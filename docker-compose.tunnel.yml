@@ -14,8 +14,9 @@ services:
     image: cloudflare/cloudflared:latest
     container_name: sakubun-cloudflared
     command: tunnel --no-autoupdate run
+    # Cùng lý do như docker-compose.yml: dùng chung token với bản deploy trong fleet.
     env_file:
-      - .env.tunnel
+      - ../fleet/projects/sakubun/.env.tunnel
     extra_hosts:
       # Linux: make host.docker.internal resolve to the host, where port 3789 is published.
       - 'host.docker.internal:host-gateway'
