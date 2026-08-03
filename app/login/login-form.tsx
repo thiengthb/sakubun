@@ -101,12 +101,6 @@ export function LoginForm({
                   onChange={(e) => setPassword(e.target.value)}
                   wrapperClassName="col-span-2 row-start-2"
                 />
-                <Link
-                  href="/forgot-password"
-                  className="col-start-2 row-start-1 inline-flex min-h-6 items-center justify-self-end text-xs text-muted-foreground underline underline-offset-4 hover:text-foreground"
-                >
-                  Quên mật khẩu?
-                </Link>
               </div>
               <Button type="submit" className="w-full" disabled={pending}>
                 {pending && <Loader2 className="animate-spin" />}

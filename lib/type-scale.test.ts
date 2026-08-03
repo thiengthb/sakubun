@@ -45,8 +45,6 @@ const DISPLAY_ALLOW = [
   'components/landing/', // marketing hero on the public landing page
   'app/login/', // auth hero
   'app/register/',
-  'app/forgot-password/',
-  'app/reset-password/',
   'components/shell/auth-nav.tsx', // wordmark on the auth pages
   'app/error.tsx', // error hero
   'app/global-error.tsx',
@@ -57,7 +55,6 @@ const DISPLAY_ALLOW = [
   'components/dashboard/retention-gauge.tsx', // data-viz number/labels
   'components/resources/item-forgetting-curve.tsx',
   'components/resources/item-analytics.tsx', // per-item stat numbers
-  'components/groups/group-flashcards.tsx', // flashcard face (large study text)
   'components/shell/app-logo.tsx', // 作文 badge glyph
   'components/shell/user-avatar.tsx', // avatar initials sizing
   'components/ui/', // shadcn primitive sizing tokens (button, calendar, …)

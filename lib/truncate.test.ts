@@ -85,7 +85,7 @@ describe('text-must-truncate — mechanical gate (CLAUDE.md #12)', () => {
       'These files use a class `truncate`/`line-clamp-1` that cannot shrink — no `min-w-0` ancestor ' +
         'and no own `max-w-*`/`w-fit`, so the truncation silently does nothing and the text can widen ' +
         'or overflow its box. Add `min-w-0` to the flex/grid parent (or a width cap on the element). ' +
-        `Canonical: components/account/admin-view.tsx.\n${offenders.join('\n')}`,
+        `Canonical: components/settings/settings-account-tab.tsx.\n${offenders.join('\n')}`,
     ).toEqual([]);
   });
 });
