@@ -1,4 +1,4 @@
-<!-- version: 2026-08-03-e -->
+<!-- version: 2026-08-04-a -->
 <!--
   Thông báo thay đổi harness cho cả team.
   SessionStart hook so `version` ở trên với version người dùng đã xem
@@ -8,6 +8,18 @@
   Mỗi lần merge thay đổi vào .claude/, cập nhật version + viết 3 dòng ở đây.
   Giữ file NGẮN — xoá mục cũ hơn 1 tháng.
 -->
+
+## 2026-08-04 — Nâng harness lên v1.5.0: hết đỏ giả
+
+Ba defect của template đã sửa ở nguồn (`/home/thien/projects/harness`), sakubun nhận
+qua `tooling/upgrade.mjs` — 0 xung đột.
+
+1. **`paths.secrets` phủ định được**: `"**/.env.*"` + `"!**/.env.example"`. Bản vá
+   liệt kê từng hậu tố env trong harness.config.json đã bỏ — hết nguy cơ quên hậu tố.
+2. **`--audit` tự bỏ qua** ở project đích. Hết `Template coverage FAIL` trong doctor
+   và trong CI parity.
+3. **`test-hooks` 53/53** trên project đã cấu hình đầy đủ (trước: 49/52). Case cần một
+   trạng thái config thì dùng `HARNESS_CONFIG=tooling/fixtures/config-unconfigured.json`.
 
 ## 2026-08-03 — Bài học giờ đi được NGƯỢC LÊN template (v1.4.0)
 

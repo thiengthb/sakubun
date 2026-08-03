@@ -42,11 +42,11 @@
       "**/db/migrate/**",
       "**/alembic/versions/**"
     ],
-    "$comment_secrets": "KHÔNG dùng `**/.env.*` — nó khớp cả `.env.example`, mà `.env.example` LÀ file phải commit (tooling/init.mjs copy nó thành .env, .gitignore có `!.env.example`). Glob của harness không hỗ trợ phủ định nên phải liệt kê. Thêm hậu tố mới vào đây khi project sinh ra file env mới. Đề xuất cho template: hỗ trợ `!pattern` trong matchAny — xem .claude/learnings/2026-W32-thien.md.",
+    "$comment_secrets": "Harness v1.5.0 hỗ trợ phủ định `!glob` (luật .gitignore: pattern sau ghi đè trước), nên bản vá liệt kê từng hậu tố env đã bỏ được — không còn nguy cơ quên một hậu tố mới. `.env.example` PHẢI đi qua: tooling/init.mjs copy nó thành .env.",
     "secrets": [
       "**/.env",
-      "**/.env.{local,docker,development,production,test,staging}",
-      "**/.env.*.local",
+      "**/.env.*",
+      "!**/.env.example",
       "**/*.pem",
       "**/id_rsa*",
       "**/id_ed25519*",
