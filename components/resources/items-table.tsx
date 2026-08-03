@@ -11,8 +11,6 @@ import {
 } from '@/components/ui/select';
 import { Truncate } from '@/components/ui/truncate';
 import { BulkDeleteButton } from '@/components/resources/bulk-delete-button';
-import { BulkGroupButton } from '@/components/resources/bulk-group-button';
-import { BulkShareButton } from '@/components/resources/bulk-share-button';
 import { BulkSuspendButton } from '@/components/resources/bulk-suspend-button';
 import { DataTable } from '@/components/shared/data-table';
 import { FilterPopover, FilterRow } from '@/components/shared/filter-popover';
@@ -22,7 +20,6 @@ import { SpokenLine } from '@/components/shared/spoken-line';
 import { StarButton } from '@/components/shared/star-button';
 import { DueCell } from '@/components/shared/due-cell';
 import { useSessionState } from '@/components/shared/use-session-state';
-import type { GroupSummary } from '@/lib/groups';
 import { PAGE_SIZE_OPTIONS } from '@/lib/pagination';
 import { JLPT_LEVELS } from '@/lib/settings-schema';
 import {
@@ -32,7 +29,7 @@ import {
   speakable,
   withinDatePreset,
 } from '@/lib/format';
-import { SHARE_FILTERS, STAR_FILTERS, STATE_FILTERS, STATE_LABELS } from '@/lib/srs-constants';
+import { STAR_FILTERS, STATE_FILTERS, STATE_LABELS } from '@/lib/srs-constants';
 import { needsWork, scoreEnrichment } from '@/lib/enrichment-quality';
 import { buildFuriganaMarkup } from '@/lib/furigana';
 import { toRomaji } from '@/lib/romaji';
@@ -88,14 +85,12 @@ export interface ItemRow {
  */
 export function ItemsTable({
   items,
-  groups,
   importSlot,
   voiceSpeaker,
   speechRate,
   showFurigana = false,
 }: {
   items: ItemRow[];
-  groups: GroupSummary[];
   importSlot?: ReactNode;
   voiceSpeaker?: number;
   speechRate?: number;
@@ -109,9 +104,7 @@ export function ItemsTable({
   const [state, setState] = useSessionState<string>('items.state', 'all', 'st');
   const [card, setCard] = useSessionState<string>('items.card', 'all', 'card');
   const [star, setStar] = useSessionState<string>('items.star', 'all', 'star');
-  const [share, setShare] = useSessionState<string>('items.share', 'all', 'shr');
   const [date, setDate] = useSessionState<DatePreset>('items.date', 'all', 'dt');
-  const [group, setGroup] = useSessionState<string>('items.group', 'all', 'grp');
 
   const filtered = useMemo(
     () =>
@@ -127,14 +120,12 @@ export function ItemsTable({
           if (card === 'yes' && needsWork(tier)) return false;
         }
         if (star === 'yes' && !it.starred) return false;
-        if (share !== 'all' && it.visibility !== share) return false;
         if (!withinDatePreset(it.createdAt, date)) return false;
-        if (group !== 'all' && !it.groupIds.includes(group)) return false;
         if (state === 'suspended') return it.suspended;
         if (state !== 'all') return !it.suspended && (it.srs?.state ?? 0) === Number(state);
         return true;
       }),
-    [items, level, state, card, star, share, date, group],
+    [items, level, state, card, star, date],
   );
 
   const columns = useMemo<ColumnDef<ItemRow>[]>(
@@ -326,8 +317,6 @@ export function ItemsTable({
                   suspended: item.suspended,
                 }}
                 kind="grammar"
-                visibility={item.visibility}
-                forkedFromId={item.forkedFromId}
               />
             </div>
           );
@@ -342,13 +331,8 @@ export function ItemsTable({
     (state !== 'all' ? 1 : 0) +
     (card !== 'all' ? 1 : 0) +
     (star !== 'all' ? 1 : 0) +
-    (share !== 'all' ? 1 : 0) +
     (date !== 'all' ? 1 : 0) +
-    (group !== 'all' ? 1 : 0);
-
-  // Grammar items only fit grammar/mixed groups (the kind-guard); remove offers only groups the
-  // selection is actually in.
-  const addTargets = groups.filter((g) => g.kind === 'grammar' || g.kind === 'mixed');
+    0;
 
   return (
     <DataTable
@@ -368,14 +352,6 @@ export function ItemsTable({
       enableRowSelection
       bulkActions={(rows, clear) => {
         const ids = rows.map((r) => r.itemId);
-        const selGroupIds = new Set(rows.flatMap((r) => r.groupIds));
-        const removeTargets = groups.filter((g) => selGroupIds.has(g.id));
-        // Only self-authored rows are shareable (a fork's content belongs to its creator); offer
-        // "Thu hồi" only when every shareable row is already public, else "Chia sẻ".
-        const shareableRows = rows.filter((r) => r.forkedFromId === null);
-        const shareableIds = shareableRows.map((r) => r.itemId);
-        const allShared =
-          shareableRows.length > 0 && shareableRows.every((r) => r.visibility === 'public');
         return (
           <>
             {/* If every selected row is already suspended, offer "Cho học lại"; otherwise "Tạm ngưng". */}
@@ -385,14 +361,6 @@ export function ItemsTable({
               suspend={!rows.every((r) => r.suspended)}
               onDone={clear}
             />
-            <BulkShareButton
-              ids={shareableIds}
-              noun="mẫu ngữ pháp"
-              share={!allShared}
-              onDone={clear}
-            />
-            <BulkGroupButton mode="add" groups={addTargets} ids={ids} onDone={clear} />
-            <BulkGroupButton mode="remove" groups={removeTargets} ids={ids} onDone={clear} />
             <BulkDeleteButton ids={ids} noun="mẫu ngữ pháp" onDone={clear} />
           </>
         );
@@ -405,9 +373,7 @@ export function ItemsTable({
             setState('all');
             setCard('all');
             setStar('all');
-            setShare('all');
             setDate('all');
-            setGroup('all');
           }}
         >
           <FilterRow label="Cấp JLPT">
@@ -467,20 +433,6 @@ export function ItemsTable({
               </SelectContent>
             </Select>
           </FilterRow>
-          <FilterRow label="Chia sẻ">
-            <Select value={share} onValueChange={setShare}>
-              <SelectTrigger size="sm" className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent position="popper">
-                {SHARE_FILTERS.map((f) => (
-                  <SelectItem key={f.value} value={f.value}>
-                    {f.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </FilterRow>
           <FilterRow label="Ngày thêm">
             <Select value={date} onValueChange={(v) => setDate(v as DatePreset)}>
               <SelectTrigger size="sm" className="w-full">
@@ -495,23 +447,6 @@ export function ItemsTable({
               </SelectContent>
             </Select>
           </FilterRow>
-          {groups.length > 0 && (
-            <FilterRow label="Nhóm">
-              <Select value={group} onValueChange={setGroup}>
-                <SelectTrigger size="sm" className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent position="popper">
-                  <SelectItem value="all">Mọi nhóm</SelectItem>
-                  {groups.map((g) => (
-                    <SelectItem key={g.id} value={g.id}>
-                      {g.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </FilterRow>
-          )}
         </FilterPopover>
       }
     />

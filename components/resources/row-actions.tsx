@@ -6,10 +6,8 @@ import {
   ChartColumn,
   CirclePause,
   CirclePlay,
-  Globe,
   MoreHorizontal,
   Pencil,
-  Share2,
   Trash2,
 } from 'lucide-react';
 import { toastResult } from '@/lib/action-toast';
@@ -32,9 +30,7 @@ import {
 import { ItemEditForm } from '@/components/resources/item-edit-dialog';
 import {
   deleteItemAction,
-  publishItemAction,
   setItemSuspendedAction,
-  unpublishItemAction,
 } from '@/app/actions';
 
 /** The editable content of a row — FSRS state is deliberately absent (never editable from the UI). */
@@ -50,40 +46,22 @@ export interface EditableItem {
 
 /**
  * Per-row actions for the resources tables: a single ⋮ menu → Chi tiết · Sửa (content edit dialog) ·
- * Tạm ngưng / Cho học lại · Chia sẻ / Thu hồi (library share) · Xóa (confirm dialog). Delete keeps the
- * review history (server preserves ReviewLog); the confirm copy says so. `kind` switches labels +
- * whether the edit form shows the JLPT level. Sharing is an OPTION IN this menu with a SHORT label
- * ("Chia sẻ" / "Thu hồi"); the full phrase rides the hover `title` only (user 2026-07-25, stated 3x —
- * locked as row-share-in-menu-short-label). A FORKED row (`forkedFromId != null`) belongs to another
- * author, so its share option renders disabled with the reason.
+ * Tạm ngưng / Cho học lại · Xóa (confirm dialog). Delete keeps the review history (server preserves
+ * ReviewLog); the confirm copy says so. `kind` switches labels + whether the edit form shows the JLPT
+ * level. A "Chia sẻ / Thu hồi" option lived here while the app had a public library; it went with the
+ * community surface.
  */
 export function RowActions({
   item,
   kind,
-  visibility,
-  forkedFromId,
 }: {
   item: EditableItem;
   kind: 'grammar' | 'vocab';
-  visibility: string;
-  forkedFromId: string | null;
 }) {
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
-  const [isPublic, setIsPublic] = useState(visibility === 'public');
   const noun = kind === 'grammar' ? 'mẫu ngữ pháp' : 'từ vựng';
-  const isForked = forkedFromId !== null;
-
-  const toggleShare = () => {
-    startTransition(async () => {
-      const r = isPublic
-        ? await unpublishItemAction(item.itemId)
-        : await publishItemAction(item.itemId);
-      if (r.ok) setIsPublic((v) => !v);
-      toastResult(r, isPublic ? 'Đã thu hồi chia sẻ' : `Đã chia sẻ ${noun} vào thư viện`);
-    });
-  };
 
   const toggleSuspend = () => {
     startTransition(async () => {
@@ -138,29 +116,6 @@ export function RowActions({
               </>
             )}
           </DropdownMenuItem>
-          {isForked ? (
-            <DropdownMenuItem disabled title="Không thể chia sẻ — mục đã lấy về từ người khác">
-              <Share2 className="size-4" /> Chia sẻ
-            </DropdownMenuItem>
-          ) : (
-            <DropdownMenuItem
-              title={isPublic ? 'Thu hồi chia sẻ' : 'Chia sẻ vào thư viện'}
-              onSelect={(e) => {
-                e.preventDefault();
-                toggleShare();
-              }}
-            >
-              {isPublic ? (
-                <>
-                  <Globe className="size-4" /> Thu hồi
-                </>
-              ) : (
-                <>
-                  <Share2 className="size-4" /> Chia sẻ
-                </>
-              )}
-            </DropdownMenuItem>
-          )}
           <DropdownMenuSeparator />
           <DropdownMenuItem
             variant="destructive"

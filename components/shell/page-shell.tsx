@@ -3,7 +3,6 @@ import { cn } from '@/lib/utils';
 import { AppBreadcrumbs, type BreadcrumbSection } from '@/components/shell/app-breadcrumbs';
 import { MobileTopBar } from '@/components/shell/mobile-top-bar';
 import { ScrollRestorer } from '@/components/shell/scroll-restorer';
-import { NotificationBell } from '@/components/shell/notification-bell';
 
 /**
  * The one page wrapper every route uses — the single source of truth for page-level rhythm.
@@ -61,21 +60,14 @@ export function PageShell({
     <div className={cn('space-y-4 py-6 text-sm', WIDTH[width], className)}>
       {/* Remember scroll position per route (long pages only; list pages are viewport-fit). */}
       <ScrollRestorer />
-      {/* The header row always renders now: the bell must sit at the far right of EVERY page, so this
-          row can no longer be conditional on there being a breadcrumb or tabs. `ml-auto` pins the bell
-          right whatever else is on the row — including a page with nothing else at all. */}
+      {/* Header row: breadcrumb + any page-supplied aside (tabs, actions). Kept unconditional so
+          every page's body starts at the same vertical offset. */}
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
         {/* Mobile only (md:hidden): app icon + open-sidebar button + a divider, since the sidebar's
             own brand/toggle are off-screen once it collapses to the off-canvas Sheet. */}
         <MobileTopBar />
         {crumb}
         {headerAside}
-        <div className="ml-auto shrink-0">
-          {/* The bell fetches its own data through a server action rather than receiving it as a prop:
-              PageShell is imported by CLIENT components too (settings-form), so making it async /
-              server-only pulled the auth module — and nodemailer with it — into a browser bundle. */}
-          <NotificationBell />
-        </div>
       </div>
       {children}
     </div>

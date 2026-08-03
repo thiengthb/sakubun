@@ -27,34 +27,16 @@ import { getStats, getWeakReport } from '@/lib/practice';
 import { computeDossier } from '@/lib/dossier';
 import { listLearnerNotesWithEvidence } from '@/lib/learner-notes';
 import { getStudyStats } from '@/lib/stats';
-import { getOptionalSessionUser } from '@/lib/current-user';
-import { LandingPage } from '@/components/landing/landing-page';
+import { getSessionUserId } from '@/lib/current-user';
 import { cn } from '@/lib/utils';
 
 /**
- * Metadata for "/" — the route a stranger is most likely to be handed as a link, so it carries the
- * marketing title/description + the OG card (`app/opengraph-image.tsx`, which Next wires in
- * automatically). The same head serves the signed-in dashboard; keeping one static export avoids
- * reading the session just to pick a <title>.
+ * Metadata for "/" — the analytics dashboard. No marketing/OG card: this is a private single-user
+ * app behind /login, so there is no public link for a stranger to be handed.
  */
 export const metadata: Metadata = {
-  title: 'sakubun — luyện dịch Nhật–Việt, Claude Desktop chấm từng câu',
-  description:
-    'Kho mẫu ngữ pháp của bạn + lịch ôn FSRS; Claude Desktop ra đề dịch, chấm điểm và sửa lỗi qua MCP. Miễn phí, dữ liệu nằm trên máy chủ của bạn.',
-  openGraph: {
-    type: 'website',
-    siteName: 'sakubun',
-    locale: 'vi_VN',
-    title: 'sakubun — luyện dịch Nhật–Việt, Claude Desktop chấm từng câu',
-    description:
-      'Bạn dịch từng câu, Claude chấm từng câu. Lịch ôn FSRS tự giãn theo trí nhớ của bạn.',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'sakubun — luyện dịch Nhật–Việt, Claude Desktop chấm từng câu',
-    description:
-      'Bạn dịch từng câu, Claude chấm từng câu. Lịch ôn FSRS tự giãn theo trí nhớ của bạn.',
-  },
+  title: 'Phân tích — sakubun',
+  description: 'Tiến độ ôn tập, điểm yếu và hồ sơ học của bạn.',
 };
 
 export const dynamic = 'force-dynamic';
@@ -290,10 +272,9 @@ function LevelBars({
 }
 
 export default async function HomePage() {
-  // Guests get the public landing page; signed-in users get the analytics dashboard below.
-  const user = await getOptionalSessionUser();
-  if (!user) return <LandingPage />;
-  const userId = user.id;
+  // Private app, single user: "/" IS the analytics dashboard. No public landing — a guest is
+  // bounced to /login by getSessionUserId() rather than shown marketing copy.
+  const userId = await getSessionUserId();
   const [stats, weak, analytics, studyStats, dossier, learnerNotes] = await Promise.all([
     getStats(userId),
     getWeakReport(userId),

@@ -12,8 +12,6 @@ import {
 } from '@/components/ui/select';
 import { Truncate } from '@/components/ui/truncate';
 import { BulkDeleteButton } from '@/components/resources/bulk-delete-button';
-import { BulkGroupButton } from '@/components/resources/bulk-group-button';
-import { BulkShareButton } from '@/components/resources/bulk-share-button';
 import { BulkSuspendButton } from '@/components/resources/bulk-suspend-button';
 import { DataTable } from '@/components/shared/data-table';
 import { FilterPopover, FilterRow } from '@/components/shared/filter-popover';
@@ -23,7 +21,6 @@ import { SpokenLine } from '@/components/shared/spoken-line';
 import { StarButton } from '@/components/shared/star-button';
 import { DueCell } from '@/components/shared/due-cell';
 import { useSessionState } from '@/components/shared/use-session-state';
-import type { GroupSummary } from '@/lib/groups';
 import { PAGE_SIZE_OPTIONS } from '@/lib/pagination';
 import { JLPT_LEVELS } from '@/lib/settings-schema';
 import {
@@ -33,7 +30,7 @@ import {
   speakable,
   withinDatePreset,
 } from '@/lib/format';
-import { SHARE_FILTERS, STAR_FILTERS, STATE_FILTERS, STATE_LABELS } from '@/lib/srs-constants';
+import { STAR_FILTERS, STATE_FILTERS, STATE_LABELS } from '@/lib/srs-constants';
 import { buildFuriganaMarkup } from '@/lib/furigana';
 import { toRomaji } from '@/lib/romaji';
 import { cn } from '@/lib/utils';
@@ -88,14 +85,12 @@ export interface VocabRow {
  */
 export function VocabTable({
   items,
-  groups,
   actionSlot,
   voiceSpeaker,
   speechRate,
   showFurigana = false,
 }: {
   items: VocabRow[];
-  groups: GroupSummary[];
   /** Toolbar action (the "Thêm từ" button) — mirrors the grammar table's import slot. */
   actionSlot?: ReactNode;
   voiceSpeaker?: number;
@@ -107,9 +102,7 @@ export function VocabTable({
   const [reason, setReason] = useSessionState<string>('vocab.reason', 'all', 'vr');
   const [star, setStar] = useSessionState<string>('vocab.star', 'all', 'vstar');
   const [level, setLevel] = useSessionState<string>('vocab.level', 'all', 'vlvl');
-  const [share, setShare] = useSessionState<string>('vocab.share', 'all', 'vshr');
   const [date, setDate] = useSessionState<DatePreset>('vocab.date', 'all', 'vdt');
-  const [group, setGroup] = useSessionState<string>('vocab.group', 'all', 'vgrp');
 
   const filtered = useMemo(
     () =>
@@ -122,12 +115,10 @@ export function VocabTable({
         if (reason !== 'all' && it.captureReason !== reason) return false;
         if (star === 'yes' && !it.starred) return false;
         if (level !== 'all' && it.level !== level) return false;
-        if (share !== 'all' && it.visibility !== share) return false;
         if (!withinDatePreset(it.createdAt, date)) return false;
-        if (group !== 'all' && !it.groupIds.includes(group)) return false;
         return true;
       }),
-    [items, state, reason, star, level, share, date, group],
+    [items, state, reason, star, level, date],
   );
 
   const columns = useMemo<ColumnDef<VocabRow>[]>(
@@ -367,8 +358,6 @@ export function VocabTable({
                   suspended: item.suspended,
                 }}
                 kind="vocab"
-                visibility={item.visibility}
-                forkedFromId={item.forkedFromId}
               />
             </div>
           );
@@ -383,12 +372,8 @@ export function VocabTable({
     (reason !== 'all' ? 1 : 0) +
     (star !== 'all' ? 1 : 0) +
     (level !== 'all' ? 1 : 0) +
-    (share !== 'all' ? 1 : 0) +
     (date !== 'all' ? 1 : 0) +
-    (group !== 'all' ? 1 : 0);
-
-  // Vocab items only fit vocab/mixed groups (the kind-guard); remove offers only groups the selection is in.
-  const addTargets = groups.filter((g) => g.kind === 'vocab' || g.kind === 'mixed');
+    0;
 
   return (
     <DataTable
@@ -408,14 +393,6 @@ export function VocabTable({
       enableRowSelection
       bulkActions={(rows, clear) => {
         const ids = rows.map((r) => r.itemId);
-        const selGroupIds = new Set(rows.flatMap((r) => r.groupIds));
-        const removeTargets = groups.filter((g) => selGroupIds.has(g.id));
-        // Only self-authored rows are shareable (a fork's content belongs to its creator); offer
-        // "Thu hồi" only when every shareable row is already public, else "Chia sẻ".
-        const shareableRows = rows.filter((r) => r.forkedFromId === null);
-        const shareableIds = shareableRows.map((r) => r.itemId);
-        const allShared =
-          shareableRows.length > 0 && shareableRows.every((r) => r.visibility === 'public');
         return (
           <>
             {/* If every selected row is already suspended, offer "Cho học lại"; otherwise "Tạm ngưng". */}
@@ -425,9 +402,6 @@ export function VocabTable({
               suspend={!rows.every((r) => r.suspended)}
               onDone={clear}
             />
-            <BulkShareButton ids={shareableIds} noun="từ vựng" share={!allShared} onDone={clear} />
-            <BulkGroupButton mode="add" groups={addTargets} ids={ids} onDone={clear} />
-            <BulkGroupButton mode="remove" groups={removeTargets} ids={ids} onDone={clear} />
             <BulkDeleteButton ids={ids} noun="từ vựng" onDone={clear} />
           </>
         );
@@ -440,9 +414,7 @@ export function VocabTable({
             setReason('all');
             setStar('all');
             setLevel('all');
-            setShare('all');
             setDate('all');
-            setGroup('all');
           }}
         >
           <FilterRow label="Trạng thái">
@@ -502,20 +474,6 @@ export function VocabTable({
               </SelectContent>
             </Select>
           </FilterRow>
-          <FilterRow label="Chia sẻ">
-            <Select value={share} onValueChange={setShare}>
-              <SelectTrigger size="sm" className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent position="popper">
-                {SHARE_FILTERS.map((f) => (
-                  <SelectItem key={f.value} value={f.value}>
-                    {f.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </FilterRow>
           <FilterRow label="Ngày thêm">
             <Select value={date} onValueChange={(v) => setDate(v as DatePreset)}>
               <SelectTrigger size="sm" className="w-full">
@@ -530,23 +488,6 @@ export function VocabTable({
               </SelectContent>
             </Select>
           </FilterRow>
-          {groups.length > 0 && (
-            <FilterRow label="Nhóm">
-              <Select value={group} onValueChange={setGroup}>
-                <SelectTrigger size="sm" className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent position="popper">
-                  <SelectItem value="all">Mọi nhóm</SelectItem>
-                  {groups.map((g) => (
-                    <SelectItem key={g.id} value={g.id}>
-                      {g.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </FilterRow>
-          )}
         </FilterPopover>
       }
     />

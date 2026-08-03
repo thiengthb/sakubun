@@ -2,15 +2,11 @@
 
 import { usePathname } from 'next/navigation';
 import {
-  Bell,
   BookOpenText,
-  Globe,
   History,
   LayoutDashboard,
   Library,
   Settings,
-  ShieldCheck,
-  UserRound,
 } from 'lucide-react';
 import { AppLogo } from '@/components/shell/app-logo';
 import { AppSidebar, type AppSidebarGroup } from '@/components/shell/app-sidebar';
@@ -23,30 +19,24 @@ import { SidebarUser } from '@/components/shell/sidebar-user';
 import { useSession } from '@/lib/auth-client';
 
 // Pre-auth routes render full-bleed (no sidebar/nav): the visitor is not signed in, so app
-// navigation would only bounce back to /login. "/" is also chromeless for GUESTS (the public
-// landing page); a signed-in user gets "/" with the sidebar (the dashboard).
-const CHROMELESS = ['/login', '/register', '/forgot-password', '/reset-password'];
+// navigation would only bounce back to /login. "/" is NEVER chromeless now — it is the dashboard,
+// and a guest never reaches it (getSessionUserId redirects to /login).
+const CHROMELESS = ['/login', '/register'];
 
 /**
- * Routes a signed-OUT visitor may read. They are data-free, and letting a stranger read the guide BEFORE
- * signing up is the point (the landing links to it) — but they must not get the app sidebar: every link in
- * it would bounce them to /login. They get the public top bar instead, same frame as the landing.
+ * Routes a signed-OUT visitor may read. `/guide` is data-free, and staying readable before sign-in is
+ * the point — but it must not get the app sidebar: every link in it would bounce to /login. It gets
+ * the public top bar instead.
  */
 const GUEST_VIEWABLE = ['/guide'];
 
 const NAV_ITEMS = [
   { href: '/', label: 'Phân tích', icon: LayoutDashboard, exact: true },
   { href: '/resources', label: 'Tài nguyên', icon: Library },
-  { href: '/library', label: 'Thư viện', icon: Globe },
   { href: '/history', label: 'Lịch sử', icon: History },
-  { href: '/notifications', label: 'Thông báo', icon: Bell },
   { href: '/settings', label: 'Cài đặt', icon: Settings },
-  { href: '/account', label: 'Tài khoản', icon: UserRound },
   { href: '/guide', label: 'Hướng dẫn', icon: BookOpenText },
 ];
-
-// Operator-only entry, appended for admins (the /admin page 404s for everyone else regardless).
-const ADMIN_ITEM = { href: '/admin', label: 'Quản trị', icon: ShieldCheck };
 
 /** Owns page width + padding — pages render their content only (todo's shell invariant). */
 export function AppShell({
@@ -74,8 +64,8 @@ export function AppShell({
     );
   }
 
-  const isAdmin = session?.user?.role === 'admin';
-  const groups: AppSidebarGroup[] = [{ items: isAdmin ? [...NAV_ITEMS, ADMIN_ITEM] : NAV_ITEMS }];
+  // Single user: no roles, so no operator-only entries to append.
+  const groups: AppSidebarGroup[] = [{ items: NAV_ITEMS }];
 
   return (
     <SidebarProvider defaultOpen={defaultSidebarOpen}>

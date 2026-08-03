@@ -1,17 +1,19 @@
 import Link from 'next/link';
-import { ArrowRight, BookOpenText } from 'lucide-react';
+import { BookOpenText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { BrandMark } from '@/components/landing/landing-hero-card';
+import { AppLogo } from '@/components/shell/app-logo';
 import { cn } from '@/lib/utils';
 
 /**
- * The ONE chrome a signed-OUT visitor gets: brand on the left, sign-in / sign-up on the right. Used by the
- * public landing at "/" AND by the guest-viewable `/guide` (see `app-shell.tsx`), so a visitor who follows
- * "Xem hướng dẫn" from the landing stays in the same frame instead of landing inside the app sidebar full
- * of links that would bounce them to /login.
+ * The ONE chrome a signed-OUT visitor gets: brand on the left, sign-in on the right. Used by the
+ * guest-viewable `/guide` (see `app-shell.tsx`) so a stranger reading the guide is not dropped inside
+ * the app sidebar, whose every link would bounce them to /login.
  *
- * `guide` adds the "Hướng dẫn" link — on for the landing, off on the guide itself (a link to the page you
- * are already on is noise).
+ * No sign-up CTA: this is a single-user app and registration closes for good once that user exists
+ * (see the /register gate), so offering it to a visitor would only lead to a rejection.
+ *
+ * `guide` adds the "Hướng dẫn" link — off on the guide itself (a link to the page you are already on
+ * is noise).
  */
 export function PublicTopBar({
   containerClassName,
@@ -30,7 +32,7 @@ export function PublicTopBar({
         )}
       >
         <Link href="/" className="flex min-w-0 items-center gap-2.5 font-semibold">
-          <BrandMark />
+          <AppLogo />
           <span className="min-w-0 leading-tight">
             sakubun
             <span className="block truncate text-xs font-normal text-muted-foreground max-sm:hidden">
@@ -50,13 +52,8 @@ export function PublicTopBar({
               </Link>
             </Button>
           )}
-          <Button asChild variant="ghost" size="sm">
-            <Link href="/login">Đăng nhập</Link>
-          </Button>
           <Button asChild size="sm">
-            <Link href="/register">
-              Đăng ký <ArrowRight className="size-4" />
-            </Link>
+            <Link href="/login">Đăng nhập</Link>
           </Button>
         </nav>
       </div>
