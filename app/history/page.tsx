@@ -6,8 +6,9 @@ import { getSessionUserId } from '@/lib/current-user';
 export const dynamic = 'force-dynamic';
 
 export default async function HistoryPage() {
-  const userId = await getSessionUserId();
-  const [sentences, settings] = await Promise.all([listSentences(userId), getSettings(userId)]);
+  // Auth gate: redirects to /login when there is no valid session.
+  await getSessionUserId();
+  const [sentences, settings] = await Promise.all([listSentences(), getSettings()]);
 
   return (
     <>

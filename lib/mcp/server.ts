@@ -7,7 +7,6 @@ import {
 } from '@/lib/mcp/prompts';
 import { registerContentTools } from '@/lib/mcp/tools/content';
 import { registerCoreTools } from '@/lib/mcp/tools/core';
-import { registerGroupTools } from '@/lib/mcp/tools/groups';
 import { registerLookupTools } from '@/lib/mcp/tools/lookup';
 import { registerManageTools } from '@/lib/mcp/tools/manage';
 import { registerPracticeTools } from '@/lib/mcp/tools/practice';
@@ -29,7 +28,6 @@ export const mcpHandler = createMcpHandler(
     registerManageTools(server);
     registerLookupTools(server);
     registerQuizTools(server);
-    registerGroupTools(server);
 
     // ---------------- Prompt: the full tutor protocol ----------------
     server.prompt(

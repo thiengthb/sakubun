@@ -17,7 +17,6 @@
 // about, now on a path that adds in bulk.
 
 import { prisma } from '@/lib/db';
-import { listPublicLibrary } from '@/lib/library';
 import { normalizeExpression } from '@/lib/normalize';
 import { GRAMMAR_KIND, VOCAB_KIND } from '@/lib/practice';
 
@@ -85,7 +84,6 @@ export interface ImportPreview {
  * a confusing twin, but it is the learner's call); a public copy only matters when they own nothing.
  */
 export async function previewImport(
-  userId: string,
   candidates: readonly ImportCandidate[],
 ): Promise<ImportPreview> {
   // The learner's WHOLE library, narrow columns. Normalization cannot be expressed in SQL (it strips
@@ -93,8 +91,7 @@ export async function previewImport(
   // complete. A truncated scan would silently classify an owned pattern as NEW, i.e. create the
   // duplicate this module exists to prevent.
   const mine = await prisma.item.findMany({
-    where: { userId },
-    select: { id: true, kind: true, expression: true, suspended: true },
+        select: { id: true, kind: true, expression: true, suspended: true },
   });
 
   const byKey = new Map<string, (typeof mine)[number]>();
@@ -102,19 +99,6 @@ export async function previewImport(
     byKey.set(`${row.kind}:${normalizeExpression(row.expression)}`, row);
   }
 
-  const needsPublic = candidates.some(
-    (c) => !byKey.has(`${c.kind}:${normalizeExpression(c.expression)}`),
-  );
-  const shared = needsPublic ? await listPublicLibrary(userId, { limit: PUBLIC_SCAN_CAP }) : [];
-  const sharedByKey = new Map<string, (typeof shared)[number]>();
-  for (const row of shared) {
-    if (row.isMine) continue; // their own published item is already covered by `byKey`
-    const key = `${row.kind}:${normalizeExpression(row.expression)}`;
-    // First wins: `listPublicLibrary` orders by createdAt DESC, and a card is better evidence than
-    // recency — so prefer an entry that actually carries one.
-    const held = sharedByKey.get(key);
-    if (!held || (!held.hasEnrichment && row.hasEnrichment)) sharedByKey.set(key, row);
-  }
 
   const fresh: ImportCandidate[] = [];
   const duplicate: DuplicateEntry[] = [];
@@ -154,19 +138,6 @@ export async function previewImport(
       continue;
     }
 
-    const sharedMatch = sharedByKey.get(`${candidate.kind}:${key}`);
-    // Only worth interrupting for when the public copy carries CONTENT. A bare public row is no better
-    // than what Claude just extracted, and stopping to ask about it would be noise.
-    if (sharedMatch?.hasEnrichment) {
-      ambiguous.push({
-        ...candidate,
-        reason: 'shared-available',
-        sharedItemId: sharedMatch.id,
-        sharedOwner: sharedMatch.ownerName,
-        sharedHasCard: true,
-      });
-      continue;
-    }
 
     fresh.push(candidate);
   }

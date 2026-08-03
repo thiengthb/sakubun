@@ -83,7 +83,7 @@ export function registerCoreTools(server: McpServer) {
       'your voice mode), speechRate (default playback speed 0.5–2 for those buttons — app only). These ' +
       'settings are SHARED by translation practice and quiz practice alike.',
     {},
-    guard('get_settings', async (_args, extra: unknown) => ok(await getSettings(getUserId(extra)))),
+    guard('get_settings', async (_args, extra: unknown) => ok(await getSettings())),
   );
 
   server.tool(
@@ -111,7 +111,7 @@ export function registerCoreTools(server: McpServer) {
       const defined = Object.fromEntries(
         Object.entries({ ...flat, ...(patch ?? {}) }).filter(([, v]) => v !== undefined),
       );
-      return ok(await saveSettings(getUserId(extra), defined));
+      return ok(await saveSettings(defined));
     }),
   );
 }

@@ -36,13 +36,12 @@ async function freshUser(): Promise<string> {
 }
 
 async function addGrammar(
-  userId: string,
   expression: string,
   level = 'N3',
   visibility = 'private',
 ): Promise<string> {
   const row = await prisma.item.create({
-    data: { userId, kind: 'GRAMMAR', expression, meaningVi: 'nghĩa', level, visibility },
+    data: { kind: 'GRAMMAR', expression, meaningVi: 'nghĩa', level, visibility },
   });
   return row.id;
 }
@@ -193,7 +192,7 @@ describe('persistence — the row is the record of what the learner was exposed 
       items: [{ itemId, role: 'TARGET' }],
       extraPatterns: ['〜ておく', '〜ながら'],
     });
-    const row = await prisma.sentence.findFirst({ where: { id: sentenceId, userId: user } });
+    const row = await prisma.sentence.findFirst({ where: { id: sentenceId } });
     expect(JSON.parse(row!.extraPatterns!)).toEqual(['〜ておく', '〜ながら']);
   });
 
@@ -207,7 +206,7 @@ describe('persistence — the row is the record of what the learner was exposed 
       suggested: '日本語',
       items: [{ itemId, role: 'TARGET' }],
     });
-    const row = await prisma.sentence.findFirst({ where: { id: sentenceId, userId: user } });
+    const row = await prisma.sentence.findFirst({ where: { id: sentenceId } });
     expect(row!.extraPatterns).toBeNull();
   });
 });

@@ -17,7 +17,7 @@ export async function GET() {
   }
 
   try {
-    const { count, bytes } = await exportVocabApkg(session.user.id);
+    const { count, bytes } = await exportVocabApkg();
     const day = new Date().toISOString().slice(0, 10);
 
     return new Response(bytes as BodyInit, {

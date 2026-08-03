@@ -13,8 +13,9 @@ export const dynamic = 'force-dynamic';
 // The group-membership and library-share slots were dropped with the community surface.
 export default async function ItemDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const userId = await getSessionUserId();
-  const [stats, settings] = await Promise.all([getItemStats(userId, id), getSettings(userId)]);
+  // Auth gate: redirects to /login when there is no valid session.
+  await getSessionUserId();
+  const [stats, settings] = await Promise.all([getItemStats(id), getSettings()]);
   if (!stats) notFound();
 
   return (

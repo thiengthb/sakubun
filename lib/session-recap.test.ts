@@ -43,7 +43,7 @@ async function freshUser(): Promise<string> {
 
 async function addItem(userId: string, expression: string): Promise<string> {
   const row = await prisma.item.create({
-    data: { userId, kind: 'GRAMMAR', expression, meaningVi: 'nghĩa', level: 'N3' },
+    data: { kind: 'GRAMMAR', expression, meaningVi: 'nghĩa', level: 'N3' },
   });
   return row.id;
 }
@@ -52,7 +52,6 @@ async function addItem(userId: string, expression: string): Promise<string> {
 async function aSentence(userId: string, at: Date): Promise<string> {
   const row = await prisma.sentence.create({
     data: {
-      userId,
       direction: 'VI_JA',
       sourceText: 'nguồn',
       userAnswer: 'đáp',
@@ -64,12 +63,10 @@ async function aSentence(userId: string, at: Date): Promise<string> {
 }
 
 async function review(
-  userId: string,
   o: { itemId?: string | null; rating: number; at: Date; sentenceId?: string },
 ): Promise<void> {
   await prisma.reviewLog.create({
     data: {
-      userId,
       itemId: o.itemId ?? null,
       rating: o.rating,
       state: 2,

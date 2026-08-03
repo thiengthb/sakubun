@@ -126,10 +126,10 @@ describe('the verdict is recorded, not remembered', () => {
   it('refuses to let one member grade another member controller', async () => {
     const owner = await freshUser();
     const stranger = await freshUser();
-    await P.recordCalibrationProposal(owner, shadow, null, NOW);
-    const [row] = await P.listCalibrationProposals(owner);
+    await P.recordCalibrationProposal(shadow, null, NOW);
+    const [row] = await P.listCalibrationProposals();
     expect(await P.setProposalVerdict(stranger, row.id, 'agree')).toBe(false);
-    const [unchanged] = await P.listCalibrationProposals(owner);
+    const [unchanged] = await P.listCalibrationProposals();
     expect(unchanged.verdict).toBeNull();
   });
 });

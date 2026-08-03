@@ -17,19 +17,21 @@ export async function createMcpKeyAction(name: string): Promise<ActionResult<{ t
   const label = name.trim();
   if (!label) return err('Đặt tên cho token (ví dụ "laptop")');
   if (label.length > 40) return err('Tên token quá dài (tối đa 40 ký tự)');
+  // Auth gate + the id the auth-layer tables (McpKey/Session/Account) are still keyed by.
   const userId = await getSessionUserId();
   const { token } = await createMcpKey(userId, label);
-  revalidatePath('/account');
+  revalidatePath('/settings');
   return ok({ token });
 }
 
 /** Revoke (delete) one of the current member's MCP tokens — takes effect on the next request. */
 export async function revokeMcpKeyAction(id: string): Promise<ActionResult> {
   if (!id) return err('Thiếu id token');
+  // Auth gate + the id the auth-layer tables (McpKey/Session/Account) are still keyed by.
   const userId = await getSessionUserId();
   // Scoped by userId so a member can only ever revoke their OWN token (McpKey sits outside the Prisma
   // tenancy guard — it is the auth layer — so the userId filter here is the isolation).
   await prisma.mcpKey.deleteMany({ where: { id, userId } });
-  revalidatePath('/account');
+  revalidatePath('/settings');
   return ok(undefined);
 }

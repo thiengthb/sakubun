@@ -1,5 +1,4 @@
 import { prisma } from '@/lib/db';
-import { listPublicLibrary } from '@/lib/library';
 import { listItems } from '@/lib/practice';
 import { normalizeExpression, stripDecoration } from '@/lib/normalize';
 import { JLPT_LEVELS, type JlptLevel } from '@/lib/settings-schema';
@@ -69,14 +68,13 @@ export const MAX_EXTRA_PATTERNS = 5;
  * the target and a secondary is a judgement call, and a rule that fires on judgement calls gets ignored.
  */
 export async function drilledLevelOf(
-  userId: string,
   itemIds: readonly string[],
 ): Promise<JlptLevel | null> {
   if (itemIds.length === 0) return null;
   // Tenant-scoped by userId — lib/db.ts throws on a user-owned query without one, and an id from
   // another account must never widen what counts as "already being drilled".
   const rows = await prisma.item.findMany({
-    where: { userId, id: { in: [...itemIds] } },
+    where: { id: { in: [...itemIds] } },
     select: { level: true },
   });
   let hardest: number | null = null;
@@ -98,7 +96,6 @@ export async function drilledLevelOf(
  * fully normalised key.
  */
 export async function classifyExtraPatterns(
-  userId: string,
   patterns: readonly string[],
   drilledLevel: string | null,
 ): Promise<ScaffoldPattern[]> {
@@ -114,10 +111,7 @@ export async function classifyExtraPatterns(
       const key = normalizeExpression(expression);
       // A LIKE search can return near-misses (a meaning fragment matches several rows), so the
       // decision is made on the normalised KEY, never on "the search returned something".
-      const [mine, shared] = await Promise.all([
-        listItems(userId, { kind: 'GRAMMAR', search, limit: 20 }),
-        listPublicLibrary(userId, { search, limit: 20 }),
-      ]);
+      const mine = await listItems({ kind: 'GRAMMAR', search, limit: 20 });
 
       const own = mine.find((i) => normalizeExpression(i.expression) === key);
       if (own) {
@@ -127,19 +121,6 @@ export async function classifyExtraPatterns(
           level: (own.level as JlptLevel) ?? null,
           itemId: own.itemId,
           aboveDrilledLevel: isAboveLevel(own.level ?? null, drilledLevel),
-        };
-      }
-
-      const pub = shared.find((i) => normalizeExpression(i.expression) === key);
-      if (pub) {
-        return {
-          expression,
-          status: 'availableInSharedLibrary' as const,
-          level: (pub.level as JlptLevel) ?? null,
-          // `LibraryEntry.id` IS the public source item's id — the same value `check_library` relays
-          // as `sourceItemId` and `fork_shared_items` expects back.
-          itemId: pub.id,
-          aboveDrilledLevel: isAboveLevel(pub.level ?? null, drilledLevel),
         };
       }
 

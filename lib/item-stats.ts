@@ -72,12 +72,11 @@ export interface ItemStats {
  * user → at most tens of rows per item) so the page can show every review + build the curve.
  */
 export async function getItemStats(
-  userId: string,
   itemId: string,
   now: Date = new Date(),
 ): Promise<ItemStats | null> {
   const item = await prisma.item.findUnique({
-    where: { id: itemId, userId },
+    where: { id: itemId },
     include: {
       srs: true,
       reviews: {
@@ -91,7 +90,7 @@ export async function getItemStats(
   });
   if (!item) return null;
 
-  const { desiredRetention } = await getSettings(userId);
+  const { desiredRetention } = await getSettings();
 
   const srsFields: SrsFields | null = item.srs
     ? {
@@ -124,7 +123,7 @@ export async function getItemStats(
 
   // One query for every contrast target; a contrast naming a pattern the user does not own simply
   // stays plain text rather than becoming a dead link.
-  const contrastLinks = await resolveContrastLinks(userId, item.enrichment, item.id);
+  const contrastLinks = await resolveContrastLinks(item.enrichment, item.id);
 
   return {
     itemId: item.id,
@@ -173,7 +172,6 @@ export async function getItemStats(
  * cannot be parsed — a missing link degrades to plain text, never to an error.
  */
 async function resolveContrastLinks(
-  userId: string,
   enrichment: string | null,
   selfId: string,
 ): Promise<ContrastLink[]> {
@@ -182,7 +180,7 @@ async function resolveContrastLinks(
   if (wanted.length === 0) return [];
 
   const rows = await prisma.item.findMany({
-    where: { userId, kind: GRAMMAR_KIND, expression: { in: wanted }, id: { not: selfId } },
+    where: { kind: GRAMMAR_KIND, expression: { in: wanted }, id: { not: selfId } },
     select: { id: true, expression: true },
   });
   return rows.map((r) => ({ expression: r.expression, itemId: r.id }));

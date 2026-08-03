@@ -250,14 +250,14 @@ function bestTopics(
  * Compute the derived half of the student model. READ-ONLY, and it proposes nothing — this is
  * evidence, delivered so composition can AIM at a real difficulty instead of a generic tag.
  */
-export async function computeDossier(userId: string, now: Date = new Date()): Promise<Dossier> {
+export async function computeDossier(now: Date = new Date()): Promise<Dossier> {
   const since = new Date(now.getTime() - DOSSIER_WINDOW_DAYS * DAY_MS);
 
   const [confusionRows, notes, reviewRows, sentenceRows] = await Promise.all([
-    listConfusionRows(userId, now),
-    listLearnerNotes(userId, now),
+    listConfusionRows(now),
+    listLearnerNotes(now),
     prisma.reviewLog.findMany({
-      where: { userId, reviewedAt: { gte: since } },
+      where: { reviewedAt: { gte: since } },
       select: {
         itemId: true,
         sentenceId: true,
@@ -274,7 +274,7 @@ export async function computeDossier(userId: string, now: Date = new Date()): Pr
       take: SCAN_CAP,
     }),
     prisma.sentence.findMany({
-      where: { userId, status: 'GRADED', createdAt: { gte: since }, score: { not: null } },
+      where: { status: 'GRADED', createdAt: { gte: since }, score: { not: null } },
       select: { context: true, score: true },
       orderBy: { createdAt: 'desc' },
       take: SCAN_CAP,

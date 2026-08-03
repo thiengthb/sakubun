@@ -122,7 +122,7 @@ export function registerPracticeTools(server: McpServer) {
         // Scenario G (2026-07-28) showed it changed no composed sentence across two confusion pairs,
         // so it moved to `get_stats` — read once per session. Dropping it also drops `computeDossier`
         // from this path, which was a second set of history scans on EVERY exercise, not just tokens.
-        const batch = await getDueBatch(userId, now, maxItems, focus);
+        const batch = await getDueBatch(now, maxItems, focus);
         // Planning sheet is Claude-only — no verbatim display order here.
         return okWithMarkdown(renderDueBatch(batch), batch, {
           verbatim: false,
@@ -257,15 +257,13 @@ export function registerPracticeTools(server: McpServer) {
         );
       }
       const userId = getUserId(extra);
-      const { sentenceId, quiz } = await stageSentence(userId, args);
+      const { sentenceId, quiz } = await stageSentence(args);
       // Classified AFTER the write: the row is the record of what the learner was exposed to, and it
       // must survive even if this lookup throws. The note is an extra, never a precondition.
       const scaffold = args.extraPatterns?.length
         ? await classifyExtraPatterns(
-            userId,
             args.extraPatterns,
             await drilledLevelOf(
-              userId,
               args.items.map((i) => i.itemId),
             ),
           )
@@ -410,7 +408,7 @@ export function registerPracticeTools(server: McpServer) {
             'BEFORE it is shown.',
         );
       }
-      const result = await submitReview(getUserId(extra), {
+      const result = await submitReview({
         ...args,
         sentenceId,
         ratings: args.ratings.map((r) => ({ ...r, rating: r.rating as 1 | 2 | 3 | 4 })),

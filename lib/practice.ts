@@ -31,7 +31,6 @@ import {
 } from '@/lib/enrichment-merge';
 import { needsWork, scoreEnrichment, type QualityTier } from '@/lib/enrichment-quality';
 import { coachTeachBack, type TeachBackHarvest } from '@/lib/coach';
-import { getPublicItem } from '@/lib/library';
 import {
   recordLearnerNote,
   type LearnerNoteInput,
@@ -39,7 +38,6 @@ import {
 } from '@/lib/learner-notes';
 import type { ConfusionRow } from '@/lib/mining';
 import { sameExpression, stripDecoration } from '@/lib/normalize';
-import { notify } from '@/lib/notifications';
 import { ratingLabel } from '@/lib/format';
 import {
   buildQuizOptions,
@@ -83,25 +81,23 @@ import {
 
 // ---------------- settings ----------------
 
-export async function getSettings(userId: string): Promise<Settings> {
-  const row = await prisma.settings.findUnique({ where: { userId } });
+export async function getSettings(): Promise<Settings> {
+  // Singleton: one settings row for the one learner (see prisma/schema.prisma).
+  const row = await prisma.settings.findFirst({ orderBy: { id: 'asc' } });
   return parseStoredSettings(row?.data);
 }
 
-export async function saveSettings(userId: string, patch: SettingsPatch): Promise<Settings> {
+export async function saveSettings(patch: SettingsPatch): Promise<Settings> {
   // migrateSettingsInput: a patch may still name the pre-split `levels` (2026-07-26) — from a stored
   // form, an older client, or Claude writing from habit. Map it before validating.
   const validated = settingsPatchSchema.parse(migrateSettingsInput(patch));
-  const merged: Settings = { ...(await getSettings(userId)), ...validated };
+  const merged: Settings = { ...(await getSettings()), ...validated };
   const data = JSON.stringify(merged);
-  // One settings row per user (keyed by the @unique userId). Settings.id is autoincrement
-  // (migration settings_id_autoincrement, 2026-07-22) so each user's create gets a fresh id — the old
-  // @default(1) made a 2nd user's create collide on the primary key. create omits id on purpose.
-  await prisma.settings.upsert({
-    where: { userId },
-    create: { userId, data },
-    update: { data },
-  });
+  // Singleton row: update the existing one, or create the first. Not an upsert — there is no stable
+  // unique key to upsert on now that `userId` is gone and `id` is autoincrement.
+  const existing = await prisma.settings.findFirst({ orderBy: { id: 'asc' } });
+  if (existing) await prisma.settings.update({ where: { id: existing.id }, data: { data } });
+  else await prisma.settings.create({ data: { data } });
   return merged;
 }
 
@@ -139,7 +135,6 @@ export const VOCAB_KIND = 'VOCAB';
 export const TEACH_BACK_EXERCISE = 'TEACH_BACK';
 
 export async function addItems(
-  userId: string,
   entries: ItemInput[],
   source = 'MCP',
   kind: string = GRAMMAR_KIND,
@@ -180,7 +175,7 @@ export async function addItems(
 
   // Pass 2 — ONE query for everything already in the store (was a per-row findUnique = N+1 on import).
   const existingRows = await prisma.item.findMany({
-    where: { userId, kind, expression: { in: candidates.map((c) => c.expression) } },
+    where: { kind, expression: { in: candidates.map((c) => c.expression) } },
     select: { expression: true },
   });
   const existing = new Set(existingRows.map((r) => r.expression));
@@ -197,7 +192,6 @@ export async function addItems(
     creates.push(
       prisma.item.create({
         data: {
-          userId,
           kind,
           expression,
           reading,
@@ -210,7 +204,7 @@ export async function addItems(
           source,
           // userId denormalized onto SrsState too (the hot due-query filters it directly, and the
           // tenancy guard requires it on every user-owned row).
-          srs: { create: { ...newSrsFields(), userId } },
+          srs: { create: { ...newSrsFields() } },
         },
       }),
     );
@@ -220,18 +214,6 @@ export async function addItems(
   // half-commit if a concurrent read trips SQLITE_BUSY midway (was N auto-committed creates in a loop).
   if (creates.length > 0) await prisma.$transaction(creates);
   result.created = creates.length;
-  // One row per BATCH, not per item, and coalesced on top of that — a 2000-row import must not be
-  // 2000 notifications, and several small adds in one Claude session read better as one line.
-  if (result.created > 0) {
-    const noun = kind === GRAMMAR_KIND ? 'mẫu ngữ pháp' : 'từ vựng';
-    await notify(userId, {
-      kind: 'ITEMS_ADDED',
-      title: `Đã thêm ${result.created} ${noun} vào kho`,
-      pluralTitle: () => `Đã thêm ${noun} vào kho (nhiều đợt)`,
-      body: source === 'MCP' ? 'Claude thêm trong lúc bạn luyện.' : null,
-      href: kind === GRAMMAR_KIND ? '/resources' : '/vocab',
-    }).catch(() => null);
-  }
   return result;
 }
 
@@ -265,7 +247,6 @@ function toLite(row: SrsRow, isNew: boolean): ItemLite {
 
 /** Last few sentence contexts per item — the protocol's novelty guard ("don't repeat these"). */
 async function recentContextsFor(
-  userId: string,
   itemIds: string[],
   perItem = 3,
 ): Promise<Record<string, string[]>> {
@@ -276,7 +257,7 @@ async function recentContextsFor(
   const entries = await Promise.all(
     itemIds.map(async (itemId) => {
       const logs = await prisma.reviewLog.findMany({
-        where: { userId, itemId, sentenceId: { not: null } },
+        where: { itemId, sentenceId: { not: null } },
         orderBy: { reviewedAt: 'desc' },
         take: perItem * 3, // headroom so dedupe still fills up to perItem distinct labels
         select: { sentence: { select: { context: true, sourceText: true } } },
@@ -302,7 +283,6 @@ export interface TodayCounts {
 }
 
 export async function todayCounts(
-  userId: string,
   settings: Settings,
   now: Date = new Date(),
 ): Promise<TodayCounts> {
@@ -312,14 +292,14 @@ export async function todayCounts(
   // the grammar budget (the anti-N5-drag guarantee). Vocab rides its own per-sentence cap instead.
   const [reviews, newGrammar, sentences] = await Promise.all([
     prisma.reviewLog.count({
-      where: { userId, reviewedAt: { gte: dayStart }, item: { kind: GRAMMAR_KIND } },
+      where: { reviewedAt: { gte: dayStart }, item: { kind: GRAMMAR_KIND } },
     }),
     prisma.reviewLog.count({
-      where: { userId, reviewedAt: { gte: dayStart }, state: 0, item: { kind: GRAMMAR_KIND } },
+      where: { reviewedAt: { gte: dayStart }, state: 0, item: { kind: GRAMMAR_KIND } },
     }),
     // GRADED only: a staged-but-unanswered (PENDING) or skipped/quiz row is not a completed sentence,
     // so it must not tick the daily goal ("câu X/goal") nor shift the ALTERNATING JA↔VI parity.
-    prisma.sentence.count({ where: { userId, createdAt: { gte: dayStart }, status: 'GRADED' } }),
+    prisma.sentence.count({ where: { createdAt: { gte: dayStart }, status: 'GRADED' } }),
   ]);
   return { reviews, newGrammar, sentences };
 }
@@ -386,12 +366,11 @@ export interface DueBatch extends PickedBatch {
 }
 
 /** Grammar items the user is weakest on: recently missed (rating ≤ 2 in the window) OR chronic leeches. */
-async function weakGrammarItemIds(userId: string, now: Date, windowDays = 30): Promise<string[]> {
+async function weakGrammarItemIds(now: Date, windowDays = 30): Promise<string[]> {
   const since = new Date(now.getTime() - windowDays * 86400000);
   const [misses, leeches] = await Promise.all([
     prisma.reviewLog.findMany({
       where: {
-        userId,
         reviewedAt: { gte: since },
         rating: { lte: 2 },
         item: { is: { suspended: false, kind: GRAMMAR_KIND } },
@@ -400,7 +379,6 @@ async function weakGrammarItemIds(userId: string, now: Date, windowDays = 30): P
     }),
     prisma.srsState.findMany({
       where: {
-        userId,
         lapses: { gte: LEECH_LAPSES },
         item: { suspended: false, kind: GRAMMAR_KIND },
       },
@@ -414,7 +392,7 @@ async function weakGrammarItemIds(userId: string, now: Date, windowDays = 30): P
 }
 
 /** Items matching a focus request, regardless of dueness or settings.grammarLevels (explicit ask wins). */
-async function focusRows(userId: string, focus: FocusInput, now: Date) {
+async function focusRows(focus: FocusInput, now: Date) {
   const or: Prisma.ItemWhereInput[] = [];
   if (focus.levels?.length) or.push({ level: { in: focus.levels } });
   for (const p of focus.patterns ?? []) {
@@ -425,13 +403,12 @@ async function focusRows(userId: string, focus: FocusInput, now: Date) {
     );
   }
   if (focus.weak) {
-    const weakIds = await weakGrammarItemIds(userId, now);
+    const weakIds = await weakGrammarItemIds(now);
     if (weakIds.length) or.push({ id: { in: weakIds } });
   }
-  if (focus.groupId) or.push({ groups: { some: { groupId: focus.groupId } } });
   if (or.length === 0) return [];
   return prisma.srsState.findMany({
-    where: { userId, item: { suspended: false, kind: GRAMMAR_KIND, OR: or } },
+    where: { item: { suspended: false, kind: GRAMMAR_KIND, OR: or } },
     include: { item: true },
     orderBy: { due: 'asc' },
     take: 100,
@@ -445,13 +422,11 @@ async function focusRows(userId: string, focus: FocusInput, now: Date) {
  * difference between "you don't have this" and "you paused this", and those need opposite fixes.
  */
 async function suspendedFocusMatches(
-  userId: string,
   patterns: string[],
 ): Promise<FocusMeta['suspendedPatterns']> {
   if (patterns.length === 0) return [];
   const rows = await prisma.item.findMany({
     where: {
-      userId,
       kind: GRAMMAR_KIND,
       suspended: true,
       OR: patterns.flatMap((p) => [
@@ -476,14 +451,13 @@ async function suspendedFocusMatches(
 
 /** Misses (rating ≤ 2) in the last `windowDays`, summarized for the planning sheet. */
 async function recentWeakSpots(
-  userId: string,
   batchItemIds: string[],
   now: Date,
   windowDays = 14,
 ): Promise<WeakSpots> {
   const since = new Date(now.getTime() - windowDays * 86400000);
   const misses = await prisma.reviewLog.findMany({
-    where: { userId, reviewedAt: { gte: since }, rating: { lte: 2 } },
+    where: { reviewedAt: { gte: since }, rating: { lte: 2 } },
     select: { itemId: true, errorTags: true },
     take: 200,
   });
@@ -530,20 +504,18 @@ function shuffle<T>(items: T[]): T[] {
 }
 
 export async function getDueBatch(
-  userId: string,
   now: Date = new Date(),
   maxItems?: number,
   focus?: FocusInput,
 ): Promise<DueBatch> {
-  const settings = await getSettings(userId);
-  const today = await todayCounts(userId, settings, now);
+  const settings = await getSettings();
+  const today = await todayCounts(settings, now);
 
   // The grammar loop only ever schedules GRAMMAR items; VOCAB lives in its own pool (see the vocab
   // query below) so it can never crowd grammar. Every item filter here is kind-scoped for that reason.
   const [dueRows, freshRows, dueNow, upcoming, newBeyondLevels] = await Promise.all([
     prisma.srsState.findMany({
       where: {
-        userId,
         due: { lte: now },
         state: { not: 0 },
         item: { suspended: false, kind: GRAMMAR_KIND },
@@ -554,7 +526,6 @@ export async function getDueBatch(
     }),
     prisma.srsState.findMany({
       where: {
-        userId,
         state: 0,
         item: { suspended: false, kind: GRAMMAR_KIND, level: { in: settings.grammarLevels } },
       },
@@ -564,7 +535,6 @@ export async function getDueBatch(
     }),
     prisma.srsState.count({
       where: {
-        userId,
         due: { lte: now },
         state: { not: 0 },
         item: { suspended: false, kind: GRAMMAR_KIND },
@@ -572,7 +542,6 @@ export async function getDueBatch(
     }),
     prisma.srsState.findFirst({
       where: {
-        userId,
         due: { gt: now },
         state: { not: 0 },
         item: { suspended: false, kind: GRAMMAR_KIND },
@@ -582,7 +551,6 @@ export async function getDueBatch(
     }),
     prisma.srsState.count({
       where: {
-        userId,
         state: 0,
         item: { suspended: false, kind: GRAMMAR_KIND, level: { notIn: settings.grammarLevels } },
       },
@@ -597,7 +565,7 @@ export async function getDueBatch(
   let focusArg: { ids: Set<string>; ahead: ItemLite[]; fillFromFocusOnly?: boolean } | undefined;
   let focusMeta: FocusMeta | null = null;
   if (focus?.levels?.length || focus?.patterns?.length || focus?.weak || focus?.groupId) {
-    const rows = await focusRows(userId, focus, now);
+    const rows = await focusRows(focus, now);
     const focusDue = rows
       .filter((r) => r.state !== 0 && r.due <= now)
       .map((r) => toLite(r as SrsRow, false));
@@ -623,7 +591,7 @@ export async function getDueBatch(
     );
     // Split the leftovers: present-but-paused is NOT absent, and conflating them tells the learner to
     // add a pattern they already own.
-    const suspendedPatterns = await suspendedFocusMatches(userId, unmatched);
+    const suspendedPatterns = await suspendedFocusMatches(unmatched);
     const suspendedKeys = new Set(suspendedPatterns.map((s) => s.pattern));
     focusMeta = {
       ...focus,
@@ -644,7 +612,6 @@ export async function getDueBatch(
   if (!focusArg && dueNow === 0 && newGrammarExhausted) {
     const gradRows = await prisma.srsState.findMany({
       where: {
-        userId,
         state: 2,
         item: { suspended: false, kind: GRAMMAR_KIND, level: { in: settings.grammarLevels } },
       },
@@ -667,7 +634,7 @@ export async function getDueBatch(
   let vocabPool: ItemLite[] = [];
   if (settings.vocabPerSentence > 0) {
     const vocabRows = await prisma.srsState.findMany({
-      where: { userId, due: { lte: now }, item: { suspended: false, kind: VOCAB_KIND } },
+      where: { due: { lte: now }, item: { suspended: false, kind: VOCAB_KIND } },
       include: { item: true },
       orderBy: { due: 'asc' },
       take: 20,
@@ -687,8 +654,8 @@ export async function getDueBatch(
   });
   const batchIds = batch.items.map((i) => i.id);
   const [recentContexts, weakSpots] = await Promise.all([
-    recentContextsFor(userId, batchIds),
-    recentWeakSpots(userId, batchIds, now),
+    recentContextsFor(batchIds),
+    recentWeakSpots(batchIds, now),
   ]);
   return {
     ...batch,
@@ -761,7 +728,6 @@ export interface StageSentenceInput {
  * 2026-07-10). The row is "pending" until submitReview (userAnswer = '').
  */
 export async function stageSentence(
-  userId: string,
   input: StageSentenceInput,
   now: Date = new Date(),
 ): Promise<{ sentenceId: string; quiz?: QuizOptions }> {
@@ -782,12 +748,11 @@ export async function stageSentence(
     quiz && text?.trim() ? `${text}\n\n${quiz.line}` : text;
 
   // Staging a fresh sentence is a natural moment to retire any long-abandoned pending rows.
-  await autoSkipStalePending(userId, now);
+  await autoSkipStalePending(now);
   const sentenceId = randomUUID();
   await prisma.sentence.create({
     data: {
       id: sentenceId,
-      userId,
       direction: input.direction,
       context: input.context?.trim() || null,
       exerciseType: input.exerciseType ?? 'TRANSLATION',
@@ -900,14 +865,12 @@ export interface CalibrationShadow extends Proposal {
  * the learner is now, not what this proposal actually stood on.
  */
 export async function recordCalibrationProposal(
-  userId: string,
   shadow: CalibrationShadow,
   sentenceId: string | null,
   now: Date = new Date(),
 ): Promise<void> {
   await prisma.calibrationProposal.create({
     data: {
-      userId,
       target: shadow.target,
       direction: shadow.direction,
       fromValue: String(shadow.from),
@@ -941,11 +904,9 @@ export interface StoredProposal {
 
 /** The gate's read: this learner's proposals, newest first. */
 export async function listCalibrationProposals(
-  userId: string,
   limit = 50,
 ): Promise<StoredProposal[]> {
   return prisma.calibrationProposal.findMany({
-    where: { userId },
     orderBy: { createdAt: 'desc' },
     take: limit,
   });
@@ -957,12 +918,11 @@ export async function listCalibrationProposals(
  * best. Scoped by userId so one member can never grade another's controller.
  */
 export async function setProposalVerdict(
-  userId: string,
   id: string,
   verdict: 'agree' | 'disagree',
 ): Promise<boolean> {
   const { count } = await prisma.calibrationProposal.updateMany({
-    where: { id, userId },
+    where: { id },
     data: { verdict },
   });
   return count > 0;
@@ -971,6 +931,9 @@ export async function setProposalVerdict(
 // ---------------- calibration (ability/challenge estimation — NEVER FSRS) ----------------
 
 /** Which LearnerAbility columns hold each axis. Keeps the column names in exactly one place. */
+/** The single ability row's fixed primary key (see prisma/schema.prisma → LearnerAbility). */
+const ABILITY_ROW_ID = 'singleton';
+
 const ABILITY_COLUMNS = {
   receptive: { rating: 'abilityReceptive', observations: 'receptiveObservations' },
   productive: { rating: 'abilityProductive', observations: 'productiveObservations' },
@@ -982,13 +945,12 @@ const ABILITY_COLUMNS = {
  * (`initialAbility`) rather than from a global default — the settings page is the trusted prior, so
  * the controller starts by agreeing with the learner and can only diverge on evidence.
  */
-async function getOrSeedAbility(userId: string, settings: Settings) {
-  const existing = await prisma.learnerAbility.findUnique({ where: { userId } });
+async function getOrSeedAbility(settings: Settings) {
+  const existing = await prisma.learnerAbility.findFirst();
   if (existing) return existing;
   const seed = initialAbility(settings);
   return prisma.learnerAbility.create({
     data: {
-      userId,
       abilityReceptive: seed,
       abilityProductive: seed,
       abilityRegister: seed,
@@ -1008,7 +970,6 @@ const ENGAGEMENT_WINDOW_DAYS = 7;
  * learner can judge them before the controller is ever allowed to act.
  */
 async function computeCalibrationShadow(
-  userId: string,
   axis: AbilityAxis,
   ability: number,
   observations: number,
@@ -1016,7 +977,6 @@ async function computeCalibrationShadow(
   now: Date,
 ): Promise<CalibrationShadow | null> {
   const logs = await prisma.reviewLog.findMany({
-    where: { userId },
     orderBy: { reviewedAt: 'desc' },
     take: CALIBRATION_LOG_WINDOW,
     select: {
@@ -1072,17 +1032,16 @@ async function computeCalibrationShadow(
 }
 
 export async function submitReview(
-  userId: string,
   input: SubmitReviewInput,
   now: Date = new Date(),
 ): Promise<SubmitReviewResult> {
-  const settings = await getSettings(userId);
+  const settings = await getSettings();
 
   // The sentence + reference translation were committed by stage_sentence BEFORE the user answered.
   // Scoped by userId so a member can only grade their OWN staged sentence (a foreign/typo'd id reads
   // as "not found", never another user's row).
   const sentence = await prisma.sentence.findUnique({
-    where: { id: input.sentenceId, userId },
+    where: { id: input.sentenceId },
   });
   if (!sentence) {
     throw new Error(
@@ -1124,7 +1083,7 @@ export async function submitReview(
   }
 
   const states = await prisma.srsState.findMany({
-    where: { userId, itemId: { in: ratings.map((r) => r.itemId) } },
+    where: { itemId: { in: ratings.map((r) => r.itemId) } },
     include: { item: true },
   });
   const byItemId = new Map(states.map((s) => [s.itemId, s]));
@@ -1136,22 +1095,15 @@ export async function submitReview(
   }
 
   const sentenceId = sentence.id;
-  // Auto-share (opt-in, /history toggle): the moment a new attempt is graded, publish it to the feed —
-  // unless it was already shared. Only affects THIS just-graded row; never touches existing sentences.
-  const autoShare =
-    settings.autoShareSentences && sentence.visibility !== 'shared'
-      ? { visibility: 'shared', sharedAt: now }
-      : {};
   const writes: Prisma.PrismaPromise<unknown>[] = [
     prisma.sentence.update({
-      where: { id: sentenceId, userId },
+      where: { id: sentenceId },
       data: {
         userAnswer: input.userAnswer,
         feedback: input.feedback ?? null,
         score: input.score ?? null,
         status: 'GRADED',
         answeredAt: now, // time-to-answer = answeredAt − createdAt (analytics)
-        ...autoShare,
       },
     }),
   ];
@@ -1161,7 +1113,7 @@ export async function submitReview(
   // estimate can never drift out of step with the reviews it was derived from. It writes ONLY its own
   // columns (Item.challenge, LearnerAbility) — never SrsState, so invariant 1 holds: submit_review is
   // still the one FSRS write path, and calibration is a passenger on it, not a second scheduler.
-  const ability = await getOrSeedAbility(userId, settings);
+  const ability = await getOrSeedAbility(settings);
   const axes = axesFor(sentence.direction, sentence.exerciseType);
   const primaryAxis = axes[0];
   // Per-axis running values, so several ratings in ONE turn compound correctly instead of each
@@ -1225,7 +1177,7 @@ export async function submitReview(
     }
     writes.push(
       prisma.item.update({
-        where: { id: itemId, userId },
+        where: { id: itemId },
         data: {
           challenge: challengeAfter,
           challengeObservations: state.item.challengeObservations + 1,
@@ -1233,10 +1185,9 @@ export async function submitReview(
       }),
     );
     writes.push(
-      prisma.srsState.update({ where: { itemId, userId }, data: { ...next } }),
+      prisma.srsState.update({ where: { itemId }, data: { ...next } }),
       prisma.reviewLog.create({
         data: {
-          userId,
           errorTags: errorTags?.length ? JSON.stringify(errorTags) : null,
           errorDetail: serializeErrorDetail(errorDetail),
           itemId,
@@ -1263,7 +1214,7 @@ export async function submitReview(
 
   writes.push(
     prisma.learnerAbility.update({
-      where: { userId },
+      where: { id: ABILITY_ROW_ID },
       data: {
         [ABILITY_COLUMNS.receptive.rating]: running.receptive.rating,
         [ABILITY_COLUMNS.receptive.observations]: running.receptive.observations,
@@ -1276,15 +1227,14 @@ export async function submitReview(
   );
 
   await prisma.$transaction(writes);
-  invalidateStreak(userId); // a fresh review may tick the streak up — drop the cache so the beacon sees it
+  invalidateStreak(); // a fresh review may tick the streak up — drop the cache so the beacon sees it
 
   const [today, dueNow, calibration, learnerNote] = await Promise.all([
-    todayCounts(userId, settings, now),
+    todayCounts(settings, now),
     // GRAMMAR-scoped like every other due-count (getDueBatch/getStats): the "Kết quả lượt này" block's "còn N mẫu đến
     // hạn" is the grammar queue — due VOCAB rides its own budget and must never inflate it (anti-N5-drag).
     prisma.srsState.count({
       where: {
-        userId,
         due: { lte: now },
         state: { not: 0 },
         item: { suspended: false, kind: GRAMMAR_KIND },
@@ -1294,7 +1244,6 @@ export async function submitReview(
     // proposal nobody applies. A failure here must never fail a graded review — the review is the
     // user's work, calibration is a bystander.
     computeCalibrationShadow(
-      userId,
       primaryAxis,
       running[primaryAxis].rating,
       running[primaryAxis].observations,
@@ -1304,7 +1253,7 @@ export async function submitReview(
     // Same bystander rule as calibration: the note is a passenger. A rejected or failing note must
     // never cost the learner the FSRS write they actually earned this turn.
     input.learnerNote
-      ? recordLearnerNote(userId, input.learnerNote, now).catch(() => null)
+      ? recordLearnerNote(input.learnerNote, now).catch(() => null)
       : Promise.resolve(null),
   ]);
 
@@ -1314,32 +1263,9 @@ export async function submitReview(
   // tool result and then gone. `LearnerAbility` overwrites in place, so nothing survived the turn: the
   // gate that makes the plan falsifiable had no evidence to read.
   if (calibration) {
-    await recordCalibrationProposal(userId, calibration, input.sentenceId, now).catch(() => null);
-    // The controller proposing a change is worth telling the learner about even in shadow mode — it is
-    // the evidence gate 1.4 asks them to review, and a proposal nobody is told about is a proposal
-    // nobody reviews (the same failure that made the gate unrunnable in the first place).
-    await notify(userId, {
-      kind: 'CALIBRATION_PROPOSED',
-      title: 'App đề xuất chỉnh độ khó cho bạn',
-      pluralTitle: (n) => `App có ${n} đề xuất chỉnh độ khó`,
-      body: calibration.reason,
-      href: '/settings',
-    }).catch(() => null);
+    await recordCalibrationProposal(calibration, input.sentenceId, now).catch(() => null);
   }
 
-  // The graded turn itself. NOT coalesced: each one points at its own detail modal, so merging two
-  // would silently drop one of the two destinations. `href` carries the sentence id, and /history opens
-  // that card's modal on arrival.
-  await notify(userId, {
-    kind: 'SENTENCE_GRADED',
-    title: 'Claude đã chấm xong một câu',
-    body: resultItems
-      .map((i) => `${i.expression}: ${ratingLabel(i.rating)}`)
-      .slice(0, 3)
-      .join(' · '),
-    href: `/history?open=${sentenceId}`,
-    entityId: sentenceId,
-  }).catch(() => null);
 
   // TEACH-BACK HARVEST (plan step 7.3). The DECISION is pure and lives in lib/coach.ts; everything it
   // reads was already loaded for the FSRS write, so this costs no extra query. Only the TARGET counts:
@@ -1408,17 +1334,16 @@ function parseStagedItems(raw: string | null): { itemId: string; role?: ItemRole
  * sentence carried (informational only — none were rated).
  */
 export async function skipSentence(
-  userId: string,
   sentenceId: string,
 ): Promise<{ skipped: number }> {
-  const sentence = await prisma.sentence.findUnique({ where: { id: sentenceId, userId } });
+  const sentence = await prisma.sentence.findUnique({ where: { id: sentenceId } });
   if (!sentence) throw new Error(`sentenceId không tồn tại: "${sentenceId}"`);
   if (sentence.status !== 'PENDING') {
     throw new Error(`câu ${sentenceId} không ở trạng thái chờ (status=${sentence.status})`);
   }
   const staged = parseStagedItems(sentence.stagedItems);
   await prisma.sentence.update({
-    where: { id: sentenceId, userId },
+    where: { id: sentenceId },
     data: { userAnswer: '(bỏ qua — không tính FSRS)', status: 'SKIPPED' },
   });
   return { skipped: staged.length };
@@ -1435,13 +1360,12 @@ const PENDING_MAX_AGE_MS = 60 * 60 * 1000; // 1 hour
  * Returns how many rows were auto-skipped.
  */
 export async function autoSkipStalePending(
-  userId: string,
   now: Date = new Date(),
   maxAgeMs: number = PENDING_MAX_AGE_MS,
 ): Promise<{ autoSkipped: number }> {
   const cutoff = new Date(now.getTime() - maxAgeMs);
   const result = await prisma.sentence.updateMany({
-    where: { userId, status: 'PENDING', createdAt: { lt: cutoff } },
+    where: { status: 'PENDING', createdAt: { lt: cutoff } },
     data: { userAnswer: '(quá hạn — tự bỏ qua)', status: 'SKIPPED' },
   });
   return { autoSkipped: result.count };
@@ -1455,11 +1379,11 @@ export async function autoSkipStalePending(
 // it the instant a review is written, so a fresh review still fires the celebration promptly. In-memory /
 // single-process is fine — the app runs as one container.
 const STREAK_TTL_MS = 60_000;
-const streakCache = new Map<string, { value: Streak; dayKey: string; at: number }>();
+let streakCache: { value: Streak; dayKey: string; at: number } | null = null;
 
-/** Drop a user's cached streak — called on the FSRS write path so the next poll recomputes. */
-function invalidateStreak(userId: string): void {
-  streakCache.delete(userId);
+/** Drop the cached streak — called on the FSRS write path so the next poll recomputes. */
+function invalidateStreak(): void {
+  streakCache = null;
 }
 
 /**
@@ -1467,24 +1391,23 @@ function invalidateStreak(userId: string): void {
  * by getStats (dashboard) and getStreak (the 10s beacon) so they can never disagree. On a miss it does the
  * one narrow full scan of ReviewLog.reviewedAt that computeStreak needs (longest run spans all history).
  */
-async function studyStreak(userId: string, cutoffHour: number, now: Date): Promise<Streak> {
+async function studyStreak(cutoffHour: number, now: Date): Promise<Streak> {
   const dayKey = studyDayKey(now, cutoffHour);
-  const hit = streakCache.get(userId);
+  const hit = streakCache;
   if (hit && hit.dayKey === dayKey && now.getTime() - hit.at < STREAK_TTL_MS) return hit.value;
   const reviewDates = await prisma.reviewLog.findMany({
-    where: { userId },
     select: { reviewedAt: true },
   });
   const value = computeStreak(
     reviewDates.map((r) => studyDayKey(r.reviewedAt, cutoffHour)),
     dayKey,
   );
-  streakCache.set(userId, { value, dayKey, at: now.getTime() });
+  streakCache = { value, dayKey, at: now.getTime() };
   return value;
 }
 
-export async function getStats(userId: string, now: Date = new Date()) {
-  const settings = await getSettings(userId);
+export async function getStats(now: Date = new Date()) {
+  const settings = await getSettings();
   const weekAgo = new Date(now.getTime() - 7 * 86400000);
   const weekAhead = new Date(now.getTime() + 7 * 86400000);
   const [totalItems, newItems, dueNow, reviews7d, dueSoon, weakRows, stateRows, suspended, today] =
@@ -1492,22 +1415,20 @@ export async function getStats(userId: string, now: Date = new Date()) {
       // The "Tiến độ" dashboard is the GRAMMAR overview (kho ngữ pháp) — item counts are
       // kind-scoped so revived vocab never inflates them. Review activity (reviews7d, today) spans
       // all reviews on purpose: a review is a review for the streak/activity, grammar or vocab.
-      prisma.item.count({ where: { userId, kind: GRAMMAR_KIND } }),
+      prisma.item.count({ where: { kind: GRAMMAR_KIND } }),
       prisma.srsState.count({
-        where: { userId, state: 0, item: { suspended: false, kind: GRAMMAR_KIND } },
+        where: { state: 0, item: { suspended: false, kind: GRAMMAR_KIND } },
       }),
       prisma.srsState.count({
         where: {
-          userId,
           due: { lte: now },
           state: { not: 0 },
           item: { suspended: false, kind: GRAMMAR_KIND },
         },
       }),
-      prisma.reviewLog.count({ where: { userId, reviewedAt: { gte: weekAgo } } }),
+      prisma.reviewLog.count({ where: { reviewedAt: { gte: weekAgo } } }),
       prisma.srsState.findMany({
         where: {
-          userId,
           due: { gt: now, lte: weekAhead },
           state: { not: 0 },
           item: { suspended: false, kind: GRAMMAR_KIND },
@@ -1516,7 +1437,6 @@ export async function getStats(userId: string, now: Date = new Date()) {
       }),
       prisma.srsState.findMany({
         where: {
-          userId,
           reps: { gt: 0 },
           lapses: { gt: 0 },
           item: { suspended: false, kind: GRAMMAR_KIND },
@@ -1527,11 +1447,11 @@ export async function getStats(userId: string, now: Date = new Date()) {
       }),
       prisma.srsState.groupBy({
         by: ['state'],
-        where: { userId, item: { suspended: false, kind: GRAMMAR_KIND } },
+        where: { item: { suspended: false, kind: GRAMMAR_KIND } },
         _count: true,
       }),
-      prisma.item.count({ where: { userId, suspended: true, kind: GRAMMAR_KIND } }),
-      todayCounts(userId, settings, now),
+      prisma.item.count({ where: { suspended: true, kind: GRAMMAR_KIND } }),
+      todayCounts(settings, now),
     ]);
 
   const forecast: Record<string, number> = {};
@@ -1551,14 +1471,14 @@ export async function getStats(userId: string, now: Date = new Date()) {
   };
 
   // Streak from distinct study days (cached; the 10s beacon path shares the same source of truth).
-  const streak = await studyStreak(userId, settings.dayCutoffHour, now);
+  const streak = await studyStreak(settings.dayCutoffHour, now);
 
   // Reviews per study-day for the last 7 days (oldest → newest) — the activity bar chart. Bounded to an
   // 8-day window (covers all 7 buckets even at a 23h cutoff) instead of re-scanning all of history; the
   // streak scan above is the only full one, and it is cached.
   const windowStart = new Date(now.getTime() - 8 * 86400000);
   const recentReviews = await prisma.reviewLog.findMany({
-    where: { userId, reviewedAt: { gte: windowStart } },
+    where: { reviewedAt: { gte: windowStart } },
     select: { reviewedAt: true },
   });
   const dayTally = new Map<string, number>();
@@ -1615,10 +1535,9 @@ export interface ListItemsFilter {
   limit?: number;
 }
 
-export async function listItems(userId: string, filter: ListItemsFilter = {}) {
+export async function listItems(filter: ListItemsFilter = {}) {
   const items = await prisma.item.findMany({
     where: {
-      userId,
       kind: filter.kind ?? GRAMMAR_KIND,
       level: filter.level,
       suspended: filter.suspended,
@@ -1646,8 +1565,6 @@ export async function listItems(userId: string, filter: ListItemsFilter = {}) {
           difficulty: true,
         },
       },
-      // Group memberships (study groups) so the resources table can filter by group + show membership.
-      groups: { select: { groupId: true } },
     },
     orderBy: { createdAt: 'desc' },
     // A quality filter cannot run in SQL (the tier comes out of the JSON blob), so the LIMIT must be
@@ -1677,12 +1594,7 @@ export async function listItems(userId: string, filter: ListItemsFilter = {}) {
     enrichment: i.enrichment,
     enrichedAt: i.enrichedAt,
     createdAt: i.createdAt,
-    // Sharing (Phase 3): current library visibility + fork provenance. forkedFromId != null means the
-    // content was taken from another user, so it is NOT re-shareable (the resources tables gate on this).
-    visibility: i.visibility,
-    forkedFromId: i.forkedFromId,
     srs: i.srs,
-    groupIds: i.groups.map((g) => g.groupId),
   }));
 }
 
@@ -1691,9 +1603,9 @@ export async function listItems(userId: string, filter: ListItemsFilter = {}) {
  * celebration beacon, which polls this on every page so the fire can fire wherever the user is when the
  * streak ticks up. Reuses the same computeStreak logic as the dashboard (one source of truth).
  */
-export async function getStreak(userId: string): Promise<{ current: number; longest: number }> {
-  const settings = await getSettings(userId);
-  return studyStreak(userId, settings.dayCutoffHour, new Date());
+export async function getStreak(): Promise<{ current: number; longest: number }> {
+  const settings = await getSettings();
+  return studyStreak(settings.dayCutoffHour, new Date());
 }
 
 // ---------------- quiz ----------------
@@ -1737,7 +1649,6 @@ export interface QuizBatch {
  * average is 1.6 contrasts per card against the 3 distractors a question needs.
  */
 async function distractorCandidatesFor(
-  userId: string,
   kind: string,
   target: { id: string; expression: string; level: string; enrichment: Enrichment | null },
 ): Promise<{ contrastCandidates: string[]; sameLevelCandidates: string[] }> {
@@ -1750,7 +1661,6 @@ async function distractorCandidatesFor(
   if (core.length >= 2) {
     const rows = await prisma.item.findMany({
       where: {
-        userId,
         kind,
         suspended: false,
         id: { not: target.id },
@@ -1768,7 +1678,7 @@ async function distractorCandidatesFor(
   }
 
   const sameLevel = await prisma.item.findMany({
-    where: { userId, kind, suspended: false, level: target.level, id: { not: target.id } },
+    where: { kind, suspended: false, level: target.level, id: { not: target.id } },
     select: { expression: true },
     orderBy: { createdAt: 'desc' },
     take: MAX_DISTRACTOR_CANDIDATES * 2,
@@ -1791,15 +1701,14 @@ async function distractorCandidatesFor(
  * sentence + can explain contrasts. (Claude is told to pick randomly among the returned items.)
  */
 export async function getQuizBatch(
-  userId: string,
   kind: string,
   count: number,
   now: Date = new Date(),
 ): Promise<QuizBatch> {
   const n = Math.max(1, Math.min(3, count));
-  const settings = await getSettings(userId);
+  const settings = await getSettings();
   const dueRows = await prisma.srsState.findMany({
-    where: { userId, due: { lte: now }, state: { not: 0 }, item: { suspended: false, kind } },
+    where: { due: { lte: now }, state: { not: 0 }, item: { suspended: false, kind } },
     include: { item: true },
     orderBy: { due: 'asc' },
     take: n,
@@ -1811,7 +1720,6 @@ export async function getQuizBatch(
   if (picked.length < n) {
     const newItems = await prisma.item.findMany({
       where: {
-        userId,
         kind,
         suspended: false,
         srs: { state: 0 },
@@ -1824,7 +1732,7 @@ export async function getQuizBatch(
   }
   const first = picked[0]?.item;
   const candidates = first
-    ? await distractorCandidatesFor(userId, kind, {
+    ? await distractorCandidatesFor(kind, {
         id: first.id,
         expression: first.expression,
         level: first.level,
@@ -1855,7 +1763,6 @@ export interface EnrichmentInput {
 
 /** Store Claude-generated enrichment cards. Unknown itemIds are reported, not fatal. */
 export async function saveEnrichments(
-  userId: string,
   inputs: { itemId: string; enrichmentJson: string }[],
 ): Promise<{ updated: number; missing: string[] }> {
   const now = new Date();
@@ -1865,7 +1772,7 @@ export async function saveEnrichments(
   const existing = new Set(
     (
       await prisma.item.findMany({
-        where: { id: { in: inputs.map((i) => i.itemId) }, userId },
+        where: { id: { in: inputs.map((i) => i.itemId) } },
         select: { id: true },
       })
     ).map((r) => r.id),
@@ -1879,7 +1786,7 @@ export async function saveEnrichments(
     }
     updates.push(
       prisma.item.update({
-        where: { id: itemId, userId },
+        where: { id: itemId },
         data: { enrichment: enrichmentJson, enrichedAt: now },
       }),
     );
@@ -1902,12 +1809,11 @@ export const CONFUSION_WINDOW_DAYS = 90;
  * handful of rows.
  */
 export async function listConfusionRows(
-  userId: string,
   now: Date = new Date(),
 ): Promise<ConfusionRow[]> {
   const since = new Date(now.getTime() - CONFUSION_WINDOW_DAYS * 86400000);
   const rows = await prisma.reviewLog.findMany({
-    where: { userId, reviewedAt: { gte: since }, errorDetail: { not: null } },
+    where: { reviewedAt: { gte: since }, errorDetail: { not: null } },
     select: {
       itemId: true,
       sentenceId: true,
@@ -1966,11 +1872,10 @@ export type PatchEnrichmentResult =
  * insurance for a read-modify-write that a plain `update` would lose.
  */
 export async function patchEnrichment(
-  userId: string,
   input: PatchEnrichmentInput,
 ): Promise<PatchEnrichmentResult> {
   const item = await prisma.item.findFirst({
-    where: { id: input.itemId, userId },
+    where: { id: input.itemId },
     select: { id: true, expression: true, enrichment: true },
   });
   if (!item) return { patched: false, reason: 'not-found' };
@@ -1978,23 +1883,9 @@ export async function patchEnrichment(
   const base = parseEnrichment(item.enrichment);
   if (!base) return { patched: false, reason: 'no-card' };
 
-  let patch: EnrichmentPatch = { add: input.add, set: input.set };
-  if (input.fromSharedItemId) {
-    const donorRow = await getPublicItem(input.fromSharedItemId);
-    const donor = parseEnrichment(donorRow?.enrichment);
-    // The donor must be the SAME pattern. Nothing else in the chain checks this: the coach only ever
-    // offers a normalized-equal match, but a mistyped or hallucinated id would otherwise merge another
-    // pattern's examples and pitfalls into this card, and the result would look plausible.
-    if (!donor || !donorRow || !sameExpression(donorRow.expression, item.expression)) {
-      return { patched: false, reason: 'donor-unusable' };
-    }
-    const donorPatch = patchFromDonor(base, donor);
-    // An explicit add/set still wins over the donor: the learner asked for the specific edit.
-    patch = {
-      add: { ...donorPatch.add, ...input.add },
-      set: { ...donorPatch.set, ...input.set },
-    };
-  }
+  // `fromSharedItemId` (merge another member's card for the same pattern into yours) went out with
+  // the public library — there is nobody to share from now, so a patch is only ever an explicit edit.
+  const patch: EnrichmentPatch = { add: input.add, set: input.set };
 
   const report = mergeEnrichment(base, patch);
   if (!report.touched) return { patched: false, reason: 'nothing-to-add' };
@@ -2002,7 +1893,7 @@ export async function patchEnrichment(
   const json = JSON.stringify(report.card);
   const res = await prisma.item.updateMany({
     // `enrichment: item.enrichment` IS the compare-and-set — it matches only the row we merged from.
-    where: { id: item.id, userId, enrichment: item.enrichment },
+    where: { id: item.id, enrichment: item.enrichment },
     data: { enrichment: json, enrichedAt: new Date() },
   });
   if (res.count === 0) return { patched: false, reason: 'conflict' };
@@ -2026,11 +1917,10 @@ export async function patchEnrichment(
  * audit) and SKIPPED rows (viewed-not-answered → all Again); `status` lets the card render each.
  * Single-user app: fetch a generous cap and filter/paginate client-side rather than truncating.
  */
-export async function listSentences(userId: string, limit = 1000) {
+export async function listSentences(limit = 1000) {
   // Self-heal stale pendings on read so an open/reloaded history page never shows week-old "đang chờ".
-  await autoSkipStalePending(userId);
+  await autoSkipStalePending();
   const sentences = await prisma.sentence.findMany({
-    where: { userId },
     orderBy: { createdAt: 'desc' },
     take: limit,
     include: {
@@ -2041,8 +1931,6 @@ export async function listSentences(userId: string, limit = 1000) {
           item: { select: { expression: true, level: true } },
         },
       },
-      // Comment count for the "Của tôi" card badge (comments only exist on a SHARED attempt).
-      _count: { select: { comments: true } },
     },
   });
   return sentences.map((s) => {
@@ -2065,10 +1953,6 @@ export async function listSentences(userId: string, limit = 1000) {
       score: s.score,
       createdAt: s.createdAt,
       starred: s.starred,
-      // Public-feed sharing (Phase 4): "private" | "shared" — drives the share toggle on the history card.
-      visibility: s.visibility,
-      // Comments on this attempt (only a shared one accrues any) — the "Của tôi" card comment badge.
-      commentCount: s._count.comments,
       // History-card meta (2026-07-17): độ khó (level), chủ đề (context tag), thời gian làm bài
       // (answeredAt − createdAt), độ dài (source char count). answeredAt is null for PENDING/SKIPPED.
       level: target?.item?.level ?? null,
@@ -2086,35 +1970,34 @@ export async function listSentences(userId: string, limit = 1000) {
 
 export type SentenceHistoryRow = Awaited<ReturnType<typeof listSentences>>[number];
 
-export async function setItemSuspended(userId: string, itemId: string, suspended: boolean) {
-  await prisma.item.update({ where: { id: itemId, userId }, data: { suspended } });
+export async function setItemSuspended(itemId: string, suspended: boolean) {
+  await prisma.item.update({ where: { id: itemId }, data: { suspended } });
   return { itemId, suspended };
 }
 
 /** Bulk suspend/resume selected items (resources DataTable row-selection → "Tạm ngưng"). Reversible;
  *  never deletes. Returns how many rows changed. */
 export async function setItemsSuspended(
-  userId: string,
   ids: string[],
   suspended: boolean,
 ): Promise<{ affected: number }> {
   if (ids.length === 0) return { affected: 0 };
   const res = await prisma.item.updateMany({
-    where: { userId, id: { in: ids } },
+    where: { id: { in: ids } },
     data: { suspended },
   });
   return { affected: res.count };
 }
 
 /** Toggle a favourite star on an item (grammar or vocab). Pure UI flag — never touches FSRS. */
-export async function setItemStarred(userId: string, itemId: string, starred: boolean) {
-  await prisma.item.update({ where: { id: itemId, userId }, data: { starred } });
+export async function setItemStarred(itemId: string, starred: boolean) {
+  await prisma.item.update({ where: { id: itemId }, data: { starred } });
   return { itemId, starred };
 }
 
 /** Toggle a favourite star on a practiced sentence (history card). Pure UI flag. */
-export async function setSentenceStarred(userId: string, sentenceId: string, starred: boolean) {
-  await prisma.sentence.update({ where: { id: sentenceId, userId }, data: { starred } });
+export async function setSentenceStarred(sentenceId: string, starred: boolean) {
+  await prisma.sentence.update({ where: { id: sentenceId }, data: { starred } });
   return { sentenceId, starred };
 }
 
@@ -2132,7 +2015,7 @@ export interface UpdateItemInput {
  * SrsState — the FSRS schedule (due/stability/difficulty/reps/lapses/state) is off-limits from the UI.
  * Throws P2002 on a (kind, expression) unique collision; the caller renders a friendly message.
  */
-export async function updateItem(userId: string, itemId: string, input: UpdateItemInput) {
+export async function updateItem(itemId: string, input: UpdateItemInput) {
   const data: Prisma.ItemUpdateInput = {};
   if (input.expression !== undefined) data.expression = cleanText(input.expression);
   if (input.reading !== undefined) data.reading = cleanTextOrNull(input.reading);
@@ -2140,7 +2023,7 @@ export async function updateItem(userId: string, itemId: string, input: UpdateIt
   if (input.meaningVi !== undefined) data.meaningVi = cleanText(input.meaningVi);
   if (input.notes !== undefined) data.notes = cleanTextOrNull(input.notes);
   if (input.level !== undefined) data.level = input.level;
-  await prisma.item.update({ where: { id: itemId, userId }, data });
+  await prisma.item.update({ where: { id: itemId }, data });
   return { itemId };
 }
 
@@ -2148,8 +2031,8 @@ export async function updateItem(userId: string, itemId: string, input: UpdateIt
  * Delete an item + its FSRS state (SrsState cascades). ReviewLog is PRESERVED (schema onDelete:
  * SetNull) so the append-only history survives (invariant #2) — a deliberate, user-initiated delete.
  */
-export async function deleteItem(userId: string, itemId: string) {
-  await prisma.item.delete({ where: { id: itemId, userId } });
+export async function deleteItem(itemId: string) {
+  await prisma.item.delete({ where: { id: itemId } });
   return { itemId };
 }
 
@@ -2158,20 +2041,9 @@ export async function deleteItem(userId: string, itemId: string) {
  * the ReviewLog is preserved: the schema's `onDelete: SetNull` NULLs each log's `itemId` instead of
  * cascading, so history survives (invariant #2). Returns how many rows were actually removed.
  */
-export async function deleteItems(userId: string, ids: string[]): Promise<{ deleted: number }> {
+export async function deleteItems(ids: string[]): Promise<{ deleted: number }> {
   if (ids.length === 0) return { deleted: 0 };
-  const res = await prisma.item.deleteMany({ where: { userId, id: { in: ids } } });
-  if (res.count > 0) {
-    // A deletion is the event most worth a trace: it is the one the learner cannot undo by looking
-    // somewhere else, and Claude can perform it while the browser is on another page entirely.
-    await notify(userId, {
-      kind: 'ITEMS_DELETED',
-      title: `Đã xóa ${res.count} mục khỏi kho`,
-      pluralTitle: (n) => `Đã xóa mục khỏi kho (${n} đợt)`,
-      body: 'Lịch sử ôn của mục đã xóa vẫn được giữ.',
-      href: '/resources',
-    }).catch(() => null);
-  }
+  const res = await prisma.item.deleteMany({ where: { id: { in: ids } } });
   return { deleted: res.count };
 }
 
@@ -2183,16 +2055,15 @@ export async function deleteItems(userId: string, ids: string[]): Promise<{ dele
  * from settings, no level hardcoded. E.g. study [N3] hides N4+N5; study [N3,N4] hides only N5.
  */
 export async function setBelowTargetSuspended(
-  userId: string,
   suspended: boolean,
 ): Promise<{ affected: number; levels: string[] }> {
-  const settings = await getSettings(userId);
+  const settings = await getSettings();
   const num = (l: string) => Number(l.slice(1));
   const easiestStudied = Math.max(...settings.grammarLevels.map(num)); // [N3,N4] → 4 (N4 is easiest studied)
   const belowLevels = JLPT_LEVELS.filter((l) => num(l) > easiestStudied); // strictly easier → hide
   if (belowLevels.length === 0) return { affected: 0, levels: [] };
   const res = await prisma.item.updateMany({
-    where: { userId, level: { in: belowLevels }, suspended: !suspended },
+    where: { level: { in: belowLevels }, suspended: !suspended },
     data: { suspended },
   });
   return { affected: res.count, levels: belowLevels };
@@ -2220,7 +2091,6 @@ export interface WeakReport {
 }
 
 export async function getWeakReport(
-  userId: string,
   now: Date = new Date(),
   windowDays = 30,
 ): Promise<WeakReport> {
@@ -2229,7 +2099,7 @@ export async function getWeakReport(
     prisma.reviewLog.findMany({
       // item isNot null → skip logs whose item was deleted (kept for streak/activity, but they can't
       // be drilled since the pattern is gone). item.expression is therefore always present below.
-      where: { userId, reviewedAt: { gte: since }, rating: { lte: 2 }, item: { isNot: null } },
+      where: { reviewedAt: { gte: since }, rating: { lte: 2 }, item: { isNot: null } },
       select: {
         errorTags: true,
         itemId: true,
@@ -2237,7 +2107,7 @@ export async function getWeakReport(
       },
     }),
     prisma.srsState.findMany({
-      where: { userId, lapses: { gte: LEECH_LAPSES }, item: { suspended: false } },
+      where: { lapses: { gte: LEECH_LAPSES }, item: { suspended: false } },
       include: { item: { select: { expression: true, meaningVi: true } } },
       orderBy: { lapses: 'desc' },
       take: 15,

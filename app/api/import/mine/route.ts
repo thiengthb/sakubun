@@ -33,7 +33,7 @@ export async function POST(req: Request) {
   }
 
   try {
-    const result = await importAccountData(session.user.id, parsed.data, { dryRun });
+    const result = await importAccountData(parsed.data, { dryRun });
     return Response.json({ ok: true, ...result });
   } catch (err) {
     console.error('[import/mine] sync failed', err);

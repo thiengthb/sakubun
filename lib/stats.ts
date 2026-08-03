@@ -42,17 +42,17 @@ interface Agg {
   count: number;
 }
 
-export async function getStudyStats(userId: string, now: Date = new Date()): Promise<StudyStats> {
-  const { dayCutoffHour } = await getSettings(userId);
+export async function getStudyStats(now: Date = new Date()): Promise<StudyStats> {
+  const { dayCutoffHour } = await getSettings();
   const since = new Date(now.getTime() - RANGE_DAYS * DAY_MS);
 
   const [logs, sentences] = await Promise.all([
     prisma.reviewLog.findMany({
-      where: { userId, reviewedAt: { gte: since } },
+      where: { reviewedAt: { gte: since } },
       select: { reviewedAt: true, rating: true, state: true },
     }),
     prisma.sentence.findMany({
-      where: { userId, status: 'GRADED', answeredAt: { gte: since } },
+      where: { status: 'GRADED', answeredAt: { gte: since } },
       select: {
         createdAt: true,
         answeredAt: true,

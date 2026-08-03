@@ -52,20 +52,18 @@ export interface SessionRecap {
  * left off, the same "an empty model looks empty" rule the dossier follows.
  */
 export async function getSessionRecap(
-  userId: string,
   cutoffHour: number,
   now: Date = new Date(),
 ): Promise<SessionRecap | null> {
   const last = await prisma.reviewLog.findFirst({
-    where: { userId },
-    orderBy: { reviewedAt: 'desc' },
+        orderBy: { reviewedAt: 'desc' },
     select: { reviewedAt: true },
   });
   if (!last) return null;
 
   const dayKey = studyDayKey(last.reviewedAt, cutoffHour);
   const rows = await prisma.reviewLog.findMany({
-    where: { userId, reviewedAt: { gte: new Date(last.reviewedAt.getTime() - LOOKBACK_MS) } },
+    where: { reviewedAt: { gte: new Date(last.reviewedAt.getTime() - LOOKBACK_MS) } },
     select: {
       itemId: true,
       rating: true,

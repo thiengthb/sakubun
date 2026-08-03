@@ -100,11 +100,10 @@ const toNote = (row: NoteRow): AssertedNote => ({
  * cleaned up opportunistically when a write needs to evict.
  */
 export async function listLearnerNotes(
-  userId: string,
   now: Date = new Date(),
 ): Promise<AssertedNote[]> {
   const rows = await prisma.learnerNote.findMany({
-    where: { userId, expiresAt: { gt: now } },
+    where: { expiresAt: { gt: now } },
     orderBy: { createdAt: 'desc' },
     take: MAX_ASSERTED_NOTES,
   });
@@ -134,15 +133,14 @@ export interface AssertedNoteWithEvidence extends AssertedNote {
  * say "no, that is not what happened there".
  */
 export async function listLearnerNotesWithEvidence(
-  userId: string,
   now: Date = new Date(),
 ): Promise<AssertedNoteWithEvidence[]> {
-  const notes = await listLearnerNotes(userId, now);
+  const notes = await listLearnerNotes(now);
   const ids = [...new Set(notes.flatMap((n) => n.evidence))];
   if (ids.length === 0) return notes.map((n) => ({ ...n, evidenceSentences: [] }));
 
   const rows = await prisma.sentence.findMany({
-    where: { userId, id: { in: ids } },
+    where: { id: { in: ids } },
     select: {
       id: true,
       sourceText: true,
@@ -167,7 +165,6 @@ export async function listLearnerNotesWithEvidence(
  * passenger on `submitReview` and a bad note must never cost the learner their FSRS write.
  */
 export async function recordLearnerNote(
-  userId: string,
   input: LearnerNoteInput,
   now: Date = new Date(),
 ): Promise<RecordNoteResult> {
@@ -182,7 +179,7 @@ export async function recordLearnerNote(
   // THIS learner actually has. A hallucinated id would produce a claim nobody can ever check, which
   // is precisely the property the asserted tier was allowed to exist without.
   const owned = await prisma.sentence.findMany({
-    where: { userId, id: { in: claimed } },
+    where: { id: { in: claimed } },
     select: { id: true },
   });
   const evidence = owned.map((s) => s.id).slice(0, MAX_NOTE_EVIDENCE);
@@ -190,7 +187,7 @@ export async function recordLearnerNote(
 
   const expiresAt = new Date(now.getTime() + NOTE_TTL_DAYS * DAY_MS);
   const live = await prisma.learnerNote.findMany({
-    where: { userId, expiresAt: { gt: now } },
+    where: { expiresAt: { gt: now } },
     orderBy: { createdAt: 'desc' },
   });
 
@@ -206,7 +203,7 @@ export async function recordLearnerNote(
     // `userId` in the where is not decoration: lib/db.ts is fail-closed and REFUSES an unscoped
     // update on a tenant model, which is what caught this the first time it was written.
     const updated = await prisma.learnerNote.update({
-      where: { id: existing.id, userId },
+      where: { id: existing.id },
       data: { evidence: JSON.stringify(merged), expiresAt },
     });
     return { recorded: 'refreshed', note: toNote(updated) };
@@ -223,14 +220,14 @@ export async function recordLearnerNote(
         a.createdAt.getTime() - b.createdAt.getTime(),
     )[0];
     evicted = victim.id;
-    await prisma.learnerNote.delete({ where: { id: victim.id, userId } });
+    await prisma.learnerNote.delete({ where: { id: victim.id } });
   }
   // Opportunistic cleanup of anything already expired — no cron exists, and this is the only moment
   // the table is being written anyway.
-  await prisma.learnerNote.deleteMany({ where: { userId, expiresAt: { lte: now } } });
+  await prisma.learnerNote.deleteMany({ where: { expiresAt: { lte: now } } });
 
   const created = await prisma.learnerNote.create({
-    data: { userId, text, evidence: JSON.stringify(evidence), expiresAt },
+    data: { text, evidence: JSON.stringify(evidence), expiresAt },
   });
   return { recorded: 'added', note: toNote(created), evicted };
 }

@@ -35,13 +35,11 @@ async function freshUser(): Promise<string> {
 }
 
 async function addItem(
-  userId: string,
   expression: string,
   over: { kind?: string; suspended?: boolean; visibility?: string; enrichment?: string } = {},
 ): Promise<string> {
   const row = await prisma.item.create({
     data: {
-      userId,
       kind: over.kind ?? 'GRAMMAR',
       expression,
       meaningVi: 'nghĩa',
@@ -200,14 +198,14 @@ describe('it writes nothing — that is the whole contract', () => {
   it('leaves the library byte-identical after a full preview', async () => {
     const user = await freshUser();
     await addItem(user, '〜わけにはいかない');
-    const before = await prisma.item.findMany({ where: { userId: user } });
+    const before = await prisma.item.findMany({ where: {} });
     await P.previewImport(user, [
       candidate('わけにはいかない'),
       candidate('〜ざるを得ない'),
       candidate('遠慮', 'VOCAB'),
     ]);
-    const after = await prisma.item.findMany({ where: { userId: user } });
+    const after = await prisma.item.findMany({ where: {} });
     expect(after).toEqual(before);
-    expect(await prisma.srsState.count({ where: { userId: user } })).toBe(0);
+    expect(await prisma.srsState.count({ where: {} })).toBe(0);
   });
 });

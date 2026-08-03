@@ -77,7 +77,7 @@ export function registerContentTools(server: McpServer) {
         .max(MAX_IMPORT_CANDIDATES),
     },
     guard('preview_import', async ({ items }, extra: unknown) =>
-      ok(await previewImport(getUserId(extra), items)),
+      ok(await previewImport(items)),
     ),
   );
 
@@ -92,7 +92,7 @@ export function registerContentTools(server: McpServer) {
       'dailyNewGrammar). The meaning MUST be in Vietnamese.',
     { grammar: z.array(grammarInputSchema).min(1).max(100) },
     guard('add_grammar', async ({ grammar }, extra: unknown) =>
-      ok(await addItems(getUserId(extra), grammar)),
+      ok(await addItems(grammar)),
     ),
   );
 
@@ -156,7 +156,6 @@ export function registerContentTools(server: McpServer) {
     guard('add_vocab', async ({ vocab }, extra: unknown) =>
       ok(
         await addItems(
-          getUserId(extra),
           vocab.map((v) => ({
             expression: v.term,
             reading: v.reading,

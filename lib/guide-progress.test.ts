@@ -53,7 +53,7 @@ describe('getStartProgress', () => {
   it('a created-but-never-used token counts as step 2, NOT step 3', async () => {
     // The distinction the plan's open question was about: having a token != Claude Desktop connected.
     await prisma.mcpKey.create({
-      data: { userId: BUSY, name: 'laptop', tokenHash: 'hash-unused' },
+      data: { name: 'laptop', tokenHash: 'hash-unused' },
     });
     const p = await GP.getStartProgress(BUSY);
     expect(p.mcpKey).toBe(true);
@@ -61,20 +61,20 @@ describe('getStartProgress', () => {
   });
 
   it('flips claudeConnected once a token has actually been used', async () => {
-    await prisma.mcpKey.updateMany({ where: { userId: BUSY }, data: { lastUsedAt: new Date() } });
+    await prisma.mcpKey.updateMany({ where: {}, data: { lastUsedAt: new Date() } });
     expect((await GP.getStartProgress(BUSY)).claudeConnected).toBe(true);
   });
 
   it('separates "has items" from "has an enrichment card"', async () => {
     const plain = await prisma.item.create({
-      data: { userId: BUSY, kind: 'GRAMMAR', expression: '〜ばかりに', meaningVi: 'chỉ vì' },
+      data: { kind: 'GRAMMAR', expression: '〜ばかりに', meaningVi: 'chỉ vì' },
     });
     let p = await GP.getStartProgress(BUSY);
     expect(p.items).toBe(true);
     expect(p.enrichment).toBe(false);
 
     await prisma.item.update({
-      where: { id: plain.id, userId: BUSY },
+      where: { id: plain.id },
       data: { enrichment: '{"usage":"…"}', enrichedAt: new Date() },
     });
     p = await GP.getStartProgress(BUSY);
@@ -95,7 +95,6 @@ describe('getStartProgress', () => {
     expect((await GP.getStartProgress(BUSY)).firstReview).toBe(false);
     await prisma.reviewLog.create({
       data: {
-        userId: BUSY,
         rating: 3,
         state: 0,
         due: new Date(),

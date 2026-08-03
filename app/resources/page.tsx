@@ -12,11 +12,12 @@ export const dynamic = 'force-dynamic';
 const MAX_ITEMS = 10_000;
 
 export default async function ResourcesPage() {
-  const userId = await getSessionUserId();
+  // Auth gate: redirects to /login when there is no valid session.
+  await getSessionUserId();
   const [grammar, vocab, settings] = await Promise.all([
-    listItems(userId, { limit: MAX_ITEMS }) as Promise<ItemRow[]>,
-    listItems(userId, { kind: VOCAB_KIND, limit: MAX_ITEMS }) as Promise<VocabRow[]>,
-    getSettings(userId),
+    listItems({ limit: MAX_ITEMS }) as unknown as Promise<ItemRow[]>,
+    listItems({ kind: VOCAB_KIND, limit: MAX_ITEMS }) as unknown as Promise<VocabRow[]>,
+    getSettings(),
   ]);
 
   return (

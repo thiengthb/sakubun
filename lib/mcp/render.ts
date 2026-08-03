@@ -322,20 +322,6 @@ export function renderLibraryCheck(check: LibraryCheck): string {
     }
   }
 
-  const forkable = check.shared.filter((s) => !s.isMine);
-  if (forkable.length > 0) {
-    lines.push('', '**Có trong thư viện chung (bạn chưa lấy về):**');
-    for (const s of forkable) {
-      // A shared card that declares LOW confidence is flagged before the learner takes a copy of it —
-      // the whole reason provenance exists (plan §12). Medium/high stay silent: a badge on everything
-      // is noise, and the absence of the marker is the signal.
-      const shaky = s.provenance?.confidence === 'low' ? ' · người soạn tự đánh giá CHƯA CHẮC' : '';
-      lines.push(
-        `- **${s.expression}** — ${s.meaningVi} · ${s.level} · ${TIER_LABELS[s.tier]} · ` +
-          `người chia sẻ: ${s.ownerName}${shaky}`,
-      );
-    }
-  }
 
   if (check.suggestions.length > 0) {
     lines.push('', '**Bạn có muốn tôi làm giúp?**');

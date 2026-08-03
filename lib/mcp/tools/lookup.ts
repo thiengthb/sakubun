@@ -10,7 +10,6 @@
 // docs/plans/2026-07-26-agentic-tutor-loop.md step 4.3.
 
 import { z } from 'zod';
-import { forkItems } from '@/lib/library';
 import { checkLibrary } from '@/lib/lookup';
 import { renderConsentGuard, renderLibraryCheck } from '@/lib/mcp/render';
 import {
@@ -93,39 +92,10 @@ export function registerLookupTools(server: McpServer) {
         ),
     },
     guard('check_library', async (args, extra: unknown) => {
-      const check = await checkLibrary(getUserId(extra), args);
+      const check = await checkLibrary(args);
       // The consent guard rides AFTER the block: eval Scenario I showed the prohibition alone is
       // not enough when its trigger is an ABSENT `auto` field (see renderConsentGuard).
       return okWithNotes(renderLibraryCheck(check), check, [renderConsentGuard(check.suggestions)]);
-    }),
-  );
-
-  server.tool(
-    'fork_shared_items',
-    'Take a COPY of one or more items another member published in the shared library, after the ' +
-      'learner agrees (a `check_library` suggestion with code FORK_SHARED carries the exact ids). ' +
-      'Copies CONTENT only — expression, reading, meaning, notes and the usage card — and gives the ' +
-      'copy a FRESH review schedule, so it never imports anyone else progress. Already-owned items are ' +
-      'skipped, so calling twice is safe. Pass `sourceItemIds` exactly as the suggestion gave them.',
-    {
-      sourceItemIds: z
-        .array(ID)
-        .min(1)
-        .max(50)
-        .describe('Public item ids from check_library `shared[].sourceItemId`.'),
-    },
-    guard('fork_shared_items', async ({ sourceItemIds }, extra: unknown) => {
-      const taken = await forkItems(getUserId(extra), sourceItemIds);
-      if (taken === 0) {
-        // Loud rather than a silent "0" the model would report as success: either the ids were wrong
-        // or the learner already owns all of them, and those need different follow-ups.
-        return mcpError(
-          'Không lấy được mục nào. Nguyên nhân thường gặp: (a) các id này không còn ở chế độ công khai, ' +
-            '(b) bạn đã có sẵn tất cả các mục đó trong kho. Hãy gọi lại check_library để lấy id mới nhất ' +
-            'rồi báo cho người học biết mục đó đã có trong kho.',
-        );
-      }
-      return ok({ forked: taken, requested: sourceItemIds.length });
     }),
   );
 }

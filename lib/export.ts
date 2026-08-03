@@ -16,9 +16,9 @@ import { VOCAB_KIND } from '@/lib/practice';
  * the Anki on the container's host, so on a multi-user deploy it was never the member's own Anki. A
  * downloaded file has no such coupling. Scoped by `userId` like every other export here.
  */
-export async function exportVocabApkg(userId: string) {
+export async function exportVocabApkg() {
   const items = await prisma.item.findMany({
-    where: { userId, kind: VOCAB_KIND },
+    where: { kind: VOCAB_KIND },
     // `notes` holds the example sentence for a VOCAB item (add_vocab maps `example` -> notes).
     select: {
       id: true,
@@ -44,33 +44,27 @@ export async function exportVocabApkg(userId: string) {
   return { count: vocab.length, bytes: buildApkg(vocab) };
 }
 
-export async function exportUserData(userId: string) {
-  const [items, srsStates, reviewLogs, sentences, settings, groups, groupMembers] =
+export async function exportUserData() {
+  const [items, srsStates, reviewLogs, sentences, settings] =
     await Promise.all([
-      prisma.item.findMany({ where: { userId } }),
-      prisma.srsState.findMany({ where: { userId } }),
-      prisma.reviewLog.findMany({ where: { userId } }),
-      prisma.sentence.findMany({ where: { userId } }),
-      prisma.settings.findFirst({ where: { userId } }),
-      prisma.group.findMany({ where: { userId } }),
-      prisma.groupMember.findMany({ where: { userId } }),
+      prisma.item.findMany({}),
+      prisma.srsState.findMany({}),
+      prisma.reviewLog.findMany({}),
+      prisma.sentence.findMany({}),
+      prisma.settings.findFirst({}),
     ]);
 
   return {
     exportedAt: new Date().toISOString(),
-    userId,
     counts: {
       items: items.length,
       reviewLogs: reviewLogs.length,
       sentences: sentences.length,
-      groups: groups.length,
     },
     items,
     srsStates,
     reviewLogs,
     sentences,
     settings,
-    groups,
-    groupMembers,
   };
 }

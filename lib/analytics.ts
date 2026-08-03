@@ -83,8 +83,8 @@ export interface PerfBreakdown {
   avgSec: number; // mean time-to-answer, seconds (0 if none timed)
 }
 
-export async function getAnalytics(userId: string, now: Date = new Date()): Promise<Analytics> {
-  const settings = await getSettings(userId);
+export async function getAnalytics(now: Date = new Date()): Promise<Analytics> {
+  const settings = await getSettings();
   const cutoff = settings.dayCutoffHour;
   const since = new Date(now.getTime() - HEATMAP_DAYS * DAY_MS);
   const in14 = new Date(now.getTime() + 14 * DAY_MS);
@@ -102,20 +102,19 @@ export async function getAnalytics(userId: string, now: Date = new Date()): Prom
     hardRows,
   ] = await Promise.all([
     prisma.reviewLog.findMany({
-      where: { userId, reviewedAt: { gte: since } },
+      where: { reviewedAt: { gte: since } },
       select: { reviewedAt: true, rating: true, state: true },
     }),
     prisma.item.findMany({
-      where: { userId, kind: GRAMMAR_KIND },
+      where: { kind: GRAMMAR_KIND },
       select: { level: true, suspended: true, srs: { select: { state: true } } },
     }),
-    prisma.item.count({ where: { userId, kind: VOCAB_KIND } }),
+    prisma.item.count({ where: { kind: VOCAB_KIND } }),
     prisma.srsState.count({
-      where: { userId, state: 2, item: { suspended: false, kind: GRAMMAR_KIND } },
+      where: { state: 2, item: { suspended: false, kind: GRAMMAR_KIND } },
     }),
     prisma.srsState.findMany({
       where: {
-        userId,
         due: { gt: now, lte: in14 },
         state: { not: 0 },
         item: { suspended: false, kind: GRAMMAR_KIND },
@@ -125,7 +124,7 @@ export async function getAnalytics(userId: string, now: Date = new Date()): Prom
     // Graded answers in the accuracy window — for time-to-answer (answeredAt − createdAt) AND the
     // difficulty/length performance breakdowns (score + timing by target-pattern level + source length).
     prisma.sentence.findMany({
-      where: { userId, status: 'GRADED', answeredAt: { gte: answerWindowStart } },
+      where: { status: 'GRADED', answeredAt: { gte: answerWindowStart } },
       select: {
         createdAt: true,
         answeredAt: true,
@@ -139,11 +138,11 @@ export async function getAnalytics(userId: string, now: Date = new Date()): Prom
     // and `get_library_health` would report different numbers for the same library. Two fetches of one
     // column, scored in JS; the tier cannot be expressed in SQL.
     prisma.item.findMany({
-      where: { userId, kind: GRAMMAR_KIND },
+      where: { kind: GRAMMAR_KIND },
       select: { enrichment: true },
     }),
     prisma.item.findMany({
-      where: { userId, kind: GRAMMAR_KIND, srs: { is: { reps: { gt: 0 } } } },
+      where: { kind: GRAMMAR_KIND, srs: { is: { reps: { gt: 0 } } } },
       select: { enrichment: true },
     }),
     // Expensive-to-hold patterns: high FSRS difficulty, regardless of whether they have lapsed.
@@ -151,7 +150,6 @@ export async function getAnalytics(userId: string, now: Date = new Date()): Prom
     // lot to retain without ever having been forgotten outright, and lapses alone never shows it.
     prisma.srsState.findMany({
       where: {
-        userId,
         difficulty: { gte: WATCHLIST_DIFFICULTY },
         reps: { gt: 0 },
         item: { suspended: false, kind: GRAMMAR_KIND },

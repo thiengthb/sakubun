@@ -4,7 +4,6 @@ import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { admin } from 'better-auth/plugins';
 import { nextCookies } from 'better-auth/next-js';
 import { prisma } from '@/lib/db';
-import { notifyAdmins } from '@/lib/notifications';
 import { sendEmail } from '@/lib/email';
 
 /**
@@ -40,7 +39,7 @@ async function assertRegistrationOpen(): Promise<void> {
 // to decide whether to render the "Sign in with Google" button.
 const googleConfigured = !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
 
-// Central auth for the deployed multi-user sakubun (plan 2026-07-21). better-auth is a vetted
+// Central auth for the deployed SINGLE-USER sakubun. better-auth is a vetted
 // library (scrypt hashing, session + rate-limit built in) — it honours the platform "never
 // hand-roll login/hash/JWT/session" rule in spirit; Authentik (the usual gate) lives on the
 // down NUC and is wrong for a machine MCP client anyway. Uses the SAME shared Prisma instance
@@ -58,11 +57,10 @@ export const auth = betterAuth({
       .map((o) => o.trim())
       .filter(Boolean) ?? []),
   ],
-  // Email + password. Sign-up is OPEN for now (small trusted friend group) via /register; invite-only
-  // gating is a deferred refinement (plan 2026-07-21, out of scope v1). requireEmailVerification =
-  // no session until the address is proven, so a typo'd / someone-else's email can't own an account
-  // (2026-07-22). Accounts that predate this are grandfathered verified by the
-  // 20260722090000_grandfather_email_verified migration, so it does not lock out existing users.
+  // Email + password. Sign-up is CLOSED once the one account exists — see assertRegistrationOpen,
+  // which runs on the user.create hook below. requireEmailVerification = no session until the address
+  // is proven. Accounts that predate this are grandfathered verified by the
+  // 20260722090000_grandfather_email_verified migration.
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: true,
@@ -127,12 +125,8 @@ export const auth = betterAuth({
       });
     },
   },
-  // Bootstrap the operator as admin (the ban/revoke kill-switch owner). Two triggers, checked on every
-  // user create: (1) the CANONICAL admin — a user whose email equals ADMIN_EMAIL — always becomes admin,
-  // on ANY machine, so a fresh deploy or a cross-machine restore always ends up with the same admin
-  // identity without a manual step (cross-machine sync, 2026-07-24; email is the stable identity — see
-  // docs/decisions.md); (2) fallback for when ADMIN_EMAIL is unset — the FIRST account created becomes
-  // admin. Everyone else is a normal member. Idempotent: only runs on create, only promotes.
+  // The registration gate (before) and the operator bootstrap (after). There is exactly one account,
+  // so the old ADMIN_EMAIL / first-user-wins branching has nothing left to decide.
   databaseHooks: {
     user: {
       create: {
@@ -140,26 +134,10 @@ export const auth = betterAuth({
         before: async () => {
           await assertRegistrationOpen();
         },
+        // The one account IS the operator, so it gets the admin role. No "is this the first user?"
+        // branch and nobody to notify: assertRegistrationOpen guarantees there is never a second.
         after: async (user) => {
-          const adminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
-          const isCanonicalAdmin = !!adminEmail && user.email.trim().toLowerCase() === adminEmail;
-          const isFirstUser = !adminEmail && (await prisma.user.count()) === 1;
-          if (isCanonicalAdmin || isFirstUser)
-            await prisma.user.update({ where: { id: user.id }, data: { role: 'admin' } });
-          // Tell the operators someone joined. Runs AFTER the promotion above so the very first
-          // account does not notify itself about its own creation. Passenger: a failure here must
-          // never break sign-up, which is the one flow a new user cannot retry around.
-          if (!isCanonicalAdmin && !isFirstUser) {
-            await notifyAdmins({
-              kind: 'USER_REGISTERED',
-              title: `${user.name || user.email} vừa tạo tài khoản`,
-              pluralTitle: (n) => `${n} tài khoản mới vừa được tạo`,
-              body: user.email,
-              href: '/admin',
-              entityId: user.id,
-              actorName: user.name || null,
-            }).catch(() => null);
-          }
+          await prisma.user.update({ where: { id: user.id }, data: { role: 'admin' } });
         },
       },
     },

@@ -6,10 +6,11 @@ import { getSessionUserId } from '@/lib/current-user';
 export const dynamic = 'force-dynamic';
 
 export default async function SettingsPage() {
+  // Auth gate + the id the auth-layer tables (McpKey/Session/Account) are still keyed by.
   const userId = await getSessionUserId();
 
   const [settings, user, keys, credential, lastSession] = await Promise.all([
-    getSettings(userId),
+    getSettings(),
     prisma.user.findUnique({
       where: { id: userId },
       select: { name: true, email: true, image: true, createdAt: true },

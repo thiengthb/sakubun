@@ -52,10 +52,9 @@ export interface LibraryHealthResult extends CoachResult {
 const jlptNumber = (level: string): number => Number(level.slice(1));
 
 export async function getLibraryHealth(
-  userId: string,
   now: Date = new Date(),
 ): Promise<LibraryHealthResult> {
-  const settings = await getSettings(userId);
+  const settings = await getSettings();
   const studied = new Set<string>(settings.grammarLevels);
   // "Below target" = strictly EASIER than the easiest level being studied (N5=5 … N1=1), the same
   // definition `setBelowTargetSuspended` acts on — derived from settings, never a hardcoded level.
@@ -63,22 +62,21 @@ export async function getLibraryHealth(
 
   const [grammarRows, vocabRows, retentionRows, weak] = await Promise.all([
     prisma.item.findMany({
-      where: { userId, kind: GRAMMAR_KIND },
+      where: { kind: GRAMMAR_KIND },
       select: { level: true, suspended: true, enrichment: true },
     }),
     prisma.item.findMany({
-      where: { userId, kind: VOCAB_KIND },
+      where: { kind: VOCAB_KIND },
       select: { expression: true, hanviet: true, suspended: true },
     }),
     prisma.reviewLog.findMany({
       where: {
-        userId,
         state: REVIEW_STATE,
         reviewedAt: { gte: new Date(now.getTime() - RETENTION_WINDOW_DAYS * 86400000) },
       },
       select: { rating: true },
     }),
-    getWeakReport(userId, now),
+    getWeakReport(now),
   ]);
 
   const quality: Record<QualityTier, number> = {

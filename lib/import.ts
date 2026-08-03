@@ -25,8 +25,6 @@ import {
   reconcileUsersByEmail,
   toDiff,
   type AccountBackup,
-  type BackupGroup,
-  type BackupGroupMember,
   type BackupItem,
   type BackupReviewLog,
   type BackupSentence,
@@ -105,38 +103,25 @@ function sentenceData(row: BackupSentence) {
   };
 }
 
-function groupData(row: BackupGroup) {
-  return {
-    name: row.name,
-    kind: row.kind,
-    color: row.color ?? null,
-    note: row.note ?? null,
-  };
-}
-
 /**
  * Sync a member's own backup (JSON) into their account. Merge-by-id, never delete; userId is forced to
  * `userId` on every write so the file's own userId is irrelevant and cross-account writes are impossible.
  * On dryRun, nothing is written — only the counts that WOULD apply are returned.
  */
 export async function importAccountData(
-  userId: string,
   backup: AccountBackup,
   { dryRun }: { dryRun: boolean },
 ): Promise<ImportResult> {
   // What the user already has, scoped by userId (passes the tenancy guard). Read once, plan in memory.
-  const [items, srsStates, reviewLogs, sentences, groups, groupMembers, settings] =
+  const [items, srsStates, reviewLogs, sentences, settings] =
     await Promise.all([
       prisma.item.findMany({
-        where: { userId },
-        select: { id: true, kind: true, expression: true },
+                select: { id: true, kind: true, expression: true },
       }),
-      prisma.srsState.findMany({ where: { userId }, select: { itemId: true } }),
-      prisma.reviewLog.findMany({ where: { userId }, select: { id: true } }),
-      prisma.sentence.findMany({ where: { userId }, select: { id: true } }),
-      prisma.group.findMany({ where: { userId }, select: { id: true } }),
-      prisma.groupMember.findMany({ where: { userId }, select: { groupId: true, itemId: true } }),
-      prisma.settings.findFirst({ where: { userId }, select: { userId: true } }),
+      prisma.srsState.findMany({ select: { itemId: true } }),
+      prisma.reviewLog.findMany({ select: { id: true } }),
+      prisma.sentence.findMany({ select: { id: true } }),
+      prisma.settings.findFirst({ select: { id: true } }),
     ]);
 
   const existingItemIds = new Set(items.map((i) => i.id));
@@ -144,10 +129,15 @@ export async function importAccountData(
   const existingSrsItemIds = new Set(srsStates.map((s) => s.itemId));
   const existingLogIds = new Set(reviewLogs.map((r) => r.id));
   const existingSentenceIds = new Set(sentences.map((s) => s.id));
-  const existingGroupIds = new Set(groups.map((g) => g.id));
-  const existingMemberKeys = new Set(groupMembers.map((m) => `${m.groupId} ${m.itemId}`));
 
   const warnings: string[] = [];
+  // A backup taken while the app was multi-user still carries these. The tables are gone, so they are
+  // skipped — but SAID, because silently dropping part of someone's backup is the worst outcome.
+  if (backup.groups.length > 0) {
+    warnings.push(
+      `${backup.groups.length} nhóm trong bản sao lưu — bỏ qua (app không còn tính năng nhóm).`,
+    );
+  }
 
   // Items first: everything else references them.
   const itemPlan = planItems(backup.items, existingItemIds, existingItemKeys);
@@ -168,15 +158,6 @@ export async function importAccountData(
   const sentenceIdsAfter = new Set<string>(existingSentenceIds);
   for (const id of sentencePlan.create) sentenceIdsAfter.add(id);
 
-  // Groups.
-  const groupPlan = planById(
-    backup.groups.map((g) => g.id),
-    existingGroupIds,
-    'upsert',
-  );
-  const groupIdsAfter = new Set<string>(existingGroupIds);
-  for (const id of groupPlan.create) groupIdsAfter.add(id);
-
   // SrsState keyed by itemId (1:1). Only rows whose item will exist; the rest are skipped.
   const srsUsable = backup.srsStates.filter((s) => itemIdsAfter.has(s.itemId));
   const srsPlan = planById(
@@ -195,26 +176,10 @@ export async function importAccountData(
     'insert-only',
   );
 
-  // GroupMember (composite key). Only pairs whose group AND item will exist; insert missing pairs only.
-  const memberUsable = backup.groupMembers.filter(
-    (m) => groupIdsAfter.has(m.groupId) && itemIdsAfter.has(m.itemId),
-  );
-  const memberOrphans = backup.groupMembers.length - memberUsable.length;
-  if (memberOrphans > 0) warnings.push(`${memberOrphans} liên kết nhóm thiếu nhóm/mục — bỏ qua.`);
-  const memberPlan: IdPlan = { create: [], update: [], skip: [] };
-  const seenMember = new Set<string>();
-  for (const m of memberUsable) {
-    const key = `${m.groupId} ${m.itemId}`;
-    if (seenMember.has(key)) continue;
-    seenMember.add(key);
-    if (existingMemberKeys.has(key)) memberPlan.skip.push(key);
-    else memberPlan.create.push(key);
-  }
-
   const settingsPlan: IdPlan = { create: [], update: [], skip: [] };
   if (backup.settings) {
-    if (settings) settingsPlan.update.push(userId);
-    else settingsPlan.create.push(userId);
+    if (settings) settingsPlan.update.push();
+    else settingsPlan.create.push();
   }
 
   const tables: TableDiff[] = [
@@ -222,8 +187,6 @@ export async function importAccountData(
     toDiff('Lịch ôn FSRS', srsPlan),
     toDiff('Lịch sử ôn', logPlan),
     toDiff('Câu đã luyện', sentencePlan),
-    toDiff('Nhóm học', groupPlan),
-    toDiff('Thành viên nhóm', memberPlan),
     toDiff('Cài đặt', settingsPlan),
   ];
 
@@ -234,10 +197,8 @@ export async function importAccountData(
   // the transaction too, so every write below still carries userId.
   const itemsById = byId(backup.items);
   const sentencesById = byId(backup.sentences);
-  const groupsById = byId(backup.groups);
   const srsByItemId = new Map(backup.srsStates.map((s) => [s.itemId, s]));
   const logsById = byId(backup.reviewLogs);
-  const membersByKey = new Map(memberUsable.map((m) => [`${m.groupId} ${m.itemId}`, m]));
 
   await prisma.$transaction(
     async (tx) => {
@@ -246,13 +207,13 @@ export async function importAccountData(
         await tx.item.createMany({
           data: itemPlan.create.map((id) => {
             const row = itemsById.get(id) as BackupItem;
-            return { id, userId, createdAt: row.createdAt, ...itemData(row) };
+            return { id, createdAt: row.createdAt, ...itemData(row) };
           }),
         });
       }
       for (const id of itemPlan.update) {
         await tx.item.update({
-          where: { id, userId },
+          where: { id },
           data: itemData(itemsById.get(id) as BackupItem),
         });
       }
@@ -264,7 +225,6 @@ export async function importAccountData(
             const row = sentencesById.get(id) as BackupSentence;
             return {
               id,
-              userId,
               createdAt: row.createdAt,
               answeredAt: row.answeredAt ?? null,
               ...sentenceData(row),
@@ -275,30 +235,8 @@ export async function importAccountData(
       for (const id of sentencePlan.update) {
         const row = sentencesById.get(id) as BackupSentence;
         await tx.sentence.update({
-          where: { id, userId },
+          where: { id },
           data: { answeredAt: row.answeredAt ?? null, ...sentenceData(row) },
-        });
-      }
-
-      // Groups.
-      if (groupPlan.create.length > 0) {
-        await tx.group.createMany({
-          data: groupPlan.create.map((id) => {
-            const row = groupsById.get(id) as BackupGroup;
-            return {
-              id,
-              userId,
-              createdAt: row.createdAt,
-              updatedAt: row.updatedAt,
-              ...groupData(row),
-            };
-          }),
-        });
-      }
-      for (const id of groupPlan.update) {
-        await tx.group.update({
-          where: { id, userId },
-          data: groupData(groupsById.get(id) as BackupGroup),
         });
       }
 
@@ -307,13 +245,13 @@ export async function importAccountData(
         await tx.srsState.createMany({
           data: srsPlan.create.map((itemId) => {
             const row = srsByItemId.get(itemId) as BackupSrsState;
-            return { id: row.id, itemId, userId, ...srsData(row) };
+            return { id: row.id, itemId, ...srsData(row) };
           }),
         });
       }
       for (const itemId of srsPlan.update) {
         await tx.srsState.update({
-          where: { itemId, userId },
+          where: { itemId },
           data: srsData(srsByItemId.get(itemId) as BackupSrsState),
         });
       }
@@ -328,7 +266,6 @@ export async function importAccountData(
               row.sentenceId && sentenceIdsAfter.has(row.sentenceId) ? row.sentenceId : null;
             return {
               id,
-              userId,
               itemId: linkedItem,
               sentenceId: linkedSentence,
               rating: row.rating,
@@ -344,23 +281,11 @@ export async function importAccountData(
         });
       }
 
-      // GroupMember (create missing pairs only).
-      if (memberPlan.create.length > 0) {
-        await tx.groupMember.createMany({
-          data: memberPlan.create.map((key) => {
-            const m = membersByKey.get(key) as BackupGroupMember;
-            return { groupId: m.groupId, itemId: m.itemId, userId, addedAt: m.addedAt };
-          }),
-        });
-      }
-
-      // Settings (one row per user, keyed by userId).
+      // Settings: the one singleton row.
       if (backup.settings) {
-        await tx.settings.upsert({
-          where: { userId },
-          create: { userId, data: backup.settings.data },
-          update: { data: backup.settings.data },
-        });
+        const row = await tx.settings.findFirst({ orderBy: { id: 'asc' } });
+        if (row) await tx.settings.update({ where: { id: row.id }, data: { data: backup.settings.data } });
+        else await tx.settings.create({ data: { data: backup.settings.data } });
       }
     },
     { timeout: 120_000, maxWait: 30_000 },
@@ -425,7 +350,7 @@ async function columnsOf(schema: string, table: string): Promise<string[]> {
   return rows.map((r) => r.name);
 }
 
-/** Columns of a live table whose FK targets the `user` table (userId, authorId, …) — the ones to remap. */
+/** Columns of a live table whose FK targets the `user` table (authorId, …) — the ones to remap. */
 async function userColsOf(table: string): Promise<string[]> {
   const rows = await prisma.$queryRawUnsafe<{ from: string; table: string }[]>(
     `PRAGMA main.foreign_key_list(${q(table)})`,
@@ -449,7 +374,7 @@ async function countOf(sql: string): Promise<number> {
  * user-referencing column is translated through that map so their rows re-home onto the local account;
  * only genuinely-new emails insert a new user row. Every table uses `INSERT OR IGNORE`, so the merge is
  * loss-free and collision-proof — a row already present (by pk OR any secondary unique,
- * e.g. Item's (userId, kind, expression) after re-homing) is skipped, never overwritten, never a crash.
+ * e.g. Item's (kind, expression) after re-homing) is skipped, never overwritten, never a crash.
  * Add-only MERGE: existing rows are kept as-is. On dryRun, nothing is written (counts are estimated by
  * the primary key, so a secondary-unique skip may read as an insert — a preview, not a guarantee).
  */

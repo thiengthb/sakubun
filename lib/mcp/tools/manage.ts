@@ -62,14 +62,14 @@ export function registerManageTools(server: McpServer) {
       // The health aggregate and the learner model both ride the call Claude ALREADY makes at session
       // open (the PUSH law), so neither needs a tool anyone has to remember. Composed HERE and not
       // inside `getStats`, because the web dashboard calls that too and must not pay for either scan.
-      const stats = await getStats(userId, now);
+      const stats = await getStats(now);
       // Both ride the call Claude ALREADY makes at session open (the PUSH law); the recap needs the
       // learner's day-cutoff, which getStats has already loaded, so it goes second rather than
       // re-reading settings.
       const [health, dossier, recap] = await Promise.all([
-        getLibraryHealth(userId, now),
-        computeDossier(userId, now),
-        getSessionRecap(userId, stats.settings.dayCutoffHour, now),
+        getLibraryHealth(now),
+        computeDossier(now),
+        getSessionRecap(stats.settings.dayCutoffHour, now),
       ]);
       // The dossier stays OUT of the markdown: that block is `verbatim: true`, i.e. Vietnamese text
       // shown to the learner as-is, and the digest is Claude-facing English (the `verbatim` boundary
@@ -97,7 +97,7 @@ export function registerManageTools(server: McpServer) {
       'VERBATIM. Use when the user asks "where am I weak" or before a focused practice session.',
     {},
     guard('get_weak_report', async (_args, extra: unknown) => {
-      const report = await getWeakReport(getUserId(extra));
+      const report = await getWeakReport();
       return okWithMarkdown(renderWeakReport(report), report);
     }),
   );
@@ -130,7 +130,7 @@ export function registerManageTools(server: McpServer) {
       limit: z.number().int().min(1).max(200).optional(),
     },
     guard('list_grammar', async (filter, extra: unknown) =>
-      ok(await listItems(getUserId(extra), { ...filter, kind: 'GRAMMAR' })),
+      ok(await listItems({ ...filter, kind: 'GRAMMAR' })),
     ),
   );
 
@@ -147,7 +147,7 @@ export function registerManageTools(server: McpServer) {
       limit: z.number().int().min(1).max(200).optional(),
     },
     guard('list_vocab', async (filter, extra: unknown) =>
-      ok(await listItems(getUserId(extra), { ...filter, kind: 'VOCAB' })),
+      ok(await listItems({ ...filter, kind: 'VOCAB' })),
     ),
   );
 
@@ -182,7 +182,6 @@ export function registerManageTools(server: McpServer) {
     guard('enrich_items', async ({ items }, extra: unknown) =>
       ok(
         await saveEnrichments(
-          getUserId(extra),
           items.map((i) => ({ itemId: i.itemId, enrichmentJson: JSON.stringify(i.enrichment) })),
         ),
       ),
@@ -200,7 +199,7 @@ export function registerManageTools(server: McpServer) {
       'markdown block VERBATIM, then relay the numbered offers and WAIT for a yes.',
     {},
     guard('get_library_health', async (_args, extra: unknown) => {
-      const result = await getLibraryHealth(getUserId(extra));
+      const result = await getLibraryHealth();
       return okWithNotes(renderLibraryHealth(result), result, [
         renderConsentGuard(result.suggestions),
       ]);
@@ -244,7 +243,7 @@ export function registerManageTools(server: McpServer) {
     // overflow, which Claude can act on — a Zod rejection would arrive as a bare `too_big` (the same
     // reasoning as the stage_sentence runtime guard, plan step 0.4).
     guard('patch_enrichment', async (args, extra: unknown) => {
-      const result = await patchEnrichment(getUserId(extra), args);
+      const result = await patchEnrichment(args);
       if (result.patched) return ok(result);
       switch (result.reason) {
         case 'not-found':
@@ -277,7 +276,6 @@ export function registerManageTools(server: McpServer) {
   const emptyToNull = (v: string | undefined): string | null | undefined =>
     v === undefined ? undefined : v === '' ? null : v;
   const runContentUpdate = async (
-    userId: string,
     itemId: string,
     patch: {
       expression?: string;
@@ -290,7 +288,7 @@ export function registerManageTools(server: McpServer) {
   ) => {
     try {
       return ok(
-        await updateItem(userId, itemId, {
+        await updateItem(itemId, {
           expression: patch.expression,
           reading: emptyToNull(patch.reading),
           hanviet: emptyToNull(patch.hanviet),
@@ -332,7 +330,7 @@ export function registerManageTools(server: McpServer) {
     guard(
       'update_grammar',
       async ({ itemId, expression, reading, meaningVi, notes, level }, extra: unknown) =>
-        runContentUpdate(getUserId(extra), itemId, {
+        runContentUpdate(itemId, {
           expression,
           reading,
           meaningVi,
@@ -365,7 +363,7 @@ export function registerManageTools(server: McpServer) {
         { itemId, expression, reading, sinoVietnamese, meaningVi, notes, level },
         extra: unknown,
       ) =>
-        runContentUpdate(getUserId(extra), itemId, {
+        runContentUpdate(itemId, {
           expression,
           reading,
           hanviet: sinoVietnamese,
@@ -382,7 +380,7 @@ export function registerManageTools(server: McpServer) {
       'practice but its history is kept intact. Get itemId from get_due_items/list_grammar/list_vocab.',
     { itemId: z.string().min(1), suspended: z.boolean() },
     guard('set_item_suspended', async ({ itemId, suspended }, extra: unknown) =>
-      ok(await setItemSuspended(getUserId(extra), itemId, suspended)),
+      ok(await setItemSuspended(itemId, suspended)),
     ),
   );
 
@@ -396,7 +394,7 @@ export function registerManageTools(server: McpServer) {
       'when the user says "thôi ôn N5", "tập trung N3", "học nhanh lên trình độ".',
     { suspended: z.boolean() },
     guard('set_below_target_suspended', async ({ suspended }, extra: unknown) =>
-      ok(await setBelowTargetSuspended(getUserId(extra), suspended)),
+      ok(await setBelowTargetSuspended(suspended)),
     ),
   );
 }

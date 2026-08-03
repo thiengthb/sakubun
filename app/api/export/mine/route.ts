@@ -17,7 +17,7 @@ export async function GET() {
   }
 
   try {
-    const data = await exportUserData(session.user.id);
+    const data = await exportUserData();
     const day = new Date().toISOString().slice(0, 10);
     const body = JSON.stringify(data, null, 2);
 

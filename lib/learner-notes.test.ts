@@ -42,7 +42,6 @@ async function freshUser(): Promise<string> {
 async function aSentence(userId: string): Promise<string> {
   const row = await prisma.sentence.create({
     data: {
-      userId,
       direction: 'VI_JA',
       sourceText: 'nguồn',
       userAnswer: 'đáp',
@@ -234,7 +233,7 @@ describe('5.4 — the note is a PASSENGER on submit_review, never a toll on it',
     // The thing the learner actually earned survived the bad passenger.
     expect(result.items).toHaveLength(1);
     expect(result.items[0].nextDue).toBeInstanceOf(Date);
-    expect(await prisma.reviewLog.count({ where: { userId: user } })).toBe(1);
+    expect(await prisma.reviewLog.count({ where: {} })).toBe(1);
     expect(await N.listLearnerNotes(user)).toEqual([]);
   });
 });

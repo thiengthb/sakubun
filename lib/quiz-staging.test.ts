@@ -43,19 +43,17 @@ async function freshUser(): Promise<{ userId: string; itemId: string }> {
   await prisma.user.create({ data: { id, name: id, email: `${id}@example.test` } });
   const item = await prisma.item.create({
     data: {
-      userId: id,
       kind: 'GRAMMAR',
       expression: TARGET,
       meaningVi: 'không thể không',
       level: 'N2',
     },
   });
-  return { userId: id, itemId: item.id };
+  return { itemId: item.id };
 }
 
 async function stageQuiz(userId: string, itemId: string, sourceText = '仕事だから、行く(＿＿)。') {
   return P.stageSentence(
-    userId,
     {
       direction: 'JA_VI',
       exerciseType: 'QUIZ',
@@ -75,10 +73,10 @@ beforeAll(async () => {
 
 describe('the recorded question contains the options the server assigned', () => {
   it('appends the A-D line to the stored sourceText', async () => {
-    const { userId, itemId } = await freshUser();
-    const { sentenceId, quiz } = await stageQuiz(userId, itemId);
+    const { itemId } = await freshUser();
+    const { sentenceId, quiz } = await stageQuiz(itemId);
     expect(quiz).toBeDefined();
-    const row = await prisma.sentence.findFirstOrThrow({ where: { id: sentenceId, userId } });
+    const row = await prisma.sentence.findFirstOrThrow({ where: { id: sentenceId } });
     expect(row.sourceText).toContain('仕事だから、行く(＿＿)。');
     expect(row.sourceText).toContain(quiz!.line);
     for (const pattern of [TARGET, ...DISTRACTORS]) {
@@ -89,9 +87,9 @@ describe('the recorded question contains the options the server assigned', () =>
   it('makes the correct letter RECOVERABLE from the row alone', async () => {
     // This is exactly what scripts/quiz-letter-audit.js does. If this assertion can pass, the
     // "is the answer always C" question is answerable by query instead of by memory.
-    const { userId, itemId } = await freshUser();
-    const { sentenceId, quiz } = await stageQuiz(userId, itemId);
-    const row = await prisma.sentence.findFirstOrThrow({ where: { id: sentenceId, userId } });
+    const { itemId } = await freshUser();
+    const { sentenceId, quiz } = await stageQuiz(itemId);
+    const row = await prisma.sentence.findFirstOrThrow({ where: { id: sentenceId } });
     const options = [...row.sourceText.matchAll(/\*\*([ABCD])\.\*\*\s*([^\n·|]+)/g)].map((m) => ({
       letter: m[1],
       pattern: m[2].trim(),
@@ -103,9 +101,8 @@ describe('the recorded question contains the options the server assigned', () =>
   it('keeps sourceRuby aligned, since ruby REPLACES the text wherever furigana is on', async () => {
     // Appending to only one of the two would hide the options from exactly the learners who have
     // furigana enabled — a silent, per-user regression.
-    const { userId, itemId } = await freshUser();
+    const { itemId } = await freshUser();
     const { sentenceId, quiz } = await P.stageSentence(
-      userId,
       {
         direction: 'JA_VI',
         exerciseType: 'QUIZ',
@@ -117,14 +114,13 @@ describe('the recorded question contains the options the server assigned', () =>
       },
       NOW,
     );
-    const row = await prisma.sentence.findFirstOrThrow({ where: { id: sentenceId, userId } });
+    const row = await prisma.sentence.findFirstOrThrow({ where: { id: sentenceId } });
     expect(row.sourceRuby).toContain(quiz!.line);
   });
 
   it('leaves a non-quiz sentence completely untouched', async () => {
-    const { userId, itemId } = await freshUser();
+    const { itemId } = await freshUser();
     const { sentenceId, quiz } = await P.stageSentence(
-      userId,
       {
         direction: 'JA_VI',
         exerciseType: 'TRANSLATION',
@@ -135,7 +131,7 @@ describe('the recorded question contains the options the server assigned', () =>
       NOW,
     );
     expect(quiz).toBeUndefined();
-    const row = await prisma.sentence.findFirstOrThrow({ where: { id: sentenceId, userId } });
+    const row = await prisma.sentence.findFirstOrThrow({ where: { id: sentenceId } });
     expect(row.sourceText).toBe('毎日勉強しています。');
     expect(row.sourceText).not.toMatch(/\*\*[ABCD]\.\*\*/);
   });
@@ -145,11 +141,10 @@ describe('a malformed question never reaches the database', () => {
   it('throws on a duplicate option and stages NOTHING', async () => {
     // The layout is built before the row is created on purpose: a rejected question must not leave a
     // pending row behind for autoSkipStalePending to sweep up as an abandoned exercise.
-    const { userId, itemId } = await freshUser();
-    const before = await prisma.sentence.count({ where: { userId } });
+    const { itemId } = await freshUser();
+    const before = await prisma.sentence.count({});
     await expect(
       P.stageSentence(
-        userId,
         {
           direction: 'JA_VI',
           exerciseType: 'QUIZ',
@@ -161,6 +156,6 @@ describe('a malformed question never reaches the database', () => {
         NOW,
       ),
     ).rejects.toThrow(/KHÁC nhau/);
-    expect(await prisma.sentence.count({ where: { userId } })).toBe(before);
+    expect(await prisma.sentence.count({})).toBe(before);
   });
 });

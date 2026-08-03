@@ -69,18 +69,18 @@ beforeAll(async () => {
 describe('submitReview — the FSRS write path', () => {
   it('writes exactly one ReviewLog and one advanced SrsState for the graded item', async () => {
     const u = await freshUser();
-    const itemId = await addOneItem(u, 'FSRS_pattern');
+    const itemId = await addOneItem('FSRS_pattern');
 
-    const result = await studyOnce(u, itemId, 3);
+    const result = await studyOnce(itemId, 3);
 
     expect(result.items).toHaveLength(1);
     expect(result.items[0].itemId).toBe(itemId);
     expect(result.items[0].nextDue instanceof Date).toBe(true);
 
-    const logs = await prisma.reviewLog.count({ where: { userId: u } });
+    const logs = await prisma.reviewLog.count({ where: {} });
     expect(logs).toBe(1);
 
-    const srs = await prisma.srsState.findFirst({ where: { itemId, userId: u } });
+    const srs = await prisma.srsState.findFirst({ where: { itemId } });
     expect(srs).not.toBeNull();
     expect(srs!.reps).toBe(1);
     expect(srs!.state).toBeGreaterThan(0); // left the "new" (0) state after a review
@@ -91,11 +91,11 @@ describe('submitReview — the FSRS write path', () => {
 describe('getStats / getStreak — the two aggregate paths must agree', () => {
   it('aggregates a known dataset and both streak computations match', async () => {
     const u = await freshUser();
-    const itemId = await addOneItem(u, 'STATS_pattern');
+    const itemId = await addOneItem('STATS_pattern');
     const now = new Date();
-    await studyOnce(u, itemId, 3, now);
+    await studyOnce(itemId, 3, now);
 
-    const stats = await P.getStats(u, now);
+    const stats = await P.getStats(now);
     expect(stats.totalItems).toBe(1);
     expect(stats.reviewsLast7Days).toBe(1);
     expect(stats.reviewsByDay).toHaveLength(7);
@@ -106,13 +106,13 @@ describe('getStats / getStreak — the two aggregate paths must agree', () => {
     expect(stats.streak.current).toBeGreaterThanOrEqual(1);
 
     // P3.2 will dedup getStreak's separate unbounded scan into getStats — pin that they agree TODAY.
-    const streak = await P.getStreak(u);
+    const streak = await P.getStreak();
     expect(streak).toEqual(stats.streak);
   });
 
   it('a user with no reviews has a zero streak and an empty 7-day activity row', async () => {
     const u = await freshUser();
-    const stats = await P.getStats(u);
+    const stats = await P.getStats();
     expect(stats.streak.current).toBe(0);
     expect(stats.reviewsLast7Days).toBe(0);
     expect(stats.reviewsByDay.every((d) => d.count === 0)).toBe(true);
@@ -122,16 +122,16 @@ describe('getStats / getStreak — the two aggregate paths must agree', () => {
 describe('saveEnrichments', () => {
   it('updates existing items and reports missing ones', async () => {
     const u = await freshUser();
-    const itemId = await addOneItem(u, 'ENRICH_pattern');
+    const itemId = await addOneItem('ENRICH_pattern');
 
-    const res = await P.saveEnrichments(u, [
+    const res = await P.saveEnrichments([
       { itemId, enrichmentJson: '{"summary":"x"}' },
       { itemId: 'does-not-exist', enrichmentJson: '{}' },
     ]);
     expect(res.updated).toBe(1);
     expect(res.missing).toEqual(['does-not-exist']);
 
-    const row = await prisma.item.findFirst({ where: { id: itemId, userId: u } });
+    const row = await prisma.item.findFirst({ where: { id: itemId } });
     expect(row!.enrichment).toBe('{"summary":"x"}');
     expect(row!.enrichedAt).not.toBeNull();
   });
@@ -140,7 +140,7 @@ describe('saveEnrichments', () => {
 describe('a long aside cannot lose the pending sentence (plan 2026-07-26-agentic-tutor-loop step 2.5)', () => {
   it('a staged sentence auto-parked after the 1h window still grades with the SAME sentenceId', async () => {
     const u = await freshUser();
-    const itemId = await addOneItem(u, 'ASIDE_pending');
+    const itemId = await addOneItem('ASIDE_pending');
     const staged = new Date(Date.now() - 2 * 60 * 60 * 1000); // the aside ran long
 
     const { sentenceId } = await P.stageSentence(
@@ -155,13 +155,13 @@ describe('a long aside cannot lose the pending sentence (plan 2026-07-26-agentic
     );
 
     // What the aside triggers: any later read/write sweeps stale pendings into SKIPPED.
-    expect((await P.autoSkipStalePending(u)).autoSkipped).toBe(1);
-    const parked = await prisma.sentence.findFirst({ where: { id: sentenceId, userId: u } });
+    expect((await P.autoSkipStalePending()).autoSkipped).toBe(1);
+    const parked = await prisma.sentence.findFirst({ where: { id: sentenceId } });
     expect(parked!.status).toBe('SKIPPED');
 
     // The answer arrives anyway. It MUST still grade: only a GRADED row is final, so the ratings and
     // the FSRS write are not lost, and the reference translation frozen at stage time is reused.
-    const result = await P.submitReview(u, {
+    const result = await P.submitReview({
       sentenceId,
       userAnswer: 'trả lời muộn',
       ratings: [{ itemId, rating: 3, role: 'TARGET' }],
@@ -169,10 +169,10 @@ describe('a long aside cannot lose the pending sentence (plan 2026-07-26-agentic
     expect(result.suggested).toBe('câu');
     expect(result.items[0]?.rating).toBe(3);
 
-    const row = await prisma.sentence.findFirst({ where: { id: sentenceId, userId: u } });
+    const row = await prisma.sentence.findFirst({ where: { id: sentenceId } });
     expect(row!.status).toBe('GRADED');
     expect(row!.userAnswer).toBe('trả lời muộn'); // the auto-skip placeholder is replaced
-    expect(await prisma.reviewLog.count({ where: { userId: u, itemId } })).toBe(1);
+    expect(await prisma.reviewLog.count({ where: { itemId } })).toBe(1);
   });
 });
 
@@ -197,15 +197,15 @@ describe('patchEnrichment — a merge that cannot destroy what is already there'
 
   it('appends one contrast and keeps every other field — the operation enrich_items destroys', async () => {
     const u = await freshUser();
-    const itemId = await seedCarded(u, 'PATCH_keeps');
+    const itemId = await seedCarded('PATCH_keeps');
 
-    const res = await P.patchEnrichment(u, {
+    const res = await P.patchEnrichment({
       itemId,
       add: { contrasts: [{ with: '〜おかげで', note: 'Kết quả tốt, ngược nghĩa.' }] },
     });
     expect(res.patched).toBe(true);
 
-    const row = await prisma.item.findFirst({ where: { id: itemId, userId: u } });
+    const row = await prisma.item.findFirst({ where: { id: itemId } });
     const after = JSON.parse(row!.enrichment!) as Record<string, unknown[]>;
     const before = JSON.parse(V1_CARD) as Record<string, unknown[]>;
     expect(after.contrasts).toHaveLength(2);
@@ -220,14 +220,14 @@ describe('patchEnrichment — a merge that cannot destroy what is already there'
 
   it('refuses on an item with no readable card instead of inventing one', async () => {
     const u = await freshUser();
-    const bare = await addOneItem(u, 'PATCH_nocard');
-    expect(await P.patchEnrichment(u, { itemId: bare, add: { pitfalls: ['x'] } })).toEqual({
+    const bare = await addOneItem('PATCH_nocard');
+    expect(await P.patchEnrichment({ itemId: bare, add: { pitfalls: ['x'] } })).toEqual({
       patched: false,
       reason: 'no-card',
     });
 
-    const broken = await seedCarded(u, 'PATCH_broken', '{"collocations":["x"]}');
-    expect(await P.patchEnrichment(u, { itemId: broken, add: { pitfalls: ['x'] } })).toEqual({
+    const broken = await seedCarded('PATCH_broken', '{"collocations":["x"]}');
+    expect(await P.patchEnrichment({ itemId: broken, add: { pitfalls: ['x'] } })).toEqual({
       patched: false,
       reason: 'no-card',
     });
@@ -236,20 +236,20 @@ describe('patchEnrichment — a merge that cannot destroy what is already there'
   it("is scoped to the caller — another user's item is simply not found", async () => {
     const owner = await freshUser();
     const stranger = await freshUser();
-    const itemId = await seedCarded(owner, 'PATCH_tenant');
+    const itemId = await seedCarded('PATCH_tenant');
 
     expect(await P.patchEnrichment(stranger, { itemId, add: { pitfalls: ['x'] } })).toEqual({
       patched: false,
       reason: 'not-found',
     });
-    const row = await prisma.item.findFirst({ where: { id: itemId, userId: owner } });
+    const row = await prisma.item.findFirst({ where: { id: itemId } });
     expect(row!.enrichment).toBe(V1_CARD); // untouched
   });
 
   it('reports a no-op rather than a success when everything sent is already on the card', async () => {
     const u = await freshUser();
-    const itemId = await seedCarded(u, 'PATCH_noop', V1_CARD.replace('"v":1', '"v":2'));
-    const res = await P.patchEnrichment(u, {
+    const itemId = await seedCarded('PATCH_noop', V1_CARD.replace('"v":1', '"v":2'));
+    const res = await P.patchEnrichment({
       itemId,
       add: { contrasts: [{ with: '「〜せいで」', note: 'Viết lại ghi chú.' }] },
     });
@@ -258,14 +258,14 @@ describe('patchEnrichment — a merge that cannot destroy what is already there'
 
   it('two concurrent patches never silently lose one of the two writes', async () => {
     const u = await freshUser();
-    const itemId = await seedCarded(u, 'PATCH_race');
+    const itemId = await seedCarded('PATCH_race');
 
     const [a, b] = await Promise.all([
-      P.patchEnrichment(u, { itemId, add: { pitfalls: ['Bẫy A.'] } }),
-      P.patchEnrichment(u, { itemId, add: { pitfalls: ['Bẫy B.'] } }),
+      P.patchEnrichment({ itemId, add: { pitfalls: ['Bẫy A.'] } }),
+      P.patchEnrichment({ itemId, add: { pitfalls: ['Bẫy B.'] } }),
     ]);
 
-    const row = await prisma.item.findFirst({ where: { id: itemId, userId: u } });
+    const row = await prisma.item.findFirst({ where: { id: itemId } });
     const stored = row!.enrichment!;
     // Whichever way the two interleave, the outcome must be honest: either BOTH landed, or the loser
     // was TOLD it conflicted. What must never happen is a reported success whose content vanished.
@@ -281,25 +281,25 @@ describe('patchEnrichment — a merge that cannot destroy what is already there'
 
   it('merges from the CURRENT card, never a stale copy read earlier', async () => {
     const u = await freshUser();
-    const itemId = await seedCarded(u, 'PATCH_conflict');
+    const itemId = await seedCarded('PATCH_conflict');
 
     // Simulate a second session finishing its own write between our read and our write by mutating the
     // column first, then patching from a report built on the ORIGINAL card.
     const stale = await prisma.item.findFirst({
-      where: { id: itemId, userId: u },
+      where: { id: itemId },
       select: { enrichment: true },
     });
     await prisma.item.updateMany({
-      where: { id: itemId, userId: u },
+      where: { id: itemId },
       data: { enrichment: V1_CARD.replace('Hối tiếc mạnh hơn.', 'Ghi chú của phiên khác.') },
     });
     expect(stale!.enrichment).toBe(V1_CARD);
 
     // The real guard: patching now succeeds (it re-reads), and the OTHER session's note survives —
     // proof the merge is built on current data rather than a stale copy.
-    const res = await P.patchEnrichment(u, { itemId, add: { pitfalls: ['Bẫy mới.'] } });
+    const res = await P.patchEnrichment({ itemId, add: { pitfalls: ['Bẫy mới.'] } });
     expect(res.patched).toBe(true);
-    const row = await prisma.item.findFirst({ where: { id: itemId, userId: u } });
+    const row = await prisma.item.findFirst({ where: { id: itemId } });
     expect(row!.enrichment).toContain('Ghi chú của phiên khác.');
   });
 
@@ -318,13 +318,13 @@ describe('patchEnrichment — a merge that cannot destroy what is already there'
       contrasts: [],
     });
     const mine = await seedCarded(me, 'PATCH_shared', thin);
-    const theirs = await seedCarded(other, 'PATCH_shared', V1_CARD);
-    await (await import('@/lib/library')).publishItem(other, theirs);
+    const theirs = await seedCarded('PATCH_shared', V1_CARD);
+    await (await import('@/lib/library')).publishItem(theirs);
 
     const res = await P.patchEnrichment(me, { itemId: mine, fromSharedItemId: theirs });
     expect(res.patched).toBe(true);
 
-    const row = await prisma.item.findFirst({ where: { id: mine, userId: me } });
+    const row = await prisma.item.findFirst({ where: { id: mine } });
     const card = JSON.parse(row!.enrichment!) as {
       usage: string;
       example: { ja: string };
@@ -344,15 +344,15 @@ describe('patchEnrichment — a merge that cannot destroy what is already there'
 describe('errorDetail — the confusion pair behind the tag (additive, no backfill)', () => {
   it('persists the pair, and a review WITHOUT one still writes exactly as before', async () => {
     const u = await freshUser();
-    const itemId = await addOneItem(u, 'DETAIL_dokoroka');
+    const itemId = await addOneItem('DETAIL_dokoroka');
 
-    const withPair = await P.stageSentence(u, {
+    const withPair = await P.stageSentence({
       direction: 'VI_JA',
       sourceText: 'câu',
       suggested: '文',
       items: [{ itemId, role: 'TARGET' }],
     });
-    await P.submitReview(u, {
+    await P.submitReview({
       sentenceId: withPair.sentenceId,
       userAnswer: 'sai',
       ratings: [
@@ -366,20 +366,20 @@ describe('errorDetail — the confusion pair behind the tag (additive, no backfi
       ],
     });
 
-    const without = await P.stageSentence(u, {
+    const without = await P.stageSentence({
       direction: 'VI_JA',
       sourceText: 'câu 2',
       suggested: '文2',
       items: [{ itemId, role: 'TARGET' }],
     });
-    await P.submitReview(u, {
+    await P.submitReview({
       sentenceId: without.sentenceId,
       userAnswer: 'ok',
       ratings: [{ itemId, rating: 3, role: 'TARGET' }],
     });
 
     const logs = await prisma.reviewLog.findMany({
-      where: { userId: u, itemId },
+      where: { itemId },
       orderBy: { rating: 'asc' },
     });
     expect(logs).toHaveLength(2);
@@ -392,14 +392,14 @@ describe('errorDetail — the confusion pair behind the tag (additive, no backfi
 
   it('listConfusionRows returns only rows that carry a pair, with the item expression attached', async () => {
     const u = await freshUser();
-    const itemId = await addOneItem(u, 'DETAIL_rows');
-    const { sentenceId } = await P.stageSentence(u, {
+    const itemId = await addOneItem('DETAIL_rows');
+    const { sentenceId } = await P.stageSentence({
       direction: 'VI_JA',
       sourceText: 'câu',
       suggested: '文',
       items: [{ itemId, role: 'TARGET' }],
     });
-    await P.submitReview(u, {
+    await P.submitReview({
       sentenceId,
       userAnswer: 'sai',
       ratings: [
@@ -413,9 +413,9 @@ describe('errorDetail — the confusion pair behind the tag (additive, no backfi
       ],
     });
     // A second review with no detail must NOT appear in the mining input.
-    await studyOnce(u, itemId, 3);
+    await studyOnce(itemId, 3);
 
-    const rows = await P.listConfusionRows(u);
+    const rows = await P.listConfusionRows();
     expect(rows).toHaveLength(1);
     expect(rows[0].expression).toBe('DETAIL_rows');
     expect(rows[0].sentenceId).toBe(sentenceId);
@@ -424,14 +424,14 @@ describe('errorDetail — the confusion pair behind the tag (additive, no backfi
 
   it('getWeakReport is unaffected — the flat tag still drives it', async () => {
     const u = await freshUser();
-    const itemId = await addOneItem(u, 'DETAIL_weak');
-    const { sentenceId } = await P.stageSentence(u, {
+    const itemId = await addOneItem('DETAIL_weak');
+    const { sentenceId } = await P.stageSentence({
       direction: 'VI_JA',
       sourceText: 'câu',
       suggested: '文',
       items: [{ itemId, role: 'TARGET' }],
     });
-    await P.submitReview(u, {
+    await P.submitReview({
       sentenceId,
       userAnswer: 'sai',
       ratings: [
@@ -444,7 +444,7 @@ describe('errorDetail — the confusion pair behind the tag (additive, no backfi
         },
       ],
     });
-    const report = await P.getWeakReport(u);
+    const report = await P.getWeakReport();
     expect(report.tagCounts.find((t) => t.tag === 'particle')?.count).toBe(1);
   });
 });
@@ -452,14 +452,14 @@ describe('errorDetail — the confusion pair behind the tag (additive, no backfi
 describe('addItems — dedup', () => {
   it('skips a duplicate expression on re-add (idempotent), keeping one row', async () => {
     const u = await freshUser();
-    const first = await P.addItems(u, [{ expression: 'DUP', meaningVi: 'a' }]);
+    const first = await P.addItems([{ expression: 'DUP', meaningVi: 'a' }]);
     expect(first.created).toBe(1);
 
-    const second = await P.addItems(u, [{ expression: 'DUP', meaningVi: 'b' }]);
+    const second = await P.addItems([{ expression: 'DUP', meaningVi: 'b' }]);
     expect(second.created).toBe(0);
     expect(second.skipped.map((s) => s.expression)).toContain('DUP');
 
-    const rows = await prisma.item.count({ where: { userId: u, kind: 'GRAMMAR' } });
+    const rows = await prisma.item.count({ where: { kind: 'GRAMMAR' } });
     expect(rows).toBe(1);
   });
 });
@@ -467,17 +467,17 @@ describe('addItems — dedup', () => {
 describe('calibration rides submitReview without touching FSRS', () => {
   it('seeds the ability row from the learner OWN settings, not a global default', async () => {
     const u = await freshUser();
-    await P.saveSettings(u, { grammarLevels: ['N2'] });
-    const itemId = await addOneItem(u, 'CAL_seed');
+    await P.saveSettings({ grammarLevels: ['N2'] });
+    const itemId = await addOneItem('CAL_seed');
 
-    await studyOnce(u, itemId, 3);
+    await studyOnce(itemId, 3);
 
-    const ability = await prisma.learnerAbility.findUnique({ where: { userId: u } });
+    const ability = await prisma.learnerAbility.findUnique({ where: {} });
     const other = await freshUser();
-    await P.saveSettings(other, { grammarLevels: ['N5'] });
-    const otherItem = await addOneItem(other, 'CAL_seed_low');
-    await studyOnce(other, otherItem, 3);
-    const otherAbility = await prisma.learnerAbility.findUnique({ where: { userId: other } });
+    await P.saveSettings({ grammarLevels: ['N5'] });
+    const otherItem = await addOneItem('CAL_seed_low');
+    await studyOnce(otherItem, 3);
+    const otherAbility = await prisma.learnerAbility.findUnique({ where: {} });
 
     // The N2 learner starts rated higher than the N5 learner — the settings page IS the prior.
     expect(ability!.abilityReceptive).toBeGreaterThan(otherAbility!.abilityReceptive);
@@ -485,16 +485,16 @@ describe('calibration rides submitReview without touching FSRS', () => {
 
   it('a graded turn moves ability + item challenge, and counts observations', async () => {
     const u = await freshUser();
-    const itemId = await addOneItem(u, 'CAL_move');
+    const itemId = await addOneItem('CAL_move');
 
-    const before = await prisma.item.findFirst({ where: { id: itemId, userId: u } });
+    const before = await prisma.item.findFirst({ where: { id: itemId } });
     expect(before!.challenge).toBeNull(); // never measured yet — no backfill
     expect(before!.challengeObservations).toBe(0);
 
-    await studyOnce(u, itemId, 4); // an easy win
+    await studyOnce(itemId, 4); // an easy win
 
-    const after = await prisma.item.findFirst({ where: { id: itemId, userId: u } });
-    const ability = await prisma.learnerAbility.findUnique({ where: { userId: u } });
+    const after = await prisma.item.findFirst({ where: { id: itemId } });
+    const ability = await prisma.learnerAbility.findUnique({ where: {} });
     expect(after!.challenge).not.toBeNull();
     expect(after!.challengeObservations).toBe(1);
     // A JA_VI translation is RECEPTIVE evidence only — production must stay untouched.
@@ -517,38 +517,38 @@ describe('calibration rides submitReview without touching FSRS', () => {
       await studyOnce(b, itemB, rating, at);
     }
 
-    const srsA = await prisma.srsState.findFirst({ where: { itemId: itemA, userId: a } });
-    const srsB = await prisma.srsState.findFirst({ where: { itemId: itemB, userId: b } });
+    const srsA = await prisma.srsState.findFirst({ where: { itemId: itemA } });
+    const srsB = await prisma.srsState.findFirst({ where: { itemId: itemB } });
     expect(srsA!.stability).toBe(srsB!.stability);
     expect(srsA!.difficulty).toBe(srsB!.difficulty);
     expect(srsA!.reps).toBe(srsB!.reps);
     expect(srsA!.state).toBe(srsB!.state);
     // And FSRS difficulty is NOT the Elo challenge — two different numbers on two different rows.
-    const itemRow = await prisma.item.findFirst({ where: { id: itemA, userId: a } });
+    const itemRow = await prisma.item.findFirst({ where: { id: itemA } });
     expect(itemRow!.challenge).not.toBe(srsA!.difficulty);
   });
 
   it('shadow mode proposes NOTHING on a thin history (no confident guess from 3 turns)', async () => {
     const u = await freshUser();
-    const itemId = await addOneItem(u, 'CAL_thin');
-    const result = await studyOnce(u, itemId, 1); // a miss, but only one observation
+    const itemId = await addOneItem('CAL_thin');
+    const result = await studyOnce(itemId, 1); // a miss, but only one observation
     expect(result.calibration).toBe(null);
   });
 
   it('shadow mode proposes a change once there IS evidence, and applies nothing', async () => {
     const u = await freshUser();
-    const itemId = await addOneItem(u, 'CAL_evidence');
-    const settingsBefore = await P.getSettings(u);
+    const itemId = await addOneItem('CAL_evidence');
+    const settingsBefore = await P.getSettings();
 
     // A long run of misses: well outside the dead band, well past the evidence floor.
     let last: Awaited<ReturnType<typeof studyOnce>> | null = null;
-    for (let i = 0; i < 16; i += 1) last = await studyOnce(u, itemId, 1);
+    for (let i = 0; i < 16; i += 1) last = await studyOnce(itemId, 1);
 
     expect(last!.calibration).not.toBe(null);
     expect(last!.calibration!.measured).toBeLessThan(0.75);
     expect(last!.calibration!.observations).toBeGreaterThanOrEqual(12);
     // SHADOW: the settings row is byte-for-byte unchanged.
-    expect(await P.getSettings(u)).toEqual(settingsBefore);
+    expect(await P.getSettings()).toEqual(settingsBefore);
   });
 });
 
@@ -566,18 +566,18 @@ describe('listItems quality filter — the sweep needs a target list', () => {
 
   it('separates missing / broken / thin / ok, and needs-work spans the first three', async () => {
     const u = await freshUser();
-    const bare = await addOneItem(u, 'Q_missing');
-    const broken = await addOneItem(u, 'Q_broken');
-    const thin = await addOneItem(u, 'Q_thin');
-    const ok = await addOneItem(u, 'Q_ok');
-    await P.saveEnrichments(u, [
+    const bare = await addOneItem('Q_missing');
+    const broken = await addOneItem('Q_broken');
+    const thin = await addOneItem('Q_thin');
+    const ok = await addOneItem('Q_ok');
+    await P.saveEnrichments([
       { itemId: broken, enrichmentJson: '{"collocations":["x"]}' },
       { itemId: thin, enrichmentJson: '{"usage":"Ngắn.","example":{"ja":"あ","vi":"a"}}' },
       { itemId: ok, enrichmentJson: OK },
     ]);
 
     const ids = async (quality: string) =>
-      (await P.listItems(u, { quality: quality as never })).map((i) => i.itemId).sort();
+      (await P.listItems({ quality: quality as never })).map((i) => i.itemId).sort();
 
     expect(await ids('missing')).toEqual([bare]);
     expect(await ids('broken')).toEqual([broken]);
@@ -585,7 +585,7 @@ describe('listItems quality filter — the sweep needs a target list', () => {
     expect(await ids('ok')).toEqual([ok]);
     expect(await ids('needs-work')).toEqual([bare, broken, thin].sort());
     // `enriched: true` is exactly the blindness this filter fixes: it calls all three of those done.
-    expect((await P.listItems(u, { enriched: true })).length).toBe(3);
+    expect((await P.listItems({ enriched: true })).length).toBe(3);
   });
 
   it('applies the limit AFTER scoring, so it never filters just one page', async () => {
@@ -593,13 +593,13 @@ describe('listItems quality filter — the sweep needs a target list', () => {
     // 3 carded items first, then 2 without — with limit applied BEFORE scoring, asking for the two
     // uncarded ones with limit 2 would return nothing.
     for (const name of ['P_a', 'P_b', 'P_c']) {
-      const id = await addOneItem(u, name);
-      await P.saveEnrichments(u, [{ itemId: id, enrichmentJson: OK }]);
+      const id = await addOneItem(name);
+      await P.saveEnrichments([{ itemId: id, enrichmentJson: OK }]);
     }
-    await addOneItem(u, 'P_gap1');
-    await addOneItem(u, 'P_gap2');
+    await addOneItem('P_gap1');
+    await addOneItem('P_gap2');
 
-    const found = await P.listItems(u, { quality: 'missing', limit: 2 });
+    const found = await P.listItems({ quality: 'missing', limit: 2 });
     expect(found.map((i) => i.expression).sort()).toEqual(['P_gap1', 'P_gap2']);
   });
 });
@@ -608,13 +608,13 @@ describe('getLibraryHealth — the whole-kho aggregate', () => {
   it('counts card quality, below-target items and the weak cluster from real rows', async () => {
     const { getLibraryHealth } = await import('@/lib/library-health');
     const u = await freshUser();
-    await P.saveSettings(u, { grammarLevels: ['N3'] });
+    await P.saveSettings({ grammarLevels: ['N3'] });
 
     // addItems defaults to N5, so the studied-level item must say N3 explicitly.
-    await P.addItems(u, [{ expression: 'H_studied', meaningVi: 'x', level: 'N3' }]);
-    await P.addItems(u, [{ expression: 'H_easy', meaningVi: 'x', level: 'N5' }]);
+    await P.addItems([{ expression: 'H_studied', meaningVi: 'x', level: 'N3' }]);
+    await P.addItems([{ expression: 'H_easy', meaningVi: 'x', level: 'N5' }]);
 
-    const health = (await getLibraryHealth(u)).health;
+    const health = (await getLibraryHealth()).health;
     expect(health.totals.grammar).toBe(2);
     expect(health.quality.missing).toBe(2);
     // Only the STUDIED level is reported as a gap — an N5 item is not a hole in an N3 curriculum.
@@ -659,17 +659,17 @@ describe('TEACH_BACK reuses the practice pipeline exactly', () => {
 
   it('writes exactly one ReviewLog and advances the SrsState, like any other turn', async () => {
     const u = await freshUser();
-    const itemId = await addOneItem(u, 'TB_pattern');
+    const itemId = await addOneItem('TB_pattern');
 
-    const result = await teachBackOnce(u, itemId);
+    const result = await teachBackOnce(itemId);
 
     expect(result.items).toHaveLength(1);
     expect(result.items[0].itemId).toBe(itemId);
-    expect(await prisma.reviewLog.count({ where: { userId: u, itemId } })).toBe(1);
-    const srs = await prisma.srsState.findFirst({ where: { userId: u, itemId } });
+    expect(await prisma.reviewLog.count({ where: { itemId } })).toBe(1);
+    const srs = await prisma.srsState.findFirst({ where: { itemId } });
     expect(srs?.state).not.toBe(0); // no longer "new" — it went through the scheduler
     const sentence = await prisma.sentence.findFirst({
-      where: { id: result.sentenceId, userId: u },
+      where: { id: result.sentenceId },
     });
     expect(sentence?.exerciseType).toBe('TEACH_BACK');
     expect(sentence?.status).toBe('GRADED');
@@ -677,11 +677,11 @@ describe('TEACH_BACK reuses the practice pipeline exactly', () => {
 
   it('counts as RECEPTIVE evidence — no Japanese was produced, so productive must not move', async () => {
     const u = await freshUser();
-    const itemId = await addOneItem(u, 'TB_axis');
+    const itemId = await addOneItem('TB_axis');
 
-    await teachBackOnce(u, itemId);
+    await teachBackOnce(itemId);
 
-    const after = await prisma.learnerAbility.findUnique({ where: { userId: u } });
+    const after = await prisma.learnerAbility.findUnique({ where: {} });
     expect(after!.receptiveObservations).toBe(1);
     expect(after!.productiveObservations).toBe(0);
     expect(after!.registerObservations).toBe(0);
@@ -691,13 +691,13 @@ describe('TEACH_BACK reuses the practice pipeline exactly', () => {
 
   it('offers the explanation to a card-less pattern, and stays silent once a card exists', async () => {
     const u = await freshUser();
-    const itemId = await addOneItem(u, 'TB_harvest');
+    const itemId = await addOneItem('TB_harvest');
 
-    const harvested = await teachBackOnce(u, itemId);
+    const harvested = await teachBackOnce(itemId);
     expect(harvested.teachBack).toMatchObject({ itemId, expression: 'TB_harvest', rating: 4 });
     expect(harvested.teachBack!.usage).toContain('tiếc nuối');
 
-    await P.saveEnrichments(u, [
+    await P.saveEnrichments([
       {
         itemId,
         enrichmentJson: JSON.stringify({
@@ -706,13 +706,13 @@ describe('TEACH_BACK reuses the practice pipeline exactly', () => {
         }),
       },
     ]);
-    expect((await teachBackOnce(u, itemId)).teachBack).toBeNull();
+    expect((await teachBackOnce(itemId)).teachBack).toBeNull();
   });
 
   it('never harvests a poor explanation — a wrong card is worse than no card', async () => {
     const u = await freshUser();
-    const itemId = await addOneItem(u, 'TB_poor');
-    const result = await teachBackOnce(u, itemId, {
+    const itemId = await addOneItem('TB_poor');
+    const result = await teachBackOnce(itemId, {
       rating: 1,
       explanation: 'Hình như nó nghĩa là "chỉ vì", mà tôi không nhớ gắn vào đâu, chắc là danh từ.',
       // errorTags are the protocol's job at rating <= 2; the harvest bar is the rating itself.
@@ -722,8 +722,8 @@ describe('TEACH_BACK reuses the practice pipeline exactly', () => {
 
   it('a TRANSLATION turn never produces a harvest, however well it was graded', async () => {
     const u = await freshUser();
-    const itemId = await addOneItem(u, 'TB_not_teachback');
+    const itemId = await addOneItem('TB_not_teachback');
     // Same rating, same card-less item — only the exerciseType differs.
-    expect((await studyOnce(u, itemId, 4)).teachBack).toBeNull();
+    expect((await studyOnce(itemId, 4)).teachBack).toBeNull();
   });
 });

@@ -274,16 +274,17 @@ function LevelBars({
 export default async function HomePage() {
   // Private app, single user: "/" IS the analytics dashboard. No public landing — a guest is
   // bounced to /login by getSessionUserId() rather than shown marketing copy.
-  const userId = await getSessionUserId();
+  // Auth gate: redirects to /login when there is no valid session.
+  await getSessionUserId();
   const [stats, weak, analytics, studyStats, dossier, learnerNotes] = await Promise.all([
-    getStats(userId),
-    getWeakReport(userId),
-    getAnalytics(userId),
-    getStudyStats(userId),
+    getStats(),
+    getWeakReport(),
+    getAnalytics(),
+    getStudyStats(),
     // The SAME student model the tutor reads (lib/dossier.ts) — one definition, two surfaces, so the
     // dashboard can never disagree with what Claude was told about this learner.
-    computeDossier(userId),
-    listLearnerNotesWithEvidence(userId),
+    computeDossier(),
+    listLearnerNotesWithEvidence(),
   ]);
   const totalItems = stats.totalItems;
   const hasWeakData =

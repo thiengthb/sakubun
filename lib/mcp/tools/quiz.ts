@@ -29,7 +29,7 @@ export function registerQuizTools(server: McpServer) {
       count: z.number().int().min(1).max(3).optional(),
     },
     guard('get_quiz_items', async ({ count }, extra: unknown) =>
-      ok(await getQuizBatch(getUserId(extra), 'GRAMMAR', count ?? 1)),
+      ok(await getQuizBatch('GRAMMAR', count ?? 1)),
     ),
   );
 
@@ -42,7 +42,7 @@ export function registerQuizTools(server: McpServer) {
       '{ skipped } = how many patterns that sentence carried (informational only; none were graded).',
     { sentenceId: ID },
     guard('skip_sentence', async ({ sentenceId }, extra: unknown) =>
-      ok(await skipSentence(getUserId(extra), sentenceId)),
+      ok(await skipSentence(sentenceId)),
     ),
   );
 }

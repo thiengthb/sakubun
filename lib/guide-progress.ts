@@ -46,12 +46,12 @@ export type StartProgress = Record<StartProgressKey, boolean>;
  */
 export async function getStartProgress(userId: string): Promise<StartProgress> {
   const [mcpKeys, usedKeys, items, enriched, settings, reviews] = await Promise.all([
-    prisma.mcpKey.count({ where: { userId } }),
-    prisma.mcpKey.count({ where: { userId, lastUsedAt: { not: null } } }),
-    prisma.item.count({ where: { userId } }),
-    prisma.item.count({ where: { userId, enrichment: { not: null } } }),
-    prisma.settings.count({ where: { userId } }),
-    prisma.reviewLog.count({ where: { userId } }),
+    prisma.mcpKey.count({}),
+    prisma.mcpKey.count({ where: { lastUsedAt: { not: null } } }),
+    prisma.item.count({}),
+    prisma.item.count({ where: { enrichment: { not: null } } }),
+    prisma.settings.count({}),
+    prisma.reviewLog.count({}),
   ]);
 
   return {

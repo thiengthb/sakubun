@@ -18,7 +18,6 @@ import { SpeakButton } from '@/components/shared/speak-button';
 import { SpokenLine } from '@/components/shared/spoken-line';
 import { StarButton } from '@/components/shared/star-button';
 import { RelativeTime } from '@/components/shared/relative-time';
-import { shareSentenceAction, unshareSentenceAction } from '@/app/actions';
 import { formatDateTimeVN, humanizeDuration, lengthBucket, ratingLabel } from '@/lib/format';
 import { hasFurigana } from '@/lib/furigana';
 import { stripEmoji } from '@/lib/text';
@@ -233,38 +232,6 @@ function RatingChip({ expression, rating }: { expression: string; rating: number
  * answer) · nhận xét · a ngữ pháp / từ vựng row (grammar chips each carry an audio button so you can
  * hear the pattern). Audio buttons align to the JA text baseline (items-end), not centered over furigana.
  */
-/** Share/unshare this attempt to the members' feed (Phase 4). Only shown for a GRADED attempt. */
-function ShareRow({ sentence }: { sentence: SentenceHistoryRow }) {
-  const [shared, setShared] = useState(sentence.visibility === 'shared');
-  const [isPending, startTransition] = useTransition();
-  const toggle = () =>
-    startTransition(async () => {
-      const r = shared
-        ? await unshareSentenceAction(sentence.id)
-        : await shareSentenceAction(sentence.id);
-      if (r.ok) setShared((v) => !v);
-      toastResult(r, shared ? 'Đã gỡ khỏi feed' : 'Đã chia sẻ lên feed cộng đồng');
-    });
-  return (
-    <div className="flex flex-wrap items-center gap-3 border-t border-border/70 pt-3">
-      <Button
-        variant={shared ? 'secondary' : 'outline'}
-        size="sm"
-        onClick={toggle}
-        disabled={isPending}
-      >
-        {shared ? <Globe className="size-3.5" /> : <Lock className="size-3.5" />}
-        {shared ? 'Đang chia sẻ' : 'Chia sẻ lên feed'}
-      </Button>
-      <span className="text-xs text-muted-foreground">
-        {shared
-          ? 'Thành viên khác thấy lượt dịch này ở tab Cộng đồng và có thể bình luận.'
-          : 'Chỉ mình bạn thấy. Chia sẻ để nhận góp ý từ thành viên khác.'}
-      </span>
-    </div>
-  );
-}
-
 function HistoryDetail({
   sentence,
   speaker,
@@ -399,7 +366,6 @@ function HistoryDetail({
         )}
 
         {/* Share to the members' feed — only a GRADED attempt can be shared. */}
-        {sentence.status === 'GRADED' && <ShareRow sentence={sentence} />}
       </div>
     </DialogContent>
   );
@@ -439,42 +405,6 @@ function PendingCard({ sentence }: { sentence: SentenceHistoryRow }) {
   );
 }
 
-/**
- * Quick share/unshare toggle for the "Của tôi" card top row (an icon sibling of the modal's ShareRow):
- * Lock = private, Globe = shared. stopPropagation keeps a click from opening the card's detail modal.
- * Only a GRADED attempt is shareable — renders nothing for pending/skipped.
- */
-function CardShareToggle({ sentence }: { sentence: SentenceHistoryRow }) {
-  const [shared, setShared] = useState(sentence.visibility === 'shared');
-  const [isPending, startTransition] = useTransition();
-  if (sentence.status !== 'GRADED') return null;
-  const toggle = (e: MouseEvent) => {
-    e.stopPropagation();
-    startTransition(async () => {
-      const r = shared
-        ? await unshareSentenceAction(sentence.id)
-        : await shareSentenceAction(sentence.id);
-      if (r.ok) setShared((v) => !v);
-      toastResult(r, shared ? 'Đã gỡ khỏi feed' : 'Đã chia sẻ lên feed cộng đồng');
-    });
-  };
-  return (
-    <button
-      type="button"
-      onClick={toggle}
-      disabled={isPending}
-      aria-label={shared ? 'Đang chia sẻ — bấm để gỡ khỏi feed' : 'Chia sẻ lượt này lên feed'}
-      title={shared ? 'Đang chia sẻ lên feed cộng đồng' : 'Chưa chia sẻ — bấm để chia sẻ'}
-      className={cn(
-        '-my-1 inline-flex size-6 items-center justify-center rounded-md transition-colors hover:bg-muted',
-        shared ? 'text-info' : 'text-muted-foreground',
-      )}
-    >
-      {shared ? <Globe className="size-3.5" /> : <Lock className="size-3.5" />}
-    </button>
-  );
-}
-
 /** A compact history card that opens the full detail in a modal on click (graded/skipped rows). */
 export function HistoryCard({
   sentence,
@@ -511,16 +441,6 @@ export function HistoryCard({
             )
           )}
           <RelativeTime value={sentence.createdAt} className="ml-auto" />
-          {sentence.commentCount > 0 && (
-            <span
-              className="inline-flex items-center gap-0.5"
-              title={`${sentence.commentCount} bình luận (đọc ở tab Cộng đồng)`}
-            >
-              <MessageSquare className="size-3.5" aria-hidden />
-              {sentence.commentCount}
-            </span>
-          )}
-          <CardShareToggle sentence={sentence} />
           <StarButton
             id={sentence.id}
             starred={sentence.starred}
