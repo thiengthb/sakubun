@@ -18,7 +18,14 @@ import { Label } from '@/components/ui/label';
  * in — NOT a NEXT_PUBLIC build-time flag. In the Docker build, `next build` never sees the runtime
  * .env.docker, so a NEXT_PUBLIC_* value bakes in as false; a server-resolved prop is correct at runtime.
  */
-export function LoginForm({ googleEnabled }: { googleEnabled: boolean }) {
+export function LoginForm({
+  googleEnabled,
+  registrationOpen,
+}: {
+  googleEnabled: boolean;
+  /** Single-user app: the sign-up link only makes sense while THE account does not exist yet. */
+  registrationOpen: boolean;
+}) {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -116,15 +123,17 @@ export function LoginForm({ googleEnabled }: { googleEnabled: boolean }) {
                 <GoogleSignInButton />
               </>
             )}
-            <p className="mt-4 text-center text-sm text-muted-foreground">
-              Chưa có tài khoản?{' '}
-              <Link
-                href="/register"
-                className="font-medium text-foreground underline underline-offset-4"
-              >
-                Đăng ký
-              </Link>
-            </p>
+            {registrationOpen && (
+              <p className="mt-4 text-center text-sm text-muted-foreground">
+                Chưa có tài khoản?{' '}
+                <Link
+                  href="/register"
+                  className="font-medium text-foreground underline underline-offset-4"
+                >
+                  Đăng ký
+                </Link>
+              </p>
+            )}
           </CardContent>
         </Card>
       </main>

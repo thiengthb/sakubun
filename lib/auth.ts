@@ -1,10 +1,38 @@
 import { betterAuth } from 'better-auth';
+import { APIError } from 'better-auth/api';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { admin } from 'better-auth/plugins';
 import { nextCookies } from 'better-auth/next-js';
 import { prisma } from '@/lib/db';
 import { notifyAdmins } from '@/lib/notifications';
 import { sendEmail } from '@/lib/email';
+
+/**
+ * THE door. This app is single-user and reachable from the public internet, so account creation is
+ * open exactly until the one account exists, then closed for good.
+ *
+ * Enforced on `user.create` — the single choke point EVERY sign-up path funnels through (email +
+ * password AND Google OAuth). Hiding the /register form or gating the server action would leave the
+ * OAuth callback as an open side door; this cannot be walked around from outside.
+ *
+ * Fail-closed: if the count query throws we refuse rather than allow, because the failure mode of
+ * allowing is a stranger with an account on your data.
+ */
+async function assertRegistrationOpen(): Promise<void> {
+  let count: number;
+  try {
+    count = await prisma.user.count();
+  } catch {
+    throw new APIError('INTERNAL_SERVER_ERROR', {
+      message: 'Không kiểm tra được trạng thái đăng ký. Thử lại sau.',
+    });
+  }
+  if (count > 0) {
+    throw new APIError('FORBIDDEN', {
+      message: 'Đăng ký đã đóng: app này chỉ dành cho một người dùng.',
+    });
+  }
+}
 
 // Google sign-in is enabled ONLY when both credentials are present in env (GOOGLE_CLIENT_ID +
 // GOOGLE_CLIENT_SECRET, set in the gitignored .env.docker). Otherwise the provider is omitted so the
@@ -108,6 +136,10 @@ export const auth = betterAuth({
   databaseHooks: {
     user: {
       create: {
+        // Runs before the row is written, for every sign-up path. See assertRegistrationOpen.
+        before: async () => {
+          await assertRegistrationOpen();
+        },
         after: async (user) => {
           const adminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
           const isCanonicalAdmin = !!adminEmail && user.email.trim().toLowerCase() === adminEmail;
