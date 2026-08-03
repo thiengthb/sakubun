@@ -5,7 +5,8 @@ import { Save } from 'lucide-react';
 import { toastResult } from '@/lib/action-toast';
 import { PageShell } from '@/components/shell/page-shell';
 import { ExpandingIconButton } from '@/components/shared/expanding-icon-button';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs } from '@/components/ui/tabs';
+import { TabSelect } from '@/components/shared/tab-select';
 import { ContentTab } from '@/components/settings/settings-content-tab';
 import { PaceTab } from '@/components/settings/settings-pace-tab';
 import { SensoryTab } from '@/components/settings/settings-sensory-tab';
@@ -29,6 +30,16 @@ interface SettingsFormProps {
     keys: McpKeyRow[];
   };
 }
+
+// Six tabs is exactly the case a tab bar handles worst at 360px — see TabSelect.
+const SETTINGS_TABS = [
+  { value: 'content', label: 'Nội dung' },
+  { value: 'pace', label: 'Nhịp học' },
+  { value: 'sensory', label: 'Nghe & nói' },
+  { value: 'data', label: 'Dữ liệu' },
+  { value: 'account', label: 'Tài khoản' },
+  { value: 'token-mcp', label: 'Token MCP' },
+] as const;
 
 /** Tabs whose contents are part of the Settings object and therefore share the one Save button. */
 const SAVEABLE_TABS = new Set(['content', 'pace', 'sensory', 'data']);
@@ -75,14 +86,12 @@ export function SettingsForm({ initial, account }: SettingsFormProps) {
         section="settings"
         headerAside={
           <>
-            <TabsList>
-              <TabsTrigger value="content">Nội dung</TabsTrigger>
-              <TabsTrigger value="pace">Nhịp học</TabsTrigger>
-              <TabsTrigger value="sensory">Nghe &amp; nói</TabsTrigger>
-              <TabsTrigger value="data">Dữ liệu</TabsTrigger>
-              <TabsTrigger value="account">Tài khoản</TabsTrigger>
-              <TabsTrigger value="token-mcp">Token MCP</TabsTrigger>
-            </TabsList>
+            <TabSelect
+              items={SETTINGS_TABS}
+              value={tab}
+              onValueChange={setTab}
+              label="Chọn mục cài đặt"
+            />
             {/* Only the four settings tabs are driven by this Save. The account + token tabs each
                 commit on their own (better-auth call / server action), so showing a settings Save
                 beside them would suggest their changes need it. */}

@@ -17,7 +17,8 @@ import { PageShell } from '@/components/shell/page-shell';
 import { CopyCommandButton } from '@/components/shared/copy-command-button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent } from '@/components/ui/tabs';
+import { TabSelect } from '@/components/shared/tab-select';
 import { EmptyState } from '@/components/shared/empty-state';
 import { EnrichmentCard } from '@/components/resources/enrichment-card';
 import { InfoTooltip } from '@/components/shared/info-tooltip';
@@ -188,12 +189,15 @@ export function ItemAnalytics({
           control path it hands over the exact instruction to paste — invariant #1 is untouched. */}
       <Tabs value={tab} onValueChange={setTab} className="space-y-6">
         <div className="flex flex-wrap items-center gap-2">
-          <TabsList>
-            <TabsTrigger value="stats">Chỉ số &amp; lịch</TabsTrigger>
-            <TabsTrigger value="detail">
-              {stats.kind === 'grammar' ? 'Thẻ chi tiết' : 'Chi tiết từ'}
-            </TabsTrigger>
-          </TabsList>
+          <TabSelect
+            items={[
+              { value: 'stats', label: 'Chỉ số & lịch' },
+              { value: 'detail', label: stats.kind === 'grammar' ? 'Thẻ chi tiết' : 'Chi tiết từ' },
+            ]}
+            value={tab}
+            onValueChange={setTab}
+            label="Chọn khung xem"
+          />
           <div className="flex flex-wrap gap-2 sm:ml-auto">
             <CopyCommandButton
               command={`luyện tập trung mẫu ${stats.expression}`}

@@ -35,6 +35,10 @@ describe('UI layout standard (nuc-platform/12-ui-layout-standard.md)', () => {
       'components/shell/page-shell.tsx', // documents the slot in a comment; renders no TabsList
       'components/resources/item-analytics.tsx', // detail page: Chỉ số / Thẻ are content sub-tabs UNDER the item header
       'components/resources/resource-add-dialog.tsx', // tabs INSIDE a modal (Theo trường/Dán/Excel), not page-level tabs
+      // The shared switcher itself (TabsList from md up, Select below). It is not a page — it is the
+      // thing pages PASS to headerAside, so the rule applies to its callers, and they are still
+      // checked: a page that rendered <TabSelect> as content instead would fail rule 4 elsewhere.
+      'components/shared/tab-select.tsx',
     ]);
     const offenders: string[] = [];
     for (const root of ['app', 'components']) {

@@ -1,6 +1,7 @@
 'use client';
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent } from '@/components/ui/tabs';
+import { TabSelect } from '@/components/shared/tab-select';
 import { EmptyState } from '@/components/shared/empty-state';
 import { GuideLink } from '@/components/shared/guide-link';
 import { ItemsTable, type ItemRow } from '@/components/resources/items-table';
@@ -15,6 +16,11 @@ import { VocabTable, type VocabRow } from '@/components/resources/vocab-table';
  * state; grammar carries the import action. The two stores were separate pages (/items, /vocab) before.
  * A third "Nhóm" tab existed while the app was multi-user; it went with the community surface.
  */
+const RESOURCE_TABS = [
+  { value: 'grammar', label: 'Ngữ pháp' },
+  { value: 'vocab', label: 'Từ vựng' },
+] as const;
+
 export function ResourcesView({
   grammar,
   vocab,
@@ -35,10 +41,12 @@ export function ResourcesView({
       <PageShell
         section="resources"
         headerAside={
-          <TabsList>
-            <TabsTrigger value="grammar">Ngữ pháp</TabsTrigger>
-            <TabsTrigger value="vocab">Từ vựng</TabsTrigger>
-          </TabsList>
+          <TabSelect
+            items={RESOURCE_TABS}
+            value={tab}
+            onValueChange={setTab}
+            label="Chọn kho"
+          />
         }
       >
         <TabsContent value="grammar">
