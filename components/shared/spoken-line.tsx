@@ -23,6 +23,7 @@ export function SpokenLine({
   label,
   rate,
   truncate = false,
+  align = 'end',
   className,
 }: {
   /** Plain Japanese surface — what SHOWS (and, by default, what's spoken). */
@@ -40,6 +41,14 @@ export function SpokenLine({
   rate?: number;
   /** Clip the text to one line + fill the row (for compact list cards). */
   truncate?: boolean;
+  /**
+   * Where the speak button sits when the JA text wraps onto more than one line. `end` (default) keeps
+   * the historic single-line behaviour — the button on the text baseline. `start` aligns it to the
+   * FIRST line, which is what a multi-line block needs: with `end` the button drifts to the bottom-left
+   * and reads as though it belonged to the last line rather than the whole block (visible on the
+   * resource cards below md, where a long pattern wraps).
+   */
+  align?: 'end' | 'start';
   className?: string;
 }) {
   const [ratio, setRatio] = useState(0);
@@ -54,7 +63,13 @@ export function SpokenLine({
     segments.slice(0, i).reduce((n, s) => n + [...s.text].length, 0),
   );
   return (
-    <span className={cn('items-end gap-2', truncate ? 'flex w-full' : 'inline-flex')}>
+    <span
+      className={cn(
+        'gap-2',
+        align === 'start' ? 'items-start' : 'items-end',
+        truncate ? 'flex w-full' : 'inline-flex',
+      )}
+    >
       <SpeakButton
         text={speakText ?? text}
         speaker={speaker}

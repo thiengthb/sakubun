@@ -16,6 +16,7 @@ import { DataTable } from '@/components/shared/data-table';
 import { FilterPopover, FilterRow } from '@/components/shared/filter-popover';
 import { ItemDetailDialog } from '@/components/resources/item-detail-dialog';
 import { RowActions } from '@/components/resources/row-actions';
+import { ResourceCard } from '@/components/resources/resource-card';
 import { SpokenLine } from '@/components/shared/spoken-line';
 import { StarButton } from '@/components/shared/star-button';
 import { DueCell } from '@/components/shared/due-cell';
@@ -60,10 +61,6 @@ export interface ItemRow {
   starred: boolean;
   enrichment: string | null;
   createdAt: string | Date;
-  /** Library sharing (Phase 3): "private" | "public" — drives the row + bulk share action. */
-  visibility: string;
-  /** Fork provenance — non-null ⇒ taken from another user ⇒ NOT re-shareable (authorship gate). */
-  forkedFromId: string | null;
   srs: {
     state: number;
     due: string | Date;
@@ -72,8 +69,6 @@ export interface ItemRow {
     stability?: number;
     difficulty?: number;
   } | null;
-  /** Study-group memberships (group ids) — drives the group filter + bulk remove targeting. */
-  groupIds: string[];
 }
 
 /**
@@ -348,6 +343,38 @@ export function ItemsTable({
       emptyMessage="Không có mẫu nào khớp bộ lọc."
       rowClassName={(r) => (r.suspended ? 'opacity-50' : undefined)}
       actionSlot={importSlot}
+      // Below md the table becomes a stacked card list (same rows, same pagination) — see DataTable.
+      renderCard={(item) => (
+        <ResourceCard
+          expression={item.expression}
+          ruby={buildFuriganaMarkup(item.expression, item.reading)}
+          speakText={speakable(item.expression)}
+          meaningVi={item.meaningVi}
+          level={item.level}
+          suspended={item.suspended}
+          srs={item.srs ?? null}
+          showFurigana={showFurigana}
+          voiceSpeaker={voiceSpeaker}
+          speechRate={speechRate}
+          actions={
+            <>
+              <StarButton id={item.itemId} starred={item.starred} kind="item" />
+              <RowActions
+                item={{
+                  itemId: item.itemId,
+                  expression: item.expression,
+                  reading: item.reading,
+                  meaningVi: item.meaningVi,
+                  notes: item.notes,
+                  level: item.level,
+                  suspended: item.suspended,
+                }}
+                kind="grammar"
+              />
+            </>
+          }
+        />
+      )}
       enableRowNumbers
       enableRowSelection
       bulkActions={(rows, clear) => {

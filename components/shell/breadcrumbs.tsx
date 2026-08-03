@@ -39,6 +39,14 @@ export function Breadcrumbs({ items, className }: { items: Crumb[]; className?: 
         {items.map((item, i) => {
           const last = i === items.length - 1;
           const Icon = item.icon;
+          // MOBILE (2026-08-04): a parent crumb shows its ICON only, the current page shows its NAME
+          // only. Full "icon + label" for every step wrapped onto two or three lines at 360px, which
+          // pushed the page body down and made the trail the loudest thing on screen. Splitting the
+          // roles keeps one line: icons say "where in the app", the name says "what you are looking
+          // at". Both come back at md+, where there is width for them.
+          //
+          // The parent's label is not lost — it stays in the DOM as sr-only, so the trail still reads
+          // "Tài nguyên › Ngữ pháp › 〜ばかりに" to a screen reader at every width.
           const inner = (
             <span
               className={cn(
@@ -46,8 +54,13 @@ export function Breadcrumbs({ items, className }: { items: Crumb[]; className?: 
                 last && 'font-medium text-foreground',
               )}
             >
-              <Icon className="size-4 shrink-0" aria-hidden />
-              <span className="max-w-[18ch] truncate">{item.label}</span>
+              <Icon
+                className={cn('size-4 shrink-0', last && 'max-md:hidden')}
+                aria-hidden
+              />
+              <span className={cn('max-w-[18ch] truncate', !last && 'max-md:sr-only')}>
+                {item.label}
+              </span>
             </span>
           );
           return (

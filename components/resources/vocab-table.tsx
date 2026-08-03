@@ -17,6 +17,7 @@ import { DataTable } from '@/components/shared/data-table';
 import { FilterPopover, FilterRow } from '@/components/shared/filter-popover';
 import { ItemDetailDialog } from '@/components/resources/item-detail-dialog';
 import { RowActions } from '@/components/resources/row-actions';
+import { ResourceCard } from '@/components/resources/resource-card';
 import { SpokenLine } from '@/components/shared/spoken-line';
 import { StarButton } from '@/components/shared/star-button';
 import { DueCell } from '@/components/shared/due-cell';
@@ -61,10 +62,6 @@ export interface VocabRow {
   suspended: boolean;
   starred: boolean;
   createdAt: string | Date;
-  /** Library sharing (Phase 3): "private" | "public" — drives the row + bulk share action. */
-  visibility: string;
-  /** Fork provenance — non-null ⇒ taken from another user ⇒ NOT re-shareable (authorship gate). */
-  forkedFromId: string | null;
   srs: {
     state: number;
     due: string | Date;
@@ -73,8 +70,6 @@ export interface VocabRow {
     stability?: number;
     difficulty?: number;
   } | null;
-  /** Study-group memberships (group ids) — drives the group filter + bulk remove targeting. */
-  groupIds: string[];
 }
 
 /**
@@ -388,6 +383,61 @@ export function VocabTable({
       totalCount={items.length}
       emptyMessage="Không có từ nào khớp bộ lọc."
       actionSlot={actionSlot}
+      // Below md the table becomes a stacked card list (same rows, same pagination) — see DataTable.
+      // Two vocab-only slots: âm Hán Việt under the word, and the capture-reason badge in the meta row.
+      renderCard={(item) => {
+        const reasonMeta = item.captureReason ? REASON_META[item.captureReason] : null;
+        return (
+          <ResourceCard
+            expression={item.expression}
+            ruby={buildFuriganaMarkup(item.expression, item.reading)}
+            speakText={speakable(item.expression)}
+            meaningVi={item.meaningVi}
+            level={item.level}
+            suspended={item.suspended}
+            srs={item.srs ?? null}
+            showFurigana={showFurigana}
+            voiceSpeaker={voiceSpeaker}
+            speechRate={speechRate}
+            extra={
+              item.hanviet ? (
+                // max-w-full is the shrink anchor: the min-w-0 ancestor is in resource-card.tsx and
+                // lib/truncate.test.ts checks per FILE, so it cannot see it from here.
+                <p className="max-w-full truncate text-xs text-muted-foreground italic">
+                  {item.hanviet}
+                </p>
+              ) : null
+            }
+            aside={
+              reasonMeta ? (
+                <Badge
+                  variant="outline"
+                  className={cn('px-1.5 py-0 text-xs font-normal', reasonMeta.className)}
+                >
+                  {reasonMeta.label}
+                </Badge>
+              ) : null
+            }
+            actions={
+              <>
+                <StarButton id={item.itemId} starred={item.starred} kind="item" />
+                <RowActions
+                  item={{
+                    itemId: item.itemId,
+                    expression: item.expression,
+                    reading: item.reading,
+                    meaningVi: item.meaningVi,
+                    notes: item.notes,
+                    level: item.level,
+                    suspended: item.suspended,
+                  }}
+                  kind="vocab"
+                />
+              </>
+            }
+          />
+        );
+      }}
       rowClassName={(r) => (r.suspended ? 'opacity-50' : undefined)}
       enableRowNumbers
       enableRowSelection

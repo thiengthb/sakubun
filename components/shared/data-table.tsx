@@ -235,6 +235,20 @@ export interface DataTableProps<T> {
    * actions, each as an icon-only `BulkActionButton` (its name shows in a hover tooltip). Receives the
    * selected originals + a `clearSelection` callback. */
   bulkActions?: (selectedRows: T[], clearSelection: () => void) => ReactNode;
+  /**
+   * MOBILE CARD RENDERER. When supplied, everything below `md` renders as a stacked list of cards
+   * instead of the table; `md`+ keeps the table. A data table is the wrong shape on a 360px screen —
+   * it becomes a horizontally-scrolling grid where the row you are reading slides out from under the
+   * column that identifies it.
+   *
+   * The cards consume the SAME `rows` the table does — already searched, filtered, sorted and PAGED —
+   * so search, filters, pagination and bulk selection keep working with one implementation. The caller
+   * only decides what one item looks like; `index` is the 1-based position within the whole filtered
+   * set (not the page), matching the table's row numbers.
+   *
+   * Omit it and the table renders at every width (the fallback for views not yet carded).
+   */
+  renderCard?: (row: T, index: number) => ReactNode;
 }
 
 /**
@@ -280,6 +294,7 @@ export function DataTable<T>({
   enableRowNumbers = false,
   rowNumberHeader = 'STT',
   bulkActions,
+  renderCard,
 }: DataTableProps<T>) {
   'use no memo'; // TanStack's useReactTable returns fresh functions each render — opt out of React Compiler memoization (official guidance); the table does its own memoization internally.
   const up = urlPrefix ?? `${persistKey}.`;
@@ -540,19 +555,28 @@ export function DataTable<T>({
 
   return (
     <div ref={rootRef} className="space-y-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+      {/* ONE ROW at every width (2026-08-04). It used to stack the actions under the search box below
+          sm, which cost a whole row of vertical space on the screen that has the least of it — and the
+          actions are icon-only there (see ExpandingIconButton), so they fit beside a shrinking input. */}
+      <div className="flex flex-row items-center gap-2 sm:gap-3">
         {searchPlaceholder && (
           <SearchInput
             ref={searchRef}
             value={globalFilter}
             onChange={(e) => table.setGlobalFilter(e.target.value)}
             placeholder={searchPlaceholder}
+            // className styles the WRAPPER here (see SearchInput). min-w-0 + flex-1 so the input
+            // yields width to the buttons instead of pushing them off the row.
+            className="min-w-0 flex-1 sm:max-w-xs"
           />
         )}
 
         {/* Column + filter controls sit at the far RIGHT (2026-07-21), with the app's action button
-            (e.g. import) OUTERMOST. `sm:ml-auto` pushes the whole group right of the search box. */}
-        <div className="flex items-center gap-2 sm:ml-auto">
+            (e.g. import) OUTERMOST. `ml-auto` pushes the whole group right of the search box. */}
+        <div className="flex shrink-0 items-center gap-2 md:ml-auto">
+          {/* The column chooser is DESKTOP-ONLY: below md the table is replaced by cards (see
+              `renderCard`), whose fields are fixed by the card layout, so there are no columns to
+              show or hide. */}
           {showColumnMenu && (
             <DropdownMenu open={colMenuOpen} onOpenChange={setColMenuOpen}>
               <DropdownMenuTrigger asChild>
@@ -560,7 +584,7 @@ export function DataTable<T>({
                     app's other toolbar actions). Button already carries the `group/button` class. */}
                 <Button
                   variant="outline"
-                  className="gap-0"
+                  className="gap-0 max-md:hidden"
                   aria-label="Hiển thị cột"
                   title="Hiển thị cột"
                 >
@@ -623,200 +647,244 @@ export function DataTable<T>({
           {/* w-full + min-width(totalSize): real columns keep their EXACT px widths; a trailing auto
               spacer eats the slack so the table fills without stretching columns (and scrolls once the
               columns exceed the width). The Table primitive supplies its own overflow-x-auto container. */}
-          <Table className="table-fixed" style={{ minWidth: table.getTotalSize() }}>
-            <TableHeader>
-              {table.getHeaderGroups().map((hg) => (
-                <TableRow key={hg.id}>
-                  {enableRowSelection && (
-                    <TableHead style={{ width: 44 }} className="px-2">
-                      <Checkbox
-                        checked={
-                          table.getIsAllPageRowsSelected()
-                            ? true
-                            : table.getIsSomePageRowsSelected()
-                              ? 'indeterminate'
-                              : false
-                        }
-                        onCheckedChange={(v) => table.toggleAllPageRowsSelected(v === true)}
-                        aria-label="Chọn tất cả dòng trên trang"
-                      />
-                    </TableHead>
-                  )}
-                  {rowNumbers && (
-                    <TableHead style={{ width: 52 }} className="text-muted-foreground">
-                      {rowNumberHeader}
-                    </TableHead>
-                  )}
-                  {hg.headers.map((header) => {
-                    const meta = header.column.columnDef.meta as DataTableColumnMeta | undefined;
-                    const canSort = header.column.getCanSort();
-                    const sorted = header.column.getIsSorted();
-                    const SortIcon =
-                      sorted === 'asc' ? ArrowUp : sorted === 'desc' ? ArrowDown : ChevronsUpDown;
-                    // With ≥2 sorts, show each column's 1-based priority so the order is legible.
-                    const showRank = sorting.length > 1 && sorted;
-                    const reorderable = canReorder(header.column);
-                    return (
-                      <TableHead
-                        key={header.id}
-                        className={cn('relative', meta?.headClassName)}
-                        style={{ width: header.getSize() }}
-                        aria-sort={
-                          sorted === 'asc'
-                            ? 'ascending'
-                            : sorted === 'desc'
-                              ? 'descending'
-                              : undefined
-                        }
-                        onDragOver={reorderable ? (e) => e.preventDefault() : undefined}
-                        onDrop={reorderable ? () => reorder(header.column.id) : undefined}
-                      >
-                        {header.isPlaceholder ? null : (
-                          <div className="flex items-center gap-1">
-                            {reorderable && (
-                              <span
-                                draggable
-                                onDragStart={() => (dragCol.current = header.column.id)}
-                                onDragEnd={() => (dragCol.current = null)}
-                                role="button"
-                                aria-label="Kéo để đổi vị trí cột"
-                                title="Kéo để đổi vị trí cột"
-                                className="-ml-1 shrink-0 cursor-grab text-muted-foreground/40 hover:text-muted-foreground active:cursor-grabbing"
-                              >
-                                <GripVertical className="size-3.5" aria-hidden />
-                              </span>
-                            )}
-                            {canSort ? (
-                              <Explain text="Bấm để sắp xếp theo cột này. Giữ Shift rồi bấm để thêm cột phụ, sắp xếp nhiều tầng.">
-                                <button
-                                  type="button"
-                                  onClick={header.column.getToggleSortingHandler()}
-                                  className={cn(
-                                    'flex min-w-0 items-center gap-1 transition-colors hover:text-foreground',
-                                    sorted && 'text-foreground',
-                                  )}
-                                >
-                                  <span className="truncate">
-                                    {flexRender(
-                                      header.column.columnDef.header,
-                                      header.getContext(),
-                                    )}
-                                  </span>
-                                  <SortIcon
-                                    className={cn(
-                                      'size-3.5 shrink-0',
-                                      sorted ? 'opacity-100' : 'opacity-40',
-                                    )}
-                                    aria-hidden
-                                  />
-                                  {showRank && (
-                                    <span className="shrink-0 text-xs font-semibold text-muted-foreground tabular-nums">
-                                      {header.column.getSortIndex() + 1}
-                                    </span>
-                                  )}
-                                </button>
-                              </Explain>
-                            ) : (
-                              <span className="truncate">
-                                {flexRender(header.column.columnDef.header, header.getContext())}
-                              </span>
-                            )}
-                          </div>
-                        )}
-                        {header.column.getCanResize() && (
-                          <span
-                            onMouseDown={header.getResizeHandler()}
-                            onTouchStart={header.getResizeHandler()}
-                            onClick={(e) => e.stopPropagation()}
-                            role="separator"
-                            aria-orientation="vertical"
-                            className={cn(
-                              'absolute top-0 right-0 h-full w-1.5 cursor-col-resize touch-none select-none hover:bg-border',
-                              header.column.getIsResizing() && 'bg-primary/60',
-                            )}
-                          />
-                        )}
+          {/* Cards below md (only when the caller supplied a renderer — otherwise the table renders at
+              every width). Same `rows` as the table: searched, filtered, sorted, paged. */}
+          {renderCard && (
+            <ul className="flex flex-col gap-2 md:hidden">
+              {rows.map((row, i) => {
+                const selected = enableRowSelection && row.getIsSelected();
+                return (
+                  <li
+                    key={row.id}
+                    className={cn(
+                      'rounded-lg border border-border/70 p-3 transition-colors',
+                      selected && 'border-primary bg-primary/5',
+                    )}
+                  >
+                    <div className="flex items-start gap-2.5">
+                      {enableRowSelection && (
+                        // mt-1 lines the box up with the first text line rather than the card's top edge.
+                        <Checkbox
+                          className="mt-1 shrink-0"
+                          checked={selected}
+                          onCheckedChange={(v) => row.toggleSelected(v === true)}
+                          aria-label="Chọn mục này"
+                        />
+                      )}
+                      {/* min-w-0: without it a long unbroken JA string makes the card wider than the
+                          viewport and the whole page scrolls sideways. */}
+                      <div className="min-w-0 flex-1">
+                        {renderCard(row.original, start + i + 1)}
+                      </div>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+
+          {/* Wrapping div, not a class on <Table>: the Table primitive renders its own
+              `overflow-x-auto` container, so hiding the <table> alone would leave that container in
+              flow. */}
+          <div className={cn(renderCard && 'max-md:hidden')}>
+            <Table className="table-fixed" style={{ minWidth: table.getTotalSize() }}>
+              <TableHeader>
+                {table.getHeaderGroups().map((hg) => (
+                  <TableRow key={hg.id}>
+                    {enableRowSelection && (
+                      <TableHead style={{ width: 44 }} className="px-2">
+                        <Checkbox
+                          checked={
+                            table.getIsAllPageRowsSelected()
+                              ? true
+                              : table.getIsSomePageRowsSelected()
+                                ? 'indeterminate'
+                                : false
+                          }
+                          onCheckedChange={(v) => table.toggleAllPageRowsSelected(v === true)}
+                          aria-label="Chọn tất cả dòng trên trang"
+                        />
                       </TableHead>
-                    );
-                  })}
-                  {/* Auto-width spacer so the real columns keep exact widths + the table still fills.
+                    )}
+                    {rowNumbers && (
+                      <TableHead style={{ width: 52 }} className="text-muted-foreground">
+                        {rowNumberHeader}
+                      </TableHead>
+                    )}
+                    {hg.headers.map((header) => {
+                      const meta = header.column.columnDef.meta as DataTableColumnMeta | undefined;
+                      const canSort = header.column.getCanSort();
+                      const sorted = header.column.getIsSorted();
+                      const SortIcon =
+                        sorted === 'asc' ? ArrowUp : sorted === 'desc' ? ArrowDown : ChevronsUpDown;
+                      // With ≥2 sorts, show each column's 1-based priority so the order is legible.
+                      const showRank = sorting.length > 1 && sorted;
+                      const reorderable = canReorder(header.column);
+                      return (
+                        <TableHead
+                          key={header.id}
+                          className={cn('relative', meta?.headClassName)}
+                          style={{ width: header.getSize() }}
+                          aria-sort={
+                            sorted === 'asc'
+                              ? 'ascending'
+                              : sorted === 'desc'
+                                ? 'descending'
+                                : undefined
+                          }
+                          onDragOver={reorderable ? (e) => e.preventDefault() : undefined}
+                          onDrop={reorderable ? () => reorder(header.column.id) : undefined}
+                        >
+                          {header.isPlaceholder ? null : (
+                            <div className="flex items-center gap-1">
+                              {reorderable && (
+                                <span
+                                  draggable
+                                  onDragStart={() => (dragCol.current = header.column.id)}
+                                  onDragEnd={() => (dragCol.current = null)}
+                                  role="button"
+                                  aria-label="Kéo để đổi vị trí cột"
+                                  title="Kéo để đổi vị trí cột"
+                                  className="-ml-1 shrink-0 cursor-grab text-muted-foreground/40 hover:text-muted-foreground active:cursor-grabbing"
+                                >
+                                  <GripVertical className="size-3.5" aria-hidden />
+                                </span>
+                              )}
+                              {canSort ? (
+                                <Explain text="Bấm để sắp xếp theo cột này. Giữ Shift rồi bấm để thêm cột phụ, sắp xếp nhiều tầng.">
+                                  <button
+                                    type="button"
+                                    onClick={header.column.getToggleSortingHandler()}
+                                    className={cn(
+                                      'flex min-w-0 items-center gap-1 transition-colors hover:text-foreground',
+                                      sorted && 'text-foreground',
+                                    )}
+                                  >
+                                    <span className="truncate">
+                                      {flexRender(
+                                        header.column.columnDef.header,
+                                        header.getContext(),
+                                      )}
+                                    </span>
+                                    <SortIcon
+                                      className={cn(
+                                        'size-3.5 shrink-0',
+                                        sorted ? 'opacity-100' : 'opacity-40',
+                                      )}
+                                      aria-hidden
+                                    />
+                                    {showRank && (
+                                      <span className="shrink-0 text-xs font-semibold text-muted-foreground tabular-nums">
+                                        {header.column.getSortIndex() + 1}
+                                      </span>
+                                    )}
+                                  </button>
+                                </Explain>
+                              ) : (
+                                <span className="truncate">
+                                  {flexRender(header.column.columnDef.header, header.getContext())}
+                                </span>
+                              )}
+                            </div>
+                          )}
+                          {header.column.getCanResize() && (
+                            <span
+                              onMouseDown={header.getResizeHandler()}
+                              onTouchStart={header.getResizeHandler()}
+                              onClick={(e) => e.stopPropagation()}
+                              role="separator"
+                              aria-orientation="vertical"
+                              className={cn(
+                                'absolute top-0 right-0 h-full w-1.5 cursor-col-resize touch-none select-none hover:bg-border',
+                                header.column.getIsResizing() && 'bg-primary/60',
+                              )}
+                            />
+                          )}
+                        </TableHead>
+                      );
+                    })}
+                    {/* Auto-width spacer so the real columns keep exact widths + the table still fills.
                       It also carries the ⓘ SHORTCUT HINT: top-right of the header, on the same row as
                       (and immediately right of) the actions column — the one spot that belongs to no
                       column, so the hint costs no header text and never shifts a column's width. */}
-                  <TableHead className="w-auto min-w-8 p-0">
-                    <span className="flex justify-end pr-1">
-                      <Explain
-                        side="left"
-                        className="items-start"
-                        text={
-                          <span className="flex flex-col gap-1">
-                            <span className="font-medium">Phím tắt bàn phím</span>
-                            {shortcuts.map((s) => (
-                              <span key={s.keys} className="flex items-center gap-2">
-                                <kbd className="min-w-10 rounded border border-background/40 px-1 text-center font-mono text-xs">
-                                  {s.keys}
-                                </kbd>
-                                <span>{s.desc}</span>
-                              </span>
-                            ))}
-                          </span>
-                        }
-                      >
-                        <button
-                          type="button"
-                          aria-label="Phím tắt của bảng"
-                          className="inline-flex size-5 items-center justify-center rounded-full text-muted-foreground/60 transition-colors hover:text-foreground focus-visible:text-foreground"
+                    <TableHead className="w-auto min-w-8 p-0">
+                      <span className="flex justify-end pr-1">
+                        <Explain
+                          side="left"
+                          className="items-start"
+                          text={
+                            <span className="flex flex-col gap-1">
+                              <span className="font-medium">Phím tắt bàn phím</span>
+                              {shortcuts.map((s) => (
+                                <span key={s.keys} className="flex items-center gap-2">
+                                  <kbd className="min-w-10 rounded border border-background/40 px-1 text-center font-mono text-xs">
+                                    {s.keys}
+                                  </kbd>
+                                  <span>{s.desc}</span>
+                                </span>
+                              ))}
+                            </span>
+                          }
                         >
-                          <Info className="size-3.5" aria-hidden />
-                        </button>
-                      </Explain>
-                    </span>
-                  </TableHead>
-                </TableRow>
-              ))}
-            </TableHeader>
-            <TableBody ref={bodyRef}>
-              {rows.map((row, i) => (
-                // Uniform data-row height (h-12 = 48px) so EVERY table reads at the same rhythm
-                // regardless of which controls a column carries — the resources table's `size-8` action
-                // button sets the 48px standard; without this, a table whose tallest control is smaller
-                // (e.g. /library's size-6 buttons) rendered shorter rows (invariant #9: same height). It
-                // is a MIN in table layout, so a cell that ever needs more still grows.
-                <TableRow key={row.id} className={cn('h-12', rowClassName?.(row.original))}>
-                  {enableRowSelection && (
-                    <TableCell style={{ width: 44 }} className="px-2">
-                      <Checkbox
-                        checked={row.getIsSelected()}
-                        onCheckedChange={(v) => row.toggleSelected(v === true)}
-                        aria-label="Chọn dòng"
-                      />
-                    </TableCell>
-                  )}
-                  {rowNumbers && (
-                    <TableCell style={{ width: 52 }} className="text-muted-foreground tabular-nums">
-                      {start + i + 1}
-                    </TableCell>
-                  )}
-                  {row.getVisibleCells().map((cell) => {
-                    const meta = cell.column.columnDef.meta as DataTableColumnMeta | undefined;
-                    return (
-                      <TableCell
-                        key={cell.id}
-                        className={meta?.cellClassName}
-                        style={{ width: cell.column.getSize() }}
-                      >
-                        {/* one-line truncation so a narrowed / long cell never breaks the row height */}
-                        <div className="truncate">
-                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                        </div>
+                          <button
+                            type="button"
+                            aria-label="Phím tắt của bảng"
+                            className="inline-flex size-5 items-center justify-center rounded-full text-muted-foreground/60 transition-colors hover:text-foreground focus-visible:text-foreground"
+                          >
+                            <Info className="size-3.5" aria-hidden />
+                          </button>
+                        </Explain>
+                      </span>
+                    </TableHead>
+                  </TableRow>
+                ))}
+              </TableHeader>
+              <TableBody ref={bodyRef}>
+                {rows.map((row, i) => (
+                  // Uniform data-row height (h-12 = 48px) so EVERY table reads at the same rhythm
+                  // regardless of which controls a column carries — the resources table's `size-8` action
+                  // button sets the 48px standard; without this, a table whose tallest control is smaller
+                  // (e.g. /library's size-6 buttons) rendered shorter rows (invariant #9: same height). It
+                  // is a MIN in table layout, so a cell that ever needs more still grows.
+                  <TableRow key={row.id} className={cn('h-12', rowClassName?.(row.original))}>
+                    {enableRowSelection && (
+                      <TableCell style={{ width: 44 }} className="px-2">
+                        <Checkbox
+                          checked={row.getIsSelected()}
+                          onCheckedChange={(v) => row.toggleSelected(v === true)}
+                          aria-label="Chọn dòng"
+                        />
                       </TableCell>
-                    );
-                  })}
-                  <TableCell aria-hidden className="p-0" />
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                    )}
+                    {rowNumbers && (
+                      <TableCell
+                        style={{ width: 52 }}
+                        className="text-muted-foreground tabular-nums"
+                      >
+                        {start + i + 1}
+                      </TableCell>
+                    )}
+                    {row.getVisibleCells().map((cell) => {
+                      const meta = cell.column.columnDef.meta as DataTableColumnMeta | undefined;
+                      return (
+                        <TableCell
+                          key={cell.id}
+                          className={meta?.cellClassName}
+                          style={{ width: cell.column.getSize() }}
+                        >
+                          {/* one-line truncation so a narrowed / long cell never breaks the row height */}
+                          <div className="truncate">
+                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                          </div>
+                        </TableCell>
+                      );
+                    })}
+                    <TableCell aria-hidden className="p-0" />
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
 
           <div
             ref={footerRef}
