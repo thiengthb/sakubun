@@ -124,18 +124,18 @@ async function postImport(kind: ImportKind, file: File, dryRun: boolean): Promis
 /**
  * Tab "Dữ liệu": get a copy of your data out, and sync a backup back in.
  *
- * Multi-user (2026-07-22): EVERY member can export/sync their OWN data as JSON (/api/export/mine,
- * /api/import/mine). The whole-DB SQLite snapshot + system sync (/api/backup, /api/import/system)
- * spans every member's data, so they are admin-only — shown only when `isAdmin`.
+ * Single user: the whole-DB SQLite snapshot + system sync (/api/backup, /api/import/system) were
+ * admin-only while the app was multi-user. With one operator there is no one to gate them from, so
+ * they render unconditionally alongside the JSON/Anki export of your own data.
  *
  * Sync (2026-07-23) is a MERGE, never a delete: rows missing locally are added, existing rows are
  * updated, review history is only ever appended (invariant #2). Every sync first runs a DRY-RUN and
  * shows exactly what would change, and only writes after the user confirms in the dialog.
  *
- * Layout (2026-07-24): a scannable card grid — "Dữ liệu của bạn" (JSON copy + Anki) for everyone, an
- * "Quản trị hệ thống" group (whole-DB backup, system sync, manual restore) gated behind `isAdmin`.
+ * Layout (2026-07-24): a scannable card grid — "Dữ liệu của bạn" (JSON copy + Anki) plus a
+ * "Toàn bộ dữ liệu" group (whole-DB backup, sync, manual restore).
  */
-export function DataTab({ isAdmin }: { isAdmin: boolean }) {
+export function DataTab() {
   const router = useRouter();
   const [busy, setBusy] = useState<'mine' | 'anki' | 'all' | 'sync' | null>(null);
   const [preview, setPreview] = useState<{
@@ -326,119 +326,116 @@ export function DataTab({ isAdmin }: { isAdmin: boolean }) {
           </div>
         </section>
 
-        {/* ---- Admin: whole-system data ---- */}
-        {isAdmin && (
-          <section className="space-y-3">
-            <SectionHeading hint="Thao tác trên dữ liệu của MỌI thành viên. Chỉ thêm / cập nhật, không bao giờ xóa.">
-              Quản trị hệ thống
-            </SectionHeading>
-            <div className="grid gap-4 sm:grid-cols-2">
-              {/* Whole-DB backup */}
-              <Card>
-                <CardHeader>
-                  <div className="flex items-start gap-3">
-                    <IconBadge icon={Download} />
-                    <div className="min-w-0 space-y-1">
-                      <CardTitle className="text-sm">Sao lưu toàn bộ (.db)</CardTitle>
-                      <CardDescription className="text-xs">
-                        Ảnh chụp SQLite nhất quán của mọi thành viên, đã kiểm tra toàn vẹn. Nằm cùng
-                        ổ với Docker — nhớ chép tiếp sang ổ khác / cloud.
-                      </CardDescription>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardFooter className="mt-auto">
-                  <Button onClick={backupAll} disabled={busy !== null}>
-                    <Download className="size-4" aria-hidden />
-                    {busy === 'all' ? 'Đang tạo…' : 'Tải bản sao lưu'}
-                  </Button>
-                </CardFooter>
-              </Card>
-
-              {/* System sync from a .db */}
-              <Card className="ring-warn/30">
-                <CardHeader>
-                  <div className="flex items-start gap-3">
-                    <IconBadge icon={Upload} tone="warn" />
-                    <div className="min-w-0 space-y-1">
-                      <CardTitle className="text-sm">Đồng bộ hệ thống</CardTitle>
-                      <CardDescription className="text-xs">
-                        Gộp một tệp <code className="text-foreground">.db</code> vào hệ thống đang
-                        chạy (thêm + cập nhật, không xóa). Hãy sao lưu trước và xem kỹ bảng thay đổi
-                        rồi mới xác nhận.
-                      </CardDescription>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardFooter className="mt-auto">
-                  <Button
-                    variant="outline"
-                    onClick={() => systemInput.current?.click()}
-                    disabled={busy !== null}
-                  >
-                    {busy === 'sync' ? (
-                      <Loader2 className="size-4 animate-spin" aria-hidden />
-                    ) : (
-                      <Upload className="size-4" aria-hidden />
-                    )}
-                    Chọn tệp .db để đồng bộ
-                  </Button>
-                  <input
-                    ref={systemInput}
-                    type="file"
-                    accept=".db,application/vnd.sqlite3,application/octet-stream"
-                    className="hidden"
-                    onChange={(e) => {
-                      void pickForSync('system', e.target.files?.[0] ?? null);
-                      e.target.value = '';
-                    }}
-                  />
-                </CardFooter>
-              </Card>
-            </div>
-
-            {/* Manual restore — advanced, tucked behind a disclosure to keep the tab calm. */}
+        {/* ---- Whole-DB data ---- */}
+        <section className="space-y-3">
+          <SectionHeading hint="Thao tác trên toàn bộ dữ liệu. Chỉ thêm / cập nhật, không bao giờ xóa.">
+            Toàn bộ dữ liệu
+          </SectionHeading>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {/* Whole-DB backup */}
             <Card>
               <CardHeader>
                 <div className="flex items-start gap-3">
-                  <IconBadge icon={HardDriveDownload} />
+                  <IconBadge icon={Download} />
                   <div className="min-w-0 space-y-1">
-                    <CardTitle className="text-sm">Khôi phục nguyên trạng (nâng cao)</CardTitle>
+                    <CardTitle className="text-sm">Sao lưu toàn bộ (.db)</CardTitle>
                     <CardDescription className="text-xs">
-                      Thay hẳn cơ sở dữ liệu bằng một bản sao lưu — mất mọi thay đổi phát sinh sau
-                      bản đó. Chỉ dùng khi cần quay về đúng một thời điểm.
+                      Ảnh chụp SQLite nhất quán của mọi thành viên, đã kiểm tra toàn vẹn. Nằm cùng ổ
+                      với Docker — nhớ chép tiếp sang ổ khác / cloud.
                     </CardDescription>
                   </div>
                 </div>
               </CardHeader>
-              <CardContent>
-                <details className="group/restore rounded-lg border border-border/70 bg-muted/30">
-                  <summary className="flex cursor-pointer list-none items-center gap-2 px-3 py-2 text-sm font-medium select-none">
-                    <HardDriveDownload className="size-4 text-muted-foreground" aria-hidden />
-                    Xem các lệnh thay tệp thủ công
-                  </summary>
-                  <div className="space-y-2 border-t border-border/70 p-3">
-                    <p className="text-xs text-muted-foreground">
-                      Chạy ở thư mục chứa{' '}
-                      <code className="text-foreground">docker-compose.yml</code>, thay tên tệp cho
-                      đúng:
-                    </p>
-                    <pre className="overflow-x-auto rounded-md bg-background p-3 text-xs">
-                      <code>{RESTORE_COMMANDS}</code>
-                    </pre>
-                    <p className="text-xs text-muted-foreground">
-                      <HardDriveDownload className="mr-1 inline size-3.5" aria-hidden />
-                      Muốn chắc bản sao lưu dùng được, chạy{' '}
-                      <code className="text-foreground">./scripts/verify-restore.sh</code>: nó phục
-                      hồi vào một container tạm rồi đối chiếu số mục, trạng thái FSRS và lịch sử ôn
-                      với bản gốc, không đụng dữ liệu thật.
-                    </p>
-                  </div>
-                </details>
-              </CardContent>
+              <CardFooter className="mt-auto">
+                <Button onClick={backupAll} disabled={busy !== null}>
+                  <Download className="size-4" aria-hidden />
+                  {busy === 'all' ? 'Đang tạo…' : 'Tải bản sao lưu'}
+                </Button>
+              </CardFooter>
             </Card>
-          </section>
-        )}
+
+            {/* System sync from a .db */}
+            <Card className="ring-warn/30">
+              <CardHeader>
+                <div className="flex items-start gap-3">
+                  <IconBadge icon={Upload} tone="warn" />
+                  <div className="min-w-0 space-y-1">
+                    <CardTitle className="text-sm">Đồng bộ hệ thống</CardTitle>
+                    <CardDescription className="text-xs">
+                      Gộp một tệp <code className="text-foreground">.db</code> vào hệ thống đang
+                      chạy (thêm + cập nhật, không xóa). Hãy sao lưu trước và xem kỹ bảng thay đổi
+                      rồi mới xác nhận.
+                    </CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardFooter className="mt-auto">
+                <Button
+                  variant="outline"
+                  onClick={() => systemInput.current?.click()}
+                  disabled={busy !== null}
+                >
+                  {busy === 'sync' ? (
+                    <Loader2 className="size-4 animate-spin" aria-hidden />
+                  ) : (
+                    <Upload className="size-4" aria-hidden />
+                  )}
+                  Chọn tệp .db để đồng bộ
+                </Button>
+                <input
+                  ref={systemInput}
+                  type="file"
+                  accept=".db,application/vnd.sqlite3,application/octet-stream"
+                  className="hidden"
+                  onChange={(e) => {
+                    void pickForSync('system', e.target.files?.[0] ?? null);
+                    e.target.value = '';
+                  }}
+                />
+              </CardFooter>
+            </Card>
+          </div>
+
+          {/* Manual restore — advanced, tucked behind a disclosure to keep the tab calm. */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-start gap-3">
+                <IconBadge icon={HardDriveDownload} />
+                <div className="min-w-0 space-y-1">
+                  <CardTitle className="text-sm">Khôi phục nguyên trạng (nâng cao)</CardTitle>
+                  <CardDescription className="text-xs">
+                    Thay hẳn cơ sở dữ liệu bằng một bản sao lưu — mất mọi thay đổi phát sinh sau bản
+                    đó. Chỉ dùng khi cần quay về đúng một thời điểm.
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <details className="group/restore rounded-lg border border-border/70 bg-muted/30">
+                <summary className="flex cursor-pointer list-none items-center gap-2 px-3 py-2 text-sm font-medium select-none">
+                  <HardDriveDownload className="size-4 text-muted-foreground" aria-hidden />
+                  Xem các lệnh thay tệp thủ công
+                </summary>
+                <div className="space-y-2 border-t border-border/70 p-3">
+                  <p className="text-xs text-muted-foreground">
+                    Chạy ở thư mục chứa <code className="text-foreground">docker-compose.yml</code>,
+                    thay tên tệp cho đúng:
+                  </p>
+                  <pre className="overflow-x-auto rounded-md bg-background p-3 text-xs">
+                    <code>{RESTORE_COMMANDS}</code>
+                  </pre>
+                  <p className="text-xs text-muted-foreground">
+                    <HardDriveDownload className="mr-1 inline size-3.5" aria-hidden />
+                    Muốn chắc bản sao lưu dùng được, chạy{' '}
+                    <code className="text-foreground">./scripts/verify-restore.sh</code>: nó phục
+                    hồi vào một container tạm rồi đối chiếu số mục, trạng thái FSRS và lịch sử ôn
+                    với bản gốc, không đụng dữ liệu thật.
+                  </p>
+                </div>
+              </details>
+            </CardContent>
+          </Card>
+        </section>
       </div>
 
       {/* Dry-run preview: shown after a file is picked, before anything is written. */}

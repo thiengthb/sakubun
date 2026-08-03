@@ -1,19 +1,14 @@
 'use client';
 
 import {
-  Bell,
   BookOpenText,
   BookText,
   ChartColumn,
-  Globe,
   History,
-  Layers,
   LayoutDashboard,
   Languages,
   Library,
   Settings,
-  ShieldCheck,
-  UserRound,
 } from 'lucide-react';
 import { Breadcrumbs, type Crumb } from '@/components/shell/breadcrumbs';
 
@@ -29,13 +24,6 @@ const CRUMBS = {
     icon: LayoutDashboard,
     description:
       'Hai tab: Tiến độ (tổng quan, tiến độ theo ngày, điểm yếu) và Thống kê (biểu đồ độ chính xác, thời gian, theo độ khó/độ dài). Luyện tập diễn ra trong Claude Desktop.',
-  },
-  notifications: {
-    label: 'Thông báo',
-    href: '/notifications',
-    icon: Bell,
-    description:
-      'Mọi việc đã xảy ra khi bạn không nhìn màn hình: Claude thêm/sửa/xóa mục trong kho, bài được chấm xong, và ai đó tương tác với thứ bạn chia sẻ. Bấm một dòng là đi thẳng tới chỗ đó.',
   },
   resources: {
     label: 'Tài nguyên',
@@ -56,20 +44,6 @@ const CRUMBS = {
     icon: Languages,
     description: 'Các từ vựng đã lưu.',
   },
-  groups: {
-    label: 'Nhóm',
-    href: '/resources?tab=groups',
-    icon: Layers,
-    description:
-      'Gom mẫu ngữ pháp và/hoặc từ vựng thành nhóm có tên để luyện tập trung. Không ảnh hưởng lịch ôn.',
-  },
-  library: {
-    label: 'Thư viện',
-    href: '/library',
-    icon: Globe,
-    description:
-      'Mẫu ngữ pháp và từ vựng người khác chia sẻ — lấy về kho của bạn với lịch ôn mới (không thấy lịch ôn của họ, họ không thấy của bạn).',
-  },
   history: {
     label: 'Lịch sử',
     href: '/history',
@@ -82,26 +56,13 @@ const CRUMBS = {
     href: '/settings',
     icon: Settings,
     description:
-      'Tuỳ chỉnh nội dung, nhịp học, nghe & nói. Claude đọc các cài đặt này qua MCP mỗi khi soạn câu.',
+      'Tuỳ chỉnh nội dung, nhịp học, nghe & nói; dữ liệu; tài khoản và token MCP. Claude đọc các cài đặt học này qua MCP mỗi khi soạn câu.',
   },
   guide: {
     label: 'Hướng dẫn',
     href: '/guide',
     icon: BookOpenText,
     description: 'Cách dùng app + kết nối Claude Desktop (MCP).',
-  },
-  account: {
-    label: 'Tài khoản',
-    href: '/account',
-    icon: UserRound,
-    description: 'Thông tin đăng nhập và token MCP để kết nối Claude Desktop dưới danh nghĩa bạn.',
-  },
-  admin: {
-    label: 'Quản trị',
-    href: '/admin',
-    icon: ShieldCheck,
-    description:
-      'Quản lý người dùng (chỉ quản trị viên). Khoá một thành viên là ngắt NGAY cả web lẫn MCP (token trả 401); có thể bỏ khoá sau.',
   },
 } satisfies Record<string, Crumb>;
 
@@ -117,7 +78,7 @@ export function AppBreadcrumbs({
   className,
 }: {
   section: BreadcrumbSection;
-  detail?: { kind: 'grammar' | 'vocab' | 'groups'; label: string; description?: string };
+  detail?: { kind: 'grammar' | 'vocab'; label: string; description?: string };
   className?: string;
 }) {
   const items: Crumb[] = detail

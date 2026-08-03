@@ -10,17 +10,30 @@ import { ContentTab } from '@/components/settings/settings-content-tab';
 import { PaceTab } from '@/components/settings/settings-pace-tab';
 import { SensoryTab } from '@/components/settings/settings-sensory-tab';
 import { DataTab } from '@/components/settings/settings-data-tab';
+import { AccountTab } from '@/components/settings/settings-account-tab';
+import type { McpKeyRow } from '@/components/settings/settings-account-tab';
 import { useSessionState } from '@/components/shared/use-session-state';
 import { saveSettingsAction } from '@/app/actions';
 import { type Settings } from '@/lib/settings-schema';
 
 interface SettingsFormProps {
   initial: Settings;
-  /** Whole-DB backup in the Data tab is admin-only; a member sees only their own export. */
-  isAdmin: boolean;
+  /** Identity + MCP tokens for the "Tài khoản" / "Token MCP" tabs (was the separate /account page). */
+  account: {
+    name: string;
+    email: string;
+    image: string | null;
+    hasPassword: boolean;
+    joinedAt: string | null;
+    lastLoginAt: string | null;
+    keys: McpKeyRow[];
+  };
 }
 
-export function SettingsForm({ initial, isAdmin }: SettingsFormProps) {
+/** Tabs whose contents are part of the Settings object and therefore share the one Save button. */
+const SAVEABLE_TABS = new Set(['content', 'pace', 'sensory', 'data']);
+
+export function SettingsForm({ initial, account }: SettingsFormProps) {
   const [settings, setSettings] = useState<Settings>(initial);
   // Remember the active tab across navigation + reload (same session).
   const [tab, setTab] = useSessionState('settings.tab', 'content', 'tab');
@@ -67,23 +80,31 @@ export function SettingsForm({ initial, isAdmin }: SettingsFormProps) {
               <TabsTrigger value="pace">Nhịp học</TabsTrigger>
               <TabsTrigger value="sensory">Nghe &amp; nói</TabsTrigger>
               <TabsTrigger value="data">Dữ liệu</TabsTrigger>
+              <TabsTrigger value="account">Tài khoản</TabsTrigger>
+              <TabsTrigger value="token-mcp">Token MCP</TabsTrigger>
             </TabsList>
-            <ExpandingIconButton
-              type="button"
-              icon={Save}
-              label={isSaving ? 'Đang lưu…' : dirty ? 'Lưu' : 'Đã lưu'}
-              variant="default"
-              disabled={isSaving || !dirty}
-              onClick={onSave}
-              className="ml-auto"
-            />
+            {/* Only the four settings tabs are driven by this Save. The account + token tabs each
+                commit on their own (better-auth call / server action), so showing a settings Save
+                beside them would suggest their changes need it. */}
+            {SAVEABLE_TABS.has(tab) && (
+              <ExpandingIconButton
+                type="button"
+                icon={Save}
+                label={isSaving ? 'Đang lưu…' : dirty ? 'Lưu' : 'Đã lưu'}
+                variant="default"
+                disabled={isSaving || !dirty}
+                onClick={onSave}
+                className="ml-auto"
+              />
+            )}
           </>
         }
       >
         <ContentTab settings={settings} set={set} setSettings={setSettings} />
         <PaceTab settings={settings} set={set} />
         <SensoryTab settings={settings} set={set} />
-        <DataTab isAdmin={isAdmin} />
+        <DataTab />
+        <AccountTab {...account} />
       </PageShell>
     </Tabs>
   );
