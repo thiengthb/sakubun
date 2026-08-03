@@ -1,0 +1,44 @@
+# Local deploy of the SINGLE-USER sakubun. `docker compose up -d --build` once; the container then
+# starts with Docker (restart: unless-stopped). Data lives in the named volume below — deleting the
+# container keeps your study history.
+#
+# Public access rides docker-compose.tunnel.yml (Cloudflare Tunnel → sakubun.thientnse.site).
+services:
+  sakubun:
+    build: .
+    image: sakubun:local
+    container_name: sakubun
+    ports:
+      - '3789:3789'
+    volumes:
+      - sakubun_data:/data
+    # Auth secrets live in the gitignored .env.docker — BETTER_AUTH_SECRET, BETTER_AUTH_URL and the
+    # GOOGLE_* pair. It deliberately omits DATABASE_URL so the image's file:/data/sakubun.db wins.
+    #
+    # The GOOGLE_* pair is NOT optional here: the one account signs in with Google and has no password
+    # row, so without those two variables better-auth drops the provider and there is no way in.
+    env_file:
+      - .env.docker
+    environment:
+      # Local VOICEVOX engine (neural JA TTS) reached over the compose network by /api/tts. If it is
+      # down the client falls back to browser Web Speech, so this is best-effort, not required.
+      - VOICEVOX_URL=http://voicevox:50021
+    depends_on:
+      - voicevox
+    restart: unless-stopped
+
+  # Neural Japanese TTS engine (VOICEVOX, local + free). NOT exposed to the host — only sakubun
+  # reaches it over the compose network. CPU build, pinned; third-party image → bump the tag manually.
+  voicevox:
+    image: voicevox/voicevox_engine:cpu-0.21.0
+    container_name: sakubun-voicevox
+    restart: unless-stopped
+
+volumes:
+  # Name PINNED to the volume that actually exists on this host (verified with `docker volume ls`).
+  # Compose prefixes a named volume with the project name, so the declaration `sakubun_data` has
+  # always produced `sakubun_sakubun_data` on disk.
+  # ⚠ DO NOT "correct" this to `sakubun_data` — that binds a DIFFERENT, EMPTY volume and the app comes
+  # up with no study history.
+  sakubun_data:
+    name: sakubun_sakubun_data

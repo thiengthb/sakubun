@@ -1,0 +1,39 @@
+node_modules
+.next
+.git
+.env
+.env.*
+!.env.example
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+lib/generated
+test-results
+playwright-report
+# e2e and its config go together: playwright.config.ts imports ./e2e/fixtures, and tsconfig
+# type-checks every .ts at build time — excluding one without the other breaks the build.
+e2e
+playwright.config.ts
+
+# Harness layer: not needed at runtime and not part of the app image.
+.claude
+tooling
+evals
+harness-migrations
+knowledge
+features
+reservations
+docs
+.github
+.githooks
+
+README.md
+CLAUDE.md
+AGENTS.md
+HARNESS-CHANGELOG.md
+harness.config.json
+harness.version
+Dockerfile
+.dockerignore
+docker-compose*.yml

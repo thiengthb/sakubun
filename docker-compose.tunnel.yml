@@ -1,0 +1,22 @@
+# Cloudflare Tunnel for the local deploy. Bring up alongside the root docker-compose.yml, which
+# publishes the app on host port 3789.
+#
+#   docker compose -f docker-compose.tunnel.yml up -d
+#
+# Dashboard ingress (Zero Trust > Networks > Tunnels) routes:
+#   sakubun.thientnse.site -> http://host.docker.internal:3789
+# so cloudflared reaches the app over the host gateway. Token lives in .env.tunnel (gitignored).
+# Separate compose project name so it is never orphan-pruned by the app's own `docker compose` runs.
+name: sakubun-tunnel
+
+services:
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: sakubun-cloudflared
+    command: tunnel --no-autoupdate run
+    env_file:
+      - .env.tunnel
+    extra_hosts:
+      # Linux: make host.docker.internal resolve to the host, where port 3789 is published.
+      - 'host.docker.internal:host-gateway'
+    restart: unless-stopped
