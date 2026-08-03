@@ -23,7 +23,6 @@ import {
 import { parseEnrichment, toTutorCard, type Enrichment } from '@/lib/enrichment';
 import {
   mergeEnrichment,
-  patchFromDonor,
   type EnrichmentAdd,
   type EnrichmentPatch,
   type EnrichmentSet,
@@ -38,7 +37,6 @@ import {
 } from '@/lib/learner-notes';
 import type { ConfusionRow } from '@/lib/mining';
 import { sameExpression, stripDecoration } from '@/lib/normalize';
-import { ratingLabel } from '@/lib/format';
 import {
   buildQuizOptions,
   MAX_DISTRACTOR_CANDIDATES,
@@ -1381,8 +1379,14 @@ export async function autoSkipStalePending(
 const STREAK_TTL_MS = 60_000;
 let streakCache: { value: Streak; dayKey: string; at: number } | null = null;
 
-/** Drop the cached streak — called on the FSRS write path so the next poll recomputes. */
-function invalidateStreak(): void {
+/**
+ * Drop the cached streak — called on the FSRS write path so the next poll recomputes.
+ *
+ * Exported because the cache is now a single module-level value (it was a per-user Map while the app
+ * was multi-user, where a new user always missed it). Anything that changes ReviewLog WITHOUT going
+ * through submitReview — a backup restore, a test clearing tables — has to say so.
+ */
+export function invalidateStreak(): void {
   streakCache = null;
 }
 

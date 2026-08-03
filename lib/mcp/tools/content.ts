@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { MAX_IMPORT_CANDIDATES, previewImport } from '@/lib/import-preview';
 import { addItems, GRAMMAR_KIND, VOCAB_CAPTURE_REASONS, VOCAB_KIND } from '@/lib/practice';
-import { getUserId, guard, LEVEL, ok, type McpServer } from '@/lib/mcp/tool-kit';
+import { guard, LEVEL, ok, type McpServer } from '@/lib/mcp/tool-kit';
 
 /** The two kinds an import candidate can be, as the tool surface names them. */
 const IMPORT_KIND = z
@@ -76,7 +76,7 @@ export function registerContentTools(server: McpServer) {
         .min(1)
         .max(MAX_IMPORT_CANDIDATES),
     },
-    guard('preview_import', async ({ items }, extra: unknown) =>
+    guard('preview_import', async ({ items }, _extra: unknown) =>
       ok(await previewImport(items)),
     ),
   );
@@ -91,7 +91,7 @@ export function registerContentTools(server: McpServer) {
       'above the pattern. Each pattern immediately gets a fresh FSRS schedule (introduced gradually per ' +
       'dailyNewGrammar). The meaning MUST be in Vietnamese.',
     { grammar: z.array(grammarInputSchema).min(1).max(100) },
-    guard('add_grammar', async ({ grammar }, extra: unknown) =>
+    guard('add_grammar', async ({ grammar }, _extra: unknown) =>
       ok(await addItems(grammar)),
     ),
   );
@@ -153,7 +153,7 @@ export function registerContentTools(server: McpServer) {
         .min(1)
         .max(30),
     },
-    guard('add_vocab', async ({ vocab }, extra: unknown) =>
+    guard('add_vocab', async ({ vocab }, _extra: unknown) =>
       ok(
         await addItems(
           vocab.map((v) => ({

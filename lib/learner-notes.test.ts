@@ -32,14 +32,23 @@ let prisma: Db['prisma'];
 const NOW = new Date('2026-07-27T10:00:00Z');
 const DAY = 86_400_000;
 
-let seq = 0;
-async function freshUser(): Promise<string> {
-  const id = `n${seq++}`;
-  await prisma.user.create({ data: { id, name: id, email: `${id}@example.test` } });
-  return id;
+/**
+ * Per-case isolation. Each test used to take a `freshUser()` and lean on the tenancy filter to keep its
+ * rows apart; with one learner and no tenant column, isolation has to come from an empty DB instead.
+ * Children before parents (SQLite FK).
+ */
+async function resetData(): Promise<void> {
+  await prisma.reviewLog.deleteMany({});
+  await prisma.sentence.deleteMany({});
+  await prisma.srsState.deleteMany({});
+  await prisma.item.deleteMany({});
+  await prisma.calibrationProposal.deleteMany({});
+  await prisma.learnerNote.deleteMany({});
+  await prisma.learnerAbility.deleteMany({});
+  await prisma.settings.deleteMany({});
 }
 
-async function aSentence(userId: string): Promise<string> {
+async function aSentence(): Promise<string> {
   const row = await prisma.sentence.create({
     data: {
       direction: 'VI_JA',
@@ -63,49 +72,47 @@ beforeAll(async () => {
 
 describe('falsifiable — a note without CHECKABLE evidence is not written', () => {
   it('rejects an empty evidence list', async () => {
-    const user = await freshUser();
-    const res = await N.recordLearnerNote(user, { text: text(1), evidence: [] }, NOW);
+    await resetData();
+    const res = await N.recordLearnerNote({ text: text(1), evidence: [] }, NOW);
     expect(res).toEqual({ recorded: 'rejected', reason: 'no-evidence' });
-    expect(await N.listLearnerNotes(user, NOW)).toEqual([]);
+    expect(await N.listLearnerNotes(NOW)).toEqual([]);
   });
 
-  it('rejects ids that are not this learner sentences (a hallucinated citation)', async () => {
-    const user = await freshUser();
-    const stranger = await freshUser();
-    const theirs = await aSentence(stranger);
+  it('rejects a note whose evidence resolves to NOTHING (a hallucinated citation)', async () => {
+    await resetData();
+    // Was "another learner's sentence id"; with one learner the same invariant is stated with ids that
+    // simply do not exist — the point is that a note with no resolvable evidence is refused outright,
+    // which is separate from the next case (some resolve ⇒ keep those and write).
     const res = await N.recordLearnerNote(
-      user,
-      { text: text(2), evidence: ['made-up-id', theirs] },
+      { text: text(2), evidence: ['made-up-id', 'another-made-up-id'] },
       NOW,
     );
     expect(res).toEqual({ recorded: 'rejected', reason: 'unknown-evidence' });
-    expect(await N.listLearnerNotes(user, NOW)).toEqual([]);
+    expect(await N.listLearnerNotes(NOW)).toEqual([]);
   });
 
   it('keeps only the ids that really resolve, and writes the note', async () => {
-    const user = await freshUser();
-    const real = await aSentence(user);
+    await resetData();
+    const real = await aSentence();
     const res = await N.recordLearnerNote(
-      user,
       { text: text(3), evidence: [real, 'ghost-id'] },
       NOW,
     );
     expect(res.recorded).toBe('added');
-    const [note] = await N.listLearnerNotes(user, NOW);
+    const [note] = await N.listLearnerNotes(NOW);
     expect(note.evidence).toEqual([real]);
     expect(note.expiresAt.getTime()).toBe(NOW.getTime() + N.NOTE_TTL_DAYS * DAY);
   });
 
   it('refuses a note too short to be a claim, and one long enough to be a diary', async () => {
-    const user = await freshUser();
-    const real = await aSentence(user);
-    expect(await N.recordLearnerNote(user, { text: 'ok', evidence: [real] }, NOW)).toEqual({
+    await resetData();
+    const real = await aSentence();
+    expect(await N.recordLearnerNote({ text: 'ok', evidence: [real] }, NOW)).toEqual({
       recorded: 'rejected',
       reason: 'too-short',
     });
     expect(
       await N.recordLearnerNote(
-        user,
         { text: 'x'.repeat(N.MAX_NOTE_CHARS + 1), evidence: [real] },
         NOW,
       ),
@@ -115,43 +122,40 @@ describe('falsifiable — a note without CHECKABLE evidence is not written', () 
 
 describe('bounded — the annex cannot grow', () => {
   it('re-asserting the same observation RENEWS it instead of taking a second slot', async () => {
-    const user = await freshUser();
-    const first = await aSentence(user);
-    const second = await aSentence(user);
-    await N.recordLearnerNote(user, { text: text(4), evidence: [first] }, NOW);
+    await resetData();
+    const first = await aSentence();
+    const second = await aSentence();
+    await N.recordLearnerNote({ text: text(4), evidence: [first] }, NOW);
 
     const later = new Date(NOW.getTime() + 10 * DAY);
     // Same claim, reworded only in case and spacing — the shape a later session actually produces.
     const res = await N.recordLearnerNote(
-      user,
       { text: `  ${text(4).toUpperCase()}  `, evidence: [second] },
       later,
     );
     expect(res.recorded).toBe('refreshed');
-    const notes = await N.listLearnerNotes(user, later);
+    const notes = await N.listLearnerNotes(later);
     expect(notes).toHaveLength(1);
     expect(notes[0].evidence).toEqual(expect.arrayContaining([first, second]));
     expect(notes[0].expiresAt.getTime()).toBe(later.getTime() + N.NOTE_TTL_DAYS * DAY);
   });
 
   it('evicts the note with the LEAST remaining life when a new one arrives at the cap', async () => {
-    const user = await freshUser();
-    const s = await aSentence(user);
+    await resetData();
+    const s = await aSentence();
     // Written on consecutive days, so the oldest also expires soonest.
     for (let i = 0; i < N.MAX_ASSERTED_NOTES; i++) {
       await N.recordLearnerNote(
-        user,
         { text: text(100 + i), evidence: [s] },
         new Date(NOW.getTime() + i * DAY),
       );
     }
-    const before = await N.listLearnerNotes(user, NOW);
+    const before = await N.listLearnerNotes(NOW);
     expect(before).toHaveLength(N.MAX_ASSERTED_NOTES);
     const doomed = before.find((n) => n.text === text(100));
     expect(doomed).toBeDefined();
 
     const res = await N.recordLearnerNote(
-      user,
       { text: text(999), evidence: [s] },
       new Date(NOW.getTime() + N.MAX_ASSERTED_NOTES * DAY),
     );
@@ -160,7 +164,6 @@ describe('bounded — the annex cannot grow', () => {
     expect(res.evicted).toBe(doomed!.id);
 
     const after = await N.listLearnerNotes(
-      user,
       new Date(NOW.getTime() + N.MAX_ASSERTED_NOTES * DAY),
     );
     expect(after).toHaveLength(N.MAX_ASSERTED_NOTES);
@@ -171,35 +174,27 @@ describe('bounded — the annex cannot grow', () => {
 
 describe('self-cleaning — a claim about a person has a shelf life', () => {
   it('stops returning a note once it expires', async () => {
-    const user = await freshUser();
-    const s = await aSentence(user);
-    await N.recordLearnerNote(user, { text: text(5), evidence: [s] }, NOW);
+    await resetData();
+    const s = await aSentence();
+    await N.recordLearnerNote({ text: text(5), evidence: [s] }, NOW);
     const afterTtl = new Date(NOW.getTime() + (N.NOTE_TTL_DAYS + 1) * DAY);
-    expect(await N.listLearnerNotes(user, afterTtl)).toEqual([]);
+    expect(await N.listLearnerNotes(afterTtl)).toEqual([]);
   });
 
-  it('never leaks another learner notes', async () => {
-    const mine = await freshUser();
-    const theirs = await freshUser();
-    const s = await aSentence(theirs);
-    await N.recordLearnerNote(theirs, { text: text(6), evidence: [s] }, NOW);
-    expect(await N.listLearnerNotes(mine, NOW)).toEqual([]);
-    expect(await N.listLearnerNotes(theirs, NOW)).toHaveLength(1);
-  });
 });
 
 describe('5.4 — the note is a PASSENGER on submit_review, never a toll on it', () => {
-  async function gradedTurn(user: string, note?: { text: string; evidence: string[] }) {
-    await P.addItems(user, [{ expression: '〜ばかりに', meaningVi: 'nghĩa' }]);
-    const item = (await P.listItems(user)).find((i) => i.expression === '〜ばかりに');
+  async function gradedTurn(note?: { text: string; evidence: string[] }) {
+    await P.addItems([{ expression: '〜ばかりに', meaningVi: 'nghĩa' }]);
+    const item = (await P.listItems()).find((i) => i.expression === '〜ばかりに');
     if (!item) throw new Error('seed failed');
-    const { sentenceId } = await P.stageSentence(user, {
+    const { sentenceId } = await P.stageSentence({
       direction: 'VI_JA',
       sourceText: 'câu nguồn',
       suggested: 'reference',
       items: [{ itemId: item.itemId, role: 'TARGET' }],
     });
-    return P.submitReview(user, {
+    return P.submitReview({
       sentenceId,
       userAnswer: 'đáp án',
       ratings: [{ itemId: item.itemId, rating: 3 }],
@@ -210,42 +205,42 @@ describe('5.4 — the note is a PASSENGER on submit_review, never a toll on it',
   }
 
   it('records nothing and reports null when no note is sent', async () => {
-    const user = await freshUser();
-    const result = await gradedTurn(user);
+    await resetData();
+    const result = await gradedTurn();
     expect(result.learnerNote).toBeNull();
-    expect(await N.listLearnerNotes(user)).toEqual([]);
+    expect(await N.listLearnerNotes()).toEqual([]);
   });
 
   it('stores the note and echoes the outcome so Claude is not left guessing', async () => {
-    const user = await freshUser();
-    const result = await gradedTurn(user, { text: text(7), evidence: [] });
+    await resetData();
+    const result = await gradedTurn({ text: text(7), evidence: [] });
     expect(result.learnerNote?.recorded).toBe('added');
-    const [stored] = await N.listLearnerNotes(user);
+    const [stored] = await N.listLearnerNotes();
     expect(stored.text).toBe(text(7));
     // The turn being graded is itself the evidence, which is why the id is available at write time.
     expect(stored.evidence).toContain(result.sentenceId);
   });
 
   it('still writes the FSRS review when the note is REJECTED', async () => {
-    const user = await freshUser();
-    const result = await gradedTurn(user, { text: 'no', evidence: [] });
+    await resetData();
+    const result = await gradedTurn({ text: 'no', evidence: [] });
     expect(result.learnerNote).toEqual({ recorded: 'rejected', reason: 'too-short' });
     // The thing the learner actually earned survived the bad passenger.
     expect(result.items).toHaveLength(1);
     expect(result.items[0].nextDue).toBeInstanceOf(Date);
     expect(await prisma.reviewLog.count({ where: {} })).toBe(1);
-    expect(await N.listLearnerNotes(user)).toEqual([]);
+    expect(await N.listLearnerNotes()).toEqual([]);
   });
 });
 
 describe('the annex reaches the tutor through the dossier, not through a new tool', () => {
   it('a note alone is enough to make the dossier non-empty', async () => {
     const D = await import('@/lib/dossier');
-    const user = await freshUser();
-    const s = await aSentence(user);
-    expect(D.isEmptyDossier(await D.computeDossier(user, NOW))).toBe(true);
-    await N.recordLearnerNote(user, { text: text(8), evidence: [s] }, NOW);
-    const dossier = await D.computeDossier(user, NOW);
+    await resetData();
+    const s = await aSentence();
+    expect(D.isEmptyDossier(await D.computeDossier(NOW))).toBe(true);
+    await N.recordLearnerNote({ text: text(8), evidence: [s] }, NOW);
+    const dossier = await D.computeDossier(NOW);
     expect(D.isEmptyDossier(dossier)).toBe(false);
     expect(dossier.notes.map((n) => n.text)).toEqual([text(8)]);
   });
@@ -253,10 +248,10 @@ describe('the annex reaches the tutor through the dossier, not through a new too
   it('but notes NEVER reach the rendered digest — they ride the JSON only', async () => {
     const D = await import('@/lib/dossier');
     const R = await import('@/lib/mcp/render');
-    const user = await freshUser();
-    const s = await aSentence(user);
-    await N.recordLearnerNote(user, { text: text(9), evidence: [s] }, NOW);
-    const block = R.renderDossier(await D.computeDossier(user, NOW));
+    await resetData();
+    const s = await aSentence();
+    await N.recordLearnerNote({ text: text(9), evidence: [s] }, NOW);
+    const block = R.renderDossier(await D.computeDossier(NOW));
     // A note is prose Claude wrote about a person: it counts toward "the dossier is not empty" but is
     // never printed back as a derived-looking bullet. Claude reads it from `dossier.notes` in the
     // get_stats JSON, where it still carries its date and its evidence ids.

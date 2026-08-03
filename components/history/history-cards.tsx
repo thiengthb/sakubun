@@ -1,11 +1,9 @@
 'use client';
 
-import { type MouseEvent, type ReactNode, useEffect, useState, useTransition } from 'react';
-import { Clock, Globe, GraduationCap, Info, Lock, MessageSquare, Ruler, Timer } from 'lucide-react';
-import { toastResult } from '@/lib/action-toast';
+import { type ReactNode, useEffect, useState } from 'react';
+import { Clock, GraduationCap, Info, Ruler, Timer } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Explain } from '@/components/shared/explain';
-import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,

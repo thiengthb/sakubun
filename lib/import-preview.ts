@@ -28,7 +28,6 @@ export const MAX_IMPORT_CANDIDATES = 40;
  * `/library` page already uses, so it inherits the same scale trigger (server-side pagination, deferred
  * in decisions.md 2026-07-24) instead of inventing a second answer to the same question.
  */
-const PUBLIC_SCAN_CAP = 1000;
 
 export type ImportKind = typeof GRAMMAR_KIND | typeof VOCAB_KIND;
 

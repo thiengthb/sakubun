@@ -37,10 +37,16 @@ const NOW = new Date('2026-07-28T09:00:00Z');
 const TARGET = '〜わけにはいかない';
 const DISTRACTORS = ['〜しかない', '〜ざるを得ない', '〜ほかない'];
 
-let seq = 0;
-async function freshUser(): Promise<{ userId: string; itemId: string }> {
-  const id = `qs${seq++}`;
-  await prisma.user.create({ data: { id, name: id, email: `${id}@example.test` } });
+/**
+ * Seed THE target item for one case. Each test used to get its own user, so `[userId, kind, expression]`
+ * let them all own the same pattern; the unique is `[kind, expression]` now, so isolation has to come
+ * from clearing the tables first instead.
+ */
+async function seedItem(): Promise<{ itemId: string }> {
+  await prisma.reviewLog.deleteMany({});
+  await prisma.sentence.deleteMany({});
+  await prisma.srsState.deleteMany({});
+  await prisma.item.deleteMany({});
   const item = await prisma.item.create({
     data: {
       kind: 'GRAMMAR',
@@ -52,7 +58,7 @@ async function freshUser(): Promise<{ userId: string; itemId: string }> {
   return { itemId: item.id };
 }
 
-async function stageQuiz(userId: string, itemId: string, sourceText = '仕事だから、行く(＿＿)。') {
+async function stageQuiz(itemId: string, sourceText = '仕事だから、行く(＿＿)。') {
   return P.stageSentence(
     {
       direction: 'JA_VI',
@@ -73,7 +79,7 @@ beforeAll(async () => {
 
 describe('the recorded question contains the options the server assigned', () => {
   it('appends the A-D line to the stored sourceText', async () => {
-    const { itemId } = await freshUser();
+    const { itemId } = await seedItem();
     const { sentenceId, quiz } = await stageQuiz(itemId);
     expect(quiz).toBeDefined();
     const row = await prisma.sentence.findFirstOrThrow({ where: { id: sentenceId } });
@@ -87,7 +93,7 @@ describe('the recorded question contains the options the server assigned', () =>
   it('makes the correct letter RECOVERABLE from the row alone', async () => {
     // This is exactly what scripts/quiz-letter-audit.js does. If this assertion can pass, the
     // "is the answer always C" question is answerable by query instead of by memory.
-    const { itemId } = await freshUser();
+    const { itemId } = await seedItem();
     const { sentenceId, quiz } = await stageQuiz(itemId);
     const row = await prisma.sentence.findFirstOrThrow({ where: { id: sentenceId } });
     const options = [...row.sourceText.matchAll(/\*\*([ABCD])\.\*\*\s*([^\n·|]+)/g)].map((m) => ({
@@ -101,7 +107,7 @@ describe('the recorded question contains the options the server assigned', () =>
   it('keeps sourceRuby aligned, since ruby REPLACES the text wherever furigana is on', async () => {
     // Appending to only one of the two would hide the options from exactly the learners who have
     // furigana enabled — a silent, per-user regression.
-    const { itemId } = await freshUser();
+    const { itemId } = await seedItem();
     const { sentenceId, quiz } = await P.stageSentence(
       {
         direction: 'JA_VI',
@@ -119,7 +125,7 @@ describe('the recorded question contains the options the server assigned', () =>
   });
 
   it('leaves a non-quiz sentence completely untouched', async () => {
-    const { itemId } = await freshUser();
+    const { itemId } = await seedItem();
     const { sentenceId, quiz } = await P.stageSentence(
       {
         direction: 'JA_VI',
@@ -141,7 +147,7 @@ describe('a malformed question never reaches the database', () => {
   it('throws on a duplicate option and stages NOTHING', async () => {
     // The layout is built before the row is created on purpose: a rejected question must not leave a
     // pending row behind for autoSkipStalePending to sweep up as an abandoned exercise.
-    const { itemId } = await freshUser();
+    const { itemId } = await seedItem();
     const before = await prisma.sentence.count({});
     await expect(
       P.stageSentence(

@@ -12,7 +12,7 @@
 // and hands the facts to the pure engine in `lib/coach.ts`.
 
 import { coach, type CoachResult, type ItemFacts } from '@/lib/coach';
-import { parseEnrichment, type Provenance } from '@/lib/enrichment';
+import { parseEnrichment } from '@/lib/enrichment';
 import { scoreEnrichment, type QualityTier } from '@/lib/enrichment-quality';
 import { sameExpression, stripDecoration } from '@/lib/normalize';
 import { minePairs } from '@/lib/mining';

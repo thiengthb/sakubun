@@ -26,7 +26,6 @@ import {
   renderWeakReport,
 } from '@/lib/mcp/render';
 import {
-  getUserId,
   guard,
   ID,
   LEVEL,
@@ -56,8 +55,7 @@ export function registerManageTools(server: McpServer) {
       'minimum-evidence floors, the notes are your own past guesses. If they DO ask what you know ' +
       'about them, say it plainly and name the evidence so they can argue with it.',
     {},
-    guard('get_stats', async (_args, extra: unknown) => {
-      const userId = getUserId(extra);
+    guard('get_stats', async (_args, _extra: unknown) => {
       const now = new Date();
       // The health aggregate and the learner model both ride the call Claude ALREADY makes at session
       // open (the PUSH law), so neither needs a tool anyone has to remember. Composed HERE and not
@@ -96,7 +94,7 @@ export function registerManageTools(server: McpServer) {
       'lapses ≥ 8 come with a suspend suggestion). Includes a "Điểm yếu" markdown block — render it ' +
       'VERBATIM. Use when the user asks "where am I weak" or before a focused practice session.',
     {},
-    guard('get_weak_report', async (_args, extra: unknown) => {
+    guard('get_weak_report', async (_args, _extra: unknown) => {
       const report = await getWeakReport();
       return okWithMarkdown(renderWeakReport(report), report);
     }),
@@ -129,7 +127,7 @@ export function registerManageTools(server: McpServer) {
         ),
       limit: z.number().int().min(1).max(200).optional(),
     },
-    guard('list_grammar', async (filter, extra: unknown) =>
+    guard('list_grammar', async (filter, _extra: unknown) =>
       ok(await listItems({ ...filter, kind: 'GRAMMAR' })),
     ),
   );
@@ -146,7 +144,7 @@ export function registerManageTools(server: McpServer) {
       suspended: z.boolean().optional(),
       limit: z.number().int().min(1).max(200).optional(),
     },
-    guard('list_vocab', async (filter, extra: unknown) =>
+    guard('list_vocab', async (filter, _extra: unknown) =>
       ok(await listItems({ ...filter, kind: 'VOCAB' })),
     ),
   );
@@ -179,7 +177,7 @@ export function registerManageTools(server: McpServer) {
         .min(1)
         .max(20),
     },
-    guard('enrich_items', async ({ items }, extra: unknown) =>
+    guard('enrich_items', async ({ items }, _extra: unknown) =>
       ok(
         await saveEnrichments(
           items.map((i) => ({ itemId: i.itemId, enrichmentJson: JSON.stringify(i.enrichment) })),
@@ -198,7 +196,7 @@ export function registerManageTools(server: McpServer) {
       'is doing / what to clean up, or ONCE at the start of a session — not every turn. Render the ' +
       'markdown block VERBATIM, then relay the numbered offers and WAIT for a yes.',
     {},
-    guard('get_library_health', async (_args, extra: unknown) => {
+    guard('get_library_health', async (_args, _extra: unknown) => {
       const result = await getLibraryHealth();
       return okWithNotes(renderLibraryHealth(result), result, [
         renderConsentGuard(result.suggestions),
@@ -242,7 +240,7 @@ export function registerManageTools(server: McpServer) {
     // No `.max()` on the add arrays on purpose: the merge enforces the schema caps and REPORTS the
     // overflow, which Claude can act on — a Zod rejection would arrive as a bare `too_big` (the same
     // reasoning as the stage_sentence runtime guard, plan step 0.4).
-    guard('patch_enrichment', async (args, extra: unknown) => {
+    guard('patch_enrichment', async (args, _extra: unknown) => {
       const result = await patchEnrichment(args);
       if (result.patched) return ok(result);
       switch (result.reason) {
@@ -329,7 +327,7 @@ export function registerManageTools(server: McpServer) {
     },
     guard(
       'update_grammar',
-      async ({ itemId, expression, reading, meaningVi, notes, level }, extra: unknown) =>
+      async ({ itemId, expression, reading, meaningVi, notes, level }, _extra: unknown) =>
         runContentUpdate(itemId, {
           expression,
           reading,
@@ -361,7 +359,7 @@ export function registerManageTools(server: McpServer) {
       'update_vocab',
       async (
         { itemId, expression, reading, sinoVietnamese, meaningVi, notes, level },
-        extra: unknown,
+        _extra: unknown,
       ) =>
         runContentUpdate(itemId, {
           expression,
@@ -379,7 +377,7 @@ export function registerManageTools(server: McpServer) {
     'Suspend (suspended=true) or resume (false) a single item — a suspended item does not appear in ' +
       'practice but its history is kept intact. Get itemId from get_due_items/list_grammar/list_vocab.',
     { itemId: z.string().min(1), suspended: z.boolean() },
-    guard('set_item_suspended', async ({ itemId, suspended }, extra: unknown) =>
+    guard('set_item_suspended', async ({ itemId, suspended }, _extra: unknown) =>
       ok(await setItemSuspended(itemId, suspended)),
     ),
   );
@@ -393,7 +391,7 @@ export function registerManageTools(server: McpServer) {
       'Reversible, does NOT delete data (history is kept). Returns { affected, levels }. Suggested ' +
       'when the user says "thôi ôn N5", "tập trung N3", "học nhanh lên trình độ".',
     { suspended: z.boolean() },
-    guard('set_below_target_suspended', async ({ suspended }, extra: unknown) =>
+    guard('set_below_target_suspended', async ({ suspended }, _extra: unknown) =>
       ok(await setBelowTargetSuspended(suspended)),
     ),
   );

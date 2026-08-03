@@ -10,11 +10,13 @@
 ## Project
 
 <!-- 2–3 câu. Sản phẩm làm gì, cho ai. Không mô tả cây thư mục — agent tự thấy. -->
-sakubun là app luyện dịch Nhật–Việt theo ngữ pháp, **nhiều người dùng, deploy thật**
-(better-auth + tenancy fail-closed). Người học luyện bằng cách nói chuyện với Claude
-Desktop qua MCP; **app giữ dữ liệu, FSRS, hạn mức ngày và cài đặt**, còn Claude soạn câu
-và chấm. Web dùng để xem lại, quản lý tài nguyên/nhóm và điều khiển.
+sakubun là app luyện dịch Nhật–Việt theo ngữ pháp, **MỘT người dùng, deploy thật, sau
+/login**. Người học luyện bằng cách nói chuyện với Claude Desktop qua MCP; **app giữ dữ
+liệu, FSRS, hạn mức ngày và cài đặt**, còn Claude soạn câu và chấm. Web gồm 5 trang:
+Phân tích · Tài nguyên · Lịch sử · Cài đặt · Hướng dẫn.
 
+Bản **nhiều người dùng + cộng đồng** (nhóm, thư viện chung, feed, thông báo, admin) nằm ở
+nhánh `feat/multiuser-community` — lấy lại từ đó, đừng dựng lại từ đầu.
 Cấu hình harness: `harness.config.json` — mọi lệnh, ngưỡng, vùng nóng khai ở đó.
 
 ## Lệnh
@@ -41,11 +43,16 @@ Cấu hình harness: `harness.config.json` — mọi lệnh, ngưỡng, vùng n�
   khi làm việc thật.
 -->
 
-- **Tenancy là fail-closed, không phải quy ước.** `lib/db.ts` bọc Prisma bằng guard: mọi
-  query lên model trong `TENANT_MODELS` (Item, SrsState, ReviewLog, Sentence, Settings,
-  Group, GroupMember, LearnerAbility, LearnerNote) **phải** có `userId` khác null trong
-  `where`/`create`, nếu không guard ném lỗi. Quên scope không ra dữ liệu người khác — nó
-  ném. Đừng "sửa" bằng cách đi vòng guard; thêm `userId` vào query.
+- **KHÔNG còn tenancy, ranh giới là ĐĂNG NHẬP.** Dữ liệu học (Item, SrsState, ReviewLog,
+  Sentence, Settings, LearnerAbility, LearnerNote, CalibrationProposal) **không có cột
+  `userId`**, và guard fail-closed trong `lib/db.ts` đã bị bỏ cùng với nó. Cái chặn người
+  lạ giờ là: `getSessionUserId()` ở mỗi page/server action, `withMcpAuth({required:true})`
+  ở route MCP, và **đăng ký đóng sau tài khoản đầu tiên** (`assertRegistrationOpen` trong
+  `lib/auth.ts`, chạy ở hook `user.create` nên cả Google OAuth cũng không lách được).
+  `userId` chỉ còn ở tầng auth: Session · Account · Verification · McpKey.
+- **Test cô lập bằng `resetData()`, không bằng user mới.** Unique của Item là
+  `[kind, expression]`, nên hai test seed cùng một mẫu sẽ đụng khoá nếu chưa dọn bảng.
+  Streak có cache module-level: gọi `invalidateStreak()` khi xoá ReviewLog thẳng vào DB.
 - **Ngôn ngữ là hợp đồng, không phải style.** Code/comment/commit: tiếng Anh. Mọi chuỗi
   người học đọc trên UI: **tiếng Việt**. Text gửi cho Claude qua MCP: tiếng Anh, trừ block
   render sẵn để Claude echo nguyên văn (`verbatim: true`) thì tiếng Việt.
@@ -58,18 +65,16 @@ Cấu hình harness: `harness.config.json` — mọi lệnh, ngưỡng, vùng n�
 - **Prisma 7 ở đây dùng driver adapter** (`@prisma/adapter-better-sqlite3`), client sinh ra
   `lib/generated/prisma`, CLI đọc `prisma.config.ts` — `schema.prisma` **không** có `url`.
   Đây không phải setup Prisma cổ điển; đọc docs Prisma 7 trước khi sửa tầng DB.
-- Mọi chuỗi tiếng Nhật người học đọc **phải** đi qua `<SpokenLine>`
-  (`components/shared/spoken-line.tsx`) — furigana + nút phát + karaoke.
-- **Web không sinh câu và không chấm.** Repo không gọi API Anthropic ở đâu cả; MCP chạy một
-  chiều — Claude gọi app. Chỗ nào cần Claude làm việc thì đưa người học câu để dán sang
-  Claude Desktop (nút copy).
+- Mọi chuỗi tiếng Nhật người học đọc **phải** đi qua `<SpokenLine>` — furigana + phát + karaoke.
+- **Web không sinh câu và không chấm.** Repo không gọi API Anthropic ở đâu cả; MCP một chiều
+  — Claude gọi app. Cần Claude làm gì thì đưa người học câu để dán sang Claude Desktop.
 - Google sign-in chỉ bật khi có **cả hai** `GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_SECRET`;
   thiếu một cái thì provider bị bỏ hẳn để app không boot OAuth nửa vời.
-- **`npm test` không xanh được cho agent nếu chưa có consent của người.** 14 file DB-backed
-  trong `lib/*.test.ts` gọi `prisma db push` lên một DB **tạm, rỗng** (`mkdtempSync`);
-  Prisma 7 phát hiện agent và chặn. Hệ quả: **stop-gate luôn đỏ ở bước `test`** dù code đúng.
-  Agent phải HỎI người, rồi chạy với `PRISMA_USER_CONSENT_FOR_DANGEROUS_AI_ACTION=<câu đồng ý>`.
-  **Đừng tự đặt biến đó thành mặc định** — xem đề xuất trong `.claude/learnings/2026-W32-thien.md`.
+- **`npm test` cần consent của người.** 10 file trong `lib/*.test.ts` gọi `prisma db push`
+  lên DB **tạm, rỗng** (`mkdtempSync`); Prisma 7 phát hiện agent và chặn, nên **stop-gate
+  luôn đỏ ở bước `test`** dù code đúng. Agent phải HỎI, rồi chạy với
+  `PRISMA_USER_CONSENT_FOR_DANGEROUS_AI_ACTION=<câu đồng ý>`. **Đừng đặt nó thành mặc
+  định** — xem `.claude/learnings/2026-W32-thien.md`.
 
 ## Làm việc trong repo dùng chung (bắt buộc)
 

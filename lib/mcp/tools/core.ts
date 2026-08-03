@@ -7,7 +7,7 @@ import {
   QUIZ_PROTOCOL,
   TEACH_BACK_PROTOCOL,
 } from '@/lib/mcp/prompts';
-import { getUserId, guard, ok, type McpServer } from '@/lib/mcp/tool-kit';
+import { guard, ok, type McpServer } from '@/lib/mcp/tool-kit';
 
 /** The switchable practice loops. Hoisted so the handler's `mode` type is derived, not restated. */
 const PROTOCOL_BY_MODE = {
@@ -83,7 +83,7 @@ export function registerCoreTools(server: McpServer) {
       'your voice mode), speechRate (default playback speed 0.5–2 for those buttons — app only). These ' +
       'settings are SHARED by translation practice and quiz practice alike.',
     {},
-    guard('get_settings', async (_args, extra: unknown) => ok(await getSettings())),
+    guard('get_settings', async (_args, _extra: unknown) => ok(await getSettings())),
   );
 
   server.tool(
@@ -104,7 +104,7 @@ export function registerCoreTools(server: McpServer) {
         .optional()
         .describe('Deprecated nested alias — prefer sending the fields flat.'),
     },
-    guard('update_settings', async (args, extra: unknown) => {
+    guard('update_settings', async (args, _extra: unknown) => {
       const { patch, ...flat } = args;
       // Absent optional keys can arrive as an explicit `undefined`, which would blank a real setting
       // when saveSettings spreads the patch over the stored object — drop them.

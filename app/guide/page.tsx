@@ -90,7 +90,7 @@ export default async function GuidePage() {
   // A guest gets `null` and the tutorial renders exactly as it always did, so /guide stays fully
   // readable without an account.
   const user = await getOptionalSessionUser();
-  const progress = user ? await getStartProgress(user.id) : null;
+  const progress = user ? await getStartProgress() : null;
 
   return (
     <GuideTabs>

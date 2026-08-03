@@ -13,11 +13,7 @@ import { z } from 'zod';
 import { checkLibrary } from '@/lib/lookup';
 import { renderConsentGuard, renderLibraryCheck } from '@/lib/mcp/render';
 import {
-  getUserId,
   guard,
-  ID,
-  mcpError,
-  ok,
   okWithNotes,
   type McpServer,
 } from '@/lib/mcp/tool-kit';
@@ -91,7 +87,7 @@ export function registerLookupTools(server: McpServer) {
             'pending exercise is not buried. Do NOT re-stage or grade early — the sentenceId stays valid.',
         ),
     },
-    guard('check_library', async (args, extra: unknown) => {
+    guard('check_library', async (args, _extra: unknown) => {
       const check = await checkLibrary(args);
       // The consent guard rides AFTER the block: eval Scenario I showed the prohibition alone is
       // not enough when its trigger is an ABSENT `auto` field (see renderConsentGuard).

@@ -22,7 +22,6 @@ import {
   DIRECTION,
   ERROR_TAG,
   EXERCISE_TYPE,
-  getUserId,
   guard,
   ID,
   LEVEL,
@@ -106,7 +105,7 @@ export function registerPracticeTools(server: McpServer) {
     },
     guard(
       'get_due_items',
-      async ({ maxItems, focusLevels, focusPatterns, focusWeak, groupId }, extra: unknown) => {
+      async ({ maxItems, focusLevels, focusPatterns, focusWeak, groupId }, _extra: unknown) => {
         const focus =
           focusLevels?.length || focusPatterns?.length || focusWeak || groupId
             ? {
@@ -116,7 +115,6 @@ export function registerPracticeTools(server: McpServer) {
                 groupId,
               }
             : undefined;
-        const userId = getUserId(extra);
         const now = new Date();
         // The learner-model digest used to be computed and rendered HERE, once per sentence. Eval
         // Scenario G (2026-07-28) showed it changed no composed sentence across two confusion pairs,
@@ -224,7 +222,7 @@ export function registerPracticeTools(server: McpServer) {
             'history shows furigana on hover. Leave empty when the answer is Vietnamese.',
         ),
     },
-    guard('stage_sentence', async (args, extra: unknown) => {
+    guard('stage_sentence', async (args, _extra: unknown) => {
       // An item-less staged row can never be graded (submit_review has nothing to rate), so the turn
       // is silently lost. Reject BEFORE writing, with the exact recovery call.
       if (!args.items?.length) {
@@ -256,7 +254,6 @@ export function registerPracticeTools(server: McpServer) {
             'to display.',
         );
       }
-      const userId = getUserId(extra);
       const { sentenceId, quiz } = await stageSentence(args);
       // Classified AFTER the write: the row is the record of what the learner was exposed to, and it
       // must survive even if this lookup throws. The note is an extra, never a precondition.
@@ -391,7 +388,7 @@ export function registerPracticeTools(server: McpServer) {
             'happened to it.',
         ),
     },
-    guard('submit_review', async (args, extra: unknown) => {
+    guard('submit_review', async (args, _extra: unknown) => {
       const sentenceId = args.sentenceId?.trim();
       // Missing id = this sentence was never staged. Instead of a dead-end, hand back the exact
       // recovery call so the model self-heals in the same turn and the review still gets recorded.

@@ -19,7 +19,7 @@ import {
   VOCAB_KIND,
 } from '@/lib/practice';
 import { JLPT_LEVELS, settingsPatchSchema, type Settings } from '@/lib/settings-schema';
-import { getOptionalSessionUser, getSessionUserId } from '@/lib/current-user';
+import { getSessionUserId } from '@/lib/current-user';
 import { type ActionResult, cleanIds, err, ok, parseInput } from '@/lib/action-result';
 
 // Re-exported so existing importers (`@/app/actions`) and client components keep one import site.

@@ -641,51 +641,6 @@ describe('renderLibraryCheck', () => {
     expect(md).toContain('NGOÀI phạm vi đang học (N3)');
   });
 
-  it('lists a shared copy the learner does not own, with who shared it', async () => {
-    const { renderLibraryCheck } = await import('@/lib/mcp/render');
-    const md = renderLibraryCheck({
-      ...baseCheck,
-      shared: [
-        {
-          sourceItemId: 'p1',
-          kind: 'GRAMMAR',
-          expression: '〜てしかたがない',
-          reading: null,
-          meaningVi: 'không chịu được',
-          level: 'N3',
-          ownerName: 'Người Chia Sẻ',
-          tier: 'ok' as const,
-          qualityScore: 80,
-          isMine: false,
-        },
-      ],
-    });
-    expect(md).toContain('thư viện chung');
-    expect(md).toContain('Người Chia Sẻ');
-  });
-
-  it("does not offer to fork the learner's OWN published item", async () => {
-    const { renderLibraryCheck } = await import('@/lib/mcp/render');
-    const md = renderLibraryCheck({
-      ...baseCheck,
-      shared: [
-        {
-          sourceItemId: 'p1',
-          kind: 'GRAMMAR',
-          expression: '〜ばかりに',
-          reading: null,
-          meaningVi: 'chỉ vì',
-          level: 'N3',
-          ownerName: 'Tôi',
-          tier: 'ok' as const,
-          qualityScore: 80,
-          isMine: true,
-        },
-      ],
-    });
-    expect(md).not.toContain('thư viện chung');
-  });
-
   it('numbers the offers and reports the overflow instead of dropping it silently', async () => {
     const { renderLibraryCheck } = await import('@/lib/mcp/render');
     const md = renderLibraryCheck({

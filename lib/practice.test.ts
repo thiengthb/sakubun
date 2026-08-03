@@ -27,25 +27,36 @@ type Db = typeof import('@/lib/db');
 let P: Practice;
 let prisma: Db['prisma'];
 
-let seq = 0;
-async function freshUser(): Promise<string> {
-  const id = `u${seq++}`;
-  await prisma.user.create({ data: { id, name: id, email: `${id}@example.test` } });
-  return id;
+/**
+ * Per-case isolation. Each test used to take a `freshUser()` and lean on the tenancy filter to keep its
+ * rows apart; with one learner and no tenant column, isolation has to come from an empty DB instead.
+ * Children before parents (SQLite FK).
+ */
+async function resetData(): Promise<void> {
+  await prisma.reviewLog.deleteMany({});
+  await prisma.sentence.deleteMany({});
+  await prisma.srsState.deleteMany({});
+  await prisma.item.deleteMany({});
+  await prisma.calibrationProposal.deleteMany({});
+  await prisma.learnerNote.deleteMany({});
+  await prisma.learnerAbility.deleteMany({});
+  await prisma.settings.deleteMany({});
+  // The streak cache is a module-level value keyed by nothing, so clearing the tables underneath it
+  // would otherwise leave the previous case's streak visible for up to STREAK_TTL_MS.
+  P.invalidateStreak();
 }
 
 /** Add one grammar item for `user` and return its itemId (addItems returns counts, not ids). */
-async function addOneItem(user: string, expression: string, meaningVi = 'nghĩa'): Promise<string> {
-  await P.addItems(user, [{ expression, meaningVi }]);
-  const row = (await P.listItems(user)).find((i) => i.expression === expression);
+async function addOneItem(expression: string, meaningVi = 'nghĩa'): Promise<string> {
+  await P.addItems([{ expression, meaningVi }]);
+  const row = (await P.listItems()).find((i) => i.expression === expression);
   if (!row) throw new Error(`seed failed: ${expression}`);
   return row.itemId;
 }
 
 /** Stage a sentence targeting `itemId`, then grade it with `rating` (default Good). */
-async function studyOnce(user: string, itemId: string, rating: RatingValue = 3, now = new Date()) {
+async function studyOnce(itemId: string, rating: RatingValue = 3, now = new Date()) {
   const { sentenceId } = await P.stageSentence(
-    user,
     {
       direction: 'JA_VI',
       sourceText: '文',
@@ -55,7 +66,6 @@ async function studyOnce(user: string, itemId: string, rating: RatingValue = 3, 
     now,
   );
   return P.submitReview(
-    user,
     { sentenceId, userAnswer: 'trả lời', ratings: [{ itemId, rating, role: 'TARGET' }] },
     now,
   );
@@ -68,7 +78,7 @@ beforeAll(async () => {
 
 describe('submitReview — the FSRS write path', () => {
   it('writes exactly one ReviewLog and one advanced SrsState for the graded item', async () => {
-    const u = await freshUser();
+    await resetData();
     const itemId = await addOneItem('FSRS_pattern');
 
     const result = await studyOnce(itemId, 3);
@@ -90,7 +100,7 @@ describe('submitReview — the FSRS write path', () => {
 
 describe('getStats / getStreak — the two aggregate paths must agree', () => {
   it('aggregates a known dataset and both streak computations match', async () => {
-    const u = await freshUser();
+    await resetData();
     const itemId = await addOneItem('STATS_pattern');
     const now = new Date();
     await studyOnce(itemId, 3, now);
@@ -111,7 +121,7 @@ describe('getStats / getStreak — the two aggregate paths must agree', () => {
   });
 
   it('a user with no reviews has a zero streak and an empty 7-day activity row', async () => {
-    const u = await freshUser();
+    await resetData();
     const stats = await P.getStats();
     expect(stats.streak.current).toBe(0);
     expect(stats.reviewsLast7Days).toBe(0);
@@ -121,7 +131,7 @@ describe('getStats / getStreak — the two aggregate paths must agree', () => {
 
 describe('saveEnrichments', () => {
   it('updates existing items and reports missing ones', async () => {
-    const u = await freshUser();
+    await resetData();
     const itemId = await addOneItem('ENRICH_pattern');
 
     const res = await P.saveEnrichments([
@@ -139,12 +149,11 @@ describe('saveEnrichments', () => {
 
 describe('a long aside cannot lose the pending sentence (plan 2026-07-26-agentic-tutor-loop step 2.5)', () => {
   it('a staged sentence auto-parked after the 1h window still grades with the SAME sentenceId', async () => {
-    const u = await freshUser();
+    await resetData();
     const itemId = await addOneItem('ASIDE_pending');
     const staged = new Date(Date.now() - 2 * 60 * 60 * 1000); // the aside ran long
 
     const { sentenceId } = await P.stageSentence(
-      u,
       {
         direction: 'JA_VI',
         sourceText: '文',
@@ -189,14 +198,14 @@ describe('patchEnrichment — a merge that cannot destroy what is already there'
     contrasts: [{ with: '〜せいで', note: 'Hối tiếc mạnh hơn.' }],
   });
 
-  async function seedCarded(user: string, expression: string, card = V1_CARD): Promise<string> {
-    const itemId = await addOneItem(user, expression);
-    await P.saveEnrichments(user, [{ itemId, enrichmentJson: card }]);
+  async function seedCarded(expression: string, card = V1_CARD): Promise<string> {
+    const itemId = await addOneItem(expression);
+    await P.saveEnrichments([{ itemId, enrichmentJson: card }]);
     return itemId;
   }
 
   it('appends one contrast and keeps every other field — the operation enrich_items destroys', async () => {
-    const u = await freshUser();
+    await resetData();
     const itemId = await seedCarded('PATCH_keeps');
 
     const res = await P.patchEnrichment({
@@ -219,7 +228,7 @@ describe('patchEnrichment — a merge that cannot destroy what is already there'
   });
 
   it('refuses on an item with no readable card instead of inventing one', async () => {
-    const u = await freshUser();
+    await resetData();
     const bare = await addOneItem('PATCH_nocard');
     expect(await P.patchEnrichment({ itemId: bare, add: { pitfalls: ['x'] } })).toEqual({
       patched: false,
@@ -233,21 +242,8 @@ describe('patchEnrichment — a merge that cannot destroy what is already there'
     });
   });
 
-  it("is scoped to the caller — another user's item is simply not found", async () => {
-    const owner = await freshUser();
-    const stranger = await freshUser();
-    const itemId = await seedCarded('PATCH_tenant');
-
-    expect(await P.patchEnrichment(stranger, { itemId, add: { pitfalls: ['x'] } })).toEqual({
-      patched: false,
-      reason: 'not-found',
-    });
-    const row = await prisma.item.findFirst({ where: { id: itemId } });
-    expect(row!.enrichment).toBe(V1_CARD); // untouched
-  });
-
   it('reports a no-op rather than a success when everything sent is already on the card', async () => {
-    const u = await freshUser();
+    await resetData();
     const itemId = await seedCarded('PATCH_noop', V1_CARD.replace('"v":1', '"v":2'));
     const res = await P.patchEnrichment({
       itemId,
@@ -257,7 +253,7 @@ describe('patchEnrichment — a merge that cannot destroy what is already there'
   });
 
   it('two concurrent patches never silently lose one of the two writes', async () => {
-    const u = await freshUser();
+    await resetData();
     const itemId = await seedCarded('PATCH_race');
 
     const [a, b] = await Promise.all([
@@ -280,7 +276,7 @@ describe('patchEnrichment — a merge that cannot destroy what is already there'
   });
 
   it('merges from the CURRENT card, never a stale copy read earlier', async () => {
-    const u = await freshUser();
+    await resetData();
     const itemId = await seedCarded('PATCH_conflict');
 
     // Simulate a second session finishing its own write between our read and our write by mutating the
@@ -303,47 +299,11 @@ describe('patchEnrichment — a merge that cannot destroy what is already there'
     expect(row!.enrichment).toContain('Ghi chú của phiên khác.');
   });
 
-  it('takes the missing parts from a PUBLIC copy without touching my own usage', async () => {
-    const me = await freshUser();
-    const other = await freshUser();
-
-    const thin = JSON.stringify({
-      v: 2,
-      structure: [],
-      usage: 'Cách dùng CỦA TÔI, ngắn nhưng là của tôi.',
-      collocations: [],
-      example: { ja: 'わたしの例。', vi: 'Ví dụ của tôi.' },
-      examples: [],
-      pitfalls: [],
-      contrasts: [],
-    });
-    const mine = await seedCarded(me, 'PATCH_shared', thin);
-    const theirs = await seedCarded('PATCH_shared', V1_CARD);
-    await (await import('@/lib/library')).publishItem(theirs);
-
-    const res = await P.patchEnrichment(me, { itemId: mine, fromSharedItemId: theirs });
-    expect(res.patched).toBe(true);
-
-    const row = await prisma.item.findFirst({ where: { id: mine } });
-    const card = JSON.parse(row!.enrichment!) as {
-      usage: string;
-      example: { ja: string };
-      pitfalls: string[];
-      contrasts: { with: string }[];
-      examples: { ja: string }[];
-    };
-    expect(card.usage).toBe('Cách dùng CỦA TÔI, ngắn nhưng là của tôi.'); // never taken from them
-    expect(card.example.ja).toBe('わたしの例。');
-    expect(card.pitfalls).toEqual(['Không dùng cho kết quả tốt.']);
-    expect(card.contrasts.map((c) => c.with)).toEqual(['〜せいで']);
-    // Their canonical example arrives as an extra, so my own stays canonical.
-    expect(card.examples.map((e) => e.ja)).toContain('一言言ったばかりに。');
-  });
 });
 
 describe('errorDetail — the confusion pair behind the tag (additive, no backfill)', () => {
   it('persists the pair, and a review WITHOUT one still writes exactly as before', async () => {
-    const u = await freshUser();
+    await resetData();
     const itemId = await addOneItem('DETAIL_dokoroka');
 
     const withPair = await P.stageSentence({
@@ -391,7 +351,7 @@ describe('errorDetail — the confusion pair behind the tag (additive, no backfi
   });
 
   it('listConfusionRows returns only rows that carry a pair, with the item expression attached', async () => {
-    const u = await freshUser();
+    await resetData();
     const itemId = await addOneItem('DETAIL_rows');
     const { sentenceId } = await P.stageSentence({
       direction: 'VI_JA',
@@ -423,7 +383,7 @@ describe('errorDetail — the confusion pair behind the tag (additive, no backfi
   });
 
   it('getWeakReport is unaffected — the flat tag still drives it', async () => {
-    const u = await freshUser();
+    await resetData();
     const itemId = await addOneItem('DETAIL_weak');
     const { sentenceId } = await P.stageSentence({
       direction: 'VI_JA',
@@ -451,7 +411,7 @@ describe('errorDetail — the confusion pair behind the tag (additive, no backfi
 
 describe('addItems — dedup', () => {
   it('skips a duplicate expression on re-add (idempotent), keeping one row', async () => {
-    const u = await freshUser();
+    await resetData();
     const first = await P.addItems([{ expression: 'DUP', meaningVi: 'a' }]);
     expect(first.created).toBe(1);
 
@@ -466,25 +426,25 @@ describe('addItems — dedup', () => {
 
 describe('calibration rides submitReview without touching FSRS', () => {
   it('seeds the ability row from the learner OWN settings, not a global default', async () => {
-    const u = await freshUser();
+    await resetData();
     await P.saveSettings({ grammarLevels: ['N2'] });
     const itemId = await addOneItem('CAL_seed');
 
     await studyOnce(itemId, 3);
 
-    const ability = await prisma.learnerAbility.findUnique({ where: {} });
-    const other = await freshUser();
+    const ability = await prisma.learnerAbility.findFirst();
+    await resetData();
     await P.saveSettings({ grammarLevels: ['N5'] });
     const otherItem = await addOneItem('CAL_seed_low');
     await studyOnce(otherItem, 3);
-    const otherAbility = await prisma.learnerAbility.findUnique({ where: {} });
+    const otherAbility = await prisma.learnerAbility.findFirst();
 
     // The N2 learner starts rated higher than the N5 learner — the settings page IS the prior.
     expect(ability!.abilityReceptive).toBeGreaterThan(otherAbility!.abilityReceptive);
   });
 
   it('a graded turn moves ability + item challenge, and counts observations', async () => {
-    const u = await freshUser();
+    await resetData();
     const itemId = await addOneItem('CAL_move');
 
     const before = await prisma.item.findFirst({ where: { id: itemId } });
@@ -494,7 +454,7 @@ describe('calibration rides submitReview without touching FSRS', () => {
     await studyOnce(itemId, 4); // an easy win
 
     const after = await prisma.item.findFirst({ where: { id: itemId } });
-    const ability = await prisma.learnerAbility.findUnique({ where: {} });
+    const ability = await prisma.learnerAbility.findFirst();
     expect(after!.challenge).not.toBeNull();
     expect(after!.challengeObservations).toBe(1);
     // A JA_VI translation is RECEPTIVE evidence only — production must stay untouched.
@@ -506,15 +466,15 @@ describe('calibration rides submitReview without touching FSRS', () => {
   it('FSRS values are IDENTICAL with calibration in the path (invariant 1)', async () => {
     // The guarantee that matters: calibration writes its own columns and nothing else. Two learners,
     // same rating sequence — their SrsState must match to the last float.
-    const a = await freshUser();
-    const b = await freshUser();
-    const itemA = await addOneItem(a, 'CAL_fsrs');
-    const itemB = await addOneItem(b, 'CAL_fsrs');
+    await resetData();
+    await resetData();
+    const itemA = await addOneItem('CAL_fsrs');
+    const itemB = await addOneItem('CAL_fsrs');
     const at = new Date('2026-07-26T09:00:00Z');
 
     for (const rating of [3, 4, 2] as RatingValue[]) {
-      await studyOnce(a, itemA, rating, at);
-      await studyOnce(b, itemB, rating, at);
+      await studyOnce(itemA, rating, at);
+      await studyOnce(itemB, rating, at);
     }
 
     const srsA = await prisma.srsState.findFirst({ where: { itemId: itemA } });
@@ -529,14 +489,14 @@ describe('calibration rides submitReview without touching FSRS', () => {
   });
 
   it('shadow mode proposes NOTHING on a thin history (no confident guess from 3 turns)', async () => {
-    const u = await freshUser();
+    await resetData();
     const itemId = await addOneItem('CAL_thin');
     const result = await studyOnce(itemId, 1); // a miss, but only one observation
     expect(result.calibration).toBe(null);
   });
 
   it('shadow mode proposes a change once there IS evidence, and applies nothing', async () => {
-    const u = await freshUser();
+    await resetData();
     const itemId = await addOneItem('CAL_evidence');
     const settingsBefore = await P.getSettings();
 
@@ -565,7 +525,7 @@ describe('listItems quality filter — the sweep needs a target list', () => {
   });
 
   it('separates missing / broken / thin / ok, and needs-work spans the first three', async () => {
-    const u = await freshUser();
+    await resetData();
     const bare = await addOneItem('Q_missing');
     const broken = await addOneItem('Q_broken');
     const thin = await addOneItem('Q_thin');
@@ -589,7 +549,7 @@ describe('listItems quality filter — the sweep needs a target list', () => {
   });
 
   it('applies the limit AFTER scoring, so it never filters just one page', async () => {
-    const u = await freshUser();
+    await resetData();
     // 3 carded items first, then 2 without — with limit applied BEFORE scoring, asking for the two
     // uncarded ones with limit 2 would return nothing.
     for (const name of ['P_a', 'P_b', 'P_c']) {
@@ -607,7 +567,7 @@ describe('listItems quality filter — the sweep needs a target list', () => {
 describe('getLibraryHealth — the whole-kho aggregate', () => {
   it('counts card quality, below-target items and the weak cluster from real rows', async () => {
     const { getLibraryHealth } = await import('@/lib/library-health');
-    const u = await freshUser();
+    await resetData();
     await P.saveSettings({ grammarLevels: ['N3'] });
 
     // addItems defaults to N5, so the studied-level item must say N3 explicitly.
@@ -636,18 +596,17 @@ describe('getLibraryHealth — the whole-kho aggregate', () => {
 describe('TEACH_BACK reuses the practice pipeline exactly', () => {
   /** Stage + grade one explanation, the way TEACH_BACK_PROTOCOL says to. */
   async function teachBackOnce(
-    user: string,
     itemId: string,
     o: { rating?: RatingValue; explanation?: string } = {},
   ) {
-    const { sentenceId } = await P.stageSentence(user, {
+    const { sentenceId } = await P.stageSentence({
       direction: 'JA_VI',
       exerciseType: P.TEACH_BACK_EXERCISE,
       sourceText: '〜ばかりに',
       suggested: 'Gắn sau động từ thể từ điển; chỉ vì một chuyện nhỏ mà ra kết quả xấu.',
       items: [{ itemId, role: 'TARGET' }],
     });
-    return P.submitReview(user, {
+    return P.submitReview({
       sentenceId,
       userAnswer:
         o.explanation ??
@@ -658,7 +617,7 @@ describe('TEACH_BACK reuses the practice pipeline exactly', () => {
   }
 
   it('writes exactly one ReviewLog and advances the SrsState, like any other turn', async () => {
-    const u = await freshUser();
+    await resetData();
     const itemId = await addOneItem('TB_pattern');
 
     const result = await teachBackOnce(itemId);
@@ -676,12 +635,12 @@ describe('TEACH_BACK reuses the practice pipeline exactly', () => {
   });
 
   it('counts as RECEPTIVE evidence — no Japanese was produced, so productive must not move', async () => {
-    const u = await freshUser();
+    await resetData();
     const itemId = await addOneItem('TB_axis');
 
     await teachBackOnce(itemId);
 
-    const after = await prisma.learnerAbility.findUnique({ where: {} });
+    const after = await prisma.learnerAbility.findFirst();
     expect(after!.receptiveObservations).toBe(1);
     expect(after!.productiveObservations).toBe(0);
     expect(after!.registerObservations).toBe(0);
@@ -690,7 +649,7 @@ describe('TEACH_BACK reuses the practice pipeline exactly', () => {
   });
 
   it('offers the explanation to a card-less pattern, and stays silent once a card exists', async () => {
-    const u = await freshUser();
+    await resetData();
     const itemId = await addOneItem('TB_harvest');
 
     const harvested = await teachBackOnce(itemId);
@@ -710,7 +669,7 @@ describe('TEACH_BACK reuses the practice pipeline exactly', () => {
   });
 
   it('never harvests a poor explanation — a wrong card is worse than no card', async () => {
-    const u = await freshUser();
+    await resetData();
     const itemId = await addOneItem('TB_poor');
     const result = await teachBackOnce(itemId, {
       rating: 1,
@@ -721,7 +680,7 @@ describe('TEACH_BACK reuses the practice pipeline exactly', () => {
   });
 
   it('a TRANSLATION turn never produces a harvest, however well it was graded', async () => {
-    const u = await freshUser();
+    await resetData();
     const itemId = await addOneItem('TB_not_teachback');
     // Same rating, same card-less item — only the exerciseType differs.
     expect((await studyOnce(itemId, 4)).teachBack).toBeNull();

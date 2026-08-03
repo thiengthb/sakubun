@@ -44,7 +44,7 @@ export type StartProgress = Record<StartProgressKey, boolean>;
  *                     at least once (from the web form or Claude's `update_settings`).
  *   firstReview     — an append-only ReviewLog row exists (a graded turn happened).
  */
-export async function getStartProgress(userId: string): Promise<StartProgress> {
+export async function getStartProgress(): Promise<StartProgress> {
   const [mcpKeys, usedKeys, items, enriched, settings, reviews] = await Promise.all([
     prisma.mcpKey.count({}),
     prisma.mcpKey.count({ where: { lastUsedAt: { not: null } } }),

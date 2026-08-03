@@ -24,20 +24,20 @@ type GuideProgress = typeof import('@/lib/guide-progress');
 let prisma: Db['prisma'];
 let GP: GuideProgress;
 
-const FRESH = 'user-fresh';
-const BUSY = 'user-busy';
+// One learner now: the two-user fixtures collapsed into a single account, and each case states its
+// own starting state by resetting the data tables (see resetData).
+const USER = 'user-1';
 
 beforeAll(async () => {
   ({ prisma } = await import('@/lib/db'));
   GP = await import('@/lib/guide-progress');
 
-  await prisma.user.create({ data: { id: FRESH, name: FRESH, email: 'fresh@example.test' } });
-  await prisma.user.create({ data: { id: BUSY, name: BUSY, email: 'busy@example.test' } });
+  await prisma.user.create({ data: { id: USER, name: USER, email: 'user@example.test' } });
 });
 
 describe('getStartProgress', () => {
   it('a brand-new account has only "signedIn" done', async () => {
-    const p = await GP.getStartProgress(FRESH);
+    const p = await GP.getStartProgress();
     expect(p).toEqual({
       signedIn: true,
       mcpKey: false,
@@ -53,23 +53,23 @@ describe('getStartProgress', () => {
   it('a created-but-never-used token counts as step 2, NOT step 3', async () => {
     // The distinction the plan's open question was about: having a token != Claude Desktop connected.
     await prisma.mcpKey.create({
-      data: { name: 'laptop', tokenHash: 'hash-unused' },
+      data: { userId: USER, name: 'laptop', tokenHash: 'hash-unused' },
     });
-    const p = await GP.getStartProgress(BUSY);
+    const p = await GP.getStartProgress();
     expect(p.mcpKey).toBe(true);
     expect(p.claudeConnected).toBe(false);
   });
 
   it('flips claudeConnected once a token has actually been used', async () => {
     await prisma.mcpKey.updateMany({ where: {}, data: { lastUsedAt: new Date() } });
-    expect((await GP.getStartProgress(BUSY)).claudeConnected).toBe(true);
+    expect((await GP.getStartProgress()).claudeConnected).toBe(true);
   });
 
   it('separates "has items" from "has an enrichment card"', async () => {
     const plain = await prisma.item.create({
       data: { kind: 'GRAMMAR', expression: '〜ばかりに', meaningVi: 'chỉ vì' },
     });
-    let p = await GP.getStartProgress(BUSY);
+    let p = await GP.getStartProgress();
     expect(p.items).toBe(true);
     expect(p.enrichment).toBe(false);
 
@@ -77,22 +77,22 @@ describe('getStartProgress', () => {
       where: { id: plain.id },
       data: { enrichment: '{"usage":"…"}', enrichedAt: new Date() },
     });
-    p = await GP.getStartProgress(BUSY);
+    p = await GP.getStartProgress();
     expect(p.enrichment).toBe(true);
   });
 
   it('settingsSaved follows the Settings row, which only saving creates', async () => {
     const P = await import('@/lib/practice');
     // Reading settings must NOT create a row — otherwise every account would look "configured".
-    await P.getSettings(BUSY);
-    expect((await GP.getStartProgress(BUSY)).settingsSaved).toBe(false);
+    await P.getSettings();
+    expect((await GP.getStartProgress()).settingsSaved).toBe(false);
 
-    await P.saveSettings(BUSY, { grammarLevels: ['N3'] });
-    expect((await GP.getStartProgress(BUSY)).settingsSaved).toBe(true);
+    await P.saveSettings({ grammarLevels: ['N3'] });
+    expect((await GP.getStartProgress()).settingsSaved).toBe(true);
   });
 
   it('firstReview follows the append-only review log', async () => {
-    expect((await GP.getStartProgress(BUSY)).firstReview).toBe(false);
+    expect((await GP.getStartProgress()).firstReview).toBe(false);
     await prisma.reviewLog.create({
       data: {
         rating: 3,
@@ -102,13 +102,9 @@ describe('getStartProgress', () => {
         difficulty: 5,
       },
     });
-    const p = await GP.getStartProgress(BUSY);
+    const p = await GP.getStartProgress();
     expect(p.firstReview).toBe(true);
     expect(GP.countDone(p)).toBe(GP.START_PROGRESS_KEYS.length);
   });
 
-  it('stays per-user: the busy account never leaks into the fresh one', async () => {
-    const p = await GP.getStartProgress(FRESH);
-    expect(GP.countDone(p)).toBe(1);
-  });
 });

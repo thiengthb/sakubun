@@ -31,11 +31,20 @@ let prisma: Db['prisma'];
 
 const NOW = new Date('2026-07-28T09:00:00Z');
 
-let seq = 0;
-async function freshUser(): Promise<string> {
-  const id = `cp${seq++}`;
-  await prisma.user.create({ data: { id, name: id, email: `${id}@example.test` } });
-  return id;
+/**
+ * Per-case isolation. Each test used to take a `freshUser()` and lean on the tenancy filter to keep its
+ * rows apart; with one learner and no tenant column, isolation has to come from an empty DB instead.
+ * Children before parents (SQLite FK).
+ */
+async function resetData(): Promise<void> {
+  await prisma.reviewLog.deleteMany({});
+  await prisma.sentence.deleteMany({});
+  await prisma.srsState.deleteMany({});
+  await prisma.item.deleteMany({});
+  await prisma.calibrationProposal.deleteMany({});
+  await prisma.learnerNote.deleteMany({});
+  await prisma.learnerAbility.deleteMany({});
+  await prisma.settings.deleteMany({});
 }
 
 const shadow = {
@@ -57,9 +66,9 @@ beforeAll(async () => {
 
 describe('the proposal survives the turn', () => {
   it('records what was proposed, on which axis, with the numbers it stood on', async () => {
-    const user = await freshUser();
-    await P.recordCalibrationProposal(user, shadow, 'sen-1', NOW);
-    const [row] = await P.listCalibrationProposals(user);
+    await resetData();
+    await P.recordCalibrationProposal(shadow, 'sen-1', NOW);
+    const [row] = await P.listCalibrationProposals();
     expect(row.target).toBe('difficulty');
     expect(row.direction).toBe('up');
     expect(row.axis).toBe('receptive');
@@ -72,40 +81,38 @@ describe('the proposal survives the turn', () => {
   it('keeps the from/to values readable for BOTH shapes of setting', async () => {
     // `difficulty` is a number and `sentenceSize` a word. One stringified pair reads the same for
     // both; two nullable typed pairs would have to be kept in sync forever.
-    const user = await freshUser();
-    await P.recordCalibrationProposal(user, shadow, null, NOW);
+    await resetData();
+    await P.recordCalibrationProposal(shadow, null, NOW);
     await P.recordCalibrationProposal(
-      user,
       { ...shadow, target: 'sentenceSize', from: 'short', to: 'medium' },
       null,
       new Date(NOW.getTime() + 1000),
     );
-    const rows = await P.listCalibrationProposals(user);
+    const rows = await P.listCalibrationProposals();
     expect(rows.map((r) => `${r.fromValue}->${r.toValue}`)).toEqual(['short->medium', '2->3']);
   });
 
   it('stores the learner-facing sentence VERBATIM', async () => {
     // The review judges what the learner actually heard. A reconstruction would be reviewing the
     // reviewer's memory of the wording, which is the thing this table exists to replace.
-    const user = await freshUser();
-    await P.recordCalibrationProposal(user, shadow, null, NOW);
-    const [row] = await P.listCalibrationProposals(user);
+    await resetData();
+    await P.recordCalibrationProposal(shadow, null, NOW);
+    const [row] = await P.listCalibrationProposals();
     expect(row.reason).toBe(shadow.reason);
   });
 
   it('is APPEND-ONLY — a second proposal never overwrites the first', async () => {
     // This is the whole difference from `LearnerAbility`, which overwrites in place and is exactly
     // why nothing was reviewable before.
-    const user = await freshUser();
+    await resetData();
     for (let i = 0; i < 3; i++) {
       await P.recordCalibrationProposal(
-        user,
         { ...shadow, measured: 0.5 + i / 10 },
         null,
         new Date(NOW.getTime() + i * 1000),
       );
     }
-    const rows = await P.listCalibrationProposals(user);
+    const rows = await P.listCalibrationProposals();
     expect(rows).toHaveLength(3);
     // Newest first, so a week's review starts at the most recent.
     expect(rows.map((r) => r.measured)).toEqual([0.7, 0.6, 0.5]);
@@ -114,31 +121,13 @@ describe('the proposal survives the turn', () => {
 
 describe('the verdict is recorded, not remembered', () => {
   it('starts unreviewed and takes a verdict', async () => {
-    const user = await freshUser();
-    await P.recordCalibrationProposal(user, shadow, null, NOW);
-    const [before] = await P.listCalibrationProposals(user);
+    await resetData();
+    await P.recordCalibrationProposal(shadow, null, NOW);
+    const [before] = await P.listCalibrationProposals();
     expect(before.verdict).toBeNull();
-    expect(await P.setProposalVerdict(user, before.id, 'disagree')).toBe(true);
-    const [after] = await P.listCalibrationProposals(user);
+    expect(await P.setProposalVerdict(before.id, 'disagree')).toBe(true);
+    const [after] = await P.listCalibrationProposals();
     expect(after.verdict).toBe('disagree');
   });
 
-  it('refuses to let one member grade another member controller', async () => {
-    const owner = await freshUser();
-    const stranger = await freshUser();
-    await P.recordCalibrationProposal(shadow, null, NOW);
-    const [row] = await P.listCalibrationProposals();
-    expect(await P.setProposalVerdict(stranger, row.id, 'agree')).toBe(false);
-    const [unchanged] = await P.listCalibrationProposals();
-    expect(unchanged.verdict).toBeNull();
-  });
-});
-
-describe('tenancy', () => {
-  it('never returns another member proposals', async () => {
-    const a = await freshUser();
-    const b = await freshUser();
-    await P.recordCalibrationProposal(a, shadow, null, NOW);
-    expect(await P.listCalibrationProposals(b)).toHaveLength(0);
-  });
 });

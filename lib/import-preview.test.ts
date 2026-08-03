@@ -27,16 +27,25 @@ type Db = typeof import('@/lib/db');
 let P: Preview;
 let prisma: Db['prisma'];
 
-let seq = 0;
-async function freshUser(): Promise<string> {
-  const id = `i${seq++}`;
-  await prisma.user.create({ data: { id, name: `user ${id}`, email: `${id}@example.test` } });
-  return id;
+/**
+ * Per-case isolation. Each test used to take a `freshUser()` and lean on the tenancy filter to keep its
+ * rows apart; with one learner and no tenant column, isolation has to come from an empty DB instead.
+ * Children before parents (SQLite FK).
+ */
+async function resetData(): Promise<void> {
+  await prisma.reviewLog.deleteMany({});
+  await prisma.sentence.deleteMany({});
+  await prisma.srsState.deleteMany({});
+  await prisma.item.deleteMany({});
+  await prisma.calibrationProposal.deleteMany({});
+  await prisma.learnerNote.deleteMany({});
+  await prisma.learnerAbility.deleteMany({});
+  await prisma.settings.deleteMany({});
 }
 
 async function addItem(
   expression: string,
-  over: { kind?: string; suspended?: boolean; visibility?: string; enrichment?: string } = {},
+  over: { kind?: string; suspended?: boolean; enrichment?: string } = {},
 ): Promise<string> {
   const row = await prisma.item.create({
     data: {
@@ -45,7 +54,6 @@ async function addItem(
       meaningVi: 'nghĩa',
       level: 'N3',
       suspended: over.suspended ?? false,
-      visibility: over.visibility ?? 'private',
       enrichment: over.enrichment ?? null,
     },
   });
@@ -56,12 +64,6 @@ const candidate = (expression: string, kind: 'GRAMMAR' | 'VOCAB' = 'GRAMMAR') =>
   kind,
   expression,
   meaningVi: 'nghĩa từ tài liệu',
-});
-
-/** A card that passes `enrichmentSchema` — enough for `hasEnrichment` to be true. */
-const CARD = JSON.stringify({
-  usage: 'Diễn tả việc buộc phải làm, không còn cách nào khác.',
-  example: { ja: '行かざるを得ない。', vi: 'Buộc phải đi.' },
 });
 
 beforeAll(async () => {
@@ -76,9 +78,9 @@ describe('the normaliser is what stands between a paste and a duplicated library
     ['わけにはいかない', 'no attachment mark at all'],
     ['  〜わけにはいかない  ', 'surrounding whitespace'],
   ])('classifies %s (%s) as a duplicate, not new', async (pasted) => {
-    const user = await freshUser();
-    const itemId = await addItem(user, '〜わけにはいかない');
-    const preview = await P.previewImport(user, [candidate(pasted)]);
+    await resetData();
+    const itemId = await addItem('〜わけにはいかない');
+    const preview = await P.previewImport([candidate(pasted)]);
     expect(preview.counts).toEqual({ new: 0, duplicate: 1, ambiguous: 0 });
     expect(preview.duplicate[0].itemId).toBe(itemId);
     // The learner sees BOTH spellings: what they pasted and what is actually stored.
@@ -87,29 +89,29 @@ describe('the normaliser is what stands between a paste and a duplicated library
   });
 
   it('folds HALF-WIDTH katakana onto the stored word (this is what NFKC is actually for)', async () => {
-    const user = await freshUser();
-    const itemId = await addItem(user, 'コーヒー', { kind: 'VOCAB' });
+    await resetData();
+    const itemId = await addItem('コーヒー', { kind: 'VOCAB' });
     // ｺｰﾋｰ is what old systems and some OCR output produce; NFKC maps it to コーヒー.
-    const preview = await P.previewImport(user, [candidate('ｺｰﾋｰ', 'VOCAB')]);
+    const preview = await P.previewImport([candidate('ｺｰﾋｰ', 'VOCAB')]);
     expect(preview.counts).toEqual({ new: 0, duplicate: 1, ambiguous: 0 });
     expect(preview.duplicate[0].itemId).toBe(itemId);
   });
 
   it('does NOT fold katakana onto hiragana — a documented limit, not an oversight', async () => {
-    const user = await freshUser();
-    await addItem(user, 'わけにはいかない');
+    await resetData();
+    await addItem('わけにはいかない');
     // NFKC normalises WIDTH and compatibility forms; it does not change kana script, and folding it
     // ourselves would be wrong for VOCAB (みる / ミル can be different words). A katakana-written
     // pattern therefore reads as NEW. Pinned so a later session does not "fix" the shared normaliser —
     // which the coach, the lookup and the card merge all depend on — for this rare case.
-    const preview = await P.previewImport(user, [candidate('ワケにはいかない')]);
+    const preview = await P.previewImport([candidate('ワケにはいかない')]);
     expect(preview.counts).toEqual({ new: 1, duplicate: 0, ambiguous: 0 });
   });
 
   it('lets a genuinely different pattern through as new', async () => {
-    const user = await freshUser();
-    await addItem(user, '〜わけにはいかない');
-    const preview = await P.previewImport(user, [candidate('〜ざるを得ない')]);
+    await resetData();
+    await addItem('〜わけにはいかない');
+    const preview = await P.previewImport([candidate('〜ざるを得ない')]);
     expect(preview.counts).toEqual({ new: 1, duplicate: 0, ambiguous: 0 });
     expect(preview.new[0].expression).toBe('〜ざるを得ない');
   });
@@ -117,9 +119,9 @@ describe('the normaliser is what stands between a paste and a duplicated library
 
 describe('a SUSPENDED duplicate must not be reported as merely "already there"', () => {
   it('flags it so the offer becomes unsuspend, not add', async () => {
-    const user = await freshUser();
-    const itemId = await addItem(user, '〜ばかりに', { suspended: true });
-    const preview = await P.previewImport(user, [candidate('ばかりに')]);
+    await resetData();
+    const itemId = await addItem('〜ばかりに', { suspended: true });
+    const preview = await P.previewImport([candidate('ばかりに')]);
     expect(preview.duplicate).toHaveLength(1);
     expect(preview.duplicate[0]).toMatchObject({ itemId, suspended: true });
   });
@@ -127,9 +129,9 @@ describe('a SUSPENDED duplicate must not be reported as merely "already there"',
 
 describe('ambiguous means "a decision is needed", and the reason says which', () => {
   it('reports the same expression owned under the OTHER kind', async () => {
-    const user = await freshUser();
-    const itemId = await addItem(user, '遠慮', { kind: 'VOCAB' });
-    const preview = await P.previewImport(user, [candidate('遠慮', 'GRAMMAR')]);
+    await resetData();
+    const itemId = await addItem('遠慮', { kind: 'VOCAB' });
+    const preview = await P.previewImport([candidate('遠慮', 'GRAMMAR')]);
     expect(preview.counts).toEqual({ new: 0, duplicate: 0, ambiguous: 1 });
     expect(preview.ambiguous[0]).toMatchObject({
       reason: 'other-kind',
@@ -139,8 +141,8 @@ describe('ambiguous means "a decision is needed", and the reason says which', ()
   });
 
   it('reports a repeat WITHIN the pasted material instead of silently collapsing it', async () => {
-    const user = await freshUser();
-    const preview = await P.previewImport(user, [
+    await resetData();
+    const preview = await P.previewImport([
       candidate('〜どころか'),
       candidate('「〜どころか」'), // the same pattern, quoted the second time
     ]);
@@ -148,58 +150,14 @@ describe('ambiguous means "a decision is needed", and the reason says which', ()
     expect(preview.ambiguous[0].reason).toBe('repeated');
   });
 
-  it('prefers forking a public copy that already carries a card', async () => {
-    const user = await freshUser();
-    const sharer = await freshUser();
-    const sharedId = await addItem(sharer, '〜てしかたがない', {
-      visibility: 'public',
-      enrichment: CARD,
-    });
-    const preview = await P.previewImport(user, [candidate('てしかたがない')]);
-    expect(preview.counts).toEqual({ new: 0, duplicate: 0, ambiguous: 1 });
-    expect(preview.ambiguous[0]).toMatchObject({
-      reason: 'shared-available',
-      sharedItemId: sharedId,
-      sharedHasCard: true,
-    });
-    expect(preview.ambiguous[0].sharedOwner).toBeTruthy();
-  });
-
-  it('does NOT interrupt for a BARE public copy — it is no better than what was just extracted', async () => {
-    const user = await freshUser();
-    const sharer = await freshUser();
-    await addItem(sharer, '〜つつある', { visibility: 'public' });
-    const preview = await P.previewImport(user, [candidate('つつある')]);
-    expect(preview.counts).toEqual({ new: 1, duplicate: 0, ambiguous: 0 });
-  });
-
-  it('an EXACT match of their own wins over any public copy', async () => {
-    const user = await freshUser();
-    const sharer = await freshUser();
-    await addItem(sharer, '〜ざるを得ない', { visibility: 'public', enrichment: CARD });
-    const mineId = await addItem(user, '〜ざるを得ない');
-    const preview = await P.previewImport(user, [candidate('「〜ざるを得ない」')]);
-    expect(preview.counts).toEqual({ new: 0, duplicate: 1, ambiguous: 0 });
-    expect(preview.duplicate[0].itemId).toBe(mineId);
-  });
-});
-
-describe('tenancy — the dry run only ever sees this learner library', () => {
-  it('another member private item is not a duplicate for me', async () => {
-    const mine = await freshUser();
-    const theirs = await freshUser();
-    await addItem(theirs, '〜んがため');
-    const preview = await P.previewImport(mine, [candidate('〜んがため')]);
-    expect(preview.counts).toEqual({ new: 1, duplicate: 0, ambiguous: 0 });
-  });
 });
 
 describe('it writes nothing — that is the whole contract', () => {
   it('leaves the library byte-identical after a full preview', async () => {
-    const user = await freshUser();
-    await addItem(user, '〜わけにはいかない');
+    await resetData();
+    await addItem('〜わけにはいかない');
     const before = await prisma.item.findMany({ where: {} });
-    await P.previewImport(user, [
+    await P.previewImport([
       candidate('わけにはいかない'),
       candidate('〜ざるを得ない'),
       candidate('遠慮', 'VOCAB'),

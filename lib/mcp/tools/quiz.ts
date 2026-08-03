@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { getQuizBatch, skipSentence } from '@/lib/practice';
-import { getUserId, guard, ID, ok, type McpServer } from '@/lib/mcp/tool-kit';
+import { guard, ID, ok, type McpServer } from '@/lib/mcp/tool-kit';
 
 export function registerQuizTools(server: McpServer) {
   // ---------------- quiz ----------------
@@ -28,7 +28,7 @@ export function registerQuizTools(server: McpServer) {
     {
       count: z.number().int().min(1).max(3).optional(),
     },
-    guard('get_quiz_items', async ({ count }, extra: unknown) =>
+    guard('get_quiz_items', async ({ count }, _extra: unknown) =>
       ok(await getQuizBatch('GRAMMAR', count ?? 1)),
     ),
   );
@@ -41,7 +41,7 @@ export function registerQuizTools(server: McpServer) {
       '"skip" for the current sentence. sentenceId = the id returned by stage_sentence. Returns ' +
       '{ skipped } = how many patterns that sentence carried (informational only; none were graded).',
     { sentenceId: ID },
-    guard('skip_sentence', async ({ sentenceId }, extra: unknown) =>
+    guard('skip_sentence', async ({ sentenceId }, _extra: unknown) =>
       ok(await skipSentence(sentenceId)),
     ),
   );
