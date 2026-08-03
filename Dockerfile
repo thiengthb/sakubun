@@ -33,12 +33,16 @@ RUN --mount=type=cache,target=/app/.next/cache npx prisma generate && npm run bu
 # pruned standalone node_modules.
 FROM node:24-alpine AS prisma-cli
 WORKDIR /cli
-COPY package.json ./
+# Copy as pkg.json, NOT package.json. Với package.json trong cwd, `npm install prisma@X --omit=dev`
+# (a) cài luôn toàn bộ dependencies của app — 404 package thay vì 1 — và (b) BỎ QUA chính prisma, vì
+# nó nằm trong devDependencies và --omit=dev loại dev deps kể cả khi được nêu tên tường minh.
+# Kết quả: image có node_modules to đùng mà KHÔNG có .bin/prisma → container exit 127 ở migrate deploy.
+COPY package.json ./pkg.json
 COPY .npmrc ./
 RUN --mount=type=cache,target=/root/.npm \
+    PRISMA_VERSION="$(node -p "require('./pkg.json').devDependencies.prisma")" && \
     npm_config_fetch_retries=5 npm_config_fetch_retry_maxtimeout=120000 \
-    npm install --no-save --omit=dev \
-    prisma@"$(node -p "require('./package.json').devDependencies.prisma")"
+    npm install --no-save prisma@"$PRISMA_VERSION"
 
 # ---------- Stage 3: runtime ----------
 FROM node:24-alpine
