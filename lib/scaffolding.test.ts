@@ -6,21 +6,10 @@
 // silent failure needs a test that fails loudly, so the classification is asserted against real rows
 // rather than trusted to a description.
 
-import { execSync } from 'node:child_process';
-import { mkdtempSync } from 'node:fs';
-import os from 'node:os';
-import path from 'node:path';
 import { beforeAll, describe, expect, it } from 'vitest';
+import { createTestDb } from '@/lib/test-db';
 
-const projectRoot = path.resolve(import.meta.dirname, '..');
-const dbFile = path.join(mkdtempSync(path.join(os.tmpdir(), 'sakubun-scaffold-')), 'test.db');
-const url = `file:${dbFile.replace(/\\/g, '/')}`;
-process.env.DATABASE_URL = url;
-execSync('npx prisma db push --accept-data-loss', {
-  cwd: projectRoot,
-  env: { ...process.env, DATABASE_URL: url },
-  stdio: 'ignore',
-});
+createTestDb('sakubun-scaffold-');
 
 type Scaffolding = typeof import('@/lib/scaffolding');
 type Db = typeof import('@/lib/db');

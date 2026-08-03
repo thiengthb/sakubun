@@ -5,22 +5,11 @@
 // changes the output fails loudly here. Same throwaway-DB harness as tenancy.test.ts: DATABASE_URL is set
 // BEFORE lib/db is imported, so the guarded singleton binds to the temp DB, not dev.db.
 
-import { execSync } from 'node:child_process';
-import { mkdtempSync } from 'node:fs';
-import os from 'node:os';
-import path from 'node:path';
 import { beforeAll, describe, expect, it } from 'vitest';
+import { createTestDb } from '@/lib/test-db';
 import type { RatingValue } from '@/lib/srs';
 
-const projectRoot = path.resolve(import.meta.dirname, '..');
-const dbFile = path.join(mkdtempSync(path.join(os.tmpdir(), 'sakubun-practice-')), 'test.db');
-const url = `file:${dbFile.replace(/\\/g, '/')}`;
-process.env.DATABASE_URL = url;
-execSync('npx prisma db push --accept-data-loss', {
-  cwd: projectRoot,
-  env: { ...process.env, DATABASE_URL: url },
-  stdio: 'ignore',
-});
+createTestDb('sakubun-practice-');
 
 type Practice = typeof import('@/lib/practice');
 type Db = typeof import('@/lib/db');

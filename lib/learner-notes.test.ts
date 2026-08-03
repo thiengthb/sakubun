@@ -5,21 +5,10 @@
 // self-cleaning (expired notes are invisible). Plus the passenger rule from 5.4 — a bad note must
 // never cost the learner the FSRS write they earned.
 
-import { execSync } from 'node:child_process';
-import { mkdtempSync } from 'node:fs';
-import os from 'node:os';
-import path from 'node:path';
 import { beforeAll, describe, expect, it } from 'vitest';
+import { createTestDb } from '@/lib/test-db';
 
-const projectRoot = path.resolve(import.meta.dirname, '..');
-const dbFile = path.join(mkdtempSync(path.join(os.tmpdir(), 'sakubun-notes-')), 'test.db');
-const url = `file:${dbFile.replace(/\\/g, '/')}`;
-process.env.DATABASE_URL = url;
-execSync('npx prisma db push --accept-data-loss', {
-  cwd: projectRoot,
-  env: { ...process.env, DATABASE_URL: url },
-  stdio: 'ignore',
-});
+createTestDb('sakubun-notes-');
 
 type Notes = typeof import('@/lib/learner-notes');
 type Practice = typeof import('@/lib/practice');

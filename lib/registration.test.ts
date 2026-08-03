@@ -7,24 +7,13 @@
 //   2. the `user.create` before-hook in lib/auth.ts — the ENFORCEMENT every sign-up path funnels
 //      through. Layer 1 alone would leave the Google OAuth callback as an open side door.
 //
-// Same throwaway-DB harness as lib/tenancy.test.ts: DATABASE_URL is set BEFORE lib/db is imported so
-// the Prisma singleton binds to the temp file, never dev.db.
+// Throwaway DB built by applying the committed migrations (lib/test-db.ts): DATABASE_URL is set
+// BEFORE lib/db is imported so the Prisma singleton binds to the temp file, never dev.db.
 
-import { execSync } from 'node:child_process';
-import { mkdtempSync } from 'node:fs';
-import os from 'node:os';
-import path from 'node:path';
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { createTestDb } from '@/lib/test-db';
 
-const projectRoot = path.resolve(import.meta.dirname, '..');
-const dbFile = path.join(mkdtempSync(path.join(os.tmpdir(), 'sakubun-registration-')), 'test.db');
-const url = `file:${dbFile.replace(/\\/g, '/')}`;
-process.env.DATABASE_URL = url;
-execSync('npx prisma db push --accept-data-loss', {
-  cwd: projectRoot,
-  env: { ...process.env, DATABASE_URL: url },
-  stdio: 'ignore',
-});
+createTestDb('sakubun-registration-');
 
 type Registration = typeof import('@/lib/registration');
 type Db = typeof import('@/lib/db');

@@ -3,21 +3,10 @@
 // module is that the flags follow the DATA, so the test has to put real rows in and watch them flip.
 // DATABASE_URL is set BEFORE lib/db is imported so the guarded singleton binds to the temp DB.
 
-import { execSync } from 'node:child_process';
-import { mkdtempSync } from 'node:fs';
-import os from 'node:os';
-import path from 'node:path';
 import { beforeAll, describe, expect, it } from 'vitest';
+import { createTestDb } from '@/lib/test-db';
 
-const projectRoot = path.resolve(import.meta.dirname, '..');
-const dbFile = path.join(mkdtempSync(path.join(os.tmpdir(), 'sakubun-progress-')), 'test.db');
-const url = `file:${dbFile.replace(/\\/g, '/')}`;
-process.env.DATABASE_URL = url;
-execSync('npx prisma db push --accept-data-loss', {
-  cwd: projectRoot,
-  env: { ...process.env, DATABASE_URL: url },
-  stdio: 'ignore',
-});
+createTestDb('sakubun-progress-');
 
 type Db = typeof import('@/lib/db');
 type GuideProgress = typeof import('@/lib/guide-progress');

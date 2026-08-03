@@ -70,11 +70,11 @@ Cấu hình harness: `harness.config.json` — mọi lệnh, ngưỡng, vùng n�
   — Claude gọi app. Cần Claude làm gì thì đưa người học câu để dán sang Claude Desktop.
 - Google sign-in chỉ bật khi có **cả hai** `GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_SECRET`;
   thiếu một cái thì provider bị bỏ hẳn để app không boot OAuth nửa vời.
-- **`npm test` cần consent của người.** 10 file trong `lib/*.test.ts` gọi `prisma db push`
-  lên DB **tạm, rỗng** (`mkdtempSync`); Prisma 7 phát hiện agent và chặn, nên **stop-gate
-  luôn đỏ ở bước `test`** dù code đúng. Agent phải HỎI, rồi chạy với
-  `PRISMA_USER_CONSENT_FOR_DANGEROUS_AI_ACTION=<câu đồng ý>`. **Đừng đặt nó thành mặc
-  định** — xem `.claude/learnings/2026-W32-thien.md`.
+- **Test DB-backed dựng schema bằng `createTestDb()` (`lib/test-db.ts`), KHÔNG bằng
+  `prisma db push`.** Helper áp thẳng các file migration đã commit vào một DB tạm — không
+  subprocess, không cần `PRISMA_USER_CONSENT_FOR_DANGEROUS_AI_ACTION`, nên `npm test` xanh
+  cho cả agent. Phải gọi **trước** khi import `@/lib/db` (Prisma singleton bind DATABASE_URL
+  lúc khởi tạo). Đừng quay lại `db push`: Prisma 7 chặn agent và stop-gate sẽ đỏ vĩnh viễn.
 
 ## Làm việc trong repo dùng chung (bắt buộc)
 

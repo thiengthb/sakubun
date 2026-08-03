@@ -5,21 +5,10 @@
 // path adds in BULK, so a normalisation miss here does not produce one stray row — it produces a
 // library with two of everything the source material happened to quote.
 
-import { execSync } from 'node:child_process';
-import { mkdtempSync } from 'node:fs';
-import os from 'node:os';
-import path from 'node:path';
 import { beforeAll, describe, expect, it } from 'vitest';
+import { createTestDb } from '@/lib/test-db';
 
-const projectRoot = path.resolve(import.meta.dirname, '..');
-const dbFile = path.join(mkdtempSync(path.join(os.tmpdir(), 'sakubun-import-')), 'test.db');
-const url = `file:${dbFile.replace(/\\/g, '/')}`;
-process.env.DATABASE_URL = url;
-execSync('npx prisma db push --accept-data-loss', {
-  cwd: projectRoot,
-  env: { ...process.env, DATABASE_URL: url },
-  stdio: 'ignore',
-});
+createTestDb('sakubun-import-');
 
 type Preview = typeof import('@/lib/import-preview');
 type Db = typeof import('@/lib/db');
