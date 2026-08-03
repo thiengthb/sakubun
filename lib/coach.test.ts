@@ -1,0 +1,664 @@
+import { describe, expect, it } from 'vitest';
+import {
+  CLUSTER_MIN_MISSES,
+  coach,
+  coachLibrary,
+  coachTeachBack,
+  MAX_SUGGESTIONS,
+  MAX_SUGGESTIONS_MID_SESSION,
+  type CoachInput,
+  type ItemFacts,
+  type SharedMatch,
+  SWEEP_MIN_NEEDS_WORK,
+  type LibraryHealthFacts,
+  type SuggestionCode,
+  type TeachBackFacts,
+  TEACH_BACK_MAX_CHARS,
+  TEACH_BACK_MIN_RATING,
+} from '@/lib/coach';
+import { scoreEnrichment } from '@/lib/enrichment-quality';
+import { CURRENT_ENRICHMENT_VERSION } from '@/lib/enrichment';
+import { LEECH_LAPSES } from '@/lib/srs';
+
+const NOW = new Date('2026-07-27T10:00:00Z');
+
+/** A card that meets every dimension at the current version → tier `ok`. */
+const OK_CARD = JSON.stringify({
+  v: CURRENT_ENRICHMENT_VERSION,
+  structure: ['動詞辞書形 + ばかりに'],
+  usage: 'Diễn tả chỉ vì một lý do nhỏ mà dẫn đến kết quả xấu ngoài ý muốn.',
+  collocations: [],
+  example: { ja: 'あ', vi: 'a' },
+  examples: [{ ja: 'い', vi: 'b' }],
+  pitfalls: ['x'],
+  contrasts: [{ with: 'y', note: 'z' }],
+});
+
+function item(patch: Partial<ItemFacts> = {}): ItemFacts {
+  return {
+    itemId: 'i1',
+    kind: 'GRAMMAR',
+    expression: '〜ばかりに',
+    level: 'N3',
+    suspended: false,
+    hasKanji: false,
+    hanviet: null,
+    quality: scoreEnrichment(OK_CARD),
+    contrastTargets: ['y'],
+    srs: { state: 2, due: new Date('2026-08-01T00:00:00Z'), lapses: 0 },
+    ...patch,
+  };
+}
+
+function input(patch: Partial<CoachInput> = {}): CoachInput {
+  return {
+    query: '〜ばかりに',
+    mine: [item()],
+    shared: [],
+    settings: { grammarLevels: ['N3'] },
+    now: NOW,
+    ...patch,
+  };
+}
+
+const codes = (i: CoachInput): SuggestionCode[] => coach(i).suggestions.map((s) => s.code);
+
+/** Parses, but missing three dimensions → tier `thin` (the state `patch_enrichment` repairs). */
+const THIN_CARD = JSON.stringify({
+  v: CURRENT_ENRICHMENT_VERSION,
+  structure: [],
+  usage: 'Ngắn quá.',
+  collocations: [],
+  example: { ja: 'あ', vi: 'a' },
+  examples: [],
+  pitfalls: [],
+  contrasts: [],
+});
+
+function shared(patch: Partial<SharedMatch> = {}): SharedMatch {
+  return {
+    sourceItemId: 'pub1',
+    kind: 'GRAMMAR',
+    expression: '〜ばかりに',
+    level: 'N3',
+    quality: scoreEnrichment(OK_CARD),
+    ...patch,
+  };
+}
+
+describe('coach — the scenarios the flagship depends on', () => {
+  it('not mine and not shared → offer to ADD it', () => {
+    expect(codes(input({ mine: [], shared: [] }))).toContain('ADD_MISSING');
+  });
+
+  it('not mine but SOMEONE PUBLISHED it → offer the fork, not a fresh add', () => {
+    const shared: SharedMatch = {
+      sourceItemId: 'pub1',
+      kind: 'GRAMMAR',
+      expression: '〜てしかたがない',
+      level: 'N2',
+      quality: scoreEnrichment(OK_CARD),
+    };
+    const result = coach(input({ mine: [], shared: [shared] }));
+    expect(result.suggestions.map((s) => s.code)).toContain('FORK_SHARED');
+    expect(result.suggestions.map((s) => s.code)).not.toContain('ADD_MISSING');
+    // Pre-filled args: a yes is ONE call, not an interrogation.
+    expect(result.suggestions[0].tool).toBe('fork_shared_items');
+    expect(result.suggestions[0].args).toEqual({ sourceItemIds: ['pub1'] });
+  });
+
+  it('suspended → the BLOCKER wins over any card-polish offer', () => {
+    const result = coach(
+      input({ mine: [item({ suspended: true, quality: scoreEnrichment(null) })] }),
+    );
+    expect(result.suggestions[0].code).toBe('UNSUSPEND');
+    expect(result.suggestions[0].class).toBe('blocker');
+  });
+
+  it('never studied + level outside the study range → say WHY, and offer to widen', () => {
+    const result = coach(
+      input({
+        mine: [item({ level: 'N1', srs: { state: 0, due: NOW, lapses: 0 } })],
+        settings: { grammarLevels: ['N3'] },
+      }),
+    );
+    const widen = result.suggestions.find((s) => s.code === 'WIDEN_LEVELS');
+    expect(widen).toBeTruthy();
+    expect(widen!.line).toContain('N1');
+    expect(widen!.args).toEqual({ grammarLevels: ['N3', 'N1'] });
+  });
+
+  it('a leech is offered as an isolation drill', () => {
+    const result = coach(
+      input({ mine: [item({ srs: { state: 2, due: NOW, lapses: LEECH_LAPSES } })] }),
+    );
+    const drill = result.suggestions.find((s) => s.code === 'LEECH_DRILL');
+    expect(drill).toBeTruthy();
+    expect(drill!.tool).toBe('get_due_items');
+    expect(drill!.args).toEqual({ focusPatterns: ['〜ばかりに'] });
+  });
+
+  it('never studied and in range → offer to learn it now', () => {
+    expect(codes(input({ mine: [item({ srs: { state: 0, due: NOW, lapses: 0 } })] }))).toContain(
+      'PRACTICE_NEW',
+    );
+  });
+
+  it('a NEVER-STUDIED item is never offered as "due for review"', () => {
+    // Found in the lab: an out-of-range never-studied pattern fell past PRACTICE_NEW, and a fresh SRS
+    // row is already due, so it was offered as 「đang đến hạn ôn」 — review something never seen.
+    const result = coach(
+      input({
+        mine: [item({ level: 'N1', srs: { state: 0, due: NOW, lapses: 0 } })],
+        settings: { grammarLevels: ['N3'] },
+      }),
+    );
+    const emitted = result.suggestions.map((s) => s.code);
+    expect(emitted).not.toContain('PRACTICE_DUE');
+    expect(emitted).toContain('WIDEN_LEVELS');
+  });
+
+  it('due now → offer to practise it', () => {
+    expect(
+      codes(input({ mine: [item({ srs: { state: 2, due: new Date(NOW), lapses: 0 } })] })),
+    ).toContain('PRACTICE_DUE');
+  });
+
+  it('not due, card fine → nothing at all is proposed (silence is a valid answer)', () => {
+    const result = coach(input());
+    expect(result.suggestions).toEqual([]);
+    expect(result.remaining).toBe(0);
+  });
+});
+
+describe('coach — the four card states each get their OWN repair', () => {
+  const withCard = (raw: string | null) =>
+    codes(input({ mine: [item({ quality: scoreEnrichment(raw) })] }));
+
+  it('no card → enrich_items', () => {
+    expect(withCard(null)).toContain('ENRICH_MISSING');
+  });
+
+  it('unparseable card → REWRITE, and it outranks the other card offers', () => {
+    const result = coach(
+      input({ mine: [item({ quality: scoreEnrichment('{"collocations":["x"]}') })] }),
+    );
+    expect(result.suggestions[0].code).toBe('ENRICH_BROKEN');
+    expect(result.suggestions[0].tool).toBe('enrich_items');
+  });
+
+  it('thin card → PATCH the named gaps, never overwrite', () => {
+    const thin = JSON.stringify({ usage: 'Chỉ vì gì đó xảy ra.', example: { ja: 'あ', vi: 'a' } });
+    const result = coach(input({ mine: [item({ quality: scoreEnrichment(thin) })] }));
+    const s = result.suggestions.find((x) => x.code === 'ENRICH_THIN');
+    expect(s).toBeTruthy();
+    expect(s!.tool).toBe('patch_enrichment'); // NOT enrich_items — that would wipe the rest
+    // The line is SPECIFIC, which is the whole point of scoring dimensions.
+    expect(s!.line).toContain('bẫy hay gặp');
+  });
+
+  it('card complete but on an older format → offer the version upgrade', () => {
+    const old = JSON.parse(OK_CARD) as Record<string, unknown>;
+    old.v = 1;
+    const result = coach(
+      input({ mine: [item({ quality: scoreEnrichment(JSON.stringify(old)) })] }),
+    );
+    const s = result.suggestions.find((x) => x.code === 'ENRICH_OUTDATED');
+    expect(s).toBeTruthy();
+    expect(s!.line).toContain('v1');
+  });
+
+  it('a BETTER public copy is offered only while mine still needs work', () => {
+    const better: SharedMatch = {
+      sourceItemId: 'pub1',
+      kind: 'GRAMMAR',
+      expression: '「〜ばかりに」', // quoted differently on purpose — normalization must match it
+      level: 'N3',
+      quality: scoreEnrichment(OK_CARD),
+    };
+    const thin = JSON.stringify({ usage: 'Chỉ vì gì đó xảy ra.', example: { ja: 'あ', vi: 'a' } });
+
+    const needy = coach(
+      input({ mine: [item({ quality: scoreEnrichment(thin) })], shared: [better] }),
+    );
+    expect(needy.suggestions.map((s) => s.code)).toContain('ENRICH_FROM_SHARED');
+
+    // Mine is already fine → do NOT nag about someone else's card.
+    const fine = coach(input({ mine: [item()], shared: [better] }));
+    expect(fine.suggestions.map((s) => s.code)).not.toContain('ENRICH_FROM_SHARED');
+  });
+
+  it('is NOT offered when I have no readable card — a patch would be refused', () => {
+    // Found by driving the MCP lab: the offer said "take the missing parts" for an item with no card
+    // at all, and patch_enrichment can only MERGE. The full-write proposal is the right one there.
+    for (const raw of [null, '{"collocations":["x"]}']) {
+      const result = coach(
+        input({
+          mine: [item({ quality: scoreEnrichment(raw) })],
+          shared: [shared({ quality: scoreEnrichment(OK_CARD) })],
+        }),
+      );
+      const emitted = result.suggestions.map((s) => s.code);
+      expect(emitted).not.toContain('ENRICH_FROM_SHARED');
+      expect(emitted.some((c) => c === 'ENRICH_MISSING' || c === 'ENRICH_BROKEN')).toBe(true);
+    }
+  });
+
+  it('a kanji VOCAB word without âm Hán Việt is offered the fill', () => {
+    const result = coach(
+      input({
+        mine: [item({ kind: 'VOCAB', expression: '遠慮', hasKanji: true, hanviet: null })],
+      }),
+    );
+    expect(result.suggestions.map((s) => s.code)).toContain('VOCAB_SINOVIET');
+  });
+
+  it('a kana VOCAB word is NOT asked for âm Hán Việt', () => {
+    const result = coach(
+      input({ mine: [item({ kind: 'VOCAB', expression: 'ください', hasKanji: false })] }),
+    );
+    expect(result.suggestions.map((s) => s.code)).not.toContain('VOCAB_SINOVIET');
+  });
+});
+
+describe('coach — a mined confusion is evidence the SERVER holds, so it IS a code here', () => {
+  const pair = {
+    used: 'ほかに',
+    required: '〜ばかりに',
+    count: 4,
+    weight: 3.2,
+    evidence: ['s1'],
+    itemIds: ['i1'],
+  };
+
+  it('offers the contrast the learner keeps getting wrong, with the count in the line', () => {
+    const result = coach(input({ minedPairs: [pair] }));
+    const s = result.suggestions.find((x) => x.code === 'MINED_CONTRAST');
+    expect(s).toBeTruthy();
+    expect(s!.tool).toBe('patch_enrichment'); // it MERGES — the card is otherwise fine
+    expect(s!.line).toContain('4 lần');
+    expect(s!.line).toContain('ほかに');
+  });
+
+  it('stays quiet when the card ALREADY draws that distinction', () => {
+    const result = coach(
+      input({ mine: [item({ contrastTargets: ['「ほかに」'] })], minedPairs: [pair] }),
+    );
+    expect(result.suggestions.map((s) => s.code)).not.toContain('MINED_CONTRAST');
+  });
+
+  it('does not fire for a different pattern', () => {
+    const other = { ...pair, required: '〜どころか' };
+    expect(codes(input({ minedPairs: [other] }))).not.toContain('MINED_CONTRAST');
+  });
+
+  it('with no card to patch it is NOT dropped — it rides the write-a-card offer instead', () => {
+    // Found by running it: the most useful moment to know "you keep mixing this up with X" is while
+    // WRITING the card, and that is exactly the case the patch-only guard used to silence.
+    for (const [raw, code] of [
+      [null, 'ENRICH_MISSING'],
+      ['{"collocations":["x"]}', 'ENRICH_BROKEN'],
+    ] as const) {
+      const result = coach(
+        input({
+          mine: [item({ quality: scoreEnrichment(raw), contrastTargets: [] })],
+          minedPairs: [pair],
+        }),
+      );
+      expect(result.suggestions.map((s) => s.code)).not.toContain('MINED_CONTRAST');
+      const write = result.suggestions.find((s) => s.code === code);
+      expect(write, `${code} should carry the evidence`).toBeTruthy();
+      expect(write!.line).toContain('ほかに');
+      expect(write!.line).toContain('4 lần');
+    }
+  });
+});
+
+describe('coach — ranking and caps', () => {
+  it('a blocker always outranks enable, quality and sweep', () => {
+    const result = coach(
+      input({
+        mine: [
+          item({
+            suspended: true,
+            quality: scoreEnrichment(null),
+            srs: { state: 2, due: NOW, lapses: LEECH_LAPSES },
+          }),
+        ],
+      }),
+    );
+    expect(result.suggestions[0].class).toBe('blocker');
+  });
+
+  it('never more than MAX_SUGGESTIONS, and the overflow is COUNTED not dropped silently', () => {
+    const result = coach(
+      input({
+        mine: [
+          item({
+            itemId: 'a',
+            suspended: true,
+            quality: scoreEnrichment(null),
+            srs: { state: 0, due: NOW, lapses: 0 },
+            level: 'N1',
+          }),
+          item({ itemId: 'b', expression: '〜つつある', quality: scoreEnrichment(null) }),
+        ],
+      }),
+    );
+    expect(result.suggestions.length).toBeLessThanOrEqual(MAX_SUGGESTIONS);
+    expect(result.remaining).toBeGreaterThan(0);
+  });
+
+  it('at most ONE per class — two offers are never both "enrich something"', () => {
+    const result = coach(
+      input({
+        mine: [
+          item({ itemId: 'a', quality: scoreEnrichment(null) }),
+          item({ itemId: 'b', expression: '〜つつある', quality: scoreEnrichment(null) }),
+        ],
+      }),
+    );
+    const qualityCount = result.suggestions.filter((s) => s.class === 'quality').length;
+    expect(qualityCount).toBeLessThanOrEqual(1);
+  });
+
+  it('mid-session shows ONE offer — there is a pending exercise to return to', () => {
+    const result = coach(
+      input({
+        midSession: true,
+        mine: [item({ suspended: true, quality: scoreEnrichment(null) })],
+      }),
+    );
+    expect(result.suggestions.length).toBeLessThanOrEqual(MAX_SUGGESTIONS_MID_SESSION);
+  });
+
+  it('a pattern withheld by the daily new cap becomes an actionable blocker', () => {
+    const result = coach(input({ mine: [], shared: [], withheldByNewCap: ['〜かねる'] }));
+    const raise = result.suggestions.find((s) => s.code === 'RAISE_NEW_CAP');
+    expect(raise).toBeTruthy();
+    expect(raise!.class).toBe('blocker');
+    expect(raise!.line).toContain('〜かねる');
+  });
+});
+
+/**
+ * The argument keys each proposal target actually accepts, mirroring the Zod schemas in
+ * `lib/mcp/tools/*`. Kept here rather than introspected because registering the real server needs an
+ * McpServer instance — and the drift this catches is worth the duplication: `ENRICH_THIN` used to
+ * pre-fill `missing`, which `patch_enrichment` does not accept, so a yes would have silently sent a
+ * patch with nothing in it.
+ */
+const TOOL_ARGS: Record<string, readonly string[]> = {
+  add_grammar: ['items'],
+  fork_shared_items: ['sourceItemIds'],
+  get_due_items: ['focusPatterns', 'limit', 'includeVocab', 'exerciseType', 'direction'],
+  set_item_suspended: ['itemId', 'suspended'],
+  update_settings: [
+    'grammarLevels',
+    'vocabCeiling',
+    'dailyNewGrammar',
+    'dailyReviewCap',
+    'maxNewPerSentence',
+  ],
+  enrich_items: ['items'],
+  patch_enrichment: ['itemId', 'add', 'set', 'fromSharedItemId'],
+  update_vocab: ['itemId', 'expression', 'reading', 'hanviet', 'meaningVi', 'notes', 'level'],
+};
+
+describe('coach — every suggestion is a call that would actually work', () => {
+  it('pre-fills only arguments the named tool accepts', () => {
+    const cases: CoachInput[] = [
+      input({ mine: [], shared: [] }),
+      input({ mine: [], shared: [shared()] }),
+      input({ mine: [item({ suspended: true })] }),
+      input({ mine: [item({ level: 'N1', srs: { state: 0, due: NOW, lapses: 0 } })] }),
+      input({ mine: [item({ quality: scoreEnrichment(THIN_CARD) })] }),
+      input({
+        mine: [item({ quality: scoreEnrichment(THIN_CARD) })],
+        shared: [shared({ quality: scoreEnrichment(OK_CARD) })],
+      }),
+      input({ mine: [item({ kind: 'VOCAB', hasKanji: true, hanviet: null })] }),
+      input({ withheldByNewCap: ['〜かねる'] }),
+    ];
+    const seen = new Set<string>();
+    for (const c of cases) {
+      for (const s of coach(c).suggestions) {
+        const allowed = TOOL_ARGS[s.tool];
+        expect(allowed, `no arg contract known for tool ${s.tool}`).toBeDefined();
+        for (const key of Object.keys(s.args)) {
+          expect(allowed, `${s.code} → ${s.tool} { ${key} }`).toContain(key);
+        }
+        seen.add(s.code);
+      }
+    }
+    // The matrix is only meaningful if the cases actually exercised most of it.
+    expect(seen.size).toBeGreaterThanOrEqual(7);
+  });
+});
+
+describe('coach — every suggestion is actionable', () => {
+  it('carries a real tool name, pre-filled args, and a Vietnamese line', () => {
+    const cases: CoachInput[] = [
+      input({ mine: [], shared: [] }),
+      input({ mine: [item({ suspended: true })] }),
+      input({ mine: [item({ quality: scoreEnrichment(null) })] }),
+      input({ mine: [item({ srs: { state: 0, due: NOW, lapses: 0 } })] }),
+      input({ mine: [item({ srs: { state: 2, due: NOW, lapses: LEECH_LAPSES } })] }),
+    ];
+    for (const c of cases) {
+      for (const s of coach(c).suggestions) {
+        expect(s.tool).toMatch(/^[a-z_]+$/); // a real snake_case tool name
+        expect(typeof s.args).toBe('object');
+        expect(s.line.length).toBeGreaterThan(10);
+        expect(s.line).not.toMatch(/[A-Z_]{4,}/); // no code names leaking into learner-facing copy
+      }
+    }
+  });
+});
+
+describe('coachLibrary — the whole-kho sweeps', () => {
+  const healthy: LibraryHealthFacts = {
+    needsWorkAtStudiedLevels: 0,
+    outdatedCards: 0,
+    belowTargetActive: 0,
+    retention: { kind: 'on-target', gapPts: 1 },
+    desiredRetention: 0.9,
+    weakCluster: null,
+  };
+
+  it('a healthy library gets NO offers — silence is the normal answer', () => {
+    expect(coachLibrary(healthy)).toEqual({ suggestions: [], remaining: 0 });
+  });
+
+  it('stays quiet just below each threshold, and speaks at it', () => {
+    expect(
+      coachLibrary({ ...healthy, needsWorkAtStudiedLevels: SWEEP_MIN_NEEDS_WORK - 1 }).suggestions,
+    ).toEqual([]);
+    const at = coachLibrary({ ...healthy, needsWorkAtStudiedLevels: SWEEP_MIN_NEEDS_WORK });
+    expect(at.suggestions[0].code).toBe('SWEEP_ENRICH');
+    // The sweep needs the target LIST before it can write anything.
+    expect(at.suggestions[0].tool).toBe('list_grammar');
+    expect(at.suggestions[0].args).toMatchObject({ quality: 'missing' });
+  });
+
+  it('retention off target proposes the move in the RIGHT direction, both ways', () => {
+    const below = coachLibrary({
+      ...healthy,
+      retention: { kind: 'below', gapPts: -12 },
+      desiredRetention: 0.9,
+    }).suggestions[0];
+    expect(below.code).toBe('TUNE_RETENTION');
+    // Forgetting more than planned → shorter intervals → a HIGHER target.
+    expect(below.args.desiredRetention).toBeGreaterThan(0.9);
+
+    const above = coachLibrary({
+      ...healthy,
+      retention: { kind: 'above', gapPts: 9 },
+      desiredRetention: 0.9,
+    }).suggestions[0];
+    expect(above.args.desiredRetention).toBeLessThan(0.9);
+
+    // Not enough data is NOT a verdict.
+    expect(
+      coachLibrary({ ...healthy, retention: { kind: 'insufficient', gapPts: null } }).suggestions,
+    ).toEqual([]);
+  });
+
+  it('a tag cluster on too FEW items is a hard pattern, not a group worth creating', () => {
+    const oneItem = coachLibrary({
+      ...healthy,
+      weakCluster: { tag: 'particle', label: 'Trợ từ', misses: 20, itemIds: ['a'] },
+    });
+    expect(oneItem.suggestions).toEqual([]);
+
+    const spread = coachLibrary({
+      ...healthy,
+      weakCluster: {
+        tag: 'particle',
+        label: 'Trợ từ',
+        misses: CLUSTER_MIN_MISSES,
+        itemIds: ['a', 'b', 'c'],
+      },
+    }).suggestions[0];
+    expect(spread.code).toBe('SUGGEST_GROUP');
+    expect(spread.args).toMatchObject({ itemIds: ['a', 'b', 'c'] });
+  });
+
+  it('never floods: the same caps as a lookup, and the count of what was dropped', () => {
+    const messy = coachLibrary({
+      needsWorkAtStudiedLevels: 50,
+      outdatedCards: 50,
+      belowTargetActive: 200,
+      retention: { kind: 'below', gapPts: -20 },
+      desiredRetention: 0.9,
+      weakCluster: { tag: 'particle', label: 'Trợ từ', misses: 30, itemIds: ['a', 'b', 'c'] },
+    });
+    expect(messy.suggestions.length).toBeLessThanOrEqual(MAX_SUGGESTIONS);
+    // One per class, so it can never be two sweeps in a row.
+    expect(new Set(messy.suggestions.map((s) => s.class)).size).toBe(messy.suggestions.length);
+    expect(messy.remaining).toBeGreaterThan(0);
+  });
+});
+
+describe('autoCapture — pre-authorisation marks the offer, it never writes', () => {
+  const shared2: SharedMatch = {
+    sourceItemId: 'pub9',
+    kind: 'GRAMMAR',
+    expression: '〜てしかたがない',
+    level: 'N2',
+    quality: scoreEnrichment(OK_CARD),
+  };
+  const off = { fork: false, vocab: false, enrichPatch: false };
+
+  it('defaults ask first — nothing is marked auto', () => {
+    const r = coach(input({ mine: [], shared: [shared2] }));
+    expect(r.suggestions[0].code).toBe('FORK_SHARED');
+    expect(r.suggestions[0].auto).toBeUndefined();
+  });
+
+  it('marks ONLY the class the learner turned on', () => {
+    const r = coach(
+      input({
+        mine: [],
+        shared: [shared2],
+        settings: { grammarLevels: ['N3'], autoCapture: { ...off, fork: true } },
+      }),
+    );
+    expect(r.suggestions[0].auto).toBe(true);
+
+    // A different flag must not leak onto the fork offer.
+    const other = coach(
+      input({
+        mine: [],
+        shared: [shared2],
+        settings: { grammarLevels: ['N3'], autoCapture: { ...off, enrichPatch: true } },
+      }),
+    );
+    expect(other.suggestions[0].auto).toBeUndefined();
+  });
+
+  it('enrichPatch covers the MERGE tool and never the overwrite tool', () => {
+    const settings = { grammarLevels: ['N3'] as const, autoCapture: { ...off, enrichPatch: true } };
+    const thin = coach(
+      input({
+        mine: [item({ quality: scoreEnrichment(THIN_CARD) })],
+        settings: { grammarLevels: [...settings.grammarLevels], autoCapture: settings.autoCapture },
+      }),
+    ).suggestions.find((s) => s.tool === 'patch_enrichment');
+    expect(thin?.auto).toBe(true);
+
+    // enrich_items REWRITES a whole card, so no flag may ever pre-authorise it.
+    const broken = coach(
+      input({
+        mine: [item({ quality: scoreEnrichment('{"collocations":["x"]}') })],
+        settings: {
+          grammarLevels: [...settings.grammarLevels],
+          autoCapture: { fork: true, vocab: true, enrichPatch: true },
+        },
+      }),
+    ).suggestions.find((s) => s.tool === 'enrich_items');
+    expect(broken).toBeTruthy();
+    expect(broken?.auto).toBeUndefined();
+  });
+});
+
+/**
+ * TEACH-BACK HARVEST (plan step 7.3). The bar is deliberately high and the failure mode it guards is
+ * asymmetric: a card that never gets written costs one missed improvement, while a card written from a
+ * half-remembered explanation is WRONG REFERENCE MATERIAL the tutor then teaches from for months.
+ */
+describe('coachTeachBack — the learner own words become card content, or nothing does', () => {
+  const GOOD =
+    'Mẫu này gắn sau động từ thể từ điển, diễn tả chỉ vì một chuyện nhỏ mà dẫn tới hậu quả xấu ' +
+    'ngoài ý muốn — người nói thường mang giọng tiếc nuối.';
+
+  const facts = (over: Partial<TeachBackFacts> = {}): TeachBackFacts => ({
+    itemId: 'i1',
+    expression: '〜ばかりに',
+    rating: 4,
+    explanation: GOOD,
+    hasCard: false,
+    ...over,
+  });
+
+  it('offers a well-graded explanation on a pattern that has no card', () => {
+    const harvest = coachTeachBack(facts());
+    expect(harvest).toMatchObject({ itemId: 'i1', expression: '〜ばかりに', rating: 4 });
+    expect(harvest?.usage).toBe(GOOD);
+  });
+
+  it('never touches a pattern that ALREADY has a card', () => {
+    // enrichmentSchema requires `usage`, so a readable card always has one — harvesting here could
+    // only mean REPLACING a usage line nobody reviewed. That is destructive, so it is not offered.
+    expect(coachTeachBack(facts({ hasCard: true }))).toBeNull();
+  });
+
+  it.each([1, 2])('refuses to harvest an explanation graded %i', (rating) => {
+    expect(coachTeachBack(facts({ rating }))).toBeNull();
+  });
+
+  it('fires at exactly the minimum rating, not one above it', () => {
+    expect(coachTeachBack(facts({ rating: TEACH_BACK_MIN_RATING }))).not.toBeNull();
+  });
+
+  it('rejects an answer too short to be a usage line', () => {
+    expect(coachTeachBack(facts({ explanation: 'Nghĩa là buộc phải làm.' }))).toBeNull();
+  });
+
+  it('rejects an essay — the usage field is one line of nuance, not a transcript', () => {
+    expect(coachTeachBack(facts({ explanation: 'a'.repeat(TEACH_BACK_MAX_CHARS + 1) }))).toBeNull();
+  });
+
+  it('collapses the whitespace a chat answer arrives with, and keeps the wording', () => {
+    const harvest = coachTeachBack(
+      facts({ explanation: `\n  ${GOOD.replace(' — ', '\n\n— ')}  ` }),
+    );
+    expect(harvest?.usage).toBe(GOOD);
+  });
+
+  it('measures length AFTER trimming, so padding cannot buy its way past the floor', () => {
+    expect(
+      coachTeachBack(facts({ explanation: `${' '.repeat(200)}ngắn quá${' '.repeat(200)}` })),
+    ).toBeNull();
+  });
+});

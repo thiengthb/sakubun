@@ -1,0 +1,60 @@
+# ── Claude Code: cá nhân, KHÔNG commit ───────────────────────────────────────
+.claude/settings.local.json
+.claude/worktrees/
+.claude/telemetry/
+.claude/state/
+knowledge/incoming/
+.harness-pack/
+
+# ── nhưng GIỮ những thứ này (harness của team) ───────────────────────────────
+!.claude/settings.json
+!.claude/rules/
+!.claude/skills/
+!.claude/agents/
+!.claude/hooks/
+!.claude/learnings/
+!.claude/whats-new.md
+
+# ── secret ───────────────────────────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+*.pem
+*.p12
+*.keystore
+*.jks
+id_rsa*
+id_ed25519*
+secrets/
+
+# ── build / dependency ───────────────────────────────────────────────────────
+node_modules/
+dist/
+build/
+out/
+.next/
+.turbo/
+.cache/
+coverage/
+*.tsbuildinfo
+__pycache__/
+.venv/
+target/
+
+# ── OS ───────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── sakubun ──────────────────────────────────────────────────────────────────
+# Prisma 7 sinh client vào đây (schema.prisma → output). Artifact của `npm run gen`.
+lib/generated/
+# SQLite dev DB: DỮ LIỆU người học, không phải code. Không bao giờ commit.
+prisma/dev.db
+prisma/dev.db-journal
+prisma/*.db-shm
+prisma/*.db-wal
+# Playwright
+test-results/
+playwright-report/
+.playwright/

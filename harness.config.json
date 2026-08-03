@@ -1,0 +1,141 @@
+{
+  "$comment": "NGUỒN SỰ THẬT của lớp harness. Mọi hook và script trong tooling/ đọc file này. Đây là chỗ DUY NHẤT biết về stack cụ thể — sửa file này khi áp template lên project mới, không sửa hook.",
+  "version": 1,
+
+  "project": {
+    "id": "sakubun",
+    "dri": "@thien",
+    "integrationBranch": "origin/main",
+    "issuePrefixes": ["SKB"],
+    "platforms": ["core", "web", "api", "mcp"]
+  },
+
+  "$comment_commands": "Để chuỗi rỗng \"\" nếu project chưa có lệnh đó — hook sẽ bỏ qua thay vì fail. {file} là placeholder cho đường dẫn file.",
+  "commands": {
+    "install": "npm ci",
+    "gen": "npm run gen",
+    "typecheck": "npm run typecheck",
+    "lint": "npm run lint",
+    "lintFix": "npx eslint --fix {file}",
+    "test": "npm test",
+    "build": "npm run build",
+    "verify": "npm run verify",
+    "e2e": "npx playwright test",
+    "depcruise": ""
+  },
+
+  "$comment_paths": "Glob theo cú pháp minimatch, đường dẫn POSIX (dùng / kể cả trên Windows).",
+  "paths": {
+    "$comment_generated": "Prisma 7 sinh client vào lib/generated/prisma (schema.prisma → output). Sửa tay ở đó bị `npm run gen` xoá ở lần chạy sau.",
+    "generated": [
+      "**/*.gen.*",
+      "**/generated/**",
+      "lib/generated/**",
+      "**/dist/**",
+      "**/build/**",
+      ".next/**"
+    ],
+    "$comment_migrations": "Migration KHÔNG phải file generated — hầu hết stack sinh KHUNG rồi bạn viết THÂN. Cái nguy hiểm là sửa migration ĐÃ MERGE: DB lệch im lặng, hỏng checksum của migration runner. protect-migrations.mjs chỉ chặn đúng ca đó. Để [] nếu project không có migration.",
+    "migrations": [
+      "**/migrations/**",
+      "**/migrate/**",
+      "**/db/migrate/**",
+      "**/alembic/versions/**"
+    ],
+    "$comment_secrets": "KHÔNG dùng `**/.env.*` — nó khớp cả `.env.example`, mà `.env.example` LÀ file phải commit (tooling/init.mjs copy nó thành .env, .gitignore có `!.env.example`). Glob của harness không hỗ trợ phủ định nên phải liệt kê. Thêm hậu tố mới vào đây khi project sinh ra file env mới. Đề xuất cho template: hỗ trợ `!pattern` trong matchAny — xem .claude/learnings/2026-W32-thien.md.",
+    "secrets": [
+      "**/.env",
+      "**/.env.{local,docker,development,production,test,staging}",
+      "**/.env.*.local",
+      "**/*.pem",
+      "**/id_rsa*",
+      "**/id_ed25519*",
+      "**/secrets/**",
+      "**/*.p12",
+      "**/*.keystore",
+      "**/*.jks"
+    ],
+    "harness": [
+      ".claude/settings.json",
+      ".claude/hooks/**",
+      ".claude/rules/**",
+      ".mcp.json",
+      "CLAUDE.md",
+      "AGENTS.md",
+      "harness.config.json",
+      ".github/CODEOWNERS"
+    ],
+    "$comment_hot": "Vùng nóng: file mà nhiều người/agent hay chạm cùng lúc. Đo bằng `node tooling/coactivity.mjs` rồi điền vào đây. Danh sách hiện tại đo bằng fan-in import (repo chưa có git history để coactivity chạy): utils 75 · practice 37 · db 37 · settings-schema 34. Chạy lại coactivity.mjs sau ~2 tuần có commit thật rồi sửa danh sách này.",
+    "hot": [
+      "lib/utils.ts",
+      "lib/practice.ts",
+      "lib/db.ts",
+      "lib/settings-schema.ts",
+      "app/actions.ts",
+      "lib/mcp/**",
+      "prisma/schema.prisma",
+      "package.json"
+    ],
+    "lintable": ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx", "**/*.mjs"],
+    "$comment_publicSurface": "Đổi export ở đây = breaking change, phải liệt kê consumer + label `breaking`.",
+    "publicSurface": [
+      "lib/db.ts",
+      "lib/practice.ts",
+      "lib/settings-schema.ts",
+      "lib/enrichment.ts",
+      "lib/mcp/catalog.ts",
+      "prisma/schema.prisma"
+    ]
+  },
+
+  "$comment_limits": "Con số. Sửa theo năng lực thật của đội, đừng để mặc định.",
+  "limits": {
+    "maxSessionsPerPerson": 2,
+    "maxWorktrees": 4,
+    "prWarnLines": 400,
+    "prFailLines": 800,
+    "prWarnFiles": 15,
+    "reservationTtlHours": 8,
+    "staleLockMinutes": 5,
+    "docStaleDays": 90
+  },
+
+  "$comment_gates": "Gate chạy ở Stop hook. Bỏ tên gate khỏi mảng để tắt. gen-clean = chạy `gen` rồi kiểm git diff rỗng.",
+  "gates": {
+    "stop": ["gen-clean", "typecheck", "test"],
+    "preMerge": ["gen-clean", "typecheck", "lint", "test", "build", "depcruise", "e2e"]
+  },
+
+  "$comment_budget": "LỚP KINH TẾ — lớp DUY NHẤT có thể gây thiệt hại tài chính trực tiếp. Một agent chạy sai 4 giờ lúc 3h sáng phải bị CÁI GÌ ĐÓ dừng lại; nếu câu trả lời là 'tôi thức dậy và thấy' thì bạn chưa có lớp này. Xem docs/ECONOMICS.md.",
+  "budget": {
+    "maxTurnsPerRun": 25,
+    "maxWallClockMinutes": 90,
+    "maxToolCallsPerRun": 200,
+    "monthlyUsdCap": 100,
+    "alertAtPercent": 80,
+    "$comment_modelTiering": "Model mạnh đi vào chỗ QUYẾT ĐỊNH (kế hoạch, luật, chấm điểm); model rẻ đi vào chỗ THỰC THI mechanical. Đây là quyết định harness, không phải quyết định tiết kiệm — một quyết định sai nhân lên 1000 file.",
+    "modelTiering": {
+      "decide": "",
+      "execute": "",
+      "classify": ""
+    }
+  },
+
+  "$comment_mcp": "3–5 server/project. Tool definition ăn context ở MỌI request. Tổng tool phơi ra: mục tiêu ≤ 15–20. CLI luôn rẻ hơn MCP về token — có CLI thì dùng CLI. Chỉ dùng MCP khi cần session bền (browser) hoặc schema có cấu trúc mà CLI không cho.",
+  "mcp": {
+    "maxServers": 5,
+    "maxTools": 20
+  },
+
+  "$comment_evals": "Nối eval với agent. Để rỗng = chỉ chạy assertion tất định, KHÔNG gọi agent (gọi agent tốn tiền, phải là hành động chủ động). Placeholder: {prompt} {maxTurns} {maxMinutes} {id}. Ví dụ: \"claude -p {prompt} --max-turns {maxTurns} --permission-mode auto\"",
+  "evals": {
+    "command": ""
+  },
+
+  "$comment_knowledge": "Cơ chế mang trí tuệ qua project khác VÀ ngược lên template. upstream = đường dẫn tới repo template harness; tooling/knowledge/upstream.mjs đọc nó để gửi bài học + gate + diff cơ chế lên. Rỗng thì phải truyền đường dẫn mỗi lần. Xem knowledge/README.md.",
+  "knowledge": {
+    "packName": "sakubun-harness-pack",
+    "upstream": "/home/thien/projects/harness",
+    "exportScopes": ["universal", "stack"]
+  }
+}

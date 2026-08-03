@@ -1,0 +1,40 @@
+# CODEOWNERS — hàng phòng ngự chính chống conflict harness (loại 3)
+#
+# Handle thật, không placeholder — GitHub bỏ qua im lặng handle không tồn tại.
+# Không có file này, .claude/ sẽ thành bãi chiến trường và không ai chịu trách nhiệm.
+# Repo hiện một người: @thien vừa là DRI vừa là reviewer.
+
+# ── Harness của team: đổi phải qua DRI ───────────────────────────────────────
+/.claude/settings.json      @thien
+/.claude/hooks/             @thien
+/.mcp.json                  @thien
+/CLAUDE.md                  @thien
+/AGENTS.md                  @thien
+/harness.config.json        @thien
+/tooling/                   @thien
+/.githooks/                 @thien
+/.gitattributes             @thien
+
+# ── Rule, skill, agent: nhẹ hơn, nhưng vẫn phải có người xem ─────────────────
+/.claude/rules/             @thien
+/.claude/skills/            @thien
+/.claude/agents/            @thien
+
+# ── Trí tuệ tích luỹ: DRI gác cổng promote ───────────────────────────────────
+/knowledge/lessons/         @thien
+/knowledge/index.json       @thien
+/evals/                     @thien
+
+# ── Hợp đồng quy trình ───────────────────────────────────────────────────────
+/docs/DOR-DOD.md            @thien
+/docs/adr/                  @thien
+/features/_index.json       @thien
+
+# ── Package: owner theo path ─────────────────────────────────────────────────
+# CHÚ Ý dòng contracts: yêu cầu CẢ HAI team approve.
+# Đây là cách RẺ NHẤT để chống conflict ngữ nghĩa Ở NGUỒN — contract là chỗ mà
+# thay đổi của một bên làm vỡ bên kia.
+# /packages/contracts/       @backend-team @frontend-team
+# /packages/core/            @backend-team
+# /packages/ui/              @frontend-team
+# /apps/mobile/              @mobile-team

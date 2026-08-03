@@ -1,0 +1,6 @@
+-- CreateTable
+CREATE TABLE "StudyPlan" (
+    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT DEFAULT 1,
+    "data" TEXT NOT NULL,
+    "updatedAt" DATETIME NOT NULL
+);

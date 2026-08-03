@@ -1,0 +1,9 @@
+.next/
+lib/generated/
+node_modules/
+package-lock.json
+# Harness layer ships formatted from the template.
+.claude/
+tooling/
+evals/
+harness-migrations/

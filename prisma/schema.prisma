@@ -1,0 +1,584 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// A study item — one vocabulary word or one grammar pattern. Single-user app: no tenant column.
+
+model Item {
+  id            String    @id @default(cuid())
+  kind          String // "GRAMMAR" | "VOCAB" (legacy "WORD" rows were purged 2026-07-07; column KEPT so vocab could revive cheaply — it did, 2026-07-11)
+  expression    String // JA surface form (word) or pattern (e.g. 〜ばかりに)
+  reading       String? // kana reading (words; optional for grammar — dropped for kana-only patterns)
+  hanviet       String? // âm Hán Việt (Sino-Vietnamese reading) — Claude-filled for VOCAB kanji words (2026-07-18)
+  meaningVi     String
+  level         String    @default("N5") // N5 | N4 | N3 | N2 | N1
+  notes         String? // nuance / attach rules / example structure
+  tags          String? // JSON string[] (SQLite has no native lists)
+  source        String    @default("MANUAL") // MAZII | MANUAL | MCP
+  // Why a VOCAB word entered the inbox (null = a plain look-up / grammar item): "misused" (used it
+  // wrong), "unclear" (met it but didn't understand), "unknown" (at-level but never produced). Drives
+  // the /vocab reason badge + filter; Claude sets it via add_vocab's `reason`. GRAMMAR items leave it null.
+  captureReason String?
+  suspended     Boolean   @default(false)
+  // Learner-flagged favourite (the star toggle on the resources tables + item detail page). Purely a
+  // UI/organisation flag — never touches FSRS scheduling. Added 2026-07-21.
+  starred       Boolean   @default(false)
+  // Claude-generated usage card (lib/enrichment.ts schema): usage, collocations, example,
+  // pitfalls, contrasts, register. Feeds sentence generation + mini-lessons.
+  enrichment    String?
+  enrichedAt    DateTime?
+
+  // Public-library sharing (Phase 3, 2026-07-22). "private" (default) | "public". Publishing shares
+  // ONLY the CONTENT of this item (expression/reading/meaning/notes/enrichment) — never its owner's
+  // SrsState/ReviewLog. The library read is a raw-SQL cross-tenant query (lib/library.ts) so the
+  // fail-closed tenancy guard in lib/db.ts stays intact (a Prisma Item query still requires userId).
+  visibility String @default("private")
+
+  createdAt DateTime @default(now())
+
+  // Tenant owner (multi-user, plan 2026-07-21). NULLABLE during the single-user->multi-user
+  // transition (backfilled to the operator). The unique is now per-user ([userId, kind, expression],
+  // 2026-07-22) so two members can each own the same pattern — the Phase 3 fork depends on it.
+  userId  String?
+  user    User?         @relation(fields: [userId], references: [id])
+  srs     SrsState?
+  reviews ReviewLog[]
+  groups  GroupMember[]
+
+  // Elo CHALLENGE (2026-07-26, lib/calibration.ts) — "how likely is a success on this item at a given
+  // ability", discovered from graded outcomes. NOT FSRS difficulty (that is "how fast is this
+  // forgotten", lives on SrsState and stays untouched — invariant 1). Nullable + no backfill: null
+  // means "not measured yet", and calibration seeds it from the item's JLPT level on first use.
+  challenge             Float?
+  challengeObservations Int    @default(0)
+
+  // Fork provenance (Phase 3): a forked copy points back at the source item for attribution ("lấy về
+  // từ X"). SetNull so deleting the source keeps the fork, just loses the link.
+  forkedFromId String?
+  forkedFrom   Item?      @relation("ItemFork", fields: [forkedFromId], references: [id], onDelete: SetNull)
+  forks        Item[]     @relation("ItemFork")
+  likes        ItemLike[]
+
+  @@unique([userId, kind, expression])
+  @@index([userId])
+  @@index([visibility])
+  // Hot paths: getDueBatch/getStats/listItems filter (userId, kind); the public library orders public
+  // items by createdAt DESC (listPublicLibrary).
+  @@index([userId, kind])
+  @@index([visibility, createdAt])
+}
+
+// A public "like" on a PUBLIC library item (Phase 5 social — the /library heart). Like SentenceLike, a
+// non-tenant social object read ACROSS owners by itemId to count popularity; writes are scoped to the
+// acting userId in the lib layer. One like per (item, user); cascade-deleted with the item or the user.
+model ItemLike {
+  id        String   @id @default(cuid())
+  itemId    String
+  item      Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([itemId, userId])
+  @@index([itemId])
+}
+
+// FSRS card state — 1:1 with Item, fields mirror ts-fsrs Card.
+
+model SrsState {
+  id            String    @id @default(cuid())
+  itemId        String    @unique
+  item          Item      @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  due           DateTime  @default(now())
+  stability     Float     @default(0)
+  difficulty    Float     @default(0)
+  scheduledDays Int       @default(0)
+  learningSteps Int       @default(0)
+  reps          Int       @default(0)
+  lapses        Int       @default(0)
+  state         Int       @default(0) // ts-fsrs State: 0 New · 1 Learning · 2 Review · 3 Relearning
+  lastReview    DateTime?
+
+  // Tenant owner, denormalized from Item (kept in sync at create) so the hot due-query filters by
+  // userId directly instead of joining through Item, and the tenancy guard is uniform across tables.
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id])
+
+  // The hottest read (get_due_items, every sentence) filters SrsState by `due`; with multi-user it
+  // filters by (userId, due) — the composite index keeps that scan cheap. Keep the plain due index too.
+  @@index([due])
+  @@index([userId, due])
+  // getDueBatch fires several (userId, state) counts/filters per batch (new vs due buckets).
+  @@index([userId, state])
+}
+
+// Append-only review history (never deleted, even on reset — yakudoku invariant kept).
+
+model ReviewLog {
+  id          String    @id @default(cuid())
+  // Nullable + SetNull (was required + Cascade): deleting an Item PRESERVES its review logs (invariant
+  // #2 — ReviewLog is append-only; the app never deletes a log). A deleted item's logs keep counting
+  // toward streak/activity; item-scoped reports skip null-item rows (see getWeakReport, listSentences).
+  itemId      String?
+  item        Item?     @relation(fields: [itemId], references: [id], onDelete: SetNull)
+  rating      Int // 1 Again · 2 Hard · 3 Good · 4 Easy
+  state       Int // ts-fsrs state at review time (0 = first-ever review)
+  role        String    @default("TARGET") // TARGET | SECONDARY — the item's role in the sentence
+  errorTags   String? // JSON string[] from the fixed taxonomy (lib/error-tags.ts) when rating ≤ 2
+  // JSON Confusion[] ({tag?, used, required}) — the CONFUSION PAIR behind the tag, when the grader can
+  // name one (lib/error-tags.ts). Additive + nullable + NO backfill: every row written before
+  // 2026-07-27 simply has none, and every reader must tolerate null exactly as it already tolerates a
+  // null itemId (invariant #2). A flat tag says "word-choice"; this says WHICH word for WHICH pattern.
+  errorDetail String?
+  due         DateTime // due AFTER this review
+  stability   Float
+  difficulty  Float
+  reviewedAt  DateTime  @default(now())
+  sentenceId  String?
+  sentence    Sentence? @relation(fields: [sentenceId], references: [id], onDelete: SetNull)
+
+  // Tenant owner, denormalized (NOT via itemId — itemId is nullable + SetNull on item delete, but the
+  // append-only log must keep counting toward its owner's streak/activity even after the item is gone).
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id])
+
+  @@index([reviewedAt])
+  @@index([itemId, reviewedAt])
+  @@index([userId, reviewedAt])
+  // getWeakReport / weak-spot queries filter (userId, rating, reviewedAt).
+  @@index([userId, rating, reviewedAt])
+}
+
+// One practiced sentence (audit trail for Claude's generation + grading).
+
+model Sentence {
+  id            String    @id @default(cuid())
+  direction     String // JA_VI | VI_JA
+  context       String? // 2–4-word topic tag (vi) — powers the "don't repeat contexts" novelty guard
+  exerciseType  String    @default("TRANSLATION") // TRANSLATION | CLOZE | DIALOGUE | QUIZ | CONVERSATION (situational production, 2026-07-23)
+  sourceText    String // the sentence shown to the user (source language)
+  // JA source only: the sourceText re-annotated by Claude as 漢字[かな] so the history card can show
+  // per-kanji furigana on hover (lib/furigana.ts). Null when not provided / VI source.
+  sourceRuby    String?
+  userAnswer    String
+  suggested     String? // Claude's model/corrected translation
+  // VI→JA reference answer re-annotated as 漢字[かな] so the history card shows hover-furigana on the
+  // Japanese answer (symmetric to sourceRuby for the JA prompt). Null for JA source / not provided.
+  suggestedRuby String?
+  feedback      String? // Claude's grading note (vi)
+  score         Int? // optional 0–100 overall impression
+  // Batch captured at stage time: JSON [{itemId, role}]. Lets the "viewed-but-not-answered → all
+  // Again" path (skipSentence) know WHICH patterns to mark, since patterns otherwise attach only at
+  // submit_review via ReviewLog. Null for pre-2026-07-11 rows.
+  stagedItems   String?
+  /// DECLARED SCAFFOLDING (2026-07-28): JSON string[] of grammar Claude knowingly used BEYOND the
+  /// scheduled batch. The protocol has always allowed unscheduled lower-level grammar as material,
+  /// "NOT graded and NOT listed" — so a pattern the learner had never met could pass by unexplained
+  /// and the rule "never add grammar HARDER than the level being drilled" had nothing enforcing it.
+  /// Plain strings, not a relation: the whole point is that some of these are NOT library items yet.
+  /// Null for every row staged before this shipped, and for a turn that declared none.
+  extraPatterns String?
+  // PENDING (staged, awaiting answer — the reference is already frozen, visible in history for
+  // audit) | GRADED (submit_review) | SKIPPED (user skipped / auto-skipped → kept, NOT counted by FSRS).
+  status        String    @default("PENDING")
+  // Learner-flagged favourite (the star toggle on a history card) — mark a translation worth revisiting.
+  // Purely a UI/organisation flag; does not affect FSRS or grading. Added 2026-07-21.
+  starred       Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  // Set by submit_review when the user answers. answeredAt − createdAt = time-to-answer, surfaced in
+  // analytics (lib/analytics.ts). Null for PENDING/SKIPPED rows (they never produced an answer).
+  answeredAt    DateTime?
+
+  // Share a practiced attempt to the members' feed (Phase 4). "private" (default) | "shared". Sharing
+  // exposes THIS attempt's content (source/answer/reference/feedback/score) to logged-in members, who
+  // can comment — it never exposes the owner's other data. sharedAt orders the feed. The feed read is
+  // raw SQL (Sentence is tenant-guarded); sharing itself is a guarded updateMany scoped by userId.
+  visibility String    @default("private")
+  sharedAt   DateTime?
+
+  // Tenant owner (multi-user, plan 2026-07-21) — nullable during transition, then NOT NULL.
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id])
+
+  reviews  ReviewLog[]
+  comments Comment[]
+  likes    SentenceLike[]
+
+  @@index([createdAt])
+  @@index([userId, createdAt])
+  @@index([visibility, sharedAt])
+}
+
+// A member's comment on a SHARED sentence (Phase 4). NOT a tenant model (see lib/db.ts TENANT_MODELS):
+// it is a social object read across authors by `sentenceId`, so a userId-scoped guard would break the
+// "show every comment on this shared attempt" read. Access control lives in the lib layer instead
+// (only comments on a shared sentence, or the sentence owner's own, are read; a comment is deletable
+// by its author OR the sentence owner). Cascade-deleted with its sentence.
+model Comment {
+  id         String        @id @default(cuid())
+  sentenceId String
+  sentence   Sentence      @relation(fields: [sentenceId], references: [id], onDelete: Cascade)
+  // The comment author. Denormalized authorName is NOT stored — join `user` for the current name.
+  authorId   String
+  author     User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  body       String
+  createdAt  DateTime      @default(now())
+  votes      CommentVote[]
+
+  @@index([sentenceId, createdAt])
+  @@index([authorId])
+}
+
+// A public "like" on a SHARED sentence (Phase 5 social). Like Comment, this is NOT a tenant model
+// (lib/db.ts TENANT_MODELS) — it is read ACROSS authors by sentenceId to count popularity, so a
+// userId-scoped guard would break the count. Writes are scoped to the acting userId in the lib layer.
+// One like per (sentence, user); cascade-deleted with the sentence or the user.
+model SentenceLike {
+  id         String   @id @default(cuid())
+  sentenceId String
+  sentence   Sentence @relation(fields: [sentenceId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@unique([sentenceId, userId])
+  @@index([sentenceId])
+}
+
+// An up/down vote on a Comment (Phase 5 social). `value` = +1 (up) | -1 (down); net score = sum(value).
+// Not a tenant model — read across authors by commentId. One vote per (comment, user); a repeat vote
+// flips or clears it (lib layer). Cascade-deleted with the comment or the user.
+model CommentVote {
+  id        String   @id @default(cuid())
+  commentId String
+  comment   Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  value     Int
+  createdAt DateTime @default(now())
+
+  @@unique([commentId, userId])
+  @@index([commentId])
+}
+
+// Singleton settings row — JSON blob validated by lib/settings-schema.ts (Zod owns the shape).
+
+// Per-user settings (was a singleton row id=1). During the transition the legacy row stays and is
+// claimed by the operator; each member then has one row keyed by userId. JSON blob validated by
+// lib/settings-schema.ts (Zod owns the shape).
+/// The ASSERTED half of the student model (2026-07-27) — a small prose annex to the derived aggregates
+/// in lib/dossier.ts. Claude writes at most MAX_ASSERTED_NOTES of these per learner, riding
+/// submit_review, and lib/learner-notes.ts owns every read and write.
+///
+/// A free-form model memory is the shape that killed the study plan (built 2026-07-12, deleted
+/// 2026-07-14): unverifiable and monotonically growing. Three columns exist purely to make this one
+/// different — `evidence` (sentenceIds the learner can re-read to CHALLENGE the claim; never empty,
+/// and every id is verified to be theirs before the row is written), `expiresAt` (a note about a
+/// person has a shelf life), and the hard cap enforced on insert (a 6th note EVICTS one).
+model LearnerNote {
+  id String @id @default(cuid())
+
+  /// VIETNAMESE, deliberately breaking the "model-facing text is English" rule: that rule holds
+  /// because model-facing text never reaches the learner, and this text does — the dashboard shows it
+  /// so they can argue with it. A claim about someone they cannot read is not one they can challenge.
+  text String
+
+  /// JSON string[] of Sentence ids, at least one, capped. SQLite has no native lists, and these are
+  /// deliberately NOT a relation: a note must survive its evidence being deleted, degrading into a
+  /// claim whose support can no longer be re-read (which is what makes it expire rather than persist).
+  evidence String
+
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  /// Tenant owner. Cascade: a deleted account leaves no opinions about it behind.
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// The only read: this user's notes that have not expired yet.
+  @@index([userId, expiresAt])
+}
+
+/// The learner's ABILITY estimate — one row per user, updated on every graded rating
+/// (lib/calibration.ts). Separate from Settings on purpose: Settings is a JSON blob the learner edits,
+/// this is machine-maintained numeric state written on the hot review path, and mixing the two would
+/// make a settings save race with a review.
+///
+/// Ability is a VECTOR, not a score: L2 receptive knowledge is consistently larger than productive
+/// knowledge, so one number cannot describe a learner who READS N3 and PRODUCES N4 — which is the
+/// exact complaint that started docs/plans/2026-07-26-adaptive-calibration.md. Each axis carries its
+/// own observation count because that is what drives its Elo learning rate (dynamicK).
+model LearnerAbility {
+  id String @id @default(cuid())
+
+  /// JA→VI comprehension.
+  abilityReceptive       Float @default(1000)
+  receptiveObservations  Int   @default(0)
+  /// VI→JA production (including the scaffolded rungs, discounted by SUPPORT_OFFSET).
+  abilityProductive      Float @default(1000)
+  productiveObservations Int   @default(0)
+  /// Situational appropriateness — only CONVERSATION turns are evidence for it.
+  abilityRegister        Float @default(1000)
+  registerObservations   Int   @default(0)
+
+  updatedAt DateTime @updatedAt
+
+  /// Tenant owner. One row per user (@unique), created lazily on the first graded rating and seeded
+  /// from the learner's own settings (initialAbility) so the controller starts by AGREEING with them.
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+/// SHADOW-PROPOSAL HISTORY (2026-07-28) — an APPEND-ONLY log of what the calibration controller
+/// WOULD have changed, and whether the learner later said it was right.
+///
+/// Why it exists: `docs/plans/2026-07-26-adaptive-calibration.md` gate 1.4 requires "a week of shadow
+/// proposals reviewed with the user" before Phase 3 may auto-apply anything — that gate is what makes
+/// the plan falsifiable. But a proposal was only ever COMPUTED per turn and rendered into the tool
+/// result, and `LearnerAbility` overwrites in place, so after the turn nothing survived. Reviewing a
+/// week meant scrolling a week of chat. A mechanism that leaves no auditable trace cannot be the
+/// evidence for shipping the mechanism.
+model CalibrationProposal {
+  id String @id @default(cuid())
+
+  /// 'difficulty' | 'sentenceSize' | 'rung' — the setting the controller would have moved.
+  target    String
+  /// 'up' | 'down'.
+  direction String
+  /// Stringified on purpose: `sentenceSize` is a word ("medium") and `difficulty` a number. One column
+  /// pair that reads the same for both beats two nullable pairs that must be kept in sync.
+  fromValue String
+  toValue   String
+
+  /// The axis whose evidence triggered it, and the numbers it was standing on at that moment. Stored
+  /// rather than recomputed: `LearnerAbility` moves every turn, so a later read would show what the
+  /// learner is NOW, not what the proposal was actually based on.
+  axis         String
+  measured     Float
+  ability      Float
+  observations Int
+
+  /// The learner-facing Vietnamese sentence the tutor was told to say. Kept verbatim so the review
+  /// judges what the learner actually heard, not a reconstruction of it.
+  reason String
+
+  /// The graded turn that produced it. Deliberately NOT a relation, for the same reason
+  /// `LearnerNote.evidence` is not one: a proposal must survive its evidence being deleted, degrading
+  /// into a claim whose support can no longer be re-read.
+  sentenceId String?
+
+  createdAt DateTime @default(now())
+
+  /// The GATE's answer: null = not yet reviewed | 'agree' | 'disagree'. This is the column that turns
+  /// "we looked at a week of proposals" into a number Phase 3 can be held to, and it is the same
+  /// human-verdict-as-oracle shape the platform uses for the idea queue.
+  verdict String?
+
+  /// Tenant owner. Cascade: a deleted account leaves no predictions about it behind.
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// The only read: this user's proposals, newest first, for the review.
+  @@index([userId, createdAt])
+}
+
+model Settings {
+  id        Int      @id @default(autoincrement())
+  data      String
+  updatedAt DateTime @updatedAt
+
+  // Tenant owner (multi-user, plan 2026-07-21). Nullable + @unique: one settings row per user; the
+  // legacy singleton row (userId NULL) is claimed by the operator during backfill. id is
+  // autoincrement (2026-07-22): a 2nd user's settings row would have collided on the old @default(1).
+  userId String? @unique
+  user   User?   @relation(fields: [userId], references: [id])
+}
+
+model User {
+  id                   String                @id
+  name                 String
+  email                String
+  emailVerified        Boolean               @default(false)
+  image                String?
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  role                 String?
+  banned               Boolean?              @default(false)
+  banReason            String?
+  banExpires           DateTime?
+  sessions             Session[]
+  accounts             Account[]
+  mcpKeys              McpKey[]
+  // Domain data owned by this user (multi-user, plan 2026-07-21).
+  items                Item[]
+  srsStates            SrsState[]
+  reviewLogs           ReviewLog[]
+  sentences            Sentence[]
+  settings             Settings?
+  ability              LearnerAbility?
+  learnerNotes         LearnerNote[]
+  calibrationProposals CalibrationProposal[]
+  groups               Group[]
+  groupMembers         GroupMember[]
+  comments             Comment[]
+  sentenceLikes        SentenceLike[]
+  commentVotes         CommentVote[]
+  itemLikes            ItemLike[]
+  notifications        Notification[]
+
+  @@unique([email])
+  @@map("user")
+}
+
+model Session {
+  id             String   @id
+  expiresAt      DateTime
+  token          String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  ipAddress      String?
+  userAgent      String?
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  impersonatedBy String?
+
+  @@unique([token])
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
+}
+
+// Per-user personal token for the MCP endpoint — Claude Desktop connects AS this user by pasting
+// the token into its mcp-remote header. Stores ONLY a SHA-256 hash of the token (never the token);
+// the MCP route hashes the incoming bearer and looks it up. Deleting a row — or banning the user —
+// revokes access instantly (the centralized kill switch). NOT the better-auth api-key plugin
+// (peer-dep / zod-v4 conflict — see lib/auth.ts); same bearer-token pattern todo/yakudoku use.
+model McpKey {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name       String // user-facing label ("laptop", "desktop")
+  tokenHash  String    @unique // SHA-256 hex of the token
+  lastUsedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([userId])
+  @@map("mcp_key")
+}
+
+// A study group — a named collection of Items (vocab and/or grammar) the learner practices in focus.
+// Many-to-many via GroupMember. `kind` (vocab|grammar|mixed) is an APP-LAYER soft constraint on which
+// Item.kind may join (mixed = both; SQLite/Prisma can't enforce it, lib/groups.ts does). Purely an
+// organization + practice-scoping layer — it NEVER touches FSRS scheduling. Practice scopes to a group
+// via the MCP due-batch `groupId` param; the app filters the resources tables by group. Added
+// 2026-07-21 (plan docs/plans/2026-07-21-study-groups.md).
+model Group {
+  id        String   @id @default(cuid())
+  name      String
+  kind      String   @default("mixed") // "vocab" | "grammar" | "mixed"
+  color     String? // optional accent token name for the UI chip
+  note      String? // optional description (the theme / why these belong together)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Tenant owner (multi-user, plan 2026-07-21) — nullable during the single->multi transition, like Item.
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id])
+
+  members GroupMember[]
+
+  @@index([userId])
+}
+
+// Join row: one Item's membership in one Group (many-to-many). Cascade on both sides — deleting a
+// group or an item just drops the membership row, never the other entity.
+model GroupMember {
+  groupId String
+  group   Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  itemId  String
+  item    Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  addedAt DateTime @default(now())
+
+  // Denormalized tenant owner — always equals group.userId (and item.userId). Carried directly so the
+  // fail-closed tenancy guard (lib/db.ts) covers GroupMember uniformly, exactly like SrsState/ReviewLog,
+  // instead of relying on every caller to join through an owned Group. Nullable to match the pattern.
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id])
+
+  @@id([groupId, itemId])
+  @@index([itemId])
+  @@index([userId])
+}
+
+/// One thing that happened while the learner was not looking — written by the server code that
+/// performed the action, never by the client and never by an MCP tool directly.
+///
+/// A notification is a POINTER, not a copy: it keeps `href` + `entityId` and a short Vietnamese line,
+/// so editing or deleting the subject can never leave a stale duplicate of it here.
+///
+/// `count` exists because coalescing is part of the design, not a later optimisation: an import of 40
+/// items must post ONE row saying 40, or the feature is noise on its first day. `notify()` folds a
+/// same-kind UNREAD row inside a short window instead of inserting.
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Event type — see NOTIFICATION_KINDS in lib/notifications.ts (the display copy lives there too).
+  kind      String
+  /// Vietnamese one-liner the learner reads in the list.
+  title     String
+  /// Optional second line: the detail that makes the event worth reading.
+  body      String?
+  /// Where clicking goes. A graded sentence points at /history?open=<id> so the modal opens.
+  href      String?
+  /// The subject's id, kept separately from `href` so a query can find "the row about this sentence".
+  entityId  String?
+  /// Who caused it, for social events ("Minh đã thích câu của bạn"). Null when the app or Claude did it.
+  actorName String?
+  /// How many same-kind events this row stands for (see the model comment).
+  count     Int       @default(1)
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+  /// Bumped when a later event coalesces into this row, so the list can sort by real recency.
+  updatedAt DateTime  @updatedAt
+
+  @@index([userId, readAt])
+  @@index([userId, createdAt])
+  @@index([userId, kind, readAt])
+}
