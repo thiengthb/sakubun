@@ -6,7 +6,7 @@ import { EmptyState } from '@/components/shared/empty-state';
 import { GuideLink } from '@/components/shared/guide-link';
 import { ItemsTable, type ItemRow } from '@/components/resources/items-table';
 import { PageShell } from '@/components/shell/page-shell';
-import { ResourceAddDialog } from '@/components/resources/resource-add-dialog';
+import { ResourceAddButton } from '@/components/resources/resource-add-button';
 import { useSessionState } from '@/components/shared/use-session-state';
 import { VocabTable, type VocabRow } from '@/components/resources/vocab-table';
 
@@ -60,7 +60,7 @@ export function ResourcesView({
               }
               action={
                 <div className="flex flex-col items-center gap-2">
-                  <ResourceAddDialog kind="grammar" />
+                  <ResourceAddButton kind="grammar" />
                   <GuideLink topic="library" label="Ba cách nhập kho" />
                 </div>
               }
@@ -68,7 +68,7 @@ export function ResourcesView({
           ) : (
             <ItemsTable
               items={grammar}
-              importSlot={<ResourceAddDialog kind="grammar" />}
+              importSlot={<ResourceAddButton kind="grammar" />}
               voiceSpeaker={voiceSpeaker}
               speechRate={speechRate}
               showFurigana={showFurigana}
@@ -88,7 +88,7 @@ export function ResourcesView({
               }
               action={
                 <div className="flex flex-col items-center gap-2">
-                  <ResourceAddDialog kind="vocab" />
+                  <ResourceAddButton kind="vocab" />
                   <GuideLink topic="vocab" label="Cách học từ vựng trong ngữ cảnh" />
                 </div>
               }
@@ -96,7 +96,7 @@ export function ResourcesView({
           ) : (
             <VocabTable
               items={vocab}
-              actionSlot={<ResourceAddDialog kind="vocab" />}
+              actionSlot={<ResourceAddButton kind="vocab" />}
               voiceSpeaker={voiceSpeaker}
               speechRate={speechRate}
               showFurigana={showFurigana}

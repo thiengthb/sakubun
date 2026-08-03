@@ -130,7 +130,7 @@ describe('invariant #9 — Japanese content renders through SpokenLine', () => {
           'beside it. The evidence quote in the same file IS a SpokenLine when the source is Japanese',
       ],
       [
-        'components/resources/resource-add-dialog.tsx',
+        'components/resources/resource-add-form.tsx',
         'add/import surface — the bulk-import preview table and the field-entry inputs, not study content',
       ],
       ['components/resources/item-edit-dialog.tsx', 'editing surface'],

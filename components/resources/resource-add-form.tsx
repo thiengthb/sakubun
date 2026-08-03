@@ -1,23 +1,14 @@
 'use client';
 
 import { type ReactNode, useMemo, useRef, useState, useTransition } from 'react';
-import { ClipboardList, FileSpreadsheet, Plus, TextCursorInput, X } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { FileSpreadsheet, X } from 'lucide-react';
 import { toastResult } from '@/lib/action-toast';
 import { addOneItemAction, importItemsAction, parseExcelAction } from '@/app/actions';
 import { parseImportText, type ParsedEntry, type ParseResult } from '@/lib/import-parse';
 import { JLPT_LEVELS, type JlptLevel } from '@/lib/settings-schema';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
 import {
   Select,
   SelectContent,
@@ -33,9 +24,9 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent } from '@/components/ui/tabs';
+import { TabSelect } from '@/components/shared/tab-select';
 import { Textarea } from '@/components/ui/textarea';
-import { ExpandingIconButton } from '@/components/shared/expanding-icon-button';
 import { Field } from '@/components/shared/field';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -51,7 +42,7 @@ import { Label } from '@/components/ui/label';
  * which gave grammar only bulk import and vocab only single add.
  */
 
-type ResourceKind = 'grammar' | 'vocab';
+export type ResourceKind = 'grammar' | 'vocab';
 
 const COPY: Record<
   ResourceKind,
@@ -95,37 +86,36 @@ const COPY: Record<
   },
 };
 
-export function ResourceAddDialog({ kind }: { kind: ResourceKind }) {
-  const [open, setOpen] = useState(false);
+const INPUT_TABS = [
+  { value: 'single', label: 'Theo trường' },
+  { value: 'paste', label: 'Dán danh sách' },
+  { value: 'excel', label: 'Nhập Excel' },
+] as const;
+
+/**
+ * "Thêm ngữ pháp / từ vựng" as a PAGE body (was a modal — `ResourceAddDialog`).
+ *
+ * Why not a modal any more: the three input methods are not a quick confirm. "Dán danh sách" is a
+ * multi-line textarea and "Nhập Excel" is a file picker plus a preview table — on a phone the modal was
+ * a scrolling box inside a scrolling page, its own header eating the top of a 640px viewport, and the
+ * OS keyboard covering whatever was left. A route also gives the work a back button and a URL, so a
+ * half-finished paste survives an accidental navigation instead of evaporating with the overlay.
+ *
+ * `onDone` goes back to /resources and refreshes, which is what closing the modal used to do implicitly.
+ */
+export function ResourceAddForm({ kind }: { kind: ResourceKind }) {
+  const router = useRouter();
+  const [tab, setTab] = useState<string>('single');
   const copy = COPY[kind];
-  const close = () => setOpen(false);
+  const close = () => {
+    router.push('/resources');
+    router.refresh();
+  };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <ExpandingIconButton icon={Plus} label={copy.trigger} variant="default" />
-      </DialogTrigger>
-      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>{copy.title}</DialogTitle>
-          <DialogDescription>{copy.description}</DialogDescription>
-        </DialogHeader>
-
-        <Tabs defaultValue="single">
-          <TabsList>
-            <TabsTrigger value="single">
-              <TextCursorInput className="size-3.5" aria-hidden />
-              Theo trường
-            </TabsTrigger>
-            <TabsTrigger value="paste">
-              <ClipboardList className="size-3.5" aria-hidden />
-              Dán danh sách
-            </TabsTrigger>
-            <TabsTrigger value="excel">
-              <FileSpreadsheet className="size-3.5" aria-hidden />
-              Nhập Excel
-            </TabsTrigger>
-          </TabsList>
+    <>
+        <Tabs value={tab} onValueChange={setTab}>
+          <TabSelect items={INPUT_TABS} value={tab} onValueChange={setTab} label="Cách nhập" />
 
           <TabsContent value="single" className="mt-4">
             <SingleTab kind={kind} copy={copy} onDone={close} />
@@ -137,8 +127,7 @@ export function ResourceAddDialog({ kind }: { kind: ResourceKind }) {
             <ExcelTab kind={kind} copy={copy} onDone={close} />
           </TabsContent>
         </Tabs>
-      </DialogContent>
-    </Dialog>
+    </>
   );
 }
 
@@ -241,16 +230,14 @@ function SingleTab({
           />
         </Field>
       </div>
-      <DialogFooter>
-        <DialogClose asChild>
-          <Button type="button" variant="outline" disabled={isPending}>
-            Huỷ
-          </Button>
-        </DialogClose>
+      <div className="flex flex-wrap justify-end gap-2 pt-2">
+        <Button type="button" variant="outline" disabled={isPending} onClick={onDone}>
+          Huỷ
+        </Button>
         <Button type="submit" disabled={isPending || !canSubmit}>
           {isPending ? 'Đang thêm…' : `Thêm ${copy.noun}`}
         </Button>
-      </DialogFooter>
+      </div>
     </form>
   );
 }
@@ -370,16 +357,14 @@ function BulkPanel({
         </>
       )}
 
-      <DialogFooter>
-        <DialogClose asChild>
-          <Button type="button" variant="outline" disabled={isPending}>
-            Huỷ
-          </Button>
-        </DialogClose>
+      <div className="flex flex-wrap justify-end gap-2 pt-2">
+        <Button type="button" variant="outline" disabled={isPending} onClick={onDone}>
+          Huỷ
+        </Button>
         <Button onClick={submit} disabled={isPending || entries.length === 0}>
           {isPending ? 'Đang xử lý…' : `Thêm ${entries.length} ${copy.noun} vào kho`}
         </Button>
-      </DialogFooter>
+      </div>
     </div>
   );
 }
