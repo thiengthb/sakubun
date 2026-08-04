@@ -4,22 +4,35 @@
  *
  * Bắt những thứ mà hook PostToolUse có thể bỏ lọt (file do người sửa tay,
  * file đến từ merge, file agent tạo bằng lệnh shell thay vì tool Write).
+ *
+ *   node tooling/precommit-scan.mjs          ← .githooks/pre-commit, quét file STAGED
+ *   node tooling/precommit-scan.mjs --all    ← ci.yml, quét mọi file ĐƯỢC TRACK
+ *
+ * VÌ SAO CÓ `--all`. Ở CI không có gì staged, nên bản chỉ-staged `exit 0` NGAY — một
+ * lưới an toàn cuối luôn xanh vì nó không bao giờ có gì để xem. Bước "Quét secret"
+ * trong ci.yml trước 2.1.0 là `echo "CHANGEME: gitleaks detect"`, tức là một dấu tick
+ * xanh chứng minh SỐ KHÔNG, trong một job có tên `security`.
+ *
+ * Quét `git ls-files` (file được TRACK), không quét cây thư mục: thứ chưa track thì
+ * chưa vào lịch sử, còn `node_modules/` thì không phải của bạn. Đây cũng là lý do
+ * `--all` không thay được một scanner chuyên dụng — nó không có phân tích entropy và
+ * không đọc được lịch sử git. Nó là **tầng rẻ nhất chạy được ở mọi repo không cần cài gì**.
  */
 import { readFileSync, existsSync } from 'node:fs';
-import { git, repoPath, toRepoRel, matchAny, pathsFor, report } from './lib/harness.mjs';
+import { git, repoPath, toRepoRel, matchAny, pathsFor, report, SECRET_PATTERNS } from './lib/harness.mjs';
 
-const staged = git(['diff', '--cached', '--name-only', '--diff-filter=ACM']).stdout.split('\n').filter(Boolean);
-if (!staged.length) process.exit(0);
+const ALL = process.argv.includes('--all');
+const staged = ALL
+  ? git(['ls-files']).stdout.split('\n').filter(Boolean)
+  : git(['diff', '--cached', '--name-only', '--diff-filter=ACM']).stdout.split('\n').filter(Boolean);
+if (!staged.length && !ALL) process.exit(0);
 
 const fail = [], warn = [], ok = [];
 
-const SECRET_PATTERNS = [
-  [/\bsk-[A-Za-z0-9_-]{20,}/, 'API key dạng sk-'],
-  [/\bAKIA[0-9A-Z]{16}\b/, 'AWS access key'],
-  [/-----BEGIN [A-Z ]*PRIVATE KEY-----/, 'private key'],
-  [/\bgh[pousr]_[A-Za-z0-9]{30,}/, 'GitHub token'],
-  [/(postgres|mysql|mongodb(\+srv)?):\/\/[^\s:@/]+:[^\s@/]+@/, 'connection string có mật khẩu'],
-];
+// SECRET_PATTERNS ở `lib/harness.mjs` — MỘT nguồn. Bản cũ ở đây có 5 pattern trong khi
+// `block-secrets.mjs` có 7: thiếu Slack token và JWT. Và tầng NÀY là tầng duy nhất thấy
+// thứ NGƯỜI gõ tay (hook PreToolUse chỉ thấy thứ agent ghi), nên hai pattern thiếu ở đây
+// là một lỗ thật, không phải một sự bất đối xứng vô hại.
 
 for (const f of staged) {
   const rel = toRepoRel(f);
@@ -28,7 +41,9 @@ for (const f of staged) {
     fail.push(`${rel}: file secret không được commit`);
     continue;
   }
-  if (matchAny(rel, pathsFor('harness'))) {
+  // Chỉ có nghĩa khi đang COMMIT. Ở `--all` thì mọi file harness đều khớp, và một
+  // cảnh báo nổ trên mọi file là cảnh báo dạy người ta ngừng đọc output.
+  if (!ALL && matchAny(rel, pathsFor('harness'))) {
     warn.push(`${rel}: đang đổi HARNESS của team → cần review của CODEOWNERS + cập nhật .claude/whats-new.md`);
   }
 
@@ -47,7 +62,7 @@ for (const f of staged) {
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     if (/harness-allow-secret/.test(line)) continue;
-    for (const [re, name] of SECRET_PATTERNS) {
+    for (const { re, name } of SECRET_PATTERNS) {
       if (re.test(line)) {
         fail.push(`${rel}:${i + 1}: phát hiện ${name}\n         Nếu đây là fixture test: thêm comment \`harness-allow-secret\` vào cuối dòng.`);
         break;
@@ -69,9 +84,9 @@ for (const f of all) {
   lower.set(k, f);
 }
 
-if (!fail.length && !warn.length) ok.push(`${staged.length} file staged, sạch`);
+if (!fail.length && !warn.length) ok.push(`${staged.length} file ${ALL ? 'được track' : 'staged'}, sạch`);
 
-if (!report('PRE-COMMIT', { ok, warn, fail })) {
+if (!report(ALL ? 'QUÉT SECRET — TOÀN BỘ FILE ĐƯỢC TRACK' : 'PRE-COMMIT', { ok, warn, fail })) {
   console.error('Bỏ qua trong trường hợp khẩn: git commit --no-verify (và ghi lý do vào PR).\n');
   process.exit(1);
 }

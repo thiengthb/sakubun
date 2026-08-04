@@ -180,18 +180,42 @@ export function runConfigured(name, { placeholders = {}, capture = false, cwd = 
   };
 }
 
-/** Chạy lệnh dạng mảng args (an toàn với path có dấu cách). */
-export function run(bin, args = [], { cwd = REPO_ROOT, capture = true, input } = {}) {
+/**
+ * Chạy lệnh dạng mảng args.
+ *
+ * `shell` mặc định `IS_WIN` vì Windows cần shell để resolve **`.cmd`/`.ps1` shim**
+ * của package manager (`npm`, `pnpm`, `yarn` là shim, không phải .exe).
+ *
+ * NHƯNG `shell: true` LÀ MỘT CÁI BẪY, và nó chỉ nổ trên MỘT hệ điều hành:
+ * Node **nối args thành chuỗi mà KHÔNG escape** (chính Node cảnh báo — DEP0190).
+ * Nên một arg có dấu cách bị chẻ thành nhiều arg:
+ *
+ *   git commit-tree <sha> -m "fixture: migration da merge"
+ *     shell:false → 1 tree  ✓
+ *     shell:true  → git thấy `migration` `da` `merge` là 3 tree nữa
+ *                 → "fatal: must give exactly one tree"
+ *
+ * Lớp lỗi này XANH trên Linux/macOS và ĐỎ trên Windows — đúng loại lỗi mà Parity
+ * Contract tồn tại để bắt, và nó đã ẩn trong fixture của `test-hooks.mjs` từ v1.3.0
+ * (bắt được ở CI `parity (windows-latest)`, xem HARNESS-CHANGELOG 1.6.0).
+ */
+export function run(bin, args = [], { cwd = REPO_ROOT, capture = true, input, shell = IS_WIN } = {}) {
   const r = spawnSync(bin, args, {
-    cwd, encoding: 'utf8', input,
-    shell: IS_WIN, // Windows cần shell để resolve .cmd/.ps1 shim
+    cwd, encoding: 'utf8', input, shell,
     stdio: capture ? 'pipe' : 'inherit',
   });
   return { status: r.status ?? 1, stdout: (r.stdout ?? '').trim(), stderr: (r.stderr ?? '').trim() };
 }
 
+/**
+ * `shell: false` LUÔN LUÔN, kể cả trên Windows — `git` là `git.exe`, một executable
+ * thật, không phải shim, nên nó không cần shell. Và đi qua shell thì mọi arg có dấu
+ * cách (message commit, đường dẫn có khoảng trắng — `C:\Users\Nguyen Van A\...`) bị
+ * chẻ im lặng. Đây là chỗ DUY NHẤT trong harness quyết định điều đó; 40+ lệnh git
+ * trong repo thừa hưởng.
+ */
 export function git(args, opts = {}) {
-  return run('git', args, opts);
+  return run('git', args, { ...opts, shell: false });
 }
 
 /** Nhánh hiện tại, hoặc '' nếu không ở trong git repo. */
@@ -199,6 +223,64 @@ export function currentBranch() {
   const r = git(['branch', '--show-current']);
   return r.status === 0 ? r.stdout : '';
 }
+
+/**
+ * Cây này là worktree hay cây chính? → { known, isWorktree, commonDir, mainRoot }
+ *
+ * ĐẶT Ở ĐÂY, không để mỗi công cụ tự suy ra. Trạng thái BÌNH THƯỜNG của một phiên
+ * harness là ở TRONG worktree — `/claim` bắt buộc "một issue = một nhánh = một
+ * worktree". Nhưng mọi công cụ đo đều đo *cây hiện tại*, và trong worktree:
+ *   · `worktree.sparsePaths` làm file vắng mặt HỢP LỆ → "harness đang co" là sai
+ *   · reservation của người khác nằm trên NHÁNH của họ → "không chồng lấn" là sai
+ * Để năm công cụ tự suy ra thì cả năm đều sai, và cái thứ năm sai vào đúng ngày
+ * cơ chế worktree được ship.
+ */
+export function worktreeInfo() {
+  const common = git(['rev-parse', '--git-common-dir']).stdout;
+  const gitDir = git(['rev-parse', '--git-dir']).stdout;
+  if (!common || !gitDir) return { known: false, isWorktree: false, mainRoot: REPO_ROOT };
+  const isWorktree = resolve(REPO_ROOT, common) !== resolve(REPO_ROOT, gitDir);
+  return {
+    known: true,
+    isWorktree,
+    commonDir: common,
+    mainRoot: isWorktree ? dirname(resolve(REPO_ROOT, common)) : REPO_ROOT,
+  };
+}
+
+/**
+ * Mọi báo cáo phải NÓI RA nó đang đo cây nào. Một con số không nói mình đo ở đâu
+ * là một con số sẽ bị so với con số đo ở chỗ khác.
+ */
+export function reportScope() {
+  const wt = worktreeInfo();
+  if (!wt.isWorktree) return null;
+  return `⚠ đang đo trong WORKTREE (cây chính: ${wt.mainRoot}). File có thể vắng mặt HỢP LỆ `
+       + `do sparsePaths hoặc do nằm trên nhánh khác — đừng so số này với mốc lấy ở cây chính.`;
+}
+
+/**
+ * Phiên này có người ngồi xem không?
+ *
+ * Ba giả định đã hết hạn: background agent tự commit + push + mở draft PR;
+ * scheduled task và webhook mở session không ai đọc. Dùng ở ba chỗ:
+ *   · gates.mjs  — phiên không người thì KHÔNG fail-open, kể cả khi gate bị BỎ QUA
+ *   · budget     — nâng mức cảnh báo, vì không ai thấy để dừng tay
+ *   · session-start — đừng in nghi thức cho phiên không có người đọc
+ *
+ * KHÔNG DÙNG `!process.stdout.isTTY`. Đây là cái bẫy: hook LUÔN được spawn với
+ * stdio piped, nên isTTY là false ở MỌI phiên bình thường — kể cả phiên có người
+ * đang ngồi nhìn. Một `unattended()` dựa vào isTTY sẽ báo "không có người" cho cả
+ * team, mọi lúc, và mọi thứ fail-đóng dựng trên nó thành một guard bắn nhầm.
+ * Xem knowledge/lessons/0002-guard-ban-nham.md — đây đúng là lớp lỗi đó.
+ * Chỉ ba tín hiệu dưới đây là đọc được TỪ BÊN TRONG một hook.
+ *
+ * ĐIỀU KIỆN THOÁT: khi vendor phơi ra một cờ chính thức cho phiên không người.
+ */
+export const unattended = () =>
+  !!process.env.CI
+  || process.env.CLAUDE_CODE_UNATTENDED === '1'
+  || process.env.CLAUDE_CODE_ENTRYPOINT === 'sdk-cli';
 
 /** Suy ra mã issue từ tên nhánh: feat/ABC-142-slug → ABC-142 */
 export function issueFromBranch(branch = currentBranch()) {
@@ -239,10 +321,19 @@ export function pass() {
   process.exit(EXIT_OK);
 }
 
-/** Rút file_path từ mọi biến thể tool input (Write/Edit/NotebookEdit). */
+/**
+ * Rút file_path từ mọi biến thể tool input (Write/Edit/NotebookEdit).
+ *
+ * FALLBACK `input.file_path` LÀ BẮT BUỘC, KHÔNG PHẢI PHÒNG XA: các sự kiện vòng đời
+ * KHÔNG có `tool_input` — chúng gửi path ở CẤP TRÊN. `ConfigChange` gửi
+ * `{ source, file_path }`; `InstructionsLoaded` gửi `{ file_path, memory_type, … }`.
+ * Không có dòng này thì cắm `protect-harness.mjs` vào `ConfigChange` cho path RỖNG,
+ * hook `pass()` ngay, và lớp phòng thủ thứ hai là trang trí — im lặng, đúng kiểu
+ * hỏng tệ nhất. Sửa ở MỘT chỗ để mọi hook thừa hưởng, thay vì trong từng hook.
+ */
 export function toolFilePath(input) {
   const ti = input?.tool_input ?? {};
-  return ti.file_path ?? ti.path ?? ti.notebook_path ?? '';
+  return ti.file_path ?? ti.path ?? ti.notebook_path ?? input?.file_path ?? '';
 }
 
 export function toolCommand(input) {
@@ -254,22 +345,101 @@ export function toolContent(input) {
   return String(ti.content ?? ti.new_string ?? ti.new_source ?? '');
 }
 
+/**
+ * Hình dạng của một secret bị lọt vào NỘI DUNG file. MỘT nguồn, hai tầng dùng.
+ *
+ * VÌ SAO NÓ Ở ĐÂY. Danh sách này từng tồn tại HAI BẢN — `.claude/hooks/block-secrets.mjs`
+ * (7 pattern) và `tooling/precommit-scan.mjs` (5). Đo 2026-08-04: bản ở pre-commit thiếu
+ * **Slack token** và **JWT**.
+ *
+ * Chiều của lỗ đó là chiều tệ hơn. Hook `block-secrets` là PreToolUse: nó chỉ thấy thứ
+ * AGENT ghi. Tầng duy nhất thấy thứ NGƯỜI gõ tay là `pre-commit` — và đó chính là tầng
+ * thiếu hai pattern. Một Slack token do người dán vào file rồi commit đi qua sạch.
+ *
+ * Hai bản của một sự thật không lệch vào ngày viết; chúng lệch vào ngày ai đó thêm một
+ * pattern và chỉ thấy một chỗ. Nên chỗ sửa không phải "thêm hai pattern vào bản kia" —
+ * đó chỉ đặt lại đồng hồ cho lần lệch sau.
+ *
+ * KHÔNG nới pattern cho dễ chịu: miễn trừ đi qua marker `harness-allow-secret` theo
+ * DÒNG (xem `precommit-scan.mjs`), tường minh và audit được, không allowlist cả file.
+ */
+export const SECRET_PATTERNS = [
+  { re: /\bsk-[A-Za-z0-9_-]{20,}/, name: 'API key dạng sk-' },
+  { re: /\bAKIA[0-9A-Z]{16}\b/, name: 'AWS access key' },
+  { re: /-----BEGIN [A-Z ]*PRIVATE KEY-----/, name: 'private key' },
+  { re: /\bgh[pousr]_[A-Za-z0-9]{30,}/, name: 'GitHub token' },
+  { re: /\bxox[baprs]-[A-Za-z0-9-]{10,}/, name: 'Slack token' },
+  { re: /\beyJ[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}\./, name: 'JWT' },
+  { re: /(postgres|mysql|mongodb(\+srv)?):\/\/[^\s:@/]+:[^\s@/]+@/, name: 'connection string có mật khẩu' },
+];
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Telemetry (cá nhân, gitignore) — nguyên liệu của vòng học
 // ─────────────────────────────────────────────────────────────────────────────
 
-export function telemetryDir() {
-  const d = repoPath('.claude', 'telemetry');
+/**
+ * Trạng thái cục bộ, không commit (`.claude/state/`): "đã xem whats-new version nào",
+ * "phiên trước dừng vì lỗi gì". Khác `telemetry/`: đây là trạng thái ĐỌC-GHI, không
+ * phải log append-only.
+ *
+ * `HARNESS_STATE_DIR` chuyển đích. CHỈ dùng cho TEST, và cũng bắt buộc như dòng dưới:
+ * `test-hooks.mjs` spawn `session-start.mjs` thật, và nếu nó ghi vào state THẬT thì
+ * mỗi lần chạy suite sẽ **ăn mất thông báo `.claude/whats-new.md` của chính bạn** — cơ chế đó
+ * cố ý chỉ in MỘT LẦN cho mỗi version, nên "đã in rồi" là trạng thái không lấy lại được.
+ */
+export function stateDir() {
+  const d = process.env.HARNESS_STATE_DIR || repoPath('.claude', 'state');
   try { mkdirSync(d, { recursive: true }); } catch {}
   return d;
 }
 
-/** Ghi một dòng vào log telemetry. `kind` = tên file không đuôi. */
+/**
+ * `HARNESS_TELEMETRY_DIR` chuyển đích ghi telemetry. CHỈ dùng cho TEST — và nó là
+ * bắt buộc, không phải tiện nghi.
+ *
+ * `tooling/test-hooks.mjs` spawn hook thật với cwd là repo thật, nên mỗi lần chạy
+ * suite nó ghi hàng chục dòng `gate-fails` vào telemetry THẬT. Sau vài tuần,
+ * "hook này chặn 267 lần" gần như toàn bộ là **suite tự gọi chính nó** — và con số
+ * đó là đầu vào của `/harness-retro` bước 4, chỗ bắt buộc đề xuất CẮT BỎ.
+ * Một bộ đếm bị chính test của nó làm nhiễu là bộ đếm nói dối về hướng nguy hiểm.
+ */
+export function telemetryDir() {
+  const d = process.env.HARNESS_TELEMETRY_DIR || repoPath('.claude', 'telemetry');
+  try { mkdirSync(d, { recursive: true }); } catch {}
+  return d;
+}
+
+/**
+ * Ghi một dòng vào log telemetry. `kind` = tên file không đuôi.
+ *
+ * BẤT BIẾN: việc ghi chép KHÔNG BAO GIỜ được đổi kết quả của hook. Log không ghi
+ * được, đĩa đầy, thư mục biến mất — không cái nào được đổi exit code, vì exit code
+ * là toàn bộ hợp đồng giữa hook và harness. Đó là lý do có `try {} catch {}` rỗng.
+ */
 export function telemetry(kind, fields) {
   try {
     const line = [new Date().toISOString(), config().project?.id ?? '-', ...fields.map(f => String(f).replace(/[|\n\r]/g, ' '))].join('|');
     appendFileSync(join(telemetryDir(), `${kind}.log`), line + '\n', 'utf8');
   } catch {}
+}
+
+/**
+ * Ghi "hook này ĐÃ CHẠY" — kể cả khi nó cho qua.
+ *
+ * VÌ SAO CẦN: một hook KHÔNG phải một lần gọi công cụ, nên không có gì trong
+ * transcript nhìn thấy nó chạy. Không có bộ đếm này thì ba tình huống sau đọc
+ * GIỐNG HỆT NHAU — cả ba đều là "log rỗng":
+ *   · hook chạy suốt tuần, không bắt gì   (đang làm việc TỐT)
+ *   · hook chưa từng nổ vì không được cắm  (mã chết)
+ *   · hook crash im lặng mỗi lần           (hỏng)
+ * Và đây đúng là dữ liệu `/harness-retro` bước 4 cần khi nó bắt buộc đề xuất cắt
+ * bỏ. Câu trả lời im lặng nghiêng về "cắt đi" — tức là nghiêng về hướng nguy hiểm.
+ *
+ * `outcome`: 'pass' | 'block' | 'skip'.
+ * Khi render, hook KHÔNG có đường exit 2 phải hiện `n/a`, KHÔNG phải `0`.
+ */
+export function hookRan(name, outcome = 'pass', detail = '') {
+  telemetry('hook-runs', [name, outcome, detail]);
 }
 
 /** Ghi output dài ra file tạm và trả đường dẫn — GIỮ CONTEXT SẠCH. */
@@ -300,13 +470,35 @@ export function exists(p) {
   return existsSync(p);
 }
 
-/** In báo cáo NGẮN, có hành động. Dùng cho mọi script trong tooling/. */
-export function report(title, { ok = [], warn = [], fail = [] }) {
+/**
+ * In báo cáo NGẮN, có hành động. Dùng cho mọi script trong tooling/.
+ *
+ * NĂM RỔ, KHÔNG PHẢI BA. Ba giá trị dưới đây KHÔNG BAO GIỜ được gộp:
+ *
+ *   ok/warn/fail — ĐÃ ĐO, và đây là kết quả.
+ *   na           — KHÔNG ÁP DỤNG, vĩnh viễn: bằng không DO CẤU TRÚC. Một hook không
+ *                  có đường exit 2 thì `fired` không thể nhúc nhích — số 0 ở đó không
+ *                  phải bằng chứng nó vô dụng.
+ *   unknown      — CHƯA ĐO ĐƯỢC: chưa có dữ liệu. Khác `0`, vốn khẳng định phép đo
+ *                  ĐÃ chạy và không thấy gì.
+ *
+ * Gộp bất kỳ hai cái nào là cách một thay đổi schema biến thành một đề xuất XOÁ.
+ * Và luật đi kèm: một tổng kết có `unknown` thì KHÔNG được gọi là "xanh" —
+ * "harness không chạy" là TRẠNG THÁI THỨ BA, không phải pass, không phải fail.
+ */
+export function report(title, { ok = [], warn = [], fail = [], na = [], unknown = [] }) {
   console.log(`\n=== ${title} ===`);
+  // Mọi báo cáo nói ra nó đo ở CÂY NÀO — một chỗ, mọi công cụ thừa hưởng.
+  const scope = reportScope();
+  if (scope) console.log('  ' + scope);
   for (const m of ok) console.log('  OK   ' + m);
   for (const m of warn) console.log('  WARN ' + m);
   for (const m of fail) console.log('  FAIL ' + m);
-  if (!ok.length && !warn.length && !fail.length) console.log('  (không có gì để báo cáo)');
+  for (const m of na) console.log('  n/a  ' + m);
+  for (const m of unknown) console.log('  ?    ' + m);
+  if (na.length) console.log(`  → ${na.length} mục KHÔNG ÁP DỤNG: bằng không do cấu trúc, không phải phát hiện.`);
+  if (unknown.length) console.log(`  → ${unknown.length} mục CHƯA ĐO ĐƯỢC: đây KHÔNG phải 0. Báo cáo này chưa được gọi là xanh.`);
+  if (!ok.length && !warn.length && !fail.length && !na.length && !unknown.length) console.log('  (không có gì để báo cáo)');
   console.log('');
   return fail.length === 0;
 }

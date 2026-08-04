@@ -69,7 +69,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node .claude/hooks/stop-gate.mjs"
+            "command": "node tooling/gates.mjs --stage stop"
           }
         ]
       }
