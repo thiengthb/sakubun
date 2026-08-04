@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { cookies } from 'next/headers';
-import { Geist_Mono, Inter } from 'next/font/google';
+import { Geist_Mono, Inter, Newsreader } from 'next/font/google';
 import { ThemeProvider } from 'next-themes';
 import { MotionConfig } from 'motion/react';
 import { Toaster } from '@/components/ui/sonner';
@@ -18,6 +18,18 @@ const interSans = Inter({
 const geistMono = Geist_Mono({
   variable: '--font-geist-mono',
   subsets: ['latin'],
+});
+
+// The heading serif (globals.css --font-display / --font-heading). Newsreader is a variable font with a
+// real optical-size axis, so one file covers a 12px card title and a 30px hero without either looking
+// like the other size stretched — and it carries the Vietnamese subset, which most display serifs do not.
+const displaySerif = Newsreader({
+  variable: '--font-serif-display',
+  subsets: ['latin', 'latin-ext', 'vietnamese'],
+  // Italic is loaded because the serif is what quotes/emphasis land in; without it the browser
+  // synthesises a slanted roman, which is exactly the detail that makes a page look unfinished.
+  style: ['normal', 'italic'],
+  display: 'swap',
 });
 
 export const metadata: Metadata = {
@@ -49,7 +61,7 @@ export default async function RootLayout({
     <html
       lang="vi"
       suppressHydrationWarning
-      className={`${interSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${interSans.variable} ${displaySerif.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <ThemeProvider

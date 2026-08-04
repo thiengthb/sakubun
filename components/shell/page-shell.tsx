@@ -57,7 +57,10 @@ export function PageShell({
     // `text-sm` is the app's BODY BASELINE (type-scale invariant): page content inherits 14px, so a
     // bare content block never renders larger than a heading. Headings opt UP (CardTitle = text-base,
     // section titles = text-base/lg); meta opts DOWN (text-xs). Enforced by lib/type-scale.test.ts.
-    <div className={cn('space-y-4 py-6 text-sm', WIDTH[width], className)}>
+    // Rhythm loosened one step (space-y-4 py-6 -> space-y-6 py-8): the surfaces are what carry the
+    // structure now, and blocks that nearly touch each other undo that. This is the single knob for
+    // page rhythm — every route inherits it.
+    <div className={cn('space-y-6 py-8 text-sm', WIDTH[width], className)}>
       {/* Remember scroll position per route (long pages only; list pages are viewport-fit). */}
       <ScrollRestorer />
       {/* Header row: breadcrumb + any page-supplied aside (tabs, actions). Kept unconditional so

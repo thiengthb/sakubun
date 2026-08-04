@@ -195,7 +195,7 @@ export function SentenceCardShell({
             setOpen(true);
           }
         }}
-        className="flex h-full cursor-pointer flex-col gap-2 rounded-lg border border-border/70 p-4 text-left transition-colors hover:border-border hover:bg-muted/40"
+        className="flex h-full cursor-pointer flex-col gap-2 rounded-2xl border border-border/70 bg-card p-5 text-left shadow-soft transition-colors hover:border-border hover:bg-accent/40"
       >
         <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
           {header}
@@ -376,7 +376,7 @@ function HistoryDetail({
  */
 function PendingCard({ sentence }: { sentence: SentenceHistoryRow }) {
   return (
-    <li className="flex h-full flex-col gap-2 rounded-lg border border-warn/40 bg-warn/5 p-4">
+    <li className="flex h-full flex-col gap-2 rounded-2xl border border-warn/40 bg-warn/5 p-5">
       <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
         <Badge variant="secondary">{dirLabel(sentence.direction)}</Badge>
         <span className="flex items-center gap-1 font-medium text-warn">

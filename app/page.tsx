@@ -54,15 +54,21 @@ function StatCard({
   hint?: string;
 }) {
   return (
-    <div className="rounded-lg border border-border/70 p-4">
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Icon className="size-4" aria-hidden />
-        {label}
+    <div className="rounded-2xl border border-border/70 bg-card p-5 shadow-soft">
+      {/* Label as an eyebrow (12px uppercase, tracked) with the icon in the brand colour: the KPI's
+          number is the content, and the label's job is to sit above it quietly. */}
+      <div className="flex items-center gap-2">
+        <Icon className="size-3.5 text-accent-brand" aria-hidden />
+        <span className="eyebrow">{label}</span>
       </div>
       {/* text-xl below sm: in the two-column phone layout a 24px "50 ngữ pháp" wraps to two lines and
-          makes one card taller than its neighbour; 20px keeps every value on one line. */}
-      <div className="mt-2 text-xl font-semibold sm:text-2xl">{value}</div>
-      {hint && <div className="mt-1 text-xs text-muted-foreground">{hint}</div>}
+          makes one card taller than its neighbour; 20px keeps every value on one line.
+          The serif carries the numbers — a figure set in the display face reads as a RESULT, which is
+          the one place in a study app worth a little drama. */}
+      <div className="mt-2.5 font-display text-xl font-semibold tracking-tight sm:text-2xl">
+        {value}
+      </div>
+      {hint && <div className="mt-1.5 text-xs text-muted-foreground">{hint}</div>}
     </div>
   );
 }
@@ -77,11 +83,11 @@ function ChartCard({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="space-y-4 rounded-lg border border-border/70 p-4">
+    <div className="space-y-4 rounded-2xl border border-border/70 bg-card p-5 shadow-soft">
       {/* flex-wrap: a long Vietnamese title + a legend cannot share 358px. Wrapping drops the legend
           onto its own line on a phone instead of squeezing the title into two ragged lines beside it. */}
       <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
-        <h2 className="text-sm font-medium text-muted-foreground">{title}</h2>
+        <h2 className="text-sm font-semibold text-foreground">{title}</h2>
         {action}
       </div>
       {children}
@@ -145,8 +151,8 @@ function Bars({
  */
 function WeakList({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="space-y-1.5">
-      <p className="text-xs text-muted-foreground">{label}</p>
+    <div className="space-y-2">
+      <p className="eyebrow">{label}</p>
       <div className="flex flex-wrap gap-2">{children}</div>
     </div>
   );
@@ -437,8 +443,8 @@ export default async function HomePage() {
 
       {hasWeakData && (
         <section className="space-y-3">
-          <h2 className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
-            <Target className="size-4" aria-hidden /> Điểm yếu 30 ngày
+          <h2 className="flex items-center gap-1.5 text-base font-semibold">
+            <Target className="size-4 text-accent-brand" aria-hidden /> Điểm yếu 30 ngày
           </h2>
           {weak.tagCounts.length > 0 && (
             <WeakList label="Loại lỗi hay mắc">

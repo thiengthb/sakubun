@@ -97,7 +97,7 @@ export function DailyProgress({
         : 'chưa ôn lượt nào';
 
   return (
-    <div className="space-y-4 rounded-lg border border-border/70 p-4">
+    <div className="space-y-4 rounded-2xl border border-border/70 bg-card p-5 shadow-soft">
       {/* Below md the day picker takes its own FULL-WIDTH row (`max-md:w-full` + flex-wrap). On one row
           it needs ~215px of the 358px available — enough to clip the title to "Tiến độ hôm" — and it
           also squeezed the two chevrons into a 7px-gap pair, which is under the 44px touch target. On

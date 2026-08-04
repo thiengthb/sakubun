@@ -15,7 +15,7 @@ export function StreakCard({ current, hint }: { current: number; hint?: string }
   // Bumping this replays the fire celebration — lets the user (re)watch the effect on demand.
   const [preview, setPreview] = useState(0);
   return (
-    <div className="relative overflow-hidden rounded-lg border border-border/70 p-4">
+    <div className="relative overflow-hidden rounded-2xl border border-border/70 bg-card p-5 shadow-soft">
       {current > 0 && (
         <div
           aria-hidden
@@ -27,20 +27,22 @@ export function StreakCard({ current, hint }: { current: number; hint?: string }
         />
       )}
       <div className="relative">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={() => setPreview((p) => p + 1)}
             aria-label="Xem lại hiệu ứng chuỗi ngày"
             title="Bấm để xem hiệu ứng lửa"
-            className="-m-1 rounded-md p-1 transition-transform hover:scale-110 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+            className="-m-1 rounded-full p-1 transition-transform hover:scale-110 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
           >
             <StreakFlame count={current} className="size-[18px]" />
           </button>
-          Chuỗi ngày học
+          <span className="eyebrow">Chuỗi ngày học</span>
         </div>
-        <div className="mt-2 text-2xl font-semibold tabular-nums">{current} ngày</div>
-        {hint && <div className="mt-1 text-xs text-muted-foreground">{hint}</div>}
+        <div className="mt-2.5 font-display text-xl font-semibold tracking-tight tabular-nums sm:text-2xl">
+          {current} ngày
+        </div>
+        {hint && <div className="mt-1.5 text-xs text-muted-foreground">{hint}</div>}
       </div>
       {/* Preview-only here (click the flame to replay); the app-wide StreakBeacon owns the auto-fire. */}
       <StreakCelebration current={current} previewNonce={preview} auto={false} />

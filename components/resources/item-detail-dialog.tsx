@@ -142,7 +142,7 @@ export function ItemDetailDialog({
 
           {/* FSRS status — reading-only, never editable */}
           {showSrs && (
-            <div className="flex flex-wrap gap-x-5 gap-y-1 rounded-lg border border-border/70 p-3 text-xs text-muted-foreground">
+            <div className="flex flex-wrap gap-x-5 gap-y-1 rounded-xl border border-border/70 bg-muted/30 p-3 text-xs text-muted-foreground">
               <span>
                 Trạng thái: <span className="font-medium text-foreground">{stateLabel}</span>
               </span>

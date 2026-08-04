@@ -317,7 +317,7 @@ function BulkPanel({
           </div>
 
           {entries.length > 0 && (
-            <div className="max-h-80 overflow-auto rounded-md border">
+            <div className="max-h-80 overflow-auto rounded-xl border">
               <Table>
                 <TableHeader>
                   <TableRow>

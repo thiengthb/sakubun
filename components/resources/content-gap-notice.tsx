@@ -25,7 +25,7 @@ export function ContentGapNotice({
   if (studiedWithoutCard === 0) return null;
 
   return (
-    <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-lg border border-warn/40 bg-warn/5 p-4">
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-2xl border border-warn/40 bg-warn/5 p-4">
       <FileWarning className="size-4 shrink-0 text-warn" aria-hidden />
       <p className="text-sm">
         <span className="font-medium text-warn tabular-nums">{studiedWithoutCard}</span> mẫu bạn

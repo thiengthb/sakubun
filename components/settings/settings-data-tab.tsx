@@ -411,7 +411,7 @@ export function DataTab() {
               </div>
             </CardHeader>
             <CardContent>
-              <details className="group/restore rounded-lg border border-border/70 bg-muted/30">
+              <details className="group/restore rounded-xl border border-border/70 bg-muted/30">
                 <summary className="flex cursor-pointer list-none items-center gap-2 px-3 py-2 text-sm font-medium select-none">
                   <HardDriveDownload className="size-4 text-muted-foreground" aria-hidden />
                   Xem các lệnh thay tệp thủ công
@@ -463,7 +463,7 @@ export function DataTab() {
           )}
 
           {nonEmpty.length > 0 ? (
-            <div className="max-h-64 overflow-y-auto rounded-lg border border-border/70">
+            <div className="max-h-64 overflow-y-auto rounded-xl border border-border/70">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -494,7 +494,7 @@ export function DataTab() {
           )}
 
           {preview && preview.result.warnings.length > 0 && (
-            <ul className="space-y-1 rounded-lg border border-warn/40 bg-warn/5 p-3 text-xs">
+            <ul className="space-y-1 rounded-xl border border-warn/40 bg-warn/5 p-3 text-xs">
               {preview.result.warnings.map((w) => (
                 <li key={w} className="flex gap-2">
                   <TriangleAlert className="mt-0.5 size-3.5 shrink-0 text-warn" aria-hidden />

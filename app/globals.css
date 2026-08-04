@@ -9,7 +9,17 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-sans);
   --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
+  /* Editorial serif (Newsreader, loaded in app/layout.tsx) for headings, card titles and data numbers.
+     `font-heading` is aliased to it, so every existing `font-heading` call site upgrades for free. */
+  --font-display: var(--font-serif-display), ui-serif, Georgia, 'Times New Roman', serif;
+  --font-heading: var(--font-display);
+  /* Japanese stack. No webfont on purpose: a JP webfont is megabytes, and every OS in our parity
+     contract ships a good gothic — Hiragino on macOS/iOS, Yu Gothic on Windows, Noto CJK on Linux.
+     Applied globally to [lang='ja'] in the base layer below, so JA text never lands on Inter's
+     fallback (which has no kana/kanji and picks whatever the OS guesses). */
+  --font-jp:
+    'Hiragino Kaku Gothic ProN', 'Hiragino Sans', 'Yu Gothic Medium', 'Yu Gothic', 'Noto Sans JP',
+    'Noto Sans CJK JP', Meiryo, var(--font-sans), sans-serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -44,31 +54,46 @@
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) * 1.4);
   --radius-2xl: calc(var(--radius) * 1.8);
+  /* Surface elevation. Two steps only: `shadow-soft` = a resting card, `shadow-lift` = something that
+     hovers over the page (popover, dragged card, primary button). Both are warm-tinted (hue 50) and
+     mostly a wide, very light spread — a shadow you notice as depth, not as a grey box. In dark mode
+     the shadow all but disappears and the hairline border carries the edge, which is how iOS does it. */
+  --shadow-soft:
+    0 1px 2px -1px oklch(0.28 0.03 50 / 0.07), 0 6px 20px -14px oklch(0.28 0.03 50 / 0.16);
+  --shadow-lift:
+    0 2px 6px -2px oklch(0.28 0.03 50 / 0.08), 0 16px 36px -20px oklch(0.28 0.03 50 / 0.22);
 }
 
 /* Claude-orange (terracotta) brand theme, 2026-07-13. Primary + brand accent = Claude's clay/orange
    (~#D9785B, OKLCH hue ~42). Neutrals carry a subtle warm bias (low chroma at hue ~55) so grays read
-   as "chosen warm", not machine-gray. Semantic tokens (ok/warn/alert/info) stay functional. */
+   as "chosen warm", not machine-gray. Semantic tokens (ok/warn/alert/info) stay functional.
+   2026-08-04 — "paper" surfaces: the page is warm cream, cards are near-white ABOVE it, chrome
+   (sidebar) is one step deeper BELOW it. Three levels of one warm hue instead of white-on-white, so a
+   card reads as a sheet on a desk with no border needed to prove it exists. Brand and semantic hues
+   are untouched — every contrast ratio measured below still holds (lib/contrast.test.ts). */
 :root {
-  --background: oklch(0.995 0.004 60);
-  --foreground: oklch(0.18 0.01 50);
-  --card: oklch(1 0.003 60);
-  --card-foreground: oklch(0.18 0.01 50);
-  --popover: oklch(1 0.003 60);
-  --popover-foreground: oklch(0.18 0.01 50);
+  --background: oklch(0.984 0.008 78);
+  --foreground: oklch(0.23 0.014 50);
+  --card: oklch(0.998 0.003 78);
+  --card-foreground: oklch(0.23 0.014 50);
+  --popover: oklch(0.998 0.003 78);
+  --popover-foreground: oklch(0.23 0.014 50);
   /* L lowered 0.62 -> 0.545 on 2026-07-28: at 0.62 this pair measured 3.74:1, under the 4.5:1 AA floor,
      on every primary button in the app. C and H are untouched — same brand orange, one step darker. */
   --primary: oklch(0.545 0.14 42);
   --primary-foreground: oklch(0.99 0.012 80);
-  --secondary: oklch(0.965 0.01 60);
-  --secondary-foreground: oklch(0.26 0.02 50);
-  --muted: oklch(0.965 0.01 60);
-  --muted-foreground: oklch(0.53 0.02 55);
-  --accent: oklch(0.955 0.016 58);
-  --accent-foreground: oklch(0.26 0.02 50);
+  --secondary: oklch(0.955 0.012 76);
+  --secondary-foreground: oklch(0.3 0.02 50);
+  --muted: oklch(0.957 0.012 76);
+  /* 0.53 -> 0.505: the page got 1.1% darker (cream, not white), and this token is the app's most common
+     text colour (every hint, meta line and axis label). One step darker keeps it clear of 4.5:1 on the
+     cream page AND on the muted fill, which is where it actually sits. */
+  --muted-foreground: oklch(0.505 0.02 55);
+  --accent: oklch(0.945 0.02 62);
+  --accent-foreground: oklch(0.3 0.02 50);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.915 0.01 58);
-  --input: oklch(0.915 0.01 58);
+  --border: oklch(0.9 0.012 76);
+  --input: oklch(0.895 0.012 76);
   --ring: var(--accent-brand);
   /* Brand accent = Claude terracotta (was vermilion 朱 0.55/0.17/35). Drives links + focus ring.
      Must track --primary: as LINK TEXT it needs 4.5:1, and at L=0.62 it measured 3.39:1 on tinted
@@ -78,49 +103,68 @@
   --warn: oklch(0.555 0.14 85); /* partial / behind — amber (nudged off the brand orange) */
   --alert: oklch(0.575 0.2 20); /* wrong / lapse — rose */
   --info: oklch(0.55 0.13 245); /* easy / mastered — blue (same L/C family as the 3 above) */
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0.008 60);
-  --sidebar-foreground: oklch(0.2 0.01 50);
+  /* 0.625rem -> 0.875rem. The radius scale is derived from this one number (sm .6x … 2xl 1.8x), so
+     bumping it moves every corner in the app at once: cards land at ~25px, fields at ~19px, chips at
+     ~12px. That generous-but-not-bubbly corner is the single most recognisable thing about the look. */
+  --radius: 0.875rem;
+  --sidebar: oklch(0.968 0.011 78);
+  --sidebar-foreground: oklch(0.25 0.014 50);
   --sidebar-primary: oklch(0.545 0.14 42);
   --sidebar-primary-foreground: oklch(0.99 0.012 80);
-  --sidebar-accent: oklch(0.95 0.016 58);
-  --sidebar-accent-foreground: oklch(0.26 0.02 50);
-  --sidebar-border: oklch(0.91 0.01 58);
+  --sidebar-accent: oklch(0.94 0.02 62);
+  --sidebar-accent-foreground: oklch(0.3 0.02 50);
+  --sidebar-border: oklch(0.9 0.012 76);
   --sidebar-ring: var(--accent-brand);
 }
 
+/* Dark = the same three surfaces, stacked the other way: chrome sinks BELOW the page, cards rise above
+   it. Warmth is kept (hue ~52) so dark mode reads as dimmed paper, not as blue-black glass. */
 .dark {
-  --background: oklch(0.16 0.008 50);
-  --foreground: oklch(0.96 0.005 70);
-  --card: oklch(0.205 0.01 50);
-  --card-foreground: oklch(0.96 0.005 70);
-  --popover: oklch(0.205 0.01 50);
-  --popover-foreground: oklch(0.96 0.005 70);
+  --background: oklch(0.168 0.009 52);
+  --foreground: oklch(0.955 0.006 75);
+  --card: oklch(0.212 0.012 52);
+  --card-foreground: oklch(0.955 0.006 75);
+  --popover: oklch(0.228 0.013 52);
+  --popover-foreground: oklch(0.955 0.006 75);
   --primary: oklch(0.7 0.13 45);
   --primary-foreground: oklch(0.2 0.03 45);
-  --secondary: oklch(0.27 0.01 50);
-  --secondary-foreground: oklch(0.96 0.005 70);
-  --muted: oklch(0.27 0.01 50);
-  --muted-foreground: oklch(0.71 0.02 60);
-  --accent: oklch(0.3 0.016 52);
-  --accent-foreground: oklch(0.96 0.005 70);
+  --secondary: oklch(0.272 0.012 52);
+  --secondary-foreground: oklch(0.955 0.006 75);
+  --muted: oklch(0.272 0.012 52);
+  --muted-foreground: oklch(0.72 0.02 62);
+  --accent: oklch(0.305 0.019 52);
+  --accent-foreground: oklch(0.955 0.006 75);
   --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
+  --border: oklch(1 0 0 / 9%);
+  --input: oklch(1 0 0 / 14%);
   --ring: var(--accent-brand);
   --accent-brand: oklch(0.72 0.13 45);
   --ok: oklch(0.72 0.14 155);
   --warn: oklch(0.8 0.13 88);
   --alert: oklch(0.71 0.18 20);
   --info: oklch(0.72 0.13 245);
-  --sidebar: oklch(0.205 0.01 50);
-  --sidebar-foreground: oklch(0.96 0.005 70);
+  --sidebar: oklch(0.142 0.008 52);
+  --sidebar-foreground: oklch(0.93 0.006 75);
   --sidebar-primary: oklch(0.7 0.13 45);
   --sidebar-primary-foreground: oklch(0.2 0.03 45);
-  --sidebar-accent: oklch(0.3 0.016 52);
-  --sidebar-accent-foreground: oklch(0.96 0.005 70);
-  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-accent: oklch(0.28 0.019 52);
+  --sidebar-accent-foreground: oklch(0.955 0.006 75);
+  --sidebar-border: oklch(1 0 0 / 8%);
   --sidebar-ring: var(--accent-brand);
+}
+
+/* The micro-label: 12px uppercase with wide tracking, in the muted colour — what sits ABOVE a number or
+   a chart instead of a same-size sentence competing with it. Forces the SANS family, because uppercase
+   tracked-out serif is a poster, not a label, and h1–h3 below default to serif.
+   Stays on the type scale (text-xs = 12px) so lib/type-scale.test.ts is satisfied by construction. */
+@utility eyebrow {
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  line-height: var(--text-xs--line-height);
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--color-muted-foreground);
 }
 
 @layer base {
@@ -132,6 +176,27 @@
   }
   html {
     @apply font-sans;
+  }
+
+  /* Headings are the serif; body/UI stays Inter. This is the whole editorial voice in one rule — it
+     reaches every h1–h3 in the app (page titles, card headings, section titles) without touching the
+     files. h4–h6 are deliberately left sans: at 14px and below they are labels, not headlines.
+     `font-optical-sizing` matters for Newsreader specifically — it is a variable opsz font, so without
+     this a 30px title renders with the letterforms drawn for body copy. */
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    font-optical-sizing: auto;
+    letter-spacing: -0.011em;
+  }
+
+  /* Japanese never falls back to a guessed OS font: everything the learner reads is tagged lang="ja"
+     (SpokenLine, FuriganaText), so one selector covers the app. `font-feature-settings: palt` turns on
+     proportional kana spacing, which is what stops a JA line from looking like a monospaced grid. */
+  [lang='ja'] {
+    font-family: var(--font-jp);
+    font-feature-settings: 'palt' 1;
   }
 
   /* Theme-aware thin scrollbar (standard + webkit fallback). */
