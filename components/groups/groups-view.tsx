@@ -6,13 +6,6 @@ import { Layers, Pencil, Plus, SearchX, Trash2 } from 'lucide-react';
 import { toastResult } from '@/lib/action-toast';
 import { Button } from '@/components/ui/button';
 import { DataPagination } from '@/components/ui/data-pagination';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import {
   Select,
@@ -24,7 +17,6 @@ import {
 import { EmptyState } from '@/components/shared/empty-state';
 import { ExpandingIconButton } from '@/components/shared/expanding-icon-button';
 import { FilterPopover, FilterRow } from '@/components/shared/filter-popover';
-import { GroupForm } from '@/components/groups/group-form';
 import { GROUP_KIND_LABELS, GroupKindBadge } from '@/components/groups/group-kind-badge';
 import { SearchInput } from '@/components/shared/search-input';
 import { usePagedList } from '@/components/shared/use-paged-list';
@@ -58,8 +50,6 @@ const cardCls =
  * create/edit/delete dialogs.
  */
 export function GroupsView({ groups }: { groups: GroupSummary[] }) {
-  const [createOpen, setCreateOpen] = useState(false);
-  const [editing, setEditing] = useState<GroupSummary | null>(null);
   const [deleting, setDeleting] = useState<GroupSummary | null>(null);
   const [isPending, startTransition] = useTransition();
   const [q, setQ] = useSessionState('groups.search', '', 'gq');
@@ -106,21 +96,6 @@ export function GroupsView({ groups }: { groups: GroupSummary[] }) {
 
   return (
     <div className="space-y-6">
-      {/* Create dialog is controlled + mounted regardless of the toolbar, so the empty-state action can
-          open it even when there are no groups yet (the toolbar is hidden then — the standard: no data
-          ⇒ no search / no action bar, just the empty state). */}
-      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Tạo nhóm mới</DialogTitle>
-            <DialogDescription>
-              Đặt tên và chọn loại. Loại quyết định mục nào được thêm.
-            </DialogDescription>
-          </DialogHeader>
-          <GroupForm onDone={() => setCreateOpen(false)} />
-        </DialogContent>
-      </Dialog>
-
       {/* Toolbar — byte-for-byte the grammar/vocab toolbar (components/shared/data-table.tsx): ONE ROW at
           every width, the search box shrinking (`min-w-0 flex-1`) so the icon-only actions stay beside it
           instead of wrapping onto a second row. This tab used to be `flex-wrap` with an uncapped search
@@ -194,12 +169,11 @@ export function GroupsView({ groups }: { groups: GroupSummary[] }) {
                 </FilterRow>
               </div>
             </FilterPopover>
-            <ExpandingIconButton
-              icon={Plus}
-              label="Tạo nhóm"
-              variant="default"
-              onClick={() => setCreateOpen(true)}
-            />
+            {/* NAVIGATES to /groups/new — it was a dialog until 2026-08-05. Same as "Thêm" on the
+                grammar / vocab tabs, which go to /resources/new. */}
+            <ExpandingIconButton asChild icon={Plus} label="Tạo nhóm" variant="default">
+              <Link href="/groups/new" />
+            </ExpandingIconButton>
           </div>
         </div>
       )}
@@ -210,9 +184,11 @@ export function GroupsView({ groups }: { groups: GroupSummary[] }) {
           title="Chưa có nhóm nào"
           description="Tạo nhóm đầu tiên để gom các mục bạn muốn luyện chung."
           action={
-            <Button onClick={() => setCreateOpen(true)}>
-              <Plus className="size-4" />
-              Tạo nhóm
+            <Button asChild>
+              <Link href="/groups/new">
+                <Plus className="size-4" />
+                Tạo nhóm
+              </Link>
             </Button>
           }
         />
@@ -249,13 +225,15 @@ export function GroupsView({ groups }: { groups: GroupSummary[] }) {
                   </span>
                   <span className="flex shrink-0 items-center gap-0.5">
                     <Button
+                      asChild
                       variant="ghost"
                       size="icon"
                       className="size-8"
-                      onClick={() => setEditing(g)}
                       aria-label={`Sửa nhóm ${g.name}`}
                     >
-                      <Pencil className="size-4" />
+                      <Link href={`/groups/${g.id}/edit`}>
+                        <Pencil className="size-4" />
+                      </Link>
                     </Button>
                     <Button
                       variant="ghost"
@@ -309,17 +287,6 @@ export function GroupsView({ groups }: { groups: GroupSummary[] }) {
           </div>
         </>
       )}
-
-      {/* Edit dialog (controlled by `editing`). */}
-      <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Sửa nhóm</DialogTitle>
-            <DialogDescription>Đổi tên, loại hoặc ghi chú.</DialogDescription>
-          </DialogHeader>
-          {editing && <GroupForm group={editing} onDone={() => setEditing(null)} />}
-        </DialogContent>
-      </Dialog>
 
       {/* Delete confirm. */}
       <ConfirmDialog

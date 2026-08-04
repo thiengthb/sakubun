@@ -86,7 +86,8 @@ test.beforeAll(async () => {
     // Re-runnable: a failing test restarts the worker, which runs this hook AGAIN against a DB that
     // already has the rows — and `Item` is unique on [kind, expression], so the retry died with a
     // SqliteError that buried the ACTUAL failure. Clear first; the hook then always describes the DB.
-    for (const t of ['ReviewLog', 'SrsState', 'Sentence', 'Item']) db.exec(`DELETE FROM "${t}"`);
+    for (const t of ['GroupMember', 'Group', 'ReviewLog', 'SrsState', 'Sentence', 'Item'])
+      db.exec(`DELETE FROM "${t}"`);
 
     const item = db.prepare(
       `INSERT INTO Item (id, kind, expression, reading, hanviet, meaningVi, level, notes, source,
@@ -119,6 +120,18 @@ test.beforeAll(async () => {
       for (let r = 0; r < 3; r++)
         log.run(`lg${n}-${r}`, id, 1 + ((n + r) % 4), (n + r) % 4, iso(now + DAY), 3 + n, 5, iso(now - (r * 2 + (n % 5)) * DAY));
     });
+    // A study group with a long name + one member, so the group routes below render their real shapes:
+    // the detail page's toolbar and tab control, the edit form, and a non-empty add picker. The name is
+    // deliberately long — the 99px overflow this spec now guards was a header row where the tab control
+    // sat beside a long group name.
+    db.prepare(
+      `INSERT INTO "Group" (id, name, kind, color, note, createdAt, updatedAt)
+       VALUES ('grp-e2e', 'Mẫu N2 hay sai khi viết mail công việc', 'grammar', NULL, 'ghi chú nhóm', ?, ?)`,
+    ).run(iso(now), iso(now));
+    db.prepare(
+      `INSERT INTO GroupMember (groupId, itemId, addedAt) VALUES ('grp-e2e', 'g0', ?)`,
+    ).run(iso(now));
+
     VOCAB.forEach(([expression, reading, hanviet, meaningVi, level, reason], n) => {
       const id = `v${n}`;
       item.run(id, 'VOCAB', expression, reading, hanviet, meaningVi, level, reason, n % 5 === 0 ? 1 : 0, iso(now - n * DAY));
@@ -150,6 +163,29 @@ const PAGES: [string, string][] = [
   // âm Hán Việt. `g0` has reviews (so the log renders rows), `v0` has none (so the empty state does).
   ['resources/g0 (detail)', '/resources/g0'],
   ['resources/v0 (detail)', '/resources/v0'],
+
+  // NON-DEFAULT TABS, reached by `?tab=` (every tabbed page mirrors its active tab to the URL, so no
+  // clicking is needed). Added 2026-08-05 because this sweep only ever opened each page's FIRST tab, and
+  // two hard overflows were living in tabs it never reached:
+  //   · /guide?tab=reference — 234px. Two <pre> config blocks have a min-content width of ~600px, and
+  //     PageShell (a flex item of the Tabs root) was sized from its CONTENT, so the PAGE scrolled
+  //     sideways instead of the code block scrolling inside itself. Fixed with `w-full` on the shell.
+  //   · /settings?tab=data — carries the only other code block in the app, same shape.
+  // Guide "features" is included as the widest PROSE tab (the topic browser), and settings "account"
+  // as the one settings tab built from cards + inline forms rather than fields.
+  ['guide (reference)', '/guide?tab=reference'],
+  ['guide (features)', '/guide?tab=features'],
+  ['settings (data)', '/settings?tab=data'],
+  ['settings (account)', '/settings?tab=account'],
+
+  // GROUPS — five surfaces, none of which this spec opened before 2026-08-05. The detail page shipped a
+  // hand-rolled <TabsList> in its header row and overflowed a 390px phone by 99px; the other three are
+  // the routes that replaced its create/edit/add-items dialogs, so they are new surface with no history.
+  ['resources (groups tab)', '/resources?tab=groups'],
+  ['group detail', '/groups/grp-e2e'],
+  ['group new', '/groups/new'],
+  ['group edit', '/groups/grp-e2e/edit'],
+  ['group add items', '/groups/grp-e2e/add'],
 ];
 
 /**

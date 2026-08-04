@@ -39,7 +39,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { TabsContent } from '@/components/ui/tabs';
+import { SettingsTab } from '@/components/settings/settings-tab';
 import { cn } from '@/lib/utils';
 
 // The volume is `sakubun_sakubun_data` — compose prefixes a named volume with the project name, so
@@ -248,8 +248,8 @@ export function DataTab() {
   const nonEmpty = preview?.result.tables.filter((t) => t.create + t.update + t.skip > 0) ?? [];
 
   return (
-    <TabsContent value="data" className="pt-2">
-      <div className="space-y-8">
+    <SettingsTab value="data" surface="bare">
+      <div className="space-y-6">
         {/* ---- Everyone: your own data ---- */}
         <section className="space-y-3">
           <SectionHeading hint="Chỉ dữ liệu của tài khoản bạn — không đụng tới người khác.">
@@ -515,6 +515,6 @@ export function DataTab() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </TabsContent>
+    </SettingsTab>
   );
 }

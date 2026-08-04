@@ -67,7 +67,19 @@ export function Breadcrumbs({ items, className }: { items: Crumb[]; className?: 
                 className={cn('size-4 shrink-0', (last || !compress) && 'max-md:hidden')}
                 aria-hidden
               />
-              <span className={cn('max-w-[18ch] truncate', !last && compress && 'max-md:sr-only')}>
+              {/* The CURRENT page's label is capped tighter on a phone (2026-08-05). A detail crumb holds
+                  an entity NAME, and a long one ("Mẫu N2 hay sai khi viết mail công việc") ate the header
+                  row: PageShell gives the crumb `shrink-0`, so the give landed on the tab control, whose
+                  pill truncated to "D." — a label that names nothing. 12ch keeps the crumb recognisable
+                  ("Mẫu N2 hay…") and leaves the tab control enough width to read. The full name is one
+                  hover/tap away in the tooltip, and it is also the page's own heading. */}
+              <span
+                className={cn(
+                  'max-w-[18ch] truncate',
+                  last && 'max-md:max-w-[12ch]',
+                  !last && compress && 'max-md:sr-only',
+                )}
+              >
                 {item.label}
               </span>
             </span>

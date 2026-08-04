@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Card, CardContent } from '@/components/ui/card';
 import { Tabs } from '@/components/ui/tabs';
 import { PageShell } from '@/components/shell/page-shell';
 import { TabSelect } from '@/components/shared/tab-select';
@@ -43,7 +44,15 @@ export function ResourceAddPage({ kind }: { kind: ResourceKind }) {
           <TabSelect items={INPUT_TABS} value={tab} onValueChange={setTab} label="Cách nhập" />
         }
       >
-        <ResourceAddPanels kind={kind} onDone={done} />
+        {/* Card, so the page reads like the rest of the app (2026-08-05). The fields used to sit bare on
+            the page background — no surface, no edge — which is the one shape nothing else here uses:
+            /settings puts its fields on cards, so do the item detail, the group cards and the history
+            entries. The DIALOG host keeps no card, because the dialog already IS the surface. */}
+        <Card>
+          <CardContent>
+            <ResourceAddPanels kind={kind} onDone={done} />
+          </CardContent>
+        </Card>
       </PageShell>
     </Tabs>
   );

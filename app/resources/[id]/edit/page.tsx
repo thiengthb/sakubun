@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { Card, CardContent } from '@/components/ui/card';
 import { PageShell } from '@/components/shell/page-shell';
 import { ItemEditForm } from '@/components/resources/item-edit-form';
 import { getItemStats } from '@/lib/item-stats';
@@ -32,18 +33,24 @@ export default async function ItemEditPage({ params }: { params: Promise<{ id: s
       <p className="text-muted-foreground">
         Chỉ sửa nội dung. Lịch ôn (FSRS) của mục được giữ nguyên.
       </p>
-      <ItemEditForm
-        item={{
-          itemId: id,
-          expression: stats.expression,
-          reading: stats.reading,
-          meaningVi: stats.meaningVi,
-          notes: stats.notes,
-          level: stats.level,
-          suspended: stats.suspended,
-        }}
-        kind={stats.kind}
-      />
+      {/* Card, same as /resources/new and the group form pages (2026-08-05): a page's content sits on a
+          surface everywhere else in this app, and a bare form was the odd one out. */}
+      <Card>
+        <CardContent>
+          <ItemEditForm
+            item={{
+              itemId: id,
+              expression: stats.expression,
+              reading: stats.reading,
+              meaningVi: stats.meaningVi,
+              notes: stats.notes,
+              level: stats.level,
+              suspended: stats.suspended,
+            }}
+            kind={stats.kind}
+          />
+        </CardContent>
+      </Card>
     </PageShell>
   );
 }

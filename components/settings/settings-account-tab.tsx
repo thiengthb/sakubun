@@ -31,7 +31,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { TabsContent } from '@/components/ui/tabs';
+import { SettingsTab } from '@/components/settings/settings-tab';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import { formatDateTimeVN, formatDateVN } from '@/lib/format';
 
@@ -215,7 +215,7 @@ export function AccountTab({
           "Nội dung" or "Nhịp học": it is not a preference at all, it is a credential OF this account,
           created and revoked here and nowhere else. Two cards in one tab say that; two tabs said they
           were unrelated pages. */}
-      <TabsContent value="account" className="space-y-4">
+      <SettingsTab value="account" surface="bare">
         <Card>
           <CardContent className="space-y-6">
             {/* Identity: avatar + name (with an inline edit button) + email. */}
@@ -398,7 +398,7 @@ export function AccountTab({
             )}
           </CardContent>
         </Card>
-      </TabsContent>
+      </SettingsTab>
 
       {/* Token shown once, right after creation. Kept outside TabsContent so it survives a tab switch. */}
       <Dialog open={newToken !== null} onOpenChange={(o) => !o && setNewToken(null)}>

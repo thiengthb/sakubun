@@ -90,6 +90,13 @@ const ACTION_CRUMBS = {
     icon: Pencil,
     description: 'Sửa nội dung mục. Lịch ôn (FSRS) được giữ nguyên.',
   },
+  // Distinct from `add` on purpose: under Nhóm, "Thêm" would be ambiguous between *creating a group* and
+  // *putting items into one*, and both are now real routes (/groups/new · /groups/<id>/add).
+  addItems: {
+    label: 'Thêm mục',
+    icon: Plus,
+    description: 'Chọn mẫu ngữ pháp / từ vựng để đưa vào nhóm. Chỉ hiện mục đúng loại và chưa ở trong nhóm.',
+  },
 } satisfies Record<string, Crumb>;
 
 export type BreadcrumbSection = keyof typeof CRUMBS;

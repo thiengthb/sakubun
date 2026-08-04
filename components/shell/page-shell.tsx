@@ -70,7 +70,17 @@ export function PageShell({
     // page sits UNDER the button — on a phone that is exactly the pagination footer's rows-per-page
     // select, which the button covered. `useFitRows`' `bottomGap` default mirrors this number; change
     // the two together or the viewport-fit lists will fit one row too many.
-    <div className={cn('space-y-4 pt-6 pb-16 text-sm', WIDTH[width], className)}>
+    // `w-full min-w-0` is load-bearing, not defensive — it is what keeps a tabbed page inside the phone.
+    // Every tabbed page renders this shell INSIDE a `<Tabs>` root, which is `display:flex`, so this div is
+    // a FLEX ITEM. With `width:auto` the browser sized it from its CONTENT instead of stretching it to the
+    // container: measured on /guide?tab=reference at 390px, the Tabs root was 358px wide and this div came
+    // out 608px (computed width, not overflow), so the whole page scrolled sideways 234px and `max-w-3xl`
+    // looked like it was being ignored. `max-w-*` and `min-w-0` alone did NOT fix it; `w-full` did, because
+    // it pins the cross size to the container instead of the content. Same pairing `app-shell.tsx` already
+    // uses on <main> (`mx-auto w-full max-w-7xl min-w-0`).
+    // Consequence worth keeping: a too-wide descendant now overflows ALONE, so its own `overflow-x-auto`
+    // can contain it and e2e/mobile-layout.spec.ts can name the element instead of blaming the page.
+    <div className={cn('w-full min-w-0 space-y-4 pt-6 pb-16 text-sm', WIDTH[width], className)}>
       {/* Remember scroll position per route (long pages only; list pages are viewport-fit). */}
       <ScrollRestorer />
       {/* Header row: breadcrumb, then the page-supplied aside (tabs, actions). Kept unconditional so
