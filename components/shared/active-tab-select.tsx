@@ -67,9 +67,15 @@ export function ActiveTabSelect({
           </span>
         </span>
       </SelectTrigger>
-      {/* align="start" so the list opens under the pill's left edge — the pill is the anchor the eye
-          is already on, and on a right-aligned header row a centred menu would drift off-screen. */}
-      <SelectContent align="start">
+      {/* position="popper" is the whole point here, not a detail: the shared SelectContent defaults to
+          `item-aligned`, which is Radix's native-select emulation — it lays the list OVER the trigger so
+          the ACTIVE option lands exactly on top of it. On a form field that reads fine; on this control
+          it means tapping the tab pill covers the pill, the breadcrumb and the toolbar under it, and the
+          list appears to open upward. `popper` anchors the list BELOW the trigger (flipping only when
+          the viewport genuinely has no room), so the tab bar stays visible while you pick.
+          align="start" so it opens under the pill's left edge — the pill is the anchor the eye is
+          already on, and on a right-aligned header row a centred menu would drift off-screen. */}
+      <SelectContent align="start" position="popper" sideOffset={6}>
         {items.map((item) => (
           <SelectItem key={item.value} value={item.value}>
             {item.label}

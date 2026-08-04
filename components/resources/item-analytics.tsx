@@ -17,8 +17,7 @@ import { PageShell } from '@/components/shell/page-shell';
 import { CopyCommandButton } from '@/components/shared/copy-command-button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
-import { Tabs, TabsContent } from '@/components/ui/tabs';
-import { TabSelect } from '@/components/shared/tab-select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { EmptyState } from '@/components/shared/empty-state';
 import { EnrichmentCard } from '@/components/resources/enrichment-card';
 import { InfoTooltip } from '@/components/shared/info-tooltip';
@@ -62,13 +61,17 @@ function StatCard({
   hint?: string;
 }) {
   return (
-    <Card className="gap-1 p-4">
+    // Denser below sm (2026-08-05): eight of these stack 2-across on a phone, so p-4 + text-2xl spent
+    // ~370px of screen before the curve and the log — the two things you scroll here for. The label
+    // truncates rather than wrapping, which is what kept the cards uneven in a 2-column grid.
+    <Card className="gap-0.5 p-3 sm:gap-1 sm:p-4">
       <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
         <Icon className="size-3.5 shrink-0" aria-hidden />
-        <span>{label}</span>
+        {/* min-w-0 is what makes `truncate` bite on a flex item (min-width defaults to auto). */}
+        <span className="min-w-0 truncate">{label}</span>
         {hint && <InfoTooltip label={`Về ${label}`}>{hint}</InfoTooltip>}
       </div>
-      <div className="text-2xl font-semibold tabular-nums">{value}</div>
+      <div className="text-xl font-semibold tabular-nums sm:text-2xl">{value}</div>
       {sub && <div className="text-xs text-muted-foreground">{sub}</div>}
     </Card>
   );
@@ -179,22 +182,33 @@ export function ItemAnalytics({
 
       {groupsSlot && <div>{groupsSlot}</div>}
 
-      {/* Two tabs: metrics + review log · then the enrichment / word detail (2026-07-18). The
-          Claude-instruction buttons sit on the SAME row as the tabs, pushed to the right (2026-07-21).
-          The app cannot drive Claude Desktop (the MCP connection runs the other way), so instead of a
-          control path it hands over the exact instruction to paste — invariant #1 is untouched. */}
+      {/* Two tabs: metrics + review log · then the enrichment / word detail (2026-07-18).
+          A REAL tab bar here, not the app's `TabSelect` (2026-08-05, by request). TabSelect trades a
+          tab bar for a select below `md` because a bar costs width proportional to the NUMBER of tabs —
+          that trade pays on /settings (five tabs) and /guide (four). With TWO tabs it does not: the pair
+          is ~200px at 360px, i.e. it already fits, so the select bought nothing and cost the thing a tab
+          bar is for — both destinations visible at once, one tap away, no menu.
+          The line is the tab row's POSITION, not the tab count: this row is page CONTENT and owns its
+          full width, while the dashboard's two tabs (`analytics-tabs.tsx`) sit on the HEADER row, where
+          360px leaves ~166px after the mobile top bar and the breadcrumb and e2e/mobile-layout.spec.ts
+          requires that row to stay one line. There, a capped-width pill is exactly what is needed.
+          `max-md:w-full` makes the pair split the phone's row evenly (a segmented control), which is also
+          what turns the two labels into two big thumb targets. */}
       <Tabs value={tab} onValueChange={setTab} className="space-y-6">
         <div className="flex flex-wrap items-center gap-2">
-          <TabSelect
-            items={[
-              { value: 'stats', label: 'Chỉ số & lịch' },
-              { value: 'detail', label: stats.kind === 'grammar' ? 'Thẻ chi tiết' : 'Chi tiết từ' },
-            ]}
-            value={tab}
-            onValueChange={setTab}
-            label="Chọn khung xem"
-          />
-          <div className="flex flex-wrap gap-2 sm:ml-auto">
+          <TabsList className="max-md:w-full">
+            <TabsTrigger value="stats">Chỉ số &amp; lịch</TabsTrigger>
+            <TabsTrigger value="detail">
+              {stats.kind === 'grammar' ? 'Thẻ chi tiết' : 'Chi tiết từ'}
+            </TabsTrigger>
+          </TabsList>
+          {/* The Claude-instruction buttons, `md` AND UP ONLY (2026-08-05, by request).
+              They are not a mobile control in the first place: each one COPIES a sentence for you to
+              paste into Claude Desktop, and Claude Desktop is not on the phone you are holding — so on a
+              phone they took two of the four slots on the tab row to offer an action that finishes
+              somewhere else. The app cannot drive Claude itself (MCP runs the other way, invariant #1),
+              which is exactly why the control is a copy button and not a "do it" button. */}
+          <div className="hidden flex-wrap gap-2 md:ml-auto md:flex">
             <CopyCommandButton
               command={`luyện tập trung mẫu ${stats.expression}`}
               label="Luyện riêng mẫu này"

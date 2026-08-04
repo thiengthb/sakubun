@@ -75,7 +75,9 @@ export function ForgettingCurve({
             />
           )}
         </svg>
-        <span className="absolute top-0 right-0 translate-x-1 text-[0.625rem] text-muted-foreground">
+        {/* Flush with the chart's right edge — it used to be nudged 4px OUT (`translate-x-1`), which on a
+            390px phone put the last glyph of "hạn ~90%" under the card's edge. */}
+        <span className="absolute top-0 right-0 text-[0.625rem] text-muted-foreground">
           hạn ~{pct(retention)}
         </span>
       </div>

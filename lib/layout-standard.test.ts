@@ -56,6 +56,20 @@ describe('UI layout standard (nuc-platform/12-ui-layout-standard.md)', () => {
     ).toEqual([]);
   });
 
+  // The app's compact tab switcher must open its list BELOW the trigger. `SelectContent` defaults to
+  // Radix's `item-aligned` positioning (a native-select emulation that lays the list OVER the trigger so
+  // the active option covers it), which on this control hid the tab bar, the breadcrumb and the toolbar
+  // the moment you tapped it — reported 2026-08-05. One prop stands between the two behaviours, it looks
+  // like noise to a reader, and nothing else in the file explains it, so it is asserted here.
+  it('the mobile tab select opens below its trigger (position="popper")', () => {
+    const src = readFileSync('components/shared/active-tab-select.tsx', 'utf8');
+    expect(
+      /<SelectContent[^>]*position="popper"/.test(src),
+      'ActiveTabSelect\'s <SelectContent> lost position="popper", so the option list is back to ' +
+        'covering the tab pill it belongs to (SelectContent defaults to position="item-aligned").',
+    ).toBe(true);
+  });
+
   // Rule 2: every route page renders inside a PageShell — either directly, or via a view component it
   // imports. Chromeless auth pages and the redirect stub are the only exemptions.
   it('every app/**/page.tsx reaches a PageShell', () => {

@@ -45,9 +45,12 @@ const MEMBER_FILTERS = [
   { value: 'empty', label: 'Trống' },
 ] as const;
 
-// The app styles cards with a ring (not a border) + --card-spacing; a plain div with these classes
-// avoids the Card component's built-in vertical padding for this custom, denser card layout.
-const cardCls = 'rounded-xl bg-card text-card-foreground ring-1 ring-foreground/10';
+// The SAME card box the grammar / vocab tabs use below `md` (see `DataTable`'s card list): one
+// `border-border/70` rounded box, a hover tint, `relative` to anchor the whole-card overlay link, and
+// every `button` inside raised above that link so edit / delete still get their own clicks. It used to
+// be a ring-1 + bg-card box, which is why the Nhóm tab read as a different screen from its two siblings.
+const cardCls =
+  'relative flex flex-col gap-1.5 rounded-lg border border-border/70 p-3 transition-colors hover:bg-muted/40 [&_button]:relative [&_button]:z-10';
 
 /**
  * Body of the "Nhóm" tab on the /resources page (was the standalone /groups page). The breadcrumb +
@@ -64,7 +67,7 @@ export function GroupsView({ groups }: { groups: GroupSummary[] }) {
   const [member, setMember] = useSessionState('groups.member', 'all', 'gm');
   const [sort, setSort] = useSessionState<SortKey>('groups.sort', 'recent', 'gs');
   // Card grid + pagination bar are measured so the page size fills the viewport (no scroll).
-  const listRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLUListElement>(null);
   const footerRef = useRef<HTMLDivElement>(null);
 
   const needle = q.trim().toLowerCase();
@@ -118,18 +121,23 @@ export function GroupsView({ groups }: { groups: GroupSummary[] }) {
         </DialogContent>
       </Dialog>
 
-      {/* Toolbar mirrors the grammar/vocab tabs: search + a filter, with the create action pushed right.
-          Shown only when there ARE groups. */}
+      {/* Toolbar — byte-for-byte the grammar/vocab toolbar (components/shared/data-table.tsx): ONE ROW at
+          every width, the search box shrinking (`min-w-0 flex-1`) so the icon-only actions stay beside it
+          instead of wrapping onto a second row. This tab used to be `flex-wrap` with an uncapped search
+          box, which cost a whole extra row at 390px — on the screen with the least vertical space, and
+          right next to two sibling tabs that do not. Shown only when there ARE groups. */}
       {groups.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-row items-center gap-2 sm:gap-3">
           <SearchInput
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Tìm nhóm theo tên / ghi chú"
+            // className styles the WRAPPER (see SearchInput) — same values the DataTable passes.
+            className="min-w-0 flex-1 sm:max-w-xs"
           />
-          {/* Filter + create grouped on the right (sm:ml-auto), mirroring the grammar/vocab DataTable
-            toolbar — the filter button sits beside "Tạo nhóm", not next to the search box. */}
-          <div className="flex items-center gap-2 sm:ml-auto">
+          {/* Filter + create grouped at the far right, the filter INNERMOST — the same order as the
+              grammar/vocab toolbar, so the create button is the outermost control on all three tabs. */}
+          <div className="flex shrink-0 items-center gap-2 md:ml-auto">
             <FilterPopover
               activeCount={filterCount}
               onReset={() => {
@@ -216,34 +224,30 @@ export function GroupsView({ groups }: { groups: GroupSummary[] }) {
         />
       ) : (
         <>
-          <div ref={listRef} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {/* Same THREE BANDS as the grammar/vocab card (components/resources/resource-card.tsx), in the
+              same order, so all three tabs read alike: 1) identity + the actions at the top-right, where
+              a thumb reaches on a tall list; 2) the prose line, clamped to two lines; 3) a text-xs meta
+              row. The kind badge moved OUT of band 1 into the meta row — it is the same class of fact as
+              the resource card's JLPT level, and band 1 belongs to the name plus its controls. */}
+          <ul ref={listRef} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {paged.items.map((g) => (
-              <div key={g.id} className={`${cardCls} flex flex-col gap-2 p-4`}>
+              <li key={g.id} className={cardCls}>
+                {/* Whole-card link, as on the resource cards: an overlay <a> rather than a wrapper,
+                    because wrapping would nest the edit/delete buttons inside an anchor. */}
+                <Link
+                  href={`/groups/${g.id}`}
+                  className="absolute inset-0 rounded-lg focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                >
+                  <span className="sr-only">Mở nhóm {g.name}</span>
+                </Link>
+
+                {/* Band 1 — identity + controls. */}
                 <div className="flex items-start justify-between gap-2">
-                  <Link
-                    href={`/groups/${g.id}`}
-                    className="flex items-center gap-2 font-medium hover:underline"
-                  >
-                    <Layers className="size-4 shrink-0 text-muted-foreground" />
+                  <span className="flex min-w-0 flex-1 items-start gap-2 font-medium">
+                    <Layers className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
                     <span className="line-clamp-2">{g.name}</span>
-                  </Link>
-                  <GroupKindBadge kind={g.kind} />
-                </div>
-
-                {/* Always render the description line (placeholder "__" when empty) + reserve 2 lines,
-                    so a note-less card is the SAME height as one with a note — cards stay uniform. */}
-                <p className="line-clamp-2 min-h-[2.5rem] text-sm text-muted-foreground">
-                  {g.note || <span className="text-muted-foreground/40">__</span>}
-                </p>
-
-                <div className="mt-auto flex items-center justify-between pt-1">
-                  <Link
-                    href={`/groups/${g.id}`}
-                    className="text-sm text-muted-foreground hover:text-foreground"
-                  >
-                    {g.memberCount} mục
-                  </Link>
-                  <div className="flex gap-1">
+                  </span>
+                  <span className="flex shrink-0 items-center gap-0.5">
                     <Button
                       variant="ghost"
                       size="icon"
@@ -262,11 +266,26 @@ export function GroupsView({ groups }: { groups: GroupSummary[] }) {
                     >
                       <Trash2 className="size-4" />
                     </Button>
-                  </div>
+                  </span>
                 </div>
-              </div>
+
+                {/* Band 2 — the note, when there is one. The old card reserved two blank lines with a
+                    "__" placeholder to keep heights uniform; the grid already stretches every card in a
+                    row to the tallest one, so the placeholder only added a stray glyph to read. */}
+                {g.note && <p className="line-clamp-2 text-sm text-muted-foreground">{g.note}</p>}
+
+                {/* Band 3 — meta: how many items · what kind. `mt-auto` pins it to the card's bottom
+                    edge so the row lines up across a grid row of unequal-length names. */}
+                <div className="mt-auto flex flex-wrap items-center gap-x-2 gap-y-1 pt-1 text-xs text-muted-foreground">
+                  <span>{g.memberCount} mục</span>
+                  <span aria-hidden>·</span>
+                  {/* Same weight as the resource card's JLPT badge in this row: tight padding, normal
+                      weight — a meta chip, not a heading. */}
+                  <GroupKindBadge kind={g.kind} className="px-1.5 py-0 font-normal" />
+                </div>
+              </li>
             ))}
-          </div>
+          </ul>
           {/* Count via DataPagination's `count` prop — it owns the footer row (see data-table). */}
           <div ref={footerRef}>
             <DataPagination

@@ -144,6 +144,12 @@ const PAGES: [string, string][] = [
   // The edit route, on a seeded grammar id. Both form routes now render their tab switcher / breadcrumb
   // action crumb in the PageShell header row, which is the row this spec measures.
   ['resources/edit', '/resources/g0/edit'],
+  // The two ITEM DETAIL routes — the densest pages in the app (an 8-card metric grid, an SVG chart and a
+  // 6-column review log) and, until 2026-08-05, the only signed-in pages this spec never opened. Both
+  // kinds are listed because they render different bodies: grammar gets the enrichment card, vocab gets
+  // âm Hán Việt. `g0` has reviews (so the log renders rows), `v0` has none (so the empty state does).
+  ['resources/g0 (detail)', '/resources/g0'],
+  ['resources/v0 (detail)', '/resources/v0'],
 ];
 
 /**

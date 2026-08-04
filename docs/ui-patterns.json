@@ -224,6 +224,34 @@
         "kind": "manual"
       },
       "allow": {}
+    },
+    {
+      "id": "menus-open-below-trigger",
+      "rule": "Danh sách bật ra từ một control (Select / dropdown / menu) mở XUỐNG DƯỚI chân control đó, không bao giờ đè lên chính nó. Với Select dùng position=\"popper\"; radix mặc định item-aligned nên phải khai rõ.",
+      "why": "Trên mobile web, thanh tab (TabSelect) mở list theo kiểu item-aligned: Radix căn option ĐANG CHỌN lên đúng vị trí trigger, nên list phủ lên chính cái tab bạn vừa bấm, phủ luôn breadcrumb và toolbar bên dưới — nhìn như menu mở NGƯỢC lên. Người dùng nêu 2026-08-05.",
+      "canonical": "components/shared/active-tab-select.tsx",
+      "source": "user 2026-08-05 (\"hãy để các danh sách option hiển thị dưới chân của component đó chứ không phải là hiện đè lên\")",
+      "repeats": 1,
+      "lockedOn": "2026-08-05",
+      "note": "Chốt tất định cho riêng thanh tab nằm ở lib/layout-standard.test.ts (\"the mobile tab select opens below its trigger\"). Không biến thành forbid toàn repo: Select trong FORM (Cài đặt) vẫn dùng mặc định item-aligned một cách chính đáng — đó là hành vi của native select, và ở đó không có gì phía dưới bị che.",
+      "check": {
+        "kind": "manual"
+      },
+      "allow": {}
+    },
+    {
+      "id": "few-tabs-stay-real-tabs",
+      "rule": "Thanh tab nằm trong THÂN trang (content row) mà chỉ có 2 tab thì để tab thật (TabsList/TabsTrigger, `max-md:w-full` để chia đều trên điện thoại) — không thay bằng TabSelect. TabSelect dành cho thanh tab nằm trên HÀNG HEADER cạnh breadcrumb, hoặc khi số tab từ 3 trở lên.",
+      "why": "TabSelect đổi tab bar thành select vì bar tốn chiều ngang theo SỐ tab — cái giá đó đáng trả ở /settings (5 tab) và /guide (4 tab), nhưng với 2 tab thì cặp tab chỉ ~200px, tức đã vừa 360px: đổi sang select không tiết kiệm gì mà mất đúng thứ tab bar tồn tại để làm — thấy cả hai đích cùng lúc, một lần bấm, không qua menu. Người dùng nêu ở trang chi tiết ngữ pháp/từ vựng 2026-08-05.",
+      "canonical": "components/resources/item-analytics.tsx",
+      "source": "user 2026-08-05 (\"tab của trang chi tiết thì chuyển thành tab bình thường giúp tôi không để tab theo kiểu kia\")",
+      "repeats": 1,
+      "lockedOn": "2026-08-05",
+      "note": "NGOẠI LỆ ĐÃ NÊU RÕ: components/dashboard/analytics-tabs.tsx cũng có 2 tab mà vẫn giữ TabSelect — tab của nó nằm trên hàng header cạnh breadcrumb, nơi ở 360px chỉ còn ~166px sau MobileTopBar + breadcrumb, và e2e/mobile-layout.spec.ts bắt hàng đó phải một dòng. Đúng chỗ TabSelect có lãi. Ranh giới là VỊ TRÍ hàng tab, không phải số tab.",
+      "check": {
+        "kind": "manual"
+      },
+      "allow": {}
     }
   ]
 }
