@@ -51,56 +51,70 @@
    as "chosen warm", not machine-gray. Semantic tokens (ok/warn/alert/info) stay functional.
 
    2026-08-04 — PAPER NEUTRALS. Colour only: the warm bias above is pushed from "barely there" (hue 60,
-   chroma 0.004) to a real warm cream (hue ~77, chroma ~0.012), and the neutrals are split into three
+   chroma 0.004) to a real warm cream (hue ~80, chroma ~0.016), and the neutrals are split into three
    levels instead of two shades of white:
 
-     sidebar   0.968   chrome, one step DOWN — it recedes
-     page      0.984   the paper you read on
-     card      0.998   surfaces lift UP off the page
+     sidebar   0.938   chrome, one step DOWN — it recedes
+     page      0.958   the paper you read on
+     card      1.000   surfaces lift UP off the page
 
-   That third level is the whole idea: a card is now told apart from the page by its COLOUR, so nothing
-   about its shape, border or shadow had to change. Brand, semantic and radius tokens are untouched, and
-   every pair is contrast-checked by lib/contrast.test.ts. */
+   That third level is the whole idea: a card is told apart from the page by its COLOUR, so nothing about
+   its shape, border or shadow had to change. Brand (--primary / --accent-brand) and --radius are
+   untouched; every pair is contrast-checked by lib/contrast.test.ts.
+
+   The first attempt at this used 0.968/0.984/0.998 — a 1.4% step between page and card — and the honest
+   result was that nobody could see it: the page still read as white, and the whole change was invisible
+   unless you diffed two screenshots. Paper only reads as paper when it is clearly NOT white, so the page
+   is now a real cream and the card is pure white. The 4% gap is the point, not a side effect.
+
+   COST of the darker page, and why the four semantic tokens below moved with it: a saturated mid-tone
+   that cleared 4.5:1 on a near-white page does NOT clear it on cream. ok/warn/alert/info/destructive each
+   lost ~0.3 and landed at 4.2-4.3:1 — as TEXT, which is what they are in badges and legends. Each was
+   lowered by the smallest step that restores 4.55:1 on BOTH the page and the card (solved numerically,
+   1.4-2.7% of L), with C and H untouched so no hue drifts. The contrast gate found all five; without it
+   this pass would have shipped five colours of unreadable status text. */
 :root {
-  --background: oklch(0.984 0.008 78);
+  --background: oklch(0.958 0.016 82);
   --foreground: oklch(0.23 0.014 50);
-  --card: oklch(0.998 0.003 78);
+  --card: oklch(1 0.002 90);
   --card-foreground: oklch(0.23 0.014 50);
-  --popover: oklch(0.998 0.003 78);
+  --popover: oklch(1 0.002 90);
   --popover-foreground: oklch(0.23 0.014 50);
   /* L lowered 0.62 -> 0.545 on 2026-07-28: at 0.62 this pair measured 3.74:1, under the 4.5:1 AA floor,
      on every primary button in the app. C and H are untouched — same brand orange, one step darker. */
   --primary: oklch(0.545 0.14 42);
   --primary-foreground: oklch(0.99 0.012 80);
-  --secondary: oklch(0.955 0.012 76);
+  /* Fills have to sit visibly on BOTH the cream page and the white card, so they go below the page. */
+  --secondary: oklch(0.928 0.018 80);
   --secondary-foreground: oklch(0.3 0.02 50);
-  --muted: oklch(0.957 0.012 76);
-  /* 0.53 -> 0.505: the page went 1.1% darker (cream, not white) and this is the app's most common text
+  --muted: oklch(0.928 0.018 80);
+  /* 0.53 -> 0.5: the page went from near-white to a real cream and this is the app's most common text
      colour — every hint, meta line and axis label. One step darker keeps it clear of the 4.5:1 AA floor
      on the cream page AND on the muted fill, which is where it actually sits. */
-  --muted-foreground: oklch(0.505 0.02 55);
-  --accent: oklch(0.945 0.02 62);
+  --muted-foreground: oklch(0.5 0.02 55);
+  --accent: oklch(0.912 0.028 68);
   --accent-foreground: oklch(0.3 0.02 50);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.9 0.012 76);
-  --input: oklch(0.895 0.012 76);
+  --destructive: oklch(0.55 0.245 27.325);
+  /* Borders track the surfaces down: a hairline tuned for a white page disappears on a cream one. */
+  --border: oklch(0.878 0.018 78);
+  --input: oklch(0.872 0.018 78);
   --ring: var(--accent-brand);
   /* Brand accent = Claude terracotta (was vermilion 朱 0.55/0.17/35). Drives links + focus ring.
      Must track --primary: as LINK TEXT it needs 4.5:1, and at L=0.62 it measured 3.39:1 on tinted
      surfaces. Changing --primary without this one leaves every link failing. */
   --accent-brand: oklch(0.545 0.14 42);
-  --ok: oklch(0.535 0.13 155); /* correct / on-track — emerald */
-  --warn: oklch(0.555 0.14 85); /* partial / behind — amber (nudged off the brand orange) */
-  --alert: oklch(0.575 0.2 20); /* wrong / lapse — rose */
-  --info: oklch(0.55 0.13 245); /* easy / mastered — blue (same L/C family as the 3 above) */
+  --ok: oklch(0.521 0.13 155); /* correct / on-track — emerald */
+  --warn: oklch(0.537 0.14 85); /* partial / behind — amber (nudged off the brand orange) */
+  --alert: oklch(0.561 0.2 20); /* wrong / lapse — rose */
+  --info: oklch(0.534 0.13 245); /* easy / mastered — blue (same L/C family as the 3 above) */
   --radius: 0.625rem;
-  --sidebar: oklch(0.968 0.011 78);
+  --sidebar: oklch(0.938 0.02 80);
   --sidebar-foreground: oklch(0.25 0.014 50);
   --sidebar-primary: oklch(0.545 0.14 42);
   --sidebar-primary-foreground: oklch(0.99 0.012 80);
-  --sidebar-accent: oklch(0.94 0.02 62);
+  --sidebar-accent: oklch(0.898 0.03 66);
   --sidebar-accent-foreground: oklch(0.3 0.02 50);
-  --sidebar-border: oklch(0.9 0.012 76);
+  --sidebar-border: oklch(0.878 0.018 78);
   --sidebar-ring: var(--accent-brand);
 }
 
@@ -109,9 +123,9 @@
 .dark {
   --background: oklch(0.168 0.009 52);
   --foreground: oklch(0.955 0.006 75);
-  --card: oklch(0.212 0.012 52);
+  --card: oklch(0.228 0.013 52);
   --card-foreground: oklch(0.955 0.006 75);
-  --popover: oklch(0.228 0.013 52);
+  --popover: oklch(0.248 0.014 52);
   --popover-foreground: oklch(0.955 0.006 75);
   --primary: oklch(0.7 0.13 45);
   --primary-foreground: oklch(0.2 0.03 45);
@@ -130,7 +144,7 @@
   --warn: oklch(0.8 0.13 88);
   --alert: oklch(0.71 0.18 20);
   --info: oklch(0.72 0.13 245);
-  --sidebar: oklch(0.142 0.008 52);
+  --sidebar: oklch(0.132 0.008 52);
   --sidebar-foreground: oklch(0.93 0.006 75);
   --sidebar-primary: oklch(0.7 0.13 45);
   --sidebar-primary-foreground: oklch(0.2 0.03 45);
