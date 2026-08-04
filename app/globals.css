@@ -48,27 +48,42 @@
 
 /* Claude-orange (terracotta) brand theme, 2026-07-13. Primary + brand accent = Claude's clay/orange
    (~#D9785B, OKLCH hue ~42). Neutrals carry a subtle warm bias (low chroma at hue ~55) so grays read
-   as "chosen warm", not machine-gray. Semantic tokens (ok/warn/alert/info) stay functional. */
+   as "chosen warm", not machine-gray. Semantic tokens (ok/warn/alert/info) stay functional.
+
+   2026-08-04 — PAPER NEUTRALS. Colour only: the warm bias above is pushed from "barely there" (hue 60,
+   chroma 0.004) to a real warm cream (hue ~77, chroma ~0.012), and the neutrals are split into three
+   levels instead of two shades of white:
+
+     sidebar   0.968   chrome, one step DOWN — it recedes
+     page      0.984   the paper you read on
+     card      0.998   surfaces lift UP off the page
+
+   That third level is the whole idea: a card is now told apart from the page by its COLOUR, so nothing
+   about its shape, border or shadow had to change. Brand, semantic and radius tokens are untouched, and
+   every pair is contrast-checked by lib/contrast.test.ts. */
 :root {
-  --background: oklch(0.995 0.004 60);
-  --foreground: oklch(0.18 0.01 50);
-  --card: oklch(1 0.003 60);
-  --card-foreground: oklch(0.18 0.01 50);
-  --popover: oklch(1 0.003 60);
-  --popover-foreground: oklch(0.18 0.01 50);
+  --background: oklch(0.984 0.008 78);
+  --foreground: oklch(0.23 0.014 50);
+  --card: oklch(0.998 0.003 78);
+  --card-foreground: oklch(0.23 0.014 50);
+  --popover: oklch(0.998 0.003 78);
+  --popover-foreground: oklch(0.23 0.014 50);
   /* L lowered 0.62 -> 0.545 on 2026-07-28: at 0.62 this pair measured 3.74:1, under the 4.5:1 AA floor,
      on every primary button in the app. C and H are untouched — same brand orange, one step darker. */
   --primary: oklch(0.545 0.14 42);
   --primary-foreground: oklch(0.99 0.012 80);
-  --secondary: oklch(0.965 0.01 60);
-  --secondary-foreground: oklch(0.26 0.02 50);
-  --muted: oklch(0.965 0.01 60);
-  --muted-foreground: oklch(0.53 0.02 55);
-  --accent: oklch(0.955 0.016 58);
-  --accent-foreground: oklch(0.26 0.02 50);
+  --secondary: oklch(0.955 0.012 76);
+  --secondary-foreground: oklch(0.3 0.02 50);
+  --muted: oklch(0.957 0.012 76);
+  /* 0.53 -> 0.505: the page went 1.1% darker (cream, not white) and this is the app's most common text
+     colour — every hint, meta line and axis label. One step darker keeps it clear of the 4.5:1 AA floor
+     on the cream page AND on the muted fill, which is where it actually sits. */
+  --muted-foreground: oklch(0.505 0.02 55);
+  --accent: oklch(0.945 0.02 62);
+  --accent-foreground: oklch(0.3 0.02 50);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.915 0.01 58);
-  --input: oklch(0.915 0.01 58);
+  --border: oklch(0.9 0.012 76);
+  --input: oklch(0.895 0.012 76);
   --ring: var(--accent-brand);
   /* Brand accent = Claude terracotta (was vermilion 朱 0.55/0.17/35). Drives links + focus ring.
      Must track --primary: as LINK TEXT it needs 4.5:1, and at L=0.62 it measured 3.39:1 on tinted
@@ -79,47 +94,49 @@
   --alert: oklch(0.575 0.2 20); /* wrong / lapse — rose */
   --info: oklch(0.55 0.13 245); /* easy / mastered — blue (same L/C family as the 3 above) */
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0.008 60);
-  --sidebar-foreground: oklch(0.2 0.01 50);
+  --sidebar: oklch(0.968 0.011 78);
+  --sidebar-foreground: oklch(0.25 0.014 50);
   --sidebar-primary: oklch(0.545 0.14 42);
   --sidebar-primary-foreground: oklch(0.99 0.012 80);
-  --sidebar-accent: oklch(0.95 0.016 58);
-  --sidebar-accent-foreground: oklch(0.26 0.02 50);
-  --sidebar-border: oklch(0.91 0.01 58);
+  --sidebar-accent: oklch(0.94 0.02 62);
+  --sidebar-accent-foreground: oklch(0.3 0.02 50);
+  --sidebar-border: oklch(0.9 0.012 76);
   --sidebar-ring: var(--accent-brand);
 }
 
+/* Dark = the same three levels, stacked the other way: chrome sinks BELOW the page, cards rise above it.
+   The warm bias is kept (hue ~52) so dark mode reads as dimmed paper rather than blue-black glass. */
 .dark {
-  --background: oklch(0.16 0.008 50);
-  --foreground: oklch(0.96 0.005 70);
-  --card: oklch(0.205 0.01 50);
-  --card-foreground: oklch(0.96 0.005 70);
-  --popover: oklch(0.205 0.01 50);
-  --popover-foreground: oklch(0.96 0.005 70);
+  --background: oklch(0.168 0.009 52);
+  --foreground: oklch(0.955 0.006 75);
+  --card: oklch(0.212 0.012 52);
+  --card-foreground: oklch(0.955 0.006 75);
+  --popover: oklch(0.228 0.013 52);
+  --popover-foreground: oklch(0.955 0.006 75);
   --primary: oklch(0.7 0.13 45);
   --primary-foreground: oklch(0.2 0.03 45);
-  --secondary: oklch(0.27 0.01 50);
-  --secondary-foreground: oklch(0.96 0.005 70);
-  --muted: oklch(0.27 0.01 50);
-  --muted-foreground: oklch(0.71 0.02 60);
-  --accent: oklch(0.3 0.016 52);
-  --accent-foreground: oklch(0.96 0.005 70);
+  --secondary: oklch(0.272 0.012 52);
+  --secondary-foreground: oklch(0.955 0.006 75);
+  --muted: oklch(0.272 0.012 52);
+  --muted-foreground: oklch(0.72 0.02 62);
+  --accent: oklch(0.305 0.019 52);
+  --accent-foreground: oklch(0.955 0.006 75);
   --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
+  --border: oklch(1 0 0 / 9%);
+  --input: oklch(1 0 0 / 14%);
   --ring: var(--accent-brand);
   --accent-brand: oklch(0.72 0.13 45);
   --ok: oklch(0.72 0.14 155);
   --warn: oklch(0.8 0.13 88);
   --alert: oklch(0.71 0.18 20);
   --info: oklch(0.72 0.13 245);
-  --sidebar: oklch(0.205 0.01 50);
-  --sidebar-foreground: oklch(0.96 0.005 70);
+  --sidebar: oklch(0.142 0.008 52);
+  --sidebar-foreground: oklch(0.93 0.006 75);
   --sidebar-primary: oklch(0.7 0.13 45);
   --sidebar-primary-foreground: oklch(0.2 0.03 45);
-  --sidebar-accent: oklch(0.3 0.016 52);
-  --sidebar-accent-foreground: oklch(0.96 0.005 70);
-  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-accent: oklch(0.28 0.019 52);
+  --sidebar-accent-foreground: oklch(0.955 0.006 75);
+  --sidebar-border: oklch(1 0 0 / 8%);
   --sidebar-ring: var(--accent-brand);
 }
 
