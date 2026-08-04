@@ -404,11 +404,15 @@ export function VocabTable({
             speechRate={speechRate}
             extra={
               item.hanviet ? (
-                // max-w-full is the shrink anchor: the min-w-0 ancestor is in resource-card.tsx and
-                // lib/truncate.test.ts checks per FILE, so it cannot see it from here.
-                <p className="max-w-full truncate text-xs text-muted-foreground italic">
-                  {item.hanviet}
-                </p>
+                // Âm Hán Việt sits BESIDE the word, bracketed and upper-cased — «把握 [BÁ ÁC]» — the
+                // convention a Vietnamese learner reads it in. A <span> (not the old block <p>) is what
+                // puts it on the word's line: SpokenLine renders inline-flex, so an inline sibling flows
+                // next to it and only wraps when the line genuinely runs out of room. No `truncate`
+                // here on purpose — it is one or two short syllables, and clipping a 4-character
+                // reading to an ellipsis loses the whole point of showing it.
+                <span className="ml-1.5 text-xs text-muted-foreground uppercase">
+                  [{item.hanviet}]
+                </span>
               ) : null
             }
             aside={

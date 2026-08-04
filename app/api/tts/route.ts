@@ -58,12 +58,48 @@ export async function GET(req: Request) {
     });
     if (!synthRes.ok) return new Response('tts synthesis failed', { status: 503 });
 
-    return new Response(synthRes.body, {
-      headers: {
-        'content-type': 'audio/wav',
-        // Same text → same audio; let the browser cache so replaying a card costs nothing.
-        'cache-control': 'public, max-age=86400',
-      },
+    // BUFFERED, not streamed (`synthRes.body`), and RANGE-AWARE — this is what makes playback work on
+    // iOS. Mobile Safari does not just GET a media URL: it first probes with `Range: bytes=0-1` and
+    // expects `206 Partial Content` + `Content-Range`, and it wants a real `Content-Length`. Streaming
+    // the upstream body produced `200` + `Transfer-Encoding: chunked` for that probe, so Safari decided
+    // the resource was not seekable media and refused to play it — silently. Desktop Chrome/Firefox
+    // never cared, which is exactly why this looked like "audio works everywhere except my phone".
+    // A reference sentence is ~45KB of WAV, so buffering it costs nothing and we need the length anyway.
+    const audio = new Uint8Array(await synthRes.arrayBuffer());
+    const base: Record<string, string> = {
+      'content-type': 'audio/wav',
+      'accept-ranges': 'bytes',
+      // Same text → same audio; let the browser cache so replaying a card costs nothing.
+      'cache-control': 'public, max-age=86400',
+    };
+
+    const range = req.headers.get('range');
+    if (range) {
+      const m = /^bytes=(\d*)-(\d*)$/.exec(range.trim());
+      if (m) {
+        const start = m[1] ? Number(m[1]) : 0;
+        const end = m[2] ? Math.min(Number(m[2]), audio.length - 1) : audio.length - 1;
+        if (Number.isFinite(start) && Number.isFinite(end) && start <= end && start < audio.length) {
+          const slice = audio.subarray(start, end + 1);
+          return new Response(slice, {
+            status: 206,
+            headers: {
+              ...base,
+              'content-length': String(slice.length),
+              'content-range': `bytes ${start}-${end}/${audio.length}`,
+            },
+          });
+        }
+        // Unsatisfiable range → 416 with the true size, per RFC 9110. Safari recovers by re-requesting.
+        return new Response(null, {
+          status: 416,
+          headers: { ...base, 'content-range': `bytes */${audio.length}` },
+        });
+      }
+    }
+
+    return new Response(audio, {
+      headers: { ...base, 'content-length': String(audio.length) },
     });
   } catch {
     // Engine down / not started / timed out → tell the client to fall back to Web Speech.

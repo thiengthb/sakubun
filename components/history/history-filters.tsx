@@ -124,9 +124,12 @@ export function HistoryFilters({
         value={search}
         onChange={(e) => onSearchChange(e.target.value)}
         placeholder="Tìm trong đề / bài dịch…"
-        className="min-w-0 flex-1"
+        // Capped at max-w-xs from sm up, exactly like the DataTable toolbar: a full-width search box
+        // leaves the two controls stuck to its right edge, mid-row. Capped, they sit at the FAR right
+        // (`md:ml-auto` below) and this toolbar matches the resources one.
+        className="min-w-0 flex-1 sm:max-w-xs"
       />
-      <div className="flex shrink-0 items-center gap-2">
+      <div className="flex shrink-0 items-center gap-2 md:ml-auto">
         {/* Layout density — sits immediately LEFT of Bộ lọc and uses the same expanding-label button.
             Hidden below lg because the grid is single-column there anyway, so the control would be a
             no-op. Labelled by the ACTION (what the next click does), matching its tooltip role. */}

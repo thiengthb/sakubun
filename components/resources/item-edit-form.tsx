@@ -34,9 +34,13 @@ import { JLPT_LEVELS } from '@/lib/settings-schema';
 export function ItemEditForm({
   item,
   kind,
+  onDone,
 }: {
   item: EditableItem;
   kind: 'grammar' | 'vocab';
+  /** Supplied when hosted in a DIALOG (the desktop path — see RowActions): close it instead of
+   *  navigating. Omitted on the `/resources/<id>/edit` route, where saving returns to the detail page. */
+  onDone?: () => void;
 }) {
   const router = useRouter();
   const backHref = `/resources/${item.itemId}`;
@@ -47,10 +51,12 @@ export function ItemEditForm({
   const [level, setLevel] = useState(item.level ?? 'N5');
   const { run, isPending } = useServerAction(updateItemAction, {
     success: 'Đã lưu',
-    onSuccess: () => {
-      router.push(backHref);
-      router.refresh();
-    },
+    onSuccess:
+      onDone ??
+      (() => {
+        router.push(backHref);
+        router.refresh();
+      }),
   });
 
   const notesLabel = kind === 'grammar' ? 'Cấu trúc / ghi chú' : 'Ví dụ';
@@ -124,12 +130,19 @@ export function ItemEditForm({
         <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={4} />
       </Field>
 
-      {/* flex-row-reverse so Lưu is the rightmost control on a wide screen and the FIRST one on a phone
-          (where the row wraps to a column) — the primary action stays under the thumb either way. */}
+      {/* flex-col-reverse so Lưu is the rightmost control on a wide screen and the FIRST one on a phone
+          (where the row stacks) — the primary action stays under the thumb either way. Hủy is a LINK on
+          the route (there is somewhere to go back to) and a button in the dialog (there isn't). */}
       <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-        <Button variant="outline" asChild disabled={isPending}>
-          <Link href={backHref}>Hủy</Link>
-        </Button>
+        {onDone ? (
+          <Button variant="outline" onClick={onDone} disabled={isPending}>
+            Hủy
+          </Button>
+        ) : (
+          <Button variant="outline" asChild disabled={isPending}>
+            <Link href={backHref}>Hủy</Link>
+          </Button>
+        )}
         <Button onClick={save} disabled={isPending}>
           Lưu
         </Button>

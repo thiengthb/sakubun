@@ -103,14 +103,25 @@ const INPUT_TABS = [
  *
  * `onDone` goes back to /resources and refreshes, which is what closing the modal used to do implicitly.
  */
-export function ResourceAddForm({ kind }: { kind: ResourceKind }) {
+export function ResourceAddForm({
+  kind,
+  onDone,
+}: {
+  kind: ResourceKind;
+  /** Supplied when the form is hosted in a DIALOG (the desktop path — see ResourceAddButton): close the
+   *  dialog instead of navigating, since the list is already on screen behind it. Omitted on the
+   *  `/resources/new` route, where finishing means going back to /resources. */
+  onDone?: () => void;
+}) {
   const router = useRouter();
   const [tab, setTab] = useState<string>('single');
   const copy = COPY[kind];
-  const close = () => {
-    router.push('/resources');
-    router.refresh();
-  };
+  const close =
+    onDone ??
+    (() => {
+      router.push('/resources');
+      router.refresh();
+    });
 
   return (
     <>

@@ -12,7 +12,15 @@ import {
 } from 'lucide-react';
 import { toastResult } from '@/lib/action-toast';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
+import { ItemEditForm } from '@/components/resources/item-edit-form';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -58,6 +66,7 @@ export function RowActions({
   kind: 'grammar' | 'vocab';
   hideDetail?: boolean;
 }) {
+  const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const noun = kind === 'grammar' ? 'mẫu ngữ pháp' : 'từ vựng';
@@ -95,10 +104,22 @@ export function RowActions({
               <DropdownMenuSeparator />
             </>
           )}
-          <DropdownMenuItem asChild>
+          {/* Sửa: MODAL on a wide screen, ROUTE on a phone (user ask 2026-08-04) — same split, and same
+              reasoning, as the add button. Two items hidden at each other's breakpoint rather than a JS
+              viewport check, so there is no wrong-control flash on first paint. */}
+          <DropdownMenuItem asChild className="md:hidden">
             <Link href={`/resources/${item.itemId}/edit`}>
               <Pencil className="size-4" /> Sửa
             </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            className="max-md:hidden"
+            onSelect={(e) => {
+              e.preventDefault();
+              setEditOpen(true);
+            }}
+          >
+            <Pencil className="size-4" /> Sửa
           </DropdownMenuItem>
           <DropdownMenuItem
             onSelect={(e) => {
@@ -128,6 +149,19 @@ export function RowActions({
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+
+      {/* Desktop edit modal. Mounted here (not in the menu) so it outlives the menu closing. */}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Sửa {noun}</DialogTitle>
+            <DialogDescription>
+              Chỉ sửa nội dung. Lịch ôn (FSRS) của mục được giữ nguyên.
+            </DialogDescription>
+          </DialogHeader>
+          <ItemEditForm item={item} kind={kind} onDone={() => setEditOpen(false)} />
+        </DialogContent>
+      </Dialog>
 
       <ConfirmDialog
         open={deleteOpen}

@@ -1,0 +1,229 @@
+{
+  "$doc": "LOCKED UI PATTERNS for this project. Append-only registry of UI rules the user should never have to repeat. Two consumers read this file: lib/ui-pattern-lock.test.ts (fails `npm test` on a violation) and .claude/hooks/ui-pattern-lock.mjs (shows every rule before the session's first UI write). Add an entry the MOMENT the user corrects a UI pattern — procedure: skill /ui-pattern-lock.",
+  "patterns": [
+    {
+      "id": "lucide-icons-only",
+      "rule": "Icons come from lucide-react only — never a hand-rolled <svg>, another icon set, or an emoji as an icon marker.",
+      "why": "A one-off <svg> drifts from the icon set's stroke width, size scale and currentColor behaviour, so it looks wrong in dark mode and at other sizes. The rule already existed in CLAUDE.md and was still broken.",
+      "canonical": "components/shell/app-sidebar.tsx",
+      "source": "platform CLAUDE.md (react-ui-craft, Mandatory UI)",
+      "repeats": 1,
+      "lockedOn": "2026-07-23",
+      "check": {
+        "kind": "forbid",
+        "pattern": "<svg[\\s>]"
+      },
+      "allow": {
+        "components/shell/google-signin-button.tsx": "Google brand mark — a third-party logo, no lucide equivalent and brand guidelines forbid substituting one",
+        "components/resources/item-forgetting-curve.tsx": "SVG that renders DATA (the retention curve) — the named exception in CLAUDE.md",
+        "components/dashboard/streak-flame.tsx": "custom tier-driven flame illustration (a data-bound figure, not an icon), shared by the inline badge and the celebration hero"
+      }
+    },
+    {
+      "id": "no-hardcoded-colors",
+      "rule": "Colors come from the theme CSS variables / Tailwind tokens — never a literal hex or an arbitrary color class.",
+      "why": "A literal color ignores the dark/light theme and the OKLCH palette, so the element is the one thing on the page that does not switch theme.",
+      "canonical": "app/globals.css",
+      "source": "platform CLAUDE.md (react-ui-craft, Mandatory UI)",
+      "repeats": 1,
+      "lockedOn": "2026-07-23",
+      "check": {
+        "kind": "forbid",
+        "pattern": "-\\[#[0-9a-fA-F]{3,8}\\]|#[0-9a-fA-F]{6}\\b"
+      },
+      "allow": {
+        "components/shell/google-signin-button.tsx": "Google brand colors are fixed by brand guidelines and must not follow our theme",
+        "components/dashboard/streak-flame.tsx": "the flame gradient stops are the streak TIER palette (data encoding), defined next to tierForStreak",
+        "components/dashboard/streak-celebration.tsx": "ember/confetti particles reuse the same tier palette as the flame above"
+      }
+    },
+    {
+      "id": "reuse-before-build",
+      "rule": "Before building any UI piece, look for the existing shared component and use it — a new one-off is only allowed after saying out loud why the shared one cannot work.",
+      "why": "The user's repeated correction: he recognises a screen by its established components, so a hand-rolled variant reads as a regression even when it looks fine in isolation. Check components/_INDEX.md and nuc-platform/08-SHARED-ASSETS.md FIRST.",
+      "canonical": "components/_INDEX.md",
+      "source": "memory extend-dont-rebuild + code-reuse skill",
+      "repeats": 3,
+      "lockedOn": "2026-07-23",
+      "check": {
+        "kind": "manual"
+      },
+      "allow": {}
+    },
+    {
+      "id": "all-surfaces",
+      "rule": "A new control, behaviour or rule goes to EVERY surface it applies to (via the shared component), and the exceptions get named out loud.",
+      "why": "The user audits for completeness — a feature that exists on one table but not the other reads as unfinished, and he then has to find the gap himself.",
+      "canonical": "components/shared/data-table.tsx",
+      "source": "memory apply-features-across-all-surfaces",
+      "repeats": 3,
+      "lockedOn": "2026-07-23",
+      "check": {
+        "kind": "manual"
+      },
+      "allow": {}
+    },
+    {
+      "id": "japanese-three-signals",
+      "rule": "Every Japanese string the learner reads as content carries all THREE signals — furigana, audio, and the karaoke highlight — by rendering <SpokenLine> AND handing it the furigana data (ruby=).",
+      "why": "Using SpokenLine is not enough: with no ruby prop it silently degrades to audio only. That is how the whole Cộng đồng tab shipped with no furigana while every check stayed green — lib/feed.ts never SELECTed sourceRuby/suggestedRuby, so the user had to spot it himself on screen.",
+      "canonical": "components/history/history-cards.tsx",
+      "source": "user 2026-07-23 (stated as invariant #9; raised AGAIN when the community feed had no furigana)",
+      "repeats": 2,
+      "lockedOn": "2026-07-23",
+      "tightenedOn": "2026-07-23 — the first version keyed on the field NAMES sourceText|suggested, so it watched 2 of the 11 files that render SpokenLine and missed components/resources/item-review-log.tsx, where the same bug (showFurigana with no ruby data, because lib/item-stats.ts never selected sourceRuby) was live. This version forbids the contradiction itself, per SITE, so it holds for any field name.",
+      "exceptFields": "userAnswer and *.notes are excluded INSIDE the pattern, not via allow: the schema has only sourceRuby + suggestedRuby, so those two fields have no ruby source to pass — a render-site fix is impossible until a column exists. Excluding them in the regex keeps the rest of each file gated (a file-level allow entry would have exempted community-feed.tsx and history-cards.tsx wholesale).",
+      "check": {
+        "kind": "forbid",
+        "pattern": "<SpokenLine(?:(?!ruby=|userAnswer|\\.notes|/>)[\\s\\S])*showFurigana(?:(?!ruby=|userAnswer|\\.notes|/>)[\\s\\S])*/>"
+      },
+      "allow": {}
+    },
+    {
+      "id": "capability-over-rearrangement",
+      "rule": "Judge and pitch UI work by what it lets the user DO. Do not restructure a familiar screen unless the restructure itself is the request.",
+      "why": "Two redesigns were rejected on exactly this: moving a familiar layout around costs the user his muscle memory and delivers no new capability, so it reads as loss.",
+      "canonical": null,
+      "source": "memory capability-over-rearrangement",
+      "repeats": 2,
+      "lockedOn": "2026-07-23",
+      "check": {
+        "kind": "manual"
+      },
+      "allow": {}
+    },
+    {
+      "id": "pagination-auto-fit",
+      "rule": "Every paginated surface sizes its page to FIT THE VIEWPORT (no page scroll; the pagination bar stays on screen) via the shared measured hook — tables use <DataTable>, client-side card lists use usePagedList (both call useFitRows + render <DataPagination>). Never a hardcoded page size, never a bespoke pagination footer.",
+      "why": "The user asked for the row count computed from the WHOLE layout: the old approach guessed a fixed reserve (and some lists used a fixed size 25), which pushed the pagination buttons off the bottom of the screen and added a page scrollbar. useFitRows reserves the MEASURED footer height + real row height instead, so it holds for any current or future paginated page. Pagination will be used a lot, so it lives in the ui-kit (components/ui/use-fit-rows.ts + components/ui/data-pagination.tsx).",
+      "canonical": "components/shared/use-paged-list.ts",
+      "source": "user 2026-07-23",
+      "repeats": 1,
+      "lockedOn": "2026-07-23",
+      "check": {
+        "kind": "manual"
+      },
+      "allow": {}
+    },
+    {
+      "id": "breadcrumb-detail-is-data-name",
+      "rule": "The breadcrumb trail always follows the tab/route hierarchy (each crumb label = that section/tab's name in CRUMBS), and a DETAIL page's LAST crumb is the entity's OWN NAME (AppBreadcrumbs detail.label) — never a generic 'Chi tiết'. Breadcrumbs replace page titles, so the name must live in the crumb; the hover description adds context. All breadcrumbs go through components/shell/app-breadcrumbs.tsx.",
+      "why": "The group/item detail crumb read 'Chi tiết' with the name only on hover — but breadcrumbs replace page titles here, so the entity name was invisible. The trail must name the data. Enforced structurally: every page's breadcrumb is built by the single AppBreadcrumbs component, so fixing it there fixes it everywhere.",
+      "canonical": "components/shell/app-breadcrumbs.tsx",
+      "source": "user 2026-07-24",
+      "repeats": 1,
+      "lockedOn": "2026-07-24",
+      "check": {
+        "kind": "forbid",
+        "pattern": "label:\\s*['\"]Chi ti\\u1ebft['\"]"
+      },
+      "allow": {}
+    },
+    {
+      "id": "text-must-truncate",
+      "rule": "Any single-line text that can exceed its box — a name, title, term, email, label, table cell, breadcrumb or menu item — MUST truncate (`truncate` or `line-clamp-1`) and sit in a `min-w-0` flex/grid parent so it can actually shrink; multi-line copy uses `line-clamp-N`. Text must NEVER push its container wider or spill past it.",
+      "why": "The user flagged content overflowing its box as a backbone-level defect. A bounded single-line string (a shared name, a long term) without `truncate` — or with `truncate` but no `min-w-0` ancestor, so it silently does nothing in a flex row — widens the layout or bleeds over neighbours. The full rule is contextual (multi-line prose legitimately wraps), so this registry entry stays `manual`. But its most common SILENT failure mode — a `truncate`/`line-clamp-1` class that cannot shrink (no `min-w-0` ancestor, no own `max-w-*`/`w-fit`), so it does nothing — is now GATE-ENFORCED by `lib/truncate.test.ts` (2026-07-24, after it shipped broken in bulk-group-button/item-groups/item-detail-dialog). The manual part (is THIS text single-line? is it the right parent?) still rides the PreToolUse hook that prints this rule before the session's first UI write, and `/ui-pattern-lock check`.",
+      "canonical": "components/account/admin-view.tsx",
+      "source": "user 2026-07-24",
+      "repeats": 1,
+      "lockedOn": "2026-07-24",
+      "check": {
+        "kind": "manual"
+      },
+      "allow": {}
+    },
+    {
+      "id": "input-clear-affordance",
+      "rule": "Every text field goes through the shared <Input> (components/ui/input.tsx), which carries the clear (x) button whenever it has content. Never hand-roll a text <input> element, and never build a bespoke clear control next to a field.",
+      "why": "The user asked for 'a clear x on the inputs in the program' as a blanket rule, not per screen — so it is implemented ONCE in the primitive (native-setter + input event, works for controlled and uncontrolled alike) and every field inherits it. A raw <input> silently opts that screen out, which is exactly the all-surfaces gap he audits for. Width/flex sizing goes on `wrapperClassName` so the x stays at the visible right edge.",
+      "canonical": "components/ui/input.tsx",
+      "source": "user 2026-07-25",
+      "repeats": 1,
+      "lockedOn": "2026-07-25",
+      "check": {
+        "kind": "forbid",
+        "pattern": "<input\\b(?![^>]*type=\"file\")"
+      },
+      "allow": {
+        "components/ui/input.tsx": "the shared primitive itself — this IS the one <input> element every field routes through"
+      }
+    },
+    {
+      "id": "bulk-actions-icon-dock",
+      "rule": "Bulk (selection) actions render as icon-only <BulkActionButton>s — name in a hover/focus tooltip, permanent aria-label — inside the DataTable's vertical dock on the right edge of the viewport (count as a themed chip, then the x to deselect, then the actions). No text-labelled bulk buttons, no bottom bar, no bespoke selection panel.",
+      "why": "The user asked for the bulk bar to become a vertical icon strip on the right, with the count as a number in a button-shaped themed container and deselect as an x. Keeping every bulk-*-button on the one shared control is what makes that hold for a NEW bulk action too — otherwise the next one ships with a text label and the dock stops reading as one icon column.",
+      "canonical": "components/resources/bulk-action-button.tsx",
+      "source": "user 2026-07-25",
+      "repeats": 1,
+      "lockedOn": "2026-07-25",
+      "check": {
+        "kind": "require-with",
+        "when": "export function Bulk\\w+Button",
+        "then": "BulkActionButton"
+      },
+      "allow": {}
+    },
+    {
+      "id": "row-share-in-menu-short-label",
+      "rule": "Per-row library sharing is an OPTION INSIDE the row's ⋮ menu (components/resources/row-actions.tsx), labelled JUST 'Chia sẻ' / 'Thu hồi' — the full phrase ('Chia sẻ vào thư viện' / 'Thu hồi chia sẻ') rides the hover `title` only. It is NOT a standalone button beside the ⋮ menu: there is no RowShareButton component. A forked row shows the option disabled.",
+      "why": "The user stated this THREE times (2026-07-24 → 2026-07-25): the earlier lock had it exactly backwards (standalone button), which is why this replaces it. Sharing belongs in the ⋮ menu as a compact option; a standalone per-row button was rejected, and so was an inline long label. The gate forbids a standalone `RowShareButton` from ever coming back (that was the recurring regression — a 'dedup' refactor kept extracting it); the SHORT-label + hover-title detail is manual, printed by the PreToolUse hook before the first UI write.",
+      "canonical": "components/resources/row-actions.tsx",
+      "source": "user 2026-07-25 (stated 3x; supersedes the reversed 2026-07-24 lock)",
+      "repeats": 3,
+      "lockedOn": "2026-07-25",
+      "check": {
+        "kind": "forbid",
+        "pattern": "RowShareButton"
+      },
+      "allow": {}
+    },
+    {
+      "id": "destructive-confirm-uses-dialog",
+      "rule": "A destructive / irreversible confirm (delete, ban, revoke) renders through <ConfirmDialog> (components/shared/confirm-dialog.tsx) — never a hand-rolled <Dialog> with a variant=\"destructive\" button inside its footer. The caller keeps the trigger + open state; body form fields (e.g. a ban reason) go in ConfirmDialog's children.",
+      "why": "The identical confirm scaffold (title + description + Cancel/Confirm-destructive footer + pending spinner) had been copy-pasted across 5 surfaces (bulk-delete, per-row delete, admin ban, account revoke-token, group delete) and had already DRIFTED — cancel was ghost in 3 and outline in 2, pending was a spinner in 3 and a text swap in 1. One shared component keeps them consistent AND stops the next destructive action shipping a subtly different confirm. The gate forbids the tell-tale shape (a destructive button living inside a DialogFooter) so a hand-rolled copy can't come back.",
+      "canonical": "components/shared/confirm-dialog.tsx",
+      "source": "opt-v2 P1.6/P1.8 dedup (5 copies) + user 2026-07-25 (lock recurring UI/layout patterns)",
+      "repeats": 3,
+      "lockedOn": "2026-07-25",
+      "check": {
+        "kind": "forbid",
+        "pattern": "<DialogFooter(?:(?!</DialogFooter>)[\\s\\S])*variant=\"destructive\""
+      },
+      "allow": {
+        "components/shared/confirm-dialog.tsx": "the shared primitive itself — this IS the one destructive-confirm footer every caller routes through"
+      }
+    },
+    {
+      "id": "explain-is-the-only-tooltip",
+      "rule": "Giải thích một phần tử bằng <Explain> — không dùng thuộc tính title= trên thẻ DOM, và không dựng Tooltip primitive trực tiếp ngoài components/shared.",
+      "why": "Hai cơ chế song song đang tồn tại (26 chỗ: title= thô + TooltipTrigger tự dựng). title= của trình duyệt KHÔNG hiện trên thiết bị cảm ứng, không theo theme, không chỉnh được độ trễ — nên trên điện thoại phần giải thích biến mất hoàn toàn. Một cửa duy nhất thì đổi cơ chế về sau chỉ sửa một file.",
+      "canonical": "components/shared/explain.tsx",
+      "source": "user 2026-07-28",
+      "repeats": 1,
+      "lockedOn": "2026-07-28",
+      "check": {
+        "kind": "forbid",
+        "pattern": "<(?:span|div|button|a|p|li|td|th|section|header|figure|img|input|label|ul|ol|nav)\\b[^>]*\\stitle=\"|<TooltipTrigger\\b"
+      },
+      "allow": {
+        "components/ui/tooltip.tsx": "the Radix primitive itself — Explain and InfoTooltip are both built on it",
+        "components/shared/explain.tsx": "the sanctioned wrapper; it is the one place allowed to touch the primitive",
+        "components/shared/info-tooltip.tsx": "the circle-i AFFORDANCE variant (adds its own trigger button) rather than wrapping existing content — same primitive, different job",
+        "components/ui/sidebar.tsx": "vendored shadcn sidebar, kept exactly as generated so it can be re-pulled without a merge"
+      }
+    },
+    {
+      "id": "every-control-explains-itself",
+      "rule": "Mỗi phần tử không tự hiển nhiên (icon-only button, badge, số liệu, nhãn viết tắt) phải mang một câu giải thích qua <Explain>: nó là gì, dùng làm gì, con số lấy từ đâu.",
+      "why": "Yêu cầu của user 2026-07-28: mọi component cần giải thích kĩ chức năng, tác dụng, thông tin thêm. Một icon trần bắt người dùng phải đoán, và cái giá không nằm ở lần đầu mà ở lần thứ mười vẫn phải đoán.",
+      "canonical": "components/history/history-cards.tsx",
+      "source": "user 2026-07-28",
+      "repeats": 1,
+      "lockedOn": "2026-07-28",
+      "check": {
+        "kind": "manual"
+      },
+      "allow": {}
+    }
+  ]
+}

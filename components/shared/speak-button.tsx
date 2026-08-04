@@ -110,14 +110,20 @@ export function SpeakButton({
     };
   }, []);
 
-  if (!supported || !text.trim()) return null;
+  // Render whenever EITHER path can work. It used to be `if (!supported) return null` — which hid the
+  // button on any browser without `speechSynthesis`, even though the PRIMARY path (VOICEVOX over
+  // /api/tts) is a plain <audio> element that needs no speech API at all. Several mobile browsers and
+  // most in-app webviews (Facebook, Zalo, …) have no speechSynthesis, so the button simply was not there
+  // on the phone. Japanese always has the server path; other languages still depend on Web Speech.
+  const canPlay = supported || lang.toLowerCase().startsWith('ja');
+  if (!canPlay || !text.trim()) return null;
 
   const stopAll = () => {
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current = null;
     }
-    window.speechSynthesis.cancel();
+    if (supported) window.speechSynthesis.cancel();
     setSpeaking(false);
     onProgress?.(0);
   };
@@ -126,6 +132,16 @@ export function SpeakButton({
   // is unreachable). Picks the most natural matching voice; warns only when the voice list is loaded
   // yet has no Japanese voice at all (the Ubuntu case) rather than playing a wrong-language voice.
   const speakWebSpeech = () => {
+    // No speech API at all (mobile webviews): the VOICEVOX path already failed if we got here, so say so
+    // instead of throwing on `window.speechSynthesis`.
+    if (!supported) {
+      toast.error('Không phát được âm thanh', {
+        description: 'Trình duyệt này không hỗ trợ đọc, và giọng máy chủ đang không truy cập được.',
+      });
+      setSpeaking(false);
+      onProgress?.(0);
+      return;
+    }
     const synth = window.speechSynthesis;
     // Firefox loads voices lazily and often DOESN'T fire `voiceschanged` before the first click, so
     // the mounted snapshot can still be empty here — re-query at click time and cache the result.

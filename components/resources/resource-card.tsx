@@ -41,7 +41,8 @@ export function ResourceCard({
   speechRate,
   /** Vocab only: the capture-reason badge ("dùng sai", "chưa rõ"…). */
   aside,
-  /** Vocab only: âm Hán Việt, shown under the JA line. */
+  /** Vocab only: âm Hán Việt, rendered INLINE right after the word — «把握 [BÁ ÁC]». Pass an inline
+   *  element (a <span>); a block one drops to its own line. */
   extra,
   /** The star toggle + the ⋮ row menu — supplied by the table so behaviour stays in one place. */
   actions,

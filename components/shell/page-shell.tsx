@@ -65,21 +65,30 @@ export function PageShell({
     <div className={cn('space-y-4 pt-6 pb-16 text-sm', WIDTH[width], className)}>
       {/* Remember scroll position per route (long pages only; list pages are viewport-fit). */}
       <ScrollRestorer />
-      {/* Header row: breadcrumb on the left, page-supplied aside (tabs, actions) pushed to the FAR
-          RIGHT. Kept unconditional so every page's body starts at the same vertical offset.
-          `ml-auto` on the aside, rather than letting it sit next to the breadcrumb: a tab bar glued to
-          the title reads as part of the title, and its position then moved with the length of the
-          breadcrumb — "Tài nguyên" and "Cài đặt" put their tabs at different x. Anchored right, the
-          tabs are in the same place on every page, and the row's two ends carry the two jobs
-          (where am I / what can I switch). It still wraps to its own line when the row runs out of
-          width, because the container is flex-wrap and the aside is w-full below sm. */}
+      {/* Header row: breadcrumb, then the page-supplied aside (tabs, actions). Kept unconditional so
+          every page's body starts at the same vertical offset.
+          POSITION IS BREAKPOINT-DEPENDENT, on purpose:
+            - md and up: the aside sits BESIDE the breadcrumb (`md:ml-0`), which is the platform layout
+              standard (fleet platform/standards/ui-layout.md rule 2) — one header row reading
+              "where I am · what I can switch", with the tabs adjacent to the thing they belong to.
+            - below md: `ml-auto` pushes it to the right edge instead. On a phone the row is the app
+              icon + sidebar button + a short crumb, and a tab control butted against that reads as a
+              fourth item in a cramped cluster; pinned right it is clearly its own control, and it is
+              also where the thumb is. */}
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
         {/* Mobile only (md:hidden): app icon + open-sidebar button + a divider, since the sidebar's
             own brand/toggle are off-screen once it collapses to the off-canvas Sheet. */}
         <MobileTopBar />
         {crumb}
         {headerAside && (
-          <div className="ml-auto flex flex-wrap items-center gap-2">{headerAside}</div>
+          // `md:flex-1` matters: some pages pass tabs AND a right-aligned action (the Settings Save
+          // button carries its own `ml-auto`). Letting the wrapper fill the rest of the row on desktop
+          // keeps the tabs at its left edge — beside the crumb — while that inner `ml-auto` can still
+          // push the action to the far right. Without it the wrapper hugs its content and the action
+          // lands glued to the tabs.
+          <div className="ml-auto flex flex-wrap items-center gap-2 md:ml-0 md:flex-1">
+            {headerAside}
+          </div>
         )}
       </div>
       {children}
