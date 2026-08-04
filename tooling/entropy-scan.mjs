@@ -13,7 +13,7 @@
 import { readdirSync, readFileSync, existsSync, statSync } from 'node:fs';
 import { join, extname } from 'node:path';
 import { parseFrontmatter } from './lib/frontmatter.mjs';
-import { repoPath, config, limit, report, git, matchAny, pathsFor } from './lib/harness.mjs';
+import { repoPath, config, limit, report, git, matchAny, pathsFor, readJson, stateDir } from './lib/harness.mjs';
 
 const ok = [], warn = [], fail = [];
 const cfg = config();
@@ -152,6 +152,53 @@ if (existsSync(INC)) {
     if (days > 30) {
       warn.push(`knowledge/incoming/${pack}: ${files.length} bài học chờ duyệt ${days} ngày — quyết đi: node tooling/knowledge/accept.mjs --list`);
     }
+  }
+}
+
+// ── 7d. Bài học mang đi được mà CHƯA BAO GIỜ gửi lên template ────────────────
+// Đối xứng với 7c, và là chiều bị bỏ quên hơn hẳn: pack chờ duyệt thì NHÌN THẤY được
+// (nó nằm trong repo), còn "chưa gửi lên" thì KHÔNG có triệu chứng nào ở đây cả. Hậu quả
+// rơi vào project TIẾP THEO của bạn — nó khởi động từ đúng số bài học seed của template,
+// dù repo này đã học được 12 thứ. Trí tuệ tích ở LÁ, không bao giờ về GỐC.
+// CHỈ ở repo TIÊU THỤ. Repo template LÀ upstream — nhắc nó "gửi lên" là vô nghĩa, và một
+// cảnh báo vô nghĩa nổ mọi lần dạy người ta bỏ qua cả bảng. Tín hiệu: manifest chỉ tồn tại
+// ở đích (apply-to/upgrade ghi ra), cùng tín hiệu mà --audit và harness-doctor đã dùng.
+const manifestForUpstream = readJson(repoPath('.claude', 'harness-manifest.json'));
+const IS_CONSUMER = !!manifestForUpstream;
+const upLast = readJson(join(stateDir(), 'upstream-last.json'));
+// CHỈ đếm bài học project NÀY tự viết. Bài học SEED đi kèm template thì template đã có sẵn
+// — `upstream.mjs` lọc chúng ra và báo "0 để đóng góp", nhưng cảnh báo này không có template
+// trong tay để so. Không lọc thì nó nổ ở MỌI project vừa áp xong, tức là nó bắt đầu đời mình
+// bằng một dương tính giả — và cảnh báo đầu tiên bạn thấy mà sai là cảnh báo dạy bạn bỏ qua
+// những cảnh báo sau. Tín hiệu: `added:` sau ngày áp template.
+// TÍN HIỆU CHÍNH: danh sách bài học SEED do apply-to ghi vào manifest — chính xác, không
+// đoán. Ngày tháng là tín hiệu SAI ở đây: bài seed `0003` có `added` đúng bằng ngày áp
+// template, nên mọi phép so ngày đều phải chọn giữa bỏ sót bài tự viết cùng ngày và tố giác
+// một bài seed. Với project áp trước 2.7.1 (chưa có `seededLessons`) thì lùi về so ngày và
+// chọn hướng IM LẶNG: bỏ sót một lần nhắc chỉ làm chậm một đóng góp, còn nhắc sai làm hỏng
+// lòng tin vào cả bảng báo cáo.
+const seeded = new Set(manifestForUpstream?.seededLessons ?? []);
+const appliedAt = Date.parse(String(manifestForUpstream?.appliedAt ?? manifestForUpstream?.upgradedAt ?? '').slice(0, 10)) || 0;
+const portable = !IS_CONSUMER ? [] : existsSync(repoPath('knowledge', 'lessons'))
+  ? readdirSync(repoPath('knowledge', 'lessons'))
+      .filter(f => f.endsWith('.md') && !f.startsWith('_'))
+      .filter(f => {
+        if (seeded.has(f)) return false;
+        const txt = readFileSync(repoPath('knowledge', 'lessons', f), 'utf8');
+        if (!/^scope:\s*(universal|stack:)/m.test(txt)) return false;
+        if (seeded.size) return true;                        // danh sách seed CHÍNH XÁC đã có
+        const added = Date.parse((txt.match(/^added:\s*(\S+)/m) || [])[1] ?? '') || 0;
+        return added > appliedAt;                            // lùi về: chọn hướng im lặng
+      })
+  : [];
+if (portable.length) {
+  const days = upLast?.at ? Math.round((Date.now() - Date.parse(upLast.at)) / 86400000) : null;
+  if (days === null) {
+    warn.push(`${portable.length} bài học mang đi được nhưng CHƯA BAO GIỜ gửi lên template — `
+      + `project sau của bạn sẽ khởi động lại từ số 0. Chạy: node tooling/knowledge/upstream.mjs`);
+  } else if (days > 30) {
+    warn.push(`${days} ngày chưa gửi bài học lên template (${portable.length} bài mang đi được) — `
+      + `node tooling/knowledge/upstream.mjs`);
   }
 }
 

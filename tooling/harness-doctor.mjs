@@ -16,7 +16,7 @@
  * Chạy: sau khi áp template · sau khi nâng cấp · mỗi 2 tuần · khi thấy "agent hôm nay lạ".
  */
 import { existsSync, readFileSync } from 'node:fs';
-import { repoPath, run, config, readJson, git, exists } from './lib/harness.mjs';
+import { repoPath, run, config, readJson, git, exists, missingLines, REQUIRED_ATTRIBUTES } from './lib/harness.mjs';
 
 const QUICK = process.argv.includes('--quick');
 const cfg = config();
@@ -129,6 +129,36 @@ const wt = (git(['worktree', 'list', '--porcelain']).stdout.match(/^worktree /gm
 const maxWt = cfg.limits?.maxWorktrees ?? 4;
 if (wt - 1 > maxWt) advice.push(`${wt - 1} worktree (trần ${maxWt}) — chạy node tooling/wt-clean.mjs`);
 
+// ── Đường biên commit / không-commit có ĐÚNG không ───────────────────────────
+// Trước 2.5.0 `.gitignore` nằm trong `SEED` của apply-to, và SEED không ghi đè file đã
+// tồn tại ⇒ ở project THẬT (nơi nào cũng đã có .gitignore) các dòng của harness không
+// bao giờ tới. Không check nào phát hiện, nên nó im lặng đúng nghĩa: bạn chỉ biết khi
+// thấy `.claude/settings.local.json` của đồng nghiệp trong diff của mình.
+//
+// TRỌNG TÀI Ở ĐÂY LÀ `git check-ignore`, KHÔNG PHẢI SO CHUỖI. So chuỗi trả lời "file
+// ignore có chứa dòng X" — câu hỏi thật là "git có ignore đường dẫn này". Hai câu khác
+// nhau khi có `.claude/` ignore rộng ở trên, hoặc `!` phủ định ở dưới; và ca đó là ca
+// khiến người ta mất cả buổi vì file rõ ràng "đã có trong .gitignore".
+const ignored = (p) => run('git', ['check-ignore', '-q', p]).status === 0;
+const MUST_NOT_TRACK = ['.claude/settings.local.json', '.claude/telemetry/x.log', '.claude/state/x.json', '.harness-pack/x'];
+const MUST_TRACK = ['.claude/settings.json', '.claude/hooks/observe.mjs', 'harness.config.json'];
+if (git(['rev-parse', '--git-dir']).status === 0) {
+  const leaking = MUST_NOT_TRACK.filter(p => !ignored(p));
+  const buried = MUST_TRACK.filter(p => exists(repoPath(p)) && ignored(p));
+  if (leaking.length) blocker(`git KHÔNG ignore ${leaking.length} đường dẫn phải là cá nhân: ${leaking.join(' · ')}`
+    + ` — dữ liệu cá nhân và log máy-cục-bộ sẽ vào lịch sử CHUNG. Sửa: chạy lại apply-to (nó thêm dòng thiếu), hoặc thêm tay.`);
+  else console.log('  ✓  đường biên commit/không-commit đúng');
+  if (buried.length) blocker(`git ĐANG ignore ${buried.join(' · ')} — đây là harness của TEAM, phải commit.`
+    + ` Cả đội tưởng mình có harness, nhưng chỉ máy này có. Nguyên nhân gần như luôn là một dòng`
+    + ` ignore rộng \`.claude/\` có từ trước khi áp harness. Sửa: thêm \`!.claude/\` — KHÔNG phải`
+    + ` \`!.claude/settings.json\`: sau khi cả thư mục bị loại, phủ định cho từng FILE bên trong`
+    + ` không có tác dụng (đo bằng git check-ignore). Hoặc chạy lại apply-to, nó tự thêm đúng dòng.`);
+}
+const attrTxt = exists(repoPath('.gitattributes')) ? readFileSync(repoPath('.gitattributes'), 'utf8') : '';
+const attrMissing = missingLines(attrTxt, REQUIRED_ATTRIBUTES);
+if (attrMissing.length) advice.push(`.gitattributes thiếu \`${attrMissing.join('`, `')}\` — đây là điều số 8 trong "mười hai điều": `
+  + `năm dòng xoá một lớp conflict GIẢ cho mọi PR trong team đa OS. Sửa: chạy lại apply-to.`);
+
 // ── Vòng học có đang chạy không ──────────────────────────────────────────────
 console.log('\n── VÒNG HỌC ──');
 const fixlogPath = repoPath('.claude', 'telemetry', 'manual-fixes.log');
@@ -154,6 +184,20 @@ const localVer = exists(repoPath('harness.version')) ? readFileSync(repoPath('ha
 if (mf) console.log(`  harness version: ${mf.templateVersion} (áp ${String(mf.upgradedAt || mf.appliedAt).slice(0, 10)})`);
 else if (localVer) console.log(`  harness version: ${localVer} (chưa có manifest — nâng cấp lần tới sẽ không phát hiện được file bạn đã sửa)`);
 else advice.push('không có .claude/harness-manifest.json — chạy upgrade.mjs một lần để tạo, nếu không nâng cấp sau này sẽ ghi đè mù');
+
+// Đã áp template (có manifest) nhưng CHƯA phỏng vấn lần nào. Đây là trạng thái sinh ra
+// mọi mục CHANGEME và mọi `commands` rỗng bên dưới — nói nguyên nhân MỘT lần thì hơn là
+// để người đọc suy ngược từ 8 dòng triệu chứng.
+if (mf && !mf.profile) {
+  blocker('đã áp template nhưng CHƯA chạy `node tooling/setup.mjs` — nó đọc repo này (package.json/'
+    + 'pyproject/go.mod/lockfile) rồi đề xuất `commands` kèm BẰNG CHỨNG, và từ chối kết thúc khi '
+    + '`commands.verify` còn rỗng. Mọi dòng CHANGEME/lệnh rỗng bên dưới là triệu chứng của một nguyên nhân này.');
+}
+if (mf?.profile?.allowedEmptyVerify) {
+  blocker('setup.mjs đã chạy với `--allow-empty-verify` — project này KHÔNG có gate verify, và điều đó '
+    + 'nằm trong manifest chứ không biến mất. Còn là trạng thái tạm thì được; còn sau tuần đầu thì '
+    + 'harness ở đây là trang trí và BẠN vẫn là verification loop.');
+}
 
 // ── Bề mặt vendor: frontmatter skill + rule ──────────────────────────────────
 //

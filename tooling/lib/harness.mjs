@@ -199,9 +199,16 @@ export function runConfigured(name, { placeholders = {}, capture = false, cwd = 
  * Contract tồn tại để bắt, và nó đã ẩn trong fixture của `test-hooks.mjs` từ v1.3.0
  * (bắt được ở CI `parity (windows-latest)`, xem HARNESS-CHANGELOG 1.6.0).
  */
-export function run(bin, args = [], { cwd = REPO_ROOT, capture = true, input, shell = IS_WIN } = {}) {
+/**
+ * `env` là THÊM VÀO `process.env`, không thay thế nó — denylist, không allowlist. Một
+ * allowlist ở đây từng làm rớt `PATHEXT` và giết mọi lần chạy trên Windows (xem
+ * HARNESS-CHANGELOG 1.6.0). Bỏ qua `env` mà cứ nhận tham số là chế độ hỏng tệ hơn: nơi gọi
+ * tin rằng biến đã được đặt — và một cờ chống-lặp không được đặt thì thành vòng lặp vô hạn.
+ */
+export function run(bin, args = [], { cwd = REPO_ROOT, capture = true, input, shell = IS_WIN, env } = {}) {
   const r = spawnSync(bin, args, {
     cwd, encoding: 'utf8', input, shell,
+    ...(env ? { env: { ...process.env, ...env } } : {}),
     stdio: capture ? 'pipe' : 'inherit',
   });
   return { status: r.status ?? 1, stdout: (r.stdout ?? '').trim(), stderr: (r.stderr ?? '').trim() };
@@ -372,6 +379,110 @@ export const SECRET_PATTERNS = [
   { re: /\beyJ[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}\./, name: 'JWT' },
   { re: /(postgres|mysql|mongodb(\+srv)?):\/\/[^\s:@/]+:[^\s@/]+@/, name: 'connection string có mật khẩu' },
 ];
+
+/**
+ * Dòng mà `.gitignore` / `.gitattributes` của MỌI repo áp harness phải có.
+ * MỘT nguồn, hai tầng dùng: `apply-to.mjs` THÊM dòng thiếu, `harness-doctor.mjs` KIỂM.
+ *
+ * VÌ SAO NÓ TỒN TẠI. Hai file này từng nằm trong `SEED` của `apply-to.mjs`, và `SEED`
+ * **không bao giờ ghi đè file đã tồn tại**. Mọi project THẬT đều đã có `.gitignore`
+ * ⇒ với đúng nhóm project mà harness nhắm tới, các dòng dưới đây im lặng KHÔNG tới.
+ * Chỉ project trống rỗng nhận được chúng — tức là cơ chế chỉ hoạt động ở ca không cần nó.
+ *
+ * Hậu quả không phải lý thuyết: project commit `.claude/settings.local.json` (van xả áp
+ * CÁ NHÂN của một người trở thành cấu hình của cả đội) và `.claude/telemetry/` (log
+ * máy-cục-bộ vào lịch sử chung, xung đột ở mọi PR). Và `* text=auto eol=lf` — điều số 8
+ * trong "mười hai điều" của README — cũng không tới, nên lớp conflict GIẢ mà nó xoá được
+ * vẫn còn nguyên ở đúng những repo đa OS.
+ *
+ * ĐÂY LÀ DANH SÁCH TỐI THIỂU, KHÔNG PHẢI CẢ FILE. Copy cả file là phép sai (project có
+ * ignore riêng của họ, và ghi đè nó là phá dữ liệu). Thêm dòng thiếu là phép đúng: nó
+ * idempotent, và nó không có ý kiến gì về phần còn lại của file.
+ *
+ * Vắng một dòng ở đây KHÔNG phải "đội họ có sở thích khác" — nó là dữ liệu cá nhân hoặc
+ * log đi vào lịch sử chung. Nên apply-to thêm lại nó ở MỌI lần áp, cố ý, kể cả khi có
+ * người đã xoá tay. Muốn thật sự bỏ thì sửa danh sách này trong một PR có người duyệt.
+ */
+export const REQUIRED_IGNORE = [
+  '.claude/settings.local.json',
+  '.claude/worktrees/',
+  '.claude/telemetry/',
+  '.claude/state/',
+  'knowledge/incoming/',
+  '.harness-pack/',
+];
+export const REQUIRED_ATTRIBUTES = ['* text=auto eol=lf'];
+
+/**
+ * Chỉ thêm khi git ĐANG ignore một file harness phải commit — ca gần như chắc chắn gặp:
+ * rất nhiều repo đã có `.claude/` trong `.gitignore` TRƯỚC khi áp harness, vì đó là lời
+ * khuyên phổ biến cho cấu hình agent cá nhân. Áp harness vào đó mà không sửa nghĩa là
+ * `.claude/hooks/` và `.claude/settings.json` không bao giờ được commit: cả đội tưởng
+ * mình có harness, nhưng chỉ MỘT người — người chạy apply-to — thật sự có.
+ *
+ * PHẢI là `!.claude/`, KHÔNG phải `!.claude/settings.json`. Đo 2026-08-05 bằng
+ * `git check-ignore`: sau một dòng loại cả thư mục (`.claude/`), mọi phủ định cho FILE
+ * bên trong đều VÔ TÁC DỤNG — git không re-include file có thư mục cha bị loại. Dòng
+ * `!.claude/settings.json` trông như đã sửa, và không sửa gì cả. Đây đúng là dạng lỗi
+ * tệ nhất của lớp này: nó im lặng và nó trông như đã xong.
+ */
+export const REQUIRED_UNIGNORE = ['!.claude/'];
+
+/**
+ * Cửa thoát trong `ci.yml` — đúng ở REPO TEMPLATE (nơi `commands` rỗng là placeholder và
+ * không có dòng này thì CI template đỏ vĩnh viễn), SAI ở mọi project đích (gate bị bỏ qua
+ * vẫn cho tick XANH).
+ *
+ * MỘT nguồn, ba nơi dùng: `apply-to` xoá lúc copy · migration `004` xoá cho project đã áp
+ * bản cũ · `harness-doctor` báo CHẶN nếu nó còn. Trước 2.6.0 chỉ có đường `upgrade` xử lý
+ * nó, nên project áp MỚI nhận cửa thoát và một dòng CHẶN của doctor ngay từ phút đầu —
+ * chào mừng bằng một lỗi mà chính công cụ vừa tạo ra.
+ *
+ * KHÔNG dùng `[\s\S]*?`: neo chính xác `env:` ở 4 space, comment ở 6 space, rồi đúng dòng
+ * biến. Lazy match sẽ ăn sang `steps:` nếu ai đó đổi thứ tự.
+ */
+export const CI_ESCAPE_HATCH = /\n {4}env:\n(?: {6}#[^\n]*\n)* {6}HARNESS_ALLOW_SKIPPED_GATES: '1'\n/;
+
+/**
+ * LỚP CƠ CHẾ: file thuộc về harness, không thuộc về project — cập nhật được, không hỏi.
+ * `apply-to.mjs` copy nó sang project mới; `upgrade.mjs` cập nhật nó ở project đã áp.
+ *
+ * MỘT DANH SÁCH, HAI NƠI DÙNG — vì trước 2.6.0 nó là hai danh sách, và chúng đã lệch:
+ * `upgrade.mjs → MECHANISM` **thiếu `tooling/gates.mjs`**. Nghĩa là runner gate — file mà
+ * cả ba stage và cả CI đều gọi — chưa bao giờ được cập nhật qua đường nâng cấp. Sửa một
+ * lỗi trong nó ở template sẽ không tới project nào, và không gì báo: project vẫn chạy bản
+ * 2.0.0 của gates.mjs trong khi manifest ghi 2.4.1.
+ *
+ * Đây đúng lớp bug mà `apply-to --audit` sinh ra để chặn, nhưng audit chỉ soi MỘT trong hai
+ * danh sách. Hai bản của một sự thật không lệch vào ngày viết; chúng lệch vào ngày ai đó
+ * thêm một file và chỉ thấy một chỗ.
+ *
+ * `tooling/generators/` KHÔNG ở đây: README của nó là SEED (project viết generator của
+ * riêng họ vào đó), và một thứ vừa là SEED vừa là cơ chế sẽ bị ghi đè ở lần nâng cấp đầu.
+ */
+export const MECHANISM_PATHS = [
+  '.claude/hooks', '.claude/skills', '.claude/agents',
+  'tooling/lib', 'tooling/knowledge', 'tooling/fixtures',
+  'tooling/init.mjs', 'tooling/test-hooks.mjs', 'tooling/test-migrations.mjs',
+  'tooling/apply-to.mjs', 'tooling/upgrade.mjs', 'tooling/gates.mjs', 'tooling/setup.mjs',
+  'tooling/fixlog.mjs', 'tooling/coactivity.mjs', 'tooling/harness-size.mjs',
+  'tooling/capo-report.mjs', 'tooling/harness-doctor.mjs', 'tooling/doctor.mjs',
+  'tooling/entropy-scan.mjs',
+  'tooling/check-reservations.mjs', 'tooling/check-feature-integrity.mjs',
+  'tooling/wt-clean.mjs', 'tooling/statusline.mjs', 'tooling/precommit-scan.mjs',
+  '.githooks', 'evals/run.mjs',
+  'harness.version', 'HARNESS-CHANGELOG.md', 'harness-migrations',
+];
+
+/**
+ * Dòng nào trong `required` chưa có trong `text`. So khớp sau khi trim, theo DÒNG
+ * NGUYÊN VẸN — không phải `includes`: `.claude/state/` là chuỗi con của
+ * `!.claude/state/keep.json`, và một phép `includes` sẽ coi dòng phủ định là "đã có".
+ */
+export function missingLines(text, required) {
+  const have = new Set(String(text).split('\n').map(l => l.trim()));
+  return required.filter(l => !have.has(l));
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Telemetry (cá nhân, gitignore) — nguyên liệu của vòng học

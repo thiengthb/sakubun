@@ -20,28 +20,74 @@
  * những thứ mà copy file không làm được (đổi tên field trong config, chuyển
  * cấu trúc thư mục).
  */
-import { readFileSync, writeFileSync, existsSync, mkdirSync, cpSync, readdirSync, statSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync, cpSync, readdirSync, statSync, renameSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join, resolve, sep, dirname } from 'node:path';
 import { createHash } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
-import { REPO_ROOT, repoPath, readJson, writeJson, report, run } from './lib/harness.mjs';
+import { REPO_ROOT, repoPath, readJson, writeJson, report, run, MECHANISM_PATHS } from './lib/harness.mjs';
 
 const args = process.argv.slice(2);
-const src = args.find(a => !a.startsWith('--'));
+const argOf = (name) => { const i = args.indexOf(name); return i >= 0 ? args[i + 1] : null; };
+const src = args.find((a, i) => !a.startsWith('--') && args[i - 1] !== '--ref');
 const APPLY = args.includes('--apply');
 const FORCE = args.includes('--force-overwrite');
+const REF = argOf('--ref');
+const ALLOW_UNPINNED = args.includes('--allow-unpinned');
 
 if (!src) {
   console.error(`Cách dùng:
   node tooling/upgrade.mjs <đường-dẫn-template>            xem trước
   node tooling/upgrade.mjs <đường-dẫn-template> --apply
+  node tooling/upgrade.mjs <URL-git> --ref v2.6.0 --apply  lấy template TỪ XA
 
-Template có thể là thư mục local hoặc một checkout của repo harness.
+Template có thể là thư mục local, hoặc URL git (https:// hoặc git@) kèm --ref.
 LUÔN xem trước rồi mới --apply.`);
   process.exit(1);
 }
 
-const TPL = resolve(src);
+/**
+ * Template TỪ XA — nếu không có đường này, một project được dựng bằng bootstrap từ xa
+ * **mắc kẹt vĩnh viễn ở version khai sinh**: `upgrade` đòi một thư mục template local mà
+ * project đó chưa bao giờ có, và `manifest.source` ghi một đường dẫn tạm đã bị xoá.
+ *
+ * PIN THEO TAG/SHA, KHÔNG BAO GIỜ THEO `main` — cùng luật mà `knowledge/README.md` đã đặt
+ * cho pack, cùng lý do và ở đây hậu quả lớn hơn: một commit sai trên `main` sẽ được kéo về
+ * ĐỒNG THỜI bởi mọi project, và nó ghi vào lớp CƠ CHẾ (hook, gate, migration) chứ không
+ * phải vào tài liệu.
+ */
+let TPL, remote = null;
+if (/^(https?:\/\/|git@)/.test(src)) {
+  if (!REF && !ALLOW_UNPINNED) {
+    console.error(`\n⛔ Lấy template từ xa mà KHÔNG pin version.\n`
+      + `  Thêm --ref <tag|sha>. Không pin nghĩa là bạn kéo về bất cứ thứ gì đang nằm trên nhánh\n`
+      + `  mặc định lúc này — và một commit sai ở đó sẽ vào MỌI project của bạn cùng lúc, ở lớp\n`
+      + `  cơ chế (hook, gate, migration). Cùng luật với pack: knowledge/README.md.\n`
+      + `  Thật sự muốn: --allow-unpinned.\n`);
+    process.exit(1);
+  }
+  const tmp = join(tmpdir(), `harness-tpl-${process.pid}`);
+  rmSync(tmp, { recursive: true, force: true });
+  const clone = run('git', ['clone', '--depth', '1', ...(REF ? ['--branch', REF] : []), src, tmp], { cwd: tmpdir() });
+  if (clone.status !== 0) {
+    console.error(`\n⛔ Không clone được ${src}${REF ? ` @ ${REF}` : ''}\n${clone.stderr}`);
+    process.exit(1);
+  }
+  TPL = tmp;
+  remote = { url: src, ref: REF ?? '(không pin)', sha: run('git', ['rev-parse', 'HEAD'], { cwd: tmp }).stdout.trim() };
+  console.log(`\n  template: ${src} @ ${remote.ref}  (${remote.sha.slice(0, 8)})`);
+  // `--ref main` ĐI QUA cửa kiểm ở trên nhưng KHÔNG phải là pin: nhánh di chuyển, nên hai
+  // project nâng cấp cách nhau một ngày nhận hai bản khác nhau trong khi manifest của
+  // chúng ghi cùng một `source`. Cảnh báo, không chặn — sha vẫn được ghi lại nên vẫn
+  // truy được về sau.
+  if (/^(main|master|HEAD)$/.test(String(REF))) {
+    console.log(`  ⚠️  \`--ref ${REF}\` là NHÁNH, không phải mốc. Hôm nay nó là ${remote.sha.slice(0, 8)};`
+      + ` ngày mai là thứ khác.\n      Dùng tag version (\`--ref v${readFileSync(join(tmp, 'harness.version'), 'utf8').trim()}\`) hoặc sha đầy đủ.`);
+  }
+  process.on('exit', () => { try { rmSync(tmp, { recursive: true, force: true }); } catch {} });
+} else {
+  TPL = resolve(src);
+}
 if (!existsSync(join(TPL, 'harness.version'))) {
   console.error(`Không phải thư mục template harness: ${TPL}\n(thiếu harness.version)`);
   process.exit(1);
@@ -91,16 +137,7 @@ if (existsSync(changelogPath)) {
 // ── So sánh file ─────────────────────────────────────────────────────────────
 // Chỉ nâng cấp lớp CƠ CHẾ. File nội dung (AGENTS.md, config, features/) là của
 // project — template không được đụng, chỉ báo nếu có thay đổi đáng biết.
-const MECHANISM = [
-  '.claude/hooks', '.claude/skills', '.claude/agents',
-  'tooling/lib', 'tooling/knowledge', 'tooling/fixtures', 'tooling/generators',
-  'tooling/init.mjs', 'tooling/test-hooks.mjs', 'tooling/test-migrations.mjs', 'tooling/apply-to.mjs', 'tooling/upgrade.mjs',
-  'tooling/fixlog.mjs', 'tooling/coactivity.mjs', 'tooling/harness-size.mjs',
-  'tooling/capo-report.mjs', 'tooling/harness-doctor.mjs', 'tooling/doctor.mjs', 'tooling/entropy-scan.mjs',
-  'tooling/check-reservations.mjs', 'tooling/check-feature-integrity.mjs',
-  'tooling/wt-clean.mjs', 'tooling/statusline.mjs', 'tooling/precommit-scan.mjs',
-  '.githooks', 'evals/run.mjs', 'harness-migrations',
-];
+const MECHANISM = MECHANISM_PATHS;
 // File tham chiếu: template cải thiện nhưng project có thể đã sửa. Chỉ BÁO, không đụng.
 const ADVISORY = [
   'docs/CONFLICTS.md', 'docs/WIP.md', 'docs/BRANCH-PROTECTION.md', 'docs/ROADMAP-30D.md',
@@ -202,6 +239,27 @@ for (const f of conflict) {
   }
 }
 
+// ── PHA 2: chạy lại bằng CHÍNH BẢN MỚI của script này ────────────────────────
+// Danh sách file cơ chế nằm TRONG script này, và script đang chạy luôn là bản CŨ (bản nằm
+// trong project). Nên mọi file `tooling/*.mjs` ra đời sau version của project là VÔ HÌNH
+// với nó — thư mục thì được duyệt đệ quy nên không sao, file khai theo TÊN thì đóng băng.
+//
+// Đo trên `warehouse` 2026-08-05: nâng v1.4.0 → v2.7.1 xong vẫn THIẾU `tooling/gates.mjs`,
+// `tooling/setup.mjs`, `tooling/harness-doctor.mjs` — và `settings.json` thì đã được
+// migration trỏ vào `gates.mjs`. Repo không cũ, repo HỎNG.
+//
+// Bước copy ở trên vừa thay chính file này. Chạy lại một lần bằng bản mới: nó có danh sách
+// mới, thấy các file kia, và mang chúng sang. Migration idempotent theo hợp đồng (điều kiện
+// ③ của test-migrations) nên chạy lại là an toàn. `HARNESS_UPGRADE_PHASE2` chặn vòng lặp.
+if (!process.env.HARNESS_UPGRADE_PHASE2 && (add.includes('tooling/upgrade.mjs') || safe.includes('tooling/upgrade.mjs'))) {
+  console.log(`\n  ↻ Bản \`tooling/upgrade.mjs\` vừa được cập nhật. Chạy lại bằng bản MỚI để nó`
+    + ` mang nốt những file mà danh sách CŨ không biết đến.\n`);
+  const r = run('node', [repoPath('tooling', 'upgrade.mjs'), ...args], {
+    cwd: REPO_ROOT, capture: false, env: { HARNESS_UPGRADE_PHASE2: '1' },
+  });
+  process.exit(r.status ?? 0);
+}
+
 for (const m of migrations) {
   try {
     await m.up({ repoPath, readJson, writeJson, readFileSync, writeFileSync, existsSync, run,
@@ -216,6 +274,21 @@ for (const m of migrations) {
                    if (existsSync(dst) && !overwrite) return false;
                    mkdirSync(dirname(dst), { recursive: true });
                    cpSync(src, dst);
+                   return true;
+                 },
+                 // "Đổi cấu trúc thư mục" là một trong những việc README của
+                 // harness-migrations/ liệt kê là BẮT BUỘC phải có migration — nhưng cho
+                 // tới 2.5.0 ctx không có cách nào DI CHUYỂN một file. Hệ quả: migration
+                 // phải tự `import` node:fs (không migration nào làm) hoặc gọi `git mv`
+                 // (fail ở test, vì thư mục fixture không phải git repo). Nên việc đó
+                 // trước đây chỉ tồn tại trên giấy.
+                 // Đổi tên, KHÔNG copy-rồi-xoá: `renameSync` là nguyên tử trong cùng
+                 // filesystem, còn copy-rồi-xoá thì đứt giữa đường là mất file.
+                 moveFile: (relFrom, relTo) => {
+                   const from = repoPath(relFrom), to = repoPath(relTo);
+                   if (!existsSync(from) || existsSync(to)) return false;
+                   mkdirSync(dirname(to), { recursive: true });
+                   renameSync(from, to);
                    return true;
                  },
                  // Log có ⚠ đi vào WARN, không vào OK. Một cảnh báo in dưới nhãn
@@ -234,13 +307,35 @@ for (const group of MECHANISM) {
     try { files[f] = sha(repoPath(f)); } catch {}
   }
 }
+// HỢP NHẤT, không thay thế — cùng lý do như trong apply-to.mjs: `profile` của setup.mjs
+// (và bất cứ khoá nào thêm sau này) không được bốc hơi ở mỗi lần nâng cấp.
 writeJson(repoPath('.claude', 'harness-manifest.json'), {
+  ...(readJson(repoPath('.claude', 'harness-manifest.json')) ?? {}),
   templateVersion: tplVersion,
   upgradedAt: new Date().toISOString(),
   previousVersion: curVersion,
-  source: TPL,
+  // Đường dẫn tạm của một clone sắp bị xoá KHÔNG phải là nguồn. Ghi URL + ref + sha thì
+  // lần nâng cấp sau (và người đọc manifest 3 tháng nữa) mới biết bản này từ đâu ra.
+  source: remote ? `${remote.url}@${remote.ref}` : TPL,
+  ...(remote ? { sourceSha: remote.sha } : {}),
   files,
 });
+// ── KIỂM TOÀN VẸN: con trỏ nào trong settings.json trỏ vào hư không? ─────────
+// Bắt cả LỚP lỗi, không riêng ca đã biết: sau nâng cấp, mọi `node <đường-dẫn>` mà
+// `.claude/settings.json` gọi phải tồn tại. Một hook không tồn tại KHÔNG báo lỗi lúc cấu
+// hình — nó ném ERR_MODULE_NOT_FOUND ở giữa phiên làm việc của người dùng, hoặc tệ hơn,
+// im lặng không chặn gì. Đây là kiểm rẻ nhất có thể có cho "nâng cấp làm repo hỏng".
+const settingsRaw = existsSync(repoPath('.claude', 'settings.json'))
+  ? readFileSync(repoPath('.claude', 'settings.json'), 'utf8') : '';
+const dangling = [...settingsRaw.matchAll(/node\s+([\w./-]+\.mjs)/g)]
+  .map(m => m[1]).filter((v, i, a) => a.indexOf(v) === i)
+  .filter(rel => !existsSync(repoPath(...rel.split('/'))));
+if (dangling.length) {
+  fail.push(`.claude/settings.json gọi ${dangling.length} file KHÔNG TỒN TẠI: ${dangling.join(' · ')}`);
+  fail.push('  Nâng cấp đã để repo ở trạng thái HỎNG (hook ném lỗi giữa phiên, hoặc im lặng không chặn gì).');
+  fail.push(`  Sửa: node ${join(TPL, 'tooling', 'apply-to.mjs')} ${REPO_ROOT} --apply --update`);
+}
+
 if (existsSync(repoPath('harness.version'))) writeFileSync(repoPath('harness.version'), tplVersion + '\n');
 ok.push(`manifest → ${tplVersion}`);
 
