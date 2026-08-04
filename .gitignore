@@ -58,3 +58,6 @@ prisma/*.db-wal
 test-results/
 playwright-report/
 .playwright/
+# Throwaway e2e database (e2e/fixtures.ts E2E_DB_FILE) — rebuilt from the migrations on every run.
+e2e-test.db
+e2e-test.db-*

@@ -1,24 +1,13 @@
-import path from 'node:path';
-import Database from 'better-sqlite3';
 import { expect, test } from '@playwright/test';
-import { E2E_BASE_URL, E2E_DB_FILE, E2E_EMAIL, E2E_LOGIN } from './fixtures';
+import { E2E_EMAIL, E2E_LOGIN, seedE2eAccount } from './fixtures';
 
-// Seed the account once the webServer is up: create it through better-auth's own sign-up endpoint (so the
-// password hash matches what login verifies), then flip emailVerified directly in the throwaway DB so
-// requireEmailVerification lets the login through without the email round-trip.
-test.beforeAll(async () => {
-  const origin = E2E_BASE_URL;
-  const res = await fetch(`${origin}/api/auth/sign-up/email`, {
-    method: 'POST',
-    // better-auth rejects a cross/absent Origin (CSRF guard) — send the trusted baseURL origin.
-    headers: { 'content-type': 'application/json', origin },
-    body: JSON.stringify({ email: E2E_EMAIL, password: E2E_LOGIN, name: 'E2E User' }),
-  });
-  if (!res.ok) throw new Error(`e2e sign-up failed: ${res.status} ${await res.text()}`);
-  const db = new Database(path.join(process.cwd(), E2E_DB_FILE));
-  db.prepare('UPDATE user SET emailVerified = 1 WHERE email = ?').run(E2E_EMAIL);
-  db.close();
-});
+// Seed the account once the webServer is up (see seedE2eAccount — shared with mobile-layout.spec.ts).
+//
+// This spec asserts the EMPTY-store dashboard ("Chưa có gì để học"), and mobile-layout.spec.ts seeds
+// items into the same throwaway DB. Playwright runs spec files in alphabetical order, and
+// `critical-path` sorts before `mobile-layout`, so this one always sees the empty store. Renaming
+// either file has to preserve that order.
+test.beforeAll(seedE2eAccount);
 
 // The one critical-path smoke: log in with the seeded account, land on the authed dashboard, then prove
 // a settings change survives a reload (a real Server Action write + read-back). The MCP-driven part of

@@ -11,6 +11,7 @@ import {
 import { PageShell } from '@/components/shell/page-shell';
 import { EmptyState } from '@/components/shared/empty-state';
 import { GuideLink } from '@/components/shared/guide-link';
+import { ScrollEndOnMount } from '@/components/shared/scroll-end-on-mount';
 import { Badge } from '@/components/ui/badge';
 import { AnalyticsTabs } from '@/components/dashboard/analytics-tabs';
 import { DailyProgress } from '@/components/dashboard/daily-progress';
@@ -58,7 +59,9 @@ function StatCard({
         <Icon className="size-4" aria-hidden />
         {label}
       </div>
-      <div className="mt-2 text-2xl font-semibold">{value}</div>
+      {/* text-xl below sm: in the two-column phone layout a 24px "50 ngữ pháp" wraps to two lines and
+          makes one card taller than its neighbour; 20px keeps every value on one line. */}
+      <div className="mt-2 text-xl font-semibold sm:text-2xl">{value}</div>
       {hint && <div className="mt-1 text-xs text-muted-foreground">{hint}</div>}
     </div>
   );
@@ -75,7 +78,9 @@ function ChartCard({
 }) {
   return (
     <div className="space-y-4 rounded-lg border border-border/70 p-4">
-      <div className="flex items-center justify-between gap-2">
+      {/* flex-wrap: a long Vietnamese title + a legend cannot share 358px. Wrapping drops the legend
+          onto its own line on a phone instead of squeezing the title into two ragged lines beside it. */}
+      <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
         <h2 className="text-sm font-medium text-muted-foreground">{title}</h2>
         {action}
       </div>
@@ -84,13 +89,20 @@ function ChartCard({
   );
 }
 
-/** Pure-CSS vertical bar chart — no chart dependency, server-rendered. */
+/**
+ * Pure-CSS vertical bar chart — no chart dependency, server-rendered.
+ *
+ * The axis labels are the whole sizing problem here: a label like "08/14" has no break opportunity, so
+ * it sets a min-content width on its column that `flex-1` cannot shrink past, and 14 of them force the
+ * page wider than a phone. Two guards: callers pass a `short` label used below `md`, and each column is
+ * `min-w-0` + `truncate` so ANY future label degrades to an ellipsis instead of breaking the layout.
+ */
 function Bars({
   data,
   barClass = 'bg-accent-brand/70',
   empty,
 }: {
-  data: { label: string; value: number; hint?: string }[];
+  data: { label: string; short?: string; value: number; hint?: string }[];
   barClass?: string;
   empty: string;
 }) {
@@ -101,7 +113,7 @@ function Bars({
   return (
     <div className="flex items-end gap-1.5">
       {data.map((d, i) => (
-        <div key={`${d.label}-${i}`} className="flex flex-1 flex-col items-center gap-1">
+        <div key={`${d.label}-${i}`} className="flex min-w-0 flex-1 flex-col items-center gap-1">
           <span className="text-[10px] text-muted-foreground">{d.value || ''}</span>
           <div className="flex h-24 w-full items-end">
             <div
@@ -111,7 +123,16 @@ function Bars({
               aria-hidden
             />
           </div>
-          <span className="text-[10px] text-muted-foreground">{d.label}</span>
+          <span className="max-w-full truncate text-[10px] text-muted-foreground">
+            {d.short ? (
+              <>
+                <span className="md:hidden">{d.short}</span>
+                <span className="max-md:hidden">{d.label}</span>
+              </>
+            ) : (
+              d.label
+            )}
+          </span>
         </div>
       ))}
     </div>
@@ -151,7 +172,9 @@ function Heatmap({ data, max }: { data: { day: string; count: number }[]; max: n
     return <p className="py-8 text-center text-sm text-muted-foreground">Chưa có hoạt động nào.</p>;
   }
   return (
-    <div className="overflow-x-auto">
+    // Starts at the right end (= today). The full year is ~830px wide, so on a phone the box shows about
+    // the last five months and older weeks are one swipe away — the title still honestly says "1 năm".
+    <ScrollEndOnMount>
       <div className="grid grid-flow-col grid-rows-7 gap-1">
         {data.map((d) => {
           const ratio = d.count / max;
@@ -166,7 +189,7 @@ function Heatmap({ data, max }: { data: { day: string; count: number }[]; max: n
           );
         })}
       </div>
-    </div>
+    </ScrollEndOnMount>
   );
 }
 
@@ -295,8 +318,13 @@ export default async function HomePage() {
   const masteredPct =
     totalItems > 0 ? Math.round((analytics.masteredGrammar / totalItems) * 100) : 0;
 
+  // `short` is the day of month alone. 14 columns of "08/14" need ~29px each of unbreakable text, which
+  // is 484px of min-content — 126px more than a 390px phone has, and THAT is what pushed the whole
+  // dashboard sideways (every card then sat in a 526px-wide page). The card title already says which
+  // 14 days these are, so the month is redundant on the axis. See Bars.
   const forecastData = analytics.forecast14.map((f) => ({
     label: f.day.slice(5).replace('-', '/'),
+    short: f.day.slice(8),
     value: f.count,
   }));
 
@@ -327,7 +355,10 @@ export default async function HomePage() {
 
   const progress = (
     <>
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {/* Two columns from the smallest screen up (was one below sm): four stacked cards ate 310px, so a
+          phone opened the dashboard on two KPIs and had to scroll for the other two. Paired up they all
+          land above the fold, which is the entire job of this row. gap-3 below sm to buy label width. */}
+      <section className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <StatCard
           icon={CalendarClock}
           label="Đến hạn bây giờ"

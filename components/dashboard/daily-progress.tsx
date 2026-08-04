@@ -98,11 +98,15 @@ export function DailyProgress({
 
   return (
     <div className="space-y-4 rounded-lg border border-border/70 p-4">
-      <div className="flex items-center justify-between gap-2">
+      {/* Below md the day picker takes its own FULL-WIDTH row (`max-md:w-full` + flex-wrap). On one row
+          it needs ~215px of the 358px available — enough to clip the title to "Tiến độ hôm" — and it
+          also squeezed the two chevrons into a 7px-gap pair, which is under the 44px touch target. On
+          its own row they sit at the two ends with the date centred between them. */}
+      <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-2">
         <h2 className="text-sm font-medium text-muted-foreground">
           {isToday ? 'Tiến độ hôm nay' : 'Tiến độ theo ngày'}
         </h2>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 max-md:w-full max-md:justify-between">
           {!isToday && (
             <button
               type="button"
@@ -117,7 +121,7 @@ export function DailyProgress({
             onClick={() => setIdx((i) => Math.max(0, i - 1))}
             disabled={idx === 0}
             aria-label="Ngày trước"
-            className="inline-flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-40"
+            className="inline-flex size-9 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-40 md:size-7"
           >
             <ChevronLeft className="size-4" aria-hidden />
           </button>
@@ -129,7 +133,7 @@ export function DailyProgress({
             onClick={() => setIdx((i) => Math.min(lastIdx, i + 1))}
             disabled={isToday}
             aria-label="Ngày sau"
-            className="inline-flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-40"
+            className="inline-flex size-9 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-40 md:size-7"
           >
             <ChevronRight className="size-4" aria-hidden />
           </button>

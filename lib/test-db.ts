@@ -28,6 +28,21 @@ const MIGRATIONS_DIR = path.join(PROJECT_ROOT, 'prisma', 'migrations');
  */
 export function createTestDb(prefix: string): string {
   const dbFile = path.join(mkdtempSync(path.join(os.tmpdir(), prefix)), 'test.db');
+  applyMigrations(dbFile);
+  // POSIX separators: a Windows path in a `file:` URL is not a valid Prisma datasource URL.
+  const url = `file:${dbFile.replace(/\\/g, '/')}`;
+  process.env.DATABASE_URL = url;
+  return url;
+}
+
+/**
+ * Apply every committed migration, in order, to the SQLite file at `dbFile` (created if absent).
+ *
+ * Split out of `createTestDb` so the Playwright harness can build its throwaway DB the same way — it
+ * needs a file at a FIXED path (the specs open it directly to seed), not a temp dir, and it must not
+ * set DATABASE_URL in the Playwright node process.
+ */
+export function applyMigrations(dbFile: string): void {
   const db = new Database(dbFile);
   try {
     // Lexical order IS chronological: Prisma names every directory with a UTC timestamp prefix.
@@ -43,8 +58,4 @@ export function createTestDb(prefix: string): string {
   } finally {
     db.close();
   }
-  // POSIX separators: a Windows path in a `file:` URL is not a valid Prisma datasource URL.
-  const url = `file:${dbFile.replace(/\\/g, '/')}`;
-  process.env.DATABASE_URL = url;
-  return url;
 }

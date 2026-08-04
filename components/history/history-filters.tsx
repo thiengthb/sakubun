@@ -116,13 +116,17 @@ export function HistoryFilters({
   const activeCount = activeFilterCount(filters);
 
   return (
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+    // One row at EVERY width (it used to stack below sm). The toolbar rule for this app is that the
+    // actions share the search box's row — a phone has vertical space to spare only in theory, and the
+    // buttons are icon-only below md, so the row costs ~76px and gives back a whole stacked row.
+    <div className="flex flex-row items-center gap-2 sm:gap-3">
       <SearchInput
         value={search}
         onChange={(e) => onSearchChange(e.target.value)}
         placeholder="Tìm trong đề / bài dịch…"
+        className="min-w-0 flex-1"
       />
-      <div className="flex items-center gap-2 sm:ml-auto">
+      <div className="flex shrink-0 items-center gap-2">
         {/* Layout density — sits immediately LEFT of Bộ lọc and uses the same expanding-label button.
             Hidden below lg because the grid is single-column there anyway, so the control would be a
             no-op. Labelled by the ACTION (what the next click does), matching its tooltip role. */}

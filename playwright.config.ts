@@ -26,7 +26,14 @@ export default defineConfig({
     // `dev` (not `start`): no build step, and the specs assert behavior, not bundle output.
     command: `npx next dev -p ${E2E_PORT}`,
     url: E2E_BASE_URL,
-    reuseExistingServer: !process.env.CI,
+    // NEVER reuse a server, not even locally. global-setup DELETES and recreates the throwaway DB file,
+    // and better-sqlite3 holds the OLD INODE open: a reused server keeps reading the deleted file, so
+    // specs write rows the app cannot see and read rows from a previous run. It fails silently — pages
+    // render, logins succeed against the stale user, and assertions pass or fail for reasons that have
+    // nothing to do with the code under test. Diagnosed 2026-08-04, after a green mobile-layout run
+    // turned out to be measuring a DB from three runs earlier. Booting dev costs ~10s; a gate that
+    // reports on the wrong data costs more.
+    reuseExistingServer: false,
     timeout: 120_000,
     env: {
       DATABASE_URL: E2E_DB_URL,
