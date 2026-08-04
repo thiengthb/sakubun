@@ -16,7 +16,7 @@
  * Chạy: sau khi áp template · sau khi nâng cấp · mỗi 2 tuần · khi thấy "agent hôm nay lạ".
  */
 import { existsSync, readFileSync } from 'node:fs';
-import { repoPath, run, config, readJson, git, exists, missingLines, REQUIRED_ATTRIBUTES } from './lib/harness.mjs';
+import { repoPath, run, config, readJson, git, exists, missingLines, REQUIRED_ATTRIBUTES, repoRole, currentBranch } from './lib/harness.mjs';
 
 const QUICK = process.argv.includes('--quick');
 const cfg = config();
@@ -25,8 +25,13 @@ const checks = [
   { id: 'hooks',    label: 'Hook tests',              cmd: ['tooling/test-hooks.mjs'],        critical: true },
   // Migration là code DUY NHẤT ghi vào repo người khác ⇒ critical, ngang hàng hook tests.
   { id: 'migs',     label: 'Migration tests',         cmd: ['tooling/test-migrations.mjs'],   critical: true },
+  // Runner eval là lớp INFERENTIAL duy nhất trong repo, và nó chỉ chạy khi có người điền
+  // `evals.command` — chưa repo nào từng điền. Suite này kiểm nó bằng agent GIẢ: tất định,
+  // miễn phí, và nó đã bắt được 3 bug thật ở 2.7.8.
+  { id: 'evals',    label: 'Eval runner tests',       cmd: ['tooling/test-evals.mjs'],        critical: false },
   { id: 'coverage', label: 'Template coverage',       cmd: ['tooling/apply-to.mjs', '--audit'], critical: false },
   { id: 'know',     label: 'Knowledge lint',          cmd: ['tooling/knowledge/lint.mjs'],    critical: false },
+  { id: 'consumers',label: 'Sổ consumer',             cmd: ['tooling/knowledge/consumers.mjs'], critical: false },
   { id: 'entropy',  label: 'Entropy scan',            cmd: ['tooling/entropy-scan.mjs'],      critical: false },
   { id: 'size',     label: 'Kích thước harness',      cmd: ['tooling/harness-size.mjs'],      critical: false },
   { id: 'feature',  label: 'Feature integrity',       cmd: ['tooling/check-feature-integrity.mjs'], critical: false, slow: true },
@@ -56,12 +61,19 @@ const blockers = [], advice = [];
 
 // Repo TEMPLATE thì CHANGEME và commands rỗng là ĐÚNG — đó là placeholder.
 // Project THẬT thì cùng trạng thái đó nghĩa là gate không tồn tại.
-const IS_TEMPLATE = exists(repoPath('HARNESS-CHANGELOG.md'))
-  && exists(repoPath('tooling', 'apply-to.mjs'))
-  && !exists(repoPath('.claude', 'harness-manifest.json'));
+const ROLE = repoRole();
+const IS_TEMPLATE = ROLE === 'template';
 const blocker = m => (IS_TEMPLATE ? advice : blockers).push(m);
 
 if (IS_TEMPLATE) console.log('  ℹ  Đây là REPO TEMPLATE — placeholder CHANGEME là đúng, không phải lỗi.');
+// Trạng thái thứ BA phải được NÓI RA, không được âm thầm gộp vào một trong hai kia. Không có
+// manifest và cũng không có changelog nghĩa là harness tới đây bằng đường không ai theo dõi
+// được — và `upgrade` sau này sẽ ghi đè MÙ vì nó không có hash nào để so.
+if (ROLE === 'unknown') {
+  blockers.push('không xác định được VAI của repo này: không có `.claude/harness-manifest.json` (dấu của repo đã áp) '
+    + 'và cũng không có `HARNESS-CHANGELOG.md` (dấu của repo template). Harness tới đây bằng đường không ai theo dõi được — '
+    + 'nâng cấp sau này sẽ ghi đè MÙ vì không có hash nào để so. Sửa: `node <template>/tooling/apply-to.mjs . --apply --update` một lần để tạo manifest.');
+}
 
 if (String(cfg.project?.id).includes('CHANGEME')) blocker('harness.config.json → project.id vẫn là CHANGEME');
 if (String(cfg.project?.dri || '').includes('CHANGEME')) blocker('harness.config.json → project.dri chưa điền');
@@ -197,6 +209,24 @@ if (mf?.profile?.allowedEmptyVerify) {
   blocker('setup.mjs đã chạy với `--allow-empty-verify` — project này KHÔNG có gate verify, và điều đó '
     + 'nằm trong manifest chứ không biến mất. Còn là trạng thái tạm thì được; còn sau tuần đầu thì '
     + 'harness ở đây là trang trí và BẠN vẫn là verification loop.');
+}
+
+// ── Phát hành: tag có trỏ vào thứ nằm trên main không? ───────────────────────
+// Rebase-merge của GitHub VIẾT LẠI SHA. Tag một commit trước rebase thì tag đó trỏ vào một
+// commit KHÔNG nằm trên main — và không gì báo: `git tag` vẫn liệt kê nó, `git show` vẫn mở
+// được, chỉ có điều `--ref <tag>` của `upgrade.mjs` sẽ kéo về một cây không ai review.
+// Gặp thật 2026-08-05 với v2.7.7. Kiểm rẻ: mọi tag `vX.Y.Z` phải là tổ tiên của main.
+if (IS_TEMPLATE && git(['rev-parse', '--git-dir']).status === 0) {
+  const tags = git(['tag', '--list', 'v*']).stdout.split('\n').filter(t => /^v\d+\.\d+\.\d+$/.test(t.trim()));
+  const orphan = tags.filter(t => git(['merge-base', '--is-ancestor', t.trim(), 'main']).status !== 0);
+  if (orphan.length) {
+    blockers.push(`${orphan.length} tag KHÔNG nằm trên main: ${orphan.join(' · ')} — gần như chắc chắn là tag đặt vào commit TRƯỚC rebase-merge. `
+      + `\`upgrade.mjs --ref <tag>\` sẽ kéo về một cây không ai review. Sửa: git tag -d <tag> && git push --delete origin <tag> rồi tag lại commit trên main.`);
+  } else if (tags.length) console.log(`  ✓  ${tags.length} tag phát hành đều nằm trên main`);
+  const localVerTag = `v${localVer}`;
+  if (localVer && !tags.includes(localVerTag) && currentBranch() === 'main') {
+    advice.push(`harness.version = ${localVer} nhưng CHƯA có tag ${localVerTag} — consumer không pin được version này (\`upgrade --ref\` cần tag có thật)`);
+  }
 }
 
 // ── Bề mặt vendor: frontmatter skill + rule ──────────────────────────────────

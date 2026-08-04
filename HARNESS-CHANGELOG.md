@@ -11,6 +11,107 @@
 
 ---
 
+## 2.7.9 — 2026-08-05
+
+**minor.** Template biết consumer của nó tồn tại — và biết bản vá đã tới ai chưa.
+
+### Sổ đăng ký: `tooling/knowledge/consumers.mjs`
+
+Template **không biết consumer của nó tồn tại**. Đo 2026-08-05: ba repo đã dùng harness này
+từ 08-03, **hai trong ba đứng ở v1.4.0 — sáu version sau lưng**, và chúng chưa từng có
+`tooling/gates.mjs` (runner ra đời ở 2.0.0). Hai project chạy một harness mà lớp cưỡng chế
+của nó chưa tồn tại — và cách duy nhất phát hiện là liệt kê thư mục bằng tay.
+
+Một hệ phân phối mà bên phát hành không biết mình đã phát hành cho ai thì không trả lời được
+câu rẻ nhất và quan trọng nhất: *"bản vá hôm nay đã tới ai chưa?"*
+
+Nguồn dữ liệu là `knowledge/incoming/<id>/pack.json` — **project TỰ báo danh** khi chạy
+`upstream`. Không quét filesystem, không đoán: vào sổ vì đã báo danh, không vì tình cờ nằm
+cạnh. `--record` là hành động của NGƯỜI; sổ được commit nên nó đi qua review như mọi dữ liệu.
+
+Sổ trống báo `n/a`, **không báo "không có consumer"** — hai thứ đó khác nhau, và gộp chúng là
+đúng lỗi mà cả loạt 2.5–2.7 này đi sửa.
+
+### Tag trỏ vào commit TRƯỚC rebase — im lặng và khó gỡ
+
+Rebase-merge của GitHub **viết lại SHA**. Tag một commit trước rebase thì tag đó trỏ vào commit
+**không nằm trên main** — và không gì báo: `git tag` vẫn liệt kê, `git show` vẫn mở được, chỉ
+có điều `upgrade.mjs --ref <tag>` sẽ kéo về một cây **không ai review**. Với một kênh phân phối
+thì đó là lỗ supply-chain, không phải lỗi tiện lợi.
+
+Gặp thật hôm nay với `v2.7.7`. Nay `harness-doctor` kiểm mọi tag `vX.Y.Z` là tổ tiên của `main`,
+và nhắc khi `harness.version` trên main chưa có tag (consumer không pin được version đó).
+
+### Mọi `.mjs` phải parse được — kiểm trong CI
+
+Một file `.mjs` **chưa từng được CI chạy** vẫn có thể ship lỗi cú pháp. Gặp **ba lần trong một
+ngày**: một glob (`**` + `/` hoặc `../*` + `/`) nằm trong block comment tạo ra chuỗi đóng comment
+và **kết thúc comment sớm**. Lỗi đó không lộ ra cho tới khi có người chạy đúng file đó — và
+người đó có thể là người dùng, ở project của họ. `node --check` mọi file được track là kiểm rẻ
+nhất cho cả lớp lỗi.
+
+## 2.7.8 — 2026-08-05
+
+**minor về hành vi, breaking cho `evals.command`.** Runner eval có ~40 dòng **chưa bao giờ
+chạy ở đâu** — đo được: `evals.command` rỗng ở cả bốn repo. Nay có `tooling/test-evals.mjs`
+kiểm nó bằng **agent GIẢ**: tất định, miễn phí, chạy 3 OS. Suite bắt được **ba bug thật** ngay
+lần đầu.
+
+### ① `JSON.stringify` không phải shell escaping — prompt nhiều dòng bị bóp méo IM LẶNG
+
+`{prompt}` được nội suy bằng `JSON.stringify(prompt)` rồi dán vào một lệnh đi qua shell. Dấu
+nháy đôi qua đúng, nhưng **`\n` tới agent dưới dạng HAI ký tự literal** (`\` và `n`) chứ không
+phải một dòng mới. Mọi prompt eval thật đều nhiều dòng ⇒ **mọi prompt đều bị bóp méo**.
+
+Và nó bóp méo im lặng: agent vẫn chạy, vẫn trả kết quả, chỉ là nó đọc một prompt khác với
+prompt trong file task. Điểm eval sai theo hướng **không ai truy được** — nó đọc y hệt
+*"model vừa tụt hạng"*. Một bug computational được che bởi lớp inferential đắt nhất trong repo.
+
+**`{prompt}` bị BỎ. Prompt đi qua STDIN** — không có tầng escaping nào để sai, và là đường duy
+nhất đúng trên cả ba OS (`cmd.exe` xử lý `"` và `%` khác `sh`). Lệnh còn `{prompt}` bị **TỪ
+CHỐI kèm cách sửa**, không chạy tiếp: bóp méo im lặng tệ hơn một lỗi nói ra. `{promptFile}`
+cho tool không đọc được stdin.
+
+### ② Transcript của agent bị NÉM ĐI
+
+`runAgent` bắt toàn bộ output, dùng nó DUY NHẤT để đếm retry, rồi bỏ. Eval đỏ mà không có
+transcript thì người đọc chỉ có một dòng *"task 0003 fail"* và không có cách nào biết agent đã
+làm gì. `features/*.json` đòi `evidence` cho mọi `passes: true` — không lý gì lớp eval, lớp
+ĐẮT nhất và mờ nhất, lại được miễn. Nay `spill()` giữ transcript và runner in đường dẫn.
+
+### ③ `error` được tạo ra rồi bị bỏ đi
+
+`runAgent` trả `{ok:false, error}` cho những ca nó TỪ CHỐI chạy — và runner **không bao giờ in
+`error`**. Task hiện ra là đỏ mà không có lý do, nên người đọc đi tìm ở model trong khi lỗi
+nằm ở cấu hình. Một thông báo lỗi đã trả chi phí để tạo ra mà không ai đọc thì tệ hơn không tạo.
+
+### Suite: 9 case, có mutant
+
+Prompt fixture cố ý chứa nháy đôi, nháy đơn, xuống dòng thật và `%` — bốn thứ hay chết khi đi
+qua shell, và `%` là ca riêng của `cmd.exe`. Case ⑥ là **mutant**: viết sai tên placeholder
+phải làm hợp đồng ① ĐỎ, không làm nó `n/a`. `EVAL_TASKS_DIR` là override CHỈ-TEST, cùng lý do
+với `HARNESS_CONFIG`.
+
+## 2.7.7 — 2026-08-05
+
+**patch.** `repoRole()` — một nguồn cho câu hỏi *"tôi là template hay repo đã áp?"*.
+
+Câu hỏi đó được hỏi ở **5 chỗ với 3 định nghĩa khác nhau**: `apply-to` chỉ xét manifest;
+`harness-doctor` và `setup.mjs` xét 3 điều kiện; `entropy-scan` tính **cả** `IS_TEMPLATE`
+**lẫn** `IS_CONSUMER` riêng rẽ trong cùng một file — và hai biến đó **không bù nhau**.
+
+Một repo không có cả manifest lẫn changelog thì **cả hai đều `false`**. Trạng thái đó có
+thật (ai đó copy `.claude/` bằng tay, hoặc manifest bị xoá) và **chưa từng được đặt tên**,
+nên mỗi tool âm thầm chọn một mặc định khác nhau cho nó. Đúng phép gộp `0` với `n/a` mà repo
+này cấm ở mọi nơi khác — chỉ có điều nó nằm trong phép **tự nhận diện** của chính harness.
+
+Nay ba giá trị: `template` · `consumer` · `unknown`. Và `unknown` **được nói ra** —
+`harness-doctor` báo CHẶN kèm lý do thật: harness tới đây bằng đường không ai theo dõi được,
+nên `upgrade` sau này sẽ ghi đè MÙ vì không có hash nào để so.
+
+Gần như mọi lỗi của bốn bản 2.5.x–2.7.x đều mọc từ chỗ này: cửa thoát CI, audit tự tắt,
+ngưỡng PR, `test-hooks` đo config sống, cảnh báo upstream nổ ở template. Tám lỗi, một gốc.
+
 ## 2.7.6 — 2026-08-05
 
 **patch.** Kết quả của lần DISTILL đầu tiên trên nguyên liệu THẬT từ ba repo tiêu thụ.
