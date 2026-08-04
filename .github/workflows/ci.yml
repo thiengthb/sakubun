@@ -57,6 +57,19 @@ jobs:
           # ra output hợp lệ. Cài frozen sẽ bắt lockfile đã bị merge tay.
           npm ci --ignore-scripts
 
+  # MỘT lệnh, không liệt kê lại từng gate. Danh sách gate sống ở
+  # `harness.config.json → gates.preMerge`; viết lại nó ở đây là tạo bản sao thứ hai, và
+  # hai danh sách là hai cơ hội để chúng lệch nhau — chúng ĐÃ lệch: config khai
+  # `e2e · depcruise · a11y · perf` mà job này chỉ chạy gen/typecheck/lint/test/build,
+  # còn `e2e` thì nằm ở một job RIÊNG bên dưới. Đó đúng là điều `harness-migrations/
+  # 004-ci-goi-gate-that.mjs` yêu cầu sửa, và nó đưa hai lựa chọn: gọi gate thật rồi xoá
+  # job e2e, HOẶC giữ job e2e và bỏ `e2e` khỏi gates.preMerge. Chọn cách một —
+  # cách hai phải sửa harness.config.json, file nằm trong `paths.harness`.
+  #
+  # Đo trước khi đổi (2026-08-05, `CI=1 node tooling/gates.mjs --stage preMerge`):
+  # typecheck · lint · test · build · e2e đều OK; ba gate chưa khai lệnh
+  # (depcruise/a11y/perf) ra **WARN + BỎ QUA**, KHÔNG fail-đóng. Nên chuyển sang gọi gate
+  # thật không làm CI đỏ vì chúng — điều tôi từng phỏng đoán ngược lại trong learnings.
   verify:
     runs-on: ubuntu-latest
     steps:
@@ -64,23 +77,9 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 22, cache: npm }
       - run: npm ci
-      - run: npm run gen && git diff --exit-code   # ← quên chạy gen là fail
-      - run: npm run typecheck                     # ← TOÀN REPO
-      - run: npm run lint
-      - run: npm test
-      - run: npm run build
-
-  e2e:
-    runs-on: ubuntu-latest
-    # if: chỉ chạy khi path liên quan đổi (affected)
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: 22, cache: npm }
-      - run: npm ci
+      # `e2e` là một gate TRONG preMerge, nên browser phải có mặt ở job này.
       - run: npx playwright install --with-deps chromium
-      - run: npm run gen
-      - run: npx playwright test
+      - run: node tooling/gates.mjs --stage preMerge
 
   security:
     runs-on: ubuntu-latest
@@ -93,5 +92,13 @@ jobs:
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # KHÔNG trùng với gitleaks, và cũng không thay nó. gitleaks mang bộ rule riêng của
+      # nó; cái này chạy `paths.secrets` + `SECRET_PATTERNS` — ĐÚNG bộ mà hook
+      # block-secrets.mjs và .githooks/pre-commit dùng. Nên một pattern thêm vào harness
+      # được cưỡng chế ở CẢ ba tầng, thay vì chỉ ở hai tầng local. `harness-migrations/
+      # 004` khai bước này trong `expect.mustContain` và nó đang thiếu.
+      # Đo tại chỗ 2026-08-05: 493 file được track, sạch, exit 0.
+      - name: Quét secret (bộ pattern của harness)
+        run: node tooling/precommit-scan.mjs --all
       # - name: SAST
       #   run: semgrep ci
