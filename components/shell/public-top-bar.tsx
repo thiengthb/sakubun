@@ -31,7 +31,7 @@ export function PublicTopBar({
           containerClassName,
         )}
       >
-        <Link href="/" className="flex min-w-0 items-center gap-2.5 font-heading text-base font-semibold tracking-tight">
+        <Link href="/" className="flex min-w-0 items-center gap-2.5 font-semibold">
           <AppLogo />
           <span className="min-w-0 leading-tight">
             sakubun

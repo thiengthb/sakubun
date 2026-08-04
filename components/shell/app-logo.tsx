@@ -11,7 +11,7 @@ export function AppLogo({ className }: { className?: string }) {
       lang="ja"
       aria-hidden
       className={cn(
-        'flex size-6 items-center justify-center rounded-lg bg-primary text-[10px] font-bold leading-none tracking-tighter text-primary-foreground',
+        'flex size-6 items-center justify-center rounded-md bg-primary text-[10px] font-bold leading-none tracking-tighter text-primary-foreground',
         className,
       )}
     >

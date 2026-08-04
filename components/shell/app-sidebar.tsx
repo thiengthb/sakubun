@@ -89,16 +89,13 @@ export function AppSidebar({ brand, groups, footer, activePath, className }: App
         <div className="flex items-center gap-1 group-data-[collapsible=icon]:flex-col group-data-[collapsible=icon]:gap-2">
           <Link
             href={brand.href ?? '/'}
-            className="flex min-w-0 flex-1 items-center gap-2.5 rounded-full px-2 py-1.5 font-semibold group-data-[collapsible=icon]:flex-none group-data-[collapsible=icon]:p-0"
+            className="flex min-w-0 flex-1 items-center gap-2 rounded-md px-2 py-1.5 font-semibold group-data-[collapsible=icon]:flex-none group-data-[collapsible=icon]:p-0"
           >
             {brand.logo && (
               <span className="flex size-6 shrink-0 items-center justify-center">{brand.logo}</span>
             )}
             <span className="flex min-w-0 flex-col group-data-[collapsible=icon]:hidden">
-              {/* The wordmark is the one place the serif is doing pure brand work. */}
-              <span className="truncate font-heading text-base leading-tight tracking-tight">
-                {brand.title}
-              </span>
+              <span className="truncate leading-tight">{brand.title}</span>
               {brand.subtitle && (
                 <span className="truncate text-xs font-normal text-muted-foreground">
                   {brand.subtitle}

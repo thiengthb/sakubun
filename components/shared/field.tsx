@@ -46,10 +46,7 @@ export function Field({
 
   return (
     <div className={cn('flex flex-col gap-1.5', className)}>
-      {/* The label is the row's TITLE, so it carries the foreground colour and medium weight; the hint
-          below stays muted. Before, label and hint were the same 12px muted grey, which left a form
-          reading as one flat block of small text with no hierarchy. */}
-      <span id={labelId} className="flex items-center gap-1 text-xs font-medium text-foreground">
+      <span id={labelId} className="flex items-center gap-1 text-xs text-muted-foreground">
         {label}
         {info && (
           <InfoTooltip label={typeof label === 'string' ? label : 'Giải thích'}>{info}</InfoTooltip>

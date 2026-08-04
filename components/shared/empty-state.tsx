@@ -22,8 +22,8 @@ interface EmptyStateProps {
 
 /**
  * THE shared empty state — one look for every "nothing here" spot so the app reads as one system
- * (2026-07-24: unified all empties through this). A soft filled panel, a lucide icon in a brand-tinted
- * disc, an optional headline + description, and an optional action. The default padding is generous (page-level
+ * (2026-07-24: unified all empties through this). A dashed frame, a muted icon in a soft circle, an
+ * optional headline + description, and an optional action. The default padding is generous (page-level
  * empties); a small in-card empty can shrink it via `className` (e.g. `py-8`) — tailwind-merge lets the
  * override win.
  *
@@ -45,19 +45,17 @@ export function EmptyState({
   return (
     <div
       className={cn(
-        // Was a dashed frame — which is the universal look of an unfinished layout. It is now a calm
-        // filled surface with a brand-tinted disc: "nothing here yet" as a designed state, not a gap.
-        'flex flex-col items-center justify-center gap-4 rounded-2xl border border-border/60 bg-muted/30 px-6 py-16 text-center',
+        'flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-border/70 px-6 py-16 text-center',
         className,
       )}
     >
       {Icon && (
-        <span className="flex size-16 items-center justify-center rounded-full bg-accent text-accent-brand/80">
-          <Icon className="size-7" strokeWidth={1.5} aria-hidden />
+        <span className="flex size-12 items-center justify-center rounded-full bg-muted text-muted-foreground/70">
+          <Icon className="size-6" aria-hidden />
         </span>
       )}
-      <div className="space-y-1.5">
-        {title && <h3 className="text-base font-semibold">{title}</h3>}
+      <div className="space-y-1">
+        {title && <p className="text-sm font-medium">{title}</p>}
         {description && (
           <p className="mx-auto max-w-sm text-sm text-muted-foreground">{description}</p>
         )}

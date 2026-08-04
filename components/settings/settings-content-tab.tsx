@@ -144,7 +144,7 @@ export function ContentTab({
 
   return (
     <TabsContent value="content" className="pt-2">
-      <section className="space-y-6 rounded-2xl border border-border/70 bg-card p-5 shadow-soft sm:p-6">
+      <section className="space-y-6">
         <Field
           label="Cấp JLPT cho mẫu ngữ pháp mới"
           info="Chỉ lọc mẫu ngữ pháp MỚI được đưa vào học. Mẫu đã học đến hạn vẫn ôn bất kể cấp. Từ vựng Claude dùng quanh mẫu là một knob RIÊNG ở dưới (trước đây hai thứ này dùng chung một ô, buộc chúng phải bằng nhau)."

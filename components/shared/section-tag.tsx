@@ -9,14 +9,7 @@ import { cn } from '@/lib/utils';
  */
 export function SectionTag({ children, className }: { children: string; className?: string }) {
   return (
-    <span
-      className={cn(
-        // The serif (font-heading) is what makes these read as EDITORIAL section titles inside a card
-        // rather than as one more bold sentence in the same font as the content under them.
-        'flex items-center gap-2 font-heading font-semibold tracking-tight text-foreground',
-        className,
-      )}
-    >
+    <span className={cn('flex items-center gap-2 font-bold text-foreground', className)}>
       <span aria-hidden className="size-1.5 shrink-0 rounded-full bg-accent-brand" />
       {children}
     </span>

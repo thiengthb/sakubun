@@ -17,7 +17,7 @@ export function PaceTab({
 }) {
   return (
     <TabsContent value="pace" className="pt-2">
-      <section className="space-y-6 rounded-2xl border border-border/70 bg-card p-5 shadow-soft sm:p-6">
+      <section className="space-y-6">
         <div className="grid gap-4 sm:grid-cols-3">
           <Field label="Mẫu ngữ pháp mới / ngày">
             <Input

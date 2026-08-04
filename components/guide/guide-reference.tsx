@@ -17,7 +17,7 @@ import { CopyCommandButton } from '@/components/shared/copy-command-button';
 export function Code({ children, copyLabel }: { children: string; copyLabel?: string }) {
   return (
     <div className="relative">
-      <pre className="overflow-x-auto rounded-xl border border-border/70 bg-muted/40 p-4 text-xs">
+      <pre className="overflow-x-auto rounded-lg border border-border/70 bg-muted/40 p-4 text-xs">
         <code>{children}</code>
       </pre>
       {copyLabel && (

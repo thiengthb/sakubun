@@ -149,7 +149,7 @@ export function GuideWalkthrough({
 
         {hasChecks(step) && (
           <dl className="grid gap-2 pt-2 sm:grid-cols-2">
-            <div className="rounded-xl border border-border/70 bg-muted/30 px-3 py-2">
+            <div className="rounded-lg border border-border/70 bg-muted/30 px-3 py-2">
               <dt className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
                 <ListChecks className="size-3.5 shrink-0" aria-hidden />
                 Cần trước đó
@@ -158,7 +158,7 @@ export function GuideWalkthrough({
             </div>
             <div
               className={cn(
-                'rounded-xl border px-3 py-2',
+                'rounded-lg border px-3 py-2',
                 stepDone ? 'border-ok bg-ok/10' : 'border-ok/40 bg-ok/5',
               )}
             >

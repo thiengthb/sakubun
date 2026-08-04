@@ -121,7 +121,7 @@ export function TableSkeleton({
 }) {
   return (
     <div className="space-y-3">
-      <div className="space-y-2 rounded-2xl border border-border/70 bg-card p-5 shadow-soft">
+      <div className="space-y-2 rounded-lg border p-4">
         {/* Column header strip (mirrors <thead>): short header labels over the same columns. */}
         <div className="flex items-center gap-3 border-b pb-2">
           <div className="size-6 shrink-0" />
@@ -251,7 +251,7 @@ export function ListSkeleton({
       fallback={rows}
       min={min}
       max={max}
-      className="divide-y rounded-2xl border border-border/70 bg-card shadow-soft"
+      className="divide-y rounded-lg border"
       item={
         <div className="flex items-center gap-3 px-4 py-3">
           <Skeleton className="size-8 shrink-0 rounded-full" />

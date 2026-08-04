@@ -23,7 +23,7 @@ export function SensoryTab({
 }) {
   return (
     <TabsContent value="sensory" className="pt-2">
-      <section className="space-y-6 rounded-2xl border border-border/70 bg-card p-5 shadow-soft sm:p-6">
+      <section className="space-y-6">
         <div className="grid gap-4 sm:grid-cols-2">
           <Field
             label="Giọng đọc mẫu"

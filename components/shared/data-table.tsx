@@ -657,7 +657,7 @@ export function DataTable<T>({
                   <li
                     key={row.id}
                     className={cn(
-                      'rounded-2xl border border-border/70 bg-card p-4 shadow-soft transition-colors',
+                      'rounded-lg border border-border/70 p-3 transition-colors',
                       selected && 'border-primary bg-primary/5',
                     )}
                   >
@@ -685,17 +685,8 @@ export function DataTable<T>({
 
           {/* Wrapping div, not a class on <Table>: the Table primitive renders its own
               `overflow-x-auto` container, so hiding the <table> alone would leave that container in
-              flow.
-              The wrapper is also the table's SHEET — the same card surface every other block on the page
-              sits on, so a list stops being a bare grid floating on the background. `overflow-hidden`
-              clips the header's tint to the rounded corners; the horizontal scroll still happens on the
-              Table primitive's own inner container. */}
-          <div
-            className={cn(
-              'overflow-hidden rounded-2xl border border-border/70 bg-card shadow-soft',
-              renderCard && 'max-md:hidden',
-            )}
-          >
+              flow. */}
+          <div className={cn(renderCard && 'max-md:hidden')}>
             <Table className="table-fixed" style={{ minWidth: table.getTotalSize() }}>
               <TableHeader>
                 {table.getHeaderGroups().map((hg) => (

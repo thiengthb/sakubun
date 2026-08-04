@@ -17,15 +17,7 @@ function Table({ className, ...props }: React.ComponentProps<'table'>) {
 }
 
 function TableHeader({ className, ...props }: React.ComponentProps<'thead'>) {
-  // Tinted header strip: inside the table's card sheet it reads as the list's own title bar, which is
-  // what separates "a list of things" from "a grid of cells".
-  return (
-    <thead
-      data-slot="table-header"
-      className={cn('bg-muted/40 [&_tr]:border-b', className)}
-      {...props}
-    />
-  );
+  return <thead data-slot="table-header" className={cn('[&_tr]:border-b', className)} {...props} />;
 }
 
 function TableBody({ className, ...props }: React.ComponentProps<'tbody'>) {
@@ -66,9 +58,7 @@ function TableHead({ className, ...props }: React.ComponentProps<'th'>) {
     <th
       data-slot="table-head"
       className={cn(
-        // px-2 stays: column widths are fixed by TanStack (getTotalSize), so extra padding would only
-        // eat into label space in a header that already truncates ("Cấp độ" -> "Le...").
-        'h-11 px-2 text-left align-middle text-xs font-semibold whitespace-nowrap text-muted-foreground [&:has([role=checkbox])]:pr-0',
+        'h-10 px-2 text-left align-middle font-medium whitespace-nowrap text-foreground [&:has([role=checkbox])]:pr-0',
         className,
       )}
       {...props}

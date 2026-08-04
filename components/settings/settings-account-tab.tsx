@@ -65,7 +65,7 @@ function MetaTile({
     // (HTML content model). The old markup nested them a second level deep inside a min-w-0 column,
     // which made the pairs invalid and orphaned them from the list — axe's definition-list + dlitem.
     // A two-row grid gives the same icon-beside-text layout without the extra wrapper.
-    <div className="grid grid-cols-[auto_1fr] items-start gap-x-3 rounded-xl border bg-muted/30 p-3">
+    <div className="grid grid-cols-[auto_1fr] items-start gap-x-3 rounded-lg border bg-muted/30 p-3">
       <Icon className="row-span-2 mt-0.5 size-4 shrink-0 text-muted-foreground" />
       <dt className="min-w-0 text-xs text-muted-foreground">{label}</dt>
       <dd className="min-w-0 truncate font-medium">{value}</dd>
@@ -321,7 +321,7 @@ export function AccountTab({
                 </Button>
               </form>
             ) : (
-              <div className="flex items-center rounded-xl border border-dashed p-4 text-sm text-muted-foreground">
+              <div className="flex items-center rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
                 Bạn đăng nhập bằng Google nên tài khoản không có mật khẩu để đổi.
               </div>
             )}
@@ -364,7 +364,7 @@ export function AccountTab({
                 {keys.map((k) => (
                   <li
                     key={k.id}
-                    className="flex items-start justify-between gap-2 rounded-xl border p-4"
+                    className="flex items-start justify-between gap-2 rounded-lg border p-4"
                   >
                     <div className="min-w-0 space-y-1">
                       <p className="flex items-center gap-2 font-medium">
