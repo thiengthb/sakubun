@@ -31,7 +31,7 @@ import { readdirSync, readFileSync, writeFileSync, mkdirSync, cpSync, rmSync, st
 import { join, dirname } from 'node:path';
 import { createHash } from 'node:crypto';
 import { parseFrontmatter } from '../lib/frontmatter.mjs';
-import { repoPath, config, report, exists, git, readJson } from '../lib/harness.mjs';
+import { repoPath, config, report, exists, git, readJson, stateDir } from '../lib/harness.mjs';
 
 const args = process.argv.slice(2);
 const APPLY = args.includes('--apply');
@@ -48,7 +48,28 @@ Hoặc khai một lần trong harness.config.json:
   process.exit(1);
 }
 
-const TPL = target;
+/**
+ * Template có thể ở XA. Trước 2.7.0 script này chỉ nhận đường dẫn FILESYSTEM — nghĩa là
+ * chiều LÊN của vòng học chỉ khép được khi template và project nằm trên CÙNG MỘT MÁY.
+ * `import.mjs` đã nhận URL từ lâu; chiều ngược lại thì không, nên trí tuệ đi xuống được
+ * mà không đi lên được, và đó đúng là chiều mà `knowledge/README.md` gọi là "chiều làm
+ * template tốt lên".
+ *
+ * Clone vào `.harness-pack/` (đã nằm trong REQUIRED_IGNORE, không lẫn vào git của project).
+ * Script này KHÔNG push và KHÔNG mở PR — nó IN RA lệnh. Ghi thẳng vào template là đường
+ * supply-chain vào MỌI project khác; cổng đó phải có người, và người đó là DRI của template.
+ */
+let TPL = target, remoteUrl = null;
+if (/^(https?:\/\/|git@)/.test(target)) {
+  const ref = args.includes('--ref') ? args[args.indexOf('--ref') + 1] : null;
+  TPL = repoPath('.harness-pack', 'upstream-clone');
+  rmSync(TPL, { recursive: true, force: true });
+  mkdirSync(dirname(TPL), { recursive: true });
+  const c = git(['clone', '--depth', '1', ...(ref ? ['--branch', ref] : []), target, TPL]);
+  if (c.status !== 0) { console.error(`Không clone được ${target}\n${c.stderr}`); process.exit(1); }
+  remoteUrl = target;
+  console.log(`\n  template: ${target}${ref ? ` @ ${ref}` : ''} → ${TPL}`);
+}
 if (!exists(TPL)) { console.error(`Không tồn tại: ${TPL}`); process.exit(1); }
 if (!exists(join(TPL, 'HARNESS-CHANGELOG.md'))) {
   console.error(`${TPL} không giống repo template harness (không có HARNESS-CHANGELOG.md).`);
@@ -125,6 +146,22 @@ for (const l of lessons) {
   }
 }
 
+// ── 2b. FIXLOG — nguyên liệu THÔ của bước 1, và là thứ DUY NHẤT thường có sẵn ────
+// Đo 2026-08-05 trên ba repo tiêu thụ thật: 17 mục fixlog, 6 bài học — nhưng cả 6 bài đều
+// là bài SEED của template, nên kênh đi lên tải được ĐÚNG SỐ KHÔNG. Lý do: bước DISTILL →
+// PROMOTE là nghi thức thủ công, và nó chưa từng chạy ở repo nào.
+//
+// Hậu quả đo được, không phải giả thuyết: `warehouse` và `sakubun-test` ghi fixlog về
+// "test-hooks bám vào harness.config.json mặc định" ngày 2026-08-03; template phát hiện lại
+// đúng lớp lỗi đó ngày 2026-08-05 và gọi nó là "lần thứ tư". Hai ngày, hai repo, và bằng
+// chứng đã nằm sẵn trên đĩa.
+//
+// Nên fixlog đi lên dưới dạng NGUYÊN LIỆU, không phải bài học: không có gì được nhận tự
+// động, DRI vẫn distill. Cái đổi là DRI có thứ để đọc thay vì một pack rỗng.
+const fixlogPath = repoPath('.claude', 'telemetry', 'manual-fixes.log');
+const fixlogLines = exists(fixlogPath)
+  ? readFileSync(fixlogPath, 'utf8').split('\n').filter(Boolean) : [];
+
 // ── 3. Diff cơ chế so với manifest ───────────────────────────────────────────
 const mf = readJson(repoPath('.claude', 'harness-manifest.json'));
 const modified = [];
@@ -148,14 +185,35 @@ for (const l of lessons) {
   }
 }
 
-if (!lessons.length && !modified.length) {
+if (!lessons.length && !modified.length && !fixlogLines.length) {
   fail.push('Không có gì để đóng góp: 0 bài học mang đi được và 0 file cơ chế đã sửa.');
   fail.push('Đây có thể là ĐÚNG (project còn mới), hoặc là dấu hiệu vòng học chưa chạy:');
   fail.push('  node tooling/fixlog.mjs --top   ·   /harness-retro   ·   /knowledge-promote');
+  // KHÔNG ghi `upstream-last.json` ở nhánh này: không có gì được gửi đi. Đóng dấu "đã gửi"
+  // cho một lần chạy rỗng sẽ TẮT cảnh báo 30 ngày của entropy-scan trong khi vấn đề còn
+  // nguyên — một cái đồng hồ tự reset bằng việc không làm gì.
   process.exit(report('UPSTREAM', { ok, warn, fail }) ? 0 : 1);
 }
 
 const DEST = join(TPL, 'knowledge', 'incoming', projectId);
+
+// VA CHẠM PROVENANCE. `upstream` ghi vào `incoming/<project.id>/` và bước ghi bắt đầu bằng
+// `rmSync(DEST)`. Hai repo khác nhau cùng `project.id` ⇒ repo thứ hai XOÁ đóng góp của repo
+// thứ nhất, không một lời nào. Gặp thật: `sakubun` và `sakubun-test` đều khai
+// `project.id = "sakubun"` (config bị copy sang), nên chúng cùng trỏ vào một thư mục.
+//
+// Một kênh cung ứng làm MẤT đóng góp mà không báo thì tệ hơn không có kênh: bên gửi tin là
+// đã gửi. Nên: từ chối, không đoán tên thay người.
+const prevPack = readJson(join(DEST, 'pack.json'));
+if (prevPack && prevPack.sourcePath && prevPack.sourcePath !== repoPath('')) {
+  console.error(`\n⛔ VA CHẠM: \`knowledge/incoming/${projectId}/\` đã có đóng góp từ MỘT REPO KHÁC\n`
+    + `     repo đó:  ${prevPack.sourcePath}\n`
+    + `     repo này: ${repoPath('')}\n\n`
+    + `  Ghi tiếp sẽ XOÁ đóng góp kia. Hai repo đang dùng chung \`project.id = "${projectId}"\`.\n`
+    + `  Sửa: đổi \`project.id\` trong harness.config.json của MỘT trong hai repo cho khác nhau.\n`
+    + `  (Nó cũng là khoá của telemetry và reservation — trùng id thì hai repo lẫn dữ liệu của nhau.)\n`);
+  process.exit(1);
+}
 
 console.log(`\n=== ĐÓNG GÓP NGƯỢC LÊN TEMPLATE ===`);
 console.log(`  từ:   ${projectId} @ ${sourceCommit}`);
@@ -165,6 +223,7 @@ console.log(`  ${mergeable.length} bài học template ĐÃ CÓ nhưng bạn có
 if (nothingNew.length) console.log(`  ${nothingNew.length} bỏ qua (template đã có, không có gì mới)`);
 console.log(`  ${evalFiles.size} eval task kèm theo (gate)`);
 console.log(`  ${artifacts.size} artifact`);
+console.log(`  ${fixlogLines.length} mục fixlog THÔ (nguyên liệu distill, không phải bài học)`);
 console.log(`  ${modified.length} file cơ chế project đã sửa → ứng viên cải tiến template`);
 if (modified.length) for (const m of modified) console.log(`     ${m}`);
 
@@ -200,10 +259,28 @@ for (const rel of modified) {
   diffs.push({ rel, lines: (d.stdout.match(/^[+-][^+-]/gm) || []).length });
 }
 
+if (fixlogLines.length) {
+  writeFileSync(join(DEST, 'fixlog.md'), `# fixlog THÔ từ ${projectId}
+
+> **Đây KHÔNG phải bài học.** Đây là nguyên liệu bước 1 (CAPTURE): mỗi dòng là một lần
+> NGƯỜI phải sửa tay việc agent làm. Chưa qua distill, chưa qua gate, được phép sai, và có
+> thể đặc thù project này.
+>
+> Việc của người đọc: tìm mục nào xuất hiện ở **≥2 repo độc lập** — đó là ứng viên promote.
+> Mục chỉ thấy một lần là ngẫu nhiên. Xem \`knowledge/README.md §Điều kiện để PROMOTE\`.
+
+${fixlogLines.length} mục · repo \`${projectId}\` @ \`${sourceCommit}\`
+
+${fixlogLines.map(l => { const p = l.split('|'); return `- \`${(p[0] || '').slice(0, 10)}\` ${p.slice(3).join('|')}`; }).join('\n')}
+`, 'utf8');
+}
+
 writeFileSync(join(DEST, 'pack.json'), JSON.stringify({
   pack: `upstream-${projectId}`,
   direction: 'upstream',
   sourceProject: projectId,
+  sourcePath: repoPath(''),
+  fixlogEntries: fixlogLines.length,
   sourceCommit,
   sourceHarnessVersion: exists(repoPath('harness.version'))
     ? readFileSync(repoPath('harness.version'), 'utf8').trim() : null,
@@ -266,17 +343,52 @@ Mỗi file dưới đây là **một trong hai thứ**, và bạn phải phân l
 ${diffs.length ? diffs.map(d => `- [ ] \`${d.rel}\`${d.note ? ` — ${d.note}` : ` — ~${d.lines} dòng đổi`}
       diff: \`mechanism-diffs/${d.rel}.diff\``).join('\n') : '_(không có — project chưa sửa file cơ chế nào. Đây là dấu hiệu TỐT.)_'}
 
+## fixlog THÔ (${fixlogLines.length})
+
+${fixlogLines.length ? `Chưa qua distill. Đọc \`fixlog.md\`, và tìm **mục lặp lại ở repo khác** — đó là
+ứng viên promote, không phải mục nghe hay nhất.
+
+- [ ] Có mục nào đã thấy ở một repo khác? → đủ ngưỡng "2 lần độc lập", promote
+- [ ] Có mục nào là bug của TEMPLATE (không phải của project)? → sửa ở template, không cần bài học
+- [ ] Còn lại → gửi trả về ${projectId}: distill ở đó, nơi còn nhớ ngữ cảnh` : '_(không có)_'}
+
 ## Artifact (${artifacts.size})
 
 ${[...artifacts].map(a => `- [ ] \`${a}\` — ĐỌC CODE trước khi copy. Hook chạy với đầy quyền của bạn.`).join('\n') || '_(không có)_'}
 `, 'utf8');
 
-ok.push(`${lessons.length} bài học + ${evalFiles.size} gate + ${artifacts.size} artifact + ${diffs.length} diff cơ chế`);
+ok.push(`${lessons.length} bài học + ${evalFiles.size} gate + ${artifacts.size} artifact + ${diffs.length} diff cơ chế + ${fixlogLines.length} mục fixlog thô`);
+if (fixlogLines.length && !lessons.length) {
+  warn.push(`${fixlogLines.length} mục fixlog nhưng 0 bài học đã promote — bước DISTILL của repo này chưa chạy. `
+    + `Fixlog đi lên dưới dạng NGUYÊN LIỆU để DRI đọc, nhưng nơi đúng để distill là ở ĐÂY, `
+    + `nơi còn nhớ ngữ cảnh: /harness-retro rồi /knowledge-promote.`);
+}
 ok.push(`→ ${DEST}`);
 ok.push(`ĐỌC TIẾP ở template: knowledge/incoming/${projectId}/CONTRIB.md`);
 warn.push('Không có gì được áp dụng tự động. Đây là cố ý.');
 if (modified.length) {
   warn.push(`${modified.length} file cơ chế đã sửa: mỗi file là tuỳ biến đặc thù (chuyển ra hook riêng) hoặc cải tiến chung (đóng góp). Xem docs/MIGRATION.md §"Nếu bạn đã lỡ sửa nhiều file cơ chế".`);
+}
+
+// Dấu vết lần gửi cuối — `entropy-scan` đọc nó. Không có nó, "quên gửi lên" là trạng
+// thái KHÔNG QUAN SÁT ĐƯỢC: nó không có triệu chứng nào ở project này, chỉ có hậu quả ở
+// project TIẾP THEO của bạn (khởi động lại từ đúng số bài học seed).
+try {
+  writeFileSync(join(stateDir(), 'upstream-last.json'),
+    JSON.stringify({ at: new Date().toISOString(), template: remoteUrl ?? TPL, lessons: lessons.length }, null, 2) + '\n', 'utf8');
+} catch {}
+
+if (remoteUrl) {
+  console.log(`
+  Template là bản clone TẠM ở ${TPL}. Ba lệnh để đưa đóng góp này lên, BẠN chạy:
+
+    cd ${TPL}
+    git checkout -b contrib/${projectId}-$(date +%Y%m%d) && git add knowledge/incoming && git commit -m "contrib(${projectId}): bài học + gate + diff cơ chế"
+    git push -u origin HEAD && gh pr create --fill
+
+  Script này KHÔNG push và KHÔNG mở PR — cố ý. Ghi vào template là đường supply-chain vào
+  MỌI project khác; cổng đó phải có NGƯỜI, và review PR chính là cổng đó.
+`);
 }
 
 process.exit(report('UPSTREAM', { ok, warn, fail }) ? 0 : 1);
