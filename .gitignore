@@ -67,3 +67,7 @@ playwright-report/
 # Throwaway e2e database (e2e/fixtures.ts E2E_DB_FILE) — rebuilt from the migrations on every run.
 e2e-test.db
 e2e-test.db-*
+# Hand-taken safety copies of the LIVE database (`docker cp sakubun:/data/sakubun.db`) before a
+# migration. Real study data and multi-MB — must never land in git, and the name is deliberate so
+# `backup-` is the one prefix you reach for.
+backup-*.db
