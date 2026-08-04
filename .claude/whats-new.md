@@ -1,4 +1,4 @@
-<!-- version: 2026-08-04-a -->
+<!-- version: 2026-08-05-a -->
 <!--
   Thông báo thay đổi harness cho cả team.
   SessionStart hook so `version` ở trên với version người dùng đã xem
@@ -8,6 +8,20 @@
   Mỗi lần merge thay đổi vào .claude/, cập nhật version + viết 3 dòng ở đây.
   Giữ file NGẮN — xoá mục cũ hơn 1 tháng.
 -->
+
+## 2026-08-05 — Harness v2.4.1: Stop gate chuyển sang gates.mjs
+
+1. **Stop hook gọi `node tooling/gates.mjs --stage stop`**; `.claude/hooks/stop-gate.mjs` đã bị
+   XOÁ (logic nằm trong gates.mjs). Muốn xem gate nào đang chạy: `node tooling/gates.mjs --list`.
+2. **`tooling/doctor.mjs` → `tooling/harness-doctor.mjs`** (alias còn ở 2.x, mất ở 3.0.0).
+   Cập nhật runbook/CI của bạn.
+3. **Nâng cấp làm hỏng hai thứ, đã sửa tại đây**: nó rewire Stop hook sang gates.mjs mà KHÔNG
+   copy file đó (gate chết bằng MODULE_NOT_FOUND nhưng trông như đã pass), và test-hooks assert
+   thông điệp block-generated-edit bằng regex chỉ khớp nhánh `commands.gen` RỖNG. Cả hai nên
+   báo ngược lên template.
+4. **CÒN NỢ, cần người**: settings.json chưa đăng ký `observe.mjs` và 5 điểm mở rộng native
+   (SubagentStop/StopFailure/InstructionsLoaded/ConfigChange/Setup) còn trống;
+   `commands.a11y`/`commands.perf` rỗng nhưng đã là gate trong preMerge. Dùng /harness-propose.
 
 ## 2026-08-04 — Nâng harness lên v1.5.0: hết đỏ giả
 
