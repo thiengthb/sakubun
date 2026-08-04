@@ -82,7 +82,6 @@ function StatCard({
 export function ItemAnalytics({
   stats,
   groupsSlot,
-  shareSlot,
   voiceSpeaker,
   speechRate,
   showFurigana = false,
@@ -90,8 +89,6 @@ export function ItemAnalytics({
   stats: ItemStats;
   /** Study-group membership control (chips + add/remove), rendered under the header. */
   groupsSlot?: ReactNode;
-  /** Public-library share toggle, rendered under the header alongside the group control. */
-  shareSlot?: ReactNode;
   /** TTS settings, so every Japanese line on the page can be played + read in sync. */
   voiceSpeaker?: number;
   speechRate?: number;
@@ -140,15 +137,14 @@ export function ItemAnalytics({
       }
       // The identity tags (JLPT level + SRS state) sit ON the breadcrumb row, right of the trail
       // (2026-07-25) — the breadcrumb already says grammar vs vocab, so the old "Ngữ pháp / Từ vựng"
-      // kind badge is dropped as redundant. Share + star follow as the [share][star] action pair,
-      // mirroring the history "Của tôi" card so the two surfaces read alike.
+      // kind badge is dropped as redundant. The star follows; the share toggle beside it went out with
+      // the public library on 2026-08-03 and its slot prop is gone with it.
       headerAside={
         <div className="ml-auto flex flex-wrap items-center gap-1.5">
           <Badge variant="outline">{stats.level}</Badge>
           <Badge variant="outline" className={cn(!stats.suspended && STATE_BADGE[srs?.state ?? 0])}>
             {stateLabel}
           </Badge>
-          {shareSlot}
           <StarButton id={stats.itemId} starred={stats.starred} kind="item" />
         </div>
       }

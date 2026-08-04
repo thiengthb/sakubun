@@ -11,6 +11,8 @@ import {
 } from '@/components/ui/select';
 import { Truncate } from '@/components/ui/truncate';
 import { BulkDeleteButton } from '@/components/resources/bulk-delete-button';
+import { BulkGroupActions } from '@/components/resources/bulk-group-button';
+import type { GroupSummary } from '@/lib/groups';
 import { BulkSuspendButton } from '@/components/resources/bulk-suspend-button';
 import { DataTable } from '@/components/shared/data-table';
 import { FilterPopover, FilterRow } from '@/components/shared/filter-popover';
@@ -61,6 +63,9 @@ export interface ItemRow {
   starred: boolean;
   enrichment: string | null;
   createdAt: string | Date;
+  /** Ids of the study groups this item belongs to. Present only when the loader asked for it
+   *  (`listItems({ withGroupIds: true })`) — the resources page does; other callers do not. */
+  groupIds?: string[];
   srs: {
     state: number;
     due: string | Date;
@@ -80,12 +85,15 @@ export interface ItemRow {
  */
 export function ItemsTable({
   items,
+  groups = [],
   importSlot,
   voiceSpeaker,
   speechRate,
   showFurigana = false,
 }: {
   items: ItemRow[];
+  /** Every study group, for the bulk add/remove menus. Narrowed per selection by BulkGroupActions. */
+  groups?: GroupSummary[];
   importSlot?: ReactNode;
   voiceSpeaker?: number;
   speechRate?: number;
@@ -393,6 +401,7 @@ export function ItemsTable({
               suspend={!rows.every((r) => r.suspended)}
               onDone={clear}
             />
+            <BulkGroupActions groups={groups} kind="grammar" rows={rows} onDone={clear} />
             <BulkDeleteButton ids={ids} noun="mẫu ngữ pháp" onDone={clear} />
           </>
         );

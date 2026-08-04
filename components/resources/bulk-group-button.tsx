@@ -67,3 +67,44 @@ export function BulkGroupButton({
     </DropdownMenu>
   );
 }
+
+/**
+ * Both group buttons for a resources table's selection dock, with the narrowing done once.
+ *
+ * ADD offers every group whose kind accepts this table's items — including ones the selection is
+ * already in, because adding is idempotent (`added: 0`) and hiding a group the moment one of fifty
+ * selected rows joined it would make the menu flicker for no reason.
+ *
+ * REMOVE offers only groups at least one selected row actually belongs to, which is why `ItemRow` /
+ * `VocabRow` carry `groupIds`: a "Gỡ khỏi nhóm" menu listing groups nothing is in is a menu where
+ * every choice is a no-op.
+ */
+export function BulkGroupActions({
+  groups,
+  kind,
+  rows,
+  onDone,
+}: {
+  groups: GroupSummary[];
+  kind: 'grammar' | 'vocab';
+  rows: { itemId: string; groupIds?: string[] }[];
+  onDone?: () => void;
+}) {
+  const ids = rows.map((r) => r.itemId);
+  const accepts = groups.filter((g) => g.kind === 'mixed' || g.kind === kind);
+  // `?? []` is load-bearing: the resources page casts listItems' output to ItemRow[], so a loader
+  // that forgot `withGroupIds` would land here as undefined rather than as a type error.
+  const selected = new Set(rows.flatMap((r) => r.groupIds ?? []));
+
+  return (
+    <>
+      <BulkGroupButton mode="add" groups={accepts} ids={ids} onDone={onDone} />
+      <BulkGroupButton
+        mode="remove"
+        groups={groups.filter((g) => selected.has(g.id))}
+        ids={ids}
+        onDone={onDone}
+      />
+    </>
+  );
+}

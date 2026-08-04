@@ -1536,6 +1536,13 @@ export interface ListItemsFilter {
   kind?: string;
   /** Only items belonging to this study group (GroupMember join). Undefined = no group filter. */
   groupId?: string;
+  /**
+   * Attach `groupIds` to every row. OPT-IN because `list_grammar` / `list_vocab` hand this function's
+   * output to Claude verbatim (`ok()` is a JSON.stringify), so an always-on array would be a per-row
+   * token tax on the hottest MCP path — to say something Claude can already get from `list_groups`.
+   * The resources tables ask for it: their bulk "Gỡ khỏi nhóm" menu needs per-row membership.
+   */
+  withGroupIds?: boolean;
   limit?: number;
 }
 
@@ -1569,6 +1576,10 @@ export async function listItems(filter: ListItemsFilter = {}) {
           difficulty: true,
         },
       },
+      // Ids only (not the Group rows): the caller already holds every group as a separate list, so
+      // per-row membership just needs to say WHICH — joining the full Group per item would fan a
+      // 10k-row store out into 10k duplicated group objects.
+      ...(filter.withGroupIds ? { groups: { select: { groupId: true } } } : {}),
     },
     orderBy: { createdAt: 'desc' },
     // A quality filter cannot run in SQL (the tier comes out of the JSON blob), so the LIMIT must be
@@ -1598,6 +1609,7 @@ export async function listItems(filter: ListItemsFilter = {}) {
     enrichment: i.enrichment,
     enrichedAt: i.enrichedAt,
     createdAt: i.createdAt,
+    ...(filter.withGroupIds ? { groupIds: i.groups.map((g) => g.groupId) } : {}),
     srs: i.srs,
   }));
 }

@@ -201,6 +201,44 @@ describe('previewGroupMembers (dry run — ghi 0 dòng)', () => {
   });
 });
 
+// listItems() is the resources page's loader; the tables' bulk "Gỡ khỏi nhóm" menu narrows itself with
+// the per-row groupIds it returns. Opt-in because list_grammar / list_vocab hand the same rows to
+// Claude verbatim, so an always-on array is a per-row token tax on the hottest MCP path — that is the
+// half worth a test, since forgetting the flag fails SILENTLY (an empty menu, not an error).
+describe('listItems({ withGroupIds })', () => {
+  it('attaches the ids of every group the item is in', async () => {
+    const { listItems } = await import('@/lib/practice');
+    const a = await G.createGroup({ name: 'nhóm A', kind: 'mixed' });
+    const b = await G.createGroup({ name: 'nhóm B', kind: 'grammar' });
+    await G.addItemsToGroup(a.id, [grammarId, vocabId]);
+    await G.addItemsToGroup(b.id, [grammarId]);
+
+    const rows = (await listItems({ withGroupIds: true })) as { itemId: string; groupIds: string[] }[];
+    const row = rows.find((r) => r.itemId === grammarId);
+    expect(row?.groupIds?.sort()).toEqual([a.id, b.id].sort());
+
+    const vocab = (await listItems({
+      kind: 'VOCAB',
+      withGroupIds: true,
+    })) as { itemId: string; groupIds: string[] }[];
+    expect(vocab.find((r) => r.itemId === vocabId)?.groupIds).toEqual([a.id]);
+  });
+
+  it('an item in no group gets an empty array, not undefined', async () => {
+    const { listItems } = await import('@/lib/practice');
+    const rows = (await listItems({ withGroupIds: true })) as { groupIds: string[] }[];
+    expect(rows.every((r) => Array.isArray(r.groupIds))).toBe(true);
+  });
+
+  it('omits the field entirely without the flag (the MCP payload must not grow)', async () => {
+    const { listItems } = await import('@/lib/practice');
+    await G.addItemsToGroup((await G.createGroup({ name: 'x', kind: 'mixed' })).id, [grammarId]);
+    const rows = await listItems({});
+    expect(rows.length).toBeGreaterThan(0);
+    expect(rows.some((r) => 'groupIds' in r)).toBe(false);
+  });
+});
+
 describe('pickers', () => {
   it('listAddableItems loại thành viên đã có và tôn trọng kind', async () => {
     const g = await G.createGroup({ name: 'chỉ ngữ pháp', kind: 'grammar' });

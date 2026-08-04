@@ -16,8 +16,8 @@ export default async function ResourcesPage() {
   // Auth gate: redirects to /login when there is no valid session.
   await getSessionUserId();
   const [grammar, vocab, groups, settings] = await Promise.all([
-    listItems({ limit: MAX_ITEMS }) as Promise<ItemRow[]>,
-    listItems({ kind: VOCAB_KIND, limit: MAX_ITEMS }) as Promise<VocabRow[]>,
+    listItems({ limit: MAX_ITEMS, withGroupIds: true }) as Promise<ItemRow[]>,
+    listItems({ kind: VOCAB_KIND, limit: MAX_ITEMS, withGroupIds: true }) as Promise<VocabRow[]>,
     listGroups(),
     getSettings(),
   ]);

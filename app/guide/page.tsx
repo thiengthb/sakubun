@@ -225,6 +225,11 @@ export default async function GuidePage() {
               <strong>flashcard</strong> để lướt lại cả nhóm.
             </p>
             <p>
+              Nhanh hơn: ở tab <em>Ngữ pháp</em> / <em>Từ vựng</em>, tick chọn nhiều dòng rồi bấm{' '}
+              <em>«Thêm vào nhóm»</em> ở cột icon bên phải màn hình. Muốn xem một mẫu đang nằm trong
+              nhóm nào thì mở trang chi tiết của nó.
+            </p>
+            <p>
               Sau đó nói với Claude <em>«luyện nhóm X»</em> — nó ưu tiên các mẫu trong nhóm đó.
               Không muốn tự gom? Nhờ Claude <em>«gợi ý một nhóm cho…»</em>: nó đề xuất tên + danh
               sách, bạn xem rồi <strong>duyệt</strong> mới tạo.

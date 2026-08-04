@@ -475,6 +475,15 @@ export function GuideFeaturesTab() {
             <strong>mẫu và từ trong đó vẫn nguyên trong kho</strong>, kèm lịch ôn của chúng.
           </p>
           <p>
+            Không phải vào tận trong nhóm mới thêm được. Ở hai tab <em>Ngữ pháp</em> /{' '}
+            <em>Từ vựng</em>, tick chọn nhiều dòng rồi dùng{' '}
+            <strong>«Thêm vào nhóm» / «Gỡ khỏi nhóm»</strong> trong cột icon bên phải —{' '}
+            <em>Gỡ</em> chỉ liệt kê những nhóm mà các dòng đang chọn thật sự thuộc về, và nhóm sai
+            loại không bao giờ được đề xuất. Trang chi tiết một mẫu/từ hiện các nhóm nó đang thuộc
+            thành <strong>chip bấm được</strong>, mỗi chip có nút gỡ, cạnh đó là nút thêm vào một
+            nhóm khác.
+          </p>
+          <p>
             Luyện tập trung một nhóm: trong Claude Desktop nói <em>“luyện nhóm X”</em> — Claude lấy
             các mẫu <strong>trong nhóm đó</strong> làm trọng tâm (thiếu độ dài thì bù mẫu khác như
             luyện theo cấp). Claude cũng có thể <strong>đề xuất một nhóm</strong> (tên + các mục)

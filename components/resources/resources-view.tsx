@@ -74,6 +74,7 @@ export function ResourcesView({
           ) : (
             <ItemsTable
               items={grammar}
+              groups={groups}
               importSlot={<ResourceAddButton kind="grammar" />}
               voiceSpeaker={voiceSpeaker}
               speechRate={speechRate}
@@ -102,6 +103,7 @@ export function ResourcesView({
           ) : (
             <VocabTable
               items={vocab}
+              groups={groups}
               actionSlot={<ResourceAddButton kind="vocab" />}
               voiceSpeaker={voiceSpeaker}
               speechRate={speechRate}
