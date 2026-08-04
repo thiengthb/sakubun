@@ -385,6 +385,9 @@ export function VocabTable({
       actionSlot={actionSlot}
       // Below md the table becomes a stacked card list (same rows, same pagination) — see DataTable.
       // Two vocab-only slots: âm Hán Việt under the word, and the capture-reason badge in the meta row.
+      // Tapping a card opens the item; the ⋮ menu drops its "Chi tiết" entry to match (hideDetail).
+      cardHref={(item) => `/resources/${item.itemId}`}
+      cardHrefLabel={(item) => `Xem chi tiết từ ${item.expression}`}
       renderCard={(item) => {
         const reasonMeta = item.captureReason ? REASON_META[item.captureReason] : null;
         return (
@@ -432,6 +435,8 @@ export function VocabTable({
                     suspended: item.suspended,
                   }}
                   kind="vocab"
+                // The card itself links to the detail page.
+                hideDetail
                 />
               </>
             }

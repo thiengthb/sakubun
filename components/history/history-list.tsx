@@ -163,15 +163,16 @@ export function HistoryList({
               />
             ))}
           </ul>
-          <div
-            ref={footerRef}
-            className="flex flex-col-reverse items-start justify-between gap-3 sm:flex-row sm:items-center"
-          >
-            <span className="text-xs text-muted-foreground">
-              {start + 1}–{Math.min(start + paged.pageSize, paged.total)} / {paged.total} lượt
-              {paged.total !== sentences.length && ` (lọc từ ${sentences.length})`}
-            </span>
+          {/* Ref on the wrapper (useFitRows measures footer height); the row layout — count, size
+              picker and nav, re-ordered per breakpoint — belongs to DataPagination. */}
+          <div ref={footerRef}>
             <DataPagination
+              count={
+                <>
+                  {start + 1}–{Math.min(start + paged.pageSize, paged.total)} / {paged.total} lượt
+                  {paged.total !== sentences.length && ` (lọc từ ${sentences.length})`}
+                </>
+              }
               page={paged.page}
               pageCount={paged.pageCount}
               onPageChange={paged.setPage}

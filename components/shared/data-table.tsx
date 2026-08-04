@@ -41,6 +41,7 @@ import {
   X,
   type LucideIcon,
 } from 'lucide-react';
+import Link from 'next/link';
 import { AnimatePresence, motion } from 'motion/react';
 import { Button } from '@/components/ui/button';
 import { Explain } from '@/components/shared/explain';
@@ -249,6 +250,20 @@ export interface DataTableProps<T> {
    * Omit it and the table renders at every width (the fallback for views not yet carded).
    */
   renderCard?: (row: T, index: number) => ReactNode;
+  /**
+   * Make each CARD (the below-`md` list) a link to this href — the whole card becomes the tap target
+   * for "open this item", instead of the destination hiding inside a ⋮ menu.
+   *
+   * Implemented as an absolutely-positioned overlay link filling the card, with every `button` inside
+   * the card raised above it (`[&_button]:relative [&_button]:z-10`). That combination is what makes a
+   * clickable card work at all: a real `<a>` wrapping the content would nest the card's own buttons
+   * (speak, star, ⋮) inside an anchor — invalid HTML, and their clicks would fight the navigation —
+   * while an onClick handler on the row would give up middle-click, ctrl-click, "copy link" and the
+   * status-bar preview. Table rows are untouched; they still have their own action column.
+   */
+  cardHref?: (row: T) => string;
+  /** Accessible name for that overlay link (default "Xem chi tiết"). */
+  cardHrefLabel?: (row: T) => string;
 }
 
 /**
@@ -295,6 +310,8 @@ export function DataTable<T>({
   rowNumberHeader = 'STT',
   bulkActions,
   renderCard,
+  cardHref,
+  cardHrefLabel,
 }: DataTableProps<T>) {
   'use no memo'; // TanStack's useReactTable returns fresh functions each render — opt out of React Compiler memoization (official guidance); the table does its own memoization internally.
   const up = urlPrefix ?? `${persistKey}.`;
@@ -659,13 +676,29 @@ export function DataTable<T>({
                     className={cn(
                       'rounded-lg border border-border/70 p-3 transition-colors',
                       selected && 'border-primary bg-primary/5',
+                      // Clickable card: `relative` positions the overlay link, and every button in the
+                      // card is lifted above it so speak / star / ⋮ still get their own clicks.
+                      cardHref && 'relative hover:bg-muted/40 [&_button]:relative [&_button]:z-10',
                     )}
                   >
+                    {cardHref && (
+                      <Link
+                        href={cardHref(row.original)}
+                        className="absolute inset-0 rounded-lg focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                      >
+                        {/* The link's own accessible name. sr-only, because the visible name is the
+                            card's content — which is NOT inside the anchor (it cannot be; see cardHref). */}
+                        <span className="sr-only">
+                          {cardHrefLabel?.(row.original) ?? 'Xem chi tiết'}
+                        </span>
+                      </Link>
+                    )}
                     <div className="flex items-start gap-2.5">
                       {enableRowSelection && (
                         // mt-1 lines the box up with the first text line rather than the card's top edge.
+                        // relative+z-10: the checkbox is not a <button>, so it needs lifting by hand.
                         <Checkbox
-                          className="mt-1 shrink-0"
+                          className="relative z-10 mt-1 shrink-0"
                           checked={selected}
                           onCheckedChange={(v) => row.toggleSelected(v === true)}
                           aria-label="Chọn mục này"
@@ -886,16 +919,17 @@ export function DataTable<T>({
             </Table>
           </div>
 
-          <div
-            ref={footerRef}
-            className="flex flex-col-reverse items-start justify-between gap-3 sm:flex-row sm:items-center"
-          >
-            <span className="text-xs text-muted-foreground">
-              {start + 1}–{Math.min(start + effectivePageSize, filteredCount)} / {filteredCount}{' '}
-              {countNoun}
-              {totalCount != null && filteredCount !== totalCount && ` (lọc từ ${totalCount})`}
-            </span>
+          {/* The ref stays on this wrapper (useFitRows measures the footer's real height); DataPagination
+              owns the row layout itself, count included — see its layout note. */}
+          <div ref={footerRef}>
             <DataPagination
+              count={
+                <>
+                  {start + 1}–{Math.min(start + effectivePageSize, filteredCount)} / {filteredCount}{' '}
+                  {countNoun}
+                  {totalCount != null && filteredCount !== totalCount && ` (lọc từ ${totalCount})`}
+                </>
+              }
               page={safePageIndex + 1}
               pageCount={pageCount}
               onPageChange={(p) => setPageIndex(p - 1)}

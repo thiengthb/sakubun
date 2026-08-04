@@ -12,6 +12,7 @@ import { AppLogo } from '@/components/shell/app-logo';
 import { AppSidebar, type AppSidebarGroup } from '@/components/shell/app-sidebar';
 import { EdgeNavRail } from '@/components/shell/edge-nav-rail';
 import { PublicTopBar } from '@/components/shell/public-top-bar';
+import { ScrollToTop } from '@/components/shell/scroll-to-top';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import { StreakBeacon } from '@/components/dashboard/streak-beacon';
 import { ThemeToggle } from '@/components/shell/theme-toggle';
@@ -60,6 +61,8 @@ export function AppShell({
         <PublicTopBar containerClassName="max-w-7xl px-4 sm:px-6" />
         {/* Same width + padding as the signed-in <main>, so the page body is laid out identically. */}
         <main className="mx-auto w-full max-w-7xl min-w-0 flex-1 px-4 sm:px-6">{children}</main>
+        {/* /guide is the longest page in the app, signed in or not. */}
+        <ScrollToTop />
       </div>
     );
   }
@@ -108,6 +111,9 @@ export function AppShell({
           moved into the breadcrumb row): a left-edge grip that slides the SAME nav out as icons, so
           another page is one tap away instead of two. Fed the same `groups` config as the sidebar. */}
       <EdgeNavRail groups={groups} />
+      {/* Back-to-top, bottom-right. Outside SidebarInset so it is positioned against the viewport and
+          does not shift when the sidebar collapses. */}
+      <ScrollToTop />
       {/* App-wide streak fire: fires on ANY page the moment the study-day streak grows (polls a cheap
           count; the once-per-increase guard lives in StreakCelebration). */}
       {session?.user && <StreakBeacon />}

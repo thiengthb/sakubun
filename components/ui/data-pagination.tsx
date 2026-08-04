@@ -38,6 +38,10 @@ interface DataPaginationProps {
    *  is the currently EFFECTIVE size (a fixed pick while auto is off); the label must always show the
    *  viewport fit, never the manual override. Falls back to `pageSize` when not supplied. */
   autoFitSize?: number;
+  /** The "1–10 / 42 mẫu" summary. Passed IN (rather than rendered by the caller beside this component)
+   *  so all three footer pieces are siblings in one flex container and can be re-ordered per
+   *  breakpoint — see the layout note on the returned element. */
+  count?: React.ReactNode;
 }
 
 const DOTS = '…';
@@ -89,11 +93,12 @@ export function DataPagination({
   autoFit = false,
   onAutoFit,
   autoFitSize,
+  count,
 }: DataPaginationProps) {
   // Must run before the early return below — hooks cannot be called conditionally.
   const sizeLabelId = useId();
   const showSize = pageSize != null && !!onPageSizeChange;
-  if (pageCount <= 1 && !showSize) return null;
+  if (pageCount <= 1 && !showSize && !count) return null;
 
   const pages = buildPages(page, pageCount, siblingCount);
   const go = (target: number) => {
@@ -102,12 +107,27 @@ export function DataPagination({
   };
 
   return (
-    // flex-wrap: on a narrow screen the size selector + the page buttons wrap to a second line instead
-    // of overflowing horizontally (which added a page scrollbar). The footer's real height is what the
-    // viewport-fit math reserves, so wrapping simply leaves room for fewer rows.
-    <div className={cn('flex flex-wrap items-center gap-3', className)}>
+    /* THE FOOTER LAYOUT, and why it is one flex container with explicit `order`s.
+     *
+     * Phone (< sm) — two rows:
+     *     [        ‹ 1 2 3 ›  centred        ]   <- nav, order-1, w-full
+     *     [ 1–10 / 42 mẫu            25 ▾ ]      <- count (order-2, mr-auto) + size (order-3)
+     *
+     * sm and up — one row:
+     *     [ 1–10 / 42 mẫu       25 ▾   ‹ 1 2 3 › ]
+     *
+     * The nav takes the phone's top row because it is the control you actually press, and centred it is
+     * reachable with either thumb; the count and the size picker are a status line and a rarely-touched
+     * setting, so they share the row below. `mr-auto` on the count does the pushing at BOTH breakpoints
+     * (it separates count from size on the phone's second row, and count from the pair on desktop), so
+     * there is no second alignment rule to keep in sync.
+     */
+    <div className={cn('flex w-full flex-wrap items-center gap-x-3 gap-y-2', className)}>
+      {count != null && (
+        <span className="order-2 mr-auto text-xs text-muted-foreground sm:order-1">{count}</span>
+      )}
       {showSize && (
-        <div className="flex items-center gap-1.5 text-xs whitespace-nowrap text-muted-foreground">
+        <div className="order-3 flex items-center gap-1.5 text-xs whitespace-nowrap text-muted-foreground sm:order-2">
           {/* The caption is hidden below `sm`, but aria-labelledby still resolves its text, so the
               control keeps its name on small screens where the label is not painted. */}
           <span id={sizeLabelId} className="hidden sm:inline">
@@ -145,7 +165,7 @@ export function DataPagination({
         <nav
           role="navigation"
           aria-label="Phân trang"
-          className="flex flex-wrap items-center justify-center gap-1"
+          className="order-1 flex w-full flex-wrap items-center justify-center gap-1 sm:order-3 sm:w-auto"
         >
           <Button
             variant="outline"

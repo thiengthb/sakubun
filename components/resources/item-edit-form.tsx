@@ -1,10 +1,11 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { useServerAction } from '@/components/shared/use-server-action';
 import { Button } from '@/components/ui/button';
-import { DialogClose, DialogFooter } from '@/components/ui/dialog';
 import { Field } from '@/components/shared/field';
 import { Input } from '@/components/ui/input';
 import {
@@ -22,16 +23,23 @@ import { JLPT_LEVELS } from '@/lib/settings-schema';
 /**
  * Content edit form for a grammar pattern or vocab word. Grammar shows the JLPT level select; vocab
  * hides it (vocab is not level-gated). NEVER sends an FSRS field. Submitting calls updateItemAction.
+ *
+ * A PAGE (`/resources/<id>/edit`), not a modal, since 2026-08-04 — same reasoning as the add form
+ * (see ResourceAddForm): a five-field form with a textarea inside a dialog is a scrolling box inside a
+ * scrolling page, with its own header eating the top of a short viewport and the OS keyboard covering
+ * the rest. A route also gives the edit a back button and a URL, so half-finished changes survive an
+ * accidental navigation. Saving (or cancelling) returns to the item's detail page, which is where the
+ * edit was launched from.
  */
 export function ItemEditForm({
   item,
   kind,
-  onDone,
 }: {
   item: EditableItem;
   kind: 'grammar' | 'vocab';
-  onDone: () => void;
 }) {
+  const router = useRouter();
+  const backHref = `/resources/${item.itemId}`;
   const [expression, setExpression] = useState(item.expression);
   const [reading, setReading] = useState(item.reading ?? '');
   const [meaningVi, setMeaningVi] = useState(item.meaningVi);
@@ -39,7 +47,10 @@ export function ItemEditForm({
   const [level, setLevel] = useState(item.level ?? 'N5');
   const { run, isPending } = useServerAction(updateItemAction, {
     success: 'Đã lưu',
-    onSuccess: () => onDone(),
+    onSuccess: () => {
+      router.push(backHref);
+      router.refresh();
+    },
   });
 
   const notesLabel = kind === 'grammar' ? 'Cấu trúc / ghi chú' : 'Ví dụ';
@@ -113,16 +124,16 @@ export function ItemEditForm({
         <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={4} />
       </Field>
 
-      <DialogFooter>
-        <DialogClose asChild>
-          <Button variant="outline" disabled={isPending}>
-            Hủy
-          </Button>
-        </DialogClose>
+      {/* flex-row-reverse so Lưu is the rightmost control on a wide screen and the FIRST one on a phone
+          (where the row wraps to a column) — the primary action stays under the thumb either way. */}
+      <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        <Button variant="outline" asChild disabled={isPending}>
+          <Link href={backHref}>Hủy</Link>
+        </Button>
         <Button onClick={save} disabled={isPending}>
           Lưu
         </Button>
-      </DialogFooter>
+      </div>
     </div>
   );
 }

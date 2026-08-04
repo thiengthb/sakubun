@@ -19,7 +19,7 @@ import { createMcpKeyAction, revokeMcpKeyAction } from '@/app/settings/actions';
 import { GuideLink } from '@/components/shared/guide-link';
 import { UserAvatar } from '@/components/shell/user-avatar';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Dialog,
   DialogClose,
@@ -210,7 +210,12 @@ export function AccountTab({
 
   return (
     <>
-      <TabsContent value="account">
+      {/* ONE tab for the whole account (2026-08-04): identity + password + the MCP tokens that belong to
+          that identity. They were two tabs, which made six in a row — and "Token MCP" is not a peer of
+          "Nội dung" or "Nhịp học": it is not a preference at all, it is a credential OF this account,
+          created and revoked here and nowhere else. Two cards in one tab say that; two tabs said they
+          were unrelated pages. */}
+      <TabsContent value="account" className="space-y-4">
         <Card>
           <CardContent className="space-y-6">
             {/* Identity: avatar + name (with an inline edit button) + email. */}
@@ -327,15 +332,17 @@ export function AccountTab({
             )}
           </CardContent>
         </Card>
-      </TabsContent>
 
-      <TabsContent value="token-mcp">
         <Card>
-          <CardContent className="space-y-6">
-            <p className="text-sm text-muted-foreground">
+          {/* A header, because this card no longer has a tab label naming it. */}
+          <CardHeader>
+            <CardTitle>Token MCP</CardTitle>
+            <CardDescription>
               Claude Desktop dùng token này để kết nối tới sakubun DƯỚI DANH NGHĨA bạn. Token chỉ
               hiện MỘT lần khi tạo — lưu lại ngay. Thu hồi bất cứ lúc nào (có hiệu lực tức thì).
-            </p>
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
             {/* The token is useless until it is pasted into claude_desktop_config.json — link the
                   recipe that shows where, right where the token is created. */}
             <GuideLink recipe="mcp" label="Cách dán token vào Claude Desktop" />

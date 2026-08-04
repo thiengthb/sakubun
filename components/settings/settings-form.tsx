@@ -19,7 +19,7 @@ import { type Settings } from '@/lib/settings-schema';
 
 interface SettingsFormProps {
   initial: Settings;
-  /** Identity + MCP tokens for the "Tài khoản" / "Token MCP" tabs (was the separate /account page). */
+  /** Identity + MCP tokens — both live in the one "Tài khoản" tab (was the separate /account page). */
   account: {
     name: string;
     email: string;
@@ -31,14 +31,15 @@ interface SettingsFormProps {
   };
 }
 
-// Six tabs is exactly the case a tab bar handles worst at 360px — see TabSelect.
+// Five tabs — "Token MCP" folded into "Tài khoản" on 2026-08-04 (see AccountTab): an MCP token is a
+// credential OF the account, not a sixth category of setting. Even five is near the limit a tab bar
+// handles at 360px, which is what TabSelect exists for.
 const SETTINGS_TABS = [
   { value: 'content', label: 'Nội dung' },
   { value: 'pace', label: 'Nhịp học' },
   { value: 'sensory', label: 'Nghe & nói' },
   { value: 'data', label: 'Dữ liệu' },
   { value: 'account', label: 'Tài khoản' },
-  { value: 'token-mcp', label: 'Token MCP' },
 ] as const;
 
 /** Tabs whose contents are part of the Settings object and therefore share the one Save button. */

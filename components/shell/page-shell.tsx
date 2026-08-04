@@ -57,17 +57,30 @@ export function PageShell({
     // `text-sm` is the app's BODY BASELINE (type-scale invariant): page content inherits 14px, so a
     // bare content block never renders larger than a heading. Headings opt UP (CardTitle = text-base,
     // section titles = text-base/lg); meta opts DOWN (text-xs). Enforced by lib/type-scale.test.ts.
-    <div className={cn('space-y-4 py-6 text-sm', WIDTH[width], className)}>
+    // `pb-16` (not `py-6`) reserves a gutter for the floating back-to-top button (`ScrollToTop`, fixed
+    // bottom-right, spanning 16-56px up from the viewport edge). Without it, the last row of a scrolled
+    // page sits UNDER the button — on a phone that is exactly the pagination footer's rows-per-page
+    // select, which the button covered. `useFitRows`' `bottomGap` default mirrors this number; change
+    // the two together or the viewport-fit lists will fit one row too many.
+    <div className={cn('space-y-4 pt-6 pb-16 text-sm', WIDTH[width], className)}>
       {/* Remember scroll position per route (long pages only; list pages are viewport-fit). */}
       <ScrollRestorer />
-      {/* Header row: breadcrumb + any page-supplied aside (tabs, actions). Kept unconditional so
-          every page's body starts at the same vertical offset. */}
+      {/* Header row: breadcrumb on the left, page-supplied aside (tabs, actions) pushed to the FAR
+          RIGHT. Kept unconditional so every page's body starts at the same vertical offset.
+          `ml-auto` on the aside, rather than letting it sit next to the breadcrumb: a tab bar glued to
+          the title reads as part of the title, and its position then moved with the length of the
+          breadcrumb — "Tài nguyên" and "Cài đặt" put their tabs at different x. Anchored right, the
+          tabs are in the same place on every page, and the row's two ends carry the two jobs
+          (where am I / what can I switch). It still wraps to its own line when the row runs out of
+          width, because the container is flex-wrap and the aside is w-full below sm. */}
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
         {/* Mobile only (md:hidden): app icon + open-sidebar button + a divider, since the sidebar's
             own brand/toggle are off-screen once it collapses to the off-canvas Sheet. */}
         <MobileTopBar />
         {crumb}
-        {headerAside}
+        {headerAside && (
+          <div className="ml-auto flex flex-wrap items-center gap-2">{headerAside}</div>
+        )}
       </div>
       {children}
     </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ActiveTabSelect } from '@/components/shared/active-tab-select';
 import { TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export interface TabSelectItem {
@@ -39,20 +39,16 @@ export function TabSelect({
 }) {
   return (
     <>
-      <Select value={value} onValueChange={onValueChange}>
-        {/* h-8 matches the toolbar buttons + search box; w-auto so it hugs the longest label rather
-            than stretching across the row. */}
-        <SelectTrigger size="sm" className="h-8 w-auto md:hidden" aria-label={label}>
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent align="start">
-          {items.map((item) => (
-            <SelectItem key={item.value} value={item.value}>
-              {item.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      {/* The compact half is `ActiveTabSelect` — a select whose trigger wears the ACTIVE TAB's own
+          treatment (muted rail + primary pill + chevron), so switching breakpoints changes the width
+          of the control, not the language it speaks. */}
+      <ActiveTabSelect
+        items={items}
+        value={value}
+        onValueChange={onValueChange}
+        label={label}
+        className="md:hidden"
+      />
 
       <TabsList className="max-md:hidden">
         {items.map((item) => (

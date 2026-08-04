@@ -344,6 +344,9 @@ export function ItemsTable({
       rowClassName={(r) => (r.suspended ? 'opacity-50' : undefined)}
       actionSlot={importSlot}
       // Below md the table becomes a stacked card list (same rows, same pagination) — see DataTable.
+      // Tapping a card opens the item; the ⋮ menu drops its "Chi tiết" entry to match (hideDetail).
+      cardHref={(item) => `/resources/${item.itemId}`}
+      cardHrefLabel={(item) => `Xem chi tiết  ${item.expression}`}
       renderCard={(item) => (
         <ResourceCard
           expression={item.expression}
@@ -370,6 +373,8 @@ export function ItemsTable({
                   suspended: item.suspended,
                 }}
                 kind="grammar"
+                // The card itself links to the detail page.
+                hideDetail
               />
             </>
           }
