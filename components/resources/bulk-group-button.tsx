@@ -54,11 +54,13 @@ export function BulkGroupButton({
         <BulkActionButton icon={Icon} label={label} pending={isPending} />
       </DropdownMenuTrigger>
       {/* The dock is pinned to the right edge, so the group list opens to its LEFT (never off-screen). */}
-      <DropdownMenuContent side="left" align="start">
+      {/* min-w so a group name is not truncated to "Ngữ ph..." the moment the dock is narrow, max-w so
+          a long one still wraps instead of stretching the menu off-screen. */}
+      <DropdownMenuContent side="left" align="start" className="max-w-72 min-w-56">
         {groups.map((g) => (
           <DropdownMenuItem key={g.id} onSelect={() => run(g.id)}>
             <span className="min-w-0 truncate">{g.name}</span>
-            <span className="ml-auto pl-3 text-xs text-muted-foreground">
+            <span className="ml-auto pl-3 text-xs whitespace-nowrap text-muted-foreground">
               {GROUP_KIND_LABELS[g.kind]}
             </span>
           </DropdownMenuItem>

@@ -86,11 +86,11 @@ export function ItemGroups({
                 disabled={isPending}
               />
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start">
+            <DropdownMenuContent align="start" className="max-w-72 min-w-56">
               {addable.map((g) => (
                 <DropdownMenuItem key={g.id} onSelect={() => add(g.id)}>
                   <span className="min-w-0 truncate">{g.name}</span>
-                  <span className="ml-auto pl-3 text-xs text-muted-foreground">
+                  <span className="ml-auto pl-3 text-xs whitespace-nowrap text-muted-foreground">
                     {GROUP_KIND_LABELS[g.kind]}
                   </span>
                 </DropdownMenuItem>
