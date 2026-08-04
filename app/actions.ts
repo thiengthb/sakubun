@@ -20,6 +20,14 @@ import {
 } from '@/lib/practice';
 import { JLPT_LEVELS, settingsPatchSchema, type Settings } from '@/lib/settings-schema';
 import { getSessionUserId } from '@/lib/current-user';
+import {
+  GROUP_KINDS,
+  addItemsToGroup,
+  createGroup,
+  deleteGroup,
+  removeItemsFromGroup,
+  updateGroup,
+} from '@/lib/groups';
 import { type ActionResult, cleanIds, err, ok, parseInput } from '@/lib/action-result';
 
 // Re-exported so existing importers (`@/app/actions`) and client components keep one import site.
@@ -295,3 +303,100 @@ export async function getStreakAction(): Promise<ActionResult<{ current: number 
 
 // ---------------- notifications ----------------
 
+// ---------------- study groups (restored 2026-08-05, see lib/groups.ts) ----------------
+//
+// `await getSessionUserId()` is still called in every one of these, and it is NOT dead code even though
+// lib/groups.ts no longer takes a userId: it IS the auth gate. Data is scoped by the login now, not by a
+// tenant column (AGENTS.md §Gotchas), so a server action's only job is to prove there is a session
+// before it touches the DB — it redirects to /login when there isn't.
+
+const createGroupSchema = z.object({
+  name: z.string().trim().min(1, 'Tên nhóm không được trống'),
+  kind: z.enum(GROUP_KINDS).optional(),
+  note: z.string().optional(),
+});
+
+const updateGroupSchema = z.object({
+  name: z.string().trim().min(1, 'Tên nhóm không được trống').optional(),
+  kind: z.enum(GROUP_KINDS).optional(),
+  note: z.string().nullable().optional(),
+});
+
+export async function createGroupAction(input: unknown): Promise<ActionResult<{ id: string }>> {
+  await getSessionUserId();
+  const parsed = parseInput(createGroupSchema, input);
+  if (!parsed.ok) return parsed;
+  try {
+    const g = await createGroup(parsed.data);
+    // The groups list lives under the /resources "Nhóm" tab.
+    revalidatePath('/resources');
+    return ok({ id: g.id });
+  } catch (e) {
+    return err(e instanceof Error ? e.message : 'Không tạo được nhóm');
+  }
+}
+
+export async function updateGroupAction(groupId: string, input: unknown): Promise<ActionResult> {
+  await getSessionUserId();
+  if (!groupId) return err('Thiếu groupId');
+  const parsed = parseInput(updateGroupSchema, input);
+  if (!parsed.ok) return parsed;
+  try {
+    const updated = await updateGroup(groupId, parsed.data);
+    if (!updated) return err('Không tìm thấy nhóm');
+  } catch (e) {
+    return err(e instanceof Error ? e.message : 'Không lưu được');
+  }
+  revalidatePath('/resources');
+  revalidatePath(`/groups/${groupId}`);
+  return ok(undefined);
+}
+
+export async function deleteGroupAction(groupId: string): Promise<ActionResult> {
+  await getSessionUserId();
+  if (!groupId) return err('Thiếu groupId');
+  try {
+    const deleted = await deleteGroup(groupId);
+    if (!deleted) return err('Không tìm thấy nhóm');
+  } catch (e) {
+    return err(e instanceof Error ? e.message : 'Không xóa được');
+  }
+  revalidatePath('/resources');
+  return ok(undefined);
+}
+
+export async function addItemsToGroupAction(
+  groupId: string,
+  itemIds: string[],
+): Promise<ActionResult<{ added: number }>> {
+  await getSessionUserId();
+  if (!groupId) return err('Thiếu groupId');
+  const clean = cleanIds(itemIds);
+  if (clean.length === 0) return err('Chưa chọn mục nào');
+  try {
+    const res = await addItemsToGroup(groupId, clean);
+    revalidatePath('/resources');
+    revalidatePath(`/groups/${groupId}`);
+    return ok(res);
+  } catch (e) {
+    return err(e instanceof Error ? e.message : 'Không thêm được vào nhóm');
+  }
+}
+
+export async function removeItemsFromGroupAction(
+  groupId: string,
+  itemIds: string[],
+): Promise<ActionResult<{ removed: number }>> {
+  await getSessionUserId();
+  if (!groupId) return err('Thiếu groupId');
+  const clean = cleanIds(itemIds);
+  if (clean.length === 0) return err('Chưa chọn mục nào');
+  try {
+    const res = await removeItemsFromGroup(groupId, clean);
+    revalidatePath('/resources');
+    revalidatePath(`/groups/${groupId}`);
+    return ok(res);
+  } catch (e) {
+    return err(e instanceof Error ? e.message : 'Không gỡ được khỏi nhóm');
+  }
+}

@@ -9,27 +9,33 @@ import { PageShell } from '@/components/shell/page-shell';
 import { ResourceAddButton } from '@/components/resources/resource-add-button';
 import { useSessionState } from '@/components/shared/use-session-state';
 import { VocabTable, type VocabRow } from '@/components/resources/vocab-table';
+import { GroupsView } from '@/components/groups/groups-view';
+import type { GroupSummary } from '@/lib/groups';
 
 /**
  * Merged "Tài nguyên" (resources) view: grammar + vocab in one page, split by tabs that sit BESIDE
  * the title (per the 2026-07-13 request). Each tab keeps its own table (sort/filter/paginate) + empty
  * state; grammar carries the import action. The two stores were separate pages (/items, /vocab) before.
- * A third "Nhóm" tab existed while the app was multi-user; it went with the community surface.
+ * The third "Nhóm" tab (study groups) went out with the multi-user/community surface on 2026-08-03 and
+ * came BACK single-user on 2026-08-05 — see lib/groups.ts.
  */
 const RESOURCE_TABS = [
   { value: 'grammar', label: 'Ngữ pháp' },
   { value: 'vocab', label: 'Từ vựng' },
+  { value: 'groups', label: 'Nhóm' },
 ] as const;
 
 export function ResourcesView({
   grammar,
   vocab,
+  groups,
   voiceSpeaker,
   speechRate,
   showFurigana = false,
 }: {
   grammar: ItemRow[];
   vocab: VocabRow[];
+  groups: GroupSummary[];
   voiceSpeaker?: number;
   speechRate?: number;
   showFurigana?: boolean;
@@ -102,6 +108,9 @@ export function ResourcesView({
               showFurigana={showFurigana}
             />
           )}
+        </TabsContent>
+        <TabsContent value="groups">
+          <GroupsView groups={groups} />
         </TabsContent>
       </PageShell>
     </Tabs>

@@ -37,6 +37,7 @@ model Item {
 
   srs     SrsState?
   reviews ReviewLog[]
+  groups  GroupMember[]
 
   // Elo CHALLENGE (2026-07-26, lib/calibration.ts) — "how likely is a success on this item at a given
   // ability", discovered from graded outcomes. NOT FSRS difficulty (that is "how fast is this
@@ -346,4 +347,46 @@ model McpKey {
 
   @@index([userId])
   @@map("mcp_key")
+}
+
+// ---------------------------------------------------------------------------------------------------
+// Study groups — named collections of Items that scope focused practice (lib/groups.ts).
+//
+// Restored 2026-08-05. They shipped 2026-07-21, then went out with the whole multi-user + community
+// surface on 2026-08-03 (migration drop_multiuser_and_community) because their rows carried the tenant
+// `userId` columns that pass removed. The FEATURE was never the problem — grouping items by theme is
+// useful to one learner too — so this is the same model minus the tenancy: no `userId` on either table,
+// exactly like Item / SrsState / ReviewLog. The boundary is the login (AGENTS.md §Gotchas).
+//
+// Groups NEVER touch FSRS. They are an organisation + practice-scoping layer; scheduling stays in
+// SrsState and is only ever computed by submitReview().
+// ---------------------------------------------------------------------------------------------------
+
+model Group {
+  id        String   @id @default(cuid())
+  name      String
+  // Soft constraint on which Item kinds may join: "vocab" | "grammar" | "mixed". SQLite/Prisma cannot
+  // enforce it, so lib/groups.ts does (itemKindFitsGroup) on every add.
+  kind      String   @default("mixed")
+  color     String? // optional accent token name for the UI chip
+  note      String? // optional description (the theme / why these belong together)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  members GroupMember[]
+}
+
+// Join row: one Item's membership in one Group (many-to-many). Cascade on BOTH sides — deleting a group
+// drops its memberships, deleting an item drops its memberships — and neither touches the other's rows.
+// NB this is the one place a cascade is right: a membership has no meaning without both ends, unlike
+// ReviewLog, which outlives its item on purpose (SetNull, invariant 2).
+model GroupMember {
+  groupId String
+  group   Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  itemId  String
+  item    Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  addedAt DateTime @default(now())
+
+  @@id([groupId, itemId])
+  @@index([itemId])
 }

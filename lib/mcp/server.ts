@@ -7,6 +7,7 @@ import {
 } from '@/lib/mcp/prompts';
 import { registerContentTools } from '@/lib/mcp/tools/content';
 import { registerCoreTools } from '@/lib/mcp/tools/core';
+import { registerGroupTools } from '@/lib/mcp/tools/groups';
 import { registerLookupTools } from '@/lib/mcp/tools/lookup';
 import { registerManageTools } from '@/lib/mcp/tools/manage';
 import { registerPracticeTools } from '@/lib/mcp/tools/practice';
@@ -28,6 +29,10 @@ export const mcpHandler = createMcpHandler(
     registerManageTools(server);
     registerLookupTools(server);
     registerQuizTools(server);
+    // Study groups (restored 2026-08-05). The catalog already advertised these five tools the whole
+    // time they were gone — lib/mcp/catalog.ts lines 146+ — so Claude could read the names and get
+    // "unknown tool" on every call.
+    registerGroupTools(server);
 
     // ---------------- Prompt: the full tutor protocol ----------------
     server.prompt(

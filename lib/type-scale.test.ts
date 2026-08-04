@@ -58,6 +58,11 @@ const DISPLAY_ALLOW = [
   'components/shell/app-logo.tsx', // 作文 badge glyph
   'components/shell/user-avatar.tsx', // avatar initials sizing
   'components/ui/', // shadcn primitive sizing tokens (button, calendar, …)
+  // The flashcard FACE is data-display in the truest sense: the whole point of the card is one Japanese
+  // word or pattern shown big enough to read, recall and self-test against — the same category as the
+  // dashboard's metric numbers, not a heading competing with body text. Only the card face goes large;
+  // its labels ("Nghĩa", "Ví dụ") are text-xs meta, and were fixed to the scale rather than exempted.
+  'components/groups/group-flashcards.tsx',
   'components/guide/guide-steps.tsx', // scaled-down UI mockups in the /guide walkthrough (like the landing mocks)
   'components/guide/guide-primitives.tsx', // the mockup building blocks (Window/Chip/Field) those steps use
 ];

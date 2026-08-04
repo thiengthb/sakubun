@@ -3,6 +3,7 @@ import { ResourcesView } from '@/components/resources/resources-view';
 import type { ItemRow } from '@/components/resources/items-table';
 import type { VocabRow } from '@/components/resources/vocab-table';
 import { getSettings, listItems, VOCAB_KIND } from '@/lib/practice';
+import { listGroups } from '@/lib/groups';
 import { getSessionUserId } from '@/lib/current-user';
 import { furiganaInApp } from '@/lib/settings-schema';
 
@@ -14,9 +15,10 @@ const MAX_ITEMS = 10_000;
 export default async function ResourcesPage() {
   // Auth gate: redirects to /login when there is no valid session.
   await getSessionUserId();
-  const [grammar, vocab, settings] = await Promise.all([
+  const [grammar, vocab, groups, settings] = await Promise.all([
     listItems({ limit: MAX_ITEMS }) as Promise<ItemRow[]>,
     listItems({ kind: VOCAB_KIND, limit: MAX_ITEMS }) as Promise<VocabRow[]>,
+    listGroups(),
     getSettings(),
   ]);
 
@@ -26,6 +28,7 @@ export default async function ResourcesPage() {
       <ResourcesView
         grammar={grammar}
         vocab={vocab}
+        groups={groups}
         voiceSpeaker={settings.voiceSpeaker}
         speechRate={settings.speechRate}
         showFurigana={furiganaInApp(settings.furiganaMode)}

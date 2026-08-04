@@ -4,6 +4,7 @@ import {
   BookOpenText,
   BookText,
   ChartColumn,
+  FolderOpen,
   History,
   LayoutDashboard,
   Languages,
@@ -44,6 +45,12 @@ const CRUMBS = {
     icon: Languages,
     description: 'Các từ vựng đã lưu.',
   },
+  groups: {
+    label: 'Nhóm',
+    href: '/resources?tab=groups',
+    icon: FolderOpen,
+    description: 'Bộ sưu tập tự đặt tên — gom mẫu ngữ pháp và từ vựng theo chủ đề để luyện tập trung.',
+  },
   history: {
     label: 'Lịch sử',
     href: '/history',
@@ -78,7 +85,10 @@ export function AppBreadcrumbs({
   className,
 }: {
   section: BreadcrumbSection;
-  detail?: { kind: 'grammar' | 'vocab'; label: string; description?: string };
+  // The middle crumb of a detail trail: Tài nguyên → <this> → <the thing's name>. 'groups' joined the
+  // set when study groups came back (2026-08-05) — a group's detail page nests under the same
+  // /resources parent as an item's does.
+  detail?: { kind: 'grammar' | 'vocab' | 'groups'; label: string; description?: string };
   className?: string;
 }) {
   const items: Crumb[] = detail
