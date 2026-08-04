@@ -18,12 +18,15 @@ services:
     # Cặp GOOGLE_* ở đây KHÔNG phải tuỳ chọn: tài khoản duy nhất đăng nhập bằng Google và không có
     # dòng password, nên thiếu hai biến đó thì better-auth bỏ provider và KHÔNG CÒN đường vào.
     #
-    # Trỏ THẲNG sang bản trong fleet thay vì giữ một bản copy thứ hai ở đây:
-    #   1. Một nguồn sự thật cho secret — đổi khoá ở một chỗ, không lệch giữa hai bản.
-    #   2. Container 3789 vốn chạy từ fleet, nên đây đúng là file nó đang dùng.
-    # Muốn project này độc lập với fleet thì copy file về và đổi lại thành `.env.docker`.
+    # File nằm TRONG repo (gitignored, không vào image vì .dockerignore chặn `.env.*`). Trước đây nó
+    # trỏ ra ../fleet/projects/sakubun/.env.docker để chỉ có một bản secret; đổi về đây vì một đường dẫn
+    # ngoài repo làm deploy chết khi fleet bị đổi tên hay dọn đi, và chết bằng lỗi "env_file not found"
+    # chứ không phải lỗi app — mất thời gian mới đoán ra.
+    #
+    # Cái giá của việc đổi: giờ có HAI bản secret. Đổi khoá Google hay BETTER_AUTH_SECRET thì phải sửa
+    # cả bản này và bản trong fleet, nếu không hai deploy sẽ lệch nhau im lặng.
     env_file:
-      - ../fleet/projects/sakubun/.env.docker
+      - .env.docker
     environment:
       # Local VOICEVOX engine (neural JA TTS) reached over the compose network by /api/tts. If it is
       # down the client falls back to browser Web Speech, so this is best-effort, not required.
