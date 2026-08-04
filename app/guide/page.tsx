@@ -1,5 +1,5 @@
 import { Plug, Sparkles, Wrench } from 'lucide-react';
-import { TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { TabsContent } from '@/components/ui/tabs';
 import {
   Table,
   TableBody,
@@ -21,7 +21,7 @@ import { getStartProgress } from '@/lib/guide-progress';
 import { GuideFeaturesTab } from '@/components/guide/guide-features';
 import { GuideToolTable } from '@/components/guide/guide-tool-table';
 import type { GuideRecipeId } from '@/components/guide/guide-topic-meta';
-import { GuideTabs } from '@/components/guide/guide-tabs';
+import { GuideTabs, GuideTabSelect } from '@/components/guide/guide-tabs';
 import { Code, RefHeading } from '@/components/guide/guide-reference';
 
 export const metadata = { title: 'Hướng dẫn — sakubun' };
@@ -98,12 +98,7 @@ export default async function GuidePage() {
         section="guide"
         headerAside={
           <>
-            <TabsList>
-              <TabsTrigger value="start">Bắt đầu</TabsTrigger>
-              <TabsTrigger value="features">Tính năng</TabsTrigger>
-              <TabsTrigger value="howto">Theo việc</TabsTrigger>
-              <TabsTrigger value="reference">Tra cứu</TabsTrigger>
-            </TabsList>
+            <GuideTabSelect />
             {/* Lightbulb at the far right of the tab row — glows until first read; the intro that used
                 to be a paragraph now lives in its hover tooltip, split into scannable sections. */}
             <IntroHint
@@ -140,10 +135,16 @@ export default async function GuidePage() {
                 thiếu bước nào (bấm <em>«Tới bước còn thiếu»</em>).
               </li>
               <li>
-                <strong>Không cần cài gì</strong>: sakubun chạy trên máy chủ chung,{' '}
+                <strong>Không cần cài gì</strong>: sakubun chạy trên máy chủ riêng,{' '}
                 <strong>luôn bật</strong> — bạn chỉ cần trình duyệt và đăng nhập ở{' '}
-                <code>sakubun.thientnse.site</code>. Dữ liệu mỗi người tách riêng theo tài khoản.
-                Máy bạn không phải mở gì (chỉ cần Claude Desktop khi luyện, và có mạng).
+                <code>sakubun.thientnse.site</code>. Máy bạn không phải mở gì (chỉ cần Claude
+                Desktop khi luyện, và có mạng).
+              </li>
+              <li>
+                <strong>Đây là app một người dùng</strong>: đăng ký{' '}
+                <strong>đóng lại sau tài khoản đầu tiên</strong>, nên toàn bộ kho, lịch ôn và lịch
+                sử trong đó là của riêng bạn. Không có thư viện chung, không có feed, không có ai
+                khác đọc được gì — ranh giới duy nhất là <strong>đăng nhập</strong>.
               </li>
               <li>
                 <strong>File .xlsx</strong>: cột <code>pattern / phonetic / mean / comment</code>{' '}
@@ -183,9 +184,8 @@ export default async function GuidePage() {
                 tạm ngưng, việc cần làm là <strong>bật lại</strong>, không phải thêm bản thứ hai.
               </li>
               <li>
-                <strong>Cần bạn quyết</strong> — ví dụ đã có người chia sẻ bản{' '}
-                <strong>kèm thẻ đầy đủ</strong> (lấy về thì được luôn cả thẻ, hơn là thêm một dòng
-                trắng), hoặc bạn đã có đúng chữ đó ở loại khác.
+                <strong>Cần bạn quyết</strong> — ví dụ bạn đã có đúng chữ đó nhưng ở{' '}
+                <strong>loại khác</strong> (đang là từ vựng, tài liệu dùng nó như mẫu ngữ pháp).
               </li>
             </ul>
             <p>
@@ -219,30 +219,15 @@ export default async function GuidePage() {
 
           <Recipe id="groups" title="Gom mẫu/từ thành nhóm rồi luyện theo nhóm">
             <p>
-              Vào trang <em>Nhóm</em> tạo một nhóm (chọn loại: ngữ pháp / từ vựng / hỗn hợp). Thêm
-              thành viên bằng cách mở nhóm và bấm thêm, hoặc ở <em>Tài nguyên</em> chọn nhiều mục
-              rồi «thêm vào nhóm». Sau đó nói với Claude <em>«luyện nhóm X»</em> — nó ưu tiên các
-              mẫu trong nhóm đó. Không muốn tự gom? Nhờ Claude <em>«gợi ý một nhóm cho…»</em>: nó đề
-              xuất tên + danh sách, bạn xem rồi <strong>duyệt</strong> mới tạo.
+              Vào <em>Tài nguyên → tab «Nhóm»</em>, bấm <em>«Tạo nhóm»</em> và chọn loại (ngữ pháp /
+              từ vựng / hỗn hợp — loại quyết định mục nào được thêm). Mở nhóm vừa tạo rồi bấm{' '}
+              <em>«Thêm mục»</em> để chọn thành viên; trong nhóm còn có nút bật{' '}
+              <strong>flashcard</strong> để lướt lại cả nhóm.
             </p>
-          </Recipe>
-
-          <Recipe id="share-items" title="Chia sẻ mẫu/từ và lấy về từ thư viện chung">
             <p>
-              Mở chi tiết một mẫu/từ (từ bảng <em>Tài nguyên</em>) → bấm{' '}
-              <em>«Chia sẻ vào thư viện»</em> để người khác thấy nội dung mục đó (lịch ôn của bạn
-              không bị chia sẻ). Muốn lấy đồ người khác chia sẻ: vào trang <em>Thư viện</em>, tìm
-              mẫu/từ cần, bấm <em>«Lấy về kho»</em> — nó vào kho bạn với lịch ôn mới, độc lập hoàn
-              toàn.
-            </p>
-          </Recipe>
-
-          <Recipe id="share-turn" title="Chia sẻ một lượt dịch để xin góp ý">
-            <p>
-              Vào <em>Lịch sử</em>, mở một lượt <strong>đã chấm</strong> → bấm{' '}
-              <em>«Chia sẻ lên feed»</em>. Lượt đó hiện ở tab <em>Cộng đồng</em> (cùng trang Lịch
-              sử) để thành viên khác đọc và bình luận; lịch ôn của bạn không bị lộ. Muốn góp ý cho
-              người khác thì mở tab <em>Cộng đồng</em>, mở phần bình luận của một lượt và viết.
+              Sau đó nói với Claude <em>«luyện nhóm X»</em> — nó ưu tiên các mẫu trong nhóm đó.
+              Không muốn tự gom? Nhờ Claude <em>«gợi ý một nhóm cho…»</em>: nó đề xuất tên + danh
+              sách, bạn xem rồi <strong>duyệt</strong> mới tạo.
             </p>
           </Recipe>
 

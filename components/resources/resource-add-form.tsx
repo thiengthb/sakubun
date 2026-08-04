@@ -86,36 +86,48 @@ const COPY: Record<
   },
 };
 
-const INPUT_TABS = [
+export const INPUT_TABS = [
   { value: 'single', label: 'Theo trường' },
   { value: 'paste', label: 'Dán danh sách' },
   { value: 'excel', label: 'Nhập Excel' },
 ] as const;
 
 /**
- * "Thêm ngữ pháp / từ vựng" as a PAGE body (was a modal — `ResourceAddDialog`).
+ * The three input panels, WITHOUT the tab switcher — it lives wherever the host puts it. Must sit
+ * inside a `<Tabs>` provider whose values are `INPUT_TABS`.
  *
- * Why not a modal any more: the three input methods are not a quick confirm. "Dán danh sách" is a
- * multi-line textarea and "Nhập Excel" is a file picker plus a preview table — on a phone the modal was
- * a scrolling box inside a scrolling page, its own header eating the top of a 640px viewport, and the
- * OS keyboard covering whatever was left. A route also gives the work a back button and a URL, so a
- * half-finished paste survives an accidental navigation instead of evaporating with the overlay.
- *
- * `onDone` goes back to /resources and refreshes, which is what closing the modal used to do implicitly.
+ * The switcher is hoisted out because its position differs by host: in the dialog it sits at the top of
+ * the dialog body (there is no other header to hang it on), while on `/resources/new` it belongs on the
+ * PageShell header row beside the breadcrumb — the platform standard for tabs, and on a phone pinned to
+ * the right edge where the thumb is. See `ResourceAddPage`.
  */
-export function ResourceAddForm({
-  kind,
-  onDone,
-}: {
-  kind: ResourceKind;
-  /** Supplied when the form is hosted in a DIALOG (the desktop path — see ResourceAddButton): close the
-   *  dialog instead of navigating, since the list is already on screen behind it. Omitted on the
-   *  `/resources/new` route, where finishing means going back to /resources. */
-  onDone?: () => void;
-}) {
+export function ResourceAddPanels({ kind, onDone }: { kind: ResourceKind; onDone: () => void }) {
+  const copy = COPY[kind];
+  return (
+    <>
+      <TabsContent value="single">
+        <SingleTab kind={kind} copy={copy} onDone={onDone} />
+      </TabsContent>
+      <TabsContent value="paste">
+        <PasteTab kind={kind} copy={copy} onDone={onDone} />
+      </TabsContent>
+      <TabsContent value="excel">
+        <ExcelTab kind={kind} copy={copy} onDone={onDone} />
+      </TabsContent>
+    </>
+  );
+}
+
+/**
+ * "Thêm ngữ pháp / từ vựng" for the DIALOG host (the desktop path — see ResourceAddButton): tabs on top
+ * of the panels, because a dialog body has no header row to hoist them onto. The route version is
+ * `ResourceAddPage`.
+ *
+ * `onDone` closes the dialog; without it (legacy callers) it falls back to going back to /resources.
+ */
+export function ResourceAddForm({ kind, onDone }: { kind: ResourceKind; onDone?: () => void }) {
   const router = useRouter();
   const [tab, setTab] = useState<string>('single');
-  const copy = COPY[kind];
   const close =
     onDone ??
     (() => {
@@ -124,21 +136,10 @@ export function ResourceAddForm({
     });
 
   return (
-    <>
-        <Tabs value={tab} onValueChange={setTab}>
-          <TabSelect items={INPUT_TABS} value={tab} onValueChange={setTab} label="Cách nhập" />
-
-          <TabsContent value="single" className="mt-4">
-            <SingleTab kind={kind} copy={copy} onDone={close} />
-          </TabsContent>
-          <TabsContent value="paste" className="mt-4">
-            <PasteTab kind={kind} copy={copy} onDone={close} />
-          </TabsContent>
-          <TabsContent value="excel" className="mt-4">
-            <ExcelTab kind={kind} copy={copy} onDone={close} />
-          </TabsContent>
-        </Tabs>
-    </>
+    <Tabs value={tab} onValueChange={setTab} className="gap-4">
+      <TabSelect items={INPUT_TABS} value={tab} onValueChange={setTab} label="Cách nhập" />
+      <ResourceAddPanels kind={kind} onDone={close} />
+    </Tabs>
   );
 }
 
@@ -241,7 +242,9 @@ function SingleTab({
           />
         </Field>
       </div>
-      <div className="flex flex-wrap justify-end gap-2 pt-2">
+      {/* flex-col-reverse: on a phone the row stacks and the PRIMARY action ends up on top, under the
+          thumb; from sm it is a normal right-aligned button row. Same pattern as ItemEditForm. */}
+      <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
         <Button type="button" variant="outline" disabled={isPending} onClick={onDone}>
           Huỷ
         </Button>
@@ -308,7 +311,9 @@ function BulkPanel({
                 {parse.errors.length} dòng lỗi
               </Badge>
             )}
-            <div className="ml-auto flex items-center gap-2">
+            {/* Below sm this takes the whole wrapped line, label left / select right, instead of being
+                shoved against the right edge by `ml-auto` with nothing beside it. */}
+            <div className="flex w-full items-center justify-between gap-2 sm:ml-auto sm:w-auto sm:justify-start">
               <Label htmlFor="bulk-default-level" className="text-xs text-muted-foreground">
                 Cấp độ mặc định
               </Label>
@@ -329,7 +334,31 @@ function BulkPanel({
 
           {entries.length > 0 && (
             <div className="max-h-80 overflow-auto rounded-md border">
-              <Table>
+              {/* PHONE: one card per row. The preview's whole job is "check this is what you meant
+                  before it is written to the store", and a four-column table at 360px truncates every
+                  cell to a few characters — which makes it unreadable exactly where the check matters.
+                  Same rows, stacked, with the level as a badge on the expression line. */}
+              <ul className="divide-y sm:hidden">
+                {entries.map((e, i) => (
+                  <li key={`${e.expression}-${i}`} className="space-y-1 p-3">
+                    <div className="flex items-baseline justify-between gap-2">
+                      <span lang="ja" className="min-w-0 truncate font-medium">
+                        {e.expression}
+                      </span>
+                      <Badge variant="outline" className="shrink-0">
+                        {e.level}
+                      </Badge>
+                    </div>
+                    {e.reading && (
+                      <p lang="ja" className="truncate text-xs text-muted-foreground">
+                        {e.reading}
+                      </p>
+                    )}
+                    <p className="text-xs">{e.meaningVi}</p>
+                  </li>
+                ))}
+              </ul>
+              <Table className="max-sm:hidden">
                 <TableHeader>
                   <TableRow>
                     <TableHead>{copy.exprLabel}</TableHead>
@@ -368,7 +397,7 @@ function BulkPanel({
         </>
       )}
 
-      <div className="flex flex-wrap justify-end gap-2 pt-2">
+      <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
         <Button type="button" variant="outline" disabled={isPending} onClick={onDone}>
           Huỷ
         </Button>

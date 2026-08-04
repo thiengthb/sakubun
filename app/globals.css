@@ -46,111 +46,106 @@
   --radius-2xl: calc(var(--radius) * 1.8);
 }
 
-/* Claude-orange (terracotta) brand theme, 2026-07-13. Primary + brand accent = Claude's clay/orange
-   (~#D9785B, OKLCH hue ~42). Neutrals carry a subtle warm bias (low chroma at hue ~55) so grays read
-   as "chosen warm", not machine-gray. Semantic tokens (ok/warn/alert/info) stay functional.
+/* CLAUDE DESKTOP PALETTE, 2026-08-05. Colour tokens only — --radius, fonts, spacing and every component
+   class are untouched, same discipline as the 2026-08-04 pass.
 
-   2026-08-04 — PAPER NEUTRALS. Colour only: the warm bias above is pushed from "barely there" (hue 60,
-   chroma 0.004) to a real warm cream (hue ~80, chroma ~0.016), and the neutrals are split into three
-   levels instead of two shades of white:
+   The surfaces are Anthropic's published brand neutrals, converted hex -> OKLCH exactly:
 
-     sidebar   0.938   chrome, one step DOWN — it recedes
-     page      0.958   the paper you read on
-     card      1.000   surfaces lift UP off the page
+     #FAF9F5  0.982   the page          (Claude's conversation surface)
+     #F0EEE6  0.949   sidebar / muted   (Anthropic ivory — chrome sits one step DOWN)
+     #FFFFFF  1.000   card              (surfaces lift UP off the page)
+     #141413  0.191   ink               (Claude's near-black, warm at hue ~107)
+     #E3E1DA  0.909   hairline
+     #D97757  0.672   CLAY — the Claude brand orange
 
-   That third level is the whole idea: a card is told apart from the page by its COLOUR, so nothing about
-   its shape, border or shadow had to change. Brand (--primary / --accent-brand) and --radius are
-   untouched; every pair is contrast-checked by lib/contrast.test.ts.
+     dark:  #262624 page · #1F1E1D sidebar · #30302E card · #3A3A38 panel · #FAF9F5 ink
 
-   The first attempt at this used 0.968/0.984/0.998 — a 1.4% step between page and card — and the honest
-   result was that nobody could see it: the page still read as white, and the whole change was invisible
-   unless you diffed two screenshots. Paper only reads as paper when it is clearly NOT white, so the page
-   is now a real cream and the card is pure white. The 4% gap is the point, not a side effect.
+   What changed vs the previous cream: the neutrals are LIGHTER and far less saturated. The old page was
+   0.958 at chroma 0.016 (a yellow cream, #F7F0E5); Claude's is 0.982 at chroma 0.005 — warm, but warm
+   the way paper is warm, not warm the way a tint is. Hue moved 80 -> 95/107, which is Claude's own axis.
 
-   COST of the darker page, and why the four semantic tokens below moved with it: a saturated mid-tone
-   that cleared 4.5:1 on a near-white page does NOT clear it on cream. ok/warn/alert/info/destructive each
-   lost ~0.3 and landed at 4.2-4.3:1 — as TEXT, which is what they are in badges and legends. Each was
-   lowered by the smallest step that restores 4.55:1 on BOTH the page and the card (solved numerically,
-   1.4-2.7% of L), with C and H untouched so no hue drifts. The contrast gate found all five; without it
-   this pass would have shipped five colours of unreadable status text. */
+   THE ONE DELIBERATE DEVIATION, and it is a real one: Claude ships white text on the clay button. That
+   pair measures 3.12:1 — below the 4.5:1 AA floor for text, and lib/contrast.test.ts is not negotiable
+   (AGENTS.md §Verification). Rather than darken the clay (which is what the previous theme did, and why
+   the orange never looked like Claude's), --primary is now the EXACT #D97757 and --primary-foreground is
+   Claude's own ink #141413: 5.89:1. The button is the right orange; the label is dark instead of white.
+   White-on-clay would still be legal for ICONS (3.12 clears the 3:1 non-text floor) if one is ever needed.
+
+   --accent-brand cannot take the same trick — it is LINK TEXT, so it has to clear 4.5:1 against the page
+   AND the white card. It stays on the clay hue (39) at the chroma of #C96442, dropped to the highest L
+   that clears 4.55:1 on both (solved numerically): oklch(0.527 0.1375 39). Same for the four semantic
+   tokens and --muted-foreground — hue and chroma chosen first, L solved last. */
 :root {
-  --background: oklch(0.958 0.016 82);
-  --foreground: oklch(0.23 0.014 50);
-  --card: oklch(1 0.002 90);
-  --card-foreground: oklch(0.23 0.014 50);
-  --popover: oklch(1 0.002 90);
-  --popover-foreground: oklch(0.23 0.014 50);
-  /* L lowered 0.62 -> 0.545 on 2026-07-28: at 0.62 this pair measured 3.74:1, under the 4.5:1 AA floor,
-     on every primary button in the app. C and H are untouched — same brand orange, one step darker. */
-  --primary: oklch(0.545 0.14 42);
-  --primary-foreground: oklch(0.99 0.012 80);
-  /* Fills have to sit visibly on BOTH the cream page and the white card, so they go below the page. */
-  --secondary: oklch(0.928 0.018 80);
-  --secondary-foreground: oklch(0.3 0.02 50);
-  --muted: oklch(0.928 0.018 80);
-  /* 0.53 -> 0.5: the page went from near-white to a real cream and this is the app's most common text
-     colour — every hint, meta line and axis label. One step darker keeps it clear of the 4.5:1 AA floor
-     on the cream page AND on the muted fill, which is where it actually sits. */
-  --muted-foreground: oklch(0.5 0.02 55);
-  --accent: oklch(0.912 0.028 68);
-  --accent-foreground: oklch(0.3 0.02 50);
-  --destructive: oklch(0.55 0.245 27.325);
-  /* Borders track the surfaces down: a hairline tuned for a white page disappears on a cream one. */
-  --border: oklch(0.878 0.018 78);
-  --input: oklch(0.872 0.018 78);
+  --background: oklch(0.982 0.005 95); /* #FAF9F5 */
+  --foreground: oklch(0.191 0.002 107); /* #141413 */
+  --card: oklch(1 0 90); /* #FFFFFF */
+  --card-foreground: oklch(0.191 0.002 107);
+  --popover: oklch(1 0 90);
+  --popover-foreground: oklch(0.191 0.002 107);
+  /* The exact Claude clay. See the deviation note above for why the label is ink, not white. */
+  --primary: oklch(0.672 0.131 39); /* #D97757 */
+  --primary-foreground: oklch(0.191 0.002 107);
+  --secondary: oklch(0.9485 0.011 95); /* #F0EEE6 */
+  --secondary-foreground: oklch(0.28 0.005 100);
+  --muted: oklch(0.9485 0.011 95);
+  --muted-foreground: oklch(0.512 0.008 97); /* ~#686762, Claude's secondary text one notch darker */
+  --accent: oklch(0.925 0.013 94); /* hover/selected — ivory, one step below the sidebar */
+  --accent-foreground: oklch(0.28 0.005 100);
+  --destructive: oklch(0.537 0.2 27);
+  --border: oklch(0.909 0.01 94); /* #E3E1DA */
+  --input: oklch(0.895 0.011 94);
   --ring: var(--accent-brand);
-  /* Brand accent = Claude terracotta (was vermilion 朱 0.55/0.17/35). Drives links + focus ring.
-     Must track --primary: as LINK TEXT it needs 4.5:1, and at L=0.62 it measured 3.39:1 on tinted
-     surfaces. Changing --primary without this one leaves every link failing. */
-  --accent-brand: oklch(0.545 0.14 42);
-  --ok: oklch(0.521 0.13 155); /* correct / on-track — emerald */
-  --warn: oklch(0.537 0.14 85); /* partial / behind — amber (nudged off the brand orange) */
-  --alert: oklch(0.561 0.2 20); /* wrong / lapse — rose */
-  --info: oklch(0.534 0.13 245); /* easy / mastered — blue (same L/C family as the 3 above) */
+  /* Clay again, but this one is TEXT (links, focus ring, brand icons) so L is solved for 4.5:1. */
+  --accent-brand: oklch(0.527 0.1375 39);
+  --ok: oklch(0.496 0.13 155); /* correct / on-track — emerald */
+  --warn: oklch(0.514 0.14 85); /* partial / behind — amber (nudged off the brand orange) */
+  --alert: oklch(0.538 0.2 20); /* wrong / lapse — rose */
+  --info: oklch(0.51 0.13 245); /* easy / mastered — blue (same L/C family as the 3 above) */
   --radius: 0.625rem;
-  --sidebar: oklch(0.938 0.02 80);
-  --sidebar-foreground: oklch(0.25 0.014 50);
-  --sidebar-primary: oklch(0.545 0.14 42);
-  --sidebar-primary-foreground: oklch(0.99 0.012 80);
-  --sidebar-accent: oklch(0.898 0.03 66);
-  --sidebar-accent-foreground: oklch(0.3 0.02 50);
-  --sidebar-border: oklch(0.878 0.018 78);
+  --sidebar: oklch(0.9485 0.011 95); /* #F0EEE6 */
+  --sidebar-foreground: oklch(0.24 0.003 100);
+  --sidebar-primary: oklch(0.672 0.131 39);
+  --sidebar-primary-foreground: oklch(0.191 0.002 107);
+  --sidebar-accent: oklch(0.912 0.014 94);
+  --sidebar-accent-foreground: oklch(0.28 0.005 100);
+  --sidebar-border: oklch(0.898 0.011 94);
   --sidebar-ring: var(--accent-brand);
 }
 
-/* Dark = the same three levels, stacked the other way: chrome sinks BELOW the page, cards rise above it.
-   The warm bias is kept (hue ~52) so dark mode reads as dimmed paper rather than blue-black glass. */
+/* Dark = Claude Desktop's dark surfaces, same structure: chrome sinks BELOW the page, cards rise above.
+   The clay is IDENTICAL in both themes (#D97757) — Claude does not lighten its brand colour for dark
+   mode, and it does not need to: the ink label rides along, so the button reads the same either way. */
 .dark {
-  --background: oklch(0.168 0.009 52);
-  --foreground: oklch(0.955 0.006 75);
-  --card: oklch(0.228 0.013 52);
-  --card-foreground: oklch(0.955 0.006 75);
-  --popover: oklch(0.248 0.014 52);
-  --popover-foreground: oklch(0.955 0.006 75);
-  --primary: oklch(0.7 0.13 45);
-  --primary-foreground: oklch(0.2 0.03 45);
-  --secondary: oklch(0.272 0.012 52);
-  --secondary-foreground: oklch(0.955 0.006 75);
-  --muted: oklch(0.272 0.012 52);
-  --muted-foreground: oklch(0.72 0.02 62);
-  --accent: oklch(0.305 0.019 52);
-  --accent-foreground: oklch(0.955 0.006 75);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 9%);
-  --input: oklch(1 0 0 / 14%);
+  --background: oklch(0.268 0.004 107); /* #262624 */
+  --foreground: oklch(0.982 0.005 95); /* #FAF9F5 */
+  --card: oklch(0.309 0.004 107); /* #30302E */
+  --card-foreground: oklch(0.982 0.005 95);
+  --popover: oklch(0.348 0.003 107); /* #3A3A38 */
+  --popover-foreground: oklch(0.982 0.005 95);
+  --primary: oklch(0.672 0.131 39);
+  --primary-foreground: oklch(0.191 0.002 107);
+  --secondary: oklch(0.325 0.004 107); /* #333331 */
+  --secondary-foreground: oklch(0.982 0.005 95);
+  --muted: oklch(0.325 0.004 107);
+  --muted-foreground: oklch(0.718 0.008 97); /* ~#A5A49E */
+  --accent: oklch(0.347 0.004 107); /* #3A3A38 — hover sits one step ABOVE the fills */
+  --accent-foreground: oklch(0.982 0.005 95);
+  --destructive: oklch(0.774 0.19 22);
+  --border: oklch(0.36 0.004 107);
+  --input: oklch(0.4 0.004 107);
   --ring: var(--accent-brand);
-  --accent-brand: oklch(0.72 0.13 45);
-  --ok: oklch(0.72 0.14 155);
-  --warn: oklch(0.8 0.13 88);
-  --alert: oklch(0.71 0.18 20);
-  --info: oklch(0.72 0.13 245);
-  --sidebar: oklch(0.132 0.008 52);
-  --sidebar-foreground: oklch(0.93 0.006 75);
-  --sidebar-primary: oklch(0.7 0.13 45);
-  --sidebar-primary-foreground: oklch(0.2 0.03 45);
-  --sidebar-accent: oklch(0.28 0.019 52);
-  --sidebar-accent-foreground: oklch(0.955 0.006 75);
-  --sidebar-border: oklch(1 0 0 / 8%);
+  --accent-brand: oklch(0.731 0.13 42);
+  --ok: oklch(0.702 0.14 155);
+  --warn: oklch(0.72 0.13 88);
+  --alert: oklch(0.761 0.18 20);
+  --info: oklch(0.715 0.13 245);
+  --sidebar: oklch(0.236 0.002 68); /* #1F1E1D */
+  --sidebar-foreground: oklch(0.95 0.005 95);
+  --sidebar-primary: oklch(0.672 0.131 39);
+  --sidebar-primary-foreground: oklch(0.191 0.002 107);
+  --sidebar-accent: oklch(0.315 0.004 107);
+  --sidebar-accent-foreground: oklch(0.982 0.005 95);
+  --sidebar-border: oklch(0.32 0.003 107);
   --sidebar-ring: var(--accent-brand);
 }
 

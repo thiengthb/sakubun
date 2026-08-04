@@ -99,9 +99,28 @@ describe('guide deep-link targets', () => {
     ).toEqual([]);
   });
 
-  it('every tab id is a real TabsTrigger', () => {
-    const missing = GUIDE_TABS.filter((id) => !guidePage.includes(`<TabsTrigger value="${id}">`));
-    expect(missing, `Tab ids with no trigger: ${missing.join(', ')}`).toEqual([]);
+  // The tab CONTROL moved out of app/guide/page.tsx into `GuideTabSelect` on 2026-08-05 (the page was
+  // hand-rolling a TabsList instead of using the app's TabSelect, which overflowed a 390px phone). Both
+  // halves still have to exist for a `?tab=` deep link to work, so check both, in their own files:
+  // the id must be SWITCHABLE TO (an item in the select/list) and must have somewhere to switch TO.
+  const guideTabsFile = readFileSync('components/guide/guide-tabs.tsx', 'utf8');
+  const guideFeatures = readFileSync('components/guide/guide-features.tsx', 'utf8');
+
+  it('every tab id is offered by the tab control', () => {
+    const missing = GUIDE_TABS.filter((id) => !guideTabsFile.includes(`value: '${id}'`));
+    expect(
+      missing,
+      `Tab ids missing from GUIDE_TAB_ITEMS in guide-tabs.tsx: ${missing.join(', ')}`,
+    ).toEqual([]);
+  });
+
+  it('every tab id has a TabsContent panel', () => {
+    const missing = GUIDE_TABS.filter(
+      (id) =>
+        !guidePage.includes(`<TabsContent value="${id}"`) &&
+        !guideFeatures.includes(`<TabsContent value="${id}"`),
+    );
+    expect(missing, `Tab ids with no panel: ${missing.join(', ')}`).toEqual([]);
   });
 
   it('isGuideRecipeId narrows only real recipes', () => {

@@ -1,6 +1,10 @@
 import { type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
-import { AppBreadcrumbs, type BreadcrumbSection } from '@/components/shell/app-breadcrumbs';
+import {
+  AppBreadcrumbs,
+  type BreadcrumbAction,
+  type BreadcrumbSection,
+} from '@/components/shell/app-breadcrumbs';
 import { MobileTopBar } from '@/components/shell/mobile-top-bar';
 import { ScrollRestorer } from '@/components/shell/scroll-restorer';
 
@@ -35,6 +39,8 @@ interface PageShellProps {
   children: ReactNode;
   /** Auto-render the breadcrumb trail for this section at the top of the page. */
   section?: BreadcrumbSection;
+  /** With `section`, appends an action crumb: "Ngữ pháp › Thêm" on /resources/new, "› Sửa" on the edit route. */
+  action?: BreadcrumbAction;
   /** Custom breadcrumb node (overrides `section`) — for a detail trail. */
   breadcrumb?: ReactNode;
   /** Rendered on the breadcrumb row, to its right — a `<TabsList>` and/or a page action button. */
@@ -47,12 +53,14 @@ interface PageShellProps {
 export function PageShell({
   children,
   section,
+  action,
   breadcrumb,
   headerAside,
   width = 'full',
   className,
 }: PageShellProps) {
-  const crumb = breadcrumb ?? (section ? <AppBreadcrumbs section={section} /> : null);
+  const crumb =
+    breadcrumb ?? (section ? <AppBreadcrumbs section={section} action={action} /> : null);
   return (
     // `text-sm` is the app's BODY BASELINE (type-scale invariant): page content inherits 14px, so a
     // bare content block never renders larger than a heading. Headings opt UP (CardTitle = text-base,
@@ -75,18 +83,29 @@ export function PageShell({
               icon + sidebar button + a short crumb, and a tab control butted against that reads as a
               fourth item in a cramped cluster; pinned right it is clearly its own control, and it is
               also where the thumb is. */}
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+      {/* Below md the row is `flex-nowrap`: the aside is REQUIRED to stay beside the crumb (that is the
+          whole ask — tabs pinned right, on the breadcrumb's row), so wrapping is not an acceptable
+          fallback. Both children get `min-w-0` and the shrink lands on the tab pill's own `truncate`,
+          which is the only part of the row that degrades gracefully. From md the row has width to
+          spare and goes back to wrapping. */}
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 max-md:flex-nowrap max-md:gap-x-2">
         {/* Mobile only (md:hidden): app icon + open-sidebar button + a divider, since the sidebar's
             own brand/toggle are off-screen once it collapses to the off-canvas Sheet. */}
         <MobileTopBar />
-        {crumb}
+        {/* `shrink-0` below md: when the row runs out of width the crumb must NOT be the thing that
+            gives — it is the page's identity, and squeezing it just wraps "Ngữ pháp › Thêm" onto two
+            lines inside its own nav. The give belongs to the tab pill, which truncates. */}
+        {crumb && <div className="flex min-w-0 max-md:shrink-0">{crumb}</div>}
         {headerAside && (
           // `md:flex-1` matters: some pages pass tabs AND a right-aligned action (the Settings Save
           // button carries its own `ml-auto`). Letting the wrapper fill the rest of the row on desktop
           // keeps the tabs at its left edge — beside the crumb — while that inner `ml-auto` can still
           // push the action to the far right. Without it the wrapper hugs its content and the action
           // lands glued to the tabs.
-          <div className="ml-auto flex flex-wrap items-center gap-2 md:ml-0 md:flex-1">
+          // `max-md:flex-nowrap` for the same reason as the row itself: /guide puts a tab select AND a
+          // hint button in here, and on a phone they wrapped against each other (a 72px header row)
+          // even while the outer row had space.
+          <div className="ml-auto flex min-w-0 flex-wrap items-center gap-2 max-md:flex-nowrap md:ml-0 md:flex-1">
             {headerAside}
           </div>
         )}

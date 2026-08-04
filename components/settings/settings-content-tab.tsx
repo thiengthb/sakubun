@@ -82,12 +82,13 @@ const FURIGANA_MODE_LABELS: Record<FuriganaMode, string> = {
  * allowed to be automatic — there is deliberately no flag for anything that overwrites a card or
  * touches the review schedule.
  */
+// `autoCapture.fork` is NOT here on purpose (2026-08-05). It pre-authorised "lấy về mẫu người khác đã
+// chia sẻ", and the shared library was cut with the multi-user surface on 2026-08-03 — `lib/lookup.ts`
+// now returns `shared: []` unconditionally, so the switch could never fire. A live control for a
+// capability that no longer exists is worse than a missing one: the learner turns it on and concludes
+// the app is broken when nothing happens. The FIELD stays in `settings-schema.ts` (a JSON backup taken
+// before the cut still carries it, and `lib/import.ts` must keep parsing those) — only the UI is gone.
 const AUTO_CAPTURE_FLAGS = [
-  {
-    key: 'fork' as const,
-    label: 'Lấy về mẫu/từ đã có trong thư viện chung',
-    hint: 'Khi bạn hỏi về một mẫu người khác đã chia sẻ — bỏ đi lúc nào cũng được.',
-  },
   {
     key: 'vocab' as const,
     label: 'Thêm từ bạn vừa hỏi vào kho ôn',

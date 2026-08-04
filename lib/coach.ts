@@ -381,7 +381,7 @@ export function coach(input: CoachInput): CoachResult {
         code: 'ADD_MISSING',
         class: 'enable',
         priority: 74,
-        line: `「${input.query}」 chưa có trong kho của bạn và cũng chưa ai chia sẻ — thêm vào để học chứ?`,
+        line: `「${input.query}」 chưa có trong kho của bạn — thêm vào để học chứ?`,
         tool: 'add_grammar',
         args: { items: [{ expression: input.query }] },
       });

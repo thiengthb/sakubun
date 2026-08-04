@@ -2,8 +2,18 @@
 
 import { useEffect, useRef, type ReactNode } from 'react';
 import { Tabs } from '@/components/ui/tabs';
+import { TabSelect } from '@/components/shared/tab-select';
 import { useSessionState } from '@/components/shared/use-session-state';
 import { isGuideRecipeId, isGuideTabId } from '@/components/guide/guide-topic-meta';
+
+const GUIDE_TAB_ITEMS = [
+  { value: 'start', label: 'Bắt đầu' },
+  { value: 'features', label: 'Tính năng' },
+  { value: 'howto', label: 'Theo việc' },
+  { value: 'reference', label: 'Tra cứu' },
+] as const;
+
+const TAB_KEY = 'guide.tab';
 
 /**
  * Client wrapper so the server-rendered `/guide` page can PERSIST its active tab across navigation +
@@ -19,8 +29,28 @@ import { isGuideRecipeId, isGuideTabId } from '@/components/guide/guide-topic-me
  *   - `?recipe=<id>` scrolls that how-to recipe into view (anchors live in `app/guide/page.tsx`).
  * Runs once per mount (a ref, not state), so switching tabs by hand afterwards is never overridden.
  */
+/**
+ * The /guide tab switcher, for `PageShell`'s `headerAside`.
+ *
+ * Separate from `GuideTabs` because the page is a Server Component: the provider wraps the whole shell,
+ * but the CONTROL has to be constructed down inside `headerAside`. It shares state with the provider by
+ * reading the same `useSessionState` key — that hook is a real external store (module-level
+ * subscribe/emit), so both components see one value and neither owns it.
+ *
+ * Until 2026-08-05 this page hand-rolled a `<TabsList>` with four triggers instead of using `TabSelect`
+ * — the one page in the app that did. At 390px those four Vietnamese labels are 307px of unbreakable
+ * tab bar, which is exactly the problem `TabSelect` exists to solve (a select costs the width of the
+ * ACTIVE label, not the sum of all four).
+ */
+export function GuideTabSelect() {
+  const [tab, setTab] = useSessionState(TAB_KEY, 'start', 'tab');
+  return (
+    <TabSelect items={GUIDE_TAB_ITEMS} value={tab} onValueChange={setTab} label="Chọn phần" />
+  );
+}
+
 export function GuideTabs({ children }: { children: ReactNode }) {
-  const [tab, setTab] = useSessionState('guide.tab', 'start', 'tab');
+  const [tab, setTab] = useSessionState(TAB_KEY, 'start', 'tab');
 
   const applied = useRef(false);
   useEffect(() => {

@@ -9,6 +9,8 @@ import {
   LayoutDashboard,
   Languages,
   Library,
+  Pencil,
+  Plus,
   Settings,
 } from 'lucide-react';
 import { Breadcrumbs, type Crumb } from '@/components/shell/breadcrumbs';
@@ -73,7 +75,25 @@ const CRUMBS = {
   },
 } satisfies Record<string, Crumb>;
 
+// The two ACTION pages under a resource store: /resources/new and /resources/<id>/edit. They are not
+// sections (no href of their own to link back to) — they are the last crumb of a two-step trail,
+// "Ngữ pháp › Thêm" / "Từ vựng › Sửa", which is what those pages read as. Kept next to CRUMBS so the
+// icon components stay on this side of the server→client boundary: a page passes the STRING 'add'.
+const ACTION_CRUMBS = {
+  add: {
+    label: 'Thêm',
+    icon: Plus,
+    description: 'Thêm mục mới — theo trường, dán danh sách, hoặc file Excel.',
+  },
+  edit: {
+    label: 'Sửa',
+    icon: Pencil,
+    description: 'Sửa nội dung mục. Lịch ôn (FSRS) được giữ nguyên.',
+  },
+} satisfies Record<string, Crumb>;
+
 export type BreadcrumbSection = keyof typeof CRUMBS;
+export type BreadcrumbAction = keyof typeof ACTION_CRUMBS;
 
 /**
  * Renders the breadcrumb trail for a page. Simple pages pass a `section`; the resource-item detail
@@ -82,6 +102,7 @@ export type BreadcrumbSection = keyof typeof CRUMBS;
 export function AppBreadcrumbs({
   section,
   detail,
+  action,
   className,
 }: {
   section: BreadcrumbSection;
@@ -89,6 +110,8 @@ export function AppBreadcrumbs({
   // set when study groups came back (2026-08-05) — a group's detail page nests under the same
   // /resources parent as an item's does.
   detail?: { kind: 'grammar' | 'vocab' | 'groups'; label: string; description?: string };
+  /** Two-crumb ACTION trail under a section: "Ngữ pháp › Thêm" / "Từ vựng › Sửa". Ignored with `detail`. */
+  action?: BreadcrumbAction;
   className?: string;
 }) {
   const items: Crumb[] = detail
@@ -104,7 +127,9 @@ export function AppBreadcrumbs({
           description: detail.description ?? `Chi tiết: ${detail.label}`,
         },
       ]
-    : [CRUMBS[section]];
+    : action
+      ? [CRUMBS[section], ACTION_CRUMBS[action]]
+      : [CRUMBS[section]];
 
   return <Breadcrumbs items={items} className={className} />;
 }

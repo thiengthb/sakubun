@@ -19,13 +19,7 @@ export const MCP_CATALOG: CatalogEntry[] = [
     name: 'check_library',
     kind: 'tool',
     summary:
-      'Tra một mẫu/từ trong CẢ kho của bạn lẫn thư viện chung trong MỘT lần gọi — trả về trạng thái ôn, chất lượng thẻ, ai đã chia sẻ, kèm đề xuất việc cần làm (thêm/lấy về/soạn thẻ/bật lại/mở rộng cấp). Claude tự gọi trước khi giảng bất cứ mẫu nào',
-  },
-  {
-    name: 'fork_shared_items',
-    kind: 'tool',
-    summary:
-      'Lấy về bản sao mẫu/từ người khác đã chia sẻ (chỉ nội dung + thẻ, lịch ôn mới hoàn toàn; mục đã có thì bỏ qua)',
+      'Tra một mẫu/từ trong kho của bạn trong MỘT lần gọi — trả về trạng thái ôn, chất lượng thẻ, kèm đề xuất việc cần làm (thêm/soạn thẻ/bật lại/mở rộng cấp). Claude tự gọi trước khi giảng bất cứ mẫu nào',
   },
   { name: 'get_settings', kind: 'tool', summary: 'Đọc toàn bộ cài đặt luyện tập hiện tại' },
   {

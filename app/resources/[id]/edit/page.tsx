@@ -24,12 +24,12 @@ export default async function ItemEditPage({ params }: { params: Promise<{ id: s
 
   return (
     // `form` width: a five-field content form reads at reading width, not across a 1280px page — the
-    // same tier /resources/new uses.
-    <PageShell section={stats.kind === 'vocab' ? 'vocab' : 'grammar'} width="form">
-      <h1 className="text-base font-semibold">
-        Sửa {stats.kind === 'grammar' ? 'mẫu ngữ pháp' : 'từ vựng'}
-      </h1>
-      <p className="text-sm text-muted-foreground">
+    // same tier /resources/new uses. The trail is "Ngữ pháp › Sửa" / "Từ vựng › Sửa"; there is no <h1>
+    // because the breadcrumb IS the page title (layout std invariant #8) and on a phone a heading that
+    // repeats the crumb one line below it costs a row of viewport to say nothing new. The item being
+    // edited is named by the first field, which is directly under the hint.
+    <PageShell section={stats.kind === 'vocab' ? 'vocab' : 'grammar'} action="edit" width="form">
+      <p className="text-muted-foreground">
         Chỉ sửa nội dung. Lịch ôn (FSRS) của mục được giữ nguyên.
       </p>
       <ItemEditForm

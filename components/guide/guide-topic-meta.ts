@@ -13,7 +13,13 @@
  * (synonyms, the English/technical token, the screen name) — they are searched, never displayed.
  */
 
-export type GuideTopicGroupId = 'practice' | 'store' | 'community';
+// 2026-08-05: the third group was 'community' and held four topics — Thư viện chung, Feed cộng đồng,
+// Nghe & nói, Furigana, Giao diện. The multi-user surface was cut on 2026-08-03 (registration closes
+// after the first account; there is no shared library, no feed, no notification bell), so the two
+// community topics are gone and what remains is the sensory/UI cluster. Renamed rather than folded
+// into 'store': "how the app sounds and feels" is a different question from "what is in my library",
+// and merging them would bury furigana + audio under a wall of library management.
+export type GuideTopicGroupId = 'practice' | 'store' | 'experience';
 
 export interface GuideTopicGroup {
   id: GuideTopicGroupId;
@@ -31,9 +37,9 @@ export const GUIDE_TOPIC_GROUPS: readonly GuideTopicGroup[] = [
     hint: 'Quản lý mẫu/từ của bạn và xem mình đang tới đâu.',
   },
   {
-    id: 'community',
-    label: 'Cộng đồng & trải nghiệm',
-    hint: 'Chia sẻ với thành viên khác, nghe/nhìn và tiện ích giao diện.',
+    id: 'experience',
+    label: 'Nghe, nhìn & trải nghiệm',
+    hint: 'Phát âm, furigana và các tiện ích giao diện.',
   },
 ];
 
@@ -72,17 +78,8 @@ export const GUIDE_TOPIC_META = [
     group: 'practice',
     title: 'Hỏi Claude bất cứ mẫu nào — nó tự tra kho và đề nghị việc cần làm',
     summary:
-      'Không cần mở app: Claude tra cả kho của bạn lẫn thư viện chung, rồi đề nghị lấy về / thêm / soạn thẻ / bật lại — bạn chỉ cần đồng ý.',
-    keywords: [
-      'hỏi',
-      'tra cứu',
-      'check_library',
-      'đề xuất',
-      'lấy về',
-      'fork',
-      'thẻ thiếu',
-      'gia sư',
-    ],
+      'Không cần mở app: Claude tra kho của bạn trước khi giảng, rồi đề nghị thêm / soạn thẻ / bổ sung / bật lại — bạn chỉ cần đồng ý.',
+    keywords: ['hỏi', 'tra cứu', 'check_library', 'đề xuất', 'thẻ thiếu', 'gia sư'],
     addedOn: '2026-07-27',
   },
   {
@@ -211,7 +208,6 @@ export const GUIDE_TOPIC_META = [
       'patch_enrichment',
       'không ghi đè',
       'thẻ dày lên',
-      'lấy thẻ của người khác',
     ],
     addedOn: '2026-07-27',
   },
@@ -241,24 +237,6 @@ export const GUIDE_TOPIC_META = [
     addedOn: '2026-07-27',
   },
   {
-    id: 'notifications',
-    group: 'store',
-    title: 'Thông báo — chuyện gì đã xảy ra khi bạn không nhìn màn hình',
-    summary:
-      'Chuông ở góc phải mỗi trang gom lại mọi việc xảy ra ngoài tầm mắt: Claude thêm/sửa/xoá mục trong kho, bài được chấm xong, và ai đó lấy/thích/bình luận thứ bạn chia sẻ. Bấm một dòng là đi thẳng tới chỗ đó.',
-    keywords: [
-      'thông báo',
-      'notification',
-      'chuông',
-      'bell',
-      'chưa đọc',
-      'đánh dấu đã đọc',
-      'sự kiện',
-      'hoạt động',
-    ],
-    addedOn: '2026-07-28',
-  },
-  {
     id: 'library',
     group: 'store',
     title: 'Quản lý kho học của bạn',
@@ -285,9 +263,12 @@ export const GUIDE_TOPIC_META = [
     group: 'store',
     title: 'Nhóm học (gom mẫu/từ để luyện tập trung)',
     summary:
-      'Gom mẫu ngữ pháp và/hoặc từ vựng thành nhóm có tên, rồi luyện đúng một nhóm — nói “luyện nhóm X” với Claude.',
+      'Gom mẫu ngữ pháp và/hoặc từ vựng thành nhóm có tên ở Tài nguyên → tab Nhóm, rồi luyện đúng một nhóm — nói “luyện nhóm X” với Claude.',
     keywords: ['nhóm', 'group', 'gom mẫu', 'luyện nhóm', 'flashcard'],
-    addedOn: '2026-07-21',
+    // Was 2026-07-21. Re-dated to the day groups came BACK: they went out with the multi-user cut on
+    // 2026-08-03 and returned single-user on 2026-08-05, so for the learner this is new again — and
+    // "Mới cập nhật" is exactly the line that answers "what changed since I last read this?".
+    addedOn: '2026-08-05',
   },
   {
     id: 'star',
@@ -352,26 +333,8 @@ export const GUIDE_TOPIC_META = [
     addedOn: '2026-07-21',
   },
   {
-    id: 'sharing',
-    group: 'community',
-    title: 'Thư viện chung (chia sẻ & lấy về mẫu/từ)',
-    summary:
-      'Chia sẻ mẫu ngữ pháp / từ vựng của bạn cho người khác, và lấy về những mục người khác chia sẻ — chỉ nội dung, không đụng lịch ôn.',
-    keywords: ['thư viện', 'chia sẻ', 'lấy về', 'fork', 'công khai', 'thích', 'tim'],
-    addedOn: '2026-07-22',
-  },
-  {
-    id: 'feed',
-    group: 'community',
-    title: 'Feed cộng đồng (chia sẻ lượt dịch & góp ý)',
-    summary:
-      'Chia sẻ một lượt dịch đã chấm cho thành viên khác xem và bình luận — ở tab «Cộng đồng» của trang Lịch sử.',
-    keywords: ['cộng đồng', 'feed', 'bình luận', 'góp ý', 'chia sẻ lượt dịch', 'bình chọn'],
-    addedOn: '2026-07-22',
-  },
-  {
     id: 'sensory',
-    group: 'community',
+    group: 'experience',
     title: 'Nghe & nói (luyện đa giác quan)',
     summary:
       'Ra đề / trả lời bằng giọng qua voice mode của Claude Desktop; app có nút phát âm tham khảo ở mọi câu tiếng Nhật.',
@@ -380,7 +343,7 @@ export const GUIDE_TOPIC_META = [
   },
   {
     id: 'furigana',
-    group: 'community',
+    group: 'experience',
     title: 'Furigana (cách đọc kana)',
     summary:
       '4 chế độ hiển thị (app / Claude / cả hai / tắt); trong app rê chuột để hiện, kèm hiệu ứng karaoke khi phát âm.',
@@ -389,7 +352,7 @@ export const GUIDE_TOPIC_META = [
   },
   {
     id: 'quality',
-    group: 'community',
+    group: 'experience',
     title: 'Giao diện & tiện ích',
     summary:
       'Chế độ sáng/tối, các trang tự làm mới khi Claude ghi dữ liệu, và dải điều hướng ở rìa trái trên màn hình nhỏ.',
@@ -452,8 +415,6 @@ export const GUIDE_RECIPES = [
   'paste-material',
   'tidy-library',
   'groups',
-  'share-items',
-  'share-turn',
   'settings',
   'modes',
   'mcp',

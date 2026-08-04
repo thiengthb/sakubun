@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
-import { PageShell } from '@/components/shell/page-shell';
-import { ResourceAddForm } from '@/components/resources/resource-add-form';
+import { ResourceAddPage } from '@/components/resources/resource-add-page';
 import { getSessionUserId } from '@/lib/current-user';
 
 export const metadata: Metadata = { title: 'Thêm vào kho — sakubun' };
@@ -13,7 +12,7 @@ export const dynamic = 'force-dynamic';
  * grammar rather than 404-ing — the only two callers are the two buttons on /resources, so a bad value
  * means a hand-typed URL, and landing on the grammar form is a better answer than an error page.
  */
-export default async function ResourceAddPage({
+export default async function ResourceAddRoute({
   searchParams,
 }: {
   searchParams: Promise<{ kind?: string }>;
@@ -22,9 +21,5 @@ export default async function ResourceAddPage({
   await getSessionUserId();
   const { kind } = await searchParams;
 
-  return (
-    <PageShell section={kind === 'vocab' ? 'vocab' : 'grammar'}>
-      <ResourceAddForm kind={kind === 'vocab' ? 'vocab' : 'grammar'} />
-    </PageShell>
-  );
+  return <ResourceAddPage kind={kind === 'vocab' ? 'vocab' : 'grammar'} />;
 }

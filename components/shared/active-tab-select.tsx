@@ -53,12 +53,18 @@ export function ActiveTabSelect({
         // instead of stretching across the row. border-transparent overrides the field border the
         // base trigger carries — a tab rail has no outline.
         className={cn(
-          'h-8 w-auto gap-1 rounded-lg border-transparent bg-muted p-[3px] pr-1.5 hover:bg-muted dark:bg-muted dark:hover:bg-muted',
+          'h-8 w-auto min-w-0 gap-1 rounded-lg border-transparent bg-muted p-[3px] pr-1.5 hover:bg-muted dark:bg-muted dark:hover:bg-muted',
           className,
         )}
       >
-        <span className="flex items-center rounded-md bg-primary px-2.5 py-0.5 text-sm font-medium text-primary-foreground">
-          <SelectValue />
+        {/* The pill is capped and truncates. It shares the header row with the breadcrumb, and a long
+            tab name ("Dán danh sách") pushed the whole control onto a second line at 360px — which is
+            the one thing this control exists to avoid. Capped, it costs a known width whatever the tab
+            is called, and the full names are one tap away in the list below. */}
+        <span className="flex min-w-0 items-center rounded-md bg-primary px-2.5 py-0.5 text-sm font-medium text-primary-foreground">
+          <span className="max-w-[8.5rem] truncate">
+            <SelectValue />
+          </span>
         </span>
       </SelectTrigger>
       {/* align="start" so the list opens under the pill's left edge — the pill is the anchor the eye

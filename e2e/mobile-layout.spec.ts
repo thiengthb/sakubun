@@ -83,6 +83,11 @@ test.beforeAll(async () => {
       return;
     }
 
+    // Re-runnable: a failing test restarts the worker, which runs this hook AGAIN against a DB that
+    // already has the rows — and `Item` is unique on [kind, expression], so the retry died with a
+    // SqliteError that buried the ACTUAL failure. Clear first; the hook then always describes the DB.
+    for (const t of ['ReviewLog', 'SrsState', 'Sentence', 'Item']) db.exec(`DELETE FROM "${t}"`);
+
     const item = db.prepare(
       `INSERT INTO Item (id, kind, expression, reading, hanviet, meaningVi, level, notes, source,
                          captureReason, suspended, starred, createdAt, challengeObservations)
@@ -135,7 +140,64 @@ const PAGES: [string, string][] = [
   ['settings', '/settings'],
   ['guide', '/guide'],
   ['resources/new', '/resources/new?kind=grammar'],
+  ['resources/new (vocab)', '/resources/new?kind=vocab'],
+  // The edit route, on a seeded grammar id. Both form routes now render their tab switcher / breadcrumb
+  // action crumb in the PageShell header row, which is the row this spec measures.
+  ['resources/edit', '/resources/g0/edit'],
 ];
+
+/**
+ * The header row (breadcrumb + the page's tab control) must stay ONE line on a phone.
+ *
+ * It is a layout invariant, not a nicety: the standard is "where I am · what I can switch" on a single
+ * row, and when it wraps the tab control drops onto its own line and reads as page content. The overflow
+ * test above cannot see this — a wrapped row is perfectly inside the viewport.
+ *
+ * 360px, not 390: /resources/new is the tightest case in the app (a two-crumb trail "Ngữ pháp › Thêm"
+ * PLUS a three-option tab select) and it fit at 390 while wrapping at 360.
+ */
+test('the header row stays one line at 360px', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 800 });
+  await page.goto('/login');
+  await page.getByLabel('Email').fill(E2E_EMAIL);
+  await page.getByLabel('Mật khẩu').fill(E2E_LOGIN);
+  await page.getByRole('button', { name: 'Đăng nhập' }).click();
+  await page.waitForURL((u) => !u.pathname.startsWith('/login'), { timeout: 30_000 });
+
+  // Every page that puts something in PageShell's `headerAside`, plus the longest tab label on the
+  // add form — the label is what pushes the row over, so measuring only the default tab proves little.
+  const CASES: [string, string, string | null][] = [
+    ['dashboard', '/', null],
+    ['resources', '/resources', null],
+    ['history', '/history', null],
+    ['settings', '/settings', null],
+    ['guide', '/guide', null],
+    ['new (grammar)', '/resources/new?kind=grammar', 'Dán danh sách'],
+    ['new (vocab)', '/resources/new?kind=vocab', 'Dán danh sách'],
+  ];
+
+  const wrapped: string[] = [];
+  for (const [name, url, tab] of CASES) {
+    await page.goto(url, { waitUntil: 'networkidle' });
+    if (tab) {
+      await page.getByRole('combobox', { name: 'Cách nhập' }).click();
+      await page.getByRole('option', { name: tab }).click();
+      await page.waitForTimeout(300);
+    }
+    const row = await page.evaluate(() => {
+      const nav = document.querySelector('nav[aria-label="Breadcrumb"]');
+      const box = nav?.closest('div.flex.flex-wrap.items-center') as HTMLElement | null;
+      return box ? Math.round(box.getBoundingClientRect().height) : 0;
+    });
+    // One line is the h-8 (32px) tab control. Two lines land at 44px+ (a wrapped crumb) or 64px+.
+    if (row > 40) wrapped.push(`${name}${tab ? ` [${tab}]` : ''}: header row is ${row}px tall`);
+  }
+
+  expect(
+    wrapped,
+    `the breadcrumb row wrapped at 360px — the tab control fell off the crumb's row:\n${wrapped.join('\n')}`,
+  ).toEqual([]);
+});
 
 test('every page renders clean and fits a 390px viewport', async ({ page }) => {
   await page.setViewportSize(VIEWPORT);

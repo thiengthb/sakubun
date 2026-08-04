@@ -10,7 +10,12 @@ import { RefHeading } from '@/components/guide/guide-reference';
 
 /**
  * The /guide "Tính năng" tab — a reference for what the app LETS THE LEARNER DO, grouped by
- * `GUIDE_TOPIC_GROUPS` (Luyện tập → Kho học & theo dõi → Cộng đồng & trải nghiệm) and searchable.
+ * `GUIDE_TOPIC_GROUPS` (Luyện tập → Kho học & theo dõi → Nghe, nhìn & trải nghiệm) and searchable.
+ *
+ * A tour describes what SHIPS. When a capability is cut, its body comes out of here in the same commit
+ * — a guide that advertises a screen the learner cannot find is worse than no guide, because it reads
+ * as "I am too stupid to find it". 2026-08-05: Thư viện chung, Feed cộng đồng and Thông báo went out
+ * with the multi-user surface (2026-08-03) and their entries are gone.
  *
  * This file holds ONLY the topic BODIES, and it is a SERVER component on purpose: the bodies are the bulk
  * of the guide's copy, so keeping them here costs zero client JS. Everything interactive (the search box,
@@ -129,17 +134,14 @@ export function GuideFeaturesTab() {
           <p>
             Cứ <strong>hỏi Claude bất cứ mẫu hay từ nào</strong> — không cần mở app, không cần biết
             tool nào tên gì, không cần đang trong buổi luyện. Trước khi giảng, Claude{' '}
-            <strong>tự tra cả hai nơi</strong>: kho của bạn và thư viện chung.
+            <strong>tự tra kho của bạn</strong> để biết bạn đang đứng ở đâu với mẫu đó.
           </p>
           <p>
             Rồi nó nói thẳng bạn đang thiếu gì, và <strong>đề nghị làm hộ</strong>:
           </p>
           <ul className="list-disc space-y-1 pl-5">
             <li>
-              Chưa có trong kho, nhưng người khác đã chia sẻ → <strong>lấy về</strong> giúp bạn.
-            </li>
-            <li>
-              Chưa ai có → <strong>thêm vào</strong> kho để học.
+              Chưa có trong kho → <strong>thêm vào</strong> để học.
             </li>
             <li>
               Có rồi nhưng <strong>chưa có thẻ</strong>, thẻ <strong>còn thiếu</strong>, thẻ{' '}
@@ -155,8 +157,8 @@ export function GuideFeaturesTab() {
           <p>
             Ngại bị hỏi đi hỏi lại? Trong <em>Cài đặt → Nội dung</em> có ô{' '}
             <strong>“Cho Claude tự làm giúp”</strong> — mặc định <strong>tắt hết</strong>. Bật một
-            mục là bạn <strong>cho phép trước</strong> đúng loại việc đó (lấy về mẫu đã chia sẻ ·
-            thêm từ bạn vừa hỏi · bổ sung phần thiếu vào thẻ): Claude làm luôn rồi báo lại một dòng.
+            mục là bạn <strong>cho phép trước</strong> đúng loại việc đó (thêm từ bạn vừa hỏi · bổ
+            sung phần thiếu vào thẻ): Claude làm luôn rồi báo lại một dòng.
             Chỉ những việc <strong>thêm vào và huỷ được</strong> mới có mặt ở đó — không có mục nào
             cho việc ghi đè hay đụng vào lịch ôn.
           </p>
@@ -289,9 +291,8 @@ export function GuideFeaturesTab() {
           </p>
           <p>
             Giờ Claude phải <strong>khai báo</strong> những mẫu nó dùng ngoài lô. sakubun đối chiếu
-            với kho của bạn và trả lời từng mẫu: <strong>đã có</strong> (không cần làm gì),{' '}
-            <strong>người khác đã chia sẻ</strong> (mời bạn lấy một bản), hay{' '}
-            <strong>hoàn toàn mới với bạn</strong> — trường hợp cuối Claude phải giảng một câu ngay
+            với kho của bạn và trả lời từng mẫu: <strong>đã có</strong> (không cần làm gì) hay{' '}
+            <strong>hoàn toàn mới với bạn</strong> — trường hợp sau Claude phải giảng một câu ngay
             trong lượt đó và hỏi có thêm vào kho không. Bạn không phải hỏi mới được giải thích.
           </p>
           <p>
@@ -352,11 +353,6 @@ export function GuideFeaturesTab() {
             lặng. Nếu thẻ đang <strong>nói sai</strong> so với điều Claude biết, nó cũng nói ra và
             xin phép sửa lại — thẻ tự chữa được, không đóng băng theo một lần soạn hỏng.
           </p>
-          <p>
-            Và nếu <strong>người khác đã chia sẻ một thẻ đầy hơn thẻ của bạn</strong>, Claude đề
-            nghị <strong>lấy đúng phần bạn thiếu</strong> về — cách dùng và ví dụ chính bạn tự viết
-            vẫn giữ, không bị thay bằng của người ta.
-          </p>
         </GuideTopicItem>
 
         <GuideTopicItem id="mistake-mining">
@@ -413,35 +409,18 @@ export function GuideFeaturesTab() {
           </p>
         </GuideTopicItem>
 
-        <GuideTopicItem id="notifications">
-          <p>
-            Phần lớn việc trong sakubun xảy ra <strong>khi bạn không nhìn màn hình</strong>: Claude
-            thêm mẫu, sửa thẻ, chấm bài qua MCP trong lúc bạn ở cửa sổ khác; và nếu bạn có chia sẻ
-            câu lên cộng đồng thì người khác có thể lấy, thích hoặc bình luận bất cứ lúc nào. Chuông
-            ở <strong>góc phải của mỗi trang</strong> gom tất cả lại một chỗ, kèm số chưa đọc.
-          </p>
-          <p>
-            Bấm một dòng là <strong>đi thẳng tới chỗ đó</strong>. Riêng dòng “Claude đã chấm xong
-            một câu” sẽ mở luôn <em>Lịch sử</em> với đúng bài đó bung sẵn — không phải tự đi tìm.
-          </p>
-          <p>
-            Những dòng lặp lại được <strong>gộp làm một</strong> (“Đã thêm 12 mẫu ngữ pháp vào kho”)
-            để chuông không biến thành nhiễu. Đánh dấu đã đọc <strong>không xoá</strong> gì — dòng
-            vẫn nằm trong danh sách, chỉ hết đậm. Không có email hay push: mọi thứ chỉ nằm trong
-            app.
-          </p>
-        </GuideTopicItem>
-
         <GuideTopicItem id="library">
           <p>
             Trang <em>Tài nguyên</em> là nơi bạn <strong>làm chủ kho học</strong>:
           </p>
           <ul className="list-disc space-y-1 pl-5">
             <li>
-              <strong>Thêm ngữ pháp và từ vựng</strong> bằng ba cách trong cùng một modal:{' '}
+              <strong>Thêm ngữ pháp và từ vựng</strong> bằng ba cách, chọn ở thanh tab đầu trang:{' '}
               <strong>gõ từng mục theo trường</strong>, <strong>dán cả danh sách</strong>, hoặc tải{' '}
               <strong>file Excel</strong> từ Mazii (hoặc nhờ Claude nhập bằng prompt) — tuỳ danh
-              sách một mục hay hàng trăm mục.
+              sách một mục hay hàng trăm mục. Màn hình rộng thì mở ra <strong>modal</strong> ngay
+              trên danh sách; điện thoại thì mở <strong>một trang riêng</strong> (có nút back, có
+              URL, gõ dở không mất khi lỡ chuyển màn).
             </li>
             <li>
               <strong>Tìm nhanh</strong> bằng kanji, kana hoặc <strong>romaji</strong>: gõ{' '}
@@ -465,7 +444,7 @@ export function GuideFeaturesTab() {
               <strong>Làm hàng loạt</strong>: tick chọn nhiều dòng, các nút tác vụ hiện thành một{' '}
               <strong>cột icon dọc bên phải màn hình</strong> — ô đầu là{' '}
               <strong>số mục đã chọn</strong>, kế đó là nút <strong>×</strong> để bỏ chọn, rồi tạm
-              ngưng / chia sẻ / thêm-gỡ nhóm / xoá. Đưa chuột vào từng icon để xem tên tác vụ.
+              ngưng / thêm-gỡ nhóm / xoá. Đưa chuột vào từng icon để xem tên tác vụ.
             </li>
             <li>
               <strong>Phím tắt bàn phím</strong> cho bảng (xem danh sách ở icon <em>ⓘ</em> góc trên
@@ -489,10 +468,11 @@ export function GuideFeaturesTab() {
             (nhận cả hai). Một mục có thể nằm trong nhiều nhóm.
           </p>
           <p>
-            Quản lý ở trang <em>Nhóm</em>: tạo/sửa/xoá, mở một nhóm để thêm hoặc gỡ thành viên. Ở
-            trang <em>Tài nguyên</em> có thể <strong>lọc theo nhóm</strong> và{' '}
-            <strong>chọn nhiều mục để thêm/gỡ khỏi nhóm hàng loạt</strong>; trang chi tiết một
-            mẫu/từ hiện các nhóm nó đang thuộc.
+            Quản lý ở <em>Tài nguyên → tab «Nhóm»</em>: tạo, sửa, xoá, và mở một nhóm ra để{' '}
+            <strong>thêm / gỡ thành viên</strong>. Trong nhóm còn có{' '}
+            <strong>chế độ flashcard</strong> để lướt nhanh: lật thẻ, tự chấm nhớ/quên, xáo thứ tự,
+            phóng toàn màn hình. Xoá một nhóm chỉ xoá cái nhóm —{' '}
+            <strong>mẫu và từ trong đó vẫn nguyên trong kho</strong>, kèm lịch ôn của chúng.
           </p>
           <p>
             Luyện tập trung một nhóm: trong Claude Desktop nói <em>“luyện nhóm X”</em> — Claude lấy
@@ -604,54 +584,7 @@ export function GuideFeaturesTab() {
           </p>
         </GuideTopicItem>
 
-        <GuideTopicGroupHeading group="community" />
-
-        <GuideTopicItem id="sharing">
-          <p>
-            Ở trang chi tiết một mẫu/từ (mở từ bảng <em>Tài nguyên</em>) có nút{' '}
-            <strong>Chia sẻ vào thư viện</strong>. Khi bật, <strong>nội dung</strong> mục đó (mẫu,
-            cách đọc, nghĩa, ghi chú, thẻ enrichment) hiện trong <em>Thư viện chung</em> cho người
-            khác — <strong>lịch ôn FSRS và lịch sử của bạn KHÔNG bao giờ được chia sẻ</strong>. Bấm
-            lại để gỡ.
-          </p>
-          <p>
-            Trang <em>Thư viện</em> hiển thị những gì người khác chia sẻ dưới dạng{' '}
-            <strong>bảng</strong> (giống Tài nguyên: tách Ngữ pháp / Từ vựng, mỗi hàng có nút nghe +
-            furigana, tìm kiếm, lọc theo cấp/“trong kho” kèm badge số &amp; nút <em>Xóa lọc</em>),
-            kèm <strong>tên người chia sẻ</strong> và số người đã lấy. Mỗi hàng có nút{' '}
-            <strong>xem chi tiết</strong> (mở thẻ enrichment) và nút <strong>Lấy về kho</strong> để
-            sao chép nội dung vào kho của bạn với một <strong>lịch ôn mới tinh</strong> — từ đó là
-            bản của riêng bạn, ôn không ảnh hưởng gì tới người chia sẻ. Mục đã có thì hiện{' '}
-            <em>“Đã có trong kho”</em>; chọn nhiều hàng để <strong>lấy về hàng loạt</strong>.
-          </p>
-          <p>
-            Bấm <strong>trái tim</strong> ở cột <em>Thích</em> để thể hiện mục hay (có đếm số lượt
-            thích công khai). Chính những mục <strong>bạn đã chia sẻ</strong> cũng hiện ở đây, đánh
-            dấu <em>“Của bạn”</em>, để bạn biết mình đang chia sẻ gì.
-          </p>
-        </GuideTopicItem>
-
-        <GuideTopicItem id="feed">
-          <p>
-            Mở một lượt <strong>đã chấm</strong> trong <em>Lịch sử</em> rồi bấm{' '}
-            <strong>«Chia sẻ lên feed»</strong>. Lượt đó xuất hiện ở tab <em>Cộng đồng</em> (cùng
-            trang Lịch sử) cho các thành viên khác xem: câu đề, bài bạn dịch, bản tham khảo, điểm,
-            nhận xét. Bấm lại để gỡ. Chia sẻ chỉ lộ <strong>lượt dịch đó</strong> —{' '}
-            <strong>không ai thấy lịch ôn hay các lượt riêng tư của bạn</strong>.
-          </p>
-          <p>
-            Không muốn chia sẻ từng lượt một? Bật công tắc{' '}
-            <strong>“Tự động chia sẻ câu mới lên cộng đồng”</strong> ở đầu tab <em>Cộng đồng</em> —
-            từ đó mỗi câu bạn <strong>dịch &amp; được chấm</strong> sẽ tự lên feed (tắt lúc nào cũng
-            được; các câu cũ không bị đụng).
-          </p>
-          <p>
-            Mỗi thẻ trong feed có nút <strong>trái tim</strong> (thích, có đếm số) để cổ vũ lượt
-            dịch hay. Mở phần bình luận của một lượt để đọc và <strong>góp ý</strong> cho nhau; mỗi
-            bình luận có nút <strong>ủng hộ / không ủng hộ (▲ ▼)</strong> để bình chọn góp ý hữu ích
-            nhất. Bình luận của chính bạn — hoặc bình luận trên lượt bạn chia sẻ — thì bạn xóa được.
-          </p>
-        </GuideTopicItem>
+        <GuideTopicGroupHeading group="experience" />
 
         <GuideTopicItem id="sensory">
           <p>
