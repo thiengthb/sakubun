@@ -43,8 +43,9 @@ const WIDTH: Record<PageWidth, string> = {
  *     (a 24px logo + 8px gap + a 1px divider = 33px, measured) rather than by rendering `MobileTopBar` —
  *     that component's SidebarTrigger throws on the chromeless auth pages this fallback also covers.
  *   - the aside was pinned `ml-auto` at EVERY width, while PageShell pins it right only below `md` and
- *     puts it beside the crumb (`md:ml-0 md:flex-1`) above. On a 1440px desktop the tabs therefore flew
- *     ~900px leftwards when the page loaded.
+ *     puts it beside the crumb (`md:ml-0 md:flex-1`) above. On a 1440px desktop the tab rail therefore
+ *     flew leftwards on load by the width of everything between it and the crumb: 880px on the dashboard,
+ *     803px on /resources, 653px on /settings.
  *   - the row lacked `max-md:flex-nowrap`, so a wide aside (5 settings tabs) WRAPPED the skeleton row to
  *     two lines — and, worse, overflowed a 390px phone by 134px, because a wrapped `ml-auto` block still
  *     cannot shrink. PageShell forbids wrapping here for exactly that reason.
