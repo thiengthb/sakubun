@@ -131,6 +131,13 @@ test.beforeAll(async () => {
 
 for (const width of [1440, 390]) {
   test(`skeletons match their pages at ${width}px`, async ({ page }) => {
+    // This spec walks every PAIR twice (real page, then its skeleton) with a 450ms settle each, on a
+    // dev server that compiles each route the first time it is hit. Measured 2026-08-06: ~46s when the
+    // file runs alone, which fits the 60s default — and blows past it in a full-suite run, where the
+    // earlier specs have already spent the budget. It failed on /dev-skeleton/settings for exactly that
+    // reason, with a timeout that reads like a hung page rather than a slow one. The assertions are
+    // unchanged; only the budget is.
+    test.setTimeout(180_000);
     await page.setViewportSize({ width, height: 900 });
     await page.goto('/login');
     await page.getByLabel('Email').fill(E2E_EMAIL);
