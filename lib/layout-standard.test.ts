@@ -76,6 +76,9 @@ describe('UI layout standard (nuc-platform/12-ui-layout-standard.md)', () => {
     const EXEMPT = new Set([
       'app/login/page.tsx', // chromeless (AuthNav, no breadcrumb)
       'app/register/page.tsx', // chromeless
+      // Dev-only harness (404 in production): it renders the routes' own `loading.tsx`, each of which
+      // owns a PageSkeleton — PageShell's twin, and the thing e2e/skeleton.spec.ts measures against it.
+      'app/dev-skeleton/[route]/page.tsx',
     ]);
     const offenders: string[] = [];
     for (const file of walk('app')) {

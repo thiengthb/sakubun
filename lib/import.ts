@@ -1,20 +1,22 @@
 // Import (sync-from-backup) — the DB writes. Validation + pure planning live in lib/import-schema.ts.
 //
-// WHY this exists (docs/decisions.md 2026-07-20, re-opened 2026-07-23): in-app restore was deliberately
-// NOT built while the app was single-user — the process holds the DB file open, and a whole-file swap or
-// an in-process rewrite of ReviewLog (invariant #2, append-only) was not worth it. That decision said
-// "do not re-raise unless the app goes multi-user"; it now is (2026-07-21). This re-opens it, but as a
-// MERGE, not a replace: we never delete, so invariant #2 holds and there is no file-swap.
+// WHY this exists (docs/decisions.md 2026-07-20, re-opened 2026-07-23): a REPLACE-style restore is not
+// possible from inside the app — the process holds the DB file open — and rewriting ReviewLog in place
+// would break invariant #2 (append-only). So both paths here are a MERGE: nothing is ever deleted, and
+// there is no file swap. Replacing the file outright stays a manual, container-level operation (the
+// commands are in the settings Data tab).
 //
 // Two surfaces, mirroring the two exports:
-//   - importAccountData: a member syncs THEIR OWN JSON dump back in. Guarded Prisma, userId forced to the
-//     session user, so a file can never write into another account.
-//   - importSystemBackup: an admin merges a whole-DB SQLite snapshot across EVERY member. Cross-tenant, so
-//     it uses raw SQL (ATTACH + INSERT ... ON CONFLICT) exactly like lib/library.ts's cross-tenant reads —
-//     that keeps the fail-closed tenancy guard in lib/db.ts intact (a Prisma model query still needs userId).
+//   - importAccountData: the learning-data JSON (lib/export.ts) synced back in through Prisma. UPSERT by
+//     stable id — add what is missing, update what is there — except ReviewLog, which is insert-only.
+//   - importSystemBackup: a whole-DB SQLite snapshot (app/api/backup) merged table-wise in raw SQL
+//     (ATTACH + INSERT OR IGNORE). ADD-ONLY: a row that already exists locally is KEPT, never
+//     overwritten. Raw SQL because it touches the auth tables, which have no Prisma-model path here.
 //
-// Merge semantics: UPSERT by stable id (add missing, update existing), never delete. ReviewLog is
-// insert-only everywhere (invariant #2). A dry-run returns the same per-table counts it would apply.
+// The two therefore differ in one visible way, and the UI says so: an account sync can UPDATE existing
+// rows, a system sync can only ADD (its dry-run reports `update: 0` for every table by construction).
+//
+// A dry-run returns the same per-table counts the apply would produce, and writes nothing.
 
 import { prisma } from '@/lib/db';
 import {
@@ -25,6 +27,8 @@ import {
   reconcileUsersByEmail,
   toDiff,
   type AccountBackup,
+  type BackupGroup,
+  type BackupGroupMember,
   type BackupItem,
   type BackupReviewLog,
   type BackupSentence,
@@ -45,6 +49,11 @@ export interface ImportResult {
 /** Index an array by a derived key for O(1) lookup when mapping planned ids back to their rows. */
 function byId<T extends { id: string }>(rows: readonly T[]): Map<string, T> {
   return new Map(rows.map((r) => [r.id, r]));
+}
+
+/** GroupMember has no id — its identity is the pair. NUL-joined so two ids can never blur together. */
+function memberKey(groupId: string, itemId: string): string {
+  return `${groupId}\u0000${itemId}`;
 }
 
 /** Fields written for an Item (id + userId handled by the caller). Nullish -> null (Prisma wants null). */
@@ -83,6 +92,16 @@ function srsData(row: BackupSrsState) {
   };
 }
 
+/** Fields written for a Group (id + createdAt handled by the caller; updatedAt is Prisma's). */
+function groupData(row: BackupGroup) {
+  return {
+    name: row.name,
+    kind: row.kind,
+    color: row.color ?? null,
+    note: row.note ?? null,
+  };
+}
+
 function sentenceData(row: BackupSentence) {
   return {
     direction: row.direction,
@@ -104,24 +123,25 @@ function sentenceData(row: BackupSentence) {
 }
 
 /**
- * Sync a member's own backup (JSON) into their account. Merge-by-id, never delete; userId is forced to
- * `userId` on every write so the file's own userId is irrelevant and cross-account writes are impossible.
+ * Sync a learning-data backup (the JSON from `/api/export/mine`) back in. Merge-by-id, never delete.
  * On dryRun, nothing is written — only the counts that WOULD apply are returned.
  */
 export async function importAccountData(
   backup: AccountBackup,
   { dryRun }: { dryRun: boolean },
 ): Promise<ImportResult> {
-  // What the user already has, scoped by userId (passes the tenancy guard). Read once, plan in memory.
-  const [items, srsStates, reviewLogs, sentences, settings] =
+  // What is already here. Read once, plan in memory.
+  const [items, srsStates, reviewLogs, sentences, settings, groups, groupMembers] =
     await Promise.all([
       prisma.item.findMany({
-                select: { id: true, kind: true, expression: true },
+        select: { id: true, kind: true, expression: true },
       }),
       prisma.srsState.findMany({ select: { itemId: true } }),
       prisma.reviewLog.findMany({ select: { id: true } }),
       prisma.sentence.findMany({ select: { id: true } }),
       prisma.settings.findFirst({ select: { id: true } }),
+      prisma.group.findMany({ select: { id: true } }),
+      prisma.groupMember.findMany({ select: { groupId: true, itemId: true } }),
     ]);
 
   const existingItemIds = new Set(items.map((i) => i.id));
@@ -129,15 +149,10 @@ export async function importAccountData(
   const existingSrsItemIds = new Set(srsStates.map((s) => s.itemId));
   const existingLogIds = new Set(reviewLogs.map((r) => r.id));
   const existingSentenceIds = new Set(sentences.map((s) => s.id));
+  const existingGroupIds = new Set(groups.map((g) => g.id));
+  const existingMemberKeys = new Set(groupMembers.map((m) => memberKey(m.groupId, m.itemId)));
 
   const warnings: string[] = [];
-  // A backup taken while the app was multi-user still carries these. The tables are gone, so they are
-  // skipped — but SAID, because silently dropping part of someone's backup is the worst outcome.
-  if (backup.groups.length > 0) {
-    warnings.push(
-      `${backup.groups.length} nhóm trong bản sao lưu — bỏ qua (app không còn tính năng nhóm).`,
-    );
-  }
 
   // Items first: everything else references them.
   const itemPlan = planItems(backup.items, existingItemIds, existingItemKeys);
@@ -176,10 +191,38 @@ export async function importAccountData(
     'insert-only',
   );
 
+  // Study groups: upsert by id. Restored to this path on 2026-08-05 — the tables came back with the
+  // feature (commit f992bdf) but the sync still answered "app không còn tính năng nhóm" and dropped them.
+  const groupPlan = planById(
+    backup.groups.map((g) => g.id),
+    existingGroupIds,
+    'upsert',
+  );
+  const groupIdsAfter = new Set<string>(existingGroupIds);
+  for (const id of groupPlan.create) groupIdsAfter.add(id);
+
+  // A membership is meaningless without BOTH ends (schema cascades on either), so a row whose group or
+  // item will not exist after this import is skipped, and said out loud. Insert-only: an existing
+  // membership has nothing to update but `addedAt`, and rewriting that would move history for no gain.
+  const memberUsable = backup.groupMembers.filter(
+    (m) => groupIdsAfter.has(m.groupId) && itemIdsAfter.has(m.itemId),
+  );
+  const memberPlan = planById(
+    memberUsable.map((m) => memberKey(m.groupId, m.itemId)),
+    existingMemberKeys,
+    'insert-only',
+  );
+  const memberOrphans = backup.groupMembers.length - memberUsable.length;
+  if (memberOrphans > 0)
+    warnings.push(`${memberOrphans} liên kết nhóm thiếu nhóm hoặc mục tương ứng — bỏ qua.`);
+
+  // Settings is a singleton, so its "plan" is a single create or a single update. The pushed value is
+  // never read (only the counts are), but it has to BE something: `push()` with no argument adds
+  // nothing, which is why the preview reported 0 changes to settings until 2026-08-05.
   const settingsPlan: IdPlan = { create: [], update: [], skip: [] };
   if (backup.settings) {
-    if (settings) settingsPlan.update.push();
-    else settingsPlan.create.push();
+    if (settings) settingsPlan.update.push('settings');
+    else settingsPlan.create.push('settings');
   }
 
   const tables: TableDiff[] = [
@@ -187,18 +230,23 @@ export async function importAccountData(
     toDiff('Lịch ôn FSRS', srsPlan),
     toDiff('Lịch sử ôn', logPlan),
     toDiff('Câu đã luyện', sentencePlan),
+    toDiff('Nhóm', groupPlan),
+    toDiff('Mục trong nhóm', memberPlan),
     toDiff('Cài đặt', settingsPlan),
   ];
 
   if (dryRun) return { dryRun: true, tables, warnings };
 
   // --- Apply. One interactive transaction: either the whole sync lands or none of it does. Creates go
-  // through createMany (one statement); the far smaller update sets loop. The tenancy guard runs inside
-  // the transaction too, so every write below still carries userId.
+  // through createMany (one statement); the far smaller update sets loop.
   const itemsById = byId(backup.items);
   const sentencesById = byId(backup.sentences);
   const srsByItemId = new Map(backup.srsStates.map((s) => [s.itemId, s]));
   const logsById = byId(backup.reviewLogs);
+  const groupsById = byId(backup.groups);
+  const membersByKey = new Map(
+    backup.groupMembers.map((m) => [memberKey(m.groupId, m.itemId), m] as const),
+  );
 
   await prisma.$transaction(
     async (tx) => {
@@ -281,6 +329,31 @@ export async function importAccountData(
         });
       }
 
+      // Groups, then memberships (the join rows reference both a group and an item, and both have to
+      // exist by now — items were written first, groups here).
+      if (groupPlan.create.length > 0) {
+        await tx.group.createMany({
+          data: groupPlan.create.map((id) => {
+            const row = groupsById.get(id) as BackupGroup;
+            return { id, createdAt: row.createdAt, ...groupData(row) };
+          }),
+        });
+      }
+      for (const id of groupPlan.update) {
+        await tx.group.update({
+          where: { id },
+          data: groupData(groupsById.get(id) as BackupGroup),
+        });
+      }
+      if (memberPlan.create.length > 0) {
+        await tx.groupMember.createMany({
+          data: memberPlan.create.map((key) => {
+            const row = membersByKey.get(key) as BackupGroupMember;
+            return { groupId: row.groupId, itemId: row.itemId, addedAt: row.addedAt };
+          }),
+        });
+      }
+
       // Settings: the one singleton row.
       if (backup.settings) {
         const row = await tx.settings.findFirst({ orderBy: { id: 'asc' } });
@@ -294,7 +367,7 @@ export async function importAccountData(
   return { dryRun: false, tables, warnings };
 }
 
-// --- System sync (whole-DB SQLite snapshot, cross-tenant raw SQL) ---------------------------------
+// --- System sync (whole-DB SQLite snapshot, raw SQL) ----------------------------------------------
 
 /** A managed table + how it merges. Order = FK parents first, so ordered inserts satisfy references. */
 interface SystemTable {
@@ -302,15 +375,21 @@ interface SystemTable {
   name: string;
   /** Column(s) that identify "the same row" — used only to ESTIMATE the dry-run counts (see below). */
   conflict: string[];
-  /** Columns to NOT carry over (Settings.id is an unstable autoincrement — match on userId instead). */
+  /** Columns to NOT carry over. */
   exclude?: string[];
-  /** Extra filter on the backup rows (alias `b`). Settings' legacy null-userId singleton is skipped. */
+  /** Extra filter on the backup rows (alias `b`). */
   backupWhere?: string;
 }
 
+// EVERY table this list names must exist in the CURRENT schema. A table missing from the backup is
+// skipped safely (`backupTables.has`), but one missing LOCALLY is not: the count query joins against
+// `main.<table>` and dies with "no such table". That is what the four community tables (ItemLike,
+// SentenceLike, Comment, CommentVote) did to any restore of a pre-single-user snapshot until 2026-08-05
+// — they were dropped from the schema and left in this list.
+//
 // `session` and `verification` are intentionally NOT restored: they are ephemeral auth state (live
 // logins, pending email tokens). Reviving stale sessions from a snapshot would be wrong and unsafe.
-// `user`/`account`/`mcp_key` ARE merged, but user identity is reconciled by EMAIL (see below) and every
+// `user`/`account`/`mcp_key` ARE merged, but identity is reconciled by EMAIL (see below) and every
 // user-referencing column is translated so a row re-homes onto the locally-matched account.
 const SYSTEM_TABLES: SystemTable[] = [
   { name: 'user', conflict: ['id'] },
@@ -320,17 +399,23 @@ const SYSTEM_TABLES: SystemTable[] = [
   { name: 'Sentence', conflict: ['id'] },
   { name: 'SrsState', conflict: ['id'] },
   { name: 'ReviewLog', conflict: ['id'] },
-  { name: 'ItemLike', conflict: ['id'] },
-  { name: 'SentenceLike', conflict: ['id'] },
-  { name: 'Comment', conflict: ['id'] },
-  { name: 'CommentVote', conflict: ['id'] },
   { name: 'Group', conflict: ['id'] },
   { name: 'GroupMember', conflict: ['groupId', 'itemId'] },
+  // The tutor's own working state. Missing from this list until 2026-08-05, so a whole-DB sync silently
+  // dropped every learner note, the ability estimate and the whole shadow-proposal log — the three
+  // things a snapshot is the ONLY copy of (the JSON export does not carry them either).
+  { name: 'LearnerNote', conflict: ['id'] },
+  { name: 'LearnerAbility', conflict: ['id'] },
+  { name: 'CalibrationProposal', conflict: ['id'] },
   {
     name: 'Settings',
-    conflict: ['userId'],
-    exclude: ['id'],
-    backupWhere: 'b."userId" IS NOT NULL',
+    conflict: ['id'],
+    // Settings is a SINGLETON row now (it was one row per user, keyed on `userId` — a column this
+    // schema no longer has, which made the count query throw "no such column: b.userId" and took the
+    // whole system sync down with it). Two rows would be worse than none: every reader takes "the
+    // first" one, so which settings apply would depend on rowid. The backup's settings are therefore
+    // adopted only by an instance that has none.
+    backupWhere: 'NOT EXISTS (SELECT 1 FROM main."Settings")',
   },
 ];
 
@@ -364,9 +449,9 @@ async function countOf(sql: string): Promise<number> {
 }
 
 /**
- * Merge a whole-DB backup into the live DB (admin-only; caller enforces the role). The backup file is
- * ATTACHed and merged table-by-table with raw SQL, deliberately bypassing the Prisma tenancy guard for
- * this cross-tenant operation (like lib/library.ts), so the guard stays intact for every normal query.
+ * Merge a whole-DB backup into the live DB (the caller enforces that the requester is signed in). The
+ * backup file is ATTACHed and merged table-by-table in raw SQL — raw because this reaches the auth
+ * tables, which have no Prisma-model path in this module.
  *
  * Cross-machine identity (2026-07-24, docs/decisions.md + plan): better-auth mints a RANDOM user id per
  * signup, so the same person has a different id on each machine. We therefore reconcile users by EMAIL:

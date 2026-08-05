@@ -280,6 +280,20 @@
         "kind": "manual"
       },
       "allow": {}
+    },
+    {
+      "id": "skeleton-mirrors-its-page",
+      "rule": "Mỗi route có PageShell phải có loading.tsx RIÊNG, dựng bằng PageSkeleton, và khớp trang thật Ở MỌI BREAKPOINT: cùng hàng header (kể cả chỗ MobileTopBar dưới md và vị trí aside bên md+), cùng bậc chiều rộng, cùng hình thân trang tại width đó (bảng ở md+ / card dưới md), và cùng tab mà trang sẽ mở ra (đọc chung key sessionStorage).",
+      "why": "loading.tsx là UI duy nhất KHÔNG AI review: nó hiện đúng một frame, server local thì gần như không thấy, và lệch bao nhiêu cũng không có gì đỏ. Nên nó trôi hàng tuần, mà trôi không nhẹ: /settings vẽ rail 5 tab ở MỌI width nên tràn ngang 134px và hàng header cao 64px thay vì 32px; mọi trang thiếu chỗ MobileTopBar nên crumb nhảy 41px khi có dữ liệu; aside `ml-auto` ở mọi width nên trên 1440px thanh tab bay ~900px sang trái lúc load; /history vẽ 2 tab cho trang đã bỏ tab; và 6 route KHÔNG có loading.tsx nên rơi về file gốc, tức nháy một cái DASHBOARD trước khi ra form. Người dùng nêu 2026-08-05.",
+      "canonical": "components/shell/page-skeleton.tsx",
+      "source": "user 2026-08-05 (\"sửa lại toàn bộ các skeleton, loading để phù hợp với bố cục hiện tại từ màn hình to đến bé của mọi trang, mọi tab\")",
+      "repeats": 1,
+      "lockedOn": "2026-08-05",
+      "note": "Hai gate. TẤT ĐỊNH-HÌNH HỌC: e2e/skeleton.spec.ts đo 12 route × {1440, 390} qua route dev-only /dev-skeleton/<key> và so 7 tiêu chí (tràn ngang, chiều cao hàng header, mốc x đầu hàng, bậc chiều rộng, y thân trang, vị trí aside, số item ở md+). TẤT ĐỊNH-CẤU TRÚC: lib/skeleton-parity.test.ts đọc chính source của trang để bắt route thiếu loading.tsx và số tab lệch. Vì sao phải có route dev-only: không giữ được trạng thái loading thật trên màn hình (payload đã prefetch; delay RSC thì race, abort prefetch thì Next quay về hard-navigation và render trang đã xong) — mà thứ cần chốt là HÌNH HỌC, nó cần một layout chứ không cần một thời điểm.",
+      "check": {
+        "kind": "manual"
+      },
+      "allow": {}
     }
   ]
 }
