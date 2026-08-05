@@ -11,6 +11,225 @@
 
 ---
 
+## 2.10.4 — 2026-08-05
+
+**patch.** `rituals.mjs` đếm pack **CHƯA ĐƯỢC QUYẾT**, không đếm pack **tồn tại**.
+
+Pack là **snapshot** — `upstream --apply` sinh lại nó mỗi lần chạy. Bản 2.10.0 đếm số thư mục
+trong `knowledge/incoming/`, nên ngay sau khi quyết xong và dọn, lần chạy `upstream` kế tiếp
+dựng lại pack cũ và mục này **đỏ lại**.
+
+Một mục đỏ vĩnh viễn dạy đúng thứ `rituals.mjs` ra đời để diệt: người đọc học rằng bảng này có
+một dòng đỏ *"bình thường"*, và sau đó một dòng đỏ **thật** lẫn vào giữa mà không ai thấy. Đây
+là tầng 1 của `knowledge/lessons/0003` (*"đỏ giả làm người ta bỏ qua màu đỏ"*), lần này ở chính
+cái bảng vừa được xây để chống nó.
+
+Neo là **`sourceCommit`** của pack — commit của repo GỬI. Repo đó không đổi thì commit không
+đổi, nên *"đã quyết"* là trạng thái **bền**. Repo đó có fixlog mới ⇒ commit mới ⇒ mục đỏ lại,
+và lần đó thì nó **đúng**. Không đọc được commit ⇒ coi là **chưa quyết**: thà nhắc thừa một lần
+còn hơn im lặng bỏ qua nguyên liệu đi lên, vì chiều LÊN là chiều dễ tắt nhất của vòng học.
+
+Ba pack hiện tại đã được ghi `REVIEWED` kèm commit trong `knowledge/DECISIONS.log`, nên bảng
+nghi thức ở template giờ **không còn mục nào tới hạn** — trạng thái đúng, không phải trạng thái
+được làm cho im.
+
+## 2.10.3 — 2026-08-05
+
+**patch.** Bỏ **proxy**, đo **trực tiếp**. Guard chống nghịch lý bootstrap không còn quét
+`import` trong nguồn.
+
+Bản 2.10.1 kiểm bằng cách quét `import` tương đối. Nó bắn nhầm **hai lần liền**:
+
+| Lần | Khớp phải cái gì |
+|---|---|
+| 2.10.1 | đoạn **comment** giải thích chính nó, nêu ví dụ một đường dẫn tương đối |
+| 2.10.2 | **chuỗi trong fixture test** — `"import a from './that.mjs'"` |
+
+Lần thứ hai **không sửa được bằng cách bỏ comment**: một regex trên văn bản nguồn **không phân
+biệt được** `import` thật với một string trông giống nó, và ở đây không có parser nào để phân
+biệt. Cố lọc thêm chỉ là thêm một lớp đoán lên một phép đoán.
+
+Câu hỏi thật không phải *"có `import` nào treo không"* mà là ***"file cơ chế nào lẽ ra phải sang
+mà chưa sang"*** — và câu đó có câu trả lời **chính xác**: so danh sách file cơ chế ở template
+với cây ở đích. Không parser, không regex, không false positive.
+
+Phép trực tiếp còn **mạnh hơn** proxy theo cả hai chiều: nó bắt file thiếu **kể cả khi chưa ai
+import nó** (proxy mù hoàn toàn với ca đó), và nó không có gì để mà lọc.
+
+> Bài học chung: khi một check phải lọc false positive **lần thứ hai**, vấn đề thường không nằm
+> ở bộ lọc mà ở chỗ nó **đang đo một thứ khác** với thứ cần biết. Ba lần sửa bộ lọc thì đắt hơn
+> một lần đổi phép đo.
+
+`RATCHET` 88 → **87** (test của proxy bị bỏ cùng proxy — giữ lại là giữ một test cho code không
+còn tồn tại).
+
+## 2.10.2 — 2026-08-05
+
+**patch.** Guard `import` mới của 2.10.1 **bắn nhầm vào comment của chính nó**.
+
+Nó quét cả văn xuôi, và đoạn comment giải thích check đó có nêu ví dụ một đường dẫn tương đối
+(`'./x.mjs'`) — nên ở lần chạy thật đầu tiên nó tố chính `tooling/upgrade.mjs` import một file
+không tồn tại, ở cả ba repo tiêu thụ.
+
+**Neo vào CODE, đừng neo vào comment GIẢI THÍCH code.** Đây là lần thứ **ba** của cùng bài học
+trong repo này — engine mutant của `test-migrations` (v2.1.0), check CODEOWNERS của
+`harness-doctor` (v2.0.0), và bây giờ. Lần này nó được một **test** với 4 ca (comment cả dòng,
+block comment, `import()` động thật, package name), không phải một comment nữa: hai lần trước
+đều đã có comment cảnh báo, và comment không ngăn được lần thứ ba.
+
+Phép lọc bỏ block comment và comment **cả dòng**; **không** bỏ `//` giữa dòng — làm vậy sẽ cắt
+cả URL trong chuỗi, và `import` không bao giờ nằm sau một `//` giữa dòng.
+
+`RATCHET` 87 → **88**.
+
+### Ghi nhận: guard NUL tìm ra một ca THẬT trong code sản phẩm
+
+Ở `sakubun`, `lib/import-schema.ts:210` dùng NUL làm separator (`itemKey`) và viết nó thành
+**byte thật** — đúng cùng lỗi mà harness vừa mắc. Comment ngay trên đó ghi *"NUL-joined so it
+can't collide"*, nên separator là **cố ý**; chỉ cách viết là sai, và cái giá giống hệt: file đó
+`git diff` in *"Binary files differ"* nên **không review được**, `rg`/`grep` bỏ qua nó.
+
+Bản sửa giữ nguyên hành vi 100% (`\u0000` trong template literal cho ra đúng ký tự đó). Không
+sửa từ đây: đó là code sản phẩm của repo khác và repo đó đang có một phiên làm việc với file đã
+staged.
+
+## 2.10.1 — 2026-08-05
+
+**patch.** Nghịch lý bootstrap, hình dạng thứ hai: điều kiện nổ pha 2 neo vào **file không
+chứa thông tin quyết định**.
+
+`v2.10.0` thêm `tooling/rituals.mjs` (file mới) và sửa `tooling/test-hooks.mjs` để `import` nó.
+`tooling/upgrade.mjs` **không đổi**. Hệ quả ở cả **ba** repo tiêu thụ: `test-hooks.mjs` bản mới
+sang được, `rituals.mjs` thì **không** ⇒ `ERR_MODULE_NOT_FOUND`, suite vỡ ngay sau khi nâng cấp.
+
+Lý do: bản 2.7.2 cho pha 2 nổ khi **`tooling/upgrade.mjs`** được cập nhật — nhưng danh sách file
+cơ chế (`MECHANISM_PATHS`) sống trong **`tooling/lib/harness.mjs`**. Hai file khác nhau, nên một
+bản phát hành thêm file cơ chế mà không chạm `upgrade.mjs` thì pha 2 im lặng không chạy. Cái neo
+cũ trỏ vào file **không chứa** thông tin quyết định điều kiện.
+
+Nay điều kiện là *"danh sách đã đổi"*: pha 2 nổ khi `upgrade.mjs` **hoặc** `lib/harness.mjs`
+được cập nhật.
+
+### Và một guard cho CẢ LỚP, không riêng ca đã gặp
+
+Con trỏ trong `settings.json` không phải loại con trỏ duy nhất — file cơ chế `import` lẫn nhau.
+Sau nâng cấp, `upgrade.mjs` giờ kiểm **mọi `import` tương đối** trong `tooling/`,
+`.claude/hooks/`, `evals/` và **FAIL** nếu có cái trỏ vào hư không, kèm câu sửa (chạy lại
+upgrade một lần nữa — bản mới đã nằm trong project).
+
+### Điều đáng ghi về phép xác minh
+
+`v2.10.0` đã được kiểm ở **cả hai vai** (template 87/87 · bản sao consumer 86/86) và vẫn ship
+lỗi này. Vì bản sao vai-consumer là một **bản copy đầy đủ** — nó có `rituals.mjs`. Nghĩa là
+phép kiểm hai-vai chứng minh **LOGIC** chạy đúng ở cả hai vai; nó **không** chứng minh được
+**PHÂN PHỐI**. Thứ duy nhất chứng minh phân phối là chạy `upgrade` thật lên một repo thật đang
+đứng ở version cũ — và đó đúng là thứ đã bắt được lỗi này.
+
+## 2.10.0 — 2026-08-05
+
+**minor.** Năng lực của harness **tự hiện ra khi tới hạn**, thay vì chờ người nhớ. Cộng một
+byte NUL đã ship ở 2.9.0 và một chẩn đoán sai do consumer báo lên.
+
+### Vấn đề: một năng lực phải NHỚ mới dùng được thì nằm im
+
+Đo trên repo này: `reservations/` chỉ có `README.md`, `docs/progress/` chỉ có hai file khuôn —
+`/claim` và `/handoff` **chưa chạy lần nào** kể từ khi harness ra đời, dù `session-start.mjs`
+in đúng dòng *"bắt đầu bằng /claim · kết thúc bằng /handoff"* ở **mọi** phiên.
+
+Dòng đó không sai. Nó nói **mọi thứ ở mọi lúc**, nên nó không nói gì ở lúc nào cả. Cùng lớp
+với `harness-doctor` in *"5/5 điểm mở rộng native còn TRỐNG"* suốt nhiều version mà không ai
+đóng, và với 22 nhóm fixlog trên 4 repo mà 0 bài học được promote.
+
+Và cái giá không phải lý thuyết: cùng ngày, hai phiên song song commit lên một nhánh ở
+`sakubun` và một `git add -A` cuốn theo file sản phẩm của phiên kia.
+
+### `tooling/rituals.mjs` — suy ra việc tới hạn từ TRẠNG THÁI
+
+```
+node tooling/rituals.mjs         chỉ việc ĐANG tới hạn (SessionStart gọi bản này)
+node tooling/rituals.mjs --all   mọi năng lực + trạng thái + VÌ SAO
+```
+
+Ba luật:
+
+1. **Tự động trước, nhắc sau.** `session-start.mjs` ghi sự có mặt của phiên **tự động** ⇒
+   chồng lấn hai phiên trên cùng máy được phát hiện **không cần ai gõ `/claim`**. `/claim` giữ
+   phần cần phán đoán (đọc nhật ký cũ, đặt chỗ cho cả đội, quyết phạm vi).
+   Liveness bằng `process.kill(ppid, 0)`, **không** bằng TTL: bản đầu dùng TTL 120 phút và
+   cảnh báo **sai** ngay khi thử — khởi động lại phiên trong cửa sổ đó thì bản ghi cũ vẫn
+   "còn tươi". Một cảnh báo sai mỗi lần restart là đúng loại nhiễu tính năng này diệt.
+   Ghi vào `stateDir()` (không commit), **không** vào `reservations/`: một hook tự ghi file
+   được commit sẽ làm cây bẩn ở mọi phiên.
+2. **Nhắc phải có SỐ ĐO.** *"Nên chạy /harness-retro"* là lời khuyên; *"3 nhóm fixlog đã ≥2
+   lần"* là một việc. Test khẳng định **mọi** mục tới hạn có chữ số trong `why`.
+3. **Ba giá trị.** `due` / `ok` / `?`. `null` (không đo được) ⇒ `?` ở cả 6 nghi thức đo bằng
+   số — gộp "chưa nhìn" vào "ổn" là cách một bảng điều khiển nói dối theo hướng dễ chịu.
+
+`evaluate()` là **hàm thuần** tách khỏi `collect()`, nên test khẳng định logic bằng trạng thái
+dựng sẵn thay vì dựng repo giả — điều kiện để suite chạy được ở project đích (`lessons/0003`).
+Một `check` throw ⇒ `?`, **không** làm sập bảng: nó được gọi từ SessionStart.
+
+### Byte NUL đã ship ở 2.9.0 — hỏng theo cách mọi cái máy nói "ổn"
+
+Một separator viết thành **byte NUL thật** trong `tooling/harness-doctor.mjs` đi qua PR #27,
+qua **7 job CI trên 3 OS**, ra tag **v2.9.0**, rồi sang **cả ba repo tiêu thụ**.
+
+| Lớp kiểm | Kết quả |
+|---|---|
+| `node --check` | **xanh** — NUL nằm trong template literal, JS hợp lệ |
+| `test-hooks` · `test-migrations` · `entropy-scan` · `apply-to --audit` | **xanh** |
+| `precommit-scan` | **xanh** — dòng `includes(NUL) → continue` coi nó là "binary, bỏ qua" |
+
+Thứ nó phá là kênh **không cái máy nào đo**: `git diff` in *"Binary files differ"* ⇒ file
+**không review được**; `grep`/`rg` bỏ qua ⇒ file **vô hình** với mọi lần tìm code. Phát hiện
+được chỉ vì `rg` trả rỗng bất thường trên một file 650 dòng.
+
+Nay `precommit-scan` **FAIL** khi file có **đuôi nguồn** chứa NUL (phân biệt bằng ĐUÔI FILE,
+không bằng nội dung — *"trông như binary"* chính là triệu chứng). Chạy cả ở pre-commit và ở CI
+qua `--all`. Guard bắt lại tôi **lần thứ hai trong cùng một giờ**, khi chính bản vá viết một
+NUL nữa vào `test-hooks.mjs` — nên nó đã được chứng minh bằng hai ca thật, không phải bằng
+fixture.
+
+### `gen-clean` thôi chẩn đoán sai — 2 lần độc lập, do consumer báo lên
+
+`sakubun` ghi fixlog **hai lần trong hai ngày**: cây bẩn vì một đợt nâng harness nằm dở, rồi
+vì một session song song đang áp template. Cả hai lần gate nói *"bạn quên chạy gen sau khi sửa
+nguồn"*, và cả hai lần người dùng đi tìm ở generator — chỗ không có gì sai. **Một chẩn đoán
+sai đắt hơn không chẩn đoán:** nó gửi người ta đi sai hướng với sự tự tin của một cái máy.
+
+Nay gate đo cây **trước** khi chạy `gen` và chỉ khẳng định *"quên chạy gen"* cho những file mà
+**chính `gen`** làm bẩn (phép **DELTA**, không phải phép đếm). Cây bẩn từ trước ⇒ **PASS** kèm
+phân loại lớp (`harness` / `generated` / `khác`) và một câu nói rõ *đây KHÔNG phải "quên chạy
+gen"*. Ba test hộp đen trên một cây tối thiểu, gồm ca chứng minh phép so là delta.
+
+### Sổ quyết định của vòng học chưa từng được commit
+
+`accept.mjs` ghi `DECISIONS.log` vào **`knowledge/incoming/`** — thư mục nằm trong
+`REQUIRED_IGNORE` (đúng: pack là snapshot, `upstream --apply` sinh lại mỗi lần). Nên sổ thừa
+hưởng luôn cái ignore. Đo: `git ls-files knowledge/incoming/DECISIONS.log` → **0**.
+
+Toàn bộ lịch sử MERGE / ACCEPT / RETURN / REJECT của vòng học chỉ tồn tại trên **một máy**,
+không đi qua review, và mất khi đổi máy. Sổ đó là thứ trả lời *"pack này đã bị từ chối chưa, vì
+sao?"* — không trả lời được thì cùng một pack được duyệt lại mãi, tức **bước quyết định của
+vòng học không có bộ nhớ**.
+
+Không sửa được bằng `!knowledge/incoming/DECISIONS.log`: git **không** re-include được file mà
+thư mục cha đã bị loại — cùng phép đo sinh ra `REQUIRED_UNIGNORE` ở 2.5.0. Một dòng `!` như vậy
+trông như đã sửa và không sửa gì cả. Nên sổ **đổi chỗ**: `knowledge/DECISIONS.log`, được commit.
+`harness-migrations/009` chuyển sổ cũ sang và **gộp** thay vì ghi đè. Nó nằm trong `IGNORE` của
+`apply-to` — ship lịch sử quyết định của repo này sang repo khác thì bên nhận đọc như thể mình
+đã từ chối những thứ chưa từng thấy.
+
+### Và một bug fail-đóng lộ ra khi thêm kênh `note`
+
+Nhánh fail-đóng cho phiên không người khoá vào `warn.length`, nhưng **ý** nó là *"gate bị BỎ
+QUA"*. Hai thứ đó đã lệch: cảnh báo **vượt ngân sách độ trễ** cũng vào `warn`, nên một phiên
+không người chỉ **chậm** (mọi gate PASS) vẫn `exit 2` kèm thông báo nói rằng gate bị bỏ qua —
+và nó dạy đúng thứ tệ nhất: đặt `HARNESS_ALLOW_SKIPPED_GATES=1` vì một lý do không liên quan.
+Nay khoá vào số gate bị bỏ qua, có test.
+
+`RATCHET` 78 → **87**. Kiểm ở cả hai vai: template 87/87 · consumer 86/86 + 1 n/a.
+
 ## 2.9.0 — 2026-08-05
 
 **minor.** Ba khoảng trống xác minh bị đóng. Không đổi hành vi runtime nào.
