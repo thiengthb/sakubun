@@ -345,3 +345,97 @@ test('every page renders clean and fits a 390px viewport', async ({ page }) => {
 
   expect(failures, `mobile layout problems at ${VIEWPORT.width}px:\n${failures.join('\n')}`).toEqual([]);
 });
+
+/** Sign in on the current page. Every test here needs a session and none can share one (worker: 1). */
+async function signIn(page: import('@playwright/test').Page): Promise<void> {
+  await page.goto('/login');
+  await page.getByLabel('Email').fill(E2E_EMAIL);
+  await page.getByLabel('Mật khẩu').fill(E2E_LOGIN);
+  await page.getByRole('button', { name: 'Đăng nhập' }).click();
+  await page.waitForURL((u) => !u.pathname.startsWith('/login'), { timeout: 30_000 });
+}
+
+/**
+ * The filter panel on a phone is a BOTTOM SHEET — asserted geometrically, because that is the whole
+ * claim (user report 2026-08-05): it used to be the desktop's Popover, anchored to a trigger in the TOP
+ * toolbar, so on a phone it opened up there as a floating 80vw panel reading like a modal dropped
+ * mid-page. "Rises from the bottom edge, full width" is a position and a size, so position and size are
+ * what this measures; a future refactor back to an anchored panel would pass any containment check.
+ */
+test('mobile: the filter panel is a bottom sheet, full width, anchored to the bottom edge', async ({
+  page,
+}) => {
+  await page.setViewportSize(VIEWPORT);
+  await signIn(page);
+  await page.goto('/resources?tab=grammar', { waitUntil: 'networkidle' });
+
+  await page.getByRole('button', { name: /^Bộ lọc/ }).click();
+  const sheet = page.locator('[data-slot="sheet-content"][data-side="bottom"]');
+  await expect(sheet).toBeVisible();
+
+  // POLLED, not read once: the sheet SLIDES up (`slide-in-from-bottom-10`, 200ms), so a single
+  // boundingBox right after "visible" measures it mid-animation ~50px short of the bottom edge — which
+  // is the assertion's own subject, so a one-shot read would fail on a correct sheet.
+  await expect
+    .poll(async () => {
+      const b = (await sheet.boundingBox())!;
+      return Math.round(b.y + b.height - VIEWPORT.height);
+    }, { message: "the sheet's bottom edge settles on the screen's bottom edge" })
+    .toBe(0);
+
+  const box = (await sheet.boundingBox())!;
+  expect(Math.round(box.x), 'the sheet starts at the left edge').toBe(0);
+  expect(Math.round(box.width), 'the sheet spans the full viewport width').toBe(VIEWPORT.width);
+  // A sheet, not a full-screen takeover: the list stays visible above it, and its height is capped
+  // (max-h-85dvh) so the body scrolls inside instead of pushing the footer button off-screen.
+  expect(box.y, 'the list is still visible above the sheet').toBeGreaterThan(0);
+  expect(box.height).toBeLessThanOrEqual(VIEWPORT.height * 0.85 + 1);
+
+  // The controls inside are select menus, and they are touch-sized (SHEET_CONTROL_CLASS lifts the
+  // desktop's 28px `size="sm"` triggers to 40px — 28px is under every platform's minimum target).
+  const firstSelect = sheet.getByRole('combobox').first();
+  await expect(firstSelect).toBeVisible();
+  expect((await firstSelect.boundingBox())!.height).toBeGreaterThanOrEqual(36);
+
+  // A filter chosen in the sheet actually filters, and the sheet closes from its own footer button.
+  await firstSelect.click(); // "Cấp JLPT"
+  await page.getByRole('option', { name: 'N5', exact: true }).click();
+  await page.getByRole('button', { name: 'Xem kết quả' }).click();
+  await expect(sheet).toBeHidden();
+  // One seeded N5 grammar pattern (see GRAMMAR above).
+  await expect(page.locator('[data-slot="data-table-cards"] > li')).toHaveCount(1);
+});
+
+/**
+ * SORTING EXISTS ON A PHONE. Below md a DataTable is replaced by a card list, which has no column
+ * headers — and clicking a header is the only way a desktop sorts, so the phone had none at all (user
+ * report 2026-08-05). The control is a bottom sheet: a field select plus a direction pair.
+ *
+ * Asserted on the ORDER of the cards, not on the control's state: "the sort control is set to Level"
+ * would pass while sorting nothing.
+ */
+test('mobile: the sort sheet reorders the card list', async ({ page }) => {
+  await page.setViewportSize(VIEWPORT);
+  await signIn(page);
+  await page.goto('/resources?tab=grammar', { waitUntil: 'networkidle' });
+
+  const cards = page.locator('[data-slot="data-table-cards"] > li');
+  await expect(cards.first()).toBeVisible();
+
+  await page.getByRole('button', { name: /^Sắp xếp/ }).click();
+  const sheet = page.locator('[data-slot="sheet-content"][data-side="bottom"]');
+  await expect(sheet).toBeVisible();
+
+  // Level, descending. The seeded grammar spans N2..N5 with exactly ONE N5 (〜てしまう), so descending
+  // puts a known row first — and ascending puts an N2 one there instead.
+  await sheet.getByRole('combobox').first().click();
+  await page.getByRole('option', { name: 'Level', exact: true }).click();
+  await page.getByRole('button', { name: 'Giảm dần' }).click();
+  await page.getByRole('button', { name: 'Xem kết quả' }).click();
+  await expect(cards.first()).toContainText('N5');
+
+  await page.getByRole('button', { name: /^Sắp xếp/ }).click();
+  await page.getByRole('button', { name: 'Tăng dần' }).click();
+  await page.getByRole('button', { name: 'Xem kết quả' }).click();
+  await expect(cards.first()).toContainText('N2');
+});

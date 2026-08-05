@@ -56,6 +56,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { SearchInput } from '@/components/shared/search-input';
+import { SortSheet, type SortOption } from '@/components/shared/sort-sheet';
 import { useFitRows } from '@/components/ui/use-fit-rows';
 import {
   Table,
@@ -397,6 +398,17 @@ export function DataTable<T>({
   const searchRef = useRef<HTMLInputElement>(null);
   const [colMenuOpen, setColMenuOpen] = useState(false);
 
+  // A new sort re-orders the WHOLE result set, so whatever page you were on no longer points at the
+  // rows you were looking at — go back to the first page. Used by BOTH sorting surfaces (the desktop
+  // column headers via `onSortingChange`, and the phone's SortSheet), so they cannot drift.
+  const changeSorting = useCallback(
+    (updater: SetStateAction<SortingState>) => {
+      setSorting(updater);
+      setPageIndex(0);
+    },
+    [setSorting, setPageIndex],
+  );
+
   const pagination = useMemo<PaginationState>(
     () => ({ pageIndex, pageSize: effectivePageSize }),
     [pageIndex, effectivePageSize],
@@ -429,7 +441,7 @@ export function DataTable<T>({
     getRowId,
     enableRowSelection,
     onRowSelectionChange: setRowSelection,
-    onSortingChange: setSorting,
+    onSortingChange: changeSorting,
     onColumnVisibilityChange: setVisibility,
     onColumnOrderChange: setOrder,
     onColumnSizingChange: setSizing,
@@ -483,6 +495,20 @@ export function DataTable<T>({
     if (pageIndex > 0 && pageIndex > pageCount - 1) setPageIndex(Math.max(0, pageCount - 1));
   }, [pageIndex, pageCount, setPageIndex]);
   const hideableColumns = table.getAllColumns().filter((c) => c.getCanHide());
+  // What the PHONE sort sheet offers (below md there is no column header to click — see SortSheet).
+  // Every sortable column is listed, including ones the "Cột" menu has hidden: that menu is a
+  // table-layout choice and the card list it replaces does not use columns at all.
+  const sortOptions: SortOption[] = table
+    .getAllColumns()
+    .filter((c) => c.getCanSort())
+    .map((c) => {
+      const meta = c.columnDef.meta as DataTableColumnMeta | undefined;
+      const header = c.columnDef.header;
+      return { id: c.id, label: meta?.label ?? (typeof header === 'string' ? header : c.id) };
+    })
+    // A column with no name to show (e.g. the actions column) is not offerable as a sort.
+    .filter((o) => o.label.trim() !== '');
+  const activeSort = sorting[0];
   // The ordinal column renders only when enabled AND not hidden via the "Cột" menu.
   const rowNumbers = enableRowNumbers && showRowNumbers;
   const showColumnMenu = hideableColumns.length > 0 || enableRowNumbers;
@@ -591,6 +617,17 @@ export function DataTable<T>({
         {/* Column + filter controls sit at the far RIGHT (2026-07-21), with the app's action button
             (e.g. import) OUTERMOST. `ml-auto` pushes the whole group right of the search box. */}
         <div className="flex shrink-0 items-center gap-2 md:ml-auto">
+          {/* Sort is MOBILE-ONLY and hides itself (see SortSheet) — it is the phone's stand-in for the
+              column headers, which is exactly what md+ has instead. It sits left of Bộ lọc so the two
+              panel-openers are adjacent, in the order you use them: order the list, then narrow it. */}
+          {sortOptions.length > 0 && (
+            <SortSheet
+              options={sortOptions}
+              columnId={activeSort?.id ?? null}
+              desc={activeSort?.desc ?? false}
+              onChange={(next) => changeSorting(next ? [{ id: next.id, desc: next.desc }] : [])}
+            />
+          )}
           {/* The column chooser is DESKTOP-ONLY: below md the table is replaced by cards (see
               `renderCard`), whose fields are fixed by the card layout, so there are no columns to
               show or hide. */}
@@ -667,7 +704,9 @@ export function DataTable<T>({
           {/* Cards below md (only when the caller supplied a renderer — otherwise the table renders at
               every width). Same `rows` as the table: searched, filtered, sorted, paged. */}
           {renderCard && (
-            <ul className="flex flex-col gap-2 md:hidden">
+            // data-slot: the card list is what a phone actually reads, so the mobile e2e gate needs to
+            // address it (and its ORDER) without depending on a Tailwind class string.
+            <ul data-slot="data-table-cards" className="flex flex-col gap-2 md:hidden">
               {rows.map((row, i) => {
                 const selected = enableRowSelection && row.getIsSelected();
                 return (
