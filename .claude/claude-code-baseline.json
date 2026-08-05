@@ -1,0 +1,12 @@
+{
+  "$comment": "Bản rà Claude Code gần nhất. Nghi thức `claude-code-drift` so `reviewedVersion` với version đang chạy. Đừng sửa tay — dùng `node tooling/rituals.mjs --reviewed-claude-code \"<thấy gì>\"`.",
+  "reviewedVersion": "2.1.221",
+  "reviewedAt": "2026-08-05T08:01:53.837Z",
+  "history": [
+    {
+      "version": "2.1.221",
+      "at": "2026-08-05T08:01:53.837Z",
+      "found": "2.1.221 rà ở template harness 2026-08-04 bằng schema nhúng trong binary: 7 sự kiện hook native tồn tại thật, 4 đã nhận vai ở harness v2.0.0. Không có tính năng native nào làm thứ harness tự viết thành thừa. Hồ sơ: template docs/adr/0002"
+    }
+  ]
+}

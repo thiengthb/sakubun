@@ -83,7 +83,8 @@ Cấu hình harness: `harness.config.json` — mọi lệnh, ngưỡng, vùng n�
 - **Một issue = một nhánh = một worktree.** Không làm 2 issue trong một worktree.
 - Trước khi sửa file trong **vùng nóng** (xem `harness.config.json → paths.hot`):
   kiểm `gh pr list --state open` và `reservations/`. Có chồng lấn → **báo người, đừng tự quyết**.
-- **KHÔNG sửa**: `.claude/settings.json`, `.claude/hooks/**`, `.mcp.json`, `AGENTS.md`, `harness.config.json`.
+- **KHÔNG sửa**: `.claude/settings.json`, `.claude/hooks/**`, `.claude/rules/**`, `.mcp.json`,
+  `CLAUDE.md`, `AGENTS.md`, `harness.config.json`, `.github/CODEOWNERS`.
   Dùng `/harness-propose`. (Hook sẽ chặn — đó là cố ý.)
 - **KHÔNG sửa** file feature của issue khác. **KHÔNG sửa** `features/_index.json`.
 - **KHÔNG** push lên nhánh người khác. **KHÔNG** force push. **KHÔNG** rebase nhánh chung.
