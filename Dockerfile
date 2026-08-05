@@ -16,6 +16,20 @@ COPY prisma ./prisma
 # `npm ci` (following a lockfile regenerated on another OS) can leave better-sqlite3 without its native
 # binding → runtime "Could not locate the bindings file". `npm rebuild` re-runs its install script so
 # the binding is always present. The npm cache mount survives across builds.
+#
+# npm_config_nodedir is NOT optional here. better-sqlite3 13 ships no `install` script, so `npm rebuild`
+# ALWAYS compiles from source, and node-gyp's default is to download the musl headers from
+# unofficial-builds.nodejs.org. BuildKit's network has no route to IPv6 while node resolves AAAA first,
+# so that download dies with AggregateError [ETIMEDOUT] in ~500ms and takes the build with it (measured
+# 2026-08-06 inside buildkit: default → ETIMEDOUT, --dns-result-order=ipv4first → HTTP 200). `docker run`
+# does not reproduce it (wget goes IPv4), which is why the image built before node:24-alpine moved to
+# 24.19.0 never hit this.
+#
+# Pointing node-gyp at the headers the node image already ships (/usr/local/include/node) removes the
+# download entirely — no IPv6 workaround to rot, and the headers are guaranteed to match the node that
+# will run the binding, because they come from this very image. NODE_OPTIONS=--dns-result-order does
+# NOT work as a fix: npm does not pass it down to the node-gyp child.
+ENV npm_config_nodedir=/usr/local
 RUN --mount=type=cache,target=/root/.npm \
     npm_config_fetch_retries=5 npm_config_fetch_retry_mintimeout=20000 \
     npm_config_fetch_retry_maxtimeout=120000 npm ci && npm rebuild better-sqlite3
