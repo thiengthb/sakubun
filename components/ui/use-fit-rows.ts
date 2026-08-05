@@ -42,12 +42,12 @@ export function useFitRows({
   rowHeight,
   rowGap = 0,
   grid = false,
-  // Only the page's own bottom padding below the footer (PageShell is `pt-6 pb-16` — 64px at the
+  // Only the page's own bottom padding below the footer (PageShell is `pt-6 pb-6` — 24px at the
   // bottom, a reserved gutter for the floating back-to-top button) + a few px of safety. The gap above
   // the footer, the table's horizontal scrollbar and the footer height are all measured into
   // `footerChrome` below. Keep in step with PageShell's `pb-*`: too small and the fitted list ends up
   // under the button, too large and it wastes a row.
-  bottomGap = 68,
+  bottomGap = 28,
   min,
   max,
   footerFallback = 56,

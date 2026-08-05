@@ -69,6 +69,7 @@ export function SpeakButton({
   speaker,
   onProgress,
   rate = 1,
+  playToken = null,
   className,
 }: {
   text: string;
@@ -84,6 +85,20 @@ export function SpeakButton({
    * (VOICEVOX speedScale — keeps pitch) and used as Web Speech `utterance.rate`. A repeat-press slows
    * it to `rate × SLOW_FACTOR`. */
   rate?: number;
+  /**
+   * AUTO-PLAY LATCH. `null` (default) = manual only, the historic behaviour. Any other value plays once,
+   * as soon as that value CHANGES — so the caller expresses "read this now" by handing over a new token
+   * (e.g. `${itemId}:answer`) and "don't" by handing over `null`.
+   *
+   * A token rather than a boolean because the interesting event is a TRANSITION, not a state: the group
+   * flashcards read the term when a new card appears, and re-handing the same token (flipping back and
+   * forth on one card) must NOT replay the audio. A boolean cannot tell those apart.
+   *
+   * Auto-play lives HERE rather than in a helper the caller could call, so the whole TTS path — VOICEVOX
+   * first, Web Speech fallback, repeat-press slow-down, karaoke progress — has exactly one
+   * implementation. A second one would drift, and it is the fallback that would rot unnoticed.
+   */
+  playToken?: string | number | null;
   className?: string;
 }) {
   const supported = useSpeechSupported();
@@ -116,7 +131,6 @@ export function SpeakButton({
   // most in-app webviews (Facebook, Zalo, …) have no speechSynthesis, so the button simply was not there
   // on the phone. Japanese always has the server path; other languages still depend on Web Speech.
   const canPlay = supported || lang.toLowerCase().startsWith('ja');
-  if (!canPlay || !text.trim()) return null;
 
   const stopAll = () => {
     if (audioRef.current) {
@@ -233,6 +247,36 @@ export function SpeakButton({
     }
     speakWebSpeech();
   };
+
+  /**
+   * The AUTO-PLAY entry point (see `playToken`). It only ever STARTS playback: a token change means
+   * "read this", not "toggle" — auto-reading a card and having it CANCEL an in-flight read would be a
+   * coin flip depending on how fast the previous card's audio was.
+   */
+  const playFn = () => {
+    if (!speaking) toggle();
+  };
+  // AUTO-PLAY (see `playToken`). Two effects, and the order matters:
+  //   1. keep a "latest" ref pointing at THIS render's `toggle` — assigning a ref during render is what
+  //      the React Compiler forbids, so it happens in an effect that runs every render;
+  //   2. when the token changes to something non-null, fire that ref.
+  // Effects run in declaration order after the same render, so (1) is always current when (2) reads it.
+  // `firedRef` starts as a sentinel, not the first token: a card that mounts WITH a token must read.
+  const playRef = useRef<() => void>(() => {});
+  const firedRef = useRef<string | number | null | undefined>(undefined);
+  useEffect(() => {
+    playRef.current = playFn;
+  });
+  useEffect(() => {
+    if (playToken == null || playToken === firedRef.current) return;
+    firedRef.current = playToken;
+    playRef.current();
+  }, [playToken]);
+
+  // Moved BELOW the handlers (2026-08-05): the auto-play effects above close over `playFn`, and a `const`
+  // that never got initialised because the component returned early is a TDZ ReferenceError inside the
+  // effect. Returning here instead keeps every definition initialised on every render path.
+  if (!canPlay || !text.trim()) return null;
 
   return (
     <button

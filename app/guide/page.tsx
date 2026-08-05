@@ -96,12 +96,6 @@ export default async function GuidePage() {
     <GuideTabs>
       <PageShell
         section="guide"
-        // `narrow` (max-w-3xl), not the default max-w-7xl (2026-08-05). /guide is the one page in the app
-        // that is almost entirely PROSE, and prose has a measure: at 1440px a line here ran ~1120px, i.e.
-        // ~160 characters, where the eye loses the start of the next line. max-w-3xl puts it near 100,
-        // and it also stops the walkthrough card from floating in a half-empty band. The two reference
-        // tables still fit (their columns are proportional, and Table scrolls if they ever do not).
-        width="narrow"
         headerAside={
           <>
             <GuideTabSelect />

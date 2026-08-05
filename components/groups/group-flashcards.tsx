@@ -9,18 +9,8 @@ import {
   useState,
   useSyncExternalStore,
 } from 'react';
-import { createPortal } from 'react-dom';
 import { motion } from 'motion/react';
-import {
-  Check,
-  Info,
-  Maximize2,
-  Minimize2,
-  Settings2,
-  Shuffle,
-  Sparkles,
-  Undo2,
-} from 'lucide-react';
+import { Check, Info, Settings2, Volume2, Shuffle, Sparkles, Undo2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Explain } from '@/components/shared/explain';
 import { Switch } from '@/components/ui/switch';
@@ -29,6 +19,7 @@ import { ExpandingIconButton } from '@/components/shared/expanding-icon-button';
 import { SpokenLine } from '@/components/shared/spoken-line';
 import { ItemDetailDialog } from '@/components/resources/item-detail-dialog';
 import { buildFuriganaMarkup } from '@/lib/furigana';
+import { useSessionState } from '@/components/shared/use-session-state';
 import { speakable } from '@/lib/format';
 import { parseEnrichment } from '@/lib/enrichment';
 import { cn } from '@/lib/utils';
@@ -100,7 +91,15 @@ function writeKnownSet(groupId: string, next: Set<string>) {
 }
 
 /** The Japanese term, big, with reference audio + furigana (SpokenLine). The prompt side for ja→vi. */
-function TermFace({ item, tts }: { item: GroupMemberItem; tts: TtsProps }) {
+function TermFace({
+  item,
+  tts,
+  playToken,
+}: {
+  item: GroupMemberItem;
+  tts: TtsProps;
+  playToken?: string | null;
+}) {
   return (
     <div className="flex flex-col items-center gap-2 text-center">
       <SpokenLine
@@ -111,7 +110,10 @@ function TermFace({ item, tts }: { item: GroupMemberItem; tts: TtsProps }) {
         speaker={tts.voiceSpeaker}
         rate={tts.speechRate}
         label="Nghe"
-        className="text-3xl leading-tight font-semibold sm:text-4xl"
+        // The card now owns the viewport, so the term scales with it instead of sitting at one size in
+        // the middle of a lot of nothing.
+        className="text-4xl leading-tight font-semibold sm:text-5xl"
+        playToken={playToken}
       />
     </div>
   );
@@ -121,7 +123,7 @@ function TermFace({ item, tts }: { item: GroupMemberItem; tts: TtsProps }) {
 function MeaningPromptFace({ item }: { item: GroupMemberItem }) {
   return (
     <div className="flex flex-col items-center gap-2 px-2 text-center">
-      <span className="text-2xl leading-snug font-semibold sm:text-3xl">
+      <span className="text-3xl leading-snug font-semibold sm:text-4xl">
         {item.meaningVi || <span className="text-muted-foreground">(chưa có nghĩa)</span>}
       </span>
       {item.hanviet && (
@@ -132,7 +134,16 @@ function MeaningPromptFace({ item }: { item: GroupMemberItem }) {
 }
 
 /** The answer side: term + nghĩa + cách dùng + ví dụ (audio + furigana). Scrolls if long. */
-function DetailFace({ item, tts }: { item: GroupMemberItem; tts: TtsProps }) {
+function DetailFace({
+  item,
+  tts,
+  playToken,
+}: {
+  item: GroupMemberItem;
+  tts: TtsProps;
+  /** Auto-read latch for the TERM only (the first Japanese of the answer) — never for the examples. */
+  playToken?: string | null;
+}) {
   const enrichment = detailKind(item.kind) === 'grammar' ? parseEnrichment(item.enrichment) : null;
   const examples = enrichment ? [enrichment.example, ...enrichment.examples] : [];
   return (
@@ -146,7 +157,8 @@ function DetailFace({ item, tts }: { item: GroupMemberItem; tts: TtsProps }) {
           speaker={tts.voiceSpeaker}
           rate={tts.speechRate}
           label="Nghe"
-          className="text-xl font-semibold"
+          className="text-2xl font-semibold sm:text-3xl"
+          playToken={playToken}
         />
       </div>
 
@@ -212,7 +224,6 @@ const SHORTCUTS: { keys: string; action: string }[] = [
   { keys: '→', action: 'Đã thuộc' },
   { keys: '←', action: 'Đang học' },
   { keys: 'Backspace', action: 'Thẻ trước' },
-  { keys: 'Esc', action: 'Thu nhỏ' },
 ];
 
 /** An info icon whose hover tooltip lists every keyboard shortcut. Sits to the RIGHT of the enrich
@@ -254,22 +265,40 @@ function FlashCard({
   flipped,
   onFlip,
   tts,
+  autoSpeak = false,
 }: {
   item: GroupMemberItem;
   direction: Direction;
   flipped: boolean;
   onFlip: () => void;
   tts: TtsProps;
+  /** Read the Japanese out loud by itself — see the settings popover. */
+  autoSpeak?: boolean;
 }) {
+  // WHICH Japanese gets read, per direction (the rule the user asked for):
+  //   ja→vi — the PROMPT is the Japanese term, so read it as the card appears.
+  //   vi→ja — the prompt is Vietnamese and reading it would give the answer away; read the first
+  //           Japanese of the ANSWER instead, i.e. the term, once the card is flipped.
+  // Examples are never auto-read in either direction: they are a paragraph, and a card that starts
+  // reciting three sentences the moment you flip it is noise you have to interrupt.
+  // The token carries the card id + face, so flipping back and forth does NOT replay (see SpeakButton).
+  const frontToken = autoSpeak && direction === 'ja-vi' && !flipped ? `${item.itemId}:term` : null;
+  const answerToken =
+    autoSpeak && direction === 'vi-ja' && flipped ? `${item.itemId}:answer` : null;
+
   const front =
-    direction === 'ja-vi' ? <TermFace item={item} tts={tts} /> : <MeaningPromptFace item={item} />;
+    direction === 'ja-vi' ? (
+      <TermFace item={item} tts={tts} playToken={frontToken} />
+    ) : (
+      <MeaningPromptFace item={item} />
+    );
   const frontHint = direction === 'ja-vi' ? 'Tiếng Nhật' : 'Tiếng Việt';
 
   const faceCls = 'absolute inset-0 rounded-2xl bg-card p-5 ring-1 ring-foreground/10';
   const centered = 'flex flex-col items-center justify-center gap-2';
 
   return (
-    <div className="relative w-full [perspective:1600px]">
+    <div className="relative min-h-[15rem] w-full flex-1 [perspective:1600px]">
       {/* A div, NOT a <button>: the faces contain SpeakButtons (real <button>s), and a button cannot
           nest a button (hydration error). Keyboard flip is handled by the component's global keydown
           listener (Space/Enter), so this only needs click + focus affordance. Clicks that land on an
@@ -282,7 +311,10 @@ function FlashCard({
           onFlip();
         }}
         aria-label={flipped ? 'Lật lại mặt trước' : 'Lật xem mặt sau'}
-        className="relative block h-80 w-full cursor-pointer rounded-2xl text-left outline-none focus-visible:ring-2 focus-visible:ring-primary sm:h-96 [transform-style:preserve-3d]"
+        // `absolute inset-0`, NOT `h-full`: this sits inside a flex item that got its height from
+        // flex-grow, and a percentage height against that resolves to the CONTENT height — measured at
+        // 245px inside a 465px slot. Absolute positioning against the `relative` wrapper fills it exactly.
+        className="absolute inset-0 block cursor-pointer rounded-2xl text-left outline-none focus-visible:ring-2 focus-visible:ring-primary [transform-style:preserve-3d]"
         animate={{ rotateY: flipped ? 180 : 0 }}
         transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
       >
@@ -296,7 +328,7 @@ function FlashCard({
           <span className="mb-1 block text-xs tracking-wide text-muted-foreground uppercase">
             Đáp án
           </span>
-          <DetailFace item={item} tts={tts} />
+          <DetailFace item={item} tts={tts} playToken={answerToken} />
         </div>
       </motion.div>
 
@@ -355,10 +387,9 @@ export function GroupFlashcards({
   // Undo stack: previous (idx, mark) so "quay lại" can rewind the last decision.
   const historyRef = useRef<{ id: string; mark: 'known' | 'still' }[]>([]);
 
-  // Expanded (pseudo-fullscreen) study: a fixed inset-0 overlay, NOT the Fullscreen API — the API
-  // portals popovers/dialogs to document.body OUTSIDE the fullscreen element, which would hide the
-  // settings popover and the enrich modal. A z-40 overlay keeps every control (portaled above) usable.
-  const [isExpanded, setIsExpanded] = useState(false);
+  // Auto-read the Japanese aloud. Session-scoped (survives leaving the tab and coming back, unlike
+  // `direction`/`shuffle`) because it is a preference about your ears, not about this round.
+  const [autoSpeak, setAutoSpeak] = useSessionState('flashcards.autoSpeak', false);
 
   const membersOrder = useMemo(() => members.map((m) => m.itemId), [members]);
   /** Order a set of ids for a round: random when shuffle is on, else the members' own order. */
@@ -488,10 +519,6 @@ export function GroupFlashcards({
       if (tag === 'input' || tag === 'textarea') return;
       // A modal (the enrich detail dialog) is open → let it own the keyboard, don't grade behind it.
       if (document.querySelector('[role="dialog"]')) return;
-      if (e.key === 'Escape' && isExpanded) {
-        setIsExpanded(false);
-        return;
-      }
       const onButton = tag === 'button';
       if (done) return;
       if ((e.key === ' ' || e.key === 'Enter') && !onButton) {
@@ -510,7 +537,7 @@ export function GroupFlashcards({
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [done, mark, undo, isExpanded]);
+  }, [done, mark, undo]);
 
   if (members.length === 0) {
     return (
@@ -529,9 +556,13 @@ export function GroupFlashcards({
   const dirLabel = direction === 'ja-vi' ? 'Nhật → Việt' : 'Việt → Nhật';
 
   const inner = (
-    <div
-      className={cn('mx-auto flex w-full flex-col gap-4', isExpanded ? 'max-w-3xl' : 'max-w-xl')}
-    >
+    // FILLS the tab: full width (was `max-w-xl`, i.e. a 576px column in the middle of a 1280px page) and
+    // a height derived from the viewport, so the card gets everything left over after the top bar, the
+    // progress bar and the grading buttons. 15rem is the measured height of that chrome plus PageShell's
+    // own pt-6/pb-6 — `svh` (not `vh`) so a phone's collapsing address bar does not clip the buttons.
+    // This replaces the old "Mở rộng" overlay: the card is now that big WITHOUT a second mode to enter,
+    // which also means the enrich dialog and the settings popover never have to out-stack an overlay.
+    <div className="flex min-h-[calc(100svh-6rem)] w-full flex-col gap-3">
       {/* Top bar: position + settings popover (direction + shuffle) + expand toggle. */}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="text-sm text-muted-foreground">
@@ -587,15 +618,28 @@ export function GroupFlashcards({
                 </span>
                 <Switch checked={shuffle} onCheckedChange={toggleShuffle} disabled={total < 2} />
               </label>
+              <label className="flex items-start justify-between gap-3">
+                <span className="flex items-start gap-2 text-sm">
+                  <Volume2 className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+                  <span className="flex flex-col leading-tight">
+                    Tự đọc tiếng Nhật
+                    {/* State the RULE here, because it differs by direction and a bare toggle would
+                        leave the user guessing why nothing spoke on a Việt → Nhật prompt. */}
+                    <span className="text-xs font-normal text-muted-foreground">
+                      {direction === 'ja-vi'
+                        ? 'Đọc mẫu/từ ngay khi thẻ hiện ra.'
+                        : 'Đọc phần tiếng Nhật đầu của đáp án sau khi lật. Ví dụ thì không tự đọc.'}
+                    </span>
+                  </span>
+                </span>
+                <Switch
+                  checked={autoSpeak}
+                  onCheckedChange={(v) => setAutoSpeak(v === true)}
+                  className="mt-0.5"
+                />
+              </label>
             </PopoverContent>
           </Popover>
-          <ExpandingIconButton
-            icon={isExpanded ? Minimize2 : Maximize2}
-            label={isExpanded ? 'Thu nhỏ' : 'Mở rộng'}
-            variant="outline"
-            size="sm"
-            onClick={() => setIsExpanded((v) => !v)}
-          />
         </div>
       </div>
 
@@ -640,6 +684,7 @@ export function GroupFlashcards({
               flipped={flipped}
               onFlip={() => setFlipped((f) => !f)}
               tts={tts}
+              autoSpeak={autoSpeak}
             />
 
             <p className="text-center text-xs text-muted-foreground">
@@ -682,16 +727,5 @@ export function GroupFlashcards({
     </div>
   );
 
-  // Expanded → a full-viewport backdrop (fixed inset-0) portaled to <body> so it covers EVERYTHING,
-  // incl. the sidebar; the content keeps its own max-width centered inside. The backdrop must be a
-  // SEPARATE element from the max-width content — putting both on one div makes a narrow centered box,
-  // not a full-screen cover (the sidebar then shows through the sides).
-  return isExpanded
-    ? createPortal(
-        <div className="fixed inset-0 z-40 flex flex-col justify-center overflow-auto bg-background px-4 py-8 sm:px-8">
-          {inner}
-        </div>,
-        document.body,
-      )
-    : inner;
+  return inner;
 }

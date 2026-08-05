@@ -85,13 +85,6 @@ export function SettingsForm({ initial, account }: SettingsFormProps) {
     <Tabs value={tab} onValueChange={setTab}>
       <PageShell
         section="settings"
-        // `wide` (max-w-5xl), not the default full-bleed max-w-7xl (2026-08-05). Settings is a FORM, and
-        // a form does not improve by getting wider — at 1440px the page was 1160px of content in which
-        // the JLPT checkboxes and the Furigana select sat ~700px apart on one row (they are one thought),
-        // and the two sliders stretched their 5 and 7 stops across the whole screen, so a one-notch drag
-        // moved the handle 160px. The 2-column field grids inside still get ~490px each, which is more
-        // than any control here needs. `full` belongs to the data-dense pages (tables, dashboard).
-        width="wide"
         headerAside={
           <>
             <TabSelect

@@ -12,6 +12,7 @@ import { PageShell } from '@/components/shell/page-shell';
 import { SearchInput } from '@/components/shared/search-input';
 import { SpokenLine } from '@/components/shared/spoken-line';
 import { addItemsToGroupAction } from '@/app/actions';
+import { cn } from '@/lib/utils';
 import { speakable } from '@/lib/format';
 import { buildFuriganaMarkup } from '@/lib/furigana';
 import { GROUP_KIND_LABELS } from '@/components/groups/group-kind-badge';
@@ -69,20 +70,33 @@ function PickerLine({
  * The kind guard is server-side (`listAddableItems` only returns items the group's kind accepts, minus
  * the ones already in it), so this component never has to decide what may join.
  */
-export function GroupItemPicker({
+export function GroupItemPickerBody({
   group,
   addable,
   voiceSpeaker,
   speechRate,
   showFurigana = false,
+  layout = 'page',
+  onDone,
+  onCancel,
 }: {
   group: GroupDetail;
   addable: GroupMemberItem[];
   voiceSpeaker?: number;
   speechRate?: number;
   showFurigana?: boolean;
+  /**
+   * `page` — the route host (/groups/<id>/add): the list runs as long as it likes and the action bar is
+   * `sticky` to the bottom of the viewport.
+   * `dialog` — the desktop modal host: the list gets its own bounded scroller (a dialog cannot grow past
+   * the viewport) and the action bar is a plain row at the end of it.
+   * The two hosts share this ONE body so the kind guard, the selection model and the submit path cannot
+   * drift between the phone and the desktop.
+   */
+  layout?: 'page' | 'dialog';
+  onDone: () => void;
+  onCancel: () => void;
 }) {
-  const router = useRouter();
   const [query, setQuery] = useState('');
   const [sel, setSel] = useState<Set<string>>(new Set());
   const [isPending, startTransition] = useTransition();
@@ -108,19 +122,29 @@ export function GroupItemPicker({
     if (sel.size === 0) return;
     startTransition(async () => {
       const r = await addItemsToGroupAction(group.id, [...sel]);
-      if (toastResult(r, (d) => `Đã thêm ${d.added} mục`)) {
-        router.push(`/groups/${group.id}`);
-        router.refresh();
-      }
+      if (toastResult(r, (d) => `Đã thêm ${d.added} mục`)) onDone();
     });
   };
 
   return (
-    <PageShell section="groups" action="addItems" width="narrow">
-      <p className="text-muted-foreground">
-        Thêm vào <span className="font-medium text-foreground">{group.name}</span>. Chỉ hiện{' '}
-        {mixed ? 'ngữ pháp và từ vựng' : GROUP_KIND_LABELS[group.kind].toLowerCase()} chưa thuộc nhóm.
-      </p>
+    <div
+      className={cn(
+        'flex min-h-0 flex-col gap-4',
+        // Page host: fill what is left of the viewport so the list is the tallest thing on screen (the
+        // reason this became a route on a phone at all). Dialog host: the DialogContent caps the height.
+        layout === 'page' && 'sm:min-h-[calc(100svh-13rem)]',
+        layout === 'dialog' && 'min-h-0 flex-1',
+      )}
+    >
+      {/* The page needs this line (its breadcrumb says only "Thêm mục"); the dialog does not — its
+          header already names the group and the filter, and printing both read as a stutter. */}
+      {layout === 'page' && (
+        <p className="text-muted-foreground">
+          Thêm vào <span className="font-medium text-foreground">{group.name}</span>. Chỉ hiện{' '}
+          {mixed ? 'ngữ pháp và từ vựng' : GROUP_KIND_LABELS[group.kind].toLowerCase()} chưa thuộc
+          nhóm.
+        </p>
+      )}
 
       {addable.length === 0 ? (
         <EmptyState
@@ -132,15 +156,15 @@ export function GroupItemPicker({
               : `Mọi mục thuộc loại ${GROUP_KIND_LABELS[group.kind].toLowerCase()} đã ở trong nhóm này.`
           }
           action={
-            <Button variant="outline" onClick={() => router.back()}>
-              Quay lại nhóm
+            <Button variant="outline" onClick={onCancel}>
+              {layout === 'dialog' ? 'Đóng' : 'Quay lại nhóm'}
             </Button>
           }
         />
       ) : (
-        <>
+        <Card className={cn('gap-3', layout === 'dialog' && 'min-h-0 flex-1 overflow-hidden')}>
           {/* One row, same as every list toolbar in the app. */}
-          <div className="flex flex-row items-center gap-2 sm:gap-3">
+          <CardContent className="flex flex-row items-center gap-2 sm:gap-3">
             <SearchInput
               value={query}
               onChange={(e) => setQuery(e.target.value)}
@@ -150,46 +174,45 @@ export function GroupItemPicker({
             <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
               {filtered.length}/{addable.length}
             </span>
-          </div>
+          </CardContent>
 
           {filtered.length === 0 ? (
-            <EmptyState icon={SearchX} title="Không khớp từ khoá." className="py-12" />
+            <EmptyState icon={SearchX} title="Không khớp từ khoá." className="py-8" />
           ) : (
-            <Card>
-              <CardContent className="px-0">
-                <ul className="divide-y divide-border">
-                  {filtered.map((i) => (
-                    <li key={i.itemId}>
-                      {/* The whole row is the label, so the tap target is the row and not the 16px box. */}
-                      <label className="flex cursor-pointer items-center gap-3 px-4 py-3">
-                        <Checkbox
-                          className="shrink-0"
-                          checked={sel.has(i.itemId)}
-                          onCheckedChange={() => toggle(i.itemId)}
-                          aria-label={`Chọn ${i.expression}`}
-                        />
-                        <PickerLine
-                          item={i}
-                          mixed={mixed}
-                          voiceSpeaker={voiceSpeaker}
-                          speechRate={speechRate}
-                          showFurigana={showFurigana}
-                        />
-                      </label>
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
+            <div className="min-h-0 flex-1 overflow-y-auto border-y border-border">
+              <ul className="divide-y divide-border">
+                {filtered.map((i) => (
+                  <li key={i.itemId}>
+                    {/* The whole row is the label, so the tap target is the row and not the 16px box. */}
+                    <label className="flex cursor-pointer items-center gap-3 px-4 py-3">
+                      <Checkbox
+                        className="shrink-0"
+                        checked={sel.has(i.itemId)}
+                        onCheckedChange={() => toggle(i.itemId)}
+                        aria-label={`Chọn ${i.expression}`}
+                      />
+                      <PickerLine
+                        item={i}
+                        mixed={mixed}
+                        voiceSpeaker={voiceSpeaker}
+                        speechRate={speechRate}
+                        showFurigana={showFurigana}
+                      />
+                    </label>
+                  </li>
+                ))}
+              </ul>
+            </div>
           )}
 
-          {/* Sticky action bar: on a phone the list is longer than the viewport, and an action row that
-              scrolls away means scrolling back to the top to commit a choice made at the bottom.
-              `-mx-4 px-4` lets the blurred bar bleed to the page edges while the buttons stay aligned. */}
-          <div className="sticky bottom-0 -mx-4 flex items-center gap-2 border-t border-border bg-background/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+          {/* Action row INSIDE the card, like every other form in the app (2026-08-05 — it used to be a
+              blurred bar bleeding to the page edges, which was the one action row here that did not look
+              like the app's). The list above it is the part that scrolls, so this row stays visible
+              without needing `position: sticky` — which a Card's `overflow-hidden` would break anyway. */}
+          <CardContent className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground tabular-nums">Đã chọn {sel.size}</span>
             <div className="ml-auto flex gap-2">
-              <Button variant="outline" onClick={() => router.back()} disabled={isPending}>
+              <Button variant="outline" onClick={onCancel} disabled={isPending}>
                 Huỷ
               </Button>
               <Button onClick={submit} disabled={isPending || sel.size === 0}>
@@ -197,9 +220,33 @@ export function GroupItemPicker({
                 Thêm {sel.size > 0 ? sel.size : ''} mục
               </Button>
             </div>
-          </div>
-        </>
+          </CardContent>
+        </Card>
       )}
+    </div>
+  );
+}
+
+/** `/groups/<id>/add` — the ROUTE host (the phone path; desktop opens the dialog host instead). */
+export function GroupItemPicker(props: {
+  group: GroupDetail;
+  addable: GroupMemberItem[];
+  voiceSpeaker?: number;
+  speechRate?: number;
+  showFurigana?: boolean;
+}) {
+  const router = useRouter();
+  return (
+    <PageShell section="groups" action="addItems" width="narrow">
+      <GroupItemPickerBody
+        {...props}
+        layout="page"
+        onDone={() => {
+          router.push(`/groups/${props.group.id}`);
+          router.refresh();
+        }}
+        onCancel={() => router.back()}
+      />
     </PageShell>
   );
 }

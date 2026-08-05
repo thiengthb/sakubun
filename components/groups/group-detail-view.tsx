@@ -1,21 +1,20 @@
 'use client';
 
-import Link from 'next/link';
 import { useMemo, useRef, useTransition } from 'react';
 import { toast } from 'sonner';
-import { Layers, Lightbulb, Pencil, Plus, SearchX } from 'lucide-react';
+import { Layers, Lightbulb, SearchX } from 'lucide-react';
 import { toastResult } from '@/lib/action-toast';
 import { AppBreadcrumbs } from '@/components/shell/app-breadcrumbs';
 import { PageShell } from '@/components/shell/page-shell';
 import { Button } from '@/components/ui/button';
 import { Explain } from '@/components/shared/explain';
 import { DataPagination } from '@/components/ui/data-pagination';
-import { ExpandingIconButton } from '@/components/shared/expanding-icon-button';
 import { EmptyState } from '@/components/shared/empty-state';
 import { usePagedList } from '@/components/shared/use-paged-list';
 import { useSessionState } from '@/components/shared/use-session-state';
 import { SearchInput } from '@/components/shared/search-input';
 import { GROUP_KIND_LABELS } from '@/components/groups/group-kind-badge';
+import { GroupAddItemsAction, GroupEditAction } from '@/components/groups/group-actions';
 import { GroupFlashcards } from '@/components/groups/group-flashcards';
 import { SpokenLine } from '@/components/shared/spoken-line';
 import { ItemDetailDialog } from '@/components/resources/item-detail-dialog';
@@ -156,20 +155,16 @@ export function GroupDetailView({
                   <Lightbulb className="size-4" />
                 </Button>
               </Explain>
-              {/* Both NAVIGATE now (2026-08-05) — /groups/<id>/edit and /groups/<id>/add. They were
-                  dialogs; see components/groups/group-form-page.tsx for why the pair moved to routes. */}
-              <ExpandingIconButton asChild icon={Pencil} label="Sửa" variant="outline">
-                <Link href={`/groups/${group.id}/edit`} />
-              </ExpandingIconButton>
-              {addable.length === 0 ? (
-                // Nothing left to add: keep the control visible but inert, so the row does not reflow
-                // between groups. A disabled <a> is not a thing, hence a real disabled button.
-                <ExpandingIconButton icon={Plus} label="Thêm mục" variant="default" disabled />
-              ) : (
-                <ExpandingIconButton asChild icon={Plus} label="Thêm mục" variant="default">
-                  <Link href={`/groups/${group.id}/add`} />
-                </ExpandingIconButton>
-              )}
+              {/* Modal from md up, route below it (2026-08-05) — see components/groups/group-actions.tsx. */}
+              <GroupEditAction group={group} variant="toolbar" />
+              <GroupAddItemsAction
+                group={group}
+                addable={addable}
+                voiceSpeaker={voiceSpeaker}
+                speechRate={speechRate}
+                showFurigana={showFurigana}
+                variant="toolbar"
+              />
             </div>
           </div>
 
@@ -185,12 +180,14 @@ export function GroupDetailView({
                 </>
               }
               action={
-                <Button asChild disabled={addable.length === 0}>
-                  <Link href={`/groups/${group.id}/add`}>
-                    <Plus className="size-4" />
-                    Thêm mục
-                  </Link>
-                </Button>
+                <GroupAddItemsAction
+                  group={group}
+                  addable={addable}
+                  voiceSpeaker={voiceSpeaker}
+                  speechRate={speechRate}
+                  showFurigana={showFurigana}
+                  variant="empty"
+                />
               }
             />
           ) : visibleMembers.length === 0 ? (

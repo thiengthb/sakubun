@@ -85,3 +85,109 @@ test('bulk add/remove to group, and the item-detail membership chips', async ({ 
 
   expect(errors, `console/page errors:\n${errors.join('\n')}`).toEqual([]);
 });
+
+/**
+ * The two group behaviours that a screenshot cannot show, both added 2026-08-05 by request.
+ *
+ * 1. ADD/EDIT IS A MODAL ON DESKTOP, A ROUTE ON A PHONE. Implemented as two triggers hidden at each
+ *    other's breakpoint (components/groups/group-actions.tsx), which is exactly the kind of thing that
+ *    silently regresses to "both" or "neither" — a `md:hidden` typo looks fine in one viewport.
+ * 2. AUTO-READ THE JAPANESE, per direction. Asserted through /api/tts: that request IS the read (the
+ *    VOICEVOX path is primary), and its `text=` says WHICH string was read. The rule under test:
+ *      ja→vi  — read the term as the card appears
+ *      vi→ja  — read NOTHING on the prompt (it is Vietnamese; reading the Japanese would be the answer),
+ *               then the term (and ONLY the term, never the examples) once flipped.
+ */
+test('group actions: modal on desktop, route on a phone', async ({ page }) => {
+  await seedE2eAccount();
+  await page.goto('/login');
+  await page.getByLabel('Email').fill(E2E_EMAIL);
+  await page.getByLabel('Mật khẩu').fill(E2E_LOGIN);
+  await page.getByRole('button', { name: 'Đăng nhập' }).click();
+  await page.waitForURL((u) => !u.pathname.startsWith('/login'), { timeout: 30_000 });
+
+  // --- desktop: the control is a BUTTON, it opens a dialog, and the URL does NOT change ---
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto('/resources?tab=groups', { waitUntil: 'networkidle' });
+  // The role is part of the contract, not an implementation detail: a dialog trigger must be a button
+  // (nothing to navigate to), and the phone's must be a link (so middle-click / "copy link" / the back
+  // button all work). Asserting the role is also what makes this test fail if both triggers ever show.
+  await expect(page.getByRole('link', { name: 'Tạo nhóm' })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Tạo nhóm' }).click();
+  await expect(page.getByRole('dialog')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Tạo nhóm mới' })).toBeVisible();
+  expect(new URL(page.url()).pathname, 'desktop must NOT navigate').toBe('/resources');
+  await page.keyboard.press('Escape');
+
+  // --- phone: the same control is a LINK to the route, and no dialog appears ---
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/resources?tab=groups', { waitUntil: 'networkidle' });
+  await expect(page.getByRole('button', { name: 'Tạo nhóm' })).toHaveCount(0);
+  await page.getByRole('link', { name: 'Tạo nhóm' }).click();
+  await page.waitForURL((u) => u.pathname === '/groups/new', { timeout: 15_000 });
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  // …and the route it lands on is the form, with the action breadcrumb.
+  await expect(page.getByRole('link', { name: /Nhóm/ }).first()).toBeVisible();
+  await expect(page.getByLabel('Tên nhóm')).toBeVisible();
+});
+
+test('flashcards read the Japanese per direction, and never the examples', async ({ page }) => {
+  await seedE2eAccount();
+  const db = new Database(path.join(process.cwd(), E2E_DB_FILE));
+  const iso = (ms: number) => new Date(ms).toISOString().replace('Z', '+00:00');
+  const now = Date.now();
+  for (const t of ['GroupMember', 'Group', 'ReviewLog', 'SrsState', 'Sentence', 'Item'])
+    db.exec(`DELETE FROM "${t}"`);
+  // ONE member, and it carries an example (`notes`) — so "the examples are not read" is a real claim
+  // here and not vacuously true.
+  db.prepare(
+    `INSERT INTO Item (id, kind, expression, reading, hanviet, meaningVi, level, notes, source,
+       captureReason, suspended, starred, createdAt, challengeObservations)
+     VALUES ('v9', 'VOCAB', '把握', 'はあく', 'bả ác', 'nắm bắt, hiểu rõ', 'N2', '状況を把握する。', 'MCP', NULL, 0, 0, ?, 0)`,
+  ).run(iso(now));
+  db.prepare(
+    `INSERT INTO "Group" (id, name, kind, color, note, createdAt, updatedAt)
+     VALUES ('grpF', 'Nhóm flashcard', 'vocab', NULL, NULL, ?, ?)`,
+  ).run(iso(now), iso(now));
+  db.prepare(`INSERT INTO GroupMember (groupId, itemId, addedAt) VALUES ('grpF', 'v9', ?)`).run(
+    iso(now),
+  );
+  db.close();
+
+  const read: string[] = [];
+  page.on('request', (r) => {
+    if (!r.url().includes('/api/tts')) return;
+    const q = new URL(r.url()).searchParams.get('text');
+    if (q) read.push(q);
+  });
+
+  await page.goto('/login');
+  await page.getByLabel('Email').fill(E2E_EMAIL);
+  await page.getByLabel('Mật khẩu').fill(E2E_LOGIN);
+  await page.getByRole('button', { name: 'Đăng nhập' }).click();
+  await page.waitForURL((u) => !u.pathname.startsWith('/login'), { timeout: 30_000 });
+
+  await page.goto('/groups/grpF', { waitUntil: 'networkidle' });
+  await page.getByRole('tab', { name: 'Flashcard' }).click();
+  await page.getByRole('button', { name: 'Cài đặt' }).click();
+  await page.getByRole('switch', { name: /Tự đọc tiếng Nhật/ }).click();
+  await page.keyboard.press('Escape');
+
+  // ja→vi (the default): the term is the PROMPT, so it reads straight away.
+  await expect.poll(() => read.length, { timeout: 10_000 }).toBe(1);
+  expect(read[0]).toBe('把握');
+
+  // vi→ja: the prompt is Vietnamese — nothing may be read until the card is flipped.
+  read.length = 0;
+  await page.getByRole('button', { name: 'Cài đặt' }).click();
+  await page.getByRole('button', { name: 'Việt → Nhật' }).click();
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(1200);
+  expect(read, 'reading the Japanese on a vi→ja prompt gives the answer away').toEqual([]);
+
+  await page.getByRole('button', { name: /Lật xem mặt sau/ }).click();
+  await expect.poll(() => read.length, { timeout: 10_000 }).toBe(1);
+  // The term, NOT the example sentence stored in notes.
+  expect(read[0]).toBe('把握');
+  expect(read).not.toContain('状況を把握する。');
+});

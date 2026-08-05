@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useMemo, useRef, useState, useTransition } from 'react';
-import { Layers, Pencil, Plus, SearchX, Trash2 } from 'lucide-react';
+import { Layers, SearchX, Trash2 } from 'lucide-react';
 import { toastResult } from '@/lib/action-toast';
 import { Button } from '@/components/ui/button';
 import { DataPagination } from '@/components/ui/data-pagination';
@@ -15,8 +15,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { EmptyState } from '@/components/shared/empty-state';
-import { ExpandingIconButton } from '@/components/shared/expanding-icon-button';
 import { FilterPopover, FilterRow } from '@/components/shared/filter-popover';
+import { GroupCreateAction, GroupEditAction } from '@/components/groups/group-actions';
 import { GROUP_KIND_LABELS, GroupKindBadge } from '@/components/groups/group-kind-badge';
 import { SearchInput } from '@/components/shared/search-input';
 import { usePagedList } from '@/components/shared/use-paged-list';
@@ -169,11 +169,8 @@ export function GroupsView({ groups }: { groups: GroupSummary[] }) {
                 </FilterRow>
               </div>
             </FilterPopover>
-            {/* NAVIGATES to /groups/new — it was a dialog until 2026-08-05. Same as "Thêm" on the
-                grammar / vocab tabs, which go to /resources/new. */}
-            <ExpandingIconButton asChild icon={Plus} label="Tạo nhóm" variant="default">
-              <Link href="/groups/new" />
-            </ExpandingIconButton>
+            {/* Modal from md up, route below it — same split as "Thêm" on the grammar/vocab tabs. */}
+            <GroupCreateAction />
           </div>
         </div>
       )}
@@ -183,14 +180,7 @@ export function GroupsView({ groups }: { groups: GroupSummary[] }) {
           icon={Layers}
           title="Chưa có nhóm nào"
           description="Tạo nhóm đầu tiên để gom các mục bạn muốn luyện chung."
-          action={
-            <Button asChild>
-              <Link href="/groups/new">
-                <Plus className="size-4" />
-                Tạo nhóm
-              </Link>
-            </Button>
-          }
+          action={<GroupCreateAction variant="empty" />}
         />
       ) : filtered.length === 0 ? (
         <EmptyState
@@ -224,17 +214,7 @@ export function GroupsView({ groups }: { groups: GroupSummary[] }) {
                     <span className="line-clamp-2">{g.name}</span>
                   </span>
                   <span className="flex shrink-0 items-center gap-0.5">
-                    <Button
-                      asChild
-                      variant="ghost"
-                      size="icon"
-                      className="size-8"
-                      aria-label={`Sửa nhóm ${g.name}`}
-                    >
-                      <Link href={`/groups/${g.id}/edit`}>
-                        <Pencil className="size-4" />
-                      </Link>
-                    </Button>
+                    <GroupEditAction group={g} />
                     <Button
                       variant="ghost"
                       size="icon"

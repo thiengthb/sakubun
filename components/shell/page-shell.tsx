@@ -65,11 +65,15 @@ export function PageShell({
     // `text-sm` is the app's BODY BASELINE (type-scale invariant): page content inherits 14px, so a
     // bare content block never renders larger than a heading. Headings opt UP (CardTitle = text-base,
     // section titles = text-base/lg); meta opts DOWN (text-xs). Enforced by lib/type-scale.test.ts.
-    // `pb-16` (not `py-6`) reserves a gutter for the floating back-to-top button (`ScrollToTop`, fixed
-    // bottom-right, spanning 16-56px up from the viewport edge). Without it, the last row of a scrolled
-    // page sits UNDER the button — on a phone that is exactly the pagination footer's rows-per-page
-    // select, which the button covered. `useFitRows`' `bottomGap` default mirrors this number; change
-    // the two together or the viewport-fit lists will fit one row too many.
+    // `pb-6`, down from `pb-16` (2026-08-05, reported as dead space under the pagination bar).
+    // The 64px was a gutter for the floating back-to-top button (`ScrollToTop`, fixed bottom-right,
+    // spanning 16–56px up from the viewport edge). The reservation was self-defeating: that button only
+    // appears once the page is scrolled past 300px, and every page with a pagination footer sizes its
+    // page to FIT THE VIEWPORT (`useFitRows`) — so those pages never scroll, the button never appears,
+    // and the 64px was pure dead space below the footer on exactly the pages that reserved it. Pages
+    // that DO scroll (guide, dashboard) end in prose, not in a control the button could cover.
+    // `useFitRows`' `bottomGap` default mirrors this number — change the two together, or the
+    // viewport-fit lists will fit one row too many and bring back the page scrollbar.
     // `w-full min-w-0` is load-bearing, not defensive — it is what keeps a tabbed page inside the phone.
     // Every tabbed page renders this shell INSIDE a `<Tabs>` root, which is `display:flex`, so this div is
     // a FLEX ITEM. With `width:auto` the browser sized it from its CONTENT instead of stretching it to the
@@ -80,7 +84,7 @@ export function PageShell({
     // uses on <main> (`mx-auto w-full max-w-7xl min-w-0`).
     // Consequence worth keeping: a too-wide descendant now overflows ALONE, so its own `overflow-x-auto`
     // can contain it and e2e/mobile-layout.spec.ts can name the element instead of blaming the page.
-    <div className={cn('w-full min-w-0 space-y-4 pt-6 pb-16 text-sm', WIDTH[width], className)}>
+    <div className={cn('w-full min-w-0 space-y-4 pt-6 pb-6 text-sm', WIDTH[width], className)}>
       {/* Remember scroll position per route (long pages only; list pages are viewport-fit). */}
       <ScrollRestorer />
       {/* Header row: breadcrumb, then the page-supplied aside (tabs, actions). Kept unconditional so

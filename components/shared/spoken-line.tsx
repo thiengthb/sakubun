@@ -24,6 +24,7 @@ export function SpokenLine({
   rate,
   truncate = false,
   align = 'end',
+  playToken = null,
   className,
 }: {
   /** Plain Japanese surface — what SHOWS (and, by default, what's spoken). */
@@ -49,6 +50,8 @@ export function SpokenLine({
    * resource cards below md, where a long pattern wraps).
    */
   align?: 'end' | 'start';
+  /** Auto-read latch, forwarded to the SpeakButton — a NEW value reads this line once. See SpeakButton. */
+  playToken?: string | number | null;
   className?: string;
 }) {
   const [ratio, setRatio] = useState(0);
@@ -76,6 +79,7 @@ export function SpokenLine({
         label={label}
         rate={rate}
         onProgress={setRatio}
+        playToken={playToken}
       />
       {/* `furigana` keeps the ruby readings hidden until the line is hovered — a hint, not a spoiler
           (same behaviour as FuriganaText); the per-char karaoke colour still shows on the base always. */}
