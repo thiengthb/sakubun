@@ -252,6 +252,34 @@
         "kind": "manual"
       },
       "allow": {}
+    },
+    {
+      "id": "tags-sit-with-their-content",
+      "rule": "Thẻ tag mô tả một đối tượng (cấp JLPT, trạng thái SRS) và nút hành động lên chính đối tượng đó (sao) nằm CẠNH ĐỐI TƯỢNG trong thân trang, không nằm trên hàng breadcrumb. Hàng header chỉ dành cho ĐIỀU HƯỚNG: breadcrumb, và tab chuyển trang.",
+      "why": "Trên mobile web hàng header đã là icon app + nút sidebar + vạch chia + breadcrumb, mà crumb cuối lại chính là tên đối tượng. Thêm hai badge và một nút sao vào đó thì cả hàng tranh nhau ~170px: dữ liệu dài là tag bị chèn sát rìa, và tag là thứ duy nhất trên hàng không phải điều hướng. Người dùng nêu 2026-08-05.",
+      "canonical": "components/resources/item-analytics.tsx",
+      "source": "user 2026-08-05 (\"những thẻ tag bên trái cạnh dấu sao của trang chi tiết ... khi về màn hình mobile web, nếu gặp dữ liệu dài thì phần này sẽ bị chèn và không bắt mắt\")",
+      "repeats": 1,
+      "lockedOn": "2026-08-05",
+      "note": "Chốt tất định bằng HÌNH HỌC ở e2e/mobile-layout.spec.ts (\"item detail: level, state and star sit below the breadcrumb row\"): sao và badge phải nằm dưới đáy breadcrumb và trên thanh tab. Đo vị trí chứ không kiểm \"nằm trong element X\" — một refactor giữ tag trên hàng đó bằng container khác vẫn qua được phép kiểm chứa, mà cái chèn thì y nguyên. Bố cục đích: ba băng giống ResourceCard (định danh + hành động phải trên · nghĩa · hàng meta), vì trang chi tiết chính là cái card đó mở rộng ra.",
+      "check": {
+        "kind": "manual"
+      },
+      "allow": {}
+    },
+    {
+      "id": "auto-play-is-not-a-repeat",
+      "rule": "Phát tự động (auto-read) không bao giờ mang trạng thái của tương tác THỦ CÔNG trên cùng control đó — không tính vào chuỗi \"bấm lại nghe chậm\", không đếm lần, không nối tiếp latch. Nó vẫn được phép NẠP trạng thái cho lần bấm tay tiếp theo.",
+      "why": "Cơ chế \"bấm lại thì đọc chậm\" (SLOW_FACTOR) đếm theo CÁI NÚT, mà một nút đọc mọi thẻ trong deck flashcard: thẻ 1 tự đọc thường rồi nạp slow, thẻ 2 tự đọc ở rate=0.6, thẻ 3 thường... Người dùng nêu 2026-08-05: \"cứ cách 1 thẻ là bị mắc cơ chế này\". Hai thẻ khác nhau không phải một lần nghe lại của nhau.",
+      "canonical": "components/shared/speak-button.tsx",
+      "source": "user 2026-08-05 (\"khi tôi đi đến thẻ thứ 2, thì nó bị cơ chế nhấn lần thứ 2 nên đọc chậm lại\")",
+      "repeats": 1,
+      "lockedOn": "2026-08-05",
+      "note": "Chốt tất định ở e2e/groups.spec.ts (\"flashcards read the Japanese per direction, and never the examples\"): test theo dõi tham số `rate` trên /api/tts qua 3 thẻ và đỏ nếu có lần tự đọc nào rate < 1 — đã kiểm ngược, bản cũ đỏ đúng ở thẻ 2. Nửa còn lại của luật vẫn giữ: sau một lần tự đọc, người dùng bấm nút để nghe LẠI thì lần đó ĐÚNG là nên chậm.",
+      "check": {
+        "kind": "manual"
+      },
+      "allow": {}
     }
   ]
 }

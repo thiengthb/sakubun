@@ -190,17 +190,19 @@ export const settingsSchema = z.object({
   speechRate: z.number().min(0.5).max(2).default(1),
   // Reviews "belong to a day" until this hour (Anki-style 4 AM cutoff).
   dayCutoffHour: z.number().int().min(0).max(6).default(4),
-  // Daily study reminder time, "HH:MM" (24h), or null = no reminder. SETTINGS-ONLY for now: it is
-  // stored + exposed via MCP get_settings, but the app does NOT send email yet (no always-on
-  // scheduler). Wiring real delivery is a separate future plan — and when it lands, the reminder goes
-  // to the signed-in user's OWN account email (better-auth `user.email`), never a stored address. The
-  // old per-settings `notificationEmail` field was removed 2026-07-22: in a multi-user app a hardcoded
-  // default address is wrong, and the account email is the single source of truth for who to notify.
-  reminderTime: z
-    .string()
-    .regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Giờ nhắc phải dạng HH:MM')
-    .nullable()
-    .default(null),
+  // `reminderTime` ("HH:MM" study reminder) was REMOVED 2026-08-05, by request. It was a control that
+  // promised a notification the app has never been able to send: delivery needs an always-on scheduler,
+  // this deploy is a single container with no background process, and MCP runs the other way (Claude
+  // calls the app — the app cannot start a conversation). Its own info text had to admit that, which is
+  // the tell that the field was a plan, not a feature. A settings row that changes nothing costs more
+  // than it looks: it was also shipped to Claude in every `get_settings`.
+  // Settings persist as ONE JSON blob (`Settings.data`), and Zod strips unknown keys, so a stored value
+  // or an old JSON backup carrying `reminderTime` still parses — it is simply dropped on the next save.
+  // No migration, and `lib/import.ts` keeps working on backups taken before today.
+  // When reminders become real, they go to the signed-in user's OWN account email (better-auth
+  // `user.email`), never a stored address — same reason the per-settings `notificationEmail` field was
+  // removed 2026-07-22.
+  //
   // When on, every sentence the learner GRADES is auto-shared to the members' feed (visibility=shared),
   // so their new attempts reach the community without toggling each one. Opt-in (off by default);
   // toggled from the /history community tab, honored in submitReview. Existing rows are untouched.
@@ -255,8 +257,7 @@ export const DEFAULT_SETTINGS: Settings = settingsSchema.parse({});
  * Excluded, because no composition path reads them: `voiceSpeaker` / `speechRate` (the APP's own TTS
  * buttons, unrelated to Claude), `dayCutoffHour` (a server-side day boundary), `desiredRetention`
  * (FSRS maths, and invariant 1 keeps scheduling off Claude's hands), `autoShareSentences` (a feed
- * toggle), `reminderTime` (documented as not delivered yet — a dead field that was being shipped every
- * turn). The three PACE numbers are KEPT even though the plan listed `maxReviewsPerDay` as droppable:
+ * toggle). The three PACE numbers are KEPT even though the plan listed `maxReviewsPerDay` as droppable:
  * the HELD BACK lines in `lib/mcp/render.ts` now name each cap and offer to raise it, so Claude needs
  * the current value to say something useful. A field with a reader stays.
  */

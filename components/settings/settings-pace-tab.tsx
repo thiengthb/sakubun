@@ -4,10 +4,9 @@ import { Field } from '@/components/shared/field';
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
 import { SettingsTab } from '@/components/settings/settings-tab';
-import { TimePicker } from '@/components/ui/time-picker';
 import type { Settings } from '@/lib/settings-schema';
 
-/** Tab "Nhịp học": daily new/review caps, session goal, vocab-per-sentence, cutoff/reminder, retention. */
+/** Tab "Nhịp học": daily new/review caps, session goal, vocab-per-sentence, day cutoff, retention. */
 export function PaceTab({
   settings,
   set,
@@ -82,16 +81,6 @@ export function PaceTab({
             max={6}
             value={settings.dayCutoffHour}
             onChange={(e) => set('dayCutoffHour', Number(e.target.value))}
-          />
-        </Field>
-        <Field
-          label="Giờ nhắc học"
-          info="Giờ muốn được nhắc luyện tập (HH:MM). Hiện MỚI lưu cài đặt — app chưa gửi thông báo/email thật (chưa có tiến trình nền). Để trống = không nhắc."
-        >
-          <TimePicker
-            ariaLabel="Giờ nhắc học"
-            value={settings.reminderTime ?? ''}
-            onChange={(v) => set('reminderTime', v || null)}
           />
         </Field>
       </div>

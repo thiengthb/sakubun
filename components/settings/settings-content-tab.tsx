@@ -280,29 +280,36 @@ export function ContentTab({
           </Select>
         </Field>
 
-        {/* The rung's meaning is READ FROM DIFFICULTY_ANCHORS — the same text Claude receives on the
-              composition sheet — so what you set and what gets generated cannot mean two things. */}
-        <Field
-          label={`Độ phức tạp của câu: ${settings.difficulty}/5`}
-          info="Độ phức tạp CẤU TRÚC — KHÔNG phải độ khó từ vựng (đó là «Trần từ vựng»), không phải độ dài (đó là «Cỡ câu»), không phải mức độ mới (đó là «Mẫu mới tối đa/câu»). Mỗi mức được định nghĩa bằng thứ đếm được: số mệnh đề, độ sâu lồng nhau, sắc thái trợ từ."
-        >
-          <div className="flex h-9 items-center">
-            <Slider
-              thumbLabel="Độ phức tạp của câu"
-              min={1}
-              max={5}
-              step={1}
-              trackClassName="h-3"
-              ticks={[2, 3, 4]}
-              value={[settings.difficulty]}
-              onValueChange={([v]) => set('difficulty', v)}
-            />
-          </div>
-          <p className="mt-2 text-xs text-muted-foreground">
+      </div>
+
+      {/* FULL WIDTH, and the same shape as «Cỡ câu» right below it (2026-08-05, by request). These are
+          the tab's only two scales, and they were drawn at two different lengths — this one at half width
+          inside the 2-column grid, that one across the whole card — so the same "slide from 1 to 5"
+          gesture had two different travels. They are also the pair whose info text points at each other
+          ("không phải độ dài — đó là «Cỡ câu»"), and a cross-reference only reads as one if the two
+          things look like siblings.
+          The rung's meaning is READ FROM DIFFICULTY_ANCHORS — the same text Claude receives on the
+          composition sheet — so what you set and what gets generated cannot mean two things. */}
+      <Field
+        label={`Độ phức tạp của câu: ${settings.difficulty}/5`}
+        info="Độ phức tạp CẤU TRÚC — KHÔNG phải độ khó từ vựng (đó là «Trần từ vựng»), không phải độ dài (đó là «Cỡ câu»), không phải mức độ mới (đó là «Mẫu mới tối đa/câu»). Mỗi mức được định nghĩa bằng thứ đếm được: số mệnh đề, độ sâu lồng nhau, sắc thái trợ từ."
+      >
+        <div className="space-y-2 px-1 pt-2">
+          <Slider
+            thumbLabel="Độ phức tạp của câu"
+            min={1}
+            max={5}
+            step={1}
+            trackClassName="h-3"
+            ticks={[2, 3, 4]}
+            value={[settings.difficulty]}
+            onValueChange={([v]) => set('difficulty', v)}
+          />
+          <p className="text-xs text-muted-foreground">
             {DIFFICULTY_ANCHORS[settings.difficulty]?.vi}
           </p>
-        </Field>
-      </div>
+        </div>
+      </Field>
 
       <Field
         label="Cỡ câu"

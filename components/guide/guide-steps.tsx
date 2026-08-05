@@ -316,8 +316,8 @@ export const START_STEPS: TutorialStep[] = [
       <>
         Trang <em>Cài đặt</em> (3 tab): <em>Nội dung</em> (cấp JLPT cho mẫu mới, trần từ vựng, hướng
         dịch, cỡ &amp; độ phức tạp câu, văn phong, chủ đề) · <em>Nhịp học</em> (mẫu mới/ngày, mẫu
-        mới tối đa/câu, lượt ôn, từ vựng/câu, giờ nhắc) · <em>Nghe &amp; nói</em>. Một bộ dùng chung
-        cho cả dịch lẫn quiz.
+        mới tối đa/câu, lượt ôn, từ vựng/câu, giờ chốt ngày, mục tiêu ghi nhớ) ·{' '}
+        <em>Nghe &amp; nói</em>. Một bộ dùng chung cho cả dịch lẫn quiz.
       </>
     ),
     done: (

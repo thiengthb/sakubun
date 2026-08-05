@@ -138,27 +138,41 @@ test('flashcards read the Japanese per direction, and never the examples', async
   const now = Date.now();
   for (const t of ['GroupMember', 'Group', 'ReviewLog', 'SrsState', 'Sentence', 'Item'])
     db.exec(`DELETE FROM "${t}"`);
-  // ONE member, and it carries an example (`notes`) — so "the examples are not read" is a real claim
-  // here and not vacuously true.
-  db.prepare(
+  // THREE members — one card cannot show the bug this test's second half guards (the repeat-slow latch
+  // only bites on the SECOND card), and each one carries an example (`notes`) so "the examples are not
+  // read" is a real claim on whichever card the deck lands on, not a vacuous one.
+  const TERMS = ['把握', '曖昧', '矛盾'];
+  const EXAMPLES = ['状況を把握する。', '曖昧な返事だった。', '話が矛盾している。'];
+  const item = db.prepare(
     `INSERT INTO Item (id, kind, expression, reading, hanviet, meaningVi, level, notes, source,
        captureReason, suspended, starred, createdAt, challengeObservations)
-     VALUES ('v9', 'VOCAB', '把握', 'はあく', 'bả ác', 'nắm bắt, hiểu rõ', 'N2', '状況を把握する。', 'MCP', NULL, 0, 0, ?, 0)`,
-  ).run(iso(now));
+     VALUES (?, 'VOCAB', ?, ?, ?, ?, 'N2', ?, 'MCP', NULL, 0, 0, ?, 0)`,
+  );
+  item.run('v9', TERMS[0], 'はあく', 'bả ác', 'nắm bắt, hiểu rõ', EXAMPLES[0], iso(now));
+  item.run('v8', TERMS[1], 'あいまい', 'ái muội', 'mơ hồ', EXAMPLES[1], iso(now - 1000));
+  item.run('v7', TERMS[2], 'むじゅん', 'mâu thuẫn', 'mâu thuẫn', EXAMPLES[2], iso(now - 2000));
   db.prepare(
     `INSERT INTO "Group" (id, name, kind, color, note, createdAt, updatedAt)
      VALUES ('grpF', 'Nhóm flashcard', 'vocab', NULL, NULL, ?, ?)`,
   ).run(iso(now), iso(now));
-  db.prepare(`INSERT INTO GroupMember (groupId, itemId, addedAt) VALUES ('grpF', 'v9', ?)`).run(
-    iso(now),
+  const member = db.prepare(
+    `INSERT INTO GroupMember (groupId, itemId, addedAt) VALUES ('grpF', ?, ?)`,
   );
+  for (const id of ['v9', 'v8', 'v7']) member.run(id, iso(now));
   db.close();
 
+  // Both the text AND the rate matter, so keep the whole query. `/api/tts` omits `rate` at the default
+  // speed and sends `rate=0.6` for a slow (repeat) play — see SLOW_FACTOR in speak-button.tsx.
   const read: string[] = [];
+  const slow: string[] = [];
   page.on('request', (r) => {
     if (!r.url().includes('/api/tts')) return;
-    const q = new URL(r.url()).searchParams.get('text');
-    if (q) read.push(q);
+    const q = new URL(r.url()).searchParams;
+    const text = q.get('text');
+    if (!text) return;
+    read.push(text);
+    const rate = q.get('rate');
+    if (rate != null && Number(rate) < 1) slow.push(`${text} @ rate=${rate}`);
   });
 
   await page.goto('/login');
@@ -175,7 +189,18 @@ test('flashcards read the Japanese per direction, and never the examples', async
 
   // ja→vi (the default): the term is the PROMPT, so it reads straight away.
   await expect.poll(() => read.length, { timeout: 10_000 }).toBe(1);
-  expect(read[0]).toBe('把握');
+  expect(TERMS).toContain(read[0]);
+
+  // EVERY card is a first listen. The "slow on repeat" alternation is per BUTTON, and one button reads
+  // every card in the deck, so before 2026-08-05 the auto-read walked it by itself: card 1 normal, card 2
+  // at rate=0.6, card 3 normal… ("cứ cách một thẻ là bị mắc cơ chế này"). Grading advances the deck.
+  for (let card = 2; card <= 3; card++) {
+    await page.getByRole('button', { name: /Đã thuộc/ }).click();
+    await expect.poll(() => read.length, { timeout: 10_000 }).toBe(card);
+  }
+  // Distinct terms = each card read ITS OWN text (not a replay of card 1, which would also pass a count).
+  expect(new Set(read).size, `each card reads its own term, got: ${read.join(', ')}`).toBe(3);
+  expect(slow, `an auto-read came out SLOW — the repeat-press latch leaked into it:\n${slow.join('\n')}`).toEqual([]);
 
   // vi→ja: the prompt is Vietnamese — nothing may be read until the card is flipped.
   read.length = 0;
@@ -187,7 +212,9 @@ test('flashcards read the Japanese per direction, and never the examples', async
 
   await page.getByRole('button', { name: /Lật xem mặt sau/ }).click();
   await expect.poll(() => read.length, { timeout: 10_000 }).toBe(1);
-  // The term, NOT the example sentence stored in notes.
-  expect(read[0]).toBe('把握');
-  expect(read).not.toContain('状況を把握する。');
+  // The term, NOT the example sentence stored in notes (every member has one, so this bites whichever
+  // card the deck is on).
+  expect(TERMS).toContain(read[0]);
+  for (const ex of EXAMPLES) expect(read).not.toContain(ex);
+  expect(slow, `a vi→ja auto-read came out SLOW:\n${slow.join('\n')}`).toEqual([]);
 });

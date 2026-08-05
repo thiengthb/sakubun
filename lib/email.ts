@@ -1,5 +1,6 @@
-// Outbound email for the deployed multi-user sakubun. Today its only caller is better-auth, sending
-// the sign-up verification link (lib/auth.ts); reminder delivery may reuse it later. SMTP is the
+// Outbound email for the deployed sakubun. Its only caller is better-auth, sending the sign-up
+// verification link (lib/auth.ts) — the study-reminder setting that used to be listed here as a future
+// second caller was removed 2026-08-05 (see `settings-schema.ts`). SMTP is the
 // transport (a Gmail app-password, or any provider) and EVERY value comes from env — nothing is
 // hardcoded, because in a multi-user app each message goes to a different user's own address.
 //

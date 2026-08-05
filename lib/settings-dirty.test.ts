@@ -12,7 +12,6 @@ describe('settings save round-trip clears dirty', () => {
     { grammarLevels: ['N5', 'N4'] },
     { topics: ['anime', 'công việc'] },
     { desiredRetention: 0.85 },
-    { reminderTime: '09:30' },
     { furiganaMode: 'both' },
     { autoShareSentences: true },
     { speechRate: 1.25 },

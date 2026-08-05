@@ -77,8 +77,7 @@ export function registerCoreTools(server: McpServer) {
       'both | none — which side renders furigana; "claude"/"both" ⇒ YOU insert the readings), ' +
       'promptModality (text | text+speech | speech-only — how to PRESENT the exercise: text only / text ' +
       'plus read aloud / audio only), answerModality (speak-or-write | speak-only — may the user write, ' +
-      'or MUST they speak), dayCutoffHour, reminderTime (study reminder "HH:MM" or null — reminders, ' +
-      'when delivery exists, go to the user account email, not a stored address), ' +
+      'or MUST they speak), dayCutoffHour, ' +
       'voiceSpeaker (VOICEVOX voice id for the play buttons on the History page — APP ONLY, unrelated to ' +
       'your voice mode), speechRate (default playback speed 0.5–2 for those buttons — app only). These ' +
       'settings are SHARED by translation practice and quiz practice alike.',

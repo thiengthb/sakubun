@@ -138,46 +138,65 @@ export function ItemAnalytics({
           }}
         />
       }
-      // The identity tags (JLPT level + SRS state) sit ON the breadcrumb row, right of the trail
-      // (2026-07-25) — the breadcrumb already says grammar vs vocab, so the old "Ngữ pháp / Từ vựng"
-      // kind badge is dropped as redundant. The star follows; the share toggle beside it went out with
-      // the public library on 2026-08-03 and its slot prop is gone with it.
-      headerAside={
-        <div className="ml-auto flex flex-wrap items-center gap-1.5">
+    >
+      {/*
+        HEADER — the item's identity, in the three bands `ResourceCard` already uses for the same item on
+        /resources (identity + actions, meaning, meta). This page is that card opened up, so it reads the
+        same way top to bottom.
+
+        The tags used to ride the BREADCRUMB row via `headerAside` (2026-07-25) and came back down here on
+        2026-08-05, by request: on a phone that row is app icon + sidebar button + divider + the trail, and
+        the trail's last crumb is the item's own name. Two badges and a star after all of that left every
+        piece fighting for the same ~170px, so a long name squeezed the tags to the edge — and the tags are
+        the one thing on the row that is not navigation. They belong next to the term they describe, where
+        the width is the page's.
+
+        Band 3 also ABSORBS the old "Âm Hán Việt:" line rather than adding a row: on a vocab page the meta
+        row replaces that line (net zero height), on a grammar page it costs one row that the breadcrumb
+        row gets back.
+      */}
+      <header className="space-y-2">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-1">
+            {/* The term itself is playable here too — this page is where the user studies it. The ruby
+                is built from the stored reading (whole-term), same as the resource tables. */}
+            <h1 className="text-2xl leading-tight font-semibold">
+              <SpokenLine
+                text={stats.expression}
+                speakText={speakable(stats.expression)}
+                ruby={buildFuriganaMarkup(stats.expression, stats.reading)}
+                showFurigana={showFurigana}
+                speaker={voiceSpeaker}
+                rate={speechRate}
+                label={stats.kind === 'grammar' ? 'Nghe mẫu' : 'Nghe từ'}
+                // A long pattern wraps in an h1 this size, and the default bottom alignment would park
+                // the speaker icon beside the LAST line (same fix as ResourceCard band 1).
+                align="start"
+              />
+            </h1>
+            <p className="text-base text-muted-foreground">{stats.meaningVi}</p>
+          </div>
+          {/* The only ACTION in the header, pinned top-right — where it sits on the card you tapped to
+              get here, and where a thumb reaches. */}
+          <StarButton id={stats.itemId} starred={stats.starred} kind="item" />
+        </div>
+        {/* Meta row: what LEVEL · what STATE (· âm Hán Việt). Reads left→right as identity facts, wraps
+            freely because it owns the page's full width. */}
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 text-sm text-muted-foreground">
           <Badge variant="outline">{stats.level}</Badge>
           <Badge variant="outline" className={cn(!stats.suspended && STATE_BADGE[srs?.state ?? 0])}>
             {stateLabel}
           </Badge>
-          <StarButton id={stats.itemId} starred={stats.starred} kind="item" />
+          {stats.kind === 'vocab' && stats.hanviet && (
+            <>
+              <span aria-hidden>·</span>
+              <span>
+                Âm Hán Việt:{' '}
+                <span className="font-medium text-foreground capitalize">{stats.hanviet}</span>
+              </span>
+            </>
+          )}
         </div>
-      }
-    >
-      {/* Header — pattern + its definition on ONE row (ngữ pháp → định nghĩa), then âm Hán Việt
-          (vocab). The level / state tags moved up to the breadcrumb row (headerAside); the kind badge
-          is gone (the breadcrumb already names grammar vs vocab). */}
-      <header className="space-y-2">
-        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-          {/* The term itself is playable here too — this page is where the user studies it. The ruby
-              is built from the stored reading (whole-term), same as the resource tables. */}
-          <h1 className="text-2xl leading-tight font-semibold">
-            <SpokenLine
-              text={stats.expression}
-              speakText={speakable(stats.expression)}
-              ruby={buildFuriganaMarkup(stats.expression, stats.reading)}
-              showFurigana={showFurigana}
-              speaker={voiceSpeaker}
-              rate={speechRate}
-              label={stats.kind === 'grammar' ? 'Nghe mẫu' : 'Nghe từ'}
-            />
-          </h1>
-          <p className="text-base text-muted-foreground">{stats.meaningVi}</p>
-        </div>
-        {stats.kind === 'vocab' && stats.hanviet && (
-          <p className="text-sm text-muted-foreground">
-            Âm Hán Việt:{' '}
-            <span className="font-medium text-foreground capitalize">{stats.hanviet}</span>
-          </p>
-        )}
       </header>
 
       {groupsSlot && <div>{groupsSlot}</div>}

@@ -198,16 +198,24 @@ export function SpeakButton({
     synth.speak(utterance);
   };
 
-  const toggle = () => {
-    if (speaking) {
-      stopAll();
-      return;
-    }
+  /**
+   * Start playback. `auto` marks a play the USER did not ask for right now (the auto-read latch below).
+   *
+   * An auto-play NEVER plays slow. "Slow on repeat" means *you asked to hear this again*, and the
+   * bookkeeping behind it (`slowNextRef`) was global to the button, so auto-reads walked the alternation
+   * by themselves: on the group flashcards, card 1 auto-read normal → armed slow → card 2 auto-read
+   * SLOW, card 3 normal, card 4 slow (reported 2026-08-05 as "cứ cách một thẻ lại đọc chậm"). Two cards
+   * are not a repeat of one another — they are different text, each heard for the first time.
+   *
+   * It still ARMS the alternation (`slowNextRef = true`), which is the useful half: the first thing you
+   * do after an auto-read is press the button to hear the same term again, and that press SHOULD be slow.
+   */
+  const startPlay = (auto: boolean) => {
     // Pick the speed for THIS play: normal first, slow on an immediate repeat, alternating; a long idle
     // resets to normal. (Date.now / ref writes here are in an event handler, not render — allowed.)
     const now = Date.now();
     const fresh = now - lastPlayRef.current >= IDLE_RESET_MS;
-    const playSlow = !fresh && slowNextRef.current;
+    const playSlow = !auto && !fresh && slowNextRef.current;
     const thisRate = playSlow ? Math.max(0.5, Math.min(2, rate * SLOW_FACTOR)) : rate;
     slowNextRef.current = !playSlow; // normal → next slow; slow → next normal
     lastPlayRef.current = now;
@@ -248,16 +256,27 @@ export function SpeakButton({
     speakWebSpeech();
   };
 
+  /** The BUTTON's handler: press while playing = stop, otherwise play (slow if this is a repeat). */
+  const toggle = () => {
+    if (speaking) {
+      stopAll();
+      return;
+    }
+    startPlay(false);
+  };
+
   /**
-   * The AUTO-PLAY entry point (see `playToken`). It only ever STARTS playback: a token change means
-   * "read this", not "toggle" — auto-reading a card and having it CANCEL an in-flight read would be a
-   * coin flip depending on how fast the previous card's audio was.
+   * The AUTO-PLAY entry point (see `playToken`). A token change means "read THIS", so anything still
+   * playing belongs to the text we just moved away from (the previous flashcard) — stop it and read the
+   * new one, rather than skipping the new read or talking over it. `stopAll()` + `startPlay()` batch
+   * into one render, so `speaking` ends up true either way.
    */
   const playFn = () => {
-    if (!speaking) toggle();
+    if (speaking) stopAll();
+    startPlay(true);
   };
   // AUTO-PLAY (see `playToken`). Two effects, and the order matters:
-  //   1. keep a "latest" ref pointing at THIS render's `toggle` — assigning a ref during render is what
+  //   1. keep a "latest" ref pointing at THIS render's `playFn` — assigning a ref during render is what
   //      the React Compiler forbids, so it happens in an effect that runs every render;
   //   2. when the token changes to something non-null, fire that ref.
   // Effects run in declaration order after the same render, so (1) is always current when (2) reads it.

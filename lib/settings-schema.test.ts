@@ -96,7 +96,6 @@ describe('toCompositionSettings', () => {
       'dayCutoffHour',
       'autoShareSentences',
       'desiredRetention',
-      'reminderTime',
     ]) {
       expect(projected).not.toHaveProperty(dead);
     }

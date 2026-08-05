@@ -691,17 +691,22 @@ export function GroupFlashcards({
               Bấm vào thẻ (hoặc phím cách) để lật · ← đang học · → đã thuộc
             </p>
 
-            <div className="flex items-center gap-3">
+            {/* The two grading buttons. `h-10` and a capped row (2026-08-05, by request: "hơi to"): they
+                inherited `h-12` + full width from the card, but the card is full-bleed because it is the
+                thing you READ, and a 48px control stretched across a 1280px page is the widest button in
+                the app for the second-most-common action in it. 40px is still a comfortable thumb target
+                on a phone (where max-w-xl never applies, so they still split the full width). */}
+            <div className="mx-auto flex w-full max-w-xl items-center gap-3">
               <Button
                 variant="outline"
-                className="h-12 flex-1 border-amber-500/40 text-amber-600 hover:bg-amber-500/10 hover:text-amber-600 dark:text-amber-400"
+                className="h-10 flex-1 border-amber-500/40 text-amber-600 hover:bg-amber-500/10 hover:text-amber-600 dark:text-amber-400"
                 onClick={() => mark('still')}
               >
                 Đang học ({stillThisRound.size})
               </Button>
               <Button
                 variant="outline"
-                className="h-12 flex-1 border-emerald-500/40 text-emerald-600 hover:bg-emerald-500/10 hover:text-emerald-600 dark:text-emerald-400"
+                className="h-10 flex-1 border-emerald-500/40 text-emerald-600 hover:bg-emerald-500/10 hover:text-emerald-600 dark:text-emerald-400"
                 onClick={() => mark('known')}
               >
                 <Check className="size-4" />

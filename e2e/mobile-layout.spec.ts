@@ -216,6 +216,11 @@ test('the header row stays one line at 360px', async ({ page }) => {
     ['guide', '/guide', null],
     ['new (grammar)', '/resources/new?kind=grammar', 'Dán danh sách'],
     ['new (vocab)', '/resources/new?kind=vocab', 'Dán danh sách'],
+    // The item detail page, on the LONGEST seeded pattern name. It has nothing in `headerAside` since
+    // 2026-08-05 — its level/state tags and star moved down to the item's own header — and it is here
+    // precisely because it used to: the crumb ends in the item's name, so a long name plus two badges
+    // plus a star was the crowded case that got them moved (see the test below).
+    ['item detail (long name)', '/resources/g4', null],
   ];
 
   const wrapped: string[] = [];
@@ -239,6 +244,42 @@ test('the header row stays one line at 360px', async ({ page }) => {
     wrapped,
     `the breadcrumb row wrapped at 360px — the tab control fell off the crumb's row:\n${wrapped.join('\n')}`,
   ).toEqual([]);
+});
+
+/**
+ * The item detail page's identity tags (JLPT level · SRS state) and its star belong to the ITEM, not to
+ * the breadcrumb — asserted geometrically, because "it looks cramped" is the kind of complaint no other
+ * check in this file can see: the row never overflowed and never wrapped, it just spent its last 170px on
+ * three things that were not navigation, so a long name squeezed them against the edge (reported
+ * 2026-08-05). They now sit in the page header with the term they describe.
+ *
+ * Geometry rather than "is it inside element X": the claim the user made is about POSITION, and a future
+ * refactor that keeps the tags in some other container on that row would pass a containment check while
+ * putting the squeeze right back.
+ */
+test('item detail: level, state and star sit below the breadcrumb row', async ({ page }) => {
+  await page.setViewportSize(VIEWPORT);
+  await page.goto('/login');
+  await page.getByLabel('Email').fill(E2E_EMAIL);
+  await page.getByLabel('Mật khẩu').fill(E2E_LOGIN);
+  await page.getByRole('button', { name: 'Đăng nhập' }).click();
+  await page.waitForURL((u) => !u.pathname.startsWith('/login'), { timeout: 30_000 });
+
+  // g4 = the longest seeded pattern name (〜てからでないと), i.e. the case that crowded the row.
+  await page.goto('/resources/g4', { waitUntil: 'networkidle' });
+
+  const crumb = await page.locator('nav[aria-label="Breadcrumb"]').first().boundingBox();
+  const star = await page.getByRole('button', { name: /đánh dấu sao/i }).boundingBox();
+  const level = await page.getByText('N3', { exact: true }).first().boundingBox();
+  const tabs = await page.getByRole('tab', { name: /Chỉ số/ }).boundingBox();
+  expect(crumb && star && level && tabs, 'header, star, level badge and tabs must all render').toBeTruthy();
+
+  const rowBottom = crumb!.y + crumb!.height;
+  expect(star!.y, 'the star is back on the breadcrumb row').toBeGreaterThanOrEqual(rowBottom);
+  expect(level!.y, 'the level badge is back on the breadcrumb row').toBeGreaterThanOrEqual(rowBottom);
+  // …and they are part of the item HEADER, above the tab bar — not stranded somewhere further down.
+  expect(star!.y).toBeLessThan(tabs!.y);
+  expect(level!.y).toBeLessThan(tabs!.y);
 });
 
 test('every page renders clean and fits a 390px viewport', async ({ page }) => {
