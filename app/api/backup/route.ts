@@ -15,9 +15,10 @@ import { auth } from '@/lib/auth';
 // Plain `cp` of a live SQLite file can capture a torn page and produce a backup that only fails when
 // you finally need it.
 //
-// ADMIN-ONLY (plan 2026-07-21, step 2.9). The app is now multi-user and public, so this snapshot spans
-// EVERY member's data — it must never be reachable by a normal member (or an unauthenticated request).
-// Gated on the admin role below; the retired invariant #5 (local-only) no longer protects it.
+// Gate: SIGNED IN. This was admin-only (plan 2026-07-21, step 2.9) while the app was multi-user and the
+// snapshot spanned every member's data. With one account there is nobody to gate it from, and keeping
+// the role check only created a way for the settings Data tab's download button to 403 on an account
+// whose `role` was never stamped. The boundary in this app is login (AGENTS.md).
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -29,13 +30,9 @@ function dbPath(): string {
 }
 
 export async function GET() {
-  // Whole-database export → operator only. A member (or a guest) gets 403, never another user's data.
   const session = await auth.api.getSession({ headers: await headers() });
-  if (session?.user?.role !== 'admin') {
-    return Response.json(
-      { ok: false, error: 'Chỉ admin mới tải được bản sao lưu.' },
-      { status: 403 },
-    );
+  if (!session?.user || session.user.banned) {
+    return Response.json({ ok: false, error: 'Cần đăng nhập.' }, { status: 401 });
   }
 
   const out = join(tmpdir(), `sakubun-snapshot-${randomUUID()}.db`);

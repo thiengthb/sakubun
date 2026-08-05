@@ -3,7 +3,7 @@
 import { useRef, useState, type ComponentType } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  Download,
+  Database,
   FileDown,
   FileUp,
   HardDriveDownload,
@@ -63,7 +63,8 @@ interface ImportResult {
   tables: TableDiff[];
   warnings: string[];
 }
-type ImportKind = 'mine' | 'system';
+/** `learning` = the JSON dump of learning data · `full` = the whole-DB SQLite snapshot. */
+type ImportKind = 'learning' | 'full';
 
 /** A small tinted icon chip that heads each data card — gives the tab a scannable visual rhythm. */
 function IconBadge({
@@ -114,7 +115,7 @@ async function downloadFrom(url: string, fallbackName: string) {
 
 /** POST a backup file to its import endpoint. `dryRun` asks for counts only; otherwise it applies. */
 async function postImport(kind: ImportKind, file: File, dryRun: boolean): Promise<ImportResult> {
-  const path = kind === 'mine' ? '/api/import/mine' : '/api/import/system';
+  const path = kind === 'learning' ? '/api/import/mine' : '/api/import/system';
   const res = await fetch(`${path}?dryRun=${dryRun ? '1' : '0'}`, { method: 'POST', body: file });
   const json = await res.json().catch(() => ({}));
   if (!res.ok || !json?.ok) throw new Error(json?.error || `Lỗi ${res.status}`);
@@ -122,30 +123,38 @@ async function postImport(kind: ImportKind, file: File, dryRun: boolean): Promis
 }
 
 /**
- * Tab "Dữ liệu": get a copy of your data out, and sync a backup back in.
+ * Tab "Dữ liệu": get a copy of what you have built out of the app, and put a copy back in.
  *
- * Single user: the whole-DB SQLite snapshot + system sync (/api/backup, /api/import/system) were
- * admin-only while the app was multi-user. With one operator there is no one to gate them from, so
- * they render unconditionally alongside the JSON/Anki export of your own data.
+ * WHAT THIS TAB HAS TO GET RIGHT — the two copies are not interchangeable, and the copy here is the only
+ * place that says which one to keep:
  *
- * Sync (2026-07-23) is a MERGE, never a delete: rows missing locally are added, existing rows are
- * updated, review history is only ever appended (invariant #2). Every sync first runs a DRY-RUN and
- * shows exactly what would change, and only writes after the user confirms in the dialog.
+ *   - The JSON (`/api/export/mine`, lib/export.ts) is the LEARNING data: items, FSRS schedule, review
+ *     history, practised sentences, settings, study groups. Readable, diffable, and it syncs back in as
+ *     an UPSERT (add missing, update existing, never delete). It does NOT carry the login, the MCP key,
+ *     or the tutor's own working state — so it is not a full backup, and saying otherwise would cost
+ *     someone the only copy of something.
+ *   - The `.db` (`/api/backup`) is a consistent, integrity-checked SQLite snapshot of EVERYTHING. It is
+ *     the only complete copy. Its sync is ADD-ONLY: a row already present locally is kept as-is, never
+ *     overwritten (lib/import.ts) — which is why its preview never reports updates.
  *
- * Layout (2026-07-24): a scannable card grid — "Dữ liệu của bạn" (JSON copy + Anki) plus a
- * "Toàn bộ dữ liệu" group (whole-DB backup, sync, manual restore).
+ * Single user (2026-08-05): this tab used to speak of members ("dữ liệu của mọi thành viên", "chỉ dữ
+ * liệu của tài khoản bạn — không đụng tới người khác") and the two whole-DB actions were admin-gated.
+ * There is one account, it is the operator, and both routes now gate on being signed in.
+ *
+ * Every sync runs a DRY-RUN first and shows exactly what would change; nothing is written until the
+ * confirmation dialog is accepted.
  */
 export function DataTab() {
   const router = useRouter();
-  const [busy, setBusy] = useState<'mine' | 'anki' | 'all' | 'sync' | null>(null);
+  const [busy, setBusy] = useState<'learning' | 'anki' | 'full' | 'sync' | null>(null);
   const [preview, setPreview] = useState<{
     kind: ImportKind;
     file: File;
     result: ImportResult;
   } | null>(null);
   const [applying, setApplying] = useState(false);
-  const mineInput = useRef<HTMLInputElement>(null);
-  const systemInput = useRef<HTMLInputElement>(null);
+  const learningInput = useRef<HTMLInputElement>(null);
+  const fullInput = useRef<HTMLInputElement>(null);
 
   const exportAnki = async () => {
     setBusy('anki');
@@ -166,12 +175,12 @@ export function DataTab() {
     }
   };
 
-  const exportMine = async () => {
-    setBusy('mine');
+  const exportLearning = async () => {
+    setBusy('learning');
     try {
       const { name, items } = await downloadFrom('/api/export/mine', 'sakubun-my-data.json');
       toast.success(`Đã tải ${name}`, {
-        description: `${items ?? '?'} mục của bạn. Hãy chép sang một ổ khác hoặc lên cloud.`,
+        description: `${items ?? '?'} mục học. Hãy chép sang một ổ khác hoặc lên cloud.`,
       });
     } catch {
       toast.error('Không tạo được bản xuất dữ liệu', {
@@ -182,8 +191,8 @@ export function DataTab() {
     }
   };
 
-  const backupAll = async () => {
-    setBusy('all');
+  const backupFull = async () => {
+    setBusy('full');
     try {
       const { name, items, size } = await downloadFrom('/api/backup', 'sakubun.db');
       const mb = (size / 1024 / 1024).toFixed(1);
@@ -224,13 +233,16 @@ export function DataTab() {
       const result = await postImport(preview.kind, preview.file, false);
       const added = result.tables.reduce((n, t) => n + t.create, 0);
       const updated = result.tables.reduce((n, t) => n + t.update, 0);
-      toast.success('Đã đồng bộ xong', {
-        description: `Thêm mới ${added} bản ghi, cập nhật ${updated}. Không có gì bị xóa.`,
+      toast.success('Đã nạp xong', {
+        description:
+          preview.kind === 'full'
+            ? `Thêm mới ${added} bản ghi. Không có gì bị xóa hay ghi đè.`
+            : `Thêm mới ${added} bản ghi, cập nhật ${updated}. Không có gì bị xóa.`,
       });
       setPreview(null);
       router.refresh();
     } catch (err) {
-      toast.error('Đồng bộ thất bại', {
+      toast.error('Nạp dữ liệu thất bại', {
         description: err instanceof Error ? err.message : 'Không có thay đổi nào được ghi.',
       });
     } finally {
@@ -246,14 +258,18 @@ export function DataTab() {
       }
     : null;
   const nonEmpty = preview?.result.tables.filter((t) => t.create + t.update + t.skip > 0) ?? [];
+  // The whole-DB merge is INSERT OR IGNORE, so `update` is 0 for every table by construction. Showing an
+  // "Cập nhật" column that can only ever read "—" invites the reading that nothing was updated *this
+  // time*, rather than that this kind of sync never updates.
+  const showUpdates = preview?.kind === 'learning';
 
   return (
     <SettingsTab value="data" surface="bare">
       <div className="space-y-6">
-        {/* ---- Everyone: your own data ---- */}
+        {/* ---- The learning data, as a portable file ---- */}
         <section className="space-y-3">
-          <SectionHeading hint="Chỉ dữ liệu của tài khoản bạn — không đụng tới người khác.">
-            Dữ liệu của bạn
+          <SectionHeading hint="Những gì bạn đã xây được trong app, ở dạng tệp mang đi được.">
+            Dữ liệu học
           </SectionHeading>
           <div className="grid gap-4 sm:grid-cols-2">
             {/* JSON copy + sync */}
@@ -262,23 +278,23 @@ export function DataTab() {
                 <div className="flex items-start gap-3">
                   <IconBadge icon={FileDown} />
                   <div className="min-w-0 space-y-1">
-                    <CardTitle className="text-sm">Bản sao dữ liệu (JSON)</CardTitle>
+                    <CardTitle className="text-sm">Bản sao dữ liệu học (JSON)</CardTitle>
                     <CardDescription className="text-xs">
-                      Từ đã thêm, lịch ôn FSRS, lịch sử luyện, câu, cài đặt và nhóm. Đồng bộ lại là{' '}
-                      <span className="font-medium text-foreground">gộp</span> — thêm cái thiếu, cập
-                      nhật cái có, không xóa gì; bạn xem trước rồi mới xác nhận.
+                      Từ vựng và ngữ pháp đã thêm, lịch ôn FSRS, lịch sử ôn, câu đã luyện, nhóm và cài
+                      đặt. Nạp lại là <span className="font-medium text-foreground">gộp</span> — thêm
+                      cái thiếu, cập nhật cái đã có, không xóa gì; bạn xem trước rồi mới xác nhận.
                     </CardDescription>
                   </div>
                 </div>
               </CardHeader>
               <CardFooter className="mt-auto flex-wrap gap-2">
-                <Button onClick={exportMine} disabled={busy !== null}>
+                <Button onClick={exportLearning} disabled={busy !== null}>
                   <FileDown className="size-4" aria-hidden />
-                  {busy === 'mine' ? 'Đang tạo…' : 'Tải JSON'}
+                  {busy === 'learning' ? 'Đang tạo…' : 'Tải JSON'}
                 </Button>
                 <Button
                   variant="outline"
-                  onClick={() => mineInput.current?.click()}
+                  onClick={() => learningInput.current?.click()}
                   disabled={busy !== null}
                 >
                   {busy === 'sync' ? (
@@ -286,15 +302,15 @@ export function DataTab() {
                   ) : (
                     <FileUp className="size-4" aria-hidden />
                   )}
-                  Đồng bộ từ tệp
+                  Nạp từ tệp JSON
                 </Button>
                 <input
-                  ref={mineInput}
+                  ref={learningInput}
                   type="file"
                   accept=".json,application/json"
                   className="hidden"
                   onChange={(e) => {
-                    void pickForSync('mine', e.target.files?.[0] ?? null);
+                    void pickForSync('learning', e.target.files?.[0] ?? null);
                     e.target.value = '';
                   }}
                 />
@@ -326,45 +342,47 @@ export function DataTab() {
           </div>
         </section>
 
-        {/* ---- Whole-DB data ---- */}
+        {/* ---- The whole database file ---- */}
         <section className="space-y-3">
-          <SectionHeading hint="Thao tác trên toàn bộ dữ liệu. Chỉ thêm / cập nhật, không bao giờ xóa.">
-            Toàn bộ dữ liệu
+          <SectionHeading hint="Bản sao đầy đủ duy nhất: có cả tài khoản đăng nhập, khóa MCP và ghi chú gia sư. Nạp vào chỉ THÊM, không ghi đè, không xóa.">
+            Toàn bộ tệp dữ liệu
           </SectionHeading>
           <div className="grid gap-4 sm:grid-cols-2">
             {/* Whole-DB backup */}
             <Card>
               <CardHeader>
                 <div className="flex items-start gap-3">
-                  <IconBadge icon={Download} />
+                  <IconBadge icon={Database} />
                   <div className="min-w-0 space-y-1">
                     <CardTitle className="text-sm">Sao lưu toàn bộ (.db)</CardTitle>
                     <CardDescription className="text-xs">
-                      Ảnh chụp SQLite nhất quán của mọi thành viên, đã kiểm tra toàn vẹn. Nằm cùng ổ
-                      với Docker — nhớ chép tiếp sang ổ khác / cloud.
+                      Ảnh chụp SQLite nhất quán của toàn bộ cơ sở dữ liệu, đã kiểm tra toàn vẹn trước
+                      khi trao cho bạn. Đây là bản duy nhất khôi phục lại được đúng mọi thứ — tệp nằm
+                      cùng ổ với Docker, nhớ chép tiếp sang ổ khác hoặc cloud.
                     </CardDescription>
                   </div>
                 </div>
               </CardHeader>
               <CardFooter className="mt-auto">
-                <Button onClick={backupAll} disabled={busy !== null}>
-                  <Download className="size-4" aria-hidden />
-                  {busy === 'all' ? 'Đang tạo…' : 'Tải bản sao lưu'}
+                <Button onClick={backupFull} disabled={busy !== null}>
+                  <Database className="size-4" aria-hidden />
+                  {busy === 'full' ? 'Đang tạo…' : 'Tải bản sao lưu'}
                 </Button>
               </CardFooter>
             </Card>
 
-            {/* System sync from a .db */}
+            {/* Merge from a .db */}
             <Card className="ring-warn/30">
               <CardHeader>
                 <div className="flex items-start gap-3">
                   <IconBadge icon={Upload} tone="warn" />
                   <div className="min-w-0 space-y-1">
-                    <CardTitle className="text-sm">Đồng bộ hệ thống</CardTitle>
+                    <CardTitle className="text-sm">Nạp thêm từ tệp .db</CardTitle>
                     <CardDescription className="text-xs">
-                      Gộp một tệp <code className="text-foreground">.db</code> vào hệ thống đang
-                      chạy (thêm + cập nhật, không xóa). Hãy sao lưu trước và xem kỹ bảng thay đổi
-                      rồi mới xác nhận.
+                      Gộp một tệp <code className="text-foreground">.db</code> vào cơ sở dữ liệu đang
+                      chạy: <span className="font-medium text-foreground">chỉ thêm</span> bản ghi còn
+                      thiếu, những gì đã có được giữ nguyên. Tệp mang theo cả tài khoản trong đó —
+                      hãy sao lưu trước và xem kỹ bảng thay đổi rồi mới xác nhận.
                     </CardDescription>
                   </div>
                 </div>
@@ -372,7 +390,7 @@ export function DataTab() {
               <CardFooter className="mt-auto">
                 <Button
                   variant="outline"
-                  onClick={() => systemInput.current?.click()}
+                  onClick={() => fullInput.current?.click()}
                   disabled={busy !== null}
                 >
                   {busy === 'sync' ? (
@@ -380,15 +398,15 @@ export function DataTab() {
                   ) : (
                     <Upload className="size-4" aria-hidden />
                   )}
-                  Chọn tệp .db để đồng bộ
+                  Chọn tệp .db
                 </Button>
                 <input
-                  ref={systemInput}
+                  ref={fullInput}
                   type="file"
                   accept=".db,application/vnd.sqlite3,application/octet-stream"
                   className="hidden"
                   onChange={(e) => {
-                    void pickForSync('system', e.target.files?.[0] ?? null);
+                    void pickForSync('full', e.target.files?.[0] ?? null);
                     e.target.value = '';
                   }}
                 />
@@ -405,7 +423,8 @@ export function DataTab() {
                   <CardTitle className="text-sm">Khôi phục nguyên trạng (nâng cao)</CardTitle>
                   <CardDescription className="text-xs">
                     Thay hẳn cơ sở dữ liệu bằng một bản sao lưu — mất mọi thay đổi phát sinh sau bản
-                    đó. Chỉ dùng khi cần quay về đúng một thời điểm.
+                    đó. Chỉ dùng khi cần quay về đúng một thời điểm. App không tự làm được việc này:
+                    tiến trình đang giữ tệp DB mở, nên phải thay từ ngoài container.
                   </CardDescription>
                 </div>
               </div>
@@ -424,12 +443,18 @@ export function DataTab() {
                   <pre className="overflow-x-auto rounded-md bg-background p-3 text-xs">
                     <code>{RESTORE_COMMANDS}</code>
                   </pre>
+                  {/* Was a pointer to `./scripts/verify-restore.sh` — a file that does not exist in
+                      this repo. "Kiểm tra bản sao lưu của bạn" is advice worth keeping, so it now
+                      names something that actually runs: the .db sync's DRY-RUN opens the file, runs
+                      PRAGMA integrity_check on it (throwing if it is torn) and counts every table,
+                      before writing a single row. That is a real verification, from inside the app. */}
                   <p className="text-xs text-muted-foreground">
                     <HardDriveDownload className="mr-1 inline size-3.5" aria-hidden />
-                    Muốn chắc bản sao lưu dùng được, chạy{' '}
-                    <code className="text-foreground">./scripts/verify-restore.sh</code>: nó phục
-                    hồi vào một container tạm rồi đối chiếu số mục, trạng thái FSRS và lịch sử ôn
-                    với bản gốc, không đụng dữ liệu thật.
+                    Muốn chắc một bản sao lưu còn dùng được: bấm{' '}
+                    <span className="text-foreground">Chọn tệp .db</span> ở thẻ trên và chọn chính
+                    tệp đó. Bước xem trước kiểm tra toàn vẹn tệp rồi đếm từng bảng mà không ghi gì —
+                    tệp hỏng sẽ báo lỗi ngay, còn “không có gì mới” nghĩa là nó khớp đúng dữ liệu
+                    hiện tại. Bấm Hủy để kết thúc.
                   </p>
                 </div>
               </details>
@@ -445,20 +470,26 @@ export function DataTab() {
       >
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Xem trước đồng bộ</DialogTitle>
+            <DialogTitle>Xem trước thay đổi</DialogTitle>
             <DialogDescription>
-              {preview?.kind === 'system'
-                ? 'Gộp bản sao lưu toàn hệ thống. Chưa có gì được ghi — đây là những thay đổi sẽ xảy ra.'
-                : 'Gộp bản sao lưu vào tài khoản bạn. Chưa có gì được ghi — đây là những thay đổi sẽ xảy ra.'}
+              {preview?.kind === 'full'
+                ? 'Gộp một tệp .db vào cơ sở dữ liệu đang chạy. Chưa có gì được ghi — đây là những thay đổi sẽ xảy ra.'
+                : 'Gộp một bản sao dữ liệu học vào app. Chưa có gì được ghi — đây là những thay đổi sẽ xảy ra.'}
             </DialogDescription>
           </DialogHeader>
 
           {previewTotals && (
             <p className="text-sm">
-              Sẽ <span className="font-medium text-primary">thêm {previewTotals.create}</span>, cập
-              nhật <span className="font-medium">{previewTotals.update}</span>, bỏ qua{' '}
-              <span className="font-medium">{previewTotals.skip}</span> bản ghi.{' '}
-              <span className="text-muted-foreground">Không xóa gì.</span>
+              Sẽ <span className="font-medium text-primary">thêm {previewTotals.create}</span>
+              {showUpdates && (
+                <>
+                  , cập nhật <span className="font-medium">{previewTotals.update}</span>
+                </>
+              )}
+              , bỏ qua <span className="font-medium">{previewTotals.skip}</span> bản ghi.{' '}
+              <span className="text-muted-foreground">
+                {showUpdates ? 'Không xóa gì.' : 'Không xóa, không ghi đè bản ghi đã có.'}
+              </span>
             </p>
           )}
 
@@ -469,7 +500,7 @@ export function DataTab() {
                   <TableRow>
                     <TableHead>Bảng</TableHead>
                     <TableHead className="text-right">Thêm</TableHead>
-                    <TableHead className="text-right">Cập nhật</TableHead>
+                    {showUpdates && <TableHead className="text-right">Cập nhật</TableHead>}
                     <TableHead className="text-right">Bỏ qua</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -478,7 +509,9 @@ export function DataTab() {
                     <TableRow key={t.table}>
                       <TableCell className="font-medium">{t.table}</TableCell>
                       <TableCell className="text-right tabular-nums">{t.create || '—'}</TableCell>
-                      <TableCell className="text-right tabular-nums">{t.update || '—'}</TableCell>
+                      {showUpdates && (
+                        <TableCell className="text-right tabular-nums">{t.update || '—'}</TableCell>
+                      )}
                       <TableCell className="text-right tabular-nums text-muted-foreground">
                         {t.skip || '—'}
                       </TableCell>
@@ -489,7 +522,7 @@ export function DataTab() {
             </div>
           ) : (
             <p className="text-sm text-muted-foreground">
-              Tệp này không có gì mới so với dữ liệu hiện tại — không cần đồng bộ.
+              Tệp này không có gì mới so với dữ liệu hiện tại — không cần nạp.
             </p>
           )}
 
@@ -510,7 +543,7 @@ export function DataTab() {
             </Button>
             <Button onClick={confirmSync} disabled={applying || nonEmpty.length === 0}>
               {applying && <Loader2 className="size-4 animate-spin" aria-hidden />}
-              {applying ? 'Đang đồng bộ…' : 'Xác nhận đồng bộ'}
+              {applying ? 'Đang nạp…' : 'Xác nhận nạp'}
             </Button>
           </DialogFooter>
         </DialogContent>

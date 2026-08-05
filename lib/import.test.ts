@@ -53,6 +53,23 @@ describe('parseAccountBackup', () => {
     expect(parseAccountBackup('not json').ok).toBe(false);
     expect(parseAccountBackup(42).ok).toBe(false);
   });
+
+  // The JSON export stopped carrying study groups when multi-user was stripped, and the importer
+  // answered "app không còn tính năng nhóm" — but the feature came back (2026-08-05), so a backup
+  // round-trip silently lost every group. This pins the two halves of the file format that fixed it:
+  // whatever lib/export.ts emits under these two keys must survive parsing.
+  it('keeps study groups and their memberships', () => {
+    const res = parseAccountBackup({
+      groups: [{ id: 'g1', name: 'Đi làm', kind: 'mixed', note: null, color: null }],
+      groupMembers: [{ groupId: 'g1', itemId: 'i1', addedAt: '2026-08-01T00:00:00Z' }],
+    });
+    expect(res.ok).toBe(true);
+    if (!res.ok) return;
+    expect(res.data.groups).toHaveLength(1);
+    expect(res.data.groups[0].name).toBe('Đi làm');
+    expect(res.data.groupMembers[0].groupId).toBe('g1');
+    expect(res.data.groupMembers[0].addedAt).toBeInstanceOf(Date);
+  });
 });
 
 describe('planById (upsert)', () => {
