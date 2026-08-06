@@ -294,6 +294,20 @@
         "kind": "manual"
       },
       "allow": {}
+    },
+    {
+      "id": "deck-moves-by-swipe",
+      "rule": "Mọi màn hình dạng thẻ (flashcard) là một CHỒNG THẺ lướt được, theo kiểu Quizlet: một thẻ mỗi lần, bấm/Space để lật, VUỐT ngang (hoặc hai mũi tên tròn, hoặc ← →) để đi qua đi lại. Chuyển thẻ là động từ DUY NHẤT — không có nút chấm điểm dưới thẻ (\"đã thuộc\" / \"đang học\"), không có dòng hướng dẫn cố định dưới deck. Hướng dẫn nằm trong tooltip ở góc thẻ. Deck mới phải dùng components/shared/card-deck.tsx, không dựng lại.",
+      "why": "Deck của nhóm từng có hai nút xếp loại + một dòng tip. Ba vấn đề, người dùng nêu 2026-08-06 (\"bỏ đi các nút đã thuộc và đang học, và dòng tip, và cho flashcard có thể lướt qua lướt lại như quizlet\"): (1) hai nút đó là một khái niệm THUỘC LÒNG thứ hai, chỉ nằm trong localStorage, đứng cạnh cái thật là FSRS — mà FSRS thì mọi lượt chấm của Claude đã nuôi rồi; (2) chúng biến deck thành màn hình chấm điểm, trong khi việc người học muốn làm là lật xem lại danh sách của mình; (3) dòng tip là đồ nội thất: đọc một lần rồi vĩnh viễn chiếm chỗ. Thêm nữa, trên điện thoại thì vuốt là cử chỉ tự nhiên, còn hai nút 48px kéo ngang cả trang là control rộng nhất app.",
+      "canonical": "components/shared/card-deck.tsx",
+      "source": "user 2026-08-06 (\"trong mobile web thì bỏ đi các nút đã thuộc và đang học, và dòng tip... mọi thứ ở mọi màn hình đều giống như quizlet... cho trang lịch sử cũng có một chế độ quizlet\")",
+      "repeats": 1,
+      "lockedOn": "2026-08-06",
+      "note": "Chốt tất định ở e2e/flashcards.spec.ts, ba test: (1) hai nút và dòng tip được khẳng định là VẮNG MẶT, rồi một cú DRAG thật (pointer đi nhiều bước, có vận tốc) chuyển thẻ theo cả hai chiều, cộng một cú drag ngắn phải BẬT LẠI chứ không chuyển — thiếu test cuối thì một deck chuyển thẻ khi pointer nhích 1px cũng xanh; (2) /history lướt được và deck lấy từ ĐÚNG các dòng đã lọc; (3) cả hai deck vừa màn 390px, mũi tên không rơi dưới fold. Một bug đã bị bắt bởi chính test (2): mã hoá \"hết thẻ\" bằng index === count làm việc lọc hẹp lại (pool co) bị đọc thành \"đã lướt qua hết\", nên thu hẹp bộ lọc lại nhảy sang màn kết thúc thay vì sang đúng thẻ vừa tìm. `done` phải là cờ RIÊNG: hết thẻ vì đi tới và bị đưa cho ít thẻ hơn là hai chuyện khác nhau.",
+      "check": {
+        "kind": "manual"
+      },
+      "allow": {}
     }
   ]
 }

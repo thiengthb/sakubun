@@ -63,6 +63,9 @@ const DISPLAY_ALLOW = [
   // dashboard's metric numbers, not a heading competing with body text. Only the card face goes large;
   // its labels ("Nghĩa", "Ví dụ") are text-xs meta, and were fixed to the scale rather than exempted.
   'components/groups/group-flashcards.tsx',
+  // Same argument, same card: /history's flashcard mode puts the đề on the face at reading size. Its
+  // answer side is ordinary body text and stays on the scale.
+  'components/history/history-flashcards.tsx',
   'components/guide/guide-steps.tsx', // scaled-down UI mockups in the /guide walkthrough (like the landing mocks)
   'components/guide/guide-primitives.tsx', // the mockup building blocks (Window/Chip/Field) those steps use
 ];

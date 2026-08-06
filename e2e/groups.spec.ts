@@ -193,9 +193,11 @@ test('flashcards read the Japanese per direction, and never the examples', async
 
   // EVERY card is a first listen. The "slow on repeat" alternation is per BUTTON, and one button reads
   // every card in the deck, so before 2026-08-05 the auto-read walked it by itself: card 1 normal, card 2
-  // at rate=0.6, card 3 normal… ("cứ cách một thẻ là bị mắc cơ chế này"). Grading advances the deck.
+  // at rate=0.6, card 3 normal… ("cứ cách một thẻ là bị mắc cơ chế này").
+  // The deck advances with "Thẻ sau" — the arrow under the card. It used to advance with "Đã thuộc";
+  // that button (and its "Đang học" twin) went out on 2026-08-06 when the deck became a swipe pile.
   for (let card = 2; card <= 3; card++) {
-    await page.getByRole('button', { name: /Đã thuộc/ }).click();
+    await page.getByRole('button', { name: 'Thẻ sau' }).click();
     await expect.poll(() => read.length, { timeout: 10_000 }).toBe(card);
   }
   // Distinct terms = each card read ITS OWN text (not a replay of card 1, which would also pass a count).

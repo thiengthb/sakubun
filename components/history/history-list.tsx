@@ -8,6 +8,7 @@ import { EmptyState } from '@/components/shared/empty-state';
 import { usePagedList } from '@/components/shared/use-paged-list';
 import { useSessionState } from '@/components/shared/use-session-state';
 import { HistoryCard } from '@/components/history/history-cards';
+import { HistoryFlashcards } from '@/components/history/history-flashcards';
 import {
   DEFAULT_FILTERS,
   HistoryFilters,
@@ -39,6 +40,9 @@ export function HistoryList({
   const [search, setSearch] = useSessionState('history.search', '', 'q');
   const [filters, setFilters] = useSessionState<Filters>('history.filters', DEFAULT_FILTERS, 'hf');
   const [columns, setColumns] = useSessionState<1 | 2>('history.columns', 2, 'cols');
+  // List vs flashcard. URL-synced like the other shareable view state, so a reload (or a link) keeps
+  // you in the deck instead of dropping you back into the table.
+  const [mode, setMode] = useSessionState<'list' | 'card'>('history.mode', 'list', 'view');
   // The list + the pagination bar are measured so the page size fills the viewport without a scroll.
   const listRef = useRef<HTMLUListElement>(null);
   const footerRef = useRef<HTMLDivElement>(null);
@@ -138,10 +142,21 @@ export function HistoryList({
         }}
         columns={columns}
         onColumnsChange={setColumns}
+        mode={mode}
+        onModeChange={setMode}
       />
 
       {filtered.length === 0 ? (
         <EmptyState icon={SearchX} title="Không có lượt dịch nào khớp bộ lọc." className="py-12" />
+      ) : mode === 'card' ? (
+        // The deck studies `filtered`, not `visible`: paging is a reading affordance for the list, and
+        // a deck that stopped at the end of page 1 would be a different (and silently smaller) pile.
+        <HistoryFlashcards
+          sentences={filtered}
+          voiceSpeaker={voiceSpeaker}
+          speechRate={speechRate}
+          showFurigana={showFurigana}
+        />
       ) : (
         <>
           <ul

@@ -283,7 +283,6 @@ export function GroupDetailView({
         <TabsContent value="flashcard">
           <GroupFlashcards
             key={group.members.map((m) => m.itemId).join(',')}
-            groupId={group.id}
             members={group.members}
             voiceSpeaker={voiceSpeaker}
             speechRate={speechRate}

@@ -34,8 +34,9 @@ const RATING_CLASS: Record<number, string> = {
   4: 'border-info/60 text-info',
 };
 
-/** /100 score → the same 4-color scale as the rating chips (bad → great); colored text, not filled. */
-function scoreClass(score: number): string {
+/** /100 score → the same 4-color scale as the rating chips (bad → great); colored text, not filled.
+ *  Exported so the flashcard deck colours its score the same way a list card does. */
+export function scoreClass(score: number): string {
   if (score < 50) return 'text-alert';
   if (score < 70) return 'text-warn';
   if (score < 90) return 'text-ok';
@@ -209,8 +210,9 @@ export function SentenceCardShell({
   );
 }
 
-/** A colored rating chip carrying the pattern/word text. (Audio for patterns lives on /resources now.) */
-function RatingChip({ expression, rating }: { expression: string; rating: number }) {
+/** A colored rating chip carrying the pattern/word text. (Audio for patterns lives on /resources now.)
+ *  Exported so the flashcard deck shows the same chip as the detail modal — one chip, one colour scale. */
+export function RatingChip({ expression, rating }: { expression: string; rating: number }) {
   const label = ratingLabel(rating);
   return (
     <Badge

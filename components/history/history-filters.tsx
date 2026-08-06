@@ -1,6 +1,6 @@
 'use client';
 
-import { LayoutGrid, Rows3 } from 'lucide-react';
+import { Layers, LayoutGrid, List, Rows3 } from 'lucide-react';
 import { ExpandingIconButton } from '@/components/shared/expanding-icon-button';
 import {
   Select,
@@ -103,6 +103,8 @@ export function HistoryFilters({
   onResetFilters,
   columns,
   onColumnsChange,
+  mode,
+  onModeChange,
 }: {
   search: string;
   onSearchChange: (value: string) => void;
@@ -112,6 +114,9 @@ export function HistoryFilters({
   /** Cards per row on large screens (1 or 2). */
   columns: 1 | 2;
   onColumnsChange: (columns: 1 | 2) => void;
+  /** Read the history as a list, or flip through it one card at a time. */
+  mode: 'list' | 'card';
+  onModeChange: (mode: 'list' | 'card') => void;
 }) {
   const activeCount = activeFilterCount(filters);
 
@@ -130,16 +135,28 @@ export function HistoryFilters({
         className="min-w-0 flex-1 sm:max-w-xs"
       />
       <div className="flex shrink-0 items-center gap-2 md:ml-auto">
+        {/* List <-> flashcard. Same expanding-label button as the rest of the toolbar, and labelled by
+            what the next click DOES. It stays in the toolbar (rather than moving up to the page header)
+            because the filters keep working in card mode — the deck is dealt from whatever the search
+            and the filter popover have narrowed to, so the two controls belong on the same row. */}
+        <ExpandingIconButton
+          icon={mode === 'list' ? Layers : List}
+          label={mode === 'list' ? 'Flashcard' : 'Danh sách'}
+          aria-pressed={mode === 'card'}
+          onClick={() => onModeChange(mode === 'list' ? 'card' : 'list')}
+        />
         {/* Layout density — sits immediately LEFT of Bộ lọc and uses the same expanding-label button.
             Hidden below lg because the grid is single-column there anyway, so the control would be a
-            no-op. Labelled by the ACTION (what the next click does), matching its tooltip role. */}
-        <ExpandingIconButton
-          icon={columns === 2 ? Rows3 : LayoutGrid}
-          label={columns === 2 ? '1 cột' : '2 cột'}
-          className="hidden lg:inline-flex"
-          aria-pressed={columns === 1}
-          onClick={() => onColumnsChange(columns === 2 ? 1 : 2)}
-        />
+            no-op; hidden in card mode for the same reason (one card, no columns). */}
+        {mode === 'list' && (
+          <ExpandingIconButton
+            icon={columns === 2 ? Rows3 : LayoutGrid}
+            label={columns === 2 ? '1 cột' : '2 cột'}
+            className="hidden lg:inline-flex"
+            aria-pressed={columns === 1}
+            onClick={() => onColumnsChange(columns === 2 ? 1 : 2)}
+          />
+        )}
         <FilterPopover activeCount={activeCount} align="end" onReset={onResetFilters}>
           <FilterRow label="Chiều dịch">
             <Select value={filters.direction} onValueChange={(v) => onPatch({ direction: v })}>
