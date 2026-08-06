@@ -182,3 +182,66 @@ describe('snapshot', () => {
     expect(snap.settings).toMatchObject({ dayCutoffHour: expect.any(Number) });
   });
 });
+
+describe('stats', () => {
+  it('refuses an unauthenticated caller', async () => {
+    await expect(caller(SIGNED_OUT).stats()).rejects.toMatchObject({ code: 'UNAUTHORIZED' });
+  });
+
+  it('answers with a shape that satisfies its own output schema', async () => {
+    const stats = await caller(SIGNED_IN).stats();
+    expect(typeof stats.takenAt).toBe('string');
+    expect(stats.today).toMatchObject({ reviews: expect.any(Number) });
+    expect(stats.reviewsByDay).toHaveLength(7);
+  });
+
+  it('applies the study-day cutoff — the reason the client is never given the ingredients', async () => {
+    // THE case this whole design exists for. With a 4am cutoff, a review at 02:00 belongs to
+    // YESTERDAY. A phone computing "today" from timestamps would count it and disagree with the web,
+    // and the learner would see two different numbers for the same day with no way to tell which lied.
+    //
+    // Both dates are built in LOCAL time on purpose: `studyDayStart` uses `setHours`, so a UTC literal
+    // would make this test's meaning depend on the machine's timezone.
+    const { saveSettings } = await import('@/lib/practice');
+    const { invalidateStreak } = await import('@/lib/practice');
+    const { buildMobileStats } = await import('@/lib/mobile-stats');
+
+    await saveSettings({ dayCutoffHour: 4 });
+    await prisma.item.create({
+      data: { id: 'cut1', kind: 'GRAMMAR', expression: '〜ものの', meaningVi: 'mặc dù', level: 'N2' },
+    });
+    const log = (at: Date) =>
+      prisma.reviewLog.create({
+        data: { itemId: 'cut1', rating: 3, state: 2, due: at, stability: 1, difficulty: 5, reviewedAt: at },
+      });
+
+    const now = new Date(2026, 7, 6, 10, 0, 0); // 06/08/2026 10:00 local
+    await log(new Date(2026, 7, 6, 2, 0, 0)); // 02:00 — BEFORE the cutoff, so it is yesterday's work
+    invalidateStreak();
+
+    let stats = await buildMobileStats(now);
+    expect(stats.today.reviews).toBe(0);
+
+    await log(new Date(2026, 7, 6, 5, 0, 0)); // 05:00 — after the cutoff, today
+    invalidateStreak();
+
+    stats = await buildMobileStats(now);
+    expect(stats.today.reviews).toBe(1);
+
+    await prisma.reviewLog.deleteMany();
+    invalidateStreak();
+  });
+
+  it('never recomputes: it projects the same getStats() the web dashboard calls', async () => {
+    const { getStats } = await import('@/lib/practice');
+    const { buildMobileStats } = await import('@/lib/mobile-stats');
+    const now = new Date(2026, 7, 6, 10, 0, 0);
+    const [web, mobile] = await Promise.all([getStats(now), buildMobileStats(now)]);
+    // A drifting second implementation is how the two surfaces start disagreeing. Same source, always.
+    expect(mobile.dueNow).toBe(web.dueNow);
+    expect(mobile.totalItems).toBe(web.totalItems);
+    expect(mobile.today).toEqual(web.today);
+    expect(mobile.sessionGoal).toBe(web.settings.sessionGoal);
+  });
+
+});

@@ -6,6 +6,7 @@
 // exact failure this transport was chosen to avoid (ADR 0001).
 import { z } from 'zod';
 import { buildMobileSnapshot, mobileSnapshotSchema } from '@/lib/mobile-snapshot';
+import { buildMobileStats, mobileStatsSchema } from '@/lib/mobile-stats';
 import { protectedProcedure, router } from '@/lib/trpc/init';
 
 export const appRouter = router({
@@ -22,6 +23,13 @@ export const appRouter = router({
   snapshot: protectedProcedure
     .output(mobileSnapshotSchema)
     .query(() => buildMobileSnapshot()),
+
+  /**
+   * Progress, already computed. Separate from `snapshot` because the two change on different clocks:
+   * the library is edited a few times a week, these numbers move with every review — and a client that
+   * had to refetch the whole library to refresh a streak would refetch it constantly.
+   */
+  stats: protectedProcedure.output(mobileStatsSchema).query(() => buildMobileStats()),
 });
 
 /** Type-only export for the Expo app. It MUST be imported with `import type` — a runtime import of this
