@@ -8,6 +8,13 @@ import { API_BASE_URL } from '~/lib/config';
 // `import type` above is load-bearing: it is erased at compile time, so the server's router (and with
 // it Prisma, better-auth's server half, the whole Node tree) never enters the Metro bundle. The only
 // thing crossing the boundary is a TYPE. Enforced by lib/mobile-imports.test.ts in the repo root.
+//
+// THE ALIASES, since `expo start` rewrites tsconfig.json and strips comments from it: `~/*` is this
+// app, `@/*` is the REPO ROOT — the same meaning `@/*` has in the server's tsconfig, which is the whole
+// point. TypeScript pulls `../lib/trpc/router.ts` in to resolve `AppRouter`, and that file's own
+// `@/lib/...` imports are then resolved with THIS project's paths; giving `@/` a second, local meaning
+// made every one of them fail. Metro resolves these aliases at runtime too, so a value import here
+// would not error — it would silently bundle the server.
 
 export const queryClient = new QueryClient();
 

@@ -3,18 +3,19 @@
   "compilerOptions": {
     "strict": true,
     "paths": {
-      // `~/*` is THIS app. `@/*` is the repo root — the SAME meaning it has in the server's tsconfig,
-      // and that is the point: when TypeScript pulls `../lib/trpc/router.ts` in to resolve the router
-      // type, that file's own `@/lib/...` imports must still resolve to the server's lib. Giving `@/`
-      // a second, local meaning here made every server import inside it fail to resolve.
-      //
-      // Only TYPES may come across: `lib/mobile-imports.test.ts` in the repo root fails the build if a
-      // runtime import of `@/...` ever appears in this folder. Metro resolves these aliases for real,
-      // so such an import would not error — it would quietly pull Prisma into the app bundle.
-      "~/*": ["./*"],
-      "@/*": ["../*"]
+      "~/*": [
+        "./*"
+      ],
+      "@/*": [
+        "../*"
+      ]
     }
   },
-  "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts"],
-  "exclude": ["node_modules"]
+  "include": [
+    "**/*.ts",
+    "**/*.tsx"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
 }
