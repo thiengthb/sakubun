@@ -1,3 +1,4 @@
+import { expo } from '@better-auth/expo';
 import { betterAuth } from 'better-auth';
 import { APIError } from 'better-auth/api';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
@@ -50,9 +51,16 @@ export const auth = betterAuth({
   // baseURL is the public domain (correct for prod cookies/callbacks), but the operator also reaches
   // the app on the host itself — trust localhost:3789 too so login/register work there, not only
   // through the tunnel. Extra origins can be added via BETTER_AUTH_TRUSTED_ORIGINS (comma-separated).
+  // `sakubun://` is the Expo app's scheme (mobile/app.json) and is NOT optional: @better-auth/expo's
+  // client sends an `expo-origin` header on EVERY call, including plain email sign-in, and expo() turns
+  // that into the request's `origin`. Without this entry every native request is 403
+  // MISSING_OR_NULL_ORIGIN — a failure that reads like broken credentials rather than a missing origin.
+  // `exp://` (Expo Go / dev client) is dev-only by design: it must never be trusted on the deployed app.
   trustedOrigins: [
     'http://localhost:3789',
     'https://sakubun.thientnse.site',
+    'sakubun://',
+    ...(process.env.NODE_ENV === 'development' ? ['exp://'] : []),
     ...(process.env.BETTER_AUTH_TRUSTED_ORIGINS?.split(',')
       .map((o) => o.trim())
       .filter(Boolean) ?? []),
@@ -147,6 +155,15 @@ export const auth = betterAuth({
     // AND MCP access immediately (every request authorises against this central DB) — the whole
     // reason this app is centralized rather than self-hosted.
     admin(),
+    // Native (Expo) client support: rewrites the `expo-origin` header into `origin` so the origin
+    // check passes, and appends the session cookie to the deep-link redirect after an OAuth /
+    // verify-email callback. See docs/adr/0001-mobile-app-architecture.md.
+    //
+    // POSITION IS LOAD-BEARING: this plugin has a `hooks.after`, and better-auth's own
+    // `warnIfCookiePluginNotLast` warns about any such plugin placed AFTER nextCookies. It is also the
+    // right order logically — expo() has to read `set-cookie` off the response before nextCookies
+    // drains it into Next's cookie store.
+    expo(),
     // MUST stay last: lets better-auth set cookies from Server Actions / Server Components.
     nextCookies(),
   ],
