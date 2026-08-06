@@ -1,4 +1,9 @@
 node_modules
+# NOT covered by the line above: a .dockerignore pattern without a slash matches only at the CONTEXT
+# ROOT, so `node_modules` never matched `mobile/node_modules` (that would need `**/node_modules`). The
+# Expo app is not part of the server image at all — its ~500MB of React Native dependencies would ride
+# into the build context and then into the image via `COPY . .`, for nothing.
+mobile
 .next
 .git
 .env
