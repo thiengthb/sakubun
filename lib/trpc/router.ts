@@ -5,11 +5,26 @@
 // tools can reach it too — otherwise the app grows its own private version of the domain, which is the
 // exact failure this transport was chosen to avoid (ADR 0001).
 import { z } from 'zod';
+import { isGoogleEnabled } from '@/lib/google-enabled';
 import { buildMobileSnapshot, mobileSnapshotSchema } from '@/lib/mobile-snapshot';
 import { buildMobileStats, mobileStatsSchema } from '@/lib/mobile-stats';
-import { protectedProcedure, router } from '@/lib/trpc/init';
+import { protectedProcedure, publicProcedure, router } from '@/lib/trpc/init';
 
 export const appRouter = router({
+  /**
+   * Which sign-in methods this server actually offers. PUBLIC on purpose — the login screen has to
+   * render before there is a session, and it must not offer a Google button that would dead-end.
+   *
+   * It has to be asked at RUNTIME, not baked in. The web has the same problem for a different reason
+   * (see lib/google-enabled.ts: `next build` runs before .env.docker exists), and the app has it worse
+   * — a build is installed on a phone and cannot be re-baked when the server's config changes.
+   *
+   * Leaks nothing: the web login page already shows this same boolean to anyone who loads it.
+   */
+  authConfig: publicProcedure
+    .output(z.object({ googleEnabled: z.boolean() }))
+    .query(() => ({ googleEnabled: isGoogleEnabled() })),
+
   /**
    * Who the bearer of this session is. The app calls it right after sign-in: it is the cheapest proof
    * that the whole native auth path works end to end (cookie jar in SecureStore -> `cookie` header ->

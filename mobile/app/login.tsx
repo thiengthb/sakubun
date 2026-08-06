@@ -10,7 +10,8 @@ import {
   View,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { trpc } from '~/lib/api';
 import { authClient } from '~/lib/auth-client';
 import { useTheme } from '~/lib/theme';
 
@@ -22,6 +23,15 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Public procedure: it has to answer BEFORE there is a session, and the answer has to come from the
+  // server at runtime — a phone build cannot know whether Google is configured (lib/trpc/router.ts).
+  const config = useQuery(trpc.authConfig.queryOptions());
+
+  /** Shared tail for both sign-in paths. See the note about better-auth #10545 below. */
+  async function enter() {
+    await queryClient.invalidateQueries();
+    router.replace('/');
+  }
 
   async function signIn() {
     setBusy(true);
@@ -36,8 +46,29 @@ export default function LoginScreen() {
     // store can fail to notify after sign-in, and the app then sits on this screen until it is killed).
     // The cookie is already in SecureStore at this point, so the next request is authenticated —
     // invalidate so the home screen refetches rather than reading a cached 401.
-    await queryClient.invalidateQueries();
-    router.replace('/');
+    await enter();
+  }
+
+  async function signInWithGoogle() {
+    setBusy(true);
+    setError(null);
+    // On native this opens a system web browser and comes back through the `sakubun://` deep link; the
+    // expo plugin lifts the session cookie off that redirect. The server keeps its OWN
+    // /api/auth/callback/google as the redirect_uri, so this reuses the existing Google OAuth client —
+    // no separate native client to register.
+    const { error: authError } = await authClient.signIn.social({
+      provider: 'google',
+      callbackURL: '/',
+    });
+    setBusy(false);
+    if (authError) {
+      setError(authError.message ?? 'Đăng nhập Google không thành công.');
+      return;
+    }
+    // Self-correcting on purpose: if the browser was dismissed before Google finished, there is no
+    // session, and the home screen's `me` query 401s and sends us straight back here. That is a better
+    // failure than trying to guess from here whether a flow in another app completed.
+    await enter();
   }
 
   const canSubmit = email.trim().length > 0 && password.length > 0 && !busy;
@@ -90,6 +121,23 @@ export default function LoginScreen() {
             <Text style={[styles.buttonText, { color: theme.onAccent }]}>Đăng nhập</Text>
           )}
         </Pressable>
+
+        {config.data?.googleEnabled ? (
+          <>
+            <Text style={[styles.divider, { color: theme.muted }]}>hoặc</Text>
+            <Pressable
+              accessibilityRole="button"
+              disabled={busy}
+              onPress={() => void signInWithGoogle()}
+              style={[
+                styles.buttonOutline,
+                { borderColor: theme.border, backgroundColor: theme.card, opacity: busy ? 0.5 : 1 },
+              ]}
+            >
+              <Text style={[styles.buttonText, { color: theme.text }]}>Đăng nhập bằng Google</Text>
+            </Pressable>
+          </>
+        ) : null}
       </View>
     </KeyboardAvoidingView>
   );
@@ -104,5 +152,7 @@ const styles = StyleSheet.create({
   input: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, fontSize: 16 },
   error: { fontSize: 14, marginTop: 8 },
   button: { marginTop: 20, borderRadius: 10, paddingVertical: 14, alignItems: 'center' },
+  buttonOutline: { borderWidth: 1, borderRadius: 10, paddingVertical: 14, alignItems: 'center' },
   buttonText: { fontSize: 16, fontWeight: '600' },
+  divider: { fontSize: 13, textAlign: 'center', marginVertical: 12 },
 });

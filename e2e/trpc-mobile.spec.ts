@@ -26,6 +26,22 @@ test('a procedure refuses an unauthenticated request', async ({ request }) => {
   expect(body.error?.data?.code).toBe('UNAUTHORIZED');
 });
 
+test('the login screen can ask which sign-in methods exist, with no session', async ({
+  playwright,
+}) => {
+  // A fresh context so this cannot pass on a cookie left by another test: `authConfig` MUST work for a
+  // caller with no session, or the app's login screen has nothing to render its buttons from.
+  const api = await playwright.request.newContext({ baseURL: test.info().project.use.baseURL });
+  try {
+    const res = await api.get('/api/trpc/authConfig');
+    expect(res.status()).toBe(200);
+    const body = (await res.json()) as { result: { data: { googleEnabled: boolean } } };
+    expect(typeof body.result.data.googleEnabled).toBe('boolean');
+  } finally {
+    await api.dispose();
+  }
+});
+
 test('the snapshot is unreadable without a session', async ({ request }) => {
   const res = await request.get('/api/trpc/snapshot');
   expect(res.status()).toBe(401);

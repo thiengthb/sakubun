@@ -48,6 +48,15 @@ beforeEach(async () => {
   await prisma.item.deleteMany();
 });
 
+describe('authConfig', () => {
+  it('answers WITHOUT a session — the login screen has no session yet', async () => {
+    // If this ever became a protectedProcedure the app would show a login screen with no buttons on it,
+    // and the only way in would be gone. Asserted from the signed-OUT context on purpose.
+    const config = await caller(SIGNED_OUT).authConfig();
+    expect(typeof config.googleEnabled).toBe('boolean');
+  });
+});
+
 describe('the guard', () => {
   it('refuses `me` without a session', async () => {
     await expect(caller(SIGNED_OUT).me()).rejects.toThrow(TRPCError);
