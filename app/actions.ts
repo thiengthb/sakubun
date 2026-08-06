@@ -14,7 +14,6 @@ import {
   setItemSuspended,
   setItemsSuspended,
   setSentenceStarred,
-  skipSentence,
   updateItem,
   VOCAB_KIND,
 } from '@/lib/practice';
@@ -275,23 +274,11 @@ export async function deleteItemsAction(ids: string[]): Promise<ActionResult<{ d
   return ok({ deleted });
 }
 
-/** Skip a pending sentence — kept in history with its reference, but NOT counted by FSRS (the
- *  history pending-card "Bỏ qua" action). */
-export async function skipSentenceAction(
-  sentenceId: string,
-): Promise<ActionResult<{ skipped: number }>> {
-  // Auth gate: a Server Action is a public HTTP endpoint — bounce if not signed in.
-  await getSessionUserId();
-  if (!sentenceId) return err('Thiếu sentenceId');
-  try {
-    const result = await skipSentence(sentenceId);
-    revalidatePath('/history');
-    revalidatePath('/');
-    return ok(result);
-  } catch (e) {
-    return err(e instanceof Error ? e.message : 'Không xử lý được');
-  }
-}
+// `skipSentenceAction` lived here until 2026-08-06 — a server action for the history pending-card
+// "Bỏ qua" button. That button is gone: skipping happens in Claude Desktop now (the tutor owns the
+// loop), which components/history/history-cards.tsx PendingCard states outright. Nothing called the
+// action, so it was a public HTTP endpoint with an auth gate protecting a feature that no longer
+// exists. `skipSentence()` in lib/practice.ts stays — the MCP tool `skip_sentence` uses it.
 
 /** Current study-day streak — polled by the app-wide streak celebration beacon (StreakBeacon). */
 export async function getStreakAction(): Promise<ActionResult<{ current: number }>> {

@@ -32,7 +32,10 @@ function walk(dir, filter = () => true) {
   }
   return out;
 }
-const rel = p => p.replace(repoPath('') + '/', '').replace(repoPath(''), '');
+// Dấu phân cách chuẩn hoá về `/`: trên Windows `join()` trả `\`, nên nếu không có bước này
+// mọi dòng báo cáo của file này in ra `\.claude\rules\README.md` — đọc được, nhưng không
+// copy-paste được vào lệnh nào, và không so được với đường dẫn viết trong tài liệu.
+const rel = p => p.split('\\').join('/').replace(repoPath('').split('\\').join('/') + '/', '').replace(/^\//, '');
 
 // ── 1. Rule: thiếu paths / owner / expires-review ────────────────────────────
 const GLOBAL_OK = ['danger-zones.md', 'README.md', '_TEMPLATE.md'];
@@ -224,6 +227,74 @@ const touched = git(['log', `--since=${since}`, '--name-only', '--pretty=format:
 if (touched.length) {
   const wnTouched = git(['log', `--since=${since}`, '--name-only', '--pretty=format:']).stdout.includes('.claude/whats-new.md');
   if (!wnTouched) warn.push(`${new Set(touched).size} file harness đổi trong 14 ngày nhưng .claude/whats-new.md KHÔNG đổi — nửa team đang hành xử theo rule cũ`);
+}
+
+// ── 9b. Đường dẫn trỏ vào hư không ───────────────────────────────────────────
+//
+// Loại hết hạn ĐẮT NHẤT với agent, và không có triệu chứng nào: với agent, mọi text
+// trong repo có thẩm quyền như nhau, nên một đường dẫn chết không báo lỗi — nó gửi
+// người đọc tới chỗ trống, và người đọc TỰ NGHĨ RA nội dung đáng lẽ ở đó.
+//
+// Đo 2026-08-06: 16 chỗ trong SOURCE trỏ vào `docs/plans/*` (5 file kế hoạch được viện
+// dẫn như thẩm quyền thiết kế) — `git log --all -- docs/plans` TRỐNG: thư mục đó chưa
+// bao giờ được commit. §4 ở trên chỉ kiểm skill trỏ vào `tooling/*.mjs`, nên cả nhóm này
+// lọt lưới.
+//
+// HAI LOẠI TRỪ CỐ Ý, vì nếu không thì tín hiệu chìm trong dương tính giả (bản đầu của
+// phép kiểm này báo 120 hit, phần lớn là văn xuôi như `origin/main` và `"n/a"`):
+//   · HARNESS-CHANGELOG.md, .claude/learnings/**, docs/progress/** — ba thứ này LÀ lịch sử,
+//     append-only. Một changelog PHẢI nhắc file đã đổi tên, và một nhật ký rà soát PHẢI
+//     trích dẫn chính những đường dẫn hỏng mà nó phát hiện; bắt lỗi chúng là bắt chúng làm
+//     sai việc của chúng. (Đo được ngay lần chạy đầu: docs/progress/optimize-sweep.md tự bị
+//     tố giác vì nó liệt kê các đường dẫn chết.)
+//   · chuỗi có glob/placeholder, và đường dẫn có segment đầu không phải thư mục thật ở
+//     gốc repo — đó là văn xuôi, không phải đường dẫn.
+const TOP_LEVEL = new Set(readdirSync(repoPath('')));
+const PROSE = p => /[*{}<>$]|\.\.|^https?:|^~|^@/.test(p);
+// Thư mục SINH RA LÚC CHẠY và gitignored: vắng mặt trên một cây sạch là ĐÚNG, không phải hỏng.
+const IGNORED_REF = p =>
+  p.startsWith('.git/') ||               // artifact lúc chạy (index.lock)
+  p.startsWith('knowledge/incoming') ||
+  p.startsWith('.claude/telemetry') ||
+  p.startsWith('.claude/state') ||
+  p.startsWith('.claude/worktrees');
+
+const dangling = new Map();              // đường dẫn -> nơi nhắc nó
+const noteRef = (p, where) => {
+  if (!p || PROSE(p) || IGNORED_REF(p)) return;
+  const clean = p.split('#')[0].split(':')[0].replace(/\/$/, '');
+  if (!clean.includes('/') || !TOP_LEVEL.has(clean.split('/')[0])) return;
+  if (existsSync(repoPath(clean))) return;
+  if (!dangling.has(clean)) dangling.set(clean, new Set());
+  dangling.get(clean).add(where);
+};
+
+const HISTORY = f => {
+  const r = rel(f);
+  return r.includes('HARNESS-CHANGELOG') || r.startsWith('.claude/learnings/') || r.startsWith('docs/progress/');
+};
+const mdRefs = [
+  ...walk(repoPath('docs'), p => extname(p) === '.md'),
+  ...walk(repoPath('.claude'), p => extname(p) === '.md'),
+  repoPath('AGENTS.md'), repoPath('CLAUDE.md'),
+].filter(f => existsSync(f) && !HISTORY(f));
+for (const f of mdRefs) {
+  for (const m of readFileSync(f, 'utf8').matchAll(/`([^`\s]+)`/g)) noteRef(m[1], rel(f));
+}
+
+// Comment trong SOURCE trỏ vào docs/ — chỗ duy nhất tìm ra nhóm docs/plans.
+for (const root of ['app', 'components', 'lib', 'e2e', 'tooling']) {
+  for (const f of walk(repoPath(root), p => /\.(ts|tsx|mjs)$/.test(p) && !p.includes('generated'))) {
+    for (const m of readFileSync(f, 'utf8').matchAll(/docs\/[A-Za-z0-9_./-]+\.md/g)) noteRef(m[0], rel(f));
+  }
+}
+
+if (dangling.size) {
+  const rows = [...dangling.entries()].sort((a, b) => b[1].size - a[1].size);
+  const shown = rows.slice(0, 6).map(([p, w]) => `${p} (${[...w].slice(0, 2).join(', ')}${w.size > 2 ? `, +${w.size - 2}` : ''})`);
+  fail.push(`${dangling.size} đường dẫn được tài liệu/comment trỏ tới nhưng KHÔNG TỒN TẠI: ${shown.join(' · ')}`
+    + (rows.length > 6 ? ` … +${rows.length - 6} nữa` : '')
+    + ' — sửa đường dẫn, tạo file, hoặc xoá lời nhắc. Đừng để nguyên.');
 }
 
 // ── 10. PHÒNG CHỜ NGHỈ HƯU — có bằng chứng, và KHÔNG có lệnh xoá ─────────────

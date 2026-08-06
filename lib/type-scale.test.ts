@@ -42,7 +42,10 @@ const rel = (file: string) => relative(process.cwd(), file).split(sep).join('/')
 // (large numbers, gauges, glyphs, primitive sizing) — none of these are body-vs-title text. Dir
 // entries end with '/'; file entries are exact. Add here WITH a reason; do not weaken the check.
 const DISPLAY_ALLOW = [
-  'components/landing/', // marketing hero on the public landing page
+  // `components/landing/` sat here until 2026-08-06 — the directory no longer exists (the public
+  // landing page went out with the multi-user surface). An allowlist entry for a deleted path is not
+  // harmless: it is a standing permission nobody can audit, and it makes the list look longer than
+  // the exemptions actually granted.
   'app/login/', // auth hero
   'app/register/',
   'components/shell/auth-nav.tsx', // wordmark on the auth pages

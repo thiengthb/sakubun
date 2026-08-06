@@ -15,20 +15,12 @@ export function ok(data: unknown) {
   return { content: [{ type: 'text' as const, text: JSON.stringify(data) }] };
 }
 
-/**
- * Resolve the authenticated user's id from the MCP call context (the SDK hands each tool an `extra`
- * as its 2nd arg). `withMcpAuth` in the route verified the bearer token and stashed the userId here;
- * a request without it never reaches a tool (required: true), so this is defense-in-depth — every
- * tool that touches user data threads this id into the practice.ts DB layer (plan 2026-07-21, 2.7).
- */
-export function getUserId(extra: unknown): string {
-  const authInfo = (extra as { authInfo?: { extra?: { userId?: unknown } } } | undefined)?.authInfo;
-  const userId = authInfo?.extra?.userId;
-  if (typeof userId !== 'string' || !userId) {
-    throw new Error('MCP request without an authenticated user — token missing or unrecognised.');
-  }
-  return userId;
-}
+// `getUserId(extra)` lived here until 2026-08-06. It pulled the authenticated userId out of the MCP
+// call context so each tool could thread it into the DB layer — which is exactly what the single-user
+// rewrite removed: the learning tables have no `userId` column and the boundary is the login
+// (AGENTS.md §Gotchas). `lib/mcp/tools/groups.ts` already said so in a comment, and no tool had
+// imported it since. What still guards this surface is `withMcpAuth({ required: true })` in the route:
+// a request with no valid bearer token never reaches a tool at all.
 
 /** "Soft" MCP error — returned as isError, NOT thrown (avoids a raw -32603). */
 export function mcpError(message: string) {
