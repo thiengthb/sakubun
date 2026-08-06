@@ -1,8 +1,42 @@
 # ADR 0001 — Kiến trúc app mobile native (Expo) cho sakubun
 
-- **Trạng thái**: Accepted
+- **Trạng thái**: Accepted (sửa đổi 2026-08-06, xem "Sửa đổi 1")
 - **Ngày**: 2026-08-06
 - **last-verified**: 2026-08-06
+
+## Sửa đổi 1 (2026-08-06) — SDK 54, không phải 57
+
+Khảo sát làm trên **Expo SDK 57 / RN 0.86** vì đó là bản mới nhất trên npm. Nhưng
+**Expo Go trên Google Play của người dùng là 54.0.8**, tức chỉ nạp được app SDK 54, và Expo Go là
+đường thử duy nhất không cần Android Studio hay tài khoản EAS. Nên app hạ về:
+
+| | Khảo sát (57) | Thực tế (54) |
+|---|---|---|
+| expo | ~57.0.10 | ~54.0.36 |
+| react-native | 0.86.2 | 0.81.5 |
+| react | 19.2.3 | 19.1.0 |
+| expo-router | ~57.0.10 | **~6.0.24** |
+| expo-secure-store | ~57.0.1 | **~15.0.8** |
+| expo-constants · expo-linking · expo-status-bar | 57.x | 18.0.13 · 8.0.12 · 3.0.9 |
+| eslint-config-expo | ~57.0.1 | ~10.0.0 |
+
+SDK 54 còn dùng lối đánh version **riêng cho từng package** (`expo-router` 6.x); việc hợp nhất về
+`57.x` chỉ có từ các SDK sau. Đừng đọc "6.0.24" là cũ hơn — nó là expo-router của SDK 54.
+
+Đã kiểm lại, không suy từ bản 57: `SecureStore.getItem` (đồng bộ) và `AFTER_FIRST_UNLOCK` **đều còn**
+trong expo-secure-store 15, nên workaround cho better-auth #10382 giữ nguyên không đổi một dòng.
+
+Hai điều SDK 54 thay đổi so với phần khảo sát, phải khảo sát lại **trước** khi làm phase 3:
+`expo-av` **vẫn còn** ở SDK 54 (nó chỉ bị xoá từ SDK 55), nên khẳng định "expo-av đã bị xoá" không
+áp dụng ở đây — nhưng `expo-audio` cũng đã có, và nó vẫn là lựa chọn đúng. Còn phần `expo-sqlite`
+session extension (dự tính cho phase 5) là API của SDK 57; SDK 54 có thể chưa có.
+
+`expo-network` phải khai tường minh: `@better-auth/expo/client` import động nó, và trên cây SDK 57
+nó tình cờ có sẵn qua dependency gián tiếp nên bundle vẫn qua. Chỉ khi cài lại sạch mới lộ. Cái bắt
+được lỗi này là bước `npx expo export`, nên bước đó là **bắt buộc** trước mỗi lần kết luận, không
+phải tuỳ chọn.
+
+Khi Expo Go trên Play lên SDK 57, hoặc khi dựng dev client bằng EAS, nâng lại theo bảng trên.
 
 ## Context
 
