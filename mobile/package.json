@@ -1,0 +1,39 @@
+{
+  "name": "sakubun-mobile",
+  "version": "1.0.0",
+  "main": "expo-router/entry",
+  "dependencies": {
+    "@better-auth/expo": "^1.6.26",
+    "@tanstack/react-query": "^5.101.4",
+    "@trpc/client": "^11.18.0",
+    "@trpc/tanstack-react-query": "^11.18.0",
+    "better-auth": "^1.6.26",
+    "expo": "~57.0.10",
+    "expo-constants": "~57.0.9",
+    "expo-linking": "~57.0.5",
+    "expo-router": "~57.0.10",
+    "expo-secure-store": "~57.0.1",
+    "expo-status-bar": "~57.0.1",
+    "react": "19.2.3",
+    "react-dom": "^19.2.3",
+    "react-native": "0.86.2",
+    "react-native-safe-area-context": "~5.7.0",
+    "react-native-screens": "~4.26.0"
+  },
+  "devDependencies": {
+    "@types/react": "~19.2.2",
+    "eslint": "^9.39.5",
+    "eslint-config-expo": "~57.0.1",
+    "typescript": "~5.9.3"
+  },
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "verify": "npm run typecheck && npm run lint"
+  },
+  "private": true
+}

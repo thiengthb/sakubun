@@ -27,8 +27,10 @@ import { describe, expect, it } from 'vitest';
 const EMOJI =
   /[\u{1F000}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE0F}\u{20E3}\u{1F1E6}-\u{1F1FF}]/u;
 
-const ROOTS = ['app', 'components', 'lib'];
-const SKIP_DIRS = new Set(['node_modules', 'generated', '.next']);
+// `mobile` joined 2026-08-06 with the Expo app: the rule says "no emoji anywhere", and a root that is
+// not walked is a blind spot the rule cannot see into.
+const ROOTS = ['app', 'components', 'lib', 'mobile'];
+const SKIP_DIRS = new Set(['node_modules', 'generated', '.next', '.expo']);
 // This file necessarily NAMES the ranges it bans; it contains escape sequences, not emoji, but keep it
 // out of the walk so the rule can never fail on its own definition.
 const SKIP_FILES = new Set(['lib/no-emoji.test.ts']);

@@ -19,6 +19,10 @@ const config = [
       'test-results/**',
       'playwright-report/**',
       'next-env.d.ts',
+      // The Expo app is a different platform with different rules (no DOM, no Next router), and it
+      // has its OWN flat config + `npm run lint` inside mobile/. Linting it with eslint-config-next
+      // here would report on rules that do not apply and miss the ones that do.
+      'mobile/**',
     ],
   },
   ...next,
