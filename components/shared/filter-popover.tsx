@@ -6,6 +6,13 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { BottomSheet, SHEET_CONTROL_CLASS } from '@/components/shared/bottom-sheet';
 import { ExpandingIconButton } from '@/components/shared/expanding-icon-button';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -26,6 +33,56 @@ export function FilterRow({
       <Label className="text-xs text-muted-foreground">{label}</Label>
       {children}
     </div>
+  );
+}
+
+/** One option in a `<SelectFilterRow>`. Matches the shape of `STATE_FILTERS` / `STAR_FILTERS` etc. */
+export interface FilterOption {
+  value: string;
+  label: string;
+}
+
+/**
+ * A `FilterRow` whose control is a `Select` — which is what EVERY filter row in this app actually is.
+ *
+ * Extracted 2026-08-06: the row + trigger + `SelectValue` + `SelectContent position="popper"` +
+ * `.map(SelectItem)` block was written out 15 times across `items-table.tsx`, `vocab-table.tsx` and
+ * `history-filters.tsx` — 13 lines each, byte-identical apart from the option list. `dup-scan` scored
+ * it as three separate clone pairs, and it is the textbook "config block lặp" case from /dedupe-scan:
+ * the answer there is one component, not one more copy.
+ *
+ * No sizing/`className` prop on purpose: `FilterPopover` already applies `SHEET_CONTROL_CLASS` to the
+ * whole sheet on a phone (a descendant selector), so the 40px touch target arrives without every call
+ * site remembering to ask for it.
+ */
+export function SelectFilterRow({
+  label,
+  value,
+  onValueChange,
+  options,
+  className,
+}: {
+  label: ReactNode;
+  value: string;
+  onValueChange: (value: string) => void;
+  options: readonly FilterOption[];
+  className?: string;
+}) {
+  return (
+    <FilterRow label={label} className={className}>
+      <Select value={value} onValueChange={onValueChange}>
+        <SelectTrigger size="sm" className="w-full">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent position="popper">
+          {options.map((o) => (
+            <SelectItem key={o.value} value={o.value}>
+              {o.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </FilterRow>
   );
 }
 

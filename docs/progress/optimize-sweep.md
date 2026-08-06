@@ -301,6 +301,52 @@ A3 (`<SelectFilterRow>`), A4, A5, B7 (bỏ `export` thừa). Mỗi cặp một c
 - **LƯU Ý trạng thái**: tag `sakubun:local` giờ trỏ tới image MỚI, còn container đang chạy vẫn dùng
   image cũ. Lần `docker compose up -d` tới sẽ nhận bản mới. Production **chưa** bị đổi trong vòng này.
 
+---
+
+## 2026-08-07 02:55 (session 1, Claude) — VÒNG 4 XONG: gom hai bảng
+
+- **ĐÃ LÀM, đúng thứ tự đã cam kết: TEST TRƯỚC**
+  1. `e2e/resources-tables.spec.ts` (3 test) — commit `a4e3528`, **trước** khi chạm code bảng. Nó lái
+     cả hai tab qua đúng phần sắp gom, cộng phần riêng của mỗi tab và danh từ trong thanh hành động
+     khối. Commit riêng để chứng minh nó viết cho code CŨ, không phải nắn theo code mới.
+  2. `components/shared/filter-popover.tsx` → thêm `SelectFilterRow`. Khối
+     `FilterRow + Select + SelectValue + SelectContent + map(SelectItem)` từng được viết tay **15 lần**
+     (13 dòng mỗi lần) ở ba file. Giờ mỗi hàng bộ lọc là 6 dòng.
+  3. `lib/srs-constants.ts` → thêm `JLPT_FILTERS`. `JLPT_LEVELS` là mảng chuỗi trần, nên mỗi bảng tự
+     dựng `{value,label}` + tự thêm mục "all" — ba chỗ làm ba lần.
+  4. `components/resources/resource-columns.tsx` (mới, 259 dòng) — `expressionColumn`, `meaningColumn`,
+     `srsMetaColumns` (7 cột), `actionsColumn`, và `ResourceRowBase`.
+- **CÁI KHÔNG GOM, cố ý**: bộ lọc chất lượng thẻ (ngữ pháp), badge lý do + cột Hán Việt + cột Ví dụ
+  (từ vựng), và `renderCard` của mỗi bảng. Hai domain khác nhau tình cờ ở cạnh nhau; ép chung tạo
+  abstraction sai, mà abstraction sai tệ hơn duplication.
+- **MỘT CHỖ SUÝT SỬA LÉN, đã kiểm và KHÔNG sửa**: bảng từ vựng không truyền `level` cho `RowActions`,
+  bảng ngữ pháp thì có. Thoạt trông như chỗ bỏ sót đáng "sửa luôn". Đọc `ItemEditForm` thì thấy nó chỉ
+  gửi `level` khi `kind === 'grammar'` và ẩn hẳn ô chọn cấp cho từ vựng — **khác biệt là CÓ LÝ**. Nên
+  `actionsColumn` giữ nguyên đúng khác biệt đó (`...(kind === 'grammar' ? { level } : {})`), kèm comment
+  giải thích. Sửa nó sẽ vừa là đổi hành vi lén trong commit refactor, vừa là đổi SAI.
+- **SỐ ĐO**
+  | | trước | sau |
+  |---|---|---|
+  | `items-table.tsx` | 495 | **276** |
+  | `vocab-table.tsx` | 563 | **349** |
+  | `resource-columns.tsx` (mới) | — | 259 |
+  | tổng ba file | 1 058 | **884** (−174) |
+  | trùng lặp toàn repo | 3.08% · 851 dòng · 38 khối | **1.56% · 426 dòng · 28 khối** |
+  | cặp `items-table ↔ vocab-table` | **145 cửa sổ** | **6** |
+
+  Cặp đó không còn đứng đầu bảng nữa; giờ đầu bảng là `analytics ↔ stats` (20 cửa sổ). Sáu cửa sổ còn
+  lại giữa hai bảng là phần props của `<DataTable>` và chuỗi `<SelectFilterRow>` — đã mỏng, để đó.
+- **BẰNG CHỨNG**
+  - `npx playwright test e2e/resources-tables.spec.ts` → 3 passed **mà không sửa một dòng test nào**.
+    Đây là phép kiểm quyết định của vòng này: lưới viết cho code cũ vẫn xanh trên code mới.
+  - `npx playwright test` (toàn bộ) → **25 passed**.
+  - `npm run verify` exit 0 — 671 test, build sạch. `gates --stage stop` xanh.
+- **GHI CHÚ**: `dead-exports` báo `looseExports +1` — là `ResourceRowBase` / `ResourceCellPrefs`, hai
+  type chỉ dùng trong chính file mới. Giữ `export` có chủ ý: chúng là HỢP ĐỒNG mà `ItemRow` và
+  `VocabRow` phải thoả, và một hợp đồng không export được thì không ai đọc được.
+- **CHƯA làm**: chưa ghim lại baseline `dup-scan`. Cố ý — còn Vòng 5; ghim lại giữa đường sẽ xoá mất
+  tín hiệu so sánh với điểm khởi đầu. Ghim khi các vòng đã xong.
+
 ## Cảnh báo tự đặt cho các vòng sau
 
 Đừng “dedupe theo điểm số”. Mỗi clone bị bỏ qua có chủ ý phải ghi **lý do vào file**, và số

@@ -3,37 +3,27 @@
 import { type ReactNode, useMemo } from 'react';
 import type { ColumnDef } from '@tanstack/react-table';
 import { Badge } from '@/components/ui/badge';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Truncate } from '@/components/ui/truncate';
 import { BulkDeleteButton } from '@/components/resources/bulk-delete-button';
 import { BulkGroupActions } from '@/components/resources/bulk-group-button';
 import type { GroupSummary } from '@/lib/groups';
 import { BulkSuspendButton } from '@/components/resources/bulk-suspend-button';
 import { DataTable } from '@/components/shared/data-table';
-import { FilterPopover, FilterRow } from '@/components/shared/filter-popover';
-import { ItemDetailDialog } from '@/components/resources/item-detail-dialog';
+import { FilterPopover, SelectFilterRow } from '@/components/shared/filter-popover';
+import {
+  actionsColumn,
+  expressionColumn,
+  meaningColumn,
+  srsMetaColumns,
+} from '@/components/resources/resource-columns';
 import { RowActions } from '@/components/resources/row-actions';
 import { ResourceCard } from '@/components/resources/resource-card';
 import { SpokenLine } from '@/components/shared/spoken-line';
 import { StarButton } from '@/components/shared/star-button';
-import { DueCell } from '@/components/shared/due-cell';
 import { useSessionState } from '@/components/shared/use-session-state';
 import { PAGE_SIZE_OPTIONS } from '@/lib/pagination';
-import { JLPT_LEVELS } from '@/lib/settings-schema';
-import {
-  DATE_PRESETS,
-  type DatePreset,
-  formatDateVN,
-  speakable,
-  withinDatePreset,
-} from '@/lib/format';
-import { STAR_FILTERS, STATE_FILTERS, STATE_LABELS } from '@/lib/srs-constants';
+import { DATE_PRESETS, type DatePreset, speakable, withinDatePreset } from '@/lib/format';
+import { JLPT_FILTERS, STAR_FILTERS, STATE_FILTERS } from '@/lib/srs-constants';
 import { buildFuriganaMarkup } from '@/lib/furigana';
 import { toRomaji } from '@/lib/romaji';
 import { cn } from '@/lib/utils';
@@ -124,36 +114,10 @@ export function VocabTable({
     [items, state, reason, star, level, date],
   );
 
-  const columns = useMemo<ColumnDef<VocabRow>[]>(
-    () => [
-      {
-        id: 'expression',
-        // Search matches the word, its kana reading, AND romaji of both (so "takai" finds 高い).
-        accessorFn: (r) =>
-          `${r.expression} ${r.reading ?? ''} ${toRomaji(r.reading ?? '')} ${toRomaji(r.expression)}`,
-        header: 'Từ',
-        enableHiding: false,
-        size: 190,
-        minSize: 130,
-        meta: { label: 'Từ' },
-        cell: ({ row }) => {
-          const item = row.original;
-          // Furigana aligned onto the kanji (handles okurigana: 高い → 高[たか]い); null when kana-only.
-          const ruby = buildFuriganaMarkup(item.expression, item.reading);
-          return (
-            <SpokenLine
-              text={item.expression}
-              speakText={speakable(item.expression)}
-              ruby={ruby}
-              showFurigana={showFurigana}
-              speaker={voiceSpeaker}
-              rate={speechRate}
-              label="Nghe từ"
-              truncate
-            />
-          );
-        },
-      },
+  const columns = useMemo<ColumnDef<VocabRow>[]>(() => {
+    const prefs = { voiceSpeaker, speechRate, showFurigana };
+    return [
+      expressionColumn<VocabRow>('Từ', 'Nghe từ', 190, 130, prefs, toRomaji),
       {
         id: 'captureReason',
         accessorFn: (r) => (r.captureReason ? (REASON_META[r.captureReason]?.label ?? '') : ''),
@@ -189,14 +153,7 @@ export function VocabTable({
           </Truncate>
         ),
       },
-      {
-        accessorKey: 'meaningVi',
-        header: 'Nghĩa',
-        size: 200,
-        minSize: 120,
-        meta: { label: 'Nghĩa' },
-        cell: ({ row }) => <Truncate>{row.original.meaningVi}</Truncate>,
-      },
+      meaningColumn<VocabRow>(200),
       {
         id: 'notes',
         accessorFn: (r) => r.notes ?? '',
@@ -221,154 +178,23 @@ export function VocabTable({
             <span className="text-muted-foreground">—</span>
           ),
       },
-      {
-        id: 'state',
-        accessorFn: (r) => (r.suspended ? 99 : (r.srs?.state ?? 0)),
-        header: 'Trạng thái',
-        size: 120,
-        minSize: 90,
-        enableGlobalFilter: false,
-        meta: { label: 'Trạng thái' },
-        cell: ({ row }) => {
-          const item = row.original;
-          return item.suspended ? (
-            <span className="text-muted-foreground">Tạm ngưng</span>
-          ) : (
-            (STATE_LABELS[item.srs?.state ?? 0] ?? '—')
-          );
-        },
-      },
-      {
-        id: 'due',
-        accessorFn: (r) => (r.srs && r.srs.state !== 0 ? new Date(r.srs.due).getTime() : Infinity),
-        header: 'Đến hạn',
-        size: 120,
-        minSize: 90,
-        enableGlobalFilter: false,
-        meta: { label: 'Đến hạn', cellClassName: 'whitespace-nowrap' },
-        cell: ({ row }) => <DueCell srs={row.original.srs} />,
-      },
-      {
-        id: 'created',
-        accessorFn: (r) => new Date(r.createdAt).getTime(),
-        header: 'Ngày thêm',
-        size: 120,
-        minSize: 90,
-        enableGlobalFilter: false,
-        meta: {
-          label: 'Ngày thêm',
-          cellClassName: 'text-muted-foreground tabular-nums whitespace-nowrap',
-        },
-        cell: ({ row }) => formatDateVN(row.original.createdAt),
-      },
-      {
-        id: 'reps',
-        accessorFn: (r) => r.srs?.reps ?? 0,
-        header: 'Đã ôn',
-        size: 90,
-        minSize: 70,
-        enableGlobalFilter: false,
-        meta: {
-          label: 'Đã ôn (lần)',
-          defaultHidden: true,
-          cellClassName: 'text-muted-foreground tabular-nums',
-        },
-      },
-      {
-        id: 'lapses',
-        accessorFn: (r) => r.srs?.lapses ?? 0,
-        header: 'Quên',
-        size: 90,
-        minSize: 70,
-        enableGlobalFilter: false,
-        meta: {
-          label: 'Quên (lần)',
-          defaultHidden: true,
-          cellClassName: 'text-muted-foreground tabular-nums',
-        },
-      },
-      {
-        id: 'stability',
-        accessorFn: (r) => r.srs?.stability ?? 0,
-        header: 'Độ bền',
-        size: 110,
-        minSize: 80,
-        enableGlobalFilter: false,
-        meta: {
-          label: 'Độ bền (ngày)',
-          defaultHidden: true,
-          cellClassName: 'text-muted-foreground tabular-nums',
-        },
-        cell: ({ row }) =>
-          row.original.srs ? (row.original.srs.stability?.toFixed(1) ?? '—') : '—',
-      },
-      {
-        id: 'difficulty',
-        accessorFn: (r) => r.srs?.difficulty ?? 0,
-        header: 'Khó FSRS',
-        size: 110,
-        minSize: 80,
-        enableGlobalFilter: false,
-        meta: {
-          label: 'Độ khó FSRS',
-          defaultHidden: true,
-          cellClassName: 'text-muted-foreground tabular-nums',
-        },
-        cell: ({ row }) =>
-          row.original.srs ? (row.original.srs.difficulty?.toFixed(1) ?? '—') : '—',
-      },
-      {
-        id: 'actions',
-        header: '',
-        // Sized for exactly 3 size-8 icon buttons (~104px content) so justify-end sits them flush with
-        // no dead space — was 200/176 back when a labelled share BUTTON lived here (2026-07-25).
-        size: 120,
-        minSize: 108,
-        enableSorting: false,
-        enableHiding: false,
-        enableResizing: false,
-        meta: { noReorder: true },
-        // star + quick-look (enrich) sit immediately LEFT of the ⋮ menu, matching the grammar table.
-        // Sharing is an option INSIDE the ⋮ menu (short label + hover title, 2026-07-25).
-        cell: ({ row }) => {
-          const item = row.original;
-          return (
-            <div className="flex items-center justify-end gap-1">
-              <StarButton id={item.itemId} starred={item.starred} kind="item" />
-              <ItemDetailDialog
-                item={{
-                  expression: item.expression,
-                  reading: item.reading,
-                  hanviet: item.hanviet,
-                  meaningVi: item.meaningVi,
-                  notes: item.notes,
-                  suspended: item.suspended,
-                  srs: item.srs,
-                }}
-                kind="vocab"
-                triggerVariant="icon"
-                voiceSpeaker={voiceSpeaker}
-                speechRate={speechRate}
-                showFurigana={showFurigana}
-              />
-              <RowActions
-                item={{
-                  itemId: item.itemId,
-                  expression: item.expression,
-                  reading: item.reading,
-                  meaningVi: item.meaningVi,
-                  notes: item.notes,
-                  suspended: item.suspended,
-                }}
-                kind="vocab"
-              />
-            </div>
-          );
-        },
-      },
-    ],
-    [voiceSpeaker, speechRate, showFurigana],
-  );
+      ...srsMetaColumns<VocabRow>(120),
+      // Từ vựng đưa `hanviet` vào dialog chi tiết, và KHÔNG đưa `level` (form sửa của từ vựng ẩn ô cấp).
+      actionsColumn<VocabRow>(
+        'vocab',
+        (item) => ({
+          expression: item.expression,
+          reading: item.reading,
+          hanviet: item.hanviet,
+          meaningVi: item.meaningVi,
+          notes: item.notes,
+          suspended: item.suspended,
+          srs: item.srs,
+        }),
+        prefs,
+      ),
+    ];
+  }, [voiceSpeaker, speechRate, showFurigana]);
 
   const filterCount =
     (state !== 'all' ? 1 : 0) +
@@ -485,77 +311,37 @@ export function VocabTable({
             setDate('all');
           }}
         >
-          <FilterRow label="Trạng thái">
-            <Select value={state} onValueChange={setState}>
-              <SelectTrigger size="sm" className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent position="popper">
-                {STATE_FILTERS.map((f) => (
-                  <SelectItem key={f.value} value={f.value}>
-                    {f.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </FilterRow>
-          <FilterRow label="Lý do">
-            <Select value={reason} onValueChange={setReason}>
-              <SelectTrigger size="sm" className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent position="popper">
-                {REASON_FILTERS.map((f) => (
-                  <SelectItem key={f.value} value={f.value}>
-                    {f.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </FilterRow>
-          <FilterRow label="Đánh dấu sao">
-            <Select value={star} onValueChange={setStar}>
-              <SelectTrigger size="sm" className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent position="popper">
-                {STAR_FILTERS.map((f) => (
-                  <SelectItem key={f.value} value={f.value}>
-                    {f.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </FilterRow>
-          <FilterRow label="Cấp JLPT">
-            <Select value={level} onValueChange={setLevel}>
-              <SelectTrigger size="sm" className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent position="popper">
-                <SelectItem value="all">Mọi cấp</SelectItem>
-                {JLPT_LEVELS.map((l) => (
-                  <SelectItem key={l} value={l}>
-                    {l}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </FilterRow>
-          <FilterRow label="Ngày thêm">
-            <Select value={date} onValueChange={(v) => setDate(v as DatePreset)}>
-              <SelectTrigger size="sm" className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent position="popper">
-                {DATE_PRESETS.map((d) => (
-                  <SelectItem key={d.value} value={d.value}>
-                    {d.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </FilterRow>
+          <SelectFilterRow
+            label="Trạng thái"
+            value={state}
+            onValueChange={setState}
+            options={STATE_FILTERS}
+          />
+          {/* Riêng của bảng từ vựng — ngữ pháp không có "lý do bắt được". */}
+          <SelectFilterRow
+            label="Lý do"
+            value={reason}
+            onValueChange={setReason}
+            options={REASON_FILTERS}
+          />
+          <SelectFilterRow
+            label="Đánh dấu sao"
+            value={star}
+            onValueChange={setStar}
+            options={STAR_FILTERS}
+          />
+          <SelectFilterRow
+            label="Cấp JLPT"
+            value={level}
+            onValueChange={setLevel}
+            options={JLPT_FILTERS}
+          />
+          <SelectFilterRow
+            label="Ngày thêm"
+            value={date}
+            onValueChange={(v) => setDate(v as DatePreset)}
+            options={DATE_PRESETS}
+          />
         </FilterPopover>
       }
     />
