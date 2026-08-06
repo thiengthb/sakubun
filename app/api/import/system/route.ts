@@ -10,7 +10,7 @@ import { importSystemBackup } from '@/lib/import';
 // `importSystemBackup` ATTACHes it and merges table-by-table (INSERT OR IGNORE): add-only, nothing is
 // deleted and nothing existing is overwritten. `session`/`verification` are skipped. `?dryRun=1` returns
 // the per-table counts without writing. This is a MERGE, not a file swap, so the DB stays open and
-// intact (the 2026-07-20 "no in-app restore" decision, docs/decisions.md).
+// intact (the 2026-07-20 "no in-app restore" decision).
 //
 // Gate: SIGNED IN. It was `role === 'admin'` back when the app had members to gate each other from;
 // with one account that role is only a way for the tab's button to 403 on an account whose role was

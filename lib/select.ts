@@ -1,6 +1,6 @@
 // Practice-batch picker — decides WHICH grammar patterns go into the next sentence. Pure (no DB)
 // so the policy is unit-testable; lib/practice.ts feeds it query results. Every item is a grammar
-// pattern (the vocab dimension was removed 2026-07-07 — see docs/decisions.md); vocabulary is free
+// pattern (the vocab dimension was removed 2026-07-07); vocabulary is free
 // scaffolding Claude chooses at generation time, never a scheduled item.
 
 import type { Direction, SentenceSize, Settings } from '@/lib/settings-schema';
@@ -11,7 +11,7 @@ import type { TutorCard } from '@/lib/enrichment';
  * target AND the grammar-pattern count. Japanese 文字 pack more meaning than Vietnamese letters, so
  * ja/vi differ (≈1.6×) to feel equally long; the tutor aims within ±~30%. Pattern count rises with
  * length because a short sentence can't naturally carry many patterns (quality floor). Replaces the
- * old split SENTENCE_CHARS + settings.patternsPerSentence — see docs/decisions.md 2026-07-11.
+ * old split SENTENCE_CHARS + settings.patternsPerSentence (replaced 2026-07-11).
  */
 export const SENTENCE_SIZE_SPEC: Record<
   SentenceSize,

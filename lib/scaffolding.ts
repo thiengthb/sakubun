@@ -13,7 +13,8 @@ import { JLPT_LEVELS, type JlptLevel } from '@/lib/settings-schema';
 //
 // WHY CLAUDE DECLARES INSTEAD OF THE SERVER PARSING. The literal ask was to segment the generated
 // sentence server-side and detect unknown grammar. Ruled out: sakubun ships no morphological analyser
-// on purpose (docs/00-map.md, the inverted trust model vs yakudoku), so adding MeCab/fugashi would
+// on purpose (the inverted trust model vs yakudoku: the model declares, the server verifies against
+// the library — it does not re-parse Japanese), so adding MeCab/fugashi would
 // break a considered architectural choice for a job the model does better anyway — it KNOWS which
 // structures it reached for. The server's job is the part the model cannot do: check those structures
 // against this learner's actual library.
@@ -91,8 +92,8 @@ export async function drilledLevelOf(
  * Matching goes through the SHARED normaliser, and that is not a detail: the library stores
  * 「〜ざるを得ない」 while a model quotes it back a dozen ways, and a lookup that missed would report a
  * pattern the learner owns as brand new — then offer to add a duplicate. That exact bug was found by
- * driving the real tool (docs/decisions.md 2026-07-27, "A normalizer used only for COMPARISON is half
- * a normalizer"), which is why the search term is decoration-stripped and the comparison is done on the
+ * driving the real tool (2026-07-27: "a normalizer used only for COMPARISON is half a normalizer"),
+ * which is why the search term is decoration-stripped and the comparison is done on the
  * fully normalised key.
  */
 export async function classifyExtraPatterns(

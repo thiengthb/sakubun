@@ -6,8 +6,7 @@
 // picking a prompt. Tool DESCRIPTIONS are the only text that is always in context, which makes them
 // the sole enforcement surface for the flagship behaviour ("check the library before explaining").
 // They are therefore written in the IMPERATIVE and state WHEN the tool applies, per Anthropic's tool
-// guidance. This is model behaviour, not code, so it gets an eval rather than a unit test — see
-// docs/plans/2026-07-26-agentic-tutor-loop.md step 4.3.
+// guidance. This is model behaviour, not code, so it gets an eval rather than a unit test.
 
 import { z } from 'zod';
 import { checkLibrary } from '@/lib/lookup';

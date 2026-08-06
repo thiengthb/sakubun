@@ -5,7 +5,7 @@
 // owns the result block: prose rules decay as a protocol grows, and they only apply when a prompt was
 // loaded at all — which is the MINORITY flow for this user (they chat freely and ask one-off
 // questions). A pure function is matrix-testable, so "did we cover that scenario?" is a test rather
-// than a hope. See docs/plans/2026-07-26-agentic-tutor-loop.md.
+// than a hope.
 //
 // A suggestion is a PROPOSAL, never a silent write: it carries the REAL tool name and pre-filled
 // arguments so Claude calls the actual tool on a yes, and the audit trail stays meaningful. There is

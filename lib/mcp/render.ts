@@ -111,8 +111,7 @@ export function renderGradeResult(result: SubmitReviewResult, now: Date = new Da
   const isTeachBack = result.exerciseType === TEACH_BACK_EXERCISE;
   const dirLabel = result.direction === 'JA_VI' ? 'Nhật → Việt' : 'Việt → Nhật';
   // Failed item → the menu leads with a rewrite step (feedback→revise→rewrite beats one-shot
-  // correction — see docs/plans/2026-07-10-deep-learning-loop.md sources). Consolidation only:
-  // the rewrite is never re-graded.
+  // correction). Consolidation only: the rewrite is never re-graded.
   const hasFail = result.items.some((i) => i.rating <= 2);
   const goalReached = t.sentences >= result.sessionGoal;
   const baseMenu = isTeachBack

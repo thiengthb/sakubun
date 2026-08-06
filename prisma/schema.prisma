@@ -185,7 +185,7 @@ model LearnerNote {
 ///
 /// Ability is a VECTOR, not a score: L2 receptive knowledge is consistently larger than productive
 /// knowledge, so one number cannot describe a learner who READS N3 and PRODUCES N4 — which is the
-/// exact complaint that started docs/plans/2026-07-26-adaptive-calibration.md. Each axis carries its
+/// exact complaint that started the calibration work (2026-07-26). Each axis carries its
 /// own observation count because that is what drives its Elo learning rate (dynamicK).
 model LearnerAbility {
   /// Single row for the single learner (was one row per user). The fixed default id makes the upsert
@@ -208,9 +208,9 @@ model LearnerAbility {
 /// SHADOW-PROPOSAL HISTORY (2026-07-28) — an APPEND-ONLY log of what the calibration controller
 /// WOULD have changed, and whether the learner later said it was right.
 ///
-/// Why it exists: `docs/plans/2026-07-26-adaptive-calibration.md` gate 1.4 requires "a week of shadow
-/// proposals reviewed with the user" before Phase 3 may auto-apply anything — that gate is what makes
-/// the plan falsifiable. But a proposal was only ever COMPUTED per turn and rendered into the tool
+/// Why it exists: the calibration rollout gate requires "a week of shadow proposals reviewed with the
+/// user" before any phase may AUTO-APPLY a settings change — that gate is what makes the plan
+/// falsifiable. But a proposal was only ever COMPUTED per turn and rendered into the tool
 /// result, and `LearnerAbility` overwrites in place, so after the turn nothing survived. Reviewing a
 /// week meant scrolling a week of chat. A mechanism that leaves no auditable trace cannot be the
 /// evidence for shipping the mechanism.

@@ -269,9 +269,14 @@ const noteRef = (p, where) => {
   dangling.get(clean).add(where);
 };
 
+// `whats-new.md` thuộc cùng nhóm: nó KỂ những gì đã đổi, nên nó phải được phép nói
+// "`.claude/hooks/stop-gate.mjs` đã bị bỏ" — chính câu đó là giá trị của nó.
 const HISTORY = f => {
   const r = rel(f);
-  return r.includes('HARNESS-CHANGELOG') || r.startsWith('.claude/learnings/') || r.startsWith('docs/progress/');
+  return r.includes('HARNESS-CHANGELOG')
+    || r.startsWith('.claude/learnings/')
+    || r.startsWith('docs/progress/')
+    || r === '.claude/whats-new.md';
 };
 const mdRefs = [
   ...walk(repoPath('docs'), p => extname(p) === '.md'),
@@ -282,9 +287,14 @@ for (const f of mdRefs) {
   for (const m of readFileSync(f, 'utf8').matchAll(/`([^`\s]+)`/g)) noteRef(m[1], rel(f));
 }
 
-// Comment trong SOURCE trỏ vào docs/ — chỗ duy nhất tìm ra nhóm docs/plans.
+// Comment trong SOURCE trỏ vào docs/ — chỗ duy nhất tìm ra nhóm plan doc không tồn tại.
+// Bỏ qua fixture của test: `tooling/test-hooks.mjs` CỐ Ý dựng những đường dẫn docs không tồn tại để
+// kiểm hook — một fixture trỏ vào chỗ trống là fixture đang làm đúng việc của nó.
+// (Không viết tên các đường dẫn đó ra đây: chính comment này sẽ thành con trỏ chết, và phép kiểm bên
+// dưới quét cả file này. Đã bị bắt đúng như vậy ở lần chạy thứ ba.)
 for (const root of ['app', 'components', 'lib', 'e2e', 'tooling']) {
-  for (const f of walk(repoPath(root), p => /\.(ts|tsx|mjs)$/.test(p) && !p.includes('generated'))) {
+  for (const f of walk(repoPath(root), p => /\.(ts|tsx|mjs)$/.test(p)
+      && !p.includes('generated') && !rel(p).startsWith('tooling/test-') && !rel(p).includes('/fixtures/'))) {
     for (const m of readFileSync(f, 'utf8').matchAll(/docs\/[A-Za-z0-9_./-]+\.md/g)) noteRef(m[0], rel(f));
   }
 }

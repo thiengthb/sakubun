@@ -119,13 +119,13 @@ export const EXERCISE_TYPE = z.enum([
   'QUIZ',
   // CONVERSATION (2026-07-23): situational PRODUCTION practice — sourceText holds the scenario brief
   // (context + register + required items), userAnswer is the learner's own Japanese utterance. Graded +
-  // FSRS-rated via the same stage_sentence/submit_review path. See docs/plans/2026-07-23-conversation-mode.md.
+  // FSRS-rated via the same stage_sentence/submit_review path.
   'CONVERSATION',
   // The two SCAFFOLDED production rungs (2026-07-26). Producing Japanese is a cliff, not a step: the
   // involvement-load ladder runs JA→VI (read) < quiz (recognise) < CLOZE_PRODUCTION < GUIDED_PRODUCTION
   // < VI→JA free < CONVERSATION, and until now the app only offered the two ends. Both reuse the
   // existing get_due_items → stage_sentence → submit_review pipeline with no schema change — the same
-  // trick CONVERSATION used. See docs/plans/2026-07-26-adaptive-calibration.md §3.
+  // trick CONVERSATION used.
   'CLOZE_PRODUCTION',
   'GUIDED_PRODUCTION',
   // TEACH_BACK (2026-07-27): the learner EXPLAINS a pattern in Vietnamese and the explanation is

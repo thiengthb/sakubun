@@ -5,8 +5,8 @@
 // what that costs: adding ONE contrast to a full card wiped 1 structure entry, 1 collocation, 1 pitfall
 // and the pre-existing contrast, and the tool answered `{"updated":1,"missing":[]}` — a success. Any
 // feature that appends to a card (the ratchet, "take the missing parts from a shared copy", a teach-back
-// explanation becoming the usage line) therefore needed a merge path BEFORE it could ship at all; see
-// docs/plans/2026-07-26-agentic-tutor-loop.md step 2.1 and the HARD DEPENDENCY on it in 2.3.
+// explanation becoming the usage line) therefore needed a merge path BEFORE it could ship at all — it
+// was a hard dependency of the ratchet, not a nicety alongside it.
 //
 // Two shapes, deliberately unequal:
 //   `add` — the five LIST fields. Append + dedup + respect the schema cap. Existing entries always win.

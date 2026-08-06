@@ -83,8 +83,8 @@ describe('invariant #9 — Japanese content renders through SpokenLine', () => {
    * `sourceRuby`/`suggestedRuby`, so the props were simply absent. These two fields HAVE ruby columns on
    * Sentence, so rendering them without their ruby is always a bug.
    *
-   * `userAnswer` is deliberately NOT in this list: no `userAnswerRuby` column exists (see
-   * docs/decisions.md 2026-07-23), so it is audio + karaoke by design until one is added.
+   * `userAnswer` is deliberately NOT in this list: no `userAnswerRuby` column exists (decided
+   * 2026-07-23), so it is audio + karaoke by design until one is added.
    */
   it('a SpokenLine for a field that HAS furigana data actually passes it', () => {
     const RUBY_BACKED = new Set(['sourceText', 'suggested']);

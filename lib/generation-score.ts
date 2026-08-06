@@ -93,7 +93,7 @@ export function japaneseOf(input: {
  * polite sentence contains 「わけにはいきません」, so a verbatim search reports "the tutor ignored the
  * pattern it was told to use" — a false failure, and exactly the class of harness artefact this file
  * exists to avoid. Dropping a fixed tail is deliberately dumb: the project ships NO morphological
- * analyser on purpose (docs/00-map.md), so the alternative is not a better matcher, it is a new
+ * analyser on purpose, so the alternative is not a better matcher, it is a new
  * architectural dependency. The bias is stated in the metric name instead of hidden in the number.
  */
 export function loosePrefix(expression: string): string {

@@ -222,6 +222,47 @@ A3 (`<SelectFilterRow>`), A4, A5, B7 (bỏ `export` thừa). Mỗi cặp một c
     lint**. Đã `node --check` cả ba. Đây là quyết định cũ của repo, không phải thứ tôi đổi ở đây —
     nhưng nó có nghĩa là 8 776 dòng `tooling/` đang không có lint. Ứng viên cho một vòng sau.
 
+---
+
+## 2026-08-06 23:35 (session 1, Claude) — VÒNG 2 XONG
+
+- **QUYẾT ĐỊNH mở đầu vòng**: **không** tái tạo năm plan doc. Chúng chưa bao giờ ở trong repo này, nên
+  “viết lại” chỉ có thể là suy diễn từ code — và một tài liệu bịa ra tệ hơn không có tài liệu, vì nó
+  trông như bằng chứng. Ghi thành `docs/adr/0002-ho-so-thiet-ke-nam-ngoai-repo.md`: **comment trong
+  code là thẩm quyền thiết kế của app này**, comment phải tự đứng được, và không viện dẫn tài liệu
+  không tồn tại.
+  Tôi đã **vi phạm chính quyết định đó trong 5 phút đầu**: sửa `lib/calibration.ts` bằng cách viết ra
+  hai phương án “đã bị loại” (IRT, rule table) mà tôi không có bằng chứng nào. Đã hoàn lại ngay. Đó
+  đúng là hành vi mà con trỏ chết khuyến khích, và nó là lý do ADR 0002 tồn tại.
+- **ĐÃ LÀM** — 17 chỗ, giữ nội dung, bỏ con trỏ:
+  - 14 file source + `lib/spoken-line.test.ts` + `lib/select.ts` (2 chỗ) — bỏ mọi viện dẫn tới plan
+    doc / decisions / 00-map. Chỗ nào con trỏ mang lý lẽ thì chuyển lý lẽ thành prose tại chỗ
+    (`lib/scaffolding.ts`: nêu thẳng “inverted trust model” là gì; `lib/enrichment-merge.ts`: nói rõ
+    nó là hard dependency chứ không phải nicety).
+  - `prisma/schema.prisma` (2 chỗ) — sửa ở NGUỒN rồi `npm run gen`, vì generated client chép lại
+    comment schema vào 4 file. `lib/generated/` gitignored nên không có gì phải commit.
+  - `docs/progress/_TEAM.md` — đường dẫn ADR sai (`docs/adr/` → `docs/adr/harness/`).
+  - `tooling/entropy-scan.mjs` — thêm `.claude/whats-new.md` và fixture của test vào nhóm loại trừ.
+- **KHÔNG sửa, vì chúng ĐÚNG**: `.claude/whats-new.md` nhắc `stop-gate.mjs` **để nói rằng hook đó đã
+  bị bỏ**; `docs/CONFLICTS.md` + ADR harness nhắc `feature_list.json` như **cột “trước”** trong bảng
+  so sánh thiết kế. Hai cái này là lịch sử đang làm đúng việc của nó, không phải link mục.
+- **BẰNG CHỨNG**
+  - `node tooling/entropy-scan.mjs` **exit 0** — không còn FAIL. Từ 11 → 0. (Dọc đường phát hiện thêm
+    6 chỗ mà bản đo đầu bỏ sót vì tôi `head -25` cái grep.)
+  - `npm run verify` exit 0 — 671 test passed, build sạch. Stop gate xanh. `npx playwright test` 22 passed.
+- **BÀI HỌC đã ghi** → `.claude/learnings/2026-W32-claude.md`: **ba lần trong một session**, một tài
+  liệu BÁO CÁO về đường dẫn hỏng lại bị chính phép kiểm tố giác — nhật ký rà soát, ADR, rồi comment
+  trong chính scanner. Không phải cẩu thả ba lần: văn bản *nói về* một đường dẫn không phân biệt được
+  với văn bản *trỏ tới* nó nếu chỉ nhìn hình dạng chuỗi. Luật đã cưỡng chế bằng máy (4 nhóm nguồn
+  lịch sử + fixture được loại trừ), và quy tắc viết: gọi tên một đường dẫn đã mất thì viết văn xuôi,
+  đừng bọc backtick.
+- **CẦN NGƯỜI GÕ** (agent bị hook chặn, đúng thiết kế) — 2 dòng trong `AGENTS.md`, chi tiết trong file
+  learnings ở trên: bảng “Đọc thêm” trỏ tới `README.md` không tồn tại (đổi sang `knowledge/README.md`,
+  file này có thật), và danh sách KHÔNG SỬA liệt `.mcp.json` cũng không tồn tại. Bỏ hai dòng đưa
+  AGENTS.md từ 154 về 152 dòng (ngưỡng 150).
+- **TIẾP THEO**: Vòng 3 (3 dependency), Vòng 4 (hai bảng — e2e tab vocab TRƯỚC), Vòng 5 (boilerplate
+  nhỏ + A6). Ba câu Vòng 6 vẫn chờ người.
+
 ## Cảnh báo tự đặt cho các vòng sau
 
 Đừng “dedupe theo điểm số”. Mỗi clone bị bỏ qua có chủ ý phải ghi **lý do vào file**, và số

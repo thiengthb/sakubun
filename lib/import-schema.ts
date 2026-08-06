@@ -247,7 +247,7 @@ export function planItems(
 //
 // The whole-DB system sync used to merge the `user` table with ON CONFLICT(id). But better-auth mints a
 // RANDOM id per signup, so the same person/email gets a different id on each machine — the merge then
-// tries to INSERT a "new" user and trips @@unique([email]) (docs/decisions.md 2026-07-24). Identity
+// tries to INSERT a "new" user and trips @@unique([email]) (found 2026-07-24). Identity
 // across machines is EMAIL, not id. These pure helpers compute the reconciliation; lib/import.ts applies
 // it in SQL. Kept DB-free so the id-translation logic — where a bug would silently misfile a user's data
 // — is unit-tested without a database.

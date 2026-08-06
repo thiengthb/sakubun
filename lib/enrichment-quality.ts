@@ -11,7 +11,7 @@
 // The five completeness dimensions are NOT invented here. They are the five a complete grammar entry
 // carries in Bunpro — conjugation/structure, usage explanation, synonymous points, warnings about
 // common mistakes, and multiple examples — so this is a check against a known-good reference product
-// rather than an opinion. See docs/plans/2026-07-26-agentic-tutor-loop.md §3.
+// rather than an opinion.
 
 import {
   CURRENT_ENRICHMENT_VERSION,

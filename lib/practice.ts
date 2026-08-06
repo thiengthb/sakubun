@@ -722,8 +722,8 @@ export interface StageSentenceInput {
 /**
  * Persist a composed sentence + its reference translation BEFORE the user answers, returning a
  * sentenceId. submitReview later fills in the answer/ratings against this row and reuses the STAGED
- * `suggested` — so the reference cannot be anchored on the user's attempt (docs/decisions.md
- * 2026-07-10). The row is "pending" until submitReview (userAnswer = '').
+ * `suggested` — so the reference cannot be anchored on the user's attempt (decided 2026-07-10).
+ * The row is "pending" until submitReview (userAnswer = '').
  */
 export async function stageSentence(
   input: StageSentenceInput,

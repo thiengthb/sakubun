@@ -51,7 +51,7 @@ import {
  * own knowledge and never touches the learner's library. Mid-session, with a protocol loaded, it does.
  * A subagent eval had scored that same question 5/5 twice; a subagent fed 64k of tool descriptions as
  * conversation text over-predicts tool use no matter how the question is framed, so the live client is
- * the only oracle. See `eval/agentic-lookup-eval.md` Scenario A and `docs/decisions.md` 2026-07-28.
+ * the only oracle (measured 2026-07-28).
  */
 export const CLAUDE_PROJECT_INSTRUCTIONS = `Whenever the sakubun tools are connected, call check_library
 BEFORE you explain, compare, or discuss any Japanese

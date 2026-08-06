@@ -1,6 +1,6 @@
 // Import (sync-from-backup) — the DB writes. Validation + pure planning live in lib/import-schema.ts.
 //
-// WHY this exists (docs/decisions.md 2026-07-20, re-opened 2026-07-23): a REPLACE-style restore is not
+// WHY this exists (decided 2026-07-20, re-opened 2026-07-23): a REPLACE-style restore is not
 // possible from inside the app — the process holds the DB file open — and rewriting ReviewLog in place
 // would break invariant #2 (append-only). So both paths here are a MERGE: nothing is ever deleted, and
 // there is no file swap. Replacing the file outright stays a manual, container-level operation (the
@@ -453,7 +453,7 @@ async function countOf(sql: string): Promise<number> {
  * backup file is ATTACHed and merged table-by-table in raw SQL — raw because this reaches the auth
  * tables, which have no Prisma-model path in this module.
  *
- * Cross-machine identity (2026-07-24, docs/decisions.md + plan): better-auth mints a RANDOM user id per
+ * Cross-machine identity (2026-07-24): better-auth mints a RANDOM user id per
  * signup, so the same person has a different id on each machine. We therefore reconcile users by EMAIL:
  * a backup user whose email already exists locally is matched to the local id (uidmap), and EVERY
  * user-referencing column is translated through that map so their rows re-home onto the local account;

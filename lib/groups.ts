@@ -1,7 +1,7 @@
 // Study groups — named collections of Items (vocab/grammar) that scope focused practice. The ONLY
 // DB layer for group CRUD + membership; the UI Server Actions and the MCP tools both call these, so
 // behavior stays identical across surfaces (same contract as lib/practice.ts). Groups are purely an
-// organization + practice-scoping layer — they NEVER touch FSRS. Plan docs/plans/2026-07-21-study-groups.md.
+// organization + practice-scoping layer — they NEVER touch FSRS.
 
 import { prisma } from '@/lib/db';
 import { cleanText, cleanTextOrNull } from '@/lib/text';

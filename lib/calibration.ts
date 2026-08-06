@@ -5,7 +5,7 @@
 // WHY Elo and not something cleverer: it "estimates both person ability and item difficulty
 // simultaneously, updates immediately after a response, and requires no computationally intensive
 // calculations" (ACM TOCE 3511886) — it fits SQLite and a per-turn update with no training pipeline.
-// See docs/plans/2026-07-26-adaptive-calibration.md for the full reasoning and the ruled-out options.
+// The citation above is the whole surviving record of that choice; see docs/adr/0002 for why.
 //
 // TWO HARD BOUNDARIES:
 //  1. This module NEVER writes or reads FSRS scheduling. FSRS `difficulty` answers "how fast does this
