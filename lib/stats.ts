@@ -5,15 +5,16 @@
 // the server. Read-only, like lib/analytics.ts (which powers the dashboard summary).
 
 import { prisma } from '@/lib/db';
-import type { PerfBreakdown } from '@/lib/analytics';
-import { lengthBucket } from '@/lib/format';
 import { getSettings } from '@/lib/practice';
-import { JLPT_LEVELS } from '@/lib/settings-schema';
+import {
+  breakdownByLevelAndLength,
+  validAnswerSec,
+  type PerfBreakdown,
+} from '@/lib/perf-breakdown';
 import { studyDayKey } from '@/lib/streak';
 
 const DAY_MS = 86_400_000;
 const RANGE_DAYS = 365;
-const MAX_ANSWER_SEC = 3600;
 
 export interface DailyStat {
   day: string; // "YYYY-MM-DD" study-day key (cutoff-adjusted)
@@ -32,14 +33,6 @@ export interface StudyStats {
   overallAvgSec: number; // mean time-to-answer over the window
   scoreByLevel: PerfBreakdown[]; // by target-pattern JLPT level, over the window
   scoreByLength: PerfBreakdown[]; // by source-sentence length bucket, over the window
-}
-
-interface Agg {
-  label: string;
-  order: number;
-  scores: number[];
-  secs: number[];
-  count: number;
 }
 
 export async function getStudyStats(now: Date = new Date()): Promise<StudyStats> {
@@ -86,16 +79,13 @@ export async function getStudyStats(now: Date = new Date()): Promise<StudyStats>
     if (l.state === 0) d.newItems += 1;
   }
 
-  const durationSec = (s: { createdAt: Date; answeredAt: Date | null }): number =>
-    s.answeredAt ? (s.answeredAt.getTime() - s.createdAt.getTime()) / 1000 : -1;
-
   for (const s of sentences) {
     if (!s.answeredAt) continue;
     const d = map.get(studyDayKey(s.answeredAt, dayCutoffHour));
     if (!d) continue;
     d.sentences += 1;
-    const sec = durationSec(s);
-    if (sec >= 0 && sec <= MAX_ANSWER_SEC) {
+    const sec = validAnswerSec(s);
+    if (sec !== null) {
       d.secSum += sec;
       d.secCount += 1;
     }
@@ -108,55 +98,14 @@ export async function getStudyStats(now: Date = new Date()): Promise<StudyStats>
   const totSecCount = daily.reduce((a, d) => a + d.secCount, 0);
 
   // --- Score + time by difficulty (target level) and by source length, over the window ---
-  const summarize = (a: Agg): PerfBreakdown => ({
-    label: a.label,
-    count: a.count,
-    avgScore: a.scores.length
-      ? Math.round(a.scores.reduce((x, y) => x + y, 0) / a.scores.length)
-      : null,
-    avgSec: a.secs.length ? Math.round(a.secs.reduce((x, y) => x + y, 0) / a.secs.length) : 0,
-  });
-  const perfByLevel = new Map<string, Agg>();
-  const perfByLength = new Map<string, Agg>();
-  for (const s of sentences) {
-    const sec = durationSec(s);
-    const validSec = sec >= 0 && sec <= MAX_ANSWER_SEC ? sec : null;
-    const target =
-      s.reviews.find((r) => r.role === 'TARGET' && r.item) ?? s.reviews.find((r) => r.item);
-    const level = target?.item?.level ?? null;
-    if (level) {
-      const g = perfByLevel.get(level) ?? {
-        label: level,
-        order: JLPT_LEVELS.indexOf(level as (typeof JLPT_LEVELS)[number]),
-        scores: [],
-        secs: [],
-        count: 0,
-      };
-      g.count += 1;
-      if (typeof s.score === 'number') g.scores.push(s.score);
-      if (validSec !== null) g.secs.push(validSec);
-      perfByLevel.set(level, g);
-    }
-    const bucket = lengthBucket(s.sourceText.length);
-    const gl = perfByLength.get(bucket.key) ?? {
-      label: bucket.label,
-      order: bucket.order,
-      scores: [],
-      secs: [],
-      count: 0,
-    };
-    gl.count += 1;
-    if (typeof s.score === 'number') gl.scores.push(s.score);
-    if (validSec !== null) gl.secs.push(validSec);
-    perfByLength.set(bucket.key, gl);
-  }
+  const { scoreByLevel, scoreByLength } = breakdownByLevelAndLength(sentences);
 
   return {
     rangeDays: RANGE_DAYS,
     daily,
     overallAccuracy: totReviews ? Math.round((totCorrect / totReviews) * 100) : null,
     overallAvgSec: totSecCount ? Math.round(totSecSum / totSecCount) : 0,
-    scoreByLevel: [...perfByLevel.values()].sort((a, b) => a.order - b.order).map(summarize),
-    scoreByLength: [...perfByLength.values()].sort((a, b) => a.order - b.order).map(summarize),
+    scoreByLevel,
+    scoreByLength,
   };
 }

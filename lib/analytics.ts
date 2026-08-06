@@ -4,8 +4,12 @@
 
 import { prisma } from '@/lib/db';
 import { needsWork, scoreEnrichment } from '@/lib/enrichment-quality';
-import { lengthBucket } from '@/lib/format';
 import { getSettings } from '@/lib/practice';
+import {
+  MAX_ANSWER_SEC,
+  breakdownByLevelAndLength,
+  type PerfBreakdown,
+} from '@/lib/perf-breakdown';
 import { JLPT_LEVELS } from '@/lib/settings-schema';
 import { studyDayKey } from '@/lib/streak';
 import {
@@ -20,9 +24,9 @@ const VOCAB_KIND = 'VOCAB';
 const DAY_MS = 86_400_000;
 const HEATMAP_DAYS = 364; // 52 weeks (GitHub-style density)
 const ACCURACY_WEEKS = 8;
-// Answers longer than this are treated as abandoned (tab left open) and excluded from timing so a
-// forgotten sentence can't skew the mean. (Stale pendings are auto-skipped after 1h anyway.)
-const MAX_ANSWER_SEC = 3600;
+// `MAX_ANSWER_SEC` (câu trả lời quá ngưỡng coi như bị bỏ dở — tab để mở — nên không tính vào thời gian
+// trung bình) giờ ở `lib/perf-breakdown.ts` cùng phép tính dùng nó. Trước đây file này và `lib/stats.ts`
+// mỗi bên khai một hằng 3600 riêng.
 
 export interface LevelDist {
   level: string;
@@ -76,12 +80,9 @@ export interface DifficultItem {
   reps: number;
 }
 
-export interface PerfBreakdown {
-  label: string; // "N3" / "Vừa"
-  count: number; // sentences in this group (graded, in window)
-  avgScore: number | null; // mean /100 (null if none scored)
-  avgSec: number; // mean time-to-answer, seconds (0 if none timed)
-}
+// `PerfBreakdown` chuyển sang `lib/perf-breakdown.ts` cùng phép tính sinh ra nó, và được RE-EXPORT ở
+// đây để `components/dashboard/stats-view.tsx` (consumer duy nhất ngoài lib) không phải đổi import.
+export type { PerfBreakdown };
 
 export async function getAnalytics(now: Date = new Date()): Promise<Analytics> {
   const settings = await getSettings();
@@ -260,58 +261,7 @@ export async function getAnalytics(now: Date = new Date()): Promise<Analytics> {
   });
 
   // --- Performance by difficulty (target pattern's level) and by source length ---
-  interface Agg {
-    label: string;
-    order: number;
-    scores: number[];
-    secs: number[];
-    count: number;
-  }
-  const summarize = (a: Agg): PerfBreakdown => ({
-    label: a.label,
-    count: a.count,
-    avgScore: a.scores.length
-      ? Math.round(a.scores.reduce((x, y) => x + y, 0) / a.scores.length)
-      : null,
-    avgSec: a.secs.length ? Math.round(a.secs.reduce((x, y) => x + y, 0) / a.secs.length) : 0,
-  });
-  const perfByLevel = new Map<string, Agg>();
-  const perfByLength = new Map<string, Agg>();
-  for (const s of answered) {
-    const sec = durationSec(s);
-    const validSec = sec >= 0 && sec <= MAX_ANSWER_SEC ? sec : null;
-    // Difficulty = TARGET pattern's level (fall back to any rated pattern's level).
-    const target =
-      s.reviews.find((r) => r.role === 'TARGET' && r.item) ?? s.reviews.find((r) => r.item);
-    const level = target?.item?.level ?? null;
-    if (level) {
-      const g = perfByLevel.get(level) ?? {
-        label: level,
-        order: JLPT_LEVELS.indexOf(level as (typeof JLPT_LEVELS)[number]),
-        scores: [],
-        secs: [],
-        count: 0,
-      };
-      g.count += 1;
-      if (typeof s.score === 'number') g.scores.push(s.score);
-      if (validSec !== null) g.secs.push(validSec);
-      perfByLevel.set(level, g);
-    }
-    const bucket = lengthBucket(s.sourceText.length);
-    const gl = perfByLength.get(bucket.key) ?? {
-      label: bucket.label,
-      order: bucket.order,
-      scores: [],
-      secs: [],
-      count: 0,
-    };
-    gl.count += 1;
-    if (typeof s.score === 'number') gl.scores.push(s.score);
-    if (validSec !== null) gl.secs.push(validSec);
-    perfByLength.set(bucket.key, gl);
-  }
-  const scoreByLevel = [...perfByLevel.values()].sort((a, b) => a.order - b.order).map(summarize);
-  const scoreByLength = [...perfByLength.values()].sort((a, b) => a.order - b.order).map(summarize);
+  const { scoreByLevel, scoreByLength } = breakdownByLevelAndLength(answered);
 
   return {
     vocabTotal,

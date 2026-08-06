@@ -69,6 +69,16 @@ async function seed() {
   );
   group.run('gr-gram', 'Nhóm ngữ pháp', 'grammar', iso(now), iso(now));
   group.run('gr-vocab', 'Nhóm từ vựng', 'vocab', iso(now), iso(now));
+
+  // Một lượt dịch, CHỈ để /history có ô tìm: không có câu nào thì trang đó vẽ empty state và ô tìm
+  // không tồn tại — test so sánh mã hoá `?q` giữa hai trang đỏ vì thiếu dữ liệu, không vì lệch mã hoá.
+  db.prepare(
+    `INSERT INTO Sentence (id, direction, context, exerciseType, sourceText, sourceRuby, userAnswer,
+       suggested, suggestedRuby, feedback, score, stagedItems, extraPatterns, status, starred,
+       createdAt, answeredAt)
+     VALUES ('s1', 'VI_JA', NULL, 'TRANSLATION', 'Tôi vừa mới đến.', NULL, '来たばかりです。',
+       '来たばかりです。', NULL, NULL, 90, NULL, NULL, 'GRADED', 0, ?, ?)`,
+  ).run(iso(now), iso(now + 1000));
   db.close();
 }
 
@@ -213,6 +223,28 @@ test('phần RIÊNG của mỗi bảng: thẻ chi tiết (ngữ pháp) · lý do
   await expect(page.getByRole('columnheader', { name: 'Hán Việt' })).toBeVisible();
   // Trong `tbody`: cùng chuỗi cũng nằm trong thẻ mobile dưới dạng «[bả ác]» bên cạnh từ.
   await expect(body.getByText('bả ác', { exact: true })).toBeVisible();
+});
+
+test('ô tìm mirror ra URL cùng một kiểu ở /resources và /history', async ({ page }) => {
+  // Hai trang dùng CÙNG tên tham số `?q` nhưng đi qua hai bản cơ chế persistence khác nhau:
+  // `components/shared/use-session-state.ts` và một bản sao riêng bên trong `data-table.tsx`. Bản sao
+  // đó luôn `JSON.stringify`, nên một chuỗi ra URL thành `q=%22abc%22` (CÓ dấu ngoặc kép), còn bản dùng
+  // chung ghi `q=abc`. Cùng một tên tham số, hai cách mã hoá — đúng loại lệch mà hai bản sao của một cơ
+  // chế sinh ra, và không có gì bắt được nó cho tới khi ai đó gửi link cho người khác.
+  await seed();
+  await login(page);
+
+  await page.goto('/resources?tab=grammar', { waitUntil: 'networkidle' });
+  await page.getByPlaceholder('Tìm mẫu / cách đọc / nghĩa…').fill('vừa');
+  await expect.poll(() => new URL(page.url()).searchParams.get('q')).toBe('vừa');
+
+  await page.goto('/history', { waitUntil: 'networkidle' });
+  await page.getByPlaceholder('Tìm trong đề / bài dịch…').fill('vừa');
+  await expect.poll(() => new URL(page.url()).searchParams.get('q')).toBe('vừa');
+
+  // Và link đó phải mở lại được: nạp thẳng URL có `?q=` thì ô tìm phải chứa đúng giá trị đó.
+  await page.goto('/resources?tab=grammar&q=vừa', { waitUntil: 'networkidle' });
+  await expect(page.getByPlaceholder('Tìm mẫu / cách đọc / nghĩa…')).toHaveValue('vừa');
 });
 
 test('chọn dòng: thanh hành động khối gọi đúng danh từ của từng bảng', async ({ page }) => {

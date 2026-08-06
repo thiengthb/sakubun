@@ -1,14 +1,18 @@
 'use client';
 
 import { useCallback, useMemo, useState } from 'react';
-import { Settings2, Shuffle, Volume2, SearchX } from 'lucide-react';
+import { Shuffle, Volume2, SearchX } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CardDeck, DeckShortcutsInfo, shuffled, useCardDeck } from '@/components/shared/card-deck';
+import {
+  CardDeck,
+  DeckSettings,
+  DeckShortcutsInfo,
+  DeckSwitchRow,
+  shuffled,
+  useCardDeck,
+} from '@/components/shared/card-deck';
 import { EmptyState } from '@/components/shared/empty-state';
-import { ExpandingIconButton } from '@/components/shared/expanding-icon-button';
 import { SpokenLine } from '@/components/shared/spoken-line';
 import { StarButton } from '@/components/shared/star-button';
 import { useSessionState } from '@/components/shared/use-session-state';
@@ -214,7 +218,8 @@ export function HistoryFlashcards({
     // Rows that appeared after the shuffle (a widened filter, a freshly graded sentence) sort to the
     // end rather than being dropped — the deck must never silently hide a row the list would show.
     return [...pool].sort(
-      (a, b) => (rank.get(a.id) ?? Number.MAX_SAFE_INTEGER) - (rank.get(b.id) ?? Number.MAX_SAFE_INTEGER),
+      (a, b) =>
+        (rank.get(a.id) ?? Number.MAX_SAFE_INTEGER) - (rank.get(b.id) ?? Number.MAX_SAFE_INTEGER),
     );
   }, [pool, order]);
 
@@ -275,41 +280,22 @@ export function HistoryFlashcards({
       // fold at 1280x720 (measured 2026-08-06) and the page grew a scrollbar to reach them.
       className="min-h-[calc(100svh-10rem)]"
       toolbar={
-        <Popover>
-          <PopoverTrigger asChild>
-            <ExpandingIconButton icon={Settings2} label="Cài đặt" variant="outline" size="sm" />
-          </PopoverTrigger>
-          <PopoverContent align="end" className="w-64 space-y-4">
-            <label className="flex items-center justify-between gap-3">
-              <span className="flex items-center gap-2 text-sm">
-                <Shuffle className="size-4 text-muted-foreground" />
-                Trộn thẻ
-              </span>
-              <Switch
-                checked={shuffle}
-                onCheckedChange={(v) => toggleShuffle(v === true)}
-                disabled={cards.length < 2}
-              />
-            </label>
-            <label className="flex items-start justify-between gap-3">
-              <span className="flex items-start gap-2 text-sm">
-                <Volume2 className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-                <span className="flex flex-col leading-tight">
-                  Tự đọc tiếng Nhật
-                  <span className="text-xs font-normal text-muted-foreground">
-                    Đề tiếng Nhật đọc ngay khi thẻ hiện ra; đề tiếng Việt thì đọc bản tham khảo sau
-                    khi lật.
-                  </span>
-                </span>
-              </span>
-              <Switch
-                checked={autoSpeak}
-                onCheckedChange={(v) => setAutoSpeak(v === true)}
-                className="mt-0.5"
-              />
-            </label>
-          </PopoverContent>
-        </Popover>
+        <DeckSettings>
+          <DeckSwitchRow
+            icon={Shuffle}
+            label="Trộn thẻ"
+            checked={shuffle}
+            onCheckedChange={toggleShuffle}
+            disabled={cards.length < 2}
+          />
+          <DeckSwitchRow
+            icon={Volume2}
+            label="Tự đọc tiếng Nhật"
+            hint="Đề tiếng Nhật đọc ngay khi thẻ hiện ra; đề tiếng Việt thì đọc bản tham khảo sau khi lật."
+            checked={autoSpeak}
+            onCheckedChange={setAutoSpeak}
+          />
+        </DeckSettings>
       }
       front={
         current && (

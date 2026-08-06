@@ -1,12 +1,16 @@
 'use client';
 
 import { useCallback, useMemo, useState } from 'react';
-import { Settings2, Volume2, Shuffle, Sparkles } from 'lucide-react';
+import { Volume2, Shuffle, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { ExpandingIconButton } from '@/components/shared/expanding-icon-button';
-import { CardDeck, DeckShortcutsInfo, shuffled, useCardDeck } from '@/components/shared/card-deck';
+import {
+  CardDeck,
+  DeckSettings,
+  DeckShortcutsInfo,
+  DeckSwitchRow,
+  shuffled,
+  useCardDeck,
+} from '@/components/shared/card-deck';
 import { SpokenLine } from '@/components/shared/spoken-line';
 import { ItemDetailDialog } from '@/components/resources/item-detail-dialog';
 import { buildFuriganaMarkup } from '@/lib/furigana';
@@ -247,7 +251,9 @@ export function GroupFlashcards({
   // reciting three sentences the moment you flip it is noise you have to interrupt.
   // The token carries the card id + face, so flipping back and forth does NOT replay (see SpeakButton).
   const frontToken =
-    autoSpeak && current && direction === 'ja-vi' && !deck.flipped ? `${current.itemId}:term` : null;
+    autoSpeak && current && direction === 'ja-vi' && !deck.flipped
+      ? `${current.itemId}:term`
+      : null;
   const answerToken =
     autoSpeak && current && direction === 'vi-ja' && deck.flipped
       ? `${current.itemId}:answer`
@@ -258,73 +264,57 @@ export function GroupFlashcards({
       deck={deck}
       cardKey={current?.itemId ?? 'done'}
       toolbar={
-        <Popover>
-          <PopoverTrigger asChild>
-            <ExpandingIconButton icon={Settings2} label="Cài đặt" variant="outline" size="sm" />
-          </PopoverTrigger>
-          <PopoverContent align="end" className="w-64 space-y-4">
-            <div className="space-y-1.5">
-              <p className="text-xs font-medium text-muted-foreground">
-                Chiều thẻ · đang: <span className="text-foreground">{dirLabel}</span>
-              </p>
-              <div className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1">
-                <button
-                  type="button"
-                  onClick={() => setDir('ja-vi')}
-                  className={
-                    direction === 'ja-vi'
-                      ? 'rounded-md bg-card px-2 py-1.5 text-sm font-medium text-foreground shadow-sm'
-                      : 'rounded-md px-2 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground'
-                  }
-                >
-                  Nhật → Việt
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setDir('vi-ja')}
-                  className={
-                    direction === 'vi-ja'
-                      ? 'rounded-md bg-card px-2 py-1.5 text-sm font-medium text-foreground shadow-sm'
-                      : 'rounded-md px-2 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground'
-                  }
-                >
-                  Việt → Nhật
-                </button>
-              </div>
+        <DeckSettings>
+          <div className="space-y-1.5">
+            <p className="text-xs font-medium text-muted-foreground">
+              Chiều thẻ · đang: <span className="text-foreground">{dirLabel}</span>
+            </p>
+            <div className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1">
+              <button
+                type="button"
+                onClick={() => setDir('ja-vi')}
+                className={
+                  direction === 'ja-vi'
+                    ? 'rounded-md bg-card px-2 py-1.5 text-sm font-medium text-foreground shadow-sm'
+                    : 'rounded-md px-2 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground'
+                }
+              >
+                Nhật → Việt
+              </button>
+              <button
+                type="button"
+                onClick={() => setDir('vi-ja')}
+                className={
+                  direction === 'vi-ja'
+                    ? 'rounded-md bg-card px-2 py-1.5 text-sm font-medium text-foreground shadow-sm'
+                    : 'rounded-md px-2 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground'
+                }
+              >
+                Việt → Nhật
+              </button>
             </div>
-            <label className="flex items-center justify-between gap-3">
-              <span className="flex items-center gap-2 text-sm">
-                <Shuffle className="size-4 text-muted-foreground" />
-                Trộn thẻ
-              </span>
-              <Switch
-                checked={shuffle}
-                onCheckedChange={toggleShuffle}
-                disabled={members.length < 2}
-              />
-            </label>
-            <label className="flex items-start justify-between gap-3">
-              <span className="flex items-start gap-2 text-sm">
-                <Volume2 className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-                <span className="flex flex-col leading-tight">
-                  Tự đọc tiếng Nhật
-                  {/* State the RULE here, because it differs by direction and a bare toggle would
-                      leave the user guessing why nothing spoke on a Việt → Nhật prompt. */}
-                  <span className="text-xs font-normal text-muted-foreground">
-                    {direction === 'ja-vi'
-                      ? 'Đọc mẫu/từ ngay khi thẻ hiện ra.'
-                      : 'Đọc phần tiếng Nhật đầu của đáp án sau khi lật. Ví dụ thì không tự đọc.'}
-                  </span>
-                </span>
-              </span>
-              <Switch
-                checked={autoSpeak}
-                onCheckedChange={(v) => setAutoSpeak(v === true)}
-                className="mt-0.5"
-              />
-            </label>
-          </PopoverContent>
-        </Popover>
+          </div>
+          <DeckSwitchRow
+            icon={Shuffle}
+            label="Trộn thẻ"
+            checked={shuffle}
+            onCheckedChange={toggleShuffle}
+            disabled={members.length < 2}
+          />
+          <DeckSwitchRow
+            icon={Volume2}
+            label="Tự đọc tiếng Nhật"
+            // State the RULE here, because it differs by direction and a bare toggle would leave the
+            // user guessing why nothing spoke on a Việt → Nhật prompt.
+            hint={
+              direction === 'ja-vi'
+                ? 'Đọc mẫu/từ ngay khi thẻ hiện ra.'
+                : 'Đọc phần tiếng Nhật đầu của đáp án sau khi lật. Ví dụ thì không tự đọc.'
+            }
+            checked={autoSpeak}
+            onCheckedChange={setAutoSpeak}
+          />
+        </DeckSettings>
       }
       front={
         current && (

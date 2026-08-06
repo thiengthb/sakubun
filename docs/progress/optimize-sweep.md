@@ -347,6 +347,46 @@ A3 (`<SelectFilterRow>`), A4, A5, B7 (bỏ `export` thừa). Mỗi cặp một c
 - **CHƯA làm**: chưa ghim lại baseline `dup-scan`. Cố ý — còn Vòng 5; ghim lại giữa đường sẽ xoá mất
   tín hiệu so sánh với điểm khởi đầu. Ghim khi các vòng đã xong.
 
+---
+
+## 2026-08-07 03:40 (session 1, Claude) — VÒNG 5 XONG. Trùng lặp 3.08% → 1.00%
+
+- **A6 — bản sao `useSessionState` trong `data-table.tsx`: gom, VÀ nó là một BUG THẬT.**
+  Trước khi sửa tôi viết assert cho trạng thái đúng rồi chạy để chứng minh lỗi có thật, chứ không chỉ
+  suy từ code. Kết quả đo: `/resources` ghi ô tìm ra URL thành `?q=%22vừa%22` (**có ngoặc kép**) vì bản
+  sao luôn `JSON.stringify`, còn `/history` ghi `?q=vừa` qua `use-session-state`. **Cùng một tên tham
+  số `q`, hai cách mã hoá tuỳ trang** — không có gì bắt được cho tới khi ai đó gửi link đi.
+  Đã gom về một cơ chế; test mới `"ô tìm mirror ra URL cùng một kiểu"` giữ nó.
+  Bản dùng chung nhận luôn **phần tốt hơn của bản sao**: `useCallback` quanh subscribe — thiếu nó thì
+  mỗi render huỷ đăng ký rồi đăng ký lại listener. Gom không có nghĩa là bên nhiều người dùng thắng.
+  Cái giá đã nói rõ trong comment: key sessionStorage nay có tiền tố `sakubun:`, nên bố cục bảng đang
+  lưu trong tab hiện tại reset **một lần**. sessionStorage là per-tab, không bền → giá đúng.
+- **Popover cài đặt của deck** → `DeckSettings` + `DeckSwitchRow` trong `card-deck.tsx`. Trùng lặp do
+  chính tôi tạo ra hôm 2026-08-06 khi viết deck lịch sử. `hint` là tham số duy nhất, và nó đổi cả cách
+  canh hàng — đúng toàn bộ khác biệt giữa hai hàng đang có.
+- **`lib/perf-breakdown.ts` (mới)** — cặp trùng lặp lớn nhất trong `lib/`: `analytics.ts` và `stats.ts`
+  mỗi file tự khai `MAX_ANSWER_SEC`, `durationSec`, `Agg`, `summarize`, rồi chạy cùng một vòng lặp 30
+  dòng **giống nhau từng ký tự** trừ tên biến. Hai file vốn đã dính nhau (`stats` import type từ
+  `analytics`), nên không phải hai domain tình cờ giống nhau. `PerfBreakdown` chuyển sang module mới và
+  `analytics.ts` **re-export** nó, nên `stats-view.tsx` không phải đổi import.
+- **KHÔNG làm: 142 `export` chỉ dùng trong chính file nó.** Đây là chỗ dễ nhất để làm con số đẹp, và là
+  chỗ tôi cố ý dừng. Phần lớn là export KIỂU (`Filters`, `PagedList`, `DataTableProps`,
+  `ResourceRowBase`) — chúng là HỢP ĐỒNG của module, và một hợp đồng không export được thì không ai đọc
+  được. Đổi hàng loạt là churn lớn, giá trị nhỏ, kèm rủi ro thật là bỏ mất một public surface đang có
+  lý do. Ai muốn làm thì làm từng cái, có lý do từng cái.
+- **SỐ ĐO cuối đợt** (`node tooling/dup-scan.mjs`)
+  | | đầu đợt (2026-08-06) | cuối Vòng 5 |
+  |---|---|---|
+  | trùng lặp | **3.08%** · 851 dòng · 38 khối | **1.00%** · 272 dòng · 20 khối |
+  | cặp lớn nhất | items↔vocab **145 cửa sổ** | items↔vocab **6 cửa sổ** |
+
+  Các cặp còn lại đều 4–6 cửa sổ, và phần lớn là **trong cùng một file** (bảng dữ liệu các bước hướng
+  dẫn, các chart của stats-view) hoặc props scaffolding — chỗ dừng đúng.
+- **BẰNG CHỨNG**: `npm run verify` exit 0 (671 test, build sạch) · `npx playwright test` **26 passed** ·
+  `gates --stage stop` xanh · `entropy-scan` exit 0.
+- **ĐÃ GHIM LẠI BASELINE** cho `dup-scan` (1.00%) và `dead-exports` — giờ là mốc để phát hiện PHÌNH TRỞ
+  LẠI. Con số của đợt này đã nằm trong bảng trên nên không mất khi ghim.
+
 ## Cảnh báo tự đặt cho các vòng sau
 
 Đừng “dedupe theo điểm số”. Mỗi clone bị bỏ qua có chủ ý phải ghi **lý do vào file**, và số

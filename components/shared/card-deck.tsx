@@ -2,9 +2,12 @@
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { AnimatePresence, motion, type PanInfo } from 'motion/react';
-import { ChevronLeft, ChevronRight, Info } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Info, Settings2, type LucideIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Switch } from '@/components/ui/switch';
 import { Explain } from '@/components/shared/explain';
+import { ExpandingIconButton } from '@/components/shared/expanding-icon-button';
 import { cn } from '@/lib/utils';
 
 /**
@@ -142,6 +145,72 @@ export function DeckShortcutsInfo() {
         <Info className="size-3.5" aria-hidden />
       </button>
     </Explain>
+  );
+}
+
+/**
+ * Panel cài đặt của deck: nút bánh xe ở hàng trên, mở ra một popover 256px.
+ *
+ * Gom 2026-08-07: hai deck (nhóm + lịch sử) viết ra cùng một popover với cùng một trigger, và
+ * `dup-scan` đếm 7 cửa sổ trùng giữa chúng — trùng lặp do CHÍNH TÔI tạo ra khi viết deck lịch sử
+ * cùng ngày hôm trước. Nội dung bên trong vẫn của từng deck (chiều thẻ chỉ nhóm mới có).
+ */
+export function DeckSettings({ children }: { children: ReactNode }) {
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <ExpandingIconButton icon={Settings2} label="Cài đặt" variant="outline" size="sm" />
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-64 space-y-4">
+        {children}
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+/**
+ * Một hàng công tắc trong `<DeckSettings>`.
+ *
+ * `hint` đổi cả cách canh hàng, và đó là toàn bộ khác biệt giữa hai hàng đang có: hàng không có chú
+ * thích canh giữa theo trục dọc, hàng CÓ chú thích canh theo đỉnh để công tắc thẳng với dòng đầu chứ
+ * không trôi xuống giữa đoạn hai dòng.
+ */
+export function DeckSwitchRow({
+  icon: Icon,
+  label,
+  hint,
+  checked,
+  onCheckedChange,
+  disabled,
+}: {
+  icon: LucideIcon;
+  label: string;
+  /** Câu giải thích dưới nhãn. Có nó thì hàng canh theo đỉnh. */
+  hint?: ReactNode;
+  checked: boolean;
+  onCheckedChange: (checked: boolean) => void;
+  disabled?: boolean;
+}) {
+  return (
+    <label className={cn('flex justify-between gap-3', hint ? 'items-start' : 'items-center')}>
+      <span className={cn('flex gap-2 text-sm', hint ? 'items-start' : 'items-center')}>
+        <Icon className={cn('size-4 text-muted-foreground', hint && 'mt-0.5 shrink-0')} />
+        {hint ? (
+          <span className="flex flex-col leading-tight">
+            {label}
+            <span className="text-xs font-normal text-muted-foreground">{hint}</span>
+          </span>
+        ) : (
+          label
+        )}
+      </span>
+      <Switch
+        checked={checked}
+        onCheckedChange={(v) => onCheckedChange(v === true)}
+        disabled={disabled}
+        className={hint ? 'mt-0.5' : undefined}
+      />
+    </label>
   );
 }
 

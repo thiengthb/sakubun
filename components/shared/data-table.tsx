@@ -9,8 +9,6 @@ import {
   useMemo,
   useRef,
   useState,
-  useSyncExternalStore,
-  type Dispatch,
   type ReactNode,
   type SetStateAction,
 } from 'react';
@@ -57,6 +55,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { SearchInput } from '@/components/shared/search-input';
 import { SortSheet, type SortOption } from '@/components/shared/sort-sheet';
+import { useSessionState } from '@/components/shared/use-session-state';
 import { useFitRows } from '@/components/ui/use-fit-rows';
 import {
   Table,
@@ -85,100 +84,20 @@ export interface DataTableColumnMeta {
 }
 
 // ---------------------------------------------------------------------------
-// Self-contained persistence: sessionStorage (survives nav + reload in-tab) with an OPTIONAL mirror to
-// the URL via history.replaceState (shareable link, no server refetch). Same idea as `use-session-state`
-// but inlined so the DataTable is a single drop-in file. Built on useSyncExternalStore → SSR-safe.
+// Persistence (sessionStorage + mirror URL tuỳ chọn) đi qua `useSessionState` — KHÔNG còn bản sao riêng
+// trong file này.
+//
+// Đến 2026-08-07 file này tự chứa một bản `readPersisted`/`writeUrl`/`usePersisted` riêng, với lý do
+// "để DataTable là một file drop-in duy nhất". Cái giá đã đo được: hai bản mã hoá chuỗi ra URL KHÁC
+// nhau — bản này luôn `JSON.stringify` nên ô tìm ghi `?q=%22abc%22`, còn `use-session-state` ghi
+// `?q=abc`. `/resources` và `/history` dùng CÙNG tên tham số `q`, nên cùng một link có hai nghĩa tuỳ
+// trang. Không có gì bắt được nó cho tới khi ai đó gửi link đi; giờ có
+// e2e/resources-tables.spec.ts ("ô tìm mirror ra URL cùng một kiểu").
+//
+// Đổi lại: key sessionStorage nay có tiền tố `sakubun:` như mọi state khác, nên bố cục bảng đang lưu
+// trong tab hiện tại reset MỘT lần. sessionStorage là per-tab và không bền, nên đó là cái giá đúng để
+// trả cho việc chỉ còn một cơ chế.
 // ---------------------------------------------------------------------------
-const cache = new Map<string, { raw: string | null; value: unknown }>();
-const listeners = new Map<string, Set<() => void>>();
-
-function readPersisted<T>(storeKey: string, initial: T, urlKey?: string): T {
-  if (typeof window === 'undefined') return initial;
-  let raw: string | null;
-  try {
-    raw = window.sessionStorage.getItem(storeKey);
-  } catch {
-    return initial;
-  }
-  const hit = cache.get(storeKey);
-  if (hit && hit.raw === raw) return hit.value as T;
-  let value = initial;
-  if (raw != null) {
-    try {
-      value = JSON.parse(raw) as T;
-    } catch {
-      value = initial;
-    }
-  } else if (urlKey) {
-    const p = new URLSearchParams(window.location.search).get(urlKey);
-    if (p != null) {
-      try {
-        value = JSON.parse(p) as T;
-      } catch {
-        value = initial;
-      }
-    }
-  }
-  cache.set(storeKey, { raw, value });
-  return value;
-}
-
-function writeUrl<T>(urlKey: string, value: T, initial: T): void {
-  const url = new URL(window.location.href);
-  const str = JSON.stringify(value);
-  if (str === JSON.stringify(initial)) url.searchParams.delete(urlKey);
-  else url.searchParams.set(urlKey, str);
-  window.history.replaceState(null, '', url);
-}
-
-function usePersisted<T>(
-  storeKey: string,
-  initial: T,
-  urlKey?: string,
-): [T, Dispatch<SetStateAction<T>>] {
-  const value = useSyncExternalStore(
-    useCallback(
-      (cb: () => void) => {
-        let set = listeners.get(storeKey);
-        if (!set) {
-          set = new Set();
-          listeners.set(storeKey, set);
-        }
-        set.add(cb);
-        const onStorage = (e: StorageEvent) => {
-          if (e.key === storeKey) cb();
-        };
-        window.addEventListener('storage', onStorage);
-        return () => {
-          set?.delete(cb);
-          window.removeEventListener('storage', onStorage);
-        };
-      },
-      [storeKey],
-    ),
-    () => readPersisted(storeKey, initial, urlKey),
-    () => initial,
-  );
-
-  const setValue = useCallback<Dispatch<SetStateAction<T>>>(
-    (action) => {
-      const prev = readPersisted(storeKey, initial, urlKey);
-      const next = typeof action === 'function' ? (action as (p: T) => T)(prev) : action;
-      const raw = JSON.stringify(next);
-      try {
-        window.sessionStorage.setItem(storeKey, raw);
-      } catch {
-        // best-effort; still update the in-memory cache below so the UI reflects the change
-      }
-      cache.set(storeKey, { raw, value: next });
-      if (urlKey) writeUrl(urlKey, next, initial);
-      listeners.get(storeKey)?.forEach((cb) => cb());
-    },
-    [storeKey, initial, urlKey],
-  );
-
-  return [value, setValue];
-}
 
 // Stable default references (useSyncExternalStore needs a stable server snapshot).
 const EMPTY_SORTING: SortingState = [];
@@ -331,34 +250,34 @@ export function DataTable<T>({
     [columns],
   );
 
-  const [sorting, setSorting] = usePersisted<SortingState>(
+  const [sorting, setSorting] = useSessionState<SortingState>(
     `${persistKey}.sort`,
     EMPTY_SORTING,
     `${up}sort`,
   );
-  const [visibility, setVisibility] = usePersisted<VisibilityState>(
+  const [visibility, setVisibility] = useSessionState<VisibilityState>(
     `${persistKey}.cols`,
     defaultVisibility,
     `${up}cols`,
   );
   // Column order + widths are personal LAYOUT prefs → sessionStorage only (survives F5 in-tab), NOT
   // mirrored to the URL (verbose + not really "navigation"). Sort/filter/search/page/size DO (shareable).
-  const [order, setOrder] = usePersisted<ColumnOrderState>(`${persistKey}.order`, defaultOrder);
-  const [sizing, setSizing] = usePersisted<ColumnSizingState>(`${persistKey}.w`, EMPTY_SIZING);
-  const [globalFilter, setGlobalFilter] = usePersisted<string>(
+  const [order, setOrder] = useSessionState<ColumnOrderState>(`${persistKey}.order`, defaultOrder);
+  const [sizing, setSizing] = useSessionState<ColumnSizingState>(`${persistKey}.w`, EMPTY_SIZING);
+  const [globalFilter, setGlobalFilter] = useSessionState<string>(
     `${persistKey}.q`,
     '',
     searchPlaceholder ? `${up}q` : undefined,
   );
-  const [pageIndex, setPageIndex] = usePersisted<number>(`${persistKey}.page`, 0, `${up}page`);
-  const [pageSize, setPageSize] = usePersisted<number>(
+  const [pageIndex, setPageIndex] = useSessionState<number>(`${persistKey}.page`, 0, `${up}page`);
+  const [pageSize, setPageSize] = useSessionState<number>(
     `${persistKey}.size`,
     initialPageSize,
     `${up}size`,
   );
   // Auto page size: fill the viewport (no page scroll) until the user picks a fixed size, then respect
   // their choice. `autoFit` persists so the "fill the screen" default survives reloads.
-  const [autoFit, setAutoFit] = usePersisted<boolean>(`${persistKey}.autofit`, true);
+  const [autoFit, setAutoFit] = useSessionState<boolean>(`${persistKey}.autofit`, true);
   // Measure the ROWS region (tbody top + a real row's height) and RESERVE the actual footer height, so
   // the last row + the pagination bar always sit within the viewport — no page scroll, no off-screen
   // controls. `estimatedRowHeight` is only the pre-measurement fallback.
@@ -385,7 +304,7 @@ export function DataTable<T>({
   // STT (ordinal) column visibility — toggled from the "Cột" menu like any real column, but the ordinal
   // isn't a TanStack column (it's rendered outside the column model), so its show/hide lives here.
   // sessionStorage-only (a personal layout pref, not shareable state), same as column order/widths.
-  const [showRowNumbers, setShowRowNumbers] = usePersisted<boolean>(`${persistKey}.rownum`, true);
+  const [showRowNumbers, setShowRowNumbers] = useSessionState<boolean>(`${persistKey}.rownum`, true);
 
   // Row selection is EPHEMERAL (not persisted) — a shared link shouldn't carry a stale selection.
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});

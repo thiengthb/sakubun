@@ -102,8 +102,13 @@ export function useSessionState<T>(
   urlKey?: string,
 ): [T, Dispatch<SetStateAction<T>>] {
   const storeKey = PREFIX + key;
+  // `useCallback` quanh subscribe: không có nó, mỗi render tạo một closure mới nên React HUỶ ĐĂNG KÝ và
+  // đăng ký lại listener ở MỌI render. Lấy từ bản sao trong data-table.tsx lúc gom hai bản làm một
+  // (2026-08-07) — bản sao đó làm đúng chỗ này, nên bản dùng chung nhận phần tốt hơn của cả hai thay vì
+  // chỉ giữ bản có nhiều người dùng hơn.
+  const subscribeToKey = useCallback((cb: () => void) => subscribe(storeKey, cb), [storeKey]);
   const value = useSyncExternalStore(
-    (cb) => subscribe(storeKey, cb),
+    subscribeToKey,
     () => read(storeKey, initial, urlKey),
     () => initial,
   );
