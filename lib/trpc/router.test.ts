@@ -31,12 +31,18 @@ let prisma: Db['prisma'];
 const SIGNED_IN = { user: { id: 'u1', email: 'a@b.c', name: 'Người học' } };
 const SIGNED_OUT = { user: null };
 
+// 60s, not the 10s default. This hook imports the ROUTER, which pulls in the whole server domain
+// layer (lib/practice.ts is 2000+ lines) plus better-auth through lib/trpc/context — on top of
+// createTestDb applying every committed migration to a fresh file. Measured 2026-08-06: ~0.7s when
+// this file runs alone, and over 10s inside `npm test`, where 51 files' worth of vitest workers are
+// competing for CPU. It failed there as "Hook timed out", which reads like a hang rather than a
+// cold start. The imports are deliberate — this suite exists to drive the REAL router.
 beforeAll(async () => {
   ({ appRouter } = await import('@/lib/trpc/router'));
   ({ createCallerFactory } = await import('@/lib/trpc/init'));
   ({ createTrpcContext } = await import('@/lib/trpc/context'));
   ({ prisma } = await import('@/lib/db'));
-});
+}, 60_000);
 
 const caller = (ctx: { user: { id: string; email: string; name: string } | null }) =>
   createCallerFactory(appRouter)(ctx);

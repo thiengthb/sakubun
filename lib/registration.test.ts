@@ -54,7 +54,15 @@ describe('isRegistrationOpen', () => {
 });
 
 describe('cổng đăng ký ở tầng auth (user.create before-hook)', () => {
-  it('cho tạo tài khoản ĐẦU TIÊN, rồi từ chối tài khoản thứ hai', async () => {
+  // This case runs the REAL sign-up path twice, so it pays for scrypt twice — a KDF that is slow on
+  // purpose. Measured 2026-08-06: the file alone finishes in 1.36s of test time, but inside a full
+  // `npm test` (51 files, vitest forking workers that compete for CPU) the same case blows the 5s
+  // default and fails as a timeout. It has flaked that way since before the mobile work existed.
+  //
+  // Raising the budget rather than mocking the hash: what makes this test worth having is that the
+  // door is tested through the door — auth.api.signUpEmail, hashing and all. A faster fake would gate
+  // a code path nobody uses.
+  it('cho tạo tài khoản ĐẦU TIÊN, rồi từ chối tài khoản thứ hai', { timeout: 30_000 }, async () => {
     const { auth } = await import('@/lib/auth');
 
     const first = await auth.api.signUpEmail({
