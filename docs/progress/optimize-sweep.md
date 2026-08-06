@@ -65,9 +65,10 @@ và ghi lý do vào file**, vì abstraction sai tệ hơn duplication.
 
 | # | Gói | Vấn đề |
 |---|---|---|
-| C1 | `shadcn@^4.16.1` nằm trong **`dependencies`** | Là CLI (`npx shadcn add`), không file nào import. 6.4 MB trong `node_modules`. Dockerfile chạy `npm ci` (không `--omit=dev`) nên nó vào cả image 481 MB. → `devDependencies`, hoặc bỏ hẳn và dùng `npx`. |
-| C2 | `@modelcontextprotocol/sdk` | Khai trong `dependencies`, **không file nào import**. Chạy được vì `mcp-handler` kéo theo. Phantom dep. |
-| C3 | `@eslint/js` | Khai trong `devDependencies`, `eslint.config.mjs` không import. |
+| C1 | `shadcn@^4.16.1` nằm trong **`dependencies`** | Là CLI (`npx shadcn add`), không file nào import. → `devDependencies`. **SỬA LẠI phần lý do**: bản đầu của báo cáo này viết “Dockerfile chạy `npm ci` nên nó vào cả image 481 MB” — **sai**. Runtime dùng Next standalone, tức `node_modules` đã prune bằng `@vercel/nft`; đo trong container đang chạy: 68.5 MB / 30 gói, **không có `shadcn`**. Cái sai thật là tính đúng của manifest — và một hệ quả cụ thể: `shadcn` tự nó phụ thuộc `@modelcontextprotocol/sdk`, nên khai nó ở `dependencies` kéo một SDK MCP vào đồ thị phụ thuộc production. |
+| C2 | ~~`@modelcontextprotocol/sdk` là phantom dep~~ | **MỤC NÀY SAI, ĐÃ HUỶ.** Nó là **peer dependency** của `mcp-handler` (`peerDependencies: {"@modelcontextprotocol/sdk": "1.26.0"}`) — peer dep là loại dep mà consumer PHẢI khai và KHÔNG import trực tiếp. Công cụ “không thấy import” đúng về mặt dữ liệu, còn kết luận “phantom” là của tôi và nó sai. **Giữ nguyên.** |
+| C2b | Xung đột peer đang bị bịt | `mcp-handler` ghim **đúng `1.26.0`**, ta khai `^1.30.0`, và `.npmrc` có `legacy-peer-deps=true` nên `npm install` im lặng. `npm ls` nói thẳng: `invalid: "1.26.0" from node_modules/mcp-handler`. Nghĩa là tầng MCP đang chạy trên một bản SDK mà handler của nó chưa từng được kiểm với. **Chưa sửa** — hạ về 1.26.0 có thể làm hỏng chỗ khác, và hôm nay mọi test đều xanh; đây là quyết định cần người. |
+| C3 | `@eslint/js` | Khai trong `devDependencies`, `eslint.config.mjs` chỉ import `eslint-config-next` + `typescript-eslint`. Thật sự không dùng. |
 
 Đã kiểm và **giữ**: `react-dom`, `@prisma/client`, mọi `@types/*` — framework/tsc dùng ngầm.
 
@@ -262,6 +263,43 @@ A3 (`<SelectFilterRow>`), A4, A5, B7 (bỏ `export` thừa). Mỗi cặp một c
   AGENTS.md từ 154 về 152 dòng (ngưỡng 150).
 - **TIẾP THEO**: Vòng 3 (3 dependency), Vòng 4 (hai bảng — e2e tab vocab TRƯỚC), Vòng 5 (boilerplate
   nhỏ + A6). Ba câu Vòng 6 vẫn chờ người.
+
+---
+
+## 2026-08-07 00:05 (session 1, Claude) — VÒNG 3 XONG (và nó phủ định hai câu của chính báo cáo này)
+
+- **ĐÃ LÀM**
+  - `shadcn` chuyển từ `dependencies` sang `devDependencies`.
+  - `@eslint/js` xoá khỏi `devDependencies`.
+  - `npm install` để cập nhật lockfile.
+  - **`@modelcontextprotocol/sdk` GIỮ NGUYÊN** — xem C2 ở bảng trên.
+- **HAI CHỖ TÔI ĐÃ SAI, đã sửa trong bảng**
+  1. “`shadcn` vào cả image 481 MB” — **sai**. Runtime là Next standalone với `node_modules` prune bằng
+     nft. Đo trong container đang chạy: 68.5 MB / 30 gói, không có `shadcn`. Và sau khi đổi:
+     **image vẫn đúng 481 MB**. Vòng này không tiết kiệm được byte nào.
+  2. “`@modelcontextprotocol/sdk` là phantom dep, bỏ được” — **sai và nguy hiểm nếu làm theo**. Nó là
+     **peer dependency** của `mcp-handler`. Công cụ báo “không file nào import” là đúng dữ liệu; kết
+     luận “phantom” là suy diễn của tôi. Peer dep là đúng loại dep mà bạn khai và không import.
+- **PHÁT HIỆN MỚI (C2b), chưa sửa, cần người quyết**
+  `mcp-handler@1.1.0` ghim peer `@modelcontextprotocol/sdk` ở **đúng `1.26.0`**; ta khai `^1.30.0` và
+  đang cài `1.30.0`. `.npmrc` bật `legacy-peer-deps=true` (có lý do riêng, viết rõ trong file — vì
+  peer `better-sqlite3` của better-auth), nên xung đột này **không hề kêu** lúc install. Chỉ `npm ls`
+  nói: `invalid: "1.26.0" from node_modules/mcp-handler`.
+  Tức là `legacy-peer-deps` được bật cho MỘT peer, nhưng nó bịt MỌI peer. Đây là cái giá của cờ đó,
+  và nó đang bị trả một cách vô hình.
+- **BẰNG CHỨNG**
+  - `npm run verify` exit 0 — 671 test passed, build sạch.
+  - `docker compose build sakubun` **exit 0** — đây là phép kiểm quan trọng của vòng này, vì nó chạy
+    `npm ci` từ đầu trong stage sạch, tức là xác nhận lockfile tự nhất quán (local `npm install` không
+    chứng minh được điều đó).
+  - `gates --stage stop` xanh · `npx playwright test` **22 passed**.
+  - Đã đối chiếu lockfile trước/sau cho `better-sqlite3`: **trùng khít** (12.11.1 lồng dưới prisma
+    adapter + 13.0.2 ở gốc, cả hai đã có từ trước) — `npm install` không làm trôi cây.
+- **CHƯA KIỂM, nói ra để không ai tưởng đã kiểm**: tầng MCP chưa có e2e nào. Vòng này không chạm code
+  MCP, và build + unit test của `lib/mcp/**` đều xanh, nhưng “MCP vẫn hoạt động sau khi đổi dep” là
+  suy luận, không phải phép đo. Nếu muốn chắc thì cần một spec gọi thật `/api/[transport]`.
+- **LƯU Ý trạng thái**: tag `sakubun:local` giờ trỏ tới image MỚI, còn container đang chạy vẫn dùng
+  image cũ. Lần `docker compose up -d` tới sẽ nhận bản mới. Production **chưa** bị đổi trong vòng này.
 
 ## Cảnh báo tự đặt cho các vòng sau
 
