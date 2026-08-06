@@ -29,6 +29,13 @@
       "expo-router",
       "expo-secure-store",
       "expo-web-browser"
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "9fcd5d7f-7f31-46cd-877e-7df4d121eeaa"
+      }
+    },
+    "owner": "thientnse"
   }
 }
