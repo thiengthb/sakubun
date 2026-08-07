@@ -24,7 +24,7 @@
   },
   "dependencies": {
     "@better-auth/expo": "^1.6.26",
-    "@modelcontextprotocol/sdk": "^1.30.0",
+    "@modelcontextprotocol/sdk": "1.26.0",
     "@prisma/adapter-better-sqlite3": "^7.9.1",
     "@prisma/client": "^7.9.1",
     "@tanstack/react-table": "^8.21.3",
