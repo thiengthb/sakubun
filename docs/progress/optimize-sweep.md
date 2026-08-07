@@ -463,6 +463,28 @@ lớn vẫn đang có tác dụng. Nếu sau này muốn gọn, `docs/TEAM.md` l
 - Hai dòng trong `AGENTS.md` vẫn **cần người gõ** (hook chặn): mục `README.md` trong bảng "Đọc thêm"
   giờ đã hợp lệ vì file có thật, nên chỉ còn `.mcp.json` trong danh sách KHÔNG SỬA là trỏ vào hư không.
 
+---
+
+## 2026-08-07 10:55 (session 1, Claude + DRI) — ĐÓNG hai mục cuối
+
+- **`features/_index.json`: DRI đã bỏ entry mẫu.** `check-feature-integrity` giờ báo
+  `chưa đăng ký feature nào` thay cho WARN. Agent không đụng vào file — hook chặn, và đó là guard
+  KHÔNG được lách kể cả khi được cho phép: lý do nó tồn tại là để agent không tự nới quyền của chính
+  mình, mà một guard bị lách một lần thì lần sau không ai tin nữa.
+  Cơ chế `features/` giờ ở trạng thái "rỗng và thành thật" thay vì "có một mục nói dối". Muốn dùng thật
+  thì viết `features/<tên>.json` theo `_TEMPLATE.json` rồi DRI thêm một dòng vào index — lúc đó
+  `check-feature-integrity` bắt đầu canh thật (cấm sửa/xoá tiêu chí, và `evidence` phải trỏ tới file có
+  thật).
+- **`.mcp.json` trong AGENTS.md: KHÔNG sửa gì — khuyến nghị trước của tôi SAI.**
+  Tôi đã hai lần bảo bỏ dòng đó vì "file không tồn tại → con trỏ chết". Kiểm `harness.config.json` thì
+  `paths.harness` liệt đúng tám mục ấy, và dòng 86 của AGENTS.md chỉ chép lại danh sách đó. `.mcp.json`
+  không phải đường dẫn để ĐỌC, nó là **phạm vi cấm dạng glob**, có hiệu lực ngay khi file xuất hiện.
+  Bỏ nó đi sẽ làm AGENTS.md LỆCH khỏi config.
+  Bài học chung, đáng nhớ hơn cả hai mục trên: có **hai loại** tham chiếu tới một đường dẫn — *"hãy đọc
+  X"* (chết khi X không có) và *"đừng sửa X"* (vẫn đúng khi X chưa có). Chỉ loại đầu là entropy. Phép
+  kiểm §9b của `entropy-scan` chỉ quét backtick có dấu `/`, nên nó **không** báo `.mcp.json` — đúng, và
+  đừng "sửa" nó thành báo.
+
 ## Cảnh báo tự đặt cho các vòng sau
 
 Đừng “dedupe theo điểm số”. Mỗi clone bị bỏ qua có chủ ý phải ghi **lý do vào file**, và số
