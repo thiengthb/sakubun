@@ -137,6 +137,18 @@ export const MCP_CATALOG: CatalogEntry[] = [
       'Ẩn / hiện lại toàn bộ ngữ pháp ở cấp dưới trình độ đang học (học nhanh tới đúng trình độ; đảo ngược được)',
   },
   {
+    name: 'list_calibration_proposals',
+    kind: 'tool',
+    summary:
+      'Xem những lần app ĐỊNH chỉnh độ khó / cỡ câu / mức trợ giúp cho bạn nhưng chưa chỉnh — kèm lý do, mới nhất trước. App chạy ở chế độ đề xuất: nó không tự đổi gì cả',
+  },
+  {
+    name: 'set_proposal_verdict',
+    kind: 'tool',
+    summary:
+      'Ghi lại câu trả lời của bạn cho một đề xuất ở trên: app đọc đúng trình độ bạn (agree) hay không (disagree)',
+  },
+  {
     name: 'list_groups',
     kind: 'tool',
     summary:

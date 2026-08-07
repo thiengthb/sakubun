@@ -9,11 +9,13 @@ import {
 import {
   getStats,
   getWeakReport,
+  listCalibrationProposals,
   listItems,
   patchEnrichment,
   saveEnrichments,
   setBelowTargetSuspended,
   setItemSuspended,
+  setProposalVerdict,
   updateItem,
 } from '@/lib/practice';
 import { getLibraryHealth } from '@/lib/library-health';
@@ -393,6 +395,50 @@ export function registerManageTools(server: McpServer) {
     { suspended: z.boolean() },
     guard('set_below_target_suspended', async ({ suspended }, _extra: unknown) =>
       ok(await setBelowTargetSuspended(suspended)),
+    ),
+  );
+
+  // ---------------- calibration: the SHADOW proposals, and the learner's verdict on them ----------
+  //
+  // Why these exist (added 2026-08-07). The calibration controller has run in shadow mode since
+  // 2026-07-28: every graded turn may record what it WOULD have changed, and that row carries a
+  // `verdict` column so the rollout gate ("a week of shadow proposals reviewed with the user") can be
+  // answered with a number instead of a memory. The write path shipped; the READ path never did.
+  // Measured in the 2026-08-06 sweep: `listCalibrationProposals` and `setProposalVerdict` had no
+  // caller outside tests — no UI, no tool — so the proposals accumulated where nobody could reach
+  // them, and the gate they exist to serve could never be met.
+  //
+  // MCP is the right surface rather than a web page: in this app Claude IS the interface the learner
+  // talks to, and reviewing a proposal is a conversation ("hồi nãy app định hạ độ khó xuống — đúng
+  // không?"), not a table to scan. Both tools are additive and touch nothing else.
+  server.tool(
+    'list_calibration_proposals',
+    'READ-ONLY. The calibration controller runs in SHADOW mode: after a graded turn it may record ' +
+      'what it WOULD have changed about the learner\'s settings (difficulty / sentence size / ' +
+      'scaffolding rung) and why, without changing anything. This lists those proposals, newest ' +
+      'first, each with `verdict` = null (not reviewed yet) | "agree" | "disagree".\n' +
+      'Use it when the learner asks whether the app is reading their level right, or when you want ' +
+      'to review a batch WITH them: read out the unreviewed ones in their own words (the `reason` ' +
+      'field is already learner-facing Vietnamese), ask whether each one felt right, then record the ' +
+      'answer with set_proposal_verdict. Never change a setting off the back of a proposal on your ' +
+      'own — the whole point of shadow mode is that a human answers first.',
+    { limit: z.number().int().min(1).max(200).optional() },
+    guard('list_calibration_proposals', async ({ limit }, _extra: unknown) => {
+      const rows = await listCalibrationProposals(limit ?? 50);
+      const unreviewed = rows.filter((r) => r.verdict === null).length;
+      return ok({ total: rows.length, unreviewed, proposals: rows });
+    }),
+  );
+
+  server.tool(
+    'set_proposal_verdict',
+    'Record the learner\'s answer to ONE shadow proposal: "agree" (the app read them right) or ' +
+      '"disagree" (it did not). Get `id` from list_calibration_proposals. This is the ONLY thing ' +
+      'that turns "we talked about it" into evidence — ask the learner, then record what THEY said, ' +
+      'never your own opinion. Returns { updated } — false means the id is unknown.',
+    { id: ID, verdict: z.enum(['agree', 'disagree']) },
+    guard('set_proposal_verdict', async ({ id, verdict }, _extra: unknown) =>
+      ok({ updated: await setProposalVerdict(id, verdict) }),
     ),
   );
 }

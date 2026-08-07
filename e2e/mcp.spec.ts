@@ -111,6 +111,11 @@ test('MCP với token hợp lệ: initialize, liệt kê tool, và gọi đượ
   // test bắt nhầm. Chốt rằng bộ tool có mặt và những cái xương sống nằm trong đó.
   expect(names.length, `phải có tool, nhận được: ${names.join(', ')}`).toBeGreaterThan(5);
   for (const must of ['ping', 'get_protocol']) expect(names).toContain(must);
+  // Nửa ĐỌC của calibration shadow. Trước 2026-08-07 các proposal được GHI vào DB mà không có đường
+  // nào lấy ra — không UI, không tool — nên cái gate mà chúng sinh ra để phục vụ không bao giờ đáp
+  // được. Chốt ở đây vì "đọc được" phải là phép đo, không phải lời hứa trong changelog.
+  for (const must of ['list_calibration_proposals', 'set_proposal_verdict'])
+    expect(names, 'nửa duyệt của calibration phải với tới được').toContain(must);
 
   const callRes = await request.post(MCP_URL, {
     headers: authed,
@@ -120,4 +125,22 @@ test('MCP với token hợp lệ: initialize, liệt kê tool, và gọi đượ
   const call = parseRpc(await callRes.text());
   const content = (call.result as { content?: { text?: string }[] })?.content ?? [];
   expect(content[0]?.text, 'ping phải trả JSON có ok:true').toContain('"ok":true');
+
+  // Và gọi thật nửa đọc đó: DB e2e không có proposal nào, nên phong bì phải là "rỗng hợp lệ"
+  // ({total:0, unreviewed:0, proposals:[]}) chứ không phải lỗi. Một tool chỉ chạy được khi CÓ dữ liệu
+  // thì chưa gọi là với tới được.
+  const propRes = await request.post(MCP_URL, {
+    headers: authed,
+    data: {
+      jsonrpc: '2.0',
+      id: 4,
+      method: 'tools/call',
+      params: { name: 'list_calibration_proposals', arguments: {} },
+    },
+  });
+  expect(propRes.status(), await propRes.text()).toBe(200);
+  const prop = parseRpc(await propRes.text());
+  const propText =
+    (prop.result as { content?: { text?: string }[] })?.content?.[0]?.text ?? '';
+  expect(JSON.parse(propText)).toMatchObject({ total: 0, unreviewed: 0, proposals: [] });
 });

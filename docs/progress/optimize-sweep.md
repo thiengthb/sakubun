@@ -387,6 +387,82 @@ A3 (`<SelectFilterRow>`), A4, A5, B7 (bỏ `export` thừa). Mỗi cặp một c
 - **ĐÃ GHIM LẠI BASELINE** cho `dup-scan` (1.00%) và `dead-exports` — giờ là mốc để phát hiện PHÌNH TRỞ
   LẠI. Con số của đợt này đã nằm trong bảng trên nên không mất khi ghim.
 
+---
+
+## 2026-08-07 09:30 (session 1, Claude) — VÒNG 6: ba câu hỏi, ba câu trả lời
+
+Người chủ repo bảo "làm nốt phần còn lại", nên đây là ba quyết định tôi đã ra thay, kèm lý do và kèm
+cái tôi KHÔNG làm được.
+
+### 1. Calibration — ĐÃ MỞ ĐƯỜNG ĐỌC (không xoá)
+
+Bộ điều khiển calibration chạy shadow từ 2026-07-28: mỗi lượt chấm có thể ghi lại nó ĐỊNH đổi gì, kèm
+cột `verdict` để cái gate ("một tuần proposal được duyệt cùng người học") trả lời được bằng số thay vì
+bằng trí nhớ. **Đường ghi đã có; đường đọc thì chưa bao giờ.** Nên proposal cứ chất đống ở nơi không ai
+với tới, và chính cái gate chúng sinh ra để phục vụ thì không bao giờ đáp được.
+
+Chọn **mở** thay vì xoá, vì xoá là vứt đi một cơ chế đã thiết kế xong chỉ còn thiếu 40 dòng. Và chọn
+**MCP** thay vì một trang web: trong app này Claude LÀ giao diện người học nói chuyện cùng, và duyệt
+một proposal là một cuộc hội thoại ("hồi nãy app định hạ độ khó — đúng không?"), không phải một bảng để
+quét mắt. Hai tool mới trong `lib/mcp/tools/manage.ts`: `list_calibration_proposals` (chỉ đọc, kèm số
+`unreviewed`) và `set_proposal_verdict`. Cả hai chỉ THÊM, không đụng gì khác.
+
+Mô tả tool nói thẳng ranh giới: **không được tự đổi cài đặt theo một proposal** — toàn bộ ý nghĩa của
+shadow mode là con người trả lời trước.
+
+### 2. `features/` — SỬA CHỖ SAI THẬT, và tôi đã mô tả sai nó lần trước
+
+Lần trước tôi viết "một gate không bao giờ đỏ được". **Không chính xác.**
+`tooling/check-feature-integrity.mjs` hoàn toàn lành: nó cưỡng chế tính bất biến của file feature và
+đòi `evidence` phải trỏ tới thứ có thật. Nó im lặng chỉ vì nó **cố ý bỏ qua file `_`-prefix**, mà
+`features/` hiện chỉ có `_index.json` + `_TEMPLATE.json` — tức là không có gì để kiểm, chứ không phải
+kiểm mà luôn xanh.
+
+Lỗ THẬT nằm chỗ khác: **`_index.json` không ai kiểm**, trong khi entry duy nhất của nó
+(`example-feature`) trỏ tới một file không tồn tại. Đã thêm phép kiểm đó vào chính tool — nó là
+`tooling/`, không bị hook chặn. Để **WARN** chứ không FAIL, cố ý: một entry mẫu ở repo vừa áp harness
+là trạng thái bình thường, và một cổng bắt đầu đời mình bằng màu đỏ ở mọi project là cổng dạy người ta
+bỏ qua nó.
+
+Sửa kèm: nhánh "không tìm thấy `origin/main`" trước đây `process.exit(0)` thẳng, nên trên cây không có
+ref đó (clone nông, worktree mới) mọi phát hiện đều biến mất không dấu vết. Giờ nó vẫn in báo cáo.
+
+Còn lại cho DRI: viết `features/example-feature.json`, hoặc bỏ entry khỏi index. Hook chặn agent sửa
+`features/_index.json` — đúng thiết kế.
+
+### 3. Harness cho nhiều người — ĐỪNG CẮT, và giờ có số để nói vậy
+
+Lần trước tôi đặt nó thành câu hỏi "giữ vì vai trò template hay cắt?". Đo xong thì câu hỏi đó sai tiền
+đề:
+
+- `repoRole()` trả **`consumer`**, không phải `template` — `.claude/harness-manifest.json` tồn tại.
+  Template nằm ở nơi khác (đường dẫn ghi trong manifest). Repo này **tiêu thụ** harness.
+- Manifest quản **96 file**, nằm gọn trong `.claude/` (27) · `tooling/` (52) · `harness-migrations/`
+  (12) · `evals/` (2) + 3 file gốc. **`docs/` có 0 file do harness quản.**
+
+Hai hệ quả:
+
+1. Cắt `tooling/` hay `.claude/` ở đây là **churn bị `upgrade.mjs` lật lại**, và phá luôn Parity
+   Contract. Không phải quyết định của repo này.
+2. Cắt trong `docs/` thì là quyết định địa phương thật. Nhưng đọc lại thì phần lớn **không** phải rác
+   của "team": `docs/WIP.md` (số session song song), `docs/CONFLICTS.md` (worktree đụng nhau),
+   `docs/MULTI-PROJECT.md` (nhiều repo) đều áp dụng cho MỘT người chạy nhiều agent — đúng cách repo
+   này đang được dùng. Chỉ `docs/TEAM.md` (109 dòng, vai trò DRI và nhịp họp) là thuần con người.
+
+**Kết luận: không cắt.** Con số "1/4 repo là harness" tôi nêu ở đầu đợt là đúng về khối lượng nhưng
+gợi sai về hành động — phần lớn khối lượng đó không thuộc quyền repo này, và phần thuộc quyền thì phần
+lớn vẫn đang có tác dụng. Nếu sau này muốn gọn, `docs/TEAM.md` là mục duy nhất tôi thấy đủ rõ để bỏ, và
+đó là 109 dòng chứ không phải 14 nghìn.
+
+### Ngoài ra, trong cùng vòng
+
+- **`README.md` (mới)** — file mà bảng "Đọc thêm" của AGENTS.md trỏ tới suốt và không hề tồn tại. Nó
+  cố ý KHÔNG nhắc lại AGENTS.md; nó nói repo là gì, bản đồ thư mục, và mục "Lớp harness" ghi lại đúng
+  các số đo ở trên để lần rà soát sau không phải đo lại.
+- **`e2e/mcp.spec.ts` (mới)** — lưới đầu tiên cho bề mặt MCP, viết TRƯỚC khi hạ SDK về 1.26.0.
+- Hai dòng trong `AGENTS.md` vẫn **cần người gõ** (hook chặn): mục `README.md` trong bảng "Đọc thêm"
+  giờ đã hợp lệ vì file có thật, nên chỉ còn `.mcp.json` trong danh sách KHÔNG SỬA là trỏ vào hư không.
+
 ## Cảnh báo tự đặt cho các vòng sau
 
 Đừng “dedupe theo điểm số”. Mỗi clone bị bỏ qua có chủ ý phải ghi **lý do vào file**, và số
