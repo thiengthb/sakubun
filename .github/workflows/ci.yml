@@ -81,6 +81,28 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - run: node tooling/gates.mjs --stage preMerge
 
+      # Gate đỏ mà KHÔNG nói được vì sao là gate không dùng được.
+      #
+      # `spill()` (tooling/lib/harness.mjs) ghi output của gate fail vào
+      # `os.tmpdir()/harness-<gate>-<pid>.log` rồi CHỈ in đường dẫn. Trên máy mình thì mở ra
+      # đọc; trên runner thì file chết cùng runner, nên dòng "FAIL e2e → /tmp/harness-e2e-2861.log"
+      # là toàn bộ những gì còn lại. Đo 2026-08-10: e2e đỏ ở PR #2 và #3 nhưng XANH ở PR #1 trên
+      # cùng một base — tức flaky — và không ai chẩn đoán được vì bằng chứng không rời khỏi runner.
+      #
+      # Chạy cả khi gate đỏ (`always()` chứ không `failure()`, để một lần xanh-sau-retry cũng để
+      # lại trace), và không đòi file phải có: gate đỏ ở `typecheck` thì chẳng có report nào.
+      - name: Bằng chứng khi gate đỏ (log gate + report Playwright)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: verify-evidence
+          path: |
+            /tmp/harness-*.log
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore
+          retention-days: 14
+
   security:
     runs-on: ubuntu-latest
     # Job này chạy được trên `push` nhưng SẬP trên `pull_request`, và không ai biết cho tới
