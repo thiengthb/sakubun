@@ -5,6 +5,8 @@
 // changes the output fails loudly here. Same throwaway-DB harness as tenancy.test.ts: DATABASE_URL is set
 // BEFORE lib/db is imported, so the guarded singleton binds to the temp DB, not dev.db.
 
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { createTestDb } from '@/lib/test-db';
 import type { RatingValue } from '@/lib/srs';
@@ -452,6 +454,41 @@ describe('calibration rides submitReview without touching FSRS', () => {
     expect(ability!.abilityProductive).toBe(ability!.abilityRegister);
   });
 
+  it('grades a turn when the ability row carries a legacy id from the multi-user era', async () => {
+    // The bug this pins (found in the deploy log 2026-08-08, nine failed submit_review calls in one
+    // session): the 2026-08-03 drop-multiuser migration rebuilt LearnerAbility with
+    // `DEFAULT 'singleton'` but COPIED the existing id verbatim, so a DB that already held an ability
+    // row still holds its 2026-07-26 cuid. getOrSeedAbility finds that row by findFirst and skips the
+    // create, then the write targeted the HARDCODED id 'singleton' and hit nothing → P2025 → the whole
+    // $transaction rolled back, so the graded review was thrown away, not just the calibration.
+    //
+    // Every other test in this file creates the row fresh (getting the 'singleton' default), which is
+    // exactly why the suite stayed green while the real deploy could not grade a single turn.
+    await resetData();
+    const itemId = await addOneItem('CAL_legacy_id');
+    const legacyId = 'clz0legacyabilityrow0001';
+    await prisma.learnerAbility.create({
+      data: {
+        id: legacyId,
+        abilityReceptive: 1100,
+        abilityProductive: 1100,
+        abilityRegister: 1100,
+      },
+    });
+
+    const result = await studyOnce(itemId, 3);
+
+    // The turn is graded and PERSISTED — the assertion that fails when the transaction rolls back.
+    expect(result.items).toHaveLength(1);
+    expect(await prisma.reviewLog.count({ where: {} })).toBe(1);
+    expect(await prisma.srsState.count({ where: { itemId } })).toBe(1);
+
+    // Calibration landed on the row that actually exists; no second row was invented alongside it.
+    expect(await prisma.learnerAbility.count({ where: {} })).toBe(1);
+    const ability = await prisma.learnerAbility.findFirst();
+    expect(ability!.receptiveObservations).toBe(1);
+  });
+
   it('FSRS values are IDENTICAL with calibration in the path (invariant 1)', async () => {
     // The guarantee that matters: calibration writes its own columns and nothing else. Two learners,
     // same rating sequence — their SrsState must match to the last float.
@@ -673,5 +710,67 @@ describe('TEACH_BACK reuses the practice pipeline exactly', () => {
     const itemId = await addOneItem('TB_not_teachback');
     // Same rating, same card-less item — only the exerciseType differs.
     expect((await studyOnce(itemId, 4)).teachBack).toBeNull();
+  });
+});
+
+// The 2026-08-10 repair migration, exercised against the row shape it exists for. The test harness
+// applies it to an EMPTY DB like every other migration, which proves only that it parses — the case
+// that matters (a row carrying a pre-2026-08-03 cuid) cannot exist before the migrations run, so the
+// SQL is re-run here by hand, after seeding it.
+describe('20260810071900 — the legacy ability id is renamed to the documented one', () => {
+  const MIGRATION_SQL = readFileSync(
+    path.join(
+      import.meta.dirname,
+      '..',
+      'prisma',
+      'migrations',
+      '20260810071900_normalize_learner_ability_singleton_id',
+      'migration.sql',
+    ),
+    'utf8',
+  );
+
+  /** Re-run the committed migration SQL verbatim: the test must never restate what it is checking. */
+  async function runMigration(): Promise<void> {
+    await prisma.$executeRawUnsafe(MIGRATION_SQL);
+  }
+
+  it('promotes a cuid row from the per-user era', async () => {
+    await resetData();
+    await prisma.learnerAbility.create({
+      data: { id: 'clz0legacyabilityrow0002', abilityReceptive: 1234 },
+    });
+
+    await runMigration();
+
+    const rows = await prisma.learnerAbility.findMany();
+    expect(rows).toHaveLength(1);
+    expect(rows[0].id).toBe('singleton');
+    expect(rows[0].abilityReceptive).toBe(1234); // a RENAME, not a reset — the estimate survives
+  });
+
+  it('is a no-op on an empty table and on a row that already has the id', async () => {
+    await resetData();
+    await runMigration(); // empty: the ORDER BY subquery is NULL, nothing matches
+    expect(await prisma.learnerAbility.count({ where: {} })).toBe(0);
+
+    await prisma.learnerAbility.create({ data: { id: 'singleton', abilityReceptive: 1000 } });
+    await runMigration();
+    expect(await prisma.learnerAbility.count({ where: {} })).toBe(1);
+  });
+
+  it('leaves both rows alone when a singleton already sits beside a legacy row', async () => {
+    // Renaming here would collide on the primary key and fail the deploy's `migrate deploy`. The
+    // writer reads the row it updates, so this state is survivable — the migration must not gamble.
+    await resetData();
+    await prisma.learnerAbility.create({ data: { id: 'singleton', abilityReceptive: 1000 } });
+    await prisma.learnerAbility.create({
+      data: { id: 'clz0legacyabilityrow0003', abilityReceptive: 1500 },
+    });
+
+    await runMigration();
+
+    const ids = (await prisma.learnerAbility.findMany({ select: { id: true } })).map((r) => r.id);
+    expect(ids.sort()).toEqual(['clz0legacyabilityrow0003', 'singleton']);
   });
 });
