@@ -73,8 +73,14 @@ function itemData(row: BackupItem) {
     starred: row.starred,
     enrichment: row.enrichment ?? null,
     enrichedAt: row.enrichedAt ?? null,
-    visibility: row.visibility,
-    forkedFromId: row.forkedFromId ?? null,
+    // `visibility` + `forkedFromId` KHÔNG còn ở đây. Migration 20260803190730 (bỏ multiuser) đã xoá
+    // hai cột đó khỏi Item, nhưng chúng vẫn được gắn vào data đưa cho Prisma — nên MỌI lần restore ném
+    // `Unknown argument 'visibility'` ở `tx.item.createMany`. Từ 2026-08-03 tới 2026-08-10, đường lấy
+    // lại dữ liệu học của người dùng hỏng hoàn toàn.
+    //
+    // Vì sao không ai thấy: `dryRun` không ghi gì nên bản XEM TRƯỚC vẫn chạy đẹp, và `tsc` không bắt
+    // được vì TypeScript không excess-check thuộc tính đến từ spread (`{ id, ...itemData(row) }`).
+    // Gác bởi lib/import-restore.test.ts.
   };
 }
 
@@ -117,8 +123,7 @@ function sentenceData(row: BackupSentence) {
     stagedItems: row.stagedItems ?? null,
     status: row.status,
     starred: row.starred,
-    visibility: row.visibility,
-    sharedAt: row.sharedAt ?? null,
+    // Cùng lý do như `itemData`: `visibility` + `sharedAt` đã bị xoá khỏi Sentence trong cùng migration.
   };
 }
 
@@ -470,9 +475,13 @@ export async function importSystemBackup(
   const attachPath = dbFilePath.replace(/\\/g, '/').replace(/'/g, "''");
   const warnings: string[] = [];
 
-  // FK enforcement OFF for the merge window: ordered inserts + Item's forkedFromId self-reference can
-  // otherwise trip immediate FK checks. A PRAGMA cannot run inside a transaction, so it is set here and
-  // always restored in `finally`. `foreign_key_check` after the inserts is the real safety net.
+  // FK enforcement OFF for the merge window: inserting table by table trips immediate FK checks before
+  // the referenced rows land (SrsState/ReviewLog/GroupMember all point at Item, ReviewLog at Sentence).
+  // A PRAGMA cannot run inside a transaction, so it is set here and always restored in `finally`;
+  // `foreign_key_check` after the inserts is the real safety net.
+  //
+  // Lý do cũ ghi ở đây là "Item's forkedFromId self-reference" — cột đó đã bị migration 20260803190730
+  // xoá cùng lớp multiuser, nên nó không còn là lý do. Các FK liệt kê trên thì vẫn còn.
   await prisma.$executeRawUnsafe('PRAGMA foreign_keys = OFF');
   await prisma.$executeRawUnsafe(`ATTACH DATABASE '${attachPath}' AS backup`);
 
