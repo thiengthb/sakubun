@@ -774,3 +774,26 @@ describe('20260810071900 — the legacy ability id is renamed to the documented 
     expect(ids.sort()).toEqual(['clz0legacyabilityrow0003', 'singleton']);
   });
 });
+
+// Hợp đồng với Prisma mà lib/mcp/tool-kit.ts dựa vào để nói cho Claude biết hàng nào thiếu.
+//
+// tool-kit.test.ts dựng lỗi P2025 bằng tay (nó là test thuần, không có DB), nên hình dạng ấy phải được
+// một chỗ nào đó đối chiếu với Prisma THẬT — nếu không, Prisma đổi `meta` một ngày nào đó và cái duy
+// nhất xảy ra là thông điệp lỗi âm thầm tệ đi, đúng loại hỏng đã tốn một buổi hôm 2026-08-08.
+describe('P2025 của Prisma mang theo tên model (hợp đồng cho thông điệp lỗi MCP)', () => {
+  it('update một hàng không tồn tại → code P2025 + meta.modelName', async () => {
+    await resetData();
+
+    const caught = await prisma.item
+      .update({ where: { id: 'khong-ton-tai' }, data: { meaningVi: 'x' } })
+      .then(
+        () => null,
+        (e: unknown) => e,
+      );
+
+    expect(caught, 'update vào id không tồn tại phải ném').not.toBeNull();
+    const e = caught as { code?: string; meta?: { modelName?: string } };
+    expect(e.code).toBe('P2025');
+    expect(e.meta?.modelName, 'tool-kit.ts đọc đúng trường này để chọn lời khuyên').toBe('Item');
+  });
+});
