@@ -24,8 +24,7 @@ import { LEECH_LAPSES } from '@/lib/srs';
  * here any more — see the note below the caps.
  */
 export type SuggestionCode =
-  | 'ADD_MISSING' // 1  not in my library and not shared anywhere
-  | 'FORK_SHARED' // 2  someone published it; take a copy
+  | 'ADD_MISSING' // 1  not in my library
   | 'ENRICH_MISSING' // 3  mine, no card
   | 'ENRICH_THIN' // 4  mine, card incomplete
   | 'ENRICH_OUTDATED' // 5  mine, card complete for an older format
@@ -36,7 +35,6 @@ export type SuggestionCode =
   | 'PRACTICE_DUE' // 10 mine, due now
   | 'PRACTICE_NEW' // 11 mine, never studied
   | 'VOCAB_SINOVIET' // 12 mine, VOCAB with kanji but no âm Hán Việt
-  | 'ENRICH_FROM_SHARED' // 13 a public copy is strictly better than mine
   | 'RAISE_NEW_CAP' // 16 a pattern the learner asked for was withheld by the daily new cap
   | 'MINED_CONTRAST' // the learner's OWN repeated mistake names a contrast the card is missing
   // ── library-wide (get_library_health), class `sweep`. These describe the KHO, not one lookup.

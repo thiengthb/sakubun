@@ -206,7 +206,6 @@ export const settingsSchema = z.object({
   // When on, every sentence the learner GRADES is auto-shared to the members' feed (visibility=shared),
   // so their new attempts reach the community without toggling each one. Opt-in (off by default);
   // toggled from the /history community tab, honored in submitReview. Existing rows are untouched.
-  autoShareSentences: z.boolean().default(false),
   /**
    * Which of Claude's proposals it may carry out WITHOUT asking first. Every flag defaults to OFF —
    * the app's culture is "never add before I agree", and the caps on suggestions only mean anything if
@@ -222,14 +221,12 @@ export const settingsSchema = z.object({
    */
   autoCapture: z
     .object({
-      /** Take a copy of a public item the learner clearly wanted. Reversible: delete it. */
-      fork: z.boolean().default(false),
       /** Add a word the learner asked about / visibly misused. Reversible: delete it. */
       vocab: z.boolean().default(false),
       /** MERGE a missing contrast/pitfall into a card — never an overwrite (patch_enrichment only). */
       enrichPatch: z.boolean().default(false),
     })
-    .default({ fork: false, vocab: false, enrichPatch: false }),
+    .default({ vocab: false, enrichPatch: false }),
 });
 
 export const settingsPatchSchema = settingsSchema.partial();
@@ -256,8 +253,7 @@ export const DEFAULT_SETTINGS: Settings = settingsSchema.parse({});
  *
  * Excluded, because no composition path reads them: `voiceSpeaker` / `speechRate` (the APP's own TTS
  * buttons, unrelated to Claude), `dayCutoffHour` (a server-side day boundary), `desiredRetention`
- * (FSRS maths, and invariant 1 keeps scheduling off Claude's hands), `autoShareSentences` (a feed
- * toggle). The three PACE numbers are KEPT even though the plan listed `maxReviewsPerDay` as droppable:
+ * (FSRS maths, and invariant 1 keeps scheduling off Claude's hands). The three PACE numbers are KEPT even though the plan listed `maxReviewsPerDay` as droppable:
  * the HELD BACK lines in `lib/mcp/render.ts` now name each cap and offer to raise it, so Claude needs
  * the current value to say something useful. A field with a reader stays.
  */

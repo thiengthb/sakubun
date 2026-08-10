@@ -94,7 +94,6 @@ describe('toCompositionSettings', () => {
       'voiceSpeaker',
       'speechRate',
       'dayCutoffHour',
-      'autoShareSentences',
       'desiredRetention',
     ]) {
       expect(projected).not.toHaveProperty(dead);
