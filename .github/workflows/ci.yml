@@ -83,6 +83,22 @@ jobs:
 
   security:
     runs-on: ubuntu-latest
+    # Job này chạy được trên `push` nhưng SẬP trên `pull_request`, và không ai biết cho tới
+    # PR đầu tiên của repo (PR #1, 2026-08-10):
+    #
+    #   GET https://api.github.com/repos/<repo>/pulls/1/commits
+    #   403 'Resource not accessible by integration'
+    #
+    # gitleaks đọc danh sách commit của PR để biết quét khoảng nào, và GITHUB_TOKEN mặc định
+    # không có quyền đọc pull request. Trên `push` nó không gọi API đó, nên gate vẫn xanh —
+    # một lỗi chỉ hiện ra ở đúng event mà gate tồn tại để bảo vệ.
+    #
+    # Khai ở mức JOB, không mức workflow: block `permissions` THAY THẾ toàn bộ quyền mặc
+    # định, nên nó phải liệt kê đủ mọi thứ job cần (`contents: read` cho checkout), và giới
+    # hạn đó không nên tràn sang các job khác.
+    permissions:
+      contents: read
+      pull-requests: read
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
@@ -92,6 +108,11 @@ jobs:
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Comment lên PR là đường DUY NHẤT trong action này cần quyền GHI pull request.
+          # Tắt nó để `permissions` ở trên giữ được mức read — nếu bật, một lần quét THẤY
+          # leak sẽ sập đúng kiểu 403 như trên, tức lại một cái bẫy chỉ nổ ở trạng thái hiếm.
+          # Phát hiện vẫn không mất: job đỏ, kèm summary và artifact (cả hai mặc định bật).
+          GITLEAKS_ENABLE_COMMENTS: 'false'
       # KHÔNG trùng với gitleaks, và cũng không thay nó. gitleaks mang bộ rule riêng của
       # nó; cái này chạy `paths.secrets` + `SECRET_PATTERNS` — ĐÚNG bộ mà hook
       # block-secrets.mjs và .githooks/pre-commit dùng. Nên một pattern thêm vào harness
