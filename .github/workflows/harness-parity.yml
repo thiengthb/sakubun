@@ -55,13 +55,25 @@ jobs:
       - name: Entropy scan
         run: node tooling/entropy-scan.mjs
 
-      - name: Doctor (tổng hợp)
-        run: node tooling/doctor.mjs
-
       # init.mjs phải chạy được cả 3 OS. Nó là chỗ duy nhất biết về khác biệt OS.
+      #
+      # PHẢI đứng TRƯỚC Doctor, và đây là thứ tự bắt buộc chứ không phải thẩm mỹ: `init.mjs` là chỗ
+      # duy nhất đặt `git config core.hooksPath .githooks`, còn `harness-doctor.mjs:152` coi việc
+      # thiếu config đó là mục CHẶN. Ở thứ tự cũ, Doctor kiểm một config mà bước ngay sau nó mới đặt,
+      # nên `parity` đỏ trên CẢ BA OS ở mọi PR chạm `tooling/**`:
+      #   ✗ core.hooksPath chưa trỏ .githooks — pre-commit guard KHÔNG chạy. Sửa: node tooling/init.mjs
+      # Lời khuyên đó đúng, và workflow ĐÃ làm đúng như vậy — chỉ là muộn hơn một bước.
+      #
+      # Vẫn đứng SAU các bước "chạy được không cần dependency" (test-hooks, knowledge lint, audit,
+      # evals --dry, entropy scan), nên tín hiệu đó không mất: chúng vẫn chạy trước khi có node_modules.
+      # `init.mjs` đặt git config ở bước 2 và chỉ `install`/`gen` ở bước 6, nên kể cả khi `npm ci` đổ
+      # trên một OS thì `core.hooksPath` vẫn được đặt và Doctor vẫn đo đúng thứ nó cần đo.
       - name: Bootstrap
         run: node tooling/init.mjs
         continue-on-error: true   # template chưa cấu hình lệnh → FAIL là đúng. Bỏ dòng này khi đã cấu hình.
+
+      - name: Doctor (tổng hợp)
+        run: node tooling/doctor.mjs
 
   no-bash-in-harness:
     runs-on: ubuntu-latest
