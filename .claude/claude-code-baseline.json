@@ -1,8 +1,13 @@
 {
   "$comment": "Bản rà Claude Code gần nhất. Nghi thức `claude-code-drift` so `reviewedVersion` với version đang chạy. Đừng sửa tay — dùng `node tooling/rituals.mjs --reviewed-claude-code \"<thấy gì>\"`.",
-  "reviewedVersion": "2.1.221",
-  "reviewedAt": "2026-08-05T08:01:53.837Z",
+  "reviewedVersion": "2.1.226",
+  "reviewedAt": "2026-08-10T14:15:53.452Z",
   "history": [
+    {
+      "version": "2.1.226",
+      "at": "2026-08-10T14:15:53.452Z",
+      "found": "2.1.221-226, ba cho vendor da lam san thu harness dang tu lam tay. (1) PERMISSION/BASH GUARD: 2.1.221 va .223 va nhieu ban truoc lien tuc va bypass cua chinh lop permission — zsh an lenh trong [[ ]], lenh dem bang tab/Unicode vo hinh, lenh tu che mot phan khoi bang kiem. dcg.mjs cua ta parse lenh bang tay nen co DUNG lop bypass do ma khong co ai va. Nen chuyen sang permissions.deny + sandbox cua vendor, giu dcg.mjs chi cho phan project-specific. Chinh harness-doctor da nhac 2 deny rule con thieu. (2) SANDBOX/SECRET: 2.1.224 them credential-masking (extract, decode jwt, awsPairs/sigv4), sua bypass denyRead co dau / o cuoi, va cho sandbox violation hien trong ket qua Bash. block-secrets.mjs + danger-zones §2 dang lam tay dung viec nay, va lam yeu hon (chi chan doc/ghi, khong mask duoc gia tri). (3) WORKTREE: 2.1.222 sua worktree-isolated session + subagent chay duoc lenh git pha vao checkout chinh, va 2.1.221 doi /fork sang tu tao worktree rieng. Ky luat 'mot issue mot worktree' cua ta gio co lop cuong che native. THEM: 2.1.225 co gateway spend-limit voi thong bao neu ro cap va gio reset — trung phan nao voi budget.monthlyUsdCap + capo-report.mjs (chi ap dung khi di qua gateway). VA MOT DIEU VE HANH VI: 2.1.222 doi loi tu choi khi model goi skill co disable-model-invocation — model duoc bao HAY NHO NGUOI CHAY, dung tu dien lai quy trinh. /pre-merge va /harness-propose deu co co do, va phien 2026-08-10 agent da thi hanh tay tung buoc thay vi nho nguoi. Can quyet: hoac bo disable-model-invocation, hoac ghi ro trong SKILL la agent duoc phep thi hanh tung buoc."
+    },
     {
       "version": "2.1.221",
       "at": "2026-08-05T08:01:53.837Z",
