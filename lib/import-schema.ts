@@ -39,9 +39,11 @@ const itemSchema = z.object({
   starred: z.boolean().default(false),
   enrichment: z.string().nullish(),
   enrichedAt: z.coerce.date().nullish(),
-  visibility: z.string().default('private'),
   createdAt: z.coerce.date().optional(),
-  forkedFromId: z.string().nullish(),
+  // `visibility` + `forkedFromId` đã bị bỏ khỏi đây cùng với hai cột tương ứng trên Item (migration
+  // 20260803190730). Bản sao lưu CŨ vẫn đọc được: `z.object` mặc định LƯỢC key lạ, nên hai trường đó
+  // bị bỏ qua thay vì làm file bị từ chối. Giữ chúng lại chỉ để zod điền `visibility: 'private'` rồi
+  // đưa xuống Prisma — và đó đúng là cách restore hỏng.
 });
 
 const srsStateSchema = z.object({
@@ -89,8 +91,7 @@ const sentenceSchema = z.object({
   starred: z.boolean().default(false),
   createdAt: z.coerce.date().optional(),
   answeredAt: z.coerce.date().nullish(),
-  visibility: z.string().default('private'),
-  sharedAt: z.coerce.date().nullish(),
+  // `visibility` + `sharedAt`: cùng lý do như trên — cột đã bị xoá khỏi Sentence, key cũ được lược.
 });
 
 const settingsSchema = z.object({
