@@ -299,6 +299,34 @@ for (const root of ['app', 'components', 'lib', 'e2e', 'tooling']) {
   }
 }
 
+// Một đường dẫn bị GITIGNORE CÓ CHỦ Ý không phải con trỏ chết — nó là file cố ý không nằm trong
+// repo, và tài liệu nhắc tới nó là tài liệu đang làm đúng việc.
+//
+// Vì sao có đoạn này (issue #8): `harness-parity` chỉ chạy khi diff chạm `tooling/**`, nên PR đầu
+// tiên chạm vào đó cũng là lần đầu job này chạy — và nó đỏ trên CẢ BA OS vì đúng ba đường dẫn:
+// `lib/generated` + `lib/generated/prisma` (do `prisma generate` sinh, `npm run gen`) và
+// `.claude/settings.local.json` (per-machine theo đúng AGENTS.md §Parity Contract, có sẵn bản
+// `.example` bên cạnh). Cả ba CÓ trên máy người dùng và không bao giờ có trên checkout sạch của CI.
+//
+// MỘT lời gọi `git check-ignore` cho cả nhóm, không phải mỗi đường một lần: danh sách này nhỏ,
+// nhưng một subprocess mỗi đường là cách dễ nhất để biến scanner tài liệu thành thứ chậm nhất
+// trong gate. `check-ignore` in ra những đường BỊ ignore, exit 1 khi không có cái nào — nên `status`
+// khác 0 là chuyện bình thường, chỉ đọc stdout.
+if (dangling.size) {
+  // Hỏi CẢ HAI dạng `p` và `p/`, và đây không phải cho chắc — nó là điều kiện để phép kiểm đúng.
+  // Pattern thư mục trong `.gitignore` (`lib/generated/`, có dấu `/`) chỉ khớp với một THƯ MỤC, mà
+  // với đường dẫn KHÔNG TỒN TẠI thì git không biết nó là thư mục nên không khớp. Đo trong một
+  // worktree sạch: `check-ignore lib/generated` → không khớp, `lib/generated/` → IGNORED. Thiếu dạng
+  // thứ hai thì bản sửa này lọc được 2 trong 3 đường dẫn của issue #8 và gate vẫn đỏ.
+  const candidates = [...dangling.keys()];
+  const r = git(['check-ignore', ...candidates, ...candidates.map((p) => `${p}/`)]);
+  for (const line of (r.stdout || '').split('\n')) {
+    // git in đường dẫn bằng `/` trên mọi OS; chuẩn hoá thêm cho chắc, không cần `sep`.
+    const p = line.trim().replace(/\\/g, '/').replace(/\/$/, '');
+    if (p) dangling.delete(p);
+  }
+}
+
 if (dangling.size) {
   const rows = [...dangling.entries()].sort((a, b) => b[1].size - a[1].size);
   const shown = rows.slice(0, 6).map(([p, w]) => `${p} (${[...w].slice(0, 2).join(', ')}${w.size > 2 ? `, +${w.size - 2}` : ''})`);
