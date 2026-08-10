@@ -171,12 +171,46 @@ export function runConfigured(name, { placeholders = {}, capture = false, cwd = 
     cwd,
     encoding: 'utf8',
     stdio: capture ? 'pipe' : 'inherit',
+    // BẮT BUỘC với stdio:'pipe'. Mặc định của Node là 1 MiB, và vượt ngưỡng thì nó không
+    // truncate — nó GIẾT tiến trình con (SIGTERM), trả `status: null` + `error.code = 'ENOBUFS'`.
+    // Gate `e2e` pipe cả log `[WebServer]` của dev server, nên tổng output dao động quanh đúng
+    // 1 MiB: cùng một commit, lần dưới ngưỡng thì XANH, lần trên ngưỡng thì ĐỎ. Đo ở repo này
+    // 2026-08-10 (issue #4): 4 lần OK / 2 lần FAIL trên cùng base `bfb19dd`, và report Playwright
+    // của đúng lần "FAIL" cho 28/28 test PASS.
+    // Được gác bởi lib/harness-gate-runner.test.ts — nếu một đợt nâng harness bỏ dòng này,
+    // `npm test` đỏ chứ không phải con flaky quay lại trong im lặng.
+    maxBuffer: 64 * 1024 * 1024,
   });
+
+  // `status === null` KHÔNG BAO GIỜ nghĩa là "lệnh trả mã lỗi": tiến trình bị giết bằng signal
+  // (buffer, OOM, timeout) hoặc spawn thất bại. Bản trước gộp nó vào `r.status ?? 1`, nên một sự
+  // cố hạ tầng được báo cáo y như một test đỏ — người đọc CI đi tìm bug trong test của mình, chỗ
+  // không có gì sai. `runGate` in `detail` nếu có, nên nói thẳng ra ở đây.
+  if (r.status === null) {
+    const why = r.error
+      ? `${r.error.code ?? r.error.name}: ${r.error.message}`
+      : `bị giết bởi signal ${r.signal}`;
+    return {
+      skipped: false,
+      status: 1,
+      stdout: r.stdout ?? '',
+      stderr: r.stderr ?? '',
+      signal: r.signal ?? null,
+      error: r.error ?? null,
+      detail:
+        `KHÔNG PHẢI lệnh trả mã lỗi — tiến trình không thoát bình thường (${why}). ` +
+        `Đây là sự cố hạ tầng của lần chạy, đừng đi tìm bug trong \`${name}\`: kiểm bộ nhớ, ` +
+        `timeout, và lượng output mà lệnh in ra.`,
+    };
+  }
+
   return {
     skipped: false,
-    status: r.status ?? 1,
+    status: r.status,
     stdout: r.stdout ?? '',
     stderr: r.stderr ?? '',
+    signal: null,
+    error: null,
   };
 }
 
