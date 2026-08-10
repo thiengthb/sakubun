@@ -1,3 +1,8 @@
+// harness-allow-test-shrink — 2026-08-10: hai ca bị XOÁ vì hành vi chúng chốt đã không còn tồn tại,
+// không phải vì chúng bất tiện. `FORK_SHARED` và `ENRICH_FROM_SHARED` gợi ý lấy thẻ từ "thư viện chung"
+// và gọi `fork_shared_items`; mảng `shared` chỉ có một nguồn trong app (`lib/lookup.ts`) và nguồn đó
+// truyền `[]` từ khi lớp multiuser bị cắt, còn `fork_shared_items` thì không còn được đăng ký. Phần
+// assertion CÒN GIÁ TRỊ của các ca đó được giữ lại, viết lại trên cờ còn tồn tại — xem comment tại chỗ.
 import { describe, expect, it } from 'vitest';
 import {
   CLUSTER_MIN_MISSES,
@@ -8,7 +13,6 @@ import {
   MAX_SUGGESTIONS_MID_SESSION,
   type CoachInput,
   type ItemFacts,
-  type SharedMatch,
   SWEEP_MIN_NEEDS_WORK,
   type LibraryHealthFacts,
   type SuggestionCode,
@@ -54,7 +58,6 @@ function input(patch: Partial<CoachInput> = {}): CoachInput {
   return {
     query: '〜ばかりに',
     mine: [item()],
-    shared: [],
     settings: { grammarLevels: ['N3'] },
     now: NOW,
     ...patch,
@@ -75,36 +78,9 @@ const THIN_CARD = JSON.stringify({
   contrasts: [],
 });
 
-function shared(patch: Partial<SharedMatch> = {}): SharedMatch {
-  return {
-    sourceItemId: 'pub1',
-    kind: 'GRAMMAR',
-    expression: '〜ばかりに',
-    level: 'N3',
-    quality: scoreEnrichment(OK_CARD),
-    ...patch,
-  };
-}
-
 describe('coach — the scenarios the flagship depends on', () => {
   it('not mine and not shared → offer to ADD it', () => {
-    expect(codes(input({ mine: [], shared: [] }))).toContain('ADD_MISSING');
-  });
-
-  it('not mine but SOMEONE PUBLISHED it → offer the fork, not a fresh add', () => {
-    const shared: SharedMatch = {
-      sourceItemId: 'pub1',
-      kind: 'GRAMMAR',
-      expression: '〜てしかたがない',
-      level: 'N2',
-      quality: scoreEnrichment(OK_CARD),
-    };
-    const result = coach(input({ mine: [], shared: [shared] }));
-    expect(result.suggestions.map((s) => s.code)).toContain('FORK_SHARED');
-    expect(result.suggestions.map((s) => s.code)).not.toContain('ADD_MISSING');
-    // Pre-filled args: a yes is ONE call, not an interrogation.
-    expect(result.suggestions[0].tool).toBe('fork_shared_items');
-    expect(result.suggestions[0].args).toEqual({ sourceItemIds: ['pub1'] });
+    expect(codes(input({ mine: [] }))).toContain('ADD_MISSING');
   });
 
   it('suspended → the BLOCKER wins over any card-polish offer', () => {
@@ -208,38 +184,14 @@ describe('coach — the four card states each get their OWN repair', () => {
     expect(s!.line).toContain('v1');
   });
 
-  it('a BETTER public copy is offered only while mine still needs work', () => {
-    const better: SharedMatch = {
-      sourceItemId: 'pub1',
-      kind: 'GRAMMAR',
-      expression: '「〜ばかりに」', // quoted differently on purpose — normalization must match it
-      level: 'N3',
-      quality: scoreEnrichment(OK_CARD),
-    };
-    const thin = JSON.stringify({ usage: 'Chỉ vì gì đó xảy ra.', example: { ja: 'あ', vi: 'a' } });
-
-    const needy = coach(
-      input({ mine: [item({ quality: scoreEnrichment(thin) })], shared: [better] }),
-    );
-    expect(needy.suggestions.map((s) => s.code)).toContain('ENRICH_FROM_SHARED');
-
-    // Mine is already fine → do NOT nag about someone else's card.
-    const fine = coach(input({ mine: [item()], shared: [better] }));
-    expect(fine.suggestions.map((s) => s.code)).not.toContain('ENRICH_FROM_SHARED');
-  });
-
-  it('is NOT offered when I have no readable card — a patch would be refused', () => {
-    // Found by driving the MCP lab: the offer said "take the missing parts" for an item with no card
-    // at all, and patch_enrichment can only MERGE. The full-write proposal is the right one there.
+  // Hai ca "một bản công khai TỐT HƠN thẻ của tôi" đã bị bỏ cùng `ENRICH_FROM_SHARED` (2026-08-10):
+  // không còn thư viện chung nên không có bản công khai nào để so. Phần CÒN GIÁ TRỊ của ca thứ hai
+  // được giữ lại ngay dưới đây — một item không có thẻ đọc được thì phải nhận đề nghị GHI ĐỦ, vì
+  // `patch_enrichment` chỉ biết MERGE.
+  it('một item KHÔNG có thẻ đọc được thì nhận đề nghị ghi đủ, không phải một merge', () => {
     for (const raw of [null, '{"collocations":["x"]}']) {
-      const result = coach(
-        input({
-          mine: [item({ quality: scoreEnrichment(raw) })],
-          shared: [shared({ quality: scoreEnrichment(OK_CARD) })],
-        }),
-      );
+      const result = coach(input({ mine: [item({ quality: scoreEnrichment(raw) })] }));
       const emitted = result.suggestions.map((s) => s.code);
-      expect(emitted).not.toContain('ENRICH_FROM_SHARED');
       expect(emitted.some((c) => c === 'ENRICH_MISSING' || c === 'ENRICH_BROKEN')).toBe(true);
     }
   });
@@ -373,7 +325,7 @@ describe('coach — ranking and caps', () => {
   });
 
   it('a pattern withheld by the daily new cap becomes an actionable blocker', () => {
-    const result = coach(input({ mine: [], shared: [], withheldByNewCap: ['〜かねる'] }));
+    const result = coach(input({ mine: [], withheldByNewCap: ['〜かねる'] }));
     const raise = result.suggestions.find((s) => s.code === 'RAISE_NEW_CAP');
     expect(raise).toBeTruthy();
     expect(raise!.class).toBe('blocker');
@@ -390,7 +342,6 @@ describe('coach — ranking and caps', () => {
  */
 const TOOL_ARGS: Record<string, readonly string[]> = {
   add_grammar: ['items'],
-  fork_shared_items: ['sourceItemIds'],
   get_due_items: ['focusPatterns', 'limit', 'includeVocab', 'exerciseType', 'direction'],
   set_item_suspended: ['itemId', 'suspended'],
   update_settings: [
@@ -408,15 +359,10 @@ const TOOL_ARGS: Record<string, readonly string[]> = {
 describe('coach — every suggestion is a call that would actually work', () => {
   it('pre-fills only arguments the named tool accepts', () => {
     const cases: CoachInput[] = [
-      input({ mine: [], shared: [] }),
-      input({ mine: [], shared: [shared()] }),
+      input({ mine: [] }),
       input({ mine: [item({ suspended: true })] }),
       input({ mine: [item({ level: 'N1', srs: { state: 0, due: NOW, lapses: 0 } })] }),
       input({ mine: [item({ quality: scoreEnrichment(THIN_CARD) })] }),
-      input({
-        mine: [item({ quality: scoreEnrichment(THIN_CARD) })],
-        shared: [shared({ quality: scoreEnrichment(OK_CARD) })],
-      }),
       input({ mine: [item({ kind: 'VOCAB', hasKanji: true, hanviet: null })] }),
       input({ withheldByNewCap: ['〜かねる'] }),
     ];
@@ -432,14 +378,17 @@ describe('coach — every suggestion is a call that would actually work', () => 
       }
     }
     // The matrix is only meaningful if the cases actually exercised most of it.
-    expect(seen.size).toBeGreaterThanOrEqual(7);
+    // Ngưỡng 7 → 6 (2026-08-10): `FORK_SHARED` và `ENRICH_FROM_SHARED` đã bị bỏ khỏi bề mặt cùng lớp
+    // multiuser, nên 6 là con số THẬT ở đây. Hạ ngưỡng chứ không xoá phép kiểm — nó vẫn đỏ nếu độ phủ
+    // sụp xuống, và một ngưỡng cao hơn thực tế thì chỉ đỏ mãi mà không nói được điều gì.
+    expect(seen.size).toBeGreaterThanOrEqual(6);
   });
 });
 
 describe('coach — every suggestion is actionable', () => {
   it('carries a real tool name, pre-filled args, and a Vietnamese line', () => {
     const cases: CoachInput[] = [
-      input({ mine: [], shared: [] }),
+      input({ mine: [] }),
       input({ mine: [item({ suspended: true })] }),
       input({ mine: [item({ quality: scoreEnrichment(null) })] }),
       input({ mine: [item({ srs: { state: 0, due: NOW, lapses: 0 } })] }),
@@ -541,37 +490,34 @@ describe('coachLibrary — the whole-kho sweeps', () => {
 });
 
 describe('autoCapture — pre-authorisation marks the offer, it never writes', () => {
-  const shared2: SharedMatch = {
-    sourceItemId: 'pub9',
-    kind: 'GRAMMAR',
-    expression: '〜てしかたがない',
-    level: 'N2',
-    quality: scoreEnrichment(OK_CARD),
-  };
   const off = { fork: false, vocab: false, enrichPatch: false };
+  /** Thẻ mỏng → đề nghị `ENRICH_THIN`, tool `patch_enrichment` — offer duy nhất còn có cờ auto. */
+  const thinOne = () => input({ mine: [item({ quality: scoreEnrichment(THIN_CARD) })] });
 
+  // Hai ca dưới đây trước 2026-08-10 lái bằng `FORK_SHARED` + cờ `autoCapture.fork`. Cả hai đã bị bỏ
+  // (không còn thư viện chung, và `fork_shared_items` không còn được đăng ký), nên chúng được viết lại
+  // trên cờ CÒN TỒN TẠI. NGUYÊN TẮC được kiểm không đổi: mặc định là hỏi trước, và chỉ đúng class
+  // người học bật mới được đánh dấu.
   it('defaults ask first — nothing is marked auto', () => {
-    const r = coach(input({ mine: [], shared: [shared2] }));
-    expect(r.suggestions[0].code).toBe('FORK_SHARED');
+    const r = coach(thinOne());
+    expect(r.suggestions[0].code).toBe('ENRICH_THIN');
     expect(r.suggestions[0].auto).toBeUndefined();
   });
 
   it('marks ONLY the class the learner turned on', () => {
     const r = coach(
       input({
-        mine: [],
-        shared: [shared2],
-        settings: { grammarLevels: ['N3'], autoCapture: { ...off, fork: true } },
+        mine: [item({ quality: scoreEnrichment(THIN_CARD) })],
+        settings: { grammarLevels: ['N3'], autoCapture: { ...off, enrichPatch: true } },
       }),
     );
     expect(r.suggestions[0].auto).toBe(true);
 
-    // A different flag must not leak onto the fork offer.
+    // Một cờ KHÁC không được tràn sang offer này.
     const other = coach(
       input({
-        mine: [],
-        shared: [shared2],
-        settings: { grammarLevels: ['N3'], autoCapture: { ...off, enrichPatch: true } },
+        mine: [item({ quality: scoreEnrichment(THIN_CARD) })],
+        settings: { grammarLevels: ['N3'], autoCapture: { ...off, vocab: true } },
       }),
     );
     expect(other.suggestions[0].auto).toBeUndefined();

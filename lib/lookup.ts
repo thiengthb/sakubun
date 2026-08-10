@@ -173,10 +173,10 @@ export async function checkLibrary(args: LookupInput): Promise<LibraryCheck> {
   const result = coach({
     query,
     mine: facts,
-    // No public library any more, so there is never a shared match to propose a fork from. The coach's
-    // FORK branch is therefore unreachable; it stays in lib/coach.ts rather than being surgically
-    // removed from a module with its own test suite.
-    shared: [],
+    // `shared: []` đứng ở đây cùng một comment nói rằng nhánh FORK trong coach là không tới được và
+    // "stays in lib/coach.ts rather than being surgically removed from a module with its own test
+    // suite". Đó là món nợ được hoãn có ý thức, và 2026-08-10 nó được trả: nhánh kia đã bị bỏ, nên
+    // trường này không còn gì để truyền.
     // grammarLevels drives WIDEN_LEVELS; autoCapture decides which offers the learner has already
     // pre-authorised. Nothing else of the settings blob is the coach's business.
     settings: { grammarLevels: settings.grammarLevels, autoCapture: settings.autoCapture },
