@@ -949,6 +949,9 @@ async function getOrSeedAbility(settings: Settings) {
   const seed = initialAbility(settings);
   return prisma.learnerAbility.create({
     data: {
+      // Explicit, not left to the column default: this row's id is an invariant the writer relies on,
+      // and a default is invisible at the call site.
+      id: ABILITY_ROW_ID,
       abilityReceptive: seed,
       abilityProductive: seed,
       abilityRegister: seed,
@@ -1212,7 +1215,14 @@ export async function submitReview(
 
   writes.push(
     prisma.learnerAbility.update({
-      where: { id: ABILITY_ROW_ID },
+      // The id of the row we just READ, never the constant. A DB that predates the single-user
+      // rewrite still holds the ability row created on 2026-07-26 under a cuid: the 2026-08-03
+      // drop-multiuser migration added `DEFAULT 'singleton'` but copied every existing id verbatim.
+      // Targeting the constant there matched nothing, and P2025 rolled back THIS WHOLE TRANSACTION —
+      // the learner's graded review included. Nine turns died that way on the deploy 2026-08-08
+      // before anyone read the container log; `npm test` never saw it because a fresh row always
+      // takes the default. Pinned by practice.test.ts "carries a legacy id from the multi-user era".
+      where: { id: ability.id },
       data: {
         [ABILITY_COLUMNS.receptive.rating]: running.receptive.rating,
         [ABILITY_COLUMNS.receptive.observations]: running.receptive.observations,

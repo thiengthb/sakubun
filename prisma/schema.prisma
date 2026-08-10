@@ -188,8 +188,12 @@ model LearnerNote {
 /// exact complaint that started the calibration work (2026-07-26). Each axis carries its
 /// own observation count because that is what drives its Elo learning rate (dynamicK).
 model LearnerAbility {
-  /// Single row for the single learner (was one row per user). The fixed default id makes the upsert
-  /// in lib/calibration.ts a plain upsert on a known key instead of a findFirst-then-write race.
+  /// Single row for the single learner (was one row per user). The default id is a CONVENIENCE for
+  /// rows created from here on, NOT a guarantee about rows that already exist: a DB seeded before
+  /// 2026-08-03 still carries the cuid it got while this table was per-user, because the migration
+  /// that added this default copied every existing id verbatim. 20260810071900 renames that row, but
+  /// readers must still write the ability row by the id they READ (lib/practice.ts) — assuming the
+  /// constant here is what cost the deploy nine graded turns on 2026-08-08.
   id String @id @default("singleton")
 
   /// JA→VI comprehension.
