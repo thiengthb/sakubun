@@ -23,10 +23,11 @@ import { JLPT_LEVELS, type JlptLevel } from '@/lib/settings-schema';
 export type ScaffoldStatus =
   /** In their library already — safe material, no action needed. */
   | 'known'
-  /** Not theirs, but another member published it — `fork_shared_items` can take a copy. */
-  | 'availableInSharedLibrary'
   /** Nowhere. They are meeting it for the first time, inside an exercise about something else. */
   | 'newToLearner';
+// `availableInSharedLibrary` ("người khác đã publish nó — `fork_shared_items` lấy được một bản") đã bị
+// bỏ 2026-08-11: `classifyExtraPatterns` chỉ gán `known` hoặc `newToLearner`, nên không có gì sinh ra
+// nó, và `fork_shared_items` cũng không còn được đăng ký trên server MCP.
 
 export interface ScaffoldPattern {
   /** As Claude declared it, verbatim — so the offer it relays matches what it said. */
@@ -34,7 +35,7 @@ export interface ScaffoldPattern {
   status: ScaffoldStatus;
   /** The matched item's level, when there is a match. */
   level: JlptLevel | null;
-  /** Present when `known` (their item) or `availableInSharedLibrary` (the public source item). */
+  /** Present when `known` — the learner's own item. */
   itemId?: string;
   /**
    * TRUE when this pattern is HARDER than the level being drilled. The protocol has always forbidden

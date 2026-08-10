@@ -38,11 +38,9 @@ export function registerContentTools(server: McpServer) {
       'Returns { new, duplicate, ambiguous, counts }. `new` = safe to add. `duplicate` = already theirs ' +
       '(and if `suspended` is true, do NOT add it — offer set_item_suspended { suspended: false }). ' +
       '`ambiguous` needs a DECISION, and the `reason` says which: "other-kind" = they own the same ' +
-      'expression as the other kind · "shared-available" = another member published a copy that already ' +
-      'carries a usage card, so fork_shared_items beats adding a bare row · "repeated" = it appeared ' +
-      'twice in the material.\n' +
+      'expression as the other kind · "repeated" = it appeared twice in the material.\n' +
       'Show the learner a SHORT Vietnamese summary (counts, then the names — never a wall of rows) and ' +
-      'WAIT. On a yes, add ONLY what they agreed to, via add_grammar / add_vocab / fork_shared_items. ' +
+      'WAIT. On a yes, add ONLY what they agreed to, via add_grammar / add_vocab. ' +
       'Extract conservatively: a pattern they will actually be tested on, not every particle in the text.',
     {
       items: z

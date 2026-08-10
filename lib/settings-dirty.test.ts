@@ -13,7 +13,7 @@ describe('settings save round-trip clears dirty', () => {
     { topics: ['anime', 'công việc'] },
     { desiredRetention: 0.85 },
     { furiganaMode: 'both' },
-    { autoShareSentences: true },
+    { autoCapture: { vocab: true, enrichPatch: false } },
     { speechRate: 1.25 },
     { maxReviewsPerDay: 120 },
   ];

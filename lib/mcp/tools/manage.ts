@@ -213,8 +213,7 @@ export function registerManageTools(server: McpServer) {
       'a contrast you just explained, a pitfall the learner just fell into, an extra example, the ' +
       'missing conjugation forms, a clearer usage line. `add` APPENDS (duplicates and overflow past ' +
       'the field cap are skipped and reported); `set` REPLACES usage/register/example (the old ' +
-      'canonical example is kept as an extra). `fromSharedItemId` pulls the parts your card lacks ' +
-      'from a public copy — it never takes their usage or canonical example. Refuses when the item ' +
+      'canonical example is kept as an extra). Refuses when the item ' +
       'has no readable card yet: write one with enrich_items first. Returns what landed, what was ' +
       'skipped, and the card tier + what is STILL missing afterwards. Restate `set.provenance` when your ' +
       'patch changes who stands behind the card.',
@@ -237,7 +236,6 @@ export function registerManageTools(server: McpServer) {
           provenance: provenanceSchema.optional(),
         })
         .optional(),
-      fromSharedItemId: ID.optional(),
     },
     // No `.max()` on the add arrays on purpose: the merge enforces the schema caps and REPORTS the
     // overflow, which Claude can act on — a Zod rejection would arrive as a bare `too_big` (the same
@@ -252,11 +250,6 @@ export function registerManageTools(server: McpServer) {
           return mcpError(
             'This item has no readable enrichment card, so there is nothing to merge into. ' +
               'Compose the full card and send it with enrich_items instead.',
-          );
-        case 'donor-unusable':
-          return mcpError(
-            'That shared item cannot be used as a source: it is no longer public, its own card is ' +
-              'unreadable, or it is a DIFFERENT pattern. Patch by hand with `add` / `set`.',
           );
         case 'nothing-to-add':
           return mcpError(

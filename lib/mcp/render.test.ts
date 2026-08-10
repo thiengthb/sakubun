@@ -1,3 +1,7 @@
+// harness-allow-test-shrink — 2026-08-11: một ca bị XOÁ vì hành vi nó chốt đã không còn tồn tại.
+// `renderScaffold` từng có nhánh `availableInSharedLibrary` dạy Claude gọi `fork_shared_items`; trạng
+// thái đó chưa bao giờ được `classifyExtraPatterns` gán, và tool đó không còn được đăng ký. Nhánh
+// `newToLearner` — nhánh duy nhất còn lại — vẫn có ca gác riêng ngay phía trên chỗ đã xoá.
 import { describe, expect, it } from 'vitest';
 import type { Suggestion } from '@/lib/coach';
 import {
@@ -925,14 +929,17 @@ describe('renderConsentGuard — a write needs a yes, and absence is not a signa
   });
 
   it('emits BOTH halves when a result mixes them, so neither is inferred from the other absence', () => {
+    // Cặp tool đứng đây từng là `fork_shared_items` (2026-08-11: tool đó không còn được đăng ký, và mã
+    // `FORK_SHARED` đã rời union). Đổi sang một tool CÓ THẬT — điều đang kiểm là "một result trộn hai
+    // nửa thì cả hai nửa phải được in ra", không phụ thuộc tool nào.
     const note = renderConsentGuard([
       offer(),
-      offer({ code: 'FORK_SHARED', tool: 'fork_shared_items', auto: true }),
+      offer({ code: 'ADD_MISSING', tool: 'add_grammar', auto: true }),
     ])!;
     expect(note).toContain('CONSENT:');
     expect(note).toContain('PRE-AUTHORISED');
     expect(note).toMatch(/may not call patch_enrichment/);
-    expect(note).toMatch(/fork_shared_items may be called NOW/);
+    expect(note).toMatch(/add_grammar may be called NOW/);
   });
 
   it('lists each tool once however many offers share it', () => {
@@ -971,20 +978,10 @@ describe('renderScaffold — declared scaffolding', () => {
     expect(md).toContain('WAIT');
   });
 
-  it('routes a shared-library pattern to fork_shared_items with its real id', () => {
-    const md = renderScaffold([
-      {
-        expression: '〜ながらも',
-        status: 'availableInSharedLibrary',
-        level: 'N2',
-        itemId: 'pub-9',
-        aboveDrilledLevel: false,
-      },
-    ]);
-    expect(md).toContain('fork_shared_items');
-    expect(md).toContain('pub-9');
-    expect(md).not.toContain('add_grammar');
-  });
+  // Ca "routes a shared-library pattern to fork_shared_items with its real id" đã bị xoá 2026-08-11:
+  // `ScaffoldStatus.availableInSharedLibrary` không còn tồn tại, `classifyExtraPatterns` chưa bao giờ
+  // gán nó, và `fork_shared_items` không còn được đăng ký. Ca `newToLearner` ngay trên vẫn gác nhánh
+  // duy nhất còn lại.
 
   it('flags scaffolding above the drilled level even when the pattern is KNOWN', () => {
     // The level rule is about difficulty, not about ownership: a pattern the learner owns can still
