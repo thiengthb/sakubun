@@ -68,9 +68,56 @@ export function okWithNotes(
   };
 }
 
-/** Prisma throws P2025 when an update/delete targets a row that no longer exists. */
-function isRecordNotFound(e: unknown): boolean {
-  return typeof e === 'object' && e !== null && 'code' in e && e.code === 'P2025';
+/**
+ * Prisma throws P2025 when an update/delete targets a row that no longer exists, and it names the
+ * model in `meta.modelName`. Returns that name, `''` for a P2025 that somehow carries no model, and
+ * `null` when the error is not a P2025 at all — so the caller can tell "no model" from "not ours".
+ */
+function recordNotFoundModel(e: unknown): string | null {
+  if (typeof e !== 'object' || e === null) return null;
+  if (!('code' in e) || e.code !== 'P2025') return null;
+  const meta: unknown = 'meta' in e ? e.meta : null;
+  const model =
+    typeof meta === 'object' && meta !== null && 'modelName' in meta
+      ? (meta as { modelName: unknown }).modelName
+      : null;
+  return typeof model === 'string' ? model : '';
+}
+
+/**
+ * What to tell Claude when a row is missing — and it hinges on WHOSE id was wrong.
+ *
+ * Until 2026-08-10 every P2025 got the same sentence: "không tìm thấy item với id đó, gọi
+ * list_grammar". For a stale itemId that is exactly right. For anything else it is a false accusation
+ * with an instruction attached, and Claude follows instructions: on 2026-08-08 the missing row was
+ * `LearnerAbility` (a server-side singleton the caller cannot address at all), so Claude dutifully
+ * re-listed the library and retried the same call nine times while every graded turn was discarded.
+ * The message sent the debugging in the wrong direction for a whole session.
+ *
+ * So: name the model, and only offer a "fetch fresh ids and retry" recovery for the models whose id
+ * the CALLER actually supplies. For the rest, say plainly that retrying cannot help — a wrong retry
+ * hint is worse than no hint, because it manufactures confident wrong action.
+ */
+function recordNotFoundMessage(model: string): string {
+  switch (model) {
+    // SrsState is keyed by itemId, so its absence is a stale itemId just as much as Item's is.
+    case 'Item':
+    case 'SrsState':
+      return 'Không tìm thấy item với id đó (có thể đã bị xoá hoặc id sai). Gọi list_grammar / list_vocab để lấy id hiện tại.';
+    case 'Sentence':
+      return 'Không tìm thấy câu với sentenceId đó (có thể đã bị xoá). Gọi stage_sentence để dựng lại câu, rồi chấm bằng sentenceId mới — đừng bịa id.';
+    case 'Group':
+    case 'GroupMember':
+      return 'Không tìm thấy nhóm với id đó (có thể đã bị xoá hoặc id sai). Gọi list_groups để lấy id hiện tại.';
+    case 'CalibrationProposal':
+      return 'Không tìm thấy proposal với id đó. Gọi list_calibration_proposals để lấy id hiện tại.';
+    default:
+      return (
+        `Lỗi phía server: thiếu một hàng ${model || '(không rõ bảng)'} trong cơ sở dữ liệu. ` +
+        'KHÔNG phải do id bạn gửi, nên gọi lại với id khác cũng không giúp được gì — ĐỪNG thử lại lời gọi này. ' +
+        'Nói với người học rằng lần ghi vừa rồi thất bại và họ cần kiểm log của app.'
+      );
+  }
 }
 
 /** Wrap EVERY tool handler: log duration + translate ZodError into a message Claude can act on. */
@@ -90,13 +137,11 @@ export function guard<Args extends unknown[], R>(name: string, fn: (...args: Arg
         return mcpError(`Tham số không hợp lệ:\n${lines}`);
       }
       // Prisma's "record not found" message is a multi-line dump of the failed invocation. Claude
-      // reads tool errors and relays them, so translate the one code we actually hit (a stale/typo'd
-      // itemId) into something it can act on. Everything else keeps its own message.
-      if (isRecordNotFound(e)) {
-        return mcpError(
-          'Không tìm thấy item với id đó (có thể đã bị xoá hoặc id sai). Gọi list_grammar / list_vocab để lấy id hiện tại.',
-        );
-      }
+      // reads tool errors and relays them, so translate it into something actionable — but the action
+      // depends on WHICH row was missing, which is why the model name is carried through instead of
+      // assuming an item (see recordNotFoundMessage). Everything else keeps its own message.
+      const missingModel = recordNotFoundModel(e);
+      if (missingModel !== null) return mcpError(recordNotFoundMessage(missingModel));
       return mcpError(e instanceof Error ? e.message : String(e));
     }
   };
