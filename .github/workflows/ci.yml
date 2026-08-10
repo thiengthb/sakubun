@@ -91,13 +91,32 @@ jobs:
       #
       # Chạy cả khi gate đỏ (`always()` chứ không `failure()`, để một lần xanh-sau-retry cũng để
       # lại trace), và không đòi file phải có: gate đỏ ở `typecheck` thì chẳng có report nào.
+      # `upload-artifact@v4` BỎ QUA đường dẫn ngoài GITHUB_WORKSPACE, nên `/tmp/harness-*.log`
+      # không bao giờ lên (đo 2026-08-10: artifact chỉ có playwright-report). Copy vào workspace
+      # trước, và in luôn KÍCH THƯỚC — với gate `e2e` con số đó chính là bằng chứng: `runConfigured`
+      # gọi spawnSync stdio:'pipe' mà không đặt maxBuffer, nên Node giết tiến trình con ở đúng
+      # 1048576 byte và `r.status ?? 1` báo thành "gate đỏ".
+      - name: Gom log gate vào workspace
+        if: always()
+        run: |
+          mkdir -p gate-logs
+          cp /tmp/harness-*.log gate-logs/ 2>/dev/null || true
+          cp "${RUNNER_TEMP}"/harness-*.log gate-logs/ 2>/dev/null || true
+          ls -la gate-logs/ || true
+          for f in gate-logs/*.log; do
+            [ -e "$f" ] || continue
+            echo "::group::$f ($(wc -c < "$f") byte)"
+            tail -c 4000 "$f"
+            echo "::endgroup::"
+          done
+
       - name: Bằng chứng khi gate đỏ (log gate + report Playwright)
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: verify-evidence
           path: |
-            /tmp/harness-*.log
+            gate-logs/
             playwright-report/
             test-results/
           if-no-files-found: ignore
