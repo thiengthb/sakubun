@@ -17,119 +17,39 @@
 // COVERAGE KHÔNG ĐƯỢC PHÉP IM LẶNG. Danh sách dưới được đối chiếu với `tools/list` của server: thêm
 // một tool mà quên payload → test ĐỎ kèm tên tool, chứ không âm thầm bỏ qua nó.
 
-import { createHash } from 'node:crypto';
-import path from 'node:path';
-import Database from 'better-sqlite3';
-import { expect, test, type APIRequestContext } from '@playwright/test';
-import { E2E_BASE_URL, E2E_DB_FILE, E2E_EMAIL, seedE2eAccount } from './fixtures';
-
-const MCP_TOKEN = ['e2e', 'smoke', 'token', '0123456789'].join('-');
-const MCP_URL = `${E2E_BASE_URL}/api/mcp`;
-const HEADERS = {
-  'content-type': 'application/json',
-  accept: 'application/json, text/event-stream',
-  authorization: `Bearer ${MCP_TOKEN}`,
-};
-
-/** JSON-RPC có thể về dạng SSE (`event: message\ndata: {...}`) hoặc JSON trần. */
-function parseRpc(body: string): Record<string, unknown> {
-  const line = body.split('\n').find((l) => l.startsWith('data:'));
-  return JSON.parse(line ? line.slice(5).trim() : body) as Record<string, unknown>;
-}
-
-function openDb() {
-  return new Database(path.join(process.cwd(), E2E_DB_FILE));
-}
+import { expect, test } from '@playwright/test';
+import {
+  callTool,
+  initializeMcp,
+  openE2eDb,
+  rpc,
+  seedMcpAccount,
+  toolJson,
+} from './mcp-client';
 
 /**
- * Tài khoản + token, và DỌN SẠCH bảng học.
+ * Tài khoản + token + kho sạch (`seedMcpAccount`), CỘNG một calibration proposal dựng sẵn.
  *
- * Cả bộ e2e dùng chung một DB tạm, nên nếu không dọn thì kết quả ở đây phụ thuộc spec chạy trước —
- * và một lưới smoke phụ thuộc thứ tự file là lưới sẽ đỏ vì lý do không liên quan. Con trước cha (FK).
+ * Vì sao phải dựng tay: KHÔNG có đường nào trong app tạo được nó ở đây. `submit_review` chỉ gọi
+ * `recordCalibrationProposal` khi shadow thật sự đề xuất một thay đổi (lib/practice.ts, `if
+ * (calibration)`), và một lượt duy nhất chưa đủ bằng chứng — đo được: lần chạy đầu của lưới này,
+ * `list_calibration_proposals` trả rỗng và `set_proposal_verdict` đỏ vì id trống. Ép cho đủ bằng
+ * chứng nghĩa là gắn lưới smoke vào ngưỡng bên trong calibration; dựng một hàng thì
+ * `set_proposal_verdict` có đường HẠNH PHÚC thật mà không cần biết ngưỡng đó là bao nhiêu.
+ * `createdAt` để SQLite tự điền (DEFAULT CURRENT_TIMESTAMP) — không tự tay định dạng DateTime.
  */
 async function seed(): Promise<void> {
-  await seedE2eAccount();
-  const db = openDb();
-  const user = db.prepare('SELECT id FROM user WHERE email = ?').get(E2E_EMAIL) as
-    | { id: string }
-    | undefined;
-  if (!user) throw new Error('chưa seed được tài khoản e2e');
-
-  db.prepare('DELETE FROM mcp_key').run();
-  db.prepare(
-    `INSERT INTO mcp_key (id, userId, name, tokenHash, lastUsedAt, createdAt)
-     VALUES ('mcpk-smoke', ?, 'smoke', ?, NULL, ?)`,
-  ).run(user.id, createHash('sha256').update(MCP_TOKEN).digest('hex'), new Date().toISOString());
-
-  for (const table of [
-    'ReviewLog',
-    'Sentence',
-    'SrsState',
-    'GroupMember',
-    'Group',
-    'Item',
-    'CalibrationProposal',
-    'LearnerNote',
-    'LearnerAbility',
-    'Settings',
-  ]) {
-    db.prepare(`DELETE FROM "${table}"`).run();
-  }
-
-  // Một calibration proposal dựng sẵn, vì KHÔNG có đường nào trong app tạo được nó ở đây:
-  // `submit_review` chỉ gọi `recordCalibrationProposal` khi shadow thật sự đề xuất một thay đổi
-  // (lib/practice.ts:1264 `if (calibration)`), và một lượt duy nhất chưa đủ bằng chứng — đo được:
-  // lần chạy đầu của lưới này, `list_calibration_proposals` trả rỗng và `set_proposal_verdict` đỏ vì
-  // id trống. Ép cho đủ bằng chứng nghĩa là gắn lưới smoke vào ngưỡng bên trong calibration; dựng
-  // một hàng thì `set_proposal_verdict` có đường HẠNH PHÚC thật mà không cần biết ngưỡng đó là bao nhiêu.
-  // `createdAt` để SQLite tự điền (DEFAULT CURRENT_TIMESTAMP) — không tự tay định dạng DateTime.
-  db.prepare(
-    `INSERT INTO "CalibrationProposal"
-       (id, target, direction, fromValue, toValue, axis, measured, ability, observations, reason, sentenceId, verdict)
-     VALUES ('prop-smoke', 'difficulty', 'up', '3', '4', 'receptive', 0.82, 1120, 12,
-             'Bạn đang đúng nhiều hơn mức mẫu này nhắm tới — nâng độ khó một bậc chứ?', NULL, NULL)`,
-  ).run();
-  db.close();
-}
-
-async function rpc(
-  api: APIRequestContext,
-  method: string,
-  params: unknown,
-  id: number,
-): Promise<Record<string, unknown>> {
-  const res = await api.post(MCP_URL, {
-    headers: HEADERS,
-    data: { jsonrpc: '2.0', id, method, params },
-  });
-  expect(res.status(), `${method} phải trả 200: ${await res.text()}`).toBe(200);
-  return parseRpc(await res.text());
-}
-
-interface ToolResult {
-  text: string;
-  isError: boolean;
-}
-
-let rpcId = 1000;
-
-async function callTool(
-  api: APIRequestContext,
-  name: string,
-  args: Record<string, unknown>,
-): Promise<ToolResult> {
-  const body = await rpc(api, 'tools/call', { name, arguments: args }, ++rpcId);
-  const result = (body.result ?? {}) as { content?: { text?: string }[]; isError?: boolean };
-  return { text: result.content?.[0]?.text ?? '', isError: result.isError === true };
-}
-
-/** JSON trong kết quả: `ok()` trả JSON trần, các tool người học đọc trả markdown + khối ```json. */
-function toolJson(text: string): Record<string, unknown> {
-  const fence = text.match(/```json\n([\s\S]*?)\n```/);
+  await seedMcpAccount();
+  const db = openE2eDb();
   try {
-    return JSON.parse(fence ? fence[1] : text) as Record<string, unknown>;
-  } catch {
-    return {};
+    db.prepare(
+      `INSERT INTO "CalibrationProposal"
+         (id, target, direction, fromValue, toValue, axis, measured, ability, observations, reason, sentenceId, verdict)
+       VALUES ('prop-smoke', 'difficulty', 'up', '3', '4', 'receptive', 0.82, 1120, 12,
+               'Bạn đang đúng nhiều hơn mức mẫu này nhắm tới — nâng độ khó một bậc chứ?', NULL, NULL)`,
+    ).run();
+  } finally {
+    db.close();
   }
 }
 
@@ -353,15 +273,10 @@ test('mọi tool MCP đều gọi được qua HTTP thật, không cái nào n�
   test.setTimeout(180_000);
   await seed();
 
-  await rpc(
-    request,
-    'initialize',
-    { protocolVersion: '2025-06-18', capabilities: {}, clientInfo: { name: 'smoke', version: '0' } },
-    1,
-  );
+  await initializeMcp(request);
 
   // ── Coverage: bảng trên phải phủ ĐÚNG bộ tool server đăng ký ─────────────
-  const list = await rpc(request, 'tools/list', {}, 2);
+  const list = await rpc(request, 'tools/list', {});
   const advertised = ((list.result as { tools?: { name: string }[] })?.tools ?? []).map(
     (t) => t.name,
   );
@@ -409,7 +324,7 @@ test('mọi tool MCP đều gọi được qua HTTP thật, không cái nào n�
 // `afterEach` chứ không phải dòng cuối trong test body: hook vẫn chạy khi test ĐỎ, còn dòng cuối thì
 // không — và một spec chỉ dọn khi nó thành công là một spec làm hỏng cả bộ đúng lúc đang có lỗi.
 test.afterEach(() => {
-  const db = openDb();
+  const db = openE2eDb();
   try {
     db.prepare('DELETE FROM "CalibrationProposal"').run();
   } finally {
