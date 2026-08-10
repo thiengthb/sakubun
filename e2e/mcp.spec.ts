@@ -6,10 +6,16 @@
 // còn sống trước và sau — nếu không thì đấy là đổi mù. Unit test của `lib/mcp/**` kiểm phần render và
 // phần thuần, không kiểm việc handler thật có nói được giao thức JSON-RPC qua HTTP hay không.
 //
-// Ba điều được chốt, và cả ba đều là ranh giới chứ không phải đường hạnh phúc:
+// Bốn điều được chốt, và cả bốn đều là ranh giới chứ không phải đường hạnh phúc:
 //   1. KHÔNG token → 401. Đây là toàn bộ biên giới của bề mặt máy (`withMcpAuth({required:true})`).
 //   2. Token SAI → 401. Khác (1): chứng minh server thật sự TRA token chứ không chỉ kiểm có header.
 //   3. Token ĐÚNG → initialize + tools/list + gọi `ping` chạy hết một vòng JSON-RPC.
+//   4. Một LƯỢT LUYỆN THẬT chạy hết vòng qua chính bề mặt này: add_grammar → stage_sentence →
+//      submit_review, và điểm FSRS phải NẰM LẠI trong DB. Thêm 2026-08-10, sau khi bản deploy không
+//      chấm nổi một lượt nào trong suốt buổi 2026-08-08 mà cả 671 unit test lẫn ba ca trên đều xanh:
+//      `submit_review` — tool duy nhất ghi lịch FSRS, tool người học chạm mỗi lượt — chưa từng được
+//      gọi qua HTTP trong bất cứ test nào. `ping` chứng minh giao thức sống, không chứng minh app làm
+//      được việc của nó.
 import path from 'node:path';
 import { createHash } from 'node:crypto';
 import Database from 'better-sqlite3';
@@ -143,4 +149,144 @@ test('MCP với token hợp lệ: initialize, liệt kê tool, và gọi đượ
   const propText =
     (prop.result as { content?: { text?: string }[] })?.content?.[0]?.text ?? '';
   expect(JSON.parse(propText)).toMatchObject({ total: 0, unreviewed: 0, proposals: [] });
+});
+
+/** Mọi lời gọi tool dùng chung một bộ header đã kèm token. */
+const AUTHED = { ...MCP_HEADERS, authorization: `Bearer ${MCP_TOKEN}` };
+
+/**
+ * Payload JSON của một tool result.
+ *
+ * Hai hình dạng cùng tồn tại và cả hai đều hợp lệ: `ok()` trả JSON trần, còn các tool người học đọc
+ * (`stage_sentence`, `submit_review`) trả markdown rồi kèm khối ```json — vì phần markdown là hợp đồng
+ * hiển thị, Claude đọc nguyên văn. Lấy khối fence khi có, không thì parse cả chuỗi.
+ */
+function toolJson(text: string): Record<string, unknown> {
+  const fence = text.match(/```json\n([\s\S]*?)\n```/);
+  return JSON.parse(fence ? fence[1] : text) as Record<string, unknown>;
+}
+
+let rpcId = 100;
+
+/**
+ * Một `tools/call`, và nó ĐỎ khi tool trả lỗi.
+ *
+ * `guard()` trong lib/mcp/tool-kit.ts bắt mọi exception và trả về `isError: true` với HTTP **200** —
+ * cố ý, để Claude đọc được lời lỗi thay vì một -32603 trần. Nghĩa là chốt `status() === 200` là chưa
+ * đủ: đúng cái bug 2026-08-08 đi qua đường đó, HTTP 200 kèm một câu tiếng Việt sai địa chỉ. Phải soi
+ * `isError`, và in cả text ra khi đỏ để lần sau đọc log là biết ngay.
+ */
+async function callTool(
+  api: APIRequestContext,
+  name: string,
+  args: Record<string, unknown>,
+): Promise<Record<string, unknown>> {
+  const res = await api.post(MCP_URL, {
+    headers: AUTHED,
+    data: { jsonrpc: '2.0', id: ++rpcId, method: 'tools/call', params: { name, arguments: args } },
+  });
+  expect(res.status(), await res.text()).toBe(200);
+  const body = parseRpc(await res.text());
+  const result = (body.result ?? {}) as { content?: { text?: string }[]; isError?: boolean };
+  const text = result.content?.[0]?.text ?? '';
+  expect(result.isError, `tool ${name} trả lỗi: ${text}`).toBeFalsy();
+  return toolJson(text);
+}
+
+/** Dựng một câu rồi chấm nó — đúng cặp lời gọi Claude thực hiện mỗi lượt. */
+async function practiseOneTurn(
+  api: APIRequestContext,
+  itemId: string,
+  rating = 3,
+): Promise<Record<string, unknown>> {
+  const staged = await callTool(api, 'stage_sentence', {
+    direction: 'JA_VI',
+    sourceText: '彼は疲れているばかりに、約束を忘れた。',
+    suggested: 'Chỉ vì anh ấy mệt mà đã quên lời hẹn.',
+    items: [{ itemId, role: 'TARGET' }],
+  });
+  const sentenceId = staged.sentenceId as string;
+  expect(sentenceId, 'stage_sentence phải trả sentenceId').toBeTruthy();
+
+  return callTool(api, 'submit_review', {
+    sentenceId,
+    userAnswer: 'Chỉ vì mệt nên anh ấy quên mất lời hẹn.',
+    ratings: [{ itemId, rating, role: 'TARGET' }],
+  });
+}
+
+/** Mở DB e2e ra đọc/ghi thẳng — cùng cách seed token ở trên. */
+function openE2eDb() {
+  return new Database(path.join(process.cwd(), E2E_DB_FILE));
+}
+
+test('MCP chấm được một lượt thật, kể cả khi hàng ability mang id từ thời nhiều người dùng', async ({
+  request,
+}) => {
+  await seed();
+  // DB e2e dùng chung cho cả bộ spec, và spec chạy trước có thể đã tạo hàng ability. Xoá để trạng thái
+  // ở đây là do test này quyết, không phải do thứ tự file.
+  const reset = openE2eDb();
+  reset.prepare('DELETE FROM "LearnerAbility"').run();
+  reset.close();
+
+  await initialize(request);
+
+  // Một mẫu ngữ pháp, vào kho qua đúng tool Claude dùng. Item unique là [kind, expression], nên nếu
+  // spec khác đã thêm mẫu này thì add_grammar bỏ qua như trùng lặp — list_grammar vẫn trả về hàng đó,
+  // nên cả hai lối đều dẫn tới cùng một itemId.
+  await callTool(request, 'add_grammar', {
+    grammar: [
+      {
+        expression: 'E2E〜ばかりに',
+        reading: 'ばかりに',
+        meaningVi: 'chỉ vì (mà sinh hậu quả xấu)',
+        level: 'N2',
+        notes: '動詞た形 + ばかりに',
+      },
+    ],
+  });
+  const listed = await callTool(request, 'list_grammar', {});
+  const rows = (listed.items ?? listed) as { itemId: string; expression: string }[];
+  const itemId = rows.find((r) => r.expression === 'E2E〜ばかりに')?.itemId;
+  expect(itemId, `list_grammar phải thấy mẫu vừa thêm, nhận được: ${JSON.stringify(rows)}`).toBeTruthy();
+
+  // ── Lượt 1: đường hạnh phúc. Nó cũng là thứ TẠO hàng ability, với id mặc định 'singleton'.
+  const first = await practiseOneTurn(request, itemId!, 3);
+  expect((first.items as { itemId: string }[])[0]?.itemId).toBe(itemId);
+
+  // ── Biến DB thành đúng bản deploy: đổi DUY NHẤT chuỗi id.
+  //
+  // Vì sao đổi id thay vì INSERT một hàng: hàng ability có cột DateTime, và định dạng datetime của
+  // Prisma trên SQLite là chuyện của tầng adapter, không phải của test này. Để lượt 1 tạo hàng bằng
+  // chính app rồi chỉ đổi khoá chính, ta có một hàng HỢP LỆ tuyệt đối mang id không phải 'singleton'
+  // — chính xác trạng thái mà migration 2026-08-03 để lại trên máy đã học từ trước.
+  const rename = openE2eDb();
+  const legacyId = 'clz0legacyabilityrow0004';
+  const renamed = rename
+    .prepare(`UPDATE "LearnerAbility" SET "id" = ? WHERE "id" = 'singleton'`)
+    .run(legacyId);
+  rename.close();
+  expect(renamed.changes, 'lượt đầu phải tạo hàng ability id singleton để đổi tên').toBe(1);
+
+  // ── Lượt 2: chỗ bug sống. Trước bản sửa, đây là P2025 → cả $transaction rollback → HTTP 200 kèm
+  // "Không tìm thấy item với id đó", và lượt luyện bay mất.
+  const second = await practiseOneTurn(request, itemId!, 4);
+  expect((second.items as { itemId: string }[])[0]?.itemId).toBe(itemId);
+
+  // Bằng chứng nó NẰM LẠI, không phải chỉ trả về đẹp: hai lượt, hai ReviewLog, và ability đếm đủ hai
+  // lần quan sát trên đúng hàng cũ. Chốt ở DB vì rollback vẫn có thể trả về một phong bì trông ổn.
+  const check = openE2eDb();
+  const logs = check
+    .prepare('SELECT COUNT(*) AS c FROM "ReviewLog" WHERE "itemId" = ?')
+    .get(itemId) as { c: number };
+  const ability = check
+    .prepare('SELECT "id", "receptiveObservations" FROM "LearnerAbility"')
+    .all() as { id: string; receptiveObservations: number }[];
+  check.close();
+
+  expect(logs.c, 'hai lượt đã chấm phải để lại hai ReviewLog').toBe(2);
+  expect(ability, 'không được sinh hàng ability thứ hai bên cạnh hàng cũ').toHaveLength(1);
+  expect(ability[0].id, 'ghi phải vào hàng đang tồn tại, không tạo hàng mới').toBe(legacyId);
+  expect(ability[0].receptiveObservations, 'cả hai lượt đều là bằng chứng receptive').toBe(2);
 });
