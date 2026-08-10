@@ -3,6 +3,21 @@
 # container keeps your study history.
 #
 # Public access rides docker-compose.tunnel.yml (Cloudflare Tunnel → sakubun.thientnse.site).
+
+# PINNED, not derived from the directory name. Compose defaults the project name to the folder it runs
+# in, so renaming the checkout to `sakubun-single-user` silently changed it — and every `up` since has
+# warned that `sakubun_sakubun_data` "was created for project sakubun". Measured 2026-08-10: the volume
+# carries the label `com.docker.compose.project=sakubun`, so the mismatch is the PROJECT name, not the
+# volume.
+#
+# Docker's own suggestion in that warning is `external: true`. NOT taken, on purpose: external means
+# Compose will never CREATE the volume, so a fresh host fails with "volume not found" instead of just
+# working — a first-run trap, and this file already carries scars from exactly that class of failure
+# (see the env_file note below). Pinning the project name fixes the label mismatch AND keeps a fresh
+# host self-sufficient, because `sakubun` + volume key `sakubun_data` is what produced
+# `sakubun_sakubun_data` in the first place.
+name: sakubun
+
 services:
   sakubun:
     build: .
