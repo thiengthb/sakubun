@@ -9,9 +9,9 @@
 //
 // Không cần DB: guard() thuần, và tool-kit.ts không import tầng Prisma.
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ZodError } from 'zod';
-import { guard } from '@/lib/mcp/tool-kit';
+import { guard, setToolCallRecorder } from '@/lib/mcp/tool-kit';
 
 /**
  * Một P2025 đúng hình dạng Prisma 7.9.1 thật sự tạo ra.
@@ -110,5 +110,111 @@ describe('guard — các nhánh lỗi còn lại không đổi', () => {
   it('thành công thì trả nguyên kết quả, không bọc thêm gì', async () => {
     const tool = guard('test_tool', async (n: number) => ({ doubled: n * 2 }));
     expect(await tool(21)).toEqual({ doubled: 42 });
+  });
+});
+
+// Bộ đếm việc dùng tool (2026-08-11). Recorder thật ghi qua Prisma và có lưới riêng ở
+// `lib/mcp/usage.test.ts`; ở đây chỉ đo phần hợp đồng của guard(), bằng recorder giả — và quan trọng
+// nhất là đo cái KHÔNG được xảy ra.
+describe('guard — đếm việc dùng tool', () => {
+  afterEach(() => {
+    // Slot ở mức module: bỏ quên nó thì mọi file test chạy sau trong cùng process đều bị ghi đè.
+    setToolCallRecorder(null);
+  });
+
+  it('không cắm recorder thì guard() KHÔNG ghi đi đâu cả', async () => {
+    // Mặc định phải là im lặng: `guard()` được gọi trong hàng chục test thuần, và một recorder mặc
+    // định sẽ biến chúng thành thứ ghi vào prisma/dev.db.
+    const tool = guard('test_tool', async () => 'ok');
+    expect(await tool()).toBe('ok');
+  });
+
+  it('lời gọi thành công: đúng tên, có thời gian, không có lỗi', async () => {
+    const seen: [string, number, string | null][] = [];
+    setToolCallRecorder(async (...call) => void seen.push(call));
+
+    await guard('get_stats', async () => 'ok')();
+
+    expect(seen).toHaveLength(1);
+    expect(seen[0][0]).toBe('get_stats');
+    expect(seen[0][1], 'ms có thể là 0 nhưng phải là số').toBeGreaterThanOrEqual(0);
+    expect(seen[0][2], 'thành công thì không có lời lỗi nào').toBeNull();
+  });
+
+  it('lời gọi hỏng: ghi mã lỗi + tên bảng, không phải câu đã dịch cho Claude', async () => {
+    const seen: [string, number, string | null][] = [];
+    setToolCallRecorder(async (...call) => void seen.push(call));
+
+    await guard('submit_review', async () => {
+      throw p2025('LearnerAbility');
+    })();
+
+    // Bảng đếm để gỡ lỗi, nên nó cần mã lỗi và tên bảng. Câu tiếng Việt gửi cho Claude là lời KHUYÊN,
+    // nó đã bỏ mất cả hai.
+    expect(seen[0][2]).toContain('[P2025 LearnerAbility]');
+    expect(seen[0][2]).toContain('required but not found');
+  });
+
+  /** Chạy một tool ném `err` rồi trả về đúng chuỗi được LƯU (không phải chuỗi gửi cho Claude). */
+  async function digestOf(err: unknown): Promise<string> {
+    const seen: (string | null)[] = [];
+    setToolCallRecorder(async (_n, _ms, error) => void seen.push(error));
+    await guard('update_grammar', async () => {
+      throw err;
+    })();
+    return seen[0]!;
+  }
+
+  it('dump của Prisma: giữ ĐÚNG dòng cuối, bỏ đường dẫn chunk và phần echo mã nguồn', async () => {
+    // Hình dạng thật, sao lại từ lần chạy e2e ngày 2026-08-11 (kể cả việc các mục cách nhau bằng MỘT
+    // dòng xuống, không phải dòng trắng — bản sửa đầu đoán là dòng trắng và e2e đỏ lần thứ hai).
+    const err = new Error(
+      'Invalid `__TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$db$2e$ts["prisma"].item.update()` invocation in\n' +
+        'C:\\project\\sakubun-single-user\\.next\\dev\\server\\chunks\\[root-of-the-server].js:5462:134\n' +
+        '  5461 |     if (input.level !== undefined) data.level = input.level;\n' +
+        '> 5462 |     await __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$db$2e$ts["prisma"].item.update({\n' +
+        'An operation failed because it depends on one or more records that were required but not found. No record was found for an update.',
+    ) as Error & { code: string; meta: unknown };
+    err.code = 'P2025';
+    err.meta = { modelName: 'Item' };
+
+    expect(await digestOf(err)).toBe(
+      '[P2025 Item] An operation failed because it depends on one or more records that were required but not found. No record was found for an update.',
+    );
+  });
+
+  it('ZodError: lưu các mục sai, không lưu dấu ngoặc cuối của JSON', async () => {
+    // `e.message` của ZodError là một mảng JSON nhiều dòng, dòng cuối của nó là `]`. Đây cũng là loại
+    // lỗi MCP thường gặp nhất (Claude gửi tham số không khớp), nên nó là loại đáng đọc được nhất.
+    const digest = await digestOf(
+      new ZodError([{ code: 'custom', path: ['ratings', 0, 'rating'], message: 'phải từ 1 tới 4' }]),
+    );
+
+    expect(digest).toBe('[ZodError] ratings.0.rating: phải từ 1 tới 4');
+  });
+
+  it('một lỗi dài bất thường vẫn bị chặn độ dài, và phần giữ lại là phần ĐUÔI', async () => {
+    // Không có dòng nào để chọn (một khối liền), nên cái chặn duy nhất là giới hạn ký tự. Cột này
+    // không phải nơi chứa stack trace.
+    const digest = await digestOf(new Error(`${'x'.repeat(5000)} câu cuối cùng`));
+
+    expect(digest.length).toBe(300);
+    expect(digest).toContain('câu cuối cùng');
+    expect(digest.startsWith('…'), 'nói rõ là đã bị cắt, không giả vờ là nguyên văn').toBe(true);
+  });
+
+  it('recorder hỏng KHÔNG được làm hỏng lời gọi tool', async () => {
+    // Một lớp đo đạc gây ra chính sự cố nó tồn tại để phát hiện là ca tệ nhất trong nhóm này: người
+    // học mất lượt luyện vì bộ đếm ghi không được.
+    setToolCallRecorder(async () => {
+      throw new Error('DB đầy');
+    });
+
+    expect(await guard('test_tool', async () => ({ ok: true }))()).toEqual({ ok: true });
+
+    const failed = await guard('test_tool', async () => {
+      throw new Error('lỗi thật của tool');
+    })();
+    expect((failed as { content: { text: string }[] }).content[0].text).toBe('lỗi thật của tool');
   });
 });

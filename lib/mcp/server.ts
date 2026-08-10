@@ -12,6 +12,13 @@ import { registerLookupTools } from '@/lib/mcp/tools/lookup';
 import { registerManageTools } from '@/lib/mcp/tools/manage';
 import { registerPracticeTools } from '@/lib/mcp/tools/practice';
 import { registerQuizTools } from '@/lib/mcp/tools/quiz';
+import { setToolCallRecorder } from '@/lib/mcp/tool-kit';
+import { recordToolCall } from '@/lib/mcp/usage';
+
+// Every tool goes through `guard()`, and from here on `guard()` counts what it already logged: which
+// tool was called, how long it took, and what went wrong. The log line still happens; it just no
+// longer has to be the only copy (lib/mcp/usage.ts explains why).
+setToolCallRecorder(recordToolCall);
 
 /**
  * sakubun MCP server — the app is the deterministic data + FSRS layer; Claude (the MCP client) is

@@ -20,7 +20,7 @@ import path from 'node:path';
 import { createHash } from 'node:crypto';
 import Database from 'better-sqlite3';
 import { expect, test, type APIRequestContext } from '@playwright/test';
-import { E2E_BASE_URL, E2E_DB_FILE, E2E_EMAIL, seedE2eAccount } from './fixtures';
+import { E2E_BASE_URL, E2E_DB_FILE, E2E_EMAIL, E2E_LOGIN, seedE2eAccount } from './fixtures';
 
 // Token thật của một máy khách; DB chỉ giữ SHA-256 của nó (lib/mcp-key.ts). Test dựng hash bằng chính
 // thuật toán đó thay vì gọi `createMcpKey`, để không phải nạp tầng Prisma vào process của Playwright.
@@ -289,4 +289,89 @@ test('MCP chấm được một lượt thật, kể cả khi hàng ability mang
   expect(ability, 'không được sinh hàng ability thứ hai bên cạnh hàng cũ').toHaveLength(1);
   expect(ability[0].id, 'ghi phải vào hàng đang tồn tại, không tạo hàng mới').toBe(legacyId);
   expect(ability[0].receptiveObservations, 'cả hai lượt đều là bằng chứng receptive').toBe(2);
+});
+
+test('bảng đếm tool: một lời gọi chạy và một lời gọi HỎNG đều nằm lại, rồi hiện trên /settings', async ({
+  page,
+  request,
+}) => {
+  // Vì sao ca này tồn tại (2026-08-11): `guard()` đã in `[mcp] tool=<name> ms=<n>` từ đầu, nhưng in ra
+  // stdout — nên sau một lần khởi động lại container, câu "Claude gọi tool nào" và câu "tool nào đang
+  // hỏng" đều không trả lời được. Đúng cặp câu đó là thứ để bug 2026-08-08 sống trọn một buổi. Bảng
+  // `mcp_tool_call` là nơi chúng nằm lại; ca này chốt cả hai nửa của nó: ghi được, và ĐỌC ĐƯỢC.
+  await seed();
+  const reset = openE2eDb();
+  reset.prepare('DELETE FROM mcp_tool_call').run();
+  reset.close();
+
+  await initialize(request);
+  await callTool(request, 'ping', {});
+
+  // Một lời gọi HỎNG, gọi thẳng (không qua callTool — hàm đó cố ý đỏ khi isError). itemId không tồn
+  // tại → Prisma P2025 → guard() trả HTTP 200 kèm isError, đúng cái hình dạng khiến một tool hỏng vô
+  // hình với máy khách, với `npm run verify`, và với người học.
+  const failing = await request.post(MCP_URL, {
+    headers: AUTHED,
+    data: {
+      jsonrpc: '2.0',
+      id: 900,
+      method: 'tools/call',
+      params: { name: 'update_grammar', arguments: { itemId: 'khong-ton-tai-that', level: 'N1' } },
+    },
+  });
+  expect(failing.status(), 'tool hỏng vẫn là HTTP 200 — đó chính là vấn đề').toBe(200);
+  const failedResult = (parseRpc(await failing.text()).result ?? {}) as { isError?: boolean };
+  expect(failedResult.isError, 'lời gọi này phải hỏng, nếu không thì ca dưới đo nhầm thứ').toBe(true);
+
+  const db = openE2eDb();
+  const rows = db
+    .prepare('SELECT name, calls, errors, lastMs, lastError FROM mcp_tool_call ORDER BY name')
+    .all() as { name: string; calls: number; errors: number; lastMs: number; lastError: string }[];
+  db.close();
+
+  expect(
+    rows.map((r) => r.name),
+    'đúng hai tool được gọi trong ca này, không nhiều hơn',
+  ).toEqual(['ping', 'update_grammar']);
+
+  const ping = rows.find((r) => r.name === 'ping')!;
+  expect(ping.calls).toBe(1);
+  expect(ping.errors, 'ping chạy được thì không được tính là lỗi').toBe(0);
+  expect(ping.lastMs, 'thời gian có thể là 0 ms, nhưng phải được ghi').toBeGreaterThanOrEqual(0);
+
+  const failed = rows.find((r) => r.name === 'update_grammar')!;
+  expect(failed.calls, 'một lời gọi hỏng vẫn LÀ một lời gọi').toBe(1);
+  expect(failed.errors).toBe(1);
+  // Lời của lỗi phải là lời của Prisma, không phải câu tiếng Việt đã dịch cho Claude: câu kia là lời
+  // KHUYÊN, nó đã mất mã lỗi lẫn tên bảng — tức mất đúng phần dùng để gỡ lỗi. Và nó phải là phần CÓ
+  // NGHĨA của dump: lần chạy đầu của ca này lưu 400 ký tự đường dẫn chunk Turbopack rồi hết chỗ, đúng
+  // lý do `errorDigest` giữ phần đuôi (lib/mcp/tool-kit.ts).
+  expect(failed.lastError, `lastError: ${failed.lastError}`).toContain('[P2025 Item]');
+  expect(failed.lastError, `lastError: ${failed.lastError}`).toContain('required but not found');
+  expect(failed.lastError, 'không lưu đường dẫn chunk của bundler').not.toContain('TURBOPACK');
+
+  // ── Nửa ĐỌC. Một bộ đếm không ai đọc được thì vẫn là log, chỉ chậm hơn. ──────────────────────
+  await page.goto('/login');
+  await page.getByLabel('Email').fill(E2E_EMAIL);
+  await page.getByLabel('Mật khẩu').fill(E2E_LOGIN);
+  await page.getByRole('button', { name: 'Đăng nhập' }).click();
+  await page.waitForURL((u) => !u.pathname.startsWith('/login'), { timeout: 30_000 });
+
+  await page.goto('/settings');
+  // Bấm rồi thử lại tới khi tabpanel thật sự mở: một cú click vào tab Radix TRƯỚC lúc React hydrate
+  // xong sẽ trôi mất trong im lặng — Playwright thấy phần tử, còn handler thì chưa gắn. Lần chạy đầu
+  // của ca này đỏ đúng như vậy: snapshot lúc thất bại cho thấy tab "Nội dung" vẫn đang được chọn.
+  await expect(async () => {
+    await page.getByRole('tab', { name: 'Tài khoản' }).click();
+    await expect(page.getByRole('tabpanel', { name: 'Tài khoản' })).toBeVisible({ timeout: 2000 });
+  }).toPass({ timeout: 30_000 });
+
+  await expect(page.getByRole('cell', { name: 'ping', exact: true })).toBeVisible();
+  await expect(page.getByRole('cell', { name: 'update_grammar' })).toBeVisible();
+  await expect(page.getByText('1 tool có lỗi')).toBeVisible();
+  await expect(page.getByText(/lỗi gần nhất/)).toBeVisible();
+  // Và vế quan trọng nhất với issue #20: những tool KHÔNG được gọi phải được nêu tên, chứ không im
+  // lặng — "không có dòng nào" và "chưa bao giờ được gọi" là hai kết luận khác nhau.
+  await expect(page.getByText(/tool CHƯA BAO GIỜ được gọi/)).toBeVisible();
+  await expect(page.getByText('get_stats', { exact: false })).toBeVisible();
 });

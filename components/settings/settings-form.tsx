@@ -13,6 +13,7 @@ import { SensoryTab } from '@/components/settings/settings-sensory-tab';
 import { DataTab } from '@/components/settings/settings-data-tab';
 import { AccountTab } from '@/components/settings/settings-account-tab';
 import type { McpKeyRow } from '@/components/settings/settings-account-tab';
+import type { ToolUsageReport } from '@/lib/mcp/usage';
 import { useSessionState } from '@/components/shared/use-session-state';
 import { saveSettingsAction } from '@/app/actions';
 import { type Settings } from '@/lib/settings-schema';
@@ -28,6 +29,7 @@ interface SettingsFormProps {
     joinedAt: string | null;
     lastLoginAt: string | null;
     keys: McpKeyRow[];
+    mcpUsage: ToolUsageReport;
   };
 }
 

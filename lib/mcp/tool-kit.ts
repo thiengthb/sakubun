@@ -120,6 +120,84 @@ function recordNotFoundMessage(model: string): string {
   }
 }
 
+/** Count one finished call. `error` is the raw message on failure, null on success. */
+type ToolCallRecorder = (name: string, ms: number, error: string | null) => Promise<void>;
+
+let recorder: ToolCallRecorder | null = null;
+
+/**
+ * Hand `guard()` somewhere durable to count calls into — `lib/mcp/server.ts` passes
+ * `recordToolCall` (lib/mcp/usage.ts) at wiring time.
+ *
+ * Injected rather than imported, and the reason is runtime, not import graph: this file already
+ * reaches `@/lib/db` transitively through `render.ts` → `dossier.ts`. What matters is that calling
+ * `guard()` must not WRITE anywhere by itself. tool-kit.test.ts exercises guard() dozens of times to
+ * check error messages; with a hard-wired recorder each of those would upsert into whatever database
+ * DATABASE_URL happened to point at when the module loaded — in a unit test, `prisma/dev.db`. Unset
+ * means don't count, which is what every pure test wants, and it also lets a test hand in a fake.
+ */
+export function setToolCallRecorder(fn: ToolCallRecorder | null): void {
+  recorder = fn;
+}
+
+/**
+ * Count the call, and never let counting break the call.
+ *
+ * A failed diagnostic write must not turn a good tool call into an error the learner sees — that
+ * would be a monitoring layer causing the outage it exists to reveal. It still gets a log line, so
+ * "the counters stopped moving" is diagnosable.
+ */
+async function count(name: string, ms: number, error: string | null): Promise<void> {
+  if (!recorder) return;
+  try {
+    await recorder(name, ms, error);
+  } catch (e) {
+    console.error(`[mcp] tool=${name} usage-write-failed`, e);
+  }
+}
+
+/** Room for a code, a model name, and the sentence at the end of a Prisma dump. */
+const DIGEST_CHARS = 300;
+
+/** Bound the stored text, keeping the END — every shape below puts its point last. */
+function tail(text: string, room: number): string {
+  const flat = text.replace(/\s+/g, ' ').trim();
+  return flat.length <= room ? flat : `…${flat.slice(flat.length - room + 1)}`;
+}
+
+/**
+ * One line worth STORING about a failure — not the sentence Claude reads (that one is advice, and it
+ * has thrown away the error code and the table name, i.e. exactly the part used for debugging).
+ *
+ * Three shapes, and each rule below is what an e2e run measured rather than what seemed likely:
+ *   - a Prisma client error carries `code` (+ `meta.modelName`) and a message that is a whole dump:
+ *     `Invalid prisma.item.update() invocation in <bundler chunk path>`, an echo of the generated
+ *     source, then — on the LAST line — the sentence saying what happened. Trimming from the head
+ *     stored 400 characters of `__TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$db…`; trimming
+ *     from the tail dragged a line of that echo in with the sentence; splitting on blank lines did
+ *     too, because the dump separates its sections with single newlines. So: last non-empty LINE,
+ *     and only for this shape — a message whose meaning is in its first line must not be cut this way.
+ *   - a ZodError message is a multi-line JSON array, whose last line is `]`. Its issues are the point,
+ *     and they are also the most common MCP failure by far (Claude sending arguments that do not fit),
+ *     so they are worth reading in the table instead of decoding JSON.
+ *   - anything else is a message someone wrote to be read; keep it as-is.
+ */
+function errorDigest(e: unknown): string {
+  if (e instanceof ZodError) {
+    const issues = e.issues.map((i) => `${i.path.join('.') || '(gốc)'}: ${i.message}`).join(' · ');
+    return `[ZodError] ${tail(issues, DIGEST_CHARS - 11)}`;
+  }
+
+  const raw = e instanceof Error ? e.message : String(e);
+  const code = typeof e === 'object' && e !== null && 'code' in e ? String(e.code) : null;
+  if (code === null) return tail(raw, DIGEST_CHARS);
+
+  const model = recordNotFoundModel(e);
+  const tag = `[${code}${model ? ` ${model}` : ''}] `;
+  const lastLine = raw.split('\n').filter((l) => l.trim().length > 0).at(-1) ?? raw;
+  return tag + tail(lastLine, DIGEST_CHARS - tag.length);
+}
+
 /** Wrap EVERY tool handler: log duration + translate ZodError into a message Claude can act on. */
 export function guard<Args extends unknown[], R>(name: string, fn: (...args: Args) => Promise<R>) {
   return async (...args: Args) => {
@@ -127,9 +205,11 @@ export function guard<Args extends unknown[], R>(name: string, fn: (...args: Arg
     try {
       const res = await fn(...args);
       console.error(`[mcp] tool=${name} ms=${Date.now() - start}`);
+      await count(name, Date.now() - start, null);
       return res;
     } catch (e) {
       console.error(`[mcp] tool=${name} error`, e);
+      await count(name, Date.now() - start, errorDigest(e));
       if (e instanceof ZodError) {
         const lines = e.issues
           .map((i) => `- ${i.path.join('.') || '(gốc)'}: ${i.message}`)

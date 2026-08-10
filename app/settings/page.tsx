@@ -2,6 +2,7 @@ import { SettingsForm } from '@/components/settings/settings-form';
 import { prisma } from '@/lib/db';
 import { getSettings } from '@/lib/practice';
 import { getSessionUserId } from '@/lib/current-user';
+import { readToolUsage } from '@/lib/mcp/usage';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,7 +10,7 @@ export default async function SettingsPage() {
   // Auth gate + the id the auth-layer tables (McpKey/Session/Account) are still keyed by.
   const userId = await getSessionUserId();
 
-  const [settings, user, keys, credential, lastSession] = await Promise.all([
+  const [settings, user, keys, credential, lastSession, mcpUsage] = await Promise.all([
     getSettings(),
     prisma.user.findUnique({
       where: { id: userId },
@@ -30,6 +31,8 @@ export default async function SettingsPage() {
       orderBy: { createdAt: 'desc' },
       select: { createdAt: true },
     }),
+    // What Claude has actually called over MCP, rendered next to the token that let it in.
+    readToolUsage(),
   ]);
 
   return (
@@ -48,6 +51,7 @@ export default async function SettingsPage() {
           lastUsedAt: k.lastUsedAt ? k.lastUsedAt.toISOString() : null,
           createdAt: k.createdAt.toISOString(),
         })),
+        mcpUsage,
       }}
     />
   );
