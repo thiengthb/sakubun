@@ -32,8 +32,10 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { SettingsTab } from '@/components/settings/settings-tab';
+import { McpUsageCard } from '@/components/settings/mcp-usage-card';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import { formatDateTimeVN, formatDateVN } from '@/lib/format';
+import type { ToolUsageReport } from '@/lib/mcp/usage';
 
 export interface McpKeyRow {
   id: string;
@@ -89,6 +91,7 @@ export function AccountTab({
   joinedAt,
   lastLoginAt,
   keys,
+  mcpUsage,
 }: {
   name: string;
   email: string;
@@ -97,6 +100,7 @@ export function AccountTab({
   joinedAt: string | null;
   lastLoginAt: string | null;
   keys: McpKeyRow[];
+  mcpUsage: ToolUsageReport;
 }) {
   const router = useRouter();
 
@@ -398,6 +402,9 @@ export function AccountTab({
             )}
           </CardContent>
         </Card>
+
+        {/* What Claude did with that token. Read-only, so it lives outside every form on this tab. */}
+        <McpUsageCard usage={mcpUsage} />
       </SettingsTab>
 
       {/* Token shown once, right after creation. Kept outside TabsContent so it survives a tab switch. */}

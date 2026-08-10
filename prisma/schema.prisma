@@ -353,6 +353,32 @@ model McpKey {
   @@map("mcp_key")
 }
 
+// One row per MCP tool NAME — a counter, not a call log.
+//
+// Two questions this table answers, neither of which could be answered before 2026-08-11:
+//   1. Which of the tools Claude is shown does it ever actually reach for? `guard()` already printed
+//      one line per call, but to stdout — so the answer died with the container, and the whole
+//      "trim the tool surface" argument (issue #20) had 12 calls of evidence.
+//   2. Which tools are FAILING? A tool that throws still answers HTTP 200 with isError, so a broken
+//      tool is invisible to the client, to `npm run verify`, and to the learner — only the container
+//      log knew, until it was restarted (see the 2026-08-08 session: nine discarded turns).
+//
+// Per-call rows would answer more (a time series) and cost more (unbounded growth in a database
+// nobody prunes) — and nothing here needs to know WHEN the fourth call happened. `lastError` is
+// truncated by lib/mcp/usage.ts; it is the last thing that went wrong, not a history of them.
+model McpToolCall {
+  name          String   @id // the MCP tool name, e.g. "submit_review"
+  calls         Int      @default(0)
+  errors        Int      @default(0) // calls that ended in isError — a tool at calls == errors is broken
+  lastMs        Int? // duration of the most recent call
+  lastError     String? // truncated message of the most recent failure
+  lastErrorAt   DateTime?
+  firstCalledAt DateTime @default(now())
+  lastCalledAt  DateTime @default(now())
+
+  @@map("mcp_tool_call")
+}
+
 // ---------------------------------------------------------------------------------------------------
 // Study groups — named collections of Items that scope focused practice (lib/groups.ts).
 //
