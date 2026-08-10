@@ -399,3 +399,20 @@ test('mọi tool MCP đều gọi được qua HTTP thật, không cái nào n�
 
   expect(failures, `Tool trả lỗi:\n  ${failures.join('\n  ')}`).toEqual([]);
 });
+
+// DỌN hàng proposal đã dựng, và đây không phải sự sạch sẽ hình thức: `e2e/mcp.spec.ts` chạy SAU spec
+// này (thứ tự chữ cái) và chốt rằng `list_calibration_proposals` trả về rỗng — "DB e2e không có
+// proposal nào, nên phong bì phải là rỗng hợp lệ". Không dọn thì `prop-smoke` rò sang đó và làm nó ĐỎ
+// vì một lý do không liên quan gì tới nó. Đo được khi chạy CẢ bộ: mcp.spec.ts:145 đỏ, 33 ca còn lại
+// xanh — và tôi chỉ thấy vì đã chạy full suite thay vì chạy riêng spec này.
+//
+// `afterEach` chứ không phải dòng cuối trong test body: hook vẫn chạy khi test ĐỎ, còn dòng cuối thì
+// không — và một spec chỉ dọn khi nó thành công là một spec làm hỏng cả bộ đúng lúc đang có lỗi.
+test.afterEach(() => {
+  const db = openDb();
+  try {
+    db.prepare('DELETE FROM "CalibrationProposal"').run();
+  } finally {
+    db.close();
+  }
+});
