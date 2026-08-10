@@ -11,7 +11,7 @@
 // arguments so Claude calls the actual tool on a yes, and the audit trail stays meaningful. There is
 // deliberately no `run_suggestion` dispatcher (it would hide intent and duplicate every validation).
 
-import type { QualityReport, QualityTier } from '@/lib/enrichment-quality';
+import type { QualityReport } from '@/lib/enrichment-quality';
 import type { MinedPair } from '@/lib/mining';
 import { sameExpression } from '@/lib/normalize';
 import type { Settings } from '@/lib/settings-schema';
@@ -129,22 +129,11 @@ export interface ItemFacts {
   srs: { state: number; due: Date; lapses: number } | null;
 }
 
-export interface SharedMatch {
-  /** The PUBLIC item's id — what `fork_shared_items` takes. */
-  sourceItemId: string;
-  kind: 'GRAMMAR' | 'VOCAB';
-  expression: string;
-  level: string;
-  quality: QualityReport;
-}
-
 export interface CoachInput {
   /** What the learner asked about, verbatim. */
   query: string;
-  /** Matches in the learner's OWN library. */
+  /** Matches in the learner's OWN library — the only library there is. */
   mine: ItemFacts[];
-  /** Matches in the public library that are NOT already theirs. */
-  shared: SharedMatch[];
   settings: Pick<Settings, 'grammarLevels'> & Partial<Pick<Settings, 'autoCapture'>>;
   now: Date;
   /** An aside during practice → tighter cap, because there is an exercise to return to. */
@@ -166,15 +155,15 @@ export interface CoachResult {
 
 // ---------------- the engine ----------------
 
-/** Tiers where a MERGE is meaningful: there is a readable card to append to. */
-const PATCHABLE_TIERS: readonly QualityTier[] = ['thin', 'outdated'];
+// `PATCHABLE_TIERS` (['thin','outdated']) đi cùng `ENRICH_FROM_SHARED` — nó chỉ tồn tại để chọn tier mà
+// một merge từ thẻ NGƯỜI KHÁC là có nghĩa. Không còn người khác thì không còn ai đọc nó.
 
 /** Is this level inside the set new items may be introduced from? */
 function levelInRange(level: string, settings: CoachInput['settings']): boolean {
   return (settings.grammarLevels as readonly string[]).includes(level);
 }
 
-function forItem(item: ItemFacts, input: CoachInput, shared: SharedMatch[]): Suggestion[] {
+function forItem(item: ItemFacts, input: CoachInput): Suggestion[] {
   const out: Suggestion[] = [];
   const label = item.expression;
   const state = item.srs?.state ?? 0;
@@ -305,25 +294,10 @@ function forItem(item: ItemFacts, input: CoachInput, shared: SharedMatch[]): Sug
     });
   }
 
-  // A published copy that is strictly better than mine. Only offered when mine still needs work —
-  // otherwise this would nag about a card that is already fine.
-  const betterShared = shared.find(
-    (s) => sameExpression(s.expression, item.expression) && s.quality.score > q.score,
-  );
-  // ONLY for a card a patch can actually repair. With `missing`/`broken` there is nothing to merge
-  // INTO, so `patch_enrichment` would refuse the offer we just made — and those two tiers already have
-  // their own proposal (a full write with `enrich_items`), where the shared card in the same result is
-  // there to be composed from.
-  if (betterShared && PATCHABLE_TIERS.includes(q.tier)) {
-    out.push({
-      code: 'ENRICH_FROM_SHARED',
-      class: 'quality',
-      priority: 42,
-      line: `Có người đã chia sẻ thẻ 「${label}」 chi tiết hơn thẻ của bạn — lấy phần thiếu về chứ?`,
-      tool: 'patch_enrichment',
-      args: { itemId: item.itemId, fromSharedItemId: betterShared.sourceItemId },
-    });
-  }
+  // `ENRICH_FROM_SHARED` đứng ở đây tới 2026-08-10: "Có người đã chia sẻ thẻ 「…」 chi tiết hơn thẻ của
+  // bạn — lấy phần thiếu về chứ?". Trong một app MỘT người dùng thì không có ai để chia sẻ, và nó không
+  // bao giờ chạy được — `shared` luôn rỗng. Nó còn gọi `patch_enrichment` với `fromSharedItemId`, tham
+  // số mà `patchEnrichment` đã bỏ qua trong im lặng từ cùng lần cắt đó.
 
   // A card that EXISTS can take the contrast directly, as a merge.
   if (mined && q.tier !== 'missing' && q.tier !== 'broken') {
@@ -362,33 +336,22 @@ function forItem(item: ItemFacts, input: CoachInput, shared: SharedMatch[]): Sug
 export function coach(input: CoachInput): CoachResult {
   const all: Suggestion[] = [];
 
-  // Nothing of the learner's own matched → offer to get it, from the shared library if possible.
+  // Nothing of the learner's own matched → offer to add it. Trước 2026-08-10 nhánh này còn một lối
+  // `FORK_SHARED` ("có trong thư viện chung — lấy về chứ?") đứng trước, và nó KHÔNG BAO GIỜ chạy: mảng
+  // `shared` chỉ có một nguồn duy nhất trong app (`lib/lookup.ts`) và nguồn đó truyền `[]` từ khi lớp
+  // multiuser bị cắt. Nó gợi ý một tool `fork_shared_items` cũng đã không còn được đăng ký.
   if (input.mine.length === 0) {
-    const match = input.shared[0];
-    if (match) {
-      all.push({
-        code: 'FORK_SHARED',
-        class: 'enable',
-        priority: 75,
-        line:
-          `「${match.expression}」 chưa có trong kho của bạn, nhưng có trong thư viện chung ` +
-          `(cấp ${match.level}) — lấy về chứ?`,
-        tool: 'fork_shared_items',
-        args: { sourceItemIds: [match.sourceItemId] },
-      });
-    } else {
-      all.push({
-        code: 'ADD_MISSING',
-        class: 'enable',
-        priority: 74,
-        line: `「${input.query}」 chưa có trong kho của bạn — thêm vào để học chứ?`,
-        tool: 'add_grammar',
-        args: { items: [{ expression: input.query }] },
-      });
-    }
+    all.push({
+      code: 'ADD_MISSING',
+      class: 'enable',
+      priority: 74,
+      line: `「${input.query}」 chưa có trong kho của bạn — thêm vào để học chứ?`,
+      tool: 'add_grammar',
+      args: { items: [{ expression: input.query }] },
+    });
   }
 
-  for (const item of input.mine) all.push(...forItem(item, input, input.shared));
+  for (const item of input.mine) all.push(...forItem(item, input));
 
   // The scheduler withheld a pattern the learner explicitly asked for. This is the reader that
   // `limits.newGrammarLimitReached` never had.
@@ -408,7 +371,6 @@ export function coach(input: CoachInput): CoachResult {
   const auto = input.settings.autoCapture;
   if (auto) {
     for (const s of all) {
-      if (auto.fork && s.tool === 'fork_shared_items') s.auto = true;
       if (auto.enrichPatch && s.tool === 'patch_enrichment') s.auto = true;
     }
   }
