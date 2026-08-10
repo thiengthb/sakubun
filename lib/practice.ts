@@ -706,7 +706,7 @@ export interface StageSentenceInput {
   items?: { itemId: string; role: ItemRole }[];
   /**
    * Grammar Claude KNOWINGLY used beyond the scheduled batch (declared scaffolding). Persisted as-is;
-   * `classifyExtraPatterns` in lib/scaffolding.ts turns them into known / new / shared-available so the
+   * `classifyExtraPatterns` in lib/scaffolding.ts turns them into known / new so the
    * turn can explain and offer without the learner having to ask. Capped by the tool's Zod schema.
    */
   extraPatterns?: string[];
@@ -1855,8 +1855,6 @@ export interface PatchEnrichmentInput {
   itemId: string;
   add?: EnrichmentAdd;
   set?: EnrichmentSet;
-  /** Take the parts my card lacks from this PUBLIC item's card (coach code ENRICH_FROM_SHARED). */
-  fromSharedItemId?: string;
 }
 
 export type PatchEnrichmentResult =
@@ -1873,7 +1871,7 @@ export type PatchEnrichmentResult =
     }
   | {
       patched: false;
-      reason: 'not-found' | 'no-card' | 'donor-unusable' | 'nothing-to-add' | 'conflict';
+      reason: 'not-found' | 'no-card' | 'nothing-to-add' | 'conflict';
     };
 
 /**
@@ -1899,8 +1897,10 @@ export async function patchEnrichment(
   const base = parseEnrichment(item.enrichment);
   if (!base) return { patched: false, reason: 'no-card' };
 
-  // `fromSharedItemId` (merge another member's card for the same pattern into yours) went out with
-  // the public library — there is nobody to share from now, so a patch is only ever an explicit edit.
+  // Một patch chỉ còn là một lần sửa TƯỜNG MINH. `fromSharedItemId` (merge thẻ của người khác cho cùng
+  // một mẫu vào thẻ của mình) ra đi cùng thư viện công khai; tới 2026-08-11 tham số đó vẫn được tool
+  // MCP quảng cáo trong khi chỗ này bỏ qua nó trong im lặng — nên Claude gửi nó lên và tưởng đã có tác
+  // dụng. Giờ nó không còn được nhận nữa, ở cả hai đầu.
   const patch: EnrichmentPatch = { add: input.add, set: input.set };
 
   const report = mergeEnrichment(base, patch);

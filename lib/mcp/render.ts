@@ -603,14 +603,12 @@ export function renderScaffold(patterns: readonly ScaffoldPattern[]): string | n
 
   const lines: string[] = ['DECLARED SCAFFOLDING — what you used beyond the scheduled batch:'];
   for (const p of fresh) {
+    // Một nhánh, không phải hai: nhánh `availableInSharedLibrary` dạy Claude gọi
+    // `fork_shared_items` — tool KHÔNG còn được đăng ký — và trạng thái đó không bao giờ được gán.
     lines.push(
-      p.status === 'availableInSharedLibrary'
-        ? `- 「${p.expression}」 is NOT in their library, but another member has published it` +
-            `${p.level ? ` (${p.level})` : ''}. Explain it in one line as you go, and offer ` +
-            `fork_shared_items { sourceItemIds: ["${p.itemId}"] } — one line, then WAIT.`
-        : `- 「${p.expression}」 is NOWHERE in their library. They are meeting it for the first time ` +
-            'inside an exercise about something else, so explain it in one line as you go and offer ' +
-            'add_grammar for it — one line, then WAIT. Do not let it pass unmentioned.',
+      `- 「${p.expression}」 is NOWHERE in their library. They are meeting it for the first time ` +
+        'inside an exercise about something else, so explain it in one line as you go and offer ' +
+        'add_grammar for it — one line, then WAIT. Do not let it pass unmentioned.',
     );
   }
   for (const p of tooHard) {

@@ -54,17 +54,13 @@ export interface DuplicateEntry extends ImportCandidate {
 }
 
 /** Why a candidate needs a decision rather than a yes/no. */
-export type AmbiguousReason = 'other-kind' | 'shared-available' | 'repeated';
+export type AmbiguousReason = 'other-kind' | 'repeated';
 
 export interface AmbiguousEntry extends ImportCandidate {
   reason: AmbiguousReason;
   /** `other-kind`: the item they already own under the other kind. */
   itemId?: string;
   storedKind?: ImportKind;
-  /** `shared-available`: a public copy that already carries content worth having. */
-  sharedItemId?: string;
-  sharedOwner?: string;
-  sharedHasCard?: boolean;
 }
 
 export interface ImportPreview {
@@ -76,7 +72,7 @@ export interface ImportPreview {
 }
 
 /**
- * Classify pasted candidates against the learner's library and the shared one. READ-ONLY.
+ * Classify pasted candidates against the learner's library. READ-ONLY.
  *
  * Order of checks matters and is not arbitrary: an exact same-kind match is the strongest signal, so it
  * wins over everything; a cross-kind match is next (owning 「遠慮」 as vocab means a GRAMMAR row would be

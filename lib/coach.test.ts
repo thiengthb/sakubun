@@ -352,7 +352,7 @@ const TOOL_ARGS: Record<string, readonly string[]> = {
     'maxNewPerSentence',
   ],
   enrich_items: ['items'],
-  patch_enrichment: ['itemId', 'add', 'set', 'fromSharedItemId'],
+  patch_enrichment: ['itemId', 'add', 'set'],
   update_vocab: ['itemId', 'expression', 'reading', 'hanviet', 'meaningVi', 'notes', 'level'],
 };
 
@@ -490,7 +490,7 @@ describe('coachLibrary — the whole-kho sweeps', () => {
 });
 
 describe('autoCapture — pre-authorisation marks the offer, it never writes', () => {
-  const off = { fork: false, vocab: false, enrichPatch: false };
+  const off = { vocab: false, enrichPatch: false };
   /** Thẻ mỏng → đề nghị `ENRICH_THIN`, tool `patch_enrichment` — offer duy nhất còn có cờ auto. */
   const thinOne = () => input({ mine: [item({ quality: scoreEnrichment(THIN_CARD) })] });
 
@@ -539,7 +539,7 @@ describe('autoCapture — pre-authorisation marks the offer, it never writes', (
         mine: [item({ quality: scoreEnrichment('{"collocations":["x"]}') })],
         settings: {
           grammarLevels: [...settings.grammarLevels],
-          autoCapture: { fork: true, vocab: true, enrichPatch: true },
+          autoCapture: { vocab: true, enrichPatch: true },
         },
       }),
     ).suggestions.find((s) => s.tool === 'enrich_items');
