@@ -21,7 +21,14 @@ export default defineConfig({
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
   },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  projects: [
+    // `warmup` chạy trước mọi spec và trả trước chi phí compile lần đầu của dev server — xem
+    // e2e/warmup.setup.ts cho lý do đầy đủ (issue #7). `testMatch` phải khai tường minh: mặc định
+    // Playwright chỉ nhận `*.spec.ts`/`*.test.ts`, nên `*.setup.ts` sẽ không bị project `chromium`
+    // nhặt lên — đúng ý, nó không phải một spec.
+    { name: 'warmup', testMatch: /.*\.setup\.ts/ },
+    { name: 'chromium', use: { ...devices['Desktop Chrome'] }, dependencies: ['warmup'] },
+  ],
   webServer: {
     // `dev` (not `start`): no build step, and the specs assert behavior, not bundle output.
     command: `npx next dev -p ${E2E_PORT}`,
