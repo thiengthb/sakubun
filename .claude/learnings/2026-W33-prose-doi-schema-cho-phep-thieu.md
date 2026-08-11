@@ -74,3 +74,26 @@ giây. Cái đắt là vòng lặp sửa-đoán-đỏ, không phải phép đo.
 
 **Dấu hiệu nhận ra mình đang đoán:** trong comment hoặc trong đầu xuất hiện "chắc là", "khoảng", "~".
 Ba chữ đó là lệnh dừng lại và đi đo.
+
+---
+
+## Phụ lục 2026-08-12: lần thứ tư — môi trường ĐO cũng là một biến
+
+Hôm qua tôi mở `/settings` trên production qua Claude in Chrome, poll 10 giây, thấy 0/6 ô chọn được
+điền, và mở issue #30 gọi đó là lỗi production kèm giả thuyết selective hydration của React. Hôm nay đo
+lại: `document.visibilityState === "hidden"`. Chrome không chạy việc render cho tab bị che. Đưa tab ra
+tiền cảnh — **không bấm gì** — thì cả 6 ô điền và hai núm `Slider` đổi từ `display:none` sang `block`.
+
+Nên "phải bấm một cú CHUỘT THẬT mới hiện" là sai: cú bấm không đáng tin ở chỗ nó là chuột, nó chỉ tình cờ
+*kích hoạt cửa sổ*. Ba giả thuyết tôi loại hôm qua đều loại đúng; cái tôi không nghĩ tới là chính cái
+kính tôi đang soi.
+
+**Luật mở rộng từ ba lần trước.** Trước đây: "khi con số là thuộc tính của thứ ĐANG CHẠY thì đo, đừng
+đoán". Lần này tôi *có* đo — và vẫn sai, vì phép đo có một biến ẩn. Nên thêm một bước: **cùng với con số,
+ghi lại trạng thái của môi trường đo**. Với browser automation, ba biến đó là `visibilityState`,
+`hasFocus()`, và kích thước viewport. Chúng rẻ đến mức nên nằm ngay trong cùng một `JSON.stringify` với
+dữ liệu — nếu hôm qua tôi in `visibilityState` cạnh mảng 6 ô rỗng thì đã không có issue #30 phần 3.
+
+**Dấu hiệu nhận ra:** khi một triệu chứng chỉ xuất hiện dưới công cụ tự động mà "người thật bấm thì được",
+nghi công cụ trước, đừng nghi framework. Cái sau viết ra một giả thuyết nghe rất kỹ thuật (và tôi đã viết
+nó ra), cái trước kiểm bằng một dòng.
