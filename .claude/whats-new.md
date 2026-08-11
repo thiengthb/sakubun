@@ -1,4 +1,4 @@
-<!-- version: 2026-08-05-a -->
+<!-- version: 2026-08-11-a -->
 <!--
   Thông báo thay đổi harness cho cả team.
   SessionStart hook so `version` ở trên với version người dùng đã xem
@@ -8,6 +8,23 @@
   Mỗi lần merge thay đổi vào .claude/, cập nhật version + viết 3 dòng ở đây.
   Giữ file NGẮN — xoá mục cũ hơn 1 tháng.
 -->
+
+## 2026-08-11 — preMerge chạy hết được, lần đầu
+
+1. **`gates.preMerge` bỏ ba tên có lệnh rỗng** (`depcruise`, `a11y`, `perf`) → còn
+   `[gen-clean, typecheck, lint, test, build, e2e]`. Đây chính là món NỢ ở §4 mục 2026-08-05, và nó
+   là lý do preMerge chưa bao giờ chạy hết: mọi PR trước hôm nay đều phải nộp bằng chứng bằng cách
+   chạy tay từng gate. Ba entry lệnh rỗng vẫn nằm nguyên chỗ template đặt, kèm comment giải thích —
+   cách TẮT là bỏ tên khỏi `gates.preMerge`, không phải để lệnh rỗng.
+2. **Xanh cả 6**: `gen-clean · typecheck · lint · test · build · e2e (296s)`. Chạy lại bằng
+   `node tooling/gates.mjs --stage preMerge` — và nhớ commit trước, cây bẩn làm gen-clean WARN.
+3. **Ba bản sửa ở tầng MECHANISM_PATHS** đã merge tại đây và sẽ bị `upgrade.mjs` ghi đè cho tới khi
+   upstream: `runConfigured` nhận `maxBuffer` 64 MiB + báo đúng tiến trình bị signal-kill (issue #4),
+   `entropy-scan` thôi coi đường dẫn gitignored là tham chiếu chết (#8), `harness-parity` chạy
+   Bootstrap trước Doctor. Đừng "sửa lại" chúng ở project khác — báo ngược lên template.
+4. **`mcp.maxTools: 20` không còn là thứ duy nhất nói về ngân sách MCP.** Nó đếm TOOL trong khi thuế
+   tính bằng TOKEN, và không có gì đọc nó. Ngân sách thật giờ là một phép chốt e2e đo BYTE của
+   `tools/list`: 52.221 hôm nay, trần 56.000, kèm bảng phân tích từng tool khi đỏ (#20, #24).
 
 ## 2026-08-05 — Harness v2.4.1: Stop gate chuyển sang gates.mjs
 
