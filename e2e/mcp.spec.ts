@@ -375,3 +375,43 @@ test('bảng đếm tool: một lời gọi chạy và một lời gọi HỎNG 
   await expect(page.getByText(/tool CHƯA BAO GIỜ được gọi/)).toBeVisible();
   await expect(page.getByText('get_stats', { exact: false })).toBeVisible();
 });
+
+test('update_settings: dạng phẳng và dạng nested cũ đều chạy, dạng nested sai vẫn bị từ chối', async ({
+  request,
+}) => {
+  // Vì sao (2026-08-11): `patch` — bí danh nested đã deprecated — trước hôm nay được KHAI bằng chính
+  // settingsPatchSchema, nên toàn bộ field/enum/default của cài đặt xuất hiện HAI lần trong inputSchema
+  // của tool này: đo được 4.134 byte có bản sao, 2.138 byte không, tức bí danh chiếm 48% tool này và
+  // ~3,6% của cả `tools/list` mà Claude tải mỗi phiên (issue #20). Bản sửa khai `patch` là `unknown` và
+  // kiểm hình dạng trong handler. Ca này chốt điều duy nhất đáng lo khi làm vậy: hợp đồng KHÔNG đổi.
+  await seed();
+  await initialize(request);
+
+  const flat = await callTool(request, 'update_settings', { register: 'keigo' });
+  expect(flat.register, 'dạng phẳng — dạng Claude dùng').toBe('keigo');
+
+  const nested = await callTool(request, 'update_settings', { patch: { register: 'casual' } });
+  expect(nested.register, 'dạng nested cũ vẫn phải được áp dụng, không bị bỏ qua').toBe('casual');
+
+  // Và phần kiểm hình dạng không được biến mất cùng bản sao schema: giá trị sai vẫn phải bị chặn, với
+  // đúng loại lỗi tham số mà Claude đọc được — nếu không, một enum viết sai sẽ lặng lẽ ghi vào cài đặt.
+  const bad = await request.post(MCP_URL, {
+    headers: AUTHED,
+    data: {
+      jsonrpc: '2.0',
+      id: 950,
+      method: 'tools/call',
+      params: { name: 'update_settings', arguments: { patch: { register: 'khong-ton-tai' } } },
+    },
+  });
+  expect(bad.status()).toBe(200);
+  const badResult = (parseRpc(await bad.text()).result ?? {}) as {
+    isError?: boolean;
+    content?: { text?: string }[];
+  };
+  expect(badResult.isError, 'giá trị enum sai trong dạng nested phải bị từ chối').toBe(true);
+  expect(badResult.content?.[0]?.text).toContain('Tham số không hợp lệ');
+
+  const after = await callTool(request, 'get_settings', {});
+  expect(after.register, 'lời gọi bị từ chối không được ghi gì').toBe('casual');
+});

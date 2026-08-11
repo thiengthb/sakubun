@@ -97,18 +97,32 @@ export function registerCoreTools(server: McpServer) {
     // FLAT arguments (2026-07-26). This was the ONLY tool of 25 that nested its input under `patch`,
     // and acting as the tutor in the lab the first call was flat and lost the turn. The nested form
     // stays accepted as an alias so anything mid-flight (or a habit) still works.
+    //
+    // `patch` is declared as UNKNOWN, not as the settings schema again (2026-08-11). Declaring the
+    // schema twice made every field, enum and default appear twice in this tool's inputSchema —
+    // measured: 4.134 byte with the nested copy, 2.138 without, i.e. the deprecated alias was 48% of
+    // this tool and ~3,6% of the entire 55,6 KB `tools/list` that Claude downloads every session
+    // (issue #20).
+    //
+    // The parse below states the nested shape HERE, since the wire no longer does. It is not the only
+    // thing standing between a bad value and the database — `saveSettings` validates too, measured by
+    // deleting this line and watching the e2e case stay green. It is at the boundary on purpose: this
+    // handler is now the only place that says what the nested form must look like, and leaving that to
+    // a downstream function's internals is how a boundary rots quietly.
     {
       ...settingsPatchSchema.shape,
-      patch: settingsPatchSchema
+      patch: z
+        .unknown()
         .optional()
         .describe('Deprecated nested alias — prefer sending the fields flat.'),
     },
     guard('update_settings', async (args, _extra: unknown) => {
       const { patch, ...flat } = args;
+      const nested = patch === undefined ? {} : settingsPatchSchema.parse(patch);
       // Absent optional keys can arrive as an explicit `undefined`, which would blank a real setting
       // when saveSettings spreads the patch over the stored object — drop them.
       const defined = Object.fromEntries(
-        Object.entries({ ...flat, ...(patch ?? {}) }).filter(([, v]) => v !== undefined),
+        Object.entries({ ...flat, ...nested }).filter(([, v]) => v !== undefined),
       );
       return ok(await saveSettings(defined));
     }),
