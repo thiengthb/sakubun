@@ -16,6 +16,18 @@
 # (see the env_file note below). Pinning the project name fixes the label mismatch AND keeps a fresh
 # host self-sufficient, because `sakubun` + volume key `sakubun_data` is what produced
 # `sakubun_sakubun_data` in the first place.
+#
+# ONE-TIME COST, measured on the first deploy after this line landed (2026-08-11): containers created
+# under the OLD project still hold the fixed `container_name`s, and Compose refuses to take a name
+# owned by a different project — `up` dies with `Conflict. The container name "/sakubun-voicevox" is
+# already in use`. The image had already built, so it fails at the very last step. Fix, and it does NOT
+# touch data:
+#
+#     docker compose -p sakubun-single-user down   # old project's containers; named volumes survive
+#     docker compose up -d
+#
+# Verify before and after with `docker volume ls`: `sakubun_sakubun_data` must still be there. `down`
+# only removes volumes when you pass `--volumes`, and the study history lives in that one.
 name: sakubun
 
 services:
