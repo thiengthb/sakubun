@@ -121,11 +121,13 @@ export function HistoryModeToggle({
 }
 
 /**
- * Popover bộ lọc đầy đủ. Có mặt ở CẢ HAI chế độ, vì deck được chia từ đúng những gì bộ lọc đã thu hẹp
- * (chỉ câu sai, có sao, N2, tuần trước) — đó là lý do nút lật chế độ nằm trong thanh công cụ chứ không
- * nằm cạnh tiêu đề trang.
+ * Popover bộ lọc đầy đủ. CHỈ có ở chế độ danh sách.
+ *
+ * Nó từng có mặt ở cả chế độ flashcard (thanh công cụ của deck), bỏ 2026-08-11 theo yêu cầu của chủ
+ * repo. Điều đó KHÔNG làm chồng thẻ mất bộ lọc: deck luôn được chia từ `filtered`, nên bộ lọc đặt ở
+ * danh sách vẫn còn hiệu lực khi lật sang thẻ — chỉ là muốn ĐỔI thì lật về danh sách.
  */
-export function HistoryFilterPopover({
+function HistoryFilterPopover({
   filters,
   onPatch,
   onResetFilters,

@@ -33,9 +33,9 @@ import type { SentenceHistoryRow } from '@/lib/practice';
  *
  * The card is the drill the sentence originally was: front is the đề, back is the reference answer
  * plus what you actually wrote and what Claude said about it. So this is not a second history view —
- * it is the practice loop replayed, one swipe at a time, over exactly the rows the filters above have
- * already narrowed to (fail-only, starred, N2, last week — the filter bar keeps working in this mode,
- * which is the whole reason the toggle lives inside the list rather than beside the page title).
+ * it is the practice loop replayed, one swipe at a time, over exactly the rows the filters have already
+ * narrowed to (fail-only, starred, N2, last week). Từ 2026-08-11, ô tìm và bộ lọc KHÔNG còn ở chế độ
+ * này — chúng thuộc chế độ danh sách, và lựa chọn ở đó vẫn quyết định chồng thẻ này gồm những gì.
  *
  * PENDING rows are excluded: they have no answer yet, so their card would have a blank back. Nothing
  * here writes — no FSRS, no re-grade. Only the star toggles, and it was already a pure UI flag.
@@ -200,7 +200,6 @@ export function HistoryFlashcards({
   speechRate,
   showFurigana = false,
   toolbarStart,
-  toolbarEnd,
 }: {
   /** Already filtered by the toolbar above — the deck studies exactly what the list would show. */
   sentences: SentenceHistoryRow[];
@@ -208,12 +207,10 @@ export function HistoryFlashcards({
   speechRate?: number;
   showFurigana?: boolean;
   /**
-   * Hai đầu của thanh công cụ, do `HistoryList` truyền xuống: nút lật về danh sách ở đầu, popover bộ
-   * lọc ở cuối. Chúng kẹp nút cài đặt deck ở giữa, nên nút chế độ và nút cài đặt đứng cạnh nhau —
-   * trước 2026-08-11 chúng ở hai hàng khác nhau vì hàng tìm kiếm chen vào giữa.
+   * Nút lật về danh sách, do `HistoryList` truyền xuống để nó đứng NGAY TRƯỚC nút cài đặt deck. Trước
+   * 2026-08-11 hai nút này ở hai hàng khác nhau vì hàng tìm kiếm chen vào giữa.
    */
   toolbarStart?: ReactNode;
-  toolbarEnd?: ReactNode;
 }) {
   const pool = useMemo(() => sentences.filter(studiable), [sentences]);
   const [shuffle, setShuffle] = useState(false);
@@ -286,9 +283,10 @@ export function HistoryFlashcards({
       deck={deck}
       cardKey={current?.id ?? 'done'}
       unit="Lượt"
-      // Shorter than the deck's own default: /history keeps its search + filter toolbar above the deck,
-      // which a group's flashcard tab does not have. At the default the nav arrows sat ~15px below the
-      // fold at 1280x720 (measured 2026-08-06) and the page grew a scrollbar to reach them.
+      // Shorter than the deck's own default: /history sits under a breadcrumb row that a group's
+      // flashcard tab does not have. At the default the nav arrows sat ~15px below the fold at 1280x720
+      // (measured 2026-08-06) and the page grew a scrollbar to reach them. (Cho tới 2026-08-11 phần
+      // chiếm chỗ là cả hàng tìm kiếm + bộ lọc; giờ hàng đó không còn nên chỗ này còn dư ra một chút.)
       className="min-h-[calc(100svh-10rem)]"
       // Hàng tìm kiếm không còn ở chế độ này, nên thanh tiến độ lên chiếm đúng hàng đó.
       inlineProgress
@@ -311,7 +309,6 @@ export function HistoryFlashcards({
               onCheckedChange={setAutoSpeak}
             />
           </DeckSettings>
-          {toolbarEnd}
         </>
       }
       front={

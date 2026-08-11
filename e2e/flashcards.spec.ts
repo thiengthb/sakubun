@@ -208,7 +208,9 @@ test('/history can be studied as a deck, dealt from the filtered rows', async ({
     rowY(settingsButton),
   ]);
   expect(Math.abs(barY - modeY), 'thanh tiến độ phải cùng hàng với các nút').toBeLessThanOrEqual(8);
-  expect(Math.abs(settingsY - modeY), 'nút cài đặt cùng hàng với nút chế độ').toBeLessThanOrEqual(8);
+  expect(Math.abs(settingsY - modeY), 'nút cài đặt cùng hàng với nút chế độ').toBeLessThanOrEqual(
+    8,
+  );
 
   // "Đứng cạnh nhau" chốt bằng DOM: không có gì chen giữa hai nút.
   const adjacent = await page.evaluate(() => {
@@ -220,30 +222,32 @@ test('/history can be studied as a deck, dealt from the filtered rows', async ({
   });
   expect(adjacent).toBe('liền nhau');
 
-  // Và bộ lọc vẫn chia thẻ cho deck khi deck đang mở — đó là lý do nút lật chế độ nằm trong thanh công
-  // cụ chứ không cạnh tiêu đề trang. Trước hôm nay phép chốt này đi qua ô tìm; giờ nó đi qua Bộ lọc,
-  // là controls duy nhất còn lại, nên nếu dây nối đó đứt thì ca này đỏ.
-  // Cách lái popover này đã được đo ở e2e/resources-tables.spec.ts: `getByLabel` KHÔNG resolve (FilterRow
-  // vẽ một <Label> không `htmlFor` với trigger Radix), nên nhận diện combobox bằng GIÁ TRỊ đang hiện; và
-  // `Escape` không đóng panel — chính trigger là toggle.
-  const filterTrigger = page.getByRole('button', { name: /^Bộ lọc/ });
-  await filterTrigger.click();
-  await page.getByRole('combobox').filter({ hasText: 'Mọi chiều' }).first().click();
-  await page.getByRole('option', { name: 'JP → VN', exact: true }).click();
-  await filterTrigger.click();
-  await expect(page.getByText('Lượt 1 / 1')).toBeVisible();
-  await expect(page.getByText('曖昧な返事だった。')).toBeVisible();
+  // Nút Bộ lọc cũng không có ở chế độ thẻ (bỏ 2026-08-11) — đúng hai nút, không hơn.
+  await expect(page.getByRole('button', { name: /^Bộ lọc/ }), 'bộ lọc thuộc danh sách').toHaveCount(
+    0,
+  );
 
-  // …và nút lật đưa về danh sách, nơi ô tìm quay lại.
+  // …nút lật đưa về danh sách, nơi ô tìm và bộ lọc quay lại.
   await modeButton.click();
   await expect(page.getByRole('button', { name: 'Thẻ sau' })).toHaveCount(0);
   await expect(page.getByPlaceholder('Tìm trong đề / bài dịch…')).toBeVisible();
+
+  // Và điều KHÔNG được mất khi bỏ hai controls kia: chồng thẻ vẫn được chia từ những hàng đã lọc. Thu
+  // hẹp ở DANH SÁCH, rồi lật sang thẻ — deck phải chỉ còn một thẻ, đúng hàng còn lại. Nếu dây nối này
+  // đứt thì bỏ nút Bộ lọc đã lặng lẽ biến "lọc rồi lướt" thành "lướt tất cả".
+  await page.getByPlaceholder('Tìm trong đề / bài dịch…').fill('曖昧');
+  await expect(page.getByText('1–1 / 1 lượt (lọc từ 3)')).toBeVisible();
+  await page.getByRole('button', { name: 'Flashcard' }).click();
+  await expect(page.getByText('Lượt 1 / 1')).toBeVisible();
+  await expect(page.getByText('曖昧な返事だった。')).toBeVisible();
 
   // Nút 1 cột / 2 cột đã bỏ (2026-08-11): danh sách luôn một cột dưới lg, hai cột từ lg lên.
   await expect(page.getByRole('button', { name: /^(1 cột|2 cột)$/ })).toHaveCount(0);
 });
 
-test('both decks fit a phone: nothing off-screen, and the arrows are reachable', async ({ page }) => {
+test('both decks fit a phone: nothing off-screen, and the arrows are reachable', async ({
+  page,
+}) => {
   // The deck sizes itself off the viewport (`min-h-[calc(100svh-…)]`), which is exactly the kind of
   // number that is right on one screen and wrong on another — the nav row sat 15px below the fold on
   // /history at 1280x720 before the deck got a shorter allowance there. So it is measured, on the
@@ -309,7 +313,10 @@ test('both decks fit a phone: nothing off-screen, and the arrows are reachable',
         viewportH: de.clientHeight,
       };
     });
-    expect(m.overflowX, `${name}: the deck widened the page by ${m.overflowX}px at 390px`).toBeLessThanOrEqual(1);
+    expect(
+      m.overflowX,
+      `${name}: the deck widened the page by ${m.overflowX}px at 390px`,
+    ).toBeLessThanOrEqual(1);
     expect(
       m.arrowBottom,
       `${name}: the nav arrows end at ${m.arrowBottom}px, past the ${m.viewportH}px fold`,

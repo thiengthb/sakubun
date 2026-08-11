@@ -11,7 +11,6 @@ import { HistoryCard } from '@/components/history/history-cards';
 import { HistoryFlashcards } from '@/components/history/history-flashcards';
 import {
   DEFAULT_FILTERS,
-  HistoryFilterPopover,
   HistoryFilters,
   HistoryModeToggle,
   inDatePreset,
@@ -164,11 +163,10 @@ export function HistoryList({
           voiceSpeaker={voiceSpeaker}
           speechRate={speechRate}
           showFurigana={showFurigana}
-          // Hai nút kẹp nút cài đặt deck ở giữa: [Danh sách] [Cài đặt] [Bộ lọc].
+          // Đúng hai nút, cạnh nhau: [Danh sách] [Cài đặt]. Bộ lọc KHÔNG có ở đây (bỏ 2026-08-11):
+          // chồng thẻ vẫn được chia từ `filtered`, nên bộ lọc đặt ở danh sách vẫn còn hiệu lực — muốn
+          // đổi thì lật về danh sách, nơi ô tìm và bộ lọc ở cùng một hàng.
           toolbarStart={<HistoryModeToggle mode={mode} onModeChange={setMode} />}
-          toolbarEnd={
-            <HistoryFilterPopover filters={filters} onPatch={patch} onResetFilters={resetFilters} />
-          }
         />
       ) : (
         <>
