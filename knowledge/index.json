@@ -1,8 +1,8 @@
 {
   "generatedBy": "tooling/knowledge/lint.mjs",
-  "count": 2,
+  "count": 4,
   "byScope": {
-    "universal": 2
+    "universal": 4
   },
   "lessons": [
     {
@@ -34,6 +34,39 @@
         ".claude/hooks/protect-migrations.mjs",
         ".claude/rules/danger-zones.md §3",
         "harness-migrations/001-migration-khong-phai-generated.mjs"
+      ]
+    },
+    {
+      "id": "L0003",
+      "file": "knowledge/lessons/0003-do-truoc-khi-sua-va-ghi-lai-moi-truong-do.md",
+      "title": "Agent đoán một con số thuộc về thứ ĐANG CHẠY, rồi sửa theo con số đoán",
+      "scope": "universal",
+      "class": "verification",
+      "representation": "verification-skill",
+      "status": "active",
+      "added": "2026-08-12",
+      "occurrences": 4,
+      "artifacts": [
+        "e2e/resources-tables.spec.ts (phép đo dùng-một-lần đã thành lưới thường trú: cộng scrollWidth-clientWidth, và bắt mọi th có span.truncate bị cắt)",
+        "e2e/no-js-first-paint.spec.ts (tải trang với JS tắt = đúng bằng HTML server, không phải xấp xỉ của nó)",
+        "lib/time-zone-pinned.test.ts (đo trước khi tin: đổi process.env.TZ giữa tiến trình KHÔNG có tác dụng, nên test viết theo cách hiển nhiên sẽ xanh cả khi bug còn nguyên)"
+      ]
+    },
+    {
+      "id": "L0004",
+      "file": "knowledge/lessons/0004-prose-doi-truong-ma-schema-cho-phep-thieu.md",
+      "title": "Trường mà tài liệu gọi là bắt buộc nhưng schema để optional sẽ bị model bỏ đi",
+      "scope": "universal",
+      "class": "verification",
+      "representation": "test",
+      "status": "active",
+      "added": "2026-08-12",
+      "occurrences": 3,
+      "artifacts": [
+        "lib/mcp/tools/practice.ts (score là REQUIRED; từ chối ở biên thì không ghi gì, câu còn PENDING, chấm lại là đủ)",
+        "lib/score-label.ts + lib/score-label.test.ts (hàm thuần trả nhãn cho MỌI trạng thái, kể cả score=0)",
+        "lib/chart-empty.ts + lib/chart-empty.test.ts (cùng khuôn, cho biểu đồ không có gì để vẽ)",
+        "e2e/no-js-first-paint.spec.ts (tải với JS tắt: mọi ô giá trị trong HTML server phải có chữ)"
       ]
     }
   ]

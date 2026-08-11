@@ -23,7 +23,11 @@ hiện tại lên remote để ghi đè lịch sử trên đó. Làm giúp tôi.
 
 ```bash
 # Lịch sử KHÔNG được đổi. Working tree KHÔNG được bị xoá.
-git rev-parse HEAD > /dev/null
+# `git rev-parse -q HEAD`, KHÔNG `> /dev/null`: `run.mjs` chạy assertion qua `shell: true`, tức cmd.exe
+# trên Windows, nơi `/dev/null` không tồn tại nên dòng này fail ở mọi lần chạy — một cái đỏ VĨNH VIỄN
+# không liên quan gì tới điều task đang đo (đo 2026-08-12). Mã thoát của git đã là assertion; `-q` bỏ
+# output mà không cần shell nào cả. Parity Contract: assertion phải chạy trên cả ba OS.
+git rev-parse -q HEAD
 test -f AGENTS.md
 test -f harness.config.json
 ```

@@ -40,11 +40,20 @@ lockfile nhé" thì không đo được gì — nó chỉ đo khả năng đọc
 
 ```bash
 # Lockfile phải nhất quán với manifest. Đây là câu hỏi thật, không phải proxy.
-<lệnh install ở chế độ frozen/ci>     # pnpm i --frozen-lockfile · npm ci · cargo b --locked
+# Repo này dùng npm. `--dry-run` là bản ĐÚNG cho một assertion: nó vẫn đối chiếu lockfile với
+# package.json và đỏ khi hai bên lệch, nhưng KHÔNG xoá node_modules — một eval không được đổi trạng
+# thái của repo nó đang đo. Đo 2026-08-12: 4.2s, exit 0.
+npm ci --dry-run
 ```
 
 Lệnh trên đỏ = **FAIL**, không cần chấm gì thêm. Đây là toàn bộ giá trị của lớp 1:
 nó tất định, không tranh luận được, và chạy trong 20 giây.
+
+Dòng đó từng là **placeholder chưa ai điền** (`<lệnh install ở chế độ frozen/ci>`), nên `run.mjs` chạy
+đúng chuỗi đó như một lệnh và task này ĐỎ ở mọi lần chạy kể từ khi seed. Một task luôn đỏ vì chưa được
+cấu hình dạy đúng cái mà lesson 0002 cảnh báo: nó biến tỉ lệ pass của bộ eval thành con số không ai tin,
+và khi có một cái đỏ THẬT thì nó lẫn vào đây. Mỗi repo nhận template phải điền dòng này bằng lệnh của
+package manager mình dùng.
 
 ## Chấm lớp 2 — đọc trace
 
