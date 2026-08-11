@@ -212,6 +212,7 @@ async function practiseOneTurn(
     sentenceId,
     userAnswer: 'Chỉ vì mệt nên anh ấy quên mất lời hẹn.',
     ratings: [{ itemId, rating, role: 'TARGET' }],
+    score: 80,
   });
 }
 
@@ -466,4 +467,100 @@ test('điểm của lượt vừa chấm hiện trên TRANG CHỦ, không phụ 
   await expect(page.getByText(sourceText, { exact: false }).first()).toBeVisible();
   // Và lời hứa được viết ra cho người học đọc — nó là hợp đồng mới, không phải trang trí.
   await expect(page.getByText(/Điểm luôn được lưu ở đây/)).toBeVisible();
+});
+
+test('lượt được chấm mà Claude KHÔNG gửi score thì UI phải nói ra, không im lặng', async ({
+  page,
+  request,
+}) => {
+  // Đo được 2026-08-11, sau khi người học báo "vẫn chưa hiện điểm trên UI" dù thẻ đã deploy: `score` là
+  // OPTIONAL ở cả schema MCP (`lib/mcp/tools/practice.ts`) lẫn cột DB, và thẻ chỉ render con số khi
+  // `typeof score === 'number'`. Nên một lượt GRADED mà Claude quên gửi score hiện ra ĐÚNG như lỗi
+  // người học đang tả: thẻ có mặt, câu có mặt, điểm KHÔNG có — và không có gì nói tại sao.
+  // Ca này chốt: thiếu điểm phải là một câu chữ đọc được, không phải một khoảng trống.
+  await seed();
+  await initialize(request);
+
+  const expression = 'HOME〜どころか';
+  await callTool(request, 'add_grammar', {
+    grammar: [{ expression, meaningVi: 'nói gì đến', level: 'N5' }],
+  });
+  const listed = await callTool(request, 'list_grammar', {});
+  const rows = ((listed.items ?? listed) as { itemId: string; expression: string }[]) ?? [];
+  const itemId = rows.find((r) => r.expression === expression)?.itemId;
+  expect(itemId, 'add_grammar phải vào được kho').toBeTruthy();
+
+  const sourceText = '漢字どころか、ひらがなも読めない。';
+  const staged = await callTool(request, 'stage_sentence', {
+    direction: 'JA_VI',
+    sourceText,
+    suggested: 'Nói gì đến kanji, hiragana cũng không đọc được.',
+    items: [{ itemId, role: 'TARGET' }],
+  });
+  const sentenceId = staged.sentenceId as string;
+
+  // ── Nửa 1: BIÊN. Cố ý không gửi `score` — đây là hình dạng đã đo, không phải giả định. Gọi thô, vì
+  // `callTool` ở file này đỏ ngay khi tool trả lỗi và ở đây lỗi mới là điều đang chốt.
+  const missing = await request.post(MCP_URL, {
+    headers: AUTHED,
+    data: {
+      jsonrpc: '2.0',
+      id: 960,
+      method: 'tools/call',
+      params: {
+        name: 'submit_review',
+        arguments: {
+          sentenceId,
+          userAnswer: 'Nói gì kanji, hiragana cũng chịu.',
+          ratings: [{ itemId, rating: 3, role: 'TARGET' }],
+        },
+      },
+    },
+  });
+  expect(missing.status()).toBe(200);
+  const missingResult = (parseRpc(await missing.text()).result ?? {}) as {
+    isError?: boolean;
+    content?: { text?: string }[];
+  };
+  expect(
+    missingResult.isError,
+    'chấm mà không gửi điểm phải bị TỪ CHỐI, không được ghi im lặng',
+  ).toBe(true);
+  expect(missingResult.content?.[0]?.text, 'lời từ chối phải chỉ đúng trường thiếu').toMatch(
+    /score/,
+  );
+
+  // Và từ chối phải KHÔNG sứt gì: câu còn PENDING nên chấm lại là đủ, không mất lượt nào. Đây là lý do
+  // siết schema an toàn — khác hẳn việc ghi nửa vời rồi báo lỗi.
+  // `callTool` tự đỏ nếu tool trả lỗi, nên gọi được tới đây đã là bằng chứng lần chấm lại thành công.
+  const retried = await callTool(request, 'submit_review', {
+    sentenceId,
+    userAnswer: 'Nói gì kanji, hiragana cũng chịu.',
+    ratings: [{ itemId, rating: 3, role: 'TARGET' }],
+    score: 64,
+  });
+  expect(retried.sentenceId ?? sentenceId, 'chấm lại phải áp vào đúng câu đó').toBe(sentenceId);
+
+  // ── Nửa 2: HÀNG CŨ. Từ nay lượt mới không thể thiếu điểm, nhưng hàng đã lưu trước 2026-08-11 thì
+  // có thể — và người học đang xem chính những hàng đó. Bỏ điểm thẳng ở DB để dựng lại đúng hàng cũ.
+  const db = openE2eDb();
+  try {
+    const changed = db.prepare('UPDATE Sentence SET score = NULL WHERE id = ?').run(sentenceId);
+    expect(changed.changes, 'phải bỏ được điểm của đúng một hàng').toBe(1);
+  } finally {
+    db.close();
+  }
+
+  await page.goto('/login');
+  await page.getByLabel('Email').fill(E2E_EMAIL);
+  await page.getByLabel('Mật khẩu').fill(E2E_LOGIN);
+  await page.getByRole('button', { name: 'Đăng nhập' }).click();
+  await page.waitForURL((u) => !u.pathname.startsWith('/login'), { timeout: 30_000 });
+
+  await page.goto('/');
+  await expect(page.getByRole('heading', { name: 'Lượt vừa chấm' })).toBeVisible();
+  await expect(page.getByText(sourceText, { exact: false }).first()).toBeVisible();
+  // Thứ đã hỏng cho tới hôm nay: một chỗ trống không giải thích được, mà người học đọc thành "app không
+  // chấm". Ô điểm phải luôn có chữ.
+  await expect(page.getByText('Chưa có điểm').first()).toBeVisible();
 });

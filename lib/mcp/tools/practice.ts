@@ -306,7 +306,27 @@ export function registerPracticeTools(server: McpServer) {
         ),
       userAnswer: z.string().min(1),
       feedback: z.string().optional(),
-      score: z.number().int().min(0).max(100).optional(),
+      // REQUIRED since 2026-08-11. It was optional for months while every prompt step already listed
+      // it ("call submit_review with: sentenceId, userAnswer, feedback, score, ratings") — prose
+      // demanding it while the schema permitted its absence is the exact gap that produced the
+      // learner's repeated "I finished the turn and there is no score": a missing score vanished from
+      // BOTH surfaces at once (the verbatim block omits the line, the card rendered an empty slot).
+      // Required means the omission is now a rejected call, and the rejection is SAFE: nothing is
+      // written, the sentence stays PENDING, so Claude retrying with a score loses no rating (proved in
+      // e2e/mcp.spec.ts, "KHÔNG gửi score"). Measured while writing that test: the SDK validates
+      // arguments against this schema BEFORE the handler, so the rejected call never reaches `guard()`
+      // and does NOT appear in mcp_tool_call — the refusal is loud to Claude, but still invisible to our
+      // own counter. A grading turn without a grade is not a turn worth storing either way.
+      score: z
+        .number()
+        .int()
+        .min(0)
+        .max(100)
+        .describe(
+          'Overall impression of the answer, 0-100. REQUIRED: the learner reads this number as "was I ' +
+            'graded at all", so a turn cannot be recorded without it. Send your honest score even when ' +
+            'the ratings already say it.',
+        ),
       ratings: z
         .array(
           z.object({

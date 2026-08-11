@@ -73,6 +73,7 @@ async function practiseOnce(api: APIRequestContext, itemId: string, sourceText: 
     sentenceId,
     userAnswer: 'trả lời',
     ratings: [{ itemId, rating: 3, role: 'TARGET' }],
+    score: 75,
   });
   return sentenceId;
 }
@@ -92,6 +93,7 @@ test('chấm hai lần bị TỪ CHỐI, và lần chấm đầu không bị s�
     sentenceId,
     userAnswer: 'đổi ý, chấm lại',
     ratings: [{ itemId, rating: 4, role: 'TARGET' }],
+    score: 90,
   });
   expect(again.isError, `chấm lại một câu đã GRADED phải bị từ chối: ${again.text}`).toBe(true);
 

@@ -93,9 +93,14 @@ describe('renderGradeResult', () => {
     expect(md).toContain('5. Kết thúc buổi');
   });
 
-  it('shows the /100 score in the verbatim block, and omits the line when unscored', () => {
+  // Ca này ĐỔI CHIỀU ngày 2026-08-11. Trước đó nó khoá hành vi "thiếu điểm thì BỎ dòng đi", và đúng
+  // hành vi ấy là một nửa của lỗi người học báo đi báo lại: điểm mất khỏi chat, đồng thời mất khỏi thẻ,
+  // nên không có chỗ nào nói ra rằng lượt này không có điểm. `score` giờ bắt buộc ở biên
+  // (`lib/mcp/tools/practice.ts`) nên null không còn tới được đây từ một lượt mới — dòng vẫn phải có
+  // chữ, vì im lặng là thứ người học đọc thành "app không chấm".
+  it('luôn có dòng Điểm trong khối chép nguyên văn, kể cả khi không có điểm', () => {
     expect(renderGradeResult(result, NOW)).toContain('**Điểm:** 85/100');
-    expect(renderGradeResult({ ...result, score: null }, NOW)).not.toContain('**Điểm:**');
+    expect(renderGradeResult({ ...result, score: null }, NOW)).toContain('**Điểm:** chưa có');
   });
 
   it('shows daily-goal progress; no retry option when nothing failed', () => {

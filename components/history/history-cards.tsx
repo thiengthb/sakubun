@@ -18,6 +18,7 @@ import { StarButton } from '@/components/shared/star-button';
 import { RelativeTime } from '@/components/shared/relative-time';
 import { formatDateTimeVN, humanizeDuration, lengthBucket, ratingLabel } from '@/lib/format';
 import { hasFurigana } from '@/lib/furigana';
+import { scoreLabel } from '@/lib/score-label';
 import { stripEmoji } from '@/lib/text';
 import type { SentenceHistoryRow } from '@/lib/practice';
 import { cn } from '@/lib/utils';
@@ -243,7 +244,7 @@ function HistoryDetail({
   rate?: number;
   showFurigana?: boolean;
 }) {
-  const skipped = sentence.status === 'SKIPPED';
+  const detailScore = scoreLabel(sentence.status, sentence.score);
   const grammar = sentence.ratings.filter((r) => r.role !== 'VOCAB');
   const vocab = sentence.ratings.filter((r) => r.role === 'VOCAB');
   const typeLabel = EXERCISE_TYPE_LABELS[sentence.exerciseType];
@@ -254,14 +255,17 @@ function HistoryDetail({
         <DialogTitle className="flex flex-wrap items-center gap-2 text-base">
           <Badge variant="secondary">{dirLabel(sentence.direction)}</Badge>
           {typeLabel && <Badge variant="outline">{typeLabel}</Badge>}
-          {skipped ? (
-            <span className="text-sm font-medium text-muted-foreground">Bỏ qua</span>
-          ) : (
-            typeof sentence.score === 'number' && (
-              <span className={cn('text-sm font-medium', scoreClass(sentence.score))}>
-                {sentence.score}/100
-              </span>
-            )
+          {detailScore && (
+            <span
+              className={cn(
+                'text-sm font-medium',
+                detailScore.muted
+                  ? 'text-muted-foreground'
+                  : scoreClass(sentence.score as number),
+              )}
+            >
+              {detailScore.text}
+            </span>
           )}
           {/* mr-6 keeps the timestamp clear of the dialog's top-right close button. */}
           <span className="mr-6 ml-auto text-xs font-normal text-muted-foreground">
@@ -421,7 +425,7 @@ export function HistoryCard({
   autoOpen?: boolean;
 }) {
   if (sentence.status === 'PENDING') return <PendingCard sentence={sentence} />;
-  const skipped = sentence.status === 'SKIPPED';
+  const score = scoreLabel(sentence.status, sentence.score);
   const typeLabel = EXERCISE_TYPE_LABELS[sentence.exerciseType];
 
   return (
@@ -431,14 +435,15 @@ export function HistoryCard({
         <>
           <Badge variant="secondary">{dirLabel(sentence.direction)}</Badge>
           {typeLabel && <Badge variant="outline">{typeLabel}</Badge>}
-          {skipped ? (
-            <span className="font-medium text-muted-foreground">Bỏ qua</span>
-          ) : (
-            typeof sentence.score === 'number' && (
-              <span className={cn('font-medium', scoreClass(sentence.score))}>
-                {sentence.score}/100
-              </span>
-            )
+          {score && (
+            <span
+              className={cn(
+                'font-medium',
+                score.muted ? 'text-muted-foreground' : scoreClass(sentence.score as number),
+              )}
+            >
+              {score.text}
+            </span>
           )}
           <RelativeTime value={sentence.createdAt} className="ml-auto" />
           <StarButton

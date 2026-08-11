@@ -136,6 +136,7 @@ for (const loop of LOOPS) {
       sentenceId,
       userAnswer: loop.userAnswer,
       ratings: [{ itemId, rating: 3, role: 'TARGET' }],
+      score: 78,
     });
     expect((graded.items as { itemId: string }[])?.[0]?.itemId).toBe(itemId);
 

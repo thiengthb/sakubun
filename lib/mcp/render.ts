@@ -125,8 +125,11 @@ export function renderGradeResult(result: SubmitReviewResult, now: Date = new Da
     result.suggested ? `**Tham khảo:** ${result.suggested}` : null,
     // The /100 score lives in the server-owned block so it appears in EVERY chat, not just history:
     // Claude sent it to submit_review, but a score outside this verbatim block was being dropped from
-    // the reply (the 2026-07-25 fix). Null when Claude didn't score → line omitted, like the card.
-    typeof result.score === 'number' ? `**Điểm:** ${result.score}/100` : null,
+    // the reply (the 2026-07-25 fix). The line used to be OMITTED when score was null — silence in the
+    // chat AND an empty slot on the card, which is exactly how "the app never graded me" was born
+    // (2026-08-11). `score` is required at the boundary now, so null is unreachable for a new turn; the
+    // line stays present anyway, because a missing score must be a sentence the learner can read.
+    typeof result.score === 'number' ? `**Điểm:** ${result.score}/100` : '**Điểm:** chưa có',
     '',
     '| Mục | Đánh giá | Ôn lại |',
     '|---|---|---|',
