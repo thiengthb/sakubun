@@ -126,7 +126,10 @@ export default async function GuidePage() {
           <StartWalkthrough progress={progress} />
           <section className="space-y-2">
             <RefHeading>Ghi chú thêm</RefHeading>
-            <ul className="list-disc space-y-1.5 pl-5 text-muted-foreground">
+            {/* Khổ đọc, không phải khổ trang: ở 1440px các dòng này chạy hết 1130px (~140 ký tự/dòng),
+                quá xa mức mắt bắt được đầu dòng sau khi xuống hàng. `max-w-3xl` là đúng con số
+                `PageShell` đã dùng cho các trang chữ (`width="narrow"`), nên không phát minh số mới. */}
+            <ul className="max-w-3xl list-disc space-y-1.5 pl-5 text-muted-foreground">
               <li>
                 <strong>Dấu tích ở mỗi bước là thật</strong>: khi bạn đã đăng nhập, app tự kiểm từ{' '}
                 <strong>dữ liệu của bạn</strong> — đã tạo token chưa, Claude Desktop đã kết nối lần

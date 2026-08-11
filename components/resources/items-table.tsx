@@ -122,14 +122,25 @@ export function ItemsTable({
   const columns = useMemo<ColumnDef<ItemRow>[]>(() => {
     const prefs = { voiceSpeaker, speechRate, showFurigana };
     return [
-      expressionColumn<ItemRow>('Mẫu ngữ pháp', 'Nghe mẫu', 260, 150, prefs, toRomaji),
+      // 236 thay vì 260 (2026-08-11): chỗ 24px này là chỗ bù cho "Cấp" và "Ngày thêm" rộng ra, để tổng
+      // bề rộng cột vẫn nằm trong khung ở 1440px và bảng không sinh thanh cuộn ngang chỉ để cuộn ~14px.
+      // Cột này còn dư nhiều nhất: chữ tiêu đề chỉ cần 144px, phần còn lại là chỗ cho mẫu dài.
+      expressionColumn<ItemRow>('Mẫu ngữ pháp', 'Nghe mẫu', 236, 150, prefs, toRomaji),
       meaningColumn<ItemRow>(220),
       {
+        // "Cấp", không phải "Level" (đổi 2026-08-11). Hai lý do, và cái thứ hai mới là lý do thật:
+        //   1. Nó là tiêu đề DUY NHẤT còn tiếng Anh giữa Nghĩa · Trạng thái · Đến hạn · Ngày thêm · Đã
+        //      ôn · Quên · Độ bền — mà AGENTS.md nói mọi chuỗi người học đọc trên UI là tiếng Việt.
+        //   2. Ở 80px, ô tiêu đề còn phải chứa tay kéo cột + nút sắp xếp, nên "Level" bị cắt thành
+        //      "Le…" (chụp được ở 1440px).
+        // Bề rộng 76px là ĐO, không phải đoán: ô tiêu đề mất đúng 48px cho tay kéo + nút sắp xếp +
+        // đệm, và chữ "Cấp" cần 27px → 75px là sàn. (Lần đầu tôi đặt 64px để lấy lại bề rộng cho cả
+        // bảng và nó cắt thành "C." — hẹp hơn sàn thì chữ nào cũng chết.)
         accessorKey: 'level',
-        header: 'Level',
-        size: 80,
-        minSize: 60,
-        meta: { label: 'Level' },
+        header: 'Cấp',
+        size: 76,
+        minSize: 76,
+        meta: { label: 'Cấp' },
       },
       ...srsMetaColumns<ItemRow>(130),
       // Ngữ pháp đưa `level` + `enrichment` vào dialog chi tiết (thẻ chi tiết là của riêng nó).

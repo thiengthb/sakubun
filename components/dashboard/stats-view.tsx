@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useSessionState } from '@/components/shared/use-session-state';
+import { cn } from '@/lib/utils';
 import type { DailyStat, StudyStats } from '@/lib/stats';
 import type { PerfBreakdown } from '@/lib/analytics';
 
@@ -123,13 +124,16 @@ function ChartCard({
   title,
   hint,
   children,
+  className,
 }: {
   title: string;
   hint?: string;
   children: React.ReactNode;
+  /** Chỗ để một thẻ tự khai nó chiếm cả hàng trong lưới 2 cột. */
+  className?: string;
 }) {
   return (
-    <div className="space-y-3 rounded-lg border border-border/70 p-4">
+    <div className={cn('space-y-3 rounded-lg border border-border/70 p-4', className)}>
       <div>
         <h3 className="text-sm font-medium">{title}</h3>
         {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
@@ -333,9 +337,13 @@ export function StatsView({ stats }: { stats: StudyStats }) {
           </ResponsiveContainer>
         </ChartCard>
 
+        {/* Thẻ thứ BA trong lưới 2 cột, nên nếu không nói gì nó nằm một mình ở cột trái và bỏ trống nửa
+            hàng bên phải (thấy rõ khi chụp 1440px, 2026-08-11). Cho nó chiếm cả hàng — nó là chuỗi thời
+            gian, càng rộng càng đọc được. */}
         <ChartCard
           title="Tiến độ theo ngày"
           hint="Số câu đã luyện + số mẫu/từ mới giới thiệu mỗi mốc"
+          className="lg:col-span-2"
         >
           <ResponsiveContainer width="100%" height={240}>
             <ComposedChart
@@ -359,7 +367,10 @@ export function StatsView({ stats }: { stats: StudyStats }) {
         </ChartCard>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      {/* `items-start`: hàng lưới mặc định kéo mọi thẻ cao bằng thẻ cao nhất, nên một thẻ chỉ có câu
+          "Chưa đủ dữ liệu." bị căng thành ~300px cạnh một thẻ có biểu đồ — đọc thành thẻ hỏng chứ không
+          phải thẻ rỗng. Cho mỗi thẻ tự cao theo nội dung. */}
+      <div className="grid items-start gap-4 lg:grid-cols-2">
         <PerfChart title="Điểm & thời gian theo ĐỘ KHÓ (cấp mẫu)" rows={stats.scoreByLevel} />
         <PerfChart title="Điểm & thời gian theo ĐỘ DÀI câu" rows={stats.scoreByLength} />
       </div>
@@ -399,12 +410,15 @@ function PerfChart({ title, rows }: { title: string; rows: PerfBreakdown[] }) {
               axisLine={false}
             />
             <Tooltip contentStyle={tooltipStyle} />
+            {/* `maxBarSize`: recharts chia đều bề rộng cho số nhóm, nên hai nhóm trên màn 1440px thành
+                hai TẤM rộng ~170px. Chặn lại để cột vẫn là cột dù chỉ có hai nhóm. */}
             <Bar
               yAxisId="l"
               dataKey="score"
               name="Điểm TB"
               fill={C.accuracy}
               radius={[3, 3, 0, 0]}
+              maxBarSize={56}
             />
             <Line
               yAxisId="r"

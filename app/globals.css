@@ -88,7 +88,10 @@
   --secondary: oklch(0.9485 0.011 95); /* #F0EEE6 */
   --secondary-foreground: oklch(0.28 0.005 100);
   --muted: oklch(0.9485 0.011 95);
-  --muted-foreground: oklch(0.512 0.008 97); /* ~#686762, Claude's secondary text one notch darker */
+  /* ~#686762, Claude's secondary text one notch darker. GIỮ TRÊN MỘT DÒNG: `lib/contrast.test.ts` đọc
+     token theo TỪNG DÒNG, nên một lần `prettier --write` gấp dòng này thành ba đã làm 4 ca đỏ với
+     `TypeError: … reading 'startsWith'` (2026-08-11). Chú thích tách ra để dòng khai báo còn ngắn. */
+  --muted-foreground: oklch(0.512 0.008 97);
   --accent: oklch(0.925 0.013 94); /* hover/selected — ivory, one step below the sidebar */
   --accent-foreground: oklch(0.28 0.005 100);
   --destructive: oklch(0.537 0.2 27);
@@ -321,6 +324,32 @@
 }
 .streak-ember {
   animation: streak-ember var(--dur, 1.6s) ease-out forwards;
+}
+
+/* ---- Chuyển trang (app/template.tsx) ----
+   Mỗi lần đổi route, nội dung trang hiện lên bằng một cú fade ngắn thay vì thay thế cứng. Vỏ ứng dụng
+   (sidebar, breadcrumb) không nhấp nháy theo, vì `template.tsx` chỉ bọc phần trang.
+
+   CHỈ `opacity`, KHÔNG `transform` — và đây là một quyết định, không phải sự thiếu sót. Một transform
+   trên phần tử bọc cả trang sẽ tạo containing block cho mọi `position: fixed` bên trong nó, và trong
+   repo này có hai chỗ như vậy nằm trong vùng trang: lớp phủ ăn mừng chuỗi ngày
+   (`components/dashboard/streak-celebration.tsx`, `fixed inset-0`) và dải nút nổi của bảng dữ liệu
+   (`components/shared/data-table.tsx`, `fixed top-1/2 right-3`). Chúng sẽ lệch trong lúc hiệu ứng chạy,
+   và nếu trang đang cuộn thì lệch rất xa chứ không phải vài pixel. Đổi 4px "nhấc lên" lấy hai chỗ neo
+   sai là một cuộc đổi tồi.
+
+   Viết bằng CSS keyframe (không phải motion/react) để luật `prefers-reduced-motion` toàn cục ở trên tự
+   vô hiệu hoá nó — animation trong JS sẽ không được luật đó chạm tới. */
+@keyframes page-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.page-enter {
+  animation: page-fade-in 180ms ease-out both;
 }
 
 /* ---- Guide walkthrough (components/guide-walkthrough.tsx) ----

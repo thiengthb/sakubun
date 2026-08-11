@@ -279,7 +279,6 @@ export function ContentTab({
             </SelectContent>
           </Select>
         </Field>
-
       </div>
 
       {/* FULL WIDTH, and the same shape as «Cỡ câu» right below it (2026-08-05, by request). These are
@@ -327,18 +326,33 @@ export function ContentTab({
             value={[SENTENCE_SIZES.indexOf(settings.sentenceSize)]}
             onValueChange={([i]) => set('sentenceSize', SENTENCE_SIZES[i])}
           />
-          <div className="flex justify-between gap-1 text-xs leading-tight text-muted-foreground">
-            {SENTENCE_SIZES.map((size) => (
-              <span
-                key={size}
-                className={cn(
-                  'flex-1 text-center',
-                  settings.sentenceSize === size && 'font-medium text-foreground',
-                )}
-              >
-                {SIZE_LABELS[size]}
-              </span>
-            ))}
+          {/* Nhãn phải nằm dưới ĐÚNG nấc của nó. Trước 2026-08-11 mỗi nhãn là `flex-1 text-center`, tức
+              7 cột đều nhau → tâm nhãn ở (i+0.5)/7 của track, còn nấc trượt ở i/6. Đo ở 1440px: track
+              300→1396 nên nấc nằm ở 300·483·665·848·1031·1213·1396, còn tâm nhãn ở 377·…·1319 — chỉ nhãn
+              GIỮA trùng nấc giữa, hai đầu lệch 77px, nên "Rất ngắn" không nằm dưới nấc Rất ngắn.
+              Cách sửa: hai nhãn đầu/cuối lấy NỬA cột và canh ra biên, các nhãn giữa lấy cột đầy và canh
+              giữa. Tổng thành 6 đơn vị = số khoảng của 7 nấc, nên tâm nhãn giữa thứ i rơi đúng i/6, và
+              hai nhãn biên áp vào hai đầu track thay vì tràn ra khỏi thẻ. */}
+          <div className="flex gap-1 text-xs leading-tight text-muted-foreground">
+            {SENTENCE_SIZES.map((size, i) => {
+              const edge = i === 0 || i === SENTENCE_SIZES.length - 1;
+              return (
+                <span
+                  key={size}
+                  className={cn(
+                    edge ? 'flex-[0.5]' : 'flex-1',
+                    i === 0
+                      ? 'text-left'
+                      : i === SENTENCE_SIZES.length - 1
+                        ? 'text-right'
+                        : 'text-center',
+                    settings.sentenceSize === size && 'font-medium text-foreground',
+                  )}
+                >
+                  {SIZE_LABELS[size]}
+                </span>
+              );
+            })}
           </div>
         </div>
       </Field>

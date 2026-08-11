@@ -52,15 +52,127 @@ async function seed() {
   );
   // Ngữ pháp: 4 mục, 2 cấp, một mục CÓ thẻ đủ và ba mục chưa có thẻ.
   //            id     kind      expression        reading hanviet meaning        level notes reason susp star card       createdAt
-  item.run('g1', 'GRAMMAR', '〜ばかりに', null, null, 'chỉ vì', 'N2', null, null, 0, 0, FULL_CARD, iso(now - 1000));
-  item.run('g2', 'GRAMMAR', '〜ざるを得ない', null, null, 'buộc phải', 'N2', null, null, 0, 0, null, iso(now - 2000));
-  item.run('g3', 'GRAMMAR', '〜わけではない', null, null, 'không phải là', 'N3', null, null, 0, 0, null, iso(now - 3000));
-  item.run('g4', 'GRAMMAR', '〜たばかり', null, null, 'vừa mới', 'N4', null, null, 0, 0, null, iso(now - 4000));
+  item.run(
+    'g1',
+    'GRAMMAR',
+    '〜ばかりに',
+    null,
+    null,
+    'chỉ vì',
+    'N2',
+    null,
+    null,
+    0,
+    0,
+    FULL_CARD,
+    iso(now - 1000),
+  );
+  item.run(
+    'g2',
+    'GRAMMAR',
+    '〜ざるを得ない',
+    null,
+    null,
+    'buộc phải',
+    'N2',
+    null,
+    null,
+    0,
+    0,
+    null,
+    iso(now - 2000),
+  );
+  item.run(
+    'g3',
+    'GRAMMAR',
+    '〜わけではない',
+    null,
+    null,
+    'không phải là',
+    'N3',
+    null,
+    null,
+    0,
+    0,
+    null,
+    iso(now - 3000),
+  );
+  item.run(
+    'g4',
+    'GRAMMAR',
+    '〜たばかり',
+    null,
+    null,
+    'vừa mới',
+    'N4',
+    null,
+    null,
+    0,
+    0,
+    null,
+    iso(now - 4000),
+  );
   // Từ vựng: 4 mục, 2 cấp, ba lý do khác nhau + một mục không có lý do, một mục CÓ âm Hán Việt.
-  item.run('v1', 'VOCAB', '把握', 'はあく', 'bả ác', 'nắm bắt', 'N2', '状況を把握する。', 'misused', 0, 0, null, iso(now - 1000));
-  item.run('v2', 'VOCAB', '曖昧', 'あいまい', 'ái muội', 'mơ hồ', 'N2', null, 'unclear', 0, 0, null, iso(now - 2000));
-  item.run('v3', 'VOCAB', '矛盾', 'むじゅん', 'mâu thuẫn', 'mâu thuẫn', 'N3', null, 'unknown', 0, 0, null, iso(now - 3000));
-  item.run('v4', 'VOCAB', '準備', 'じゅんび', null, 'sự chuẩn bị', 'N5', null, null, 0, 0, null, iso(now - 4000));
+  item.run(
+    'v1',
+    'VOCAB',
+    '把握',
+    'はあく',
+    'bả ác',
+    'nắm bắt',
+    'N2',
+    '状況を把握する。',
+    'misused',
+    0,
+    0,
+    null,
+    iso(now - 1000),
+  );
+  item.run(
+    'v2',
+    'VOCAB',
+    '曖昧',
+    'あいまい',
+    'ái muội',
+    'mơ hồ',
+    'N2',
+    null,
+    'unclear',
+    0,
+    0,
+    null,
+    iso(now - 2000),
+  );
+  item.run(
+    'v3',
+    'VOCAB',
+    '矛盾',
+    'むじゅん',
+    'mâu thuẫn',
+    'mâu thuẫn',
+    'N3',
+    null,
+    'unknown',
+    0,
+    0,
+    null,
+    iso(now - 3000),
+  );
+  item.run(
+    'v4',
+    'VOCAB',
+    '準備',
+    'じゅんび',
+    null,
+    'sự chuẩn bị',
+    'N5',
+    null,
+    null,
+    0,
+    0,
+    null,
+    iso(now - 4000),
+  );
 
   // Một nhóm mỗi loại. BẮT BUỘC phải có: `BulkGroupActions` không vẽ gì khi KHÔNG có nhóm nào nhận
   // được selection — hành vi đúng của app, nhưng nó làm bản đầu của test này đỏ ở chỗ "Thêm vào nhóm".
@@ -123,7 +235,11 @@ async function withFilters(page: Page, body: () => Promise<void>) {
 
 /** Số bản ghi bảng đang hiện, đọc từ dòng đếm của DataTable ("1–4 / 4 mẫu"). */
 async function shownCount(page: Page, noun: string): Promise<number> {
-  const text = (await page.getByText(new RegExp(`/\\s*\\d+\\s*${noun}`)).first().textContent()) ?? '';
+  const text =
+    (await page
+      .getByText(new RegExp(`/\\s*\\d+\\s*${noun}`))
+      .first()
+      .textContent()) ?? '';
   return Number(text.match(new RegExp(`/\\s*(\\d+)\\s*${noun}`))?.[1] ?? -1);
 }
 
@@ -133,7 +249,9 @@ const TABS = [
   { tab: 'vocab', noun: 'từ', firstHeader: 'Từ', bulkNoun: 'từ vựng' },
 ] as const;
 
-test('phần dùng chung của hai bảng: sắp xếp, cột ẩn mặc định, lọc theo cấp JLPT', async ({ page }) => {
+test('phần dùng chung của hai bảng: sắp xếp, cột ẩn mặc định, lọc theo cấp JLPT', async ({
+  page,
+}) => {
   await seed();
   await login(page);
 
@@ -263,4 +381,45 @@ test('chọn dòng: thanh hành động khối gọi đúng danh từ của từ
     await expect(page.getByRole('button', { name: /Thêm vào nhóm/ })).toBeVisible();
     await page.getByRole('button', { name: 'Bỏ chọn' }).click();
   }
+});
+
+test('bảng ngữ pháp không sinh thanh cuộn ngang ở 1440px, và không tiêu đề nào bị cắt', async ({
+  page,
+}) => {
+  // Vì sao ca này tồn tại (2026-08-11): rà giao diện bằng ảnh chụp phát hiện bảng rộng 1146px trong
+  // khung 1132px — tràn đúng 14px, tức một thanh cuộn ngang chỉ để cuộn 14px, kèm cột cuối bị cắt. Cùng
+  // lúc, "Level" (80px) bị cắt thành "Le…" và "Ngày thêm" (120px) thành "Ngày th…", vì ô tiêu đề còn
+  // phải chứa tay kéo cột + nút sắp xếp — ĐO được là 48px phí mỗi ô. Cả ba đều là loại lỗi đọc code
+  // không thấy: mọi con số trong `size:` trông hợp lý, chỉ trình duyệt mới biết chúng không vừa.
+  //
+  // Ca này chốt CẢ HAI, ở đúng bề rộng đã đo. Nó cố ý không chốt từng con số `size:` — chốt hệ quả
+  // (không tràn, không cắt) để còn đổi bề rộng cột được mà không phải sửa test.
+  await seed();
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await login(page);
+  await page.goto('/resources?tab=grammar', { waitUntil: 'networkidle' });
+  await expect(page.getByRole('columnheader', { name: /Cấp/ })).toBeVisible();
+
+  const fit = await page.evaluate(() => {
+    const table = document.querySelector('table');
+    if (!table) return { error: 'không thấy bảng' };
+    // Phần tử cuộn ngang, tìm bằng cách đi LÊN từ bảng thay vì đoán class.
+    let overflowPx = 0;
+    for (let el: HTMLElement | null = table.parentElement; el; el = el.parentElement) {
+      overflowPx = Math.max(overflowPx, el.scrollWidth - el.clientWidth);
+    }
+    // Node thật sự cắt chữ tiêu đề là `span.truncate` trong nút sắp xếp.
+    const cut = [...document.querySelectorAll('th')]
+      .map((th) => {
+        const span = th.querySelector('span.truncate');
+        if (!span) return null;
+        return span.scrollWidth > span.clientWidth + 1 ? (th.textContent ?? '').trim() : null;
+      })
+      .filter((x): x is string => x !== null);
+    return { overflowPx, cut };
+  });
+
+  expect(fit, 'bảng phải render').not.toHaveProperty('error');
+  expect(fit.cut, 'không tiêu đề cột nào được phép bị cắt').toEqual([]);
+  expect(fit.overflowPx, 'không phần tử nào quanh bảng được cuộn ngang ở 1440px').toBe(0);
 });

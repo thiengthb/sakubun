@@ -152,7 +152,10 @@ export function srsMetaColumns<T extends ResourceRowBase>(dueSize: number): Colu
       id: 'created',
       accessorFn: (r) => new Date(r.createdAt).getTime(),
       header: 'Ngày thêm',
-      size: 120,
+      // 124, không phải 120: đo được 2026-08-11 rằng ô tiêu đề mất 48px cho tay kéo + nút sắp xếp +
+      // đệm, và "Ngày thêm" cần 73px chữ → sàn là 121px. Ở 120px nó bị cắt thành "Ngày th…" — thiếu
+      // đúng một pixel, kiểu lỗi chỉ nhìn ảnh chụp mới thấy mà đọc code thì không.
+      size: 124,
       minSize: 90,
       enableGlobalFilter: false,
       meta: { label: 'Ngày thêm', cellClassName: `${NUM_CELL} whitespace-nowrap` },

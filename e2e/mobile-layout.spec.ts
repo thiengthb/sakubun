@@ -426,10 +426,11 @@ test('mobile: the sort sheet reorders the card list', async ({ page }) => {
   const sheet = page.locator('[data-slot="sheet-content"][data-side="bottom"]');
   await expect(sheet).toBeVisible();
 
-  // Level, descending. The seeded grammar spans N2..N5 with exactly ONE N5 (〜てしまう), so descending
-  // puts a known row first — and ascending puts an N2 one there instead.
+  // Cấp (JLPT), descending. The seeded grammar spans N2..N5 with exactly ONE N5 (〜てしまう), so
+  // descending puts a known row first — and ascending puts an N2 one there instead. (Nhãn đổi từ
+  // "Level" sang "Cấp" ngày 2026-08-11: nó là tiêu đề cột duy nhất còn tiếng Anh.)
   await sheet.getByRole('combobox').first().click();
-  await page.getByRole('option', { name: 'Level', exact: true }).click();
+  await page.getByRole('option', { name: 'Cấp', exact: true }).click();
   await page.getByRole('button', { name: 'Giảm dần' }).click();
   await page.getByRole('button', { name: 'Xem kết quả' }).click();
   await expect(cards.first()).toContainText('N5');
