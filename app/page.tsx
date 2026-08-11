@@ -28,6 +28,7 @@ import { getAnalytics } from '@/lib/analytics';
 import { getSettings, getStats, getWeakReport, listSentences } from '@/lib/practice';
 import { computeDossier } from '@/lib/dossier';
 import { listLearnerNotesWithEvidence } from '@/lib/learner-notes';
+import { chartEmptyMessage } from '@/lib/chart-empty';
 import { getStudyStats } from '@/lib/stats';
 import { getSessionUserId } from '@/lib/current-user';
 import { cn } from '@/lib/utils';
@@ -169,8 +170,17 @@ function HeatmapLegend() {
 
 /** GitHub-style contribution heatmap: 7 rows (day of week) × 52 columns (weeks), color = review count. */
 function Heatmap({ data, max }: { data: { day: string; count: number }[]; max: number }) {
-  if (data.every((d) => d.count === 0)) {
-    return <p className="py-8 text-center text-sm text-muted-foreground">Chưa có hoạt động nào.</p>;
+  const empty = chartEmptyMessage({
+    // Nhiệt đồ luôn là 1 năm, nên không có kỳ nào dài hơn để gợi ý — hai cờ bằng nhau.
+    hasInWindow: data.some((d) => d.count > 0),
+    hasInYear: data.some((d) => d.count > 0),
+    rangeLabel: '1 năm',
+    noun: 'hoạt động nào',
+  });
+  if (empty) {
+    // Cùng một giọng với các thẻ ở tab Thống kê: nói luôn dữ liệu đến từ đâu, vì không nút nào trên web
+    // sinh ra nó. Trước đây câu ở đây chỉ là "Chưa có hoạt động nào." — đúng mà không giúp được gì.
+    return <p className="py-8 text-center text-sm text-muted-foreground">{empty}</p>;
   }
   return (
     // Starts at the right end (= today). The full year is ~830px wide, so on a phone the box shows about

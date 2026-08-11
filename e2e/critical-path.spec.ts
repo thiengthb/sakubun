@@ -21,6 +21,8 @@ test('login → dashboard → a settings change persists across reload', async (
 
   // A fresh account has no items, so the authed dashboard shows the empty-state prompt.
   await expect(page.getByText('Chưa có gì để học')).toBeVisible();
+  // Measured 2026-08-12: an empty store short-circuits to THIS state — no tabs, no charts at all. So the
+  // empty-chart message lives in `lib/chart-empty.ts` with unit tests, not in an e2e assertion here.
 
   // Change "Mẫu ngữ pháp mới / ngày" (default 3) → 11, save, reload, and assert it stuck.
   await page.goto('/settings');

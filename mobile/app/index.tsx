@@ -154,7 +154,13 @@ export default function HomeScreen() {
         </Section>
 
         <Text style={[styles.footnote, { color: theme.muted }]}>
-          Số liệu lúc {new Date(s.takenAt).toLocaleTimeString('vi-VN')}
+          {/* Ghim +07 như mọi mốc thời gian khác của app (`APP_TIME_ZONE` trong lib/format.ts). Chuỗi
+              được viết lại ở đây thay vì import: `mobile` chỉ mới dùng `@/lib/...` cho import TYPE — thứ
+              bị xoá lúc build — nên chưa có bằng chứng Metro giải được alias đó lúc CHẠY, và một hằng số
+              19 ký tự không đáng đánh cược bundle. Hạn mức ngày của server cũng tính theo +07, nên hiện
+              giờ máy sẽ làm "hôm nay" trên điện thoại lệch với "hôm nay" của hạn mức. */}
+          Số liệu lúc{' '}
+          {new Date(s.takenAt).toLocaleTimeString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}
         </Text>
       </ScrollView>
     </SafeAreaView>

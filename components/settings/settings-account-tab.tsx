@@ -34,7 +34,7 @@ import { Label } from '@/components/ui/label';
 import { SettingsTab } from '@/components/settings/settings-tab';
 import { McpUsageCard } from '@/components/settings/mcp-usage-card';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
-import { formatDateTimeVN, formatDateVN } from '@/lib/format';
+import { APP_TIME_ZONE, formatDateTimeVN, formatDateVN } from '@/lib/format';
 import type { ToolUsageReport } from '@/lib/mcp/usage';
 
 export interface McpKeyRow {
@@ -46,6 +46,7 @@ export interface McpKeyRow {
 
 function fmtDate(iso: string): string {
   return new Date(iso).toLocaleDateString('vi-VN', {
+    timeZone: APP_TIME_ZONE,
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',

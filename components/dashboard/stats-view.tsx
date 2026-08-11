@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useSessionState } from '@/components/shared/use-session-state';
+import { chartEmptyMessage } from '@/lib/chart-empty';
 import { cn } from '@/lib/utils';
 import type { DailyStat, StudyStats } from '@/lib/stats';
 import type { PerfBreakdown } from '@/lib/analytics';
@@ -125,12 +126,21 @@ function ChartCard({
   hint,
   children,
   className,
+  empty,
 }: {
   title: string;
   hint?: string;
   children: React.ReactNode;
   /** Chỗ để một thẻ tự khai nó chiếm cả hàng trong lưới 2 cột. */
   className?: string;
+  /**
+   * Câu thay cho biểu đồ khi không có gì để vẽ. Chuỗi rỗng / false / null = có dữ liệu, vẽ bình thường.
+   *
+   * Vì sao thẻ tự quyết chứ không để Recharts tự lo: một `ComposedChart` với chuỗi toàn số 0 vẫn vẽ đủ
+   * lưới, hai trục và 240px trắng — trông y như biểu đồ HỎNG chứ không phải "chưa có dữ liệu". Đo ở
+   * 390px 2026-08-11: sáu thẻ như vậy chồng nhau thành 2683px trang chủ mà không nói được gì.
+   */
+  empty?: string | false | null;
 }) {
   return (
     <div className={cn('space-y-3 rounded-lg border border-border/70 p-4', className)}>
@@ -138,7 +148,11 @@ function ChartCard({
         <h3 className="text-sm font-medium">{title}</h3>
         {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
       </div>
-      {children}
+      {empty ? (
+        <p className="py-10 text-center text-sm text-muted-foreground">{empty}</p>
+      ) : (
+        children
+      )}
     </div>
   );
 }
@@ -176,6 +190,26 @@ export function StatsView({ stats }: { stats: StudyStats }) {
     sentences: b.sentences,
     newItems: b.newItems,
   }));
+
+  // Thẻ nào không có gì để vẽ thì NÓI RA (xem `lib/chart-empty.ts` cho lý do và cho phần test). Cửa sổ
+  // đang xem lấy từ chuỗi đã bucket; "cả năm" lấy từ `stats.daily` — server luôn gửi đủ 365 ngày, nên
+  // phân biệt được hai ca mà không cần gọi thêm.
+  const rangeLabel = RANGES.find((r) => r.value === range)?.label ?? `${range} ngày`;
+  const emptyFor = (kind: 'reviews' | 'sentences' | 'progress', noun: string): string | null => {
+    const hasInWindow =
+      kind === 'reviews'
+        ? accuracySeries.some((b) => b.reviews > 0)
+        : kind === 'sentences'
+          ? timeSeries.some((b) => b.sentences > 0)
+          : progressSeries.some((b) => b.sentences > 0 || b.newItems > 0);
+    const hasInYear =
+      kind === 'reviews'
+        ? stats.daily.some((d) => d.reviews > 0)
+        : kind === 'sentences'
+          ? stats.daily.some((d) => d.sentences > 0)
+          : stats.daily.some((d) => d.sentences > 0 || d.newItems > 0);
+    return chartEmptyMessage({ hasInWindow, hasInYear, rangeLabel, noun });
+  };
 
   return (
     <div className="space-y-6">
@@ -225,6 +259,7 @@ export function StatsView({ stats }: { stats: StudyStats }) {
         <ChartCard
           title="Độ chính xác theo thời gian"
           hint="Đường = % đúng mỗi mốc · cột = số lượt ôn · nét đứt = trung bình cả kỳ"
+          empty={emptyFor('reviews', 'lượt ôn nào')}
         >
           <ResponsiveContainer width="100%" height={240}>
             <ComposedChart
@@ -287,6 +322,7 @@ export function StatsView({ stats }: { stats: StudyStats }) {
         <ChartCard
           title="Thời gian làm bài theo thời gian"
           hint="Đường = giây/câu mỗi mốc · cột = số câu · nét đứt = trung bình cả kỳ"
+          empty={emptyFor('sentences', 'câu nào được chấm')}
         >
           <ResponsiveContainer width="100%" height={240}>
             <ComposedChart data={timeSeries} margin={{ top: 6, right: 8, bottom: 0, left: -18 }}>
@@ -344,6 +380,7 @@ export function StatsView({ stats }: { stats: StudyStats }) {
           title="Tiến độ theo ngày"
           hint="Số câu đã luyện + số mẫu/từ mới giới thiệu mỗi mốc"
           className="lg:col-span-2"
+          empty={emptyFor('progress', 'hoạt động nào')}
         >
           <ResponsiveContainer width="100%" height={240}>
             <ComposedChart
@@ -387,52 +424,53 @@ function PerfChart({ title, rows }: { title: string; rows: PerfBreakdown[] }) {
     count: r.count,
   }));
   return (
-    <ChartCard title={title} hint="Cột = điểm TB /100 · đường = giây/câu · (1 năm gần nhất)">
-      {data.length === 0 ? (
-        <p className="py-10 text-center text-sm text-muted-foreground">Chưa đủ dữ liệu.</p>
-      ) : (
-        <ResponsiveContainer width="100%" height={240}>
-          <ComposedChart data={data} margin={{ top: 6, right: 8, bottom: 0, left: -18 }}>
-            <CartesianGrid stroke={C.grid} strokeDasharray="3 3" vertical={false} />
-            <XAxis dataKey="label" tick={axisTick} tickLine={false} axisLine={false} />
-            <YAxis
-              yAxisId="l"
-              domain={[0, 100]}
-              tick={axisTick}
-              tickLine={false}
-              axisLine={false}
-            />
-            <YAxis
-              yAxisId="r"
-              orientation="right"
-              tick={axisTick}
-              tickLine={false}
-              axisLine={false}
-            />
-            <Tooltip contentStyle={tooltipStyle} />
-            {/* `maxBarSize`: recharts chia đều bề rộng cho số nhóm, nên hai nhóm trên màn 1440px thành
+    <ChartCard
+      title={title}
+      hint="Cột = điểm TB /100 · đường = giây/câu · (1 năm gần nhất)"
+      // Thẻ này luôn nhìn cả năm (không theo ô chọn kỳ), nên `hasInWindow` = `hasInYear`: không có kỳ
+      // nào dài hơn để gợi ý, và câu phải nói dữ liệu đến từ đâu.
+      empty={chartEmptyMessage({
+        hasInWindow: data.length > 0,
+        hasInYear: data.length > 0,
+        rangeLabel: '1 năm',
+        noun: 'câu nào được chấm',
+      })}
+    >
+      <ResponsiveContainer width="100%" height={240}>
+        <ComposedChart data={data} margin={{ top: 6, right: 8, bottom: 0, left: -18 }}>
+          <CartesianGrid stroke={C.grid} strokeDasharray="3 3" vertical={false} />
+          <XAxis dataKey="label" tick={axisTick} tickLine={false} axisLine={false} />
+          <YAxis yAxisId="l" domain={[0, 100]} tick={axisTick} tickLine={false} axisLine={false} />
+          <YAxis
+            yAxisId="r"
+            orientation="right"
+            tick={axisTick}
+            tickLine={false}
+            axisLine={false}
+          />
+          <Tooltip contentStyle={tooltipStyle} />
+          {/* `maxBarSize`: recharts chia đều bề rộng cho số nhóm, nên hai nhóm trên màn 1440px thành
                 hai TẤM rộng ~170px. Chặn lại để cột vẫn là cột dù chỉ có hai nhóm. */}
-            <Bar
-              yAxisId="l"
-              dataKey="score"
-              name="Điểm TB"
-              fill={C.accuracy}
-              radius={[3, 3, 0, 0]}
-              maxBarSize={56}
-            />
-            <Line
-              yAxisId="r"
-              type="monotone"
-              dataKey="sec"
-              name="Giây/câu"
-              stroke={C.time}
-              strokeWidth={2}
-              dot={{ r: 3 }}
-              connectNulls
-            />
-          </ComposedChart>
-        </ResponsiveContainer>
-      )}
+          <Bar
+            yAxisId="l"
+            dataKey="score"
+            name="Điểm TB"
+            fill={C.accuracy}
+            radius={[3, 3, 0, 0]}
+            maxBarSize={56}
+          />
+          <Line
+            yAxisId="r"
+            type="monotone"
+            dataKey="sec"
+            name="Giây/câu"
+            stroke={C.time}
+            strokeWidth={2}
+            dot={{ r: 3 }}
+            connectNulls
+          />
+        </ComposedChart>
+      </ResponsiveContainer>
     </ChartCard>
   );
 }

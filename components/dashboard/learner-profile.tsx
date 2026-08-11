@@ -4,6 +4,7 @@ import { ArrowRight, Quote } from 'lucide-react';
 import { SpokenLine } from '@/components/shared/spoken-line';
 import { Badge } from '@/components/ui/badge';
 import { ERROR_TAG_LABELS } from '@/lib/error-tags';
+import { APP_TIME_ZONE } from '@/lib/format';
 import type { Dossier, TrendDirection } from '@/lib/dossier';
 import type { AssertedNoteWithEvidence } from '@/lib/learner-notes';
 import { furiganaInApp, type FuriganaMode } from '@/lib/settings-schema';
@@ -48,7 +49,11 @@ function Block({ label, children }: { label: string; children: React.ReactNode }
 }
 
 function dateVi(d: Date): string {
-  return new Intl.DateTimeFormat('vi-VN', { day: '2-digit', month: '2-digit' }).format(d);
+  return new Intl.DateTimeFormat('vi-VN', {
+    timeZone: APP_TIME_ZONE,
+    day: '2-digit',
+    month: '2-digit',
+  }).format(d);
 }
 
 export function LearnerProfile({
