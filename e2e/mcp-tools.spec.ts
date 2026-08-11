@@ -221,6 +221,9 @@ const STEPS: Step[] = [
       sentenceId: ctx.pendingSentenceId,
       userAnswer: 'Thì ra đường đang tắc.',
       ratings: [{ itemId: ctx.grammarItemId, rating: 3, role: 'TARGET' }],
+      // `score` bắt buộc từ 2026-08-11: một lượt không có điểm là một lượt người học đọc thành "app
+      // không chấm". Thiếu nó thì SDK chặn ở -32602, trước cả handler.
+      score: 72,
     }),
     why: 'Tool duy nhất ghi lịch FSRS. Nó cũng sinh ra calibration proposal cho bước dưới.',
   },
