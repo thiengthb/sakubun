@@ -8,12 +8,13 @@ status: active
 owner: "@ai"
 added: 2026-08-12
 expires-review: 2027-02-12
-occurrences: 4
+occurrences: 5
 evidence:
   - "sakubun 2026-07: `errorDigest` — đoán hình dạng chuỗi lỗi Prisma (đầu chuỗi, rồi 'đoạn cách bằng dòng trống'), e2e đỏ hai lần trước khi đọc chuỗi thật."
   - "sakubun 2026-08-11: điểm không hiện trên UI — đoán rằng log production không có lỗi nghĩa là app lành. Thật ra `score` là `.optional()` ở biên MCP (xem [[0004-prose-doi-truong-ma-schema-cho-phep-thieu]])."
   - "sakubun 2026-08-11: đoán ô tiêu đề bảng mất '~40px cho tay kéo + nút sắp xếp', đặt cột 64px → tiêu đề bị cắt thành 'C.', TỆ HƠN trước khi sửa. Đo ra: đúng 48px."
   - "sakubun 2026-08-11: mở issue #30 gọi một lỗi là lỗi production, kèm giả thuyết selective hydration của React. Hôm sau đo lại: tab đang `visibilityState: hidden` nên Chrome không render. Không có lỗi production nào."
+  - "sakubun 2026-08-12: extension Chrome không nối. Đo registry key, manifest, allowed_origins, mtime của exe, thời điểm Chrome khởi động, số profile — LÀNH HẾT. Nguyên nhân thật: extension đăng nhập claude.ai bằng tài khoản khác Claude Code, đúng điều thông báo lỗi nói ở dòng đầu. Chủ repo tự tìm ra."
 artifacts:
   - "e2e/resources-tables.spec.ts (phép đo dùng-một-lần đã thành lưới thường trú: cộng scrollWidth-clientWidth, và bắt mọi th có span.truncate bị cắt)"
   - "e2e/no-js-first-paint.spec.ts (tải trang với JS tắt = đúng bằng HTML server, không phải xấp xỉ của nó)"
@@ -68,6 +69,15 @@ Ba thứ làm nó khả thi thay vì chỉ là lời khuyên tốt:
    vừa không" không bao giờ phải hỏi lại bằng mắt.
 3. **Khai biến môi trường trong cùng một output.** Với browser automation, ba biến đó là
    `visibilityState`, `hasFocus()`, kích thước viewport. Chúng rẻ đến mức không có cớ để thiếu.
+
+**Và biết khi nào phép đo KHÔNG phải câu trả lời.** Ca thứ năm ở trên là mặt khác của cùng đồng xu: tôi
+đo sáu thứ, tất cả đều lành, và biến quyết định — *extension đang đăng nhập tài khoản nào* — **không đo
+được từ shell**. Nó cũng được viết sẵn ở dòng đầu của thông báo lỗi, thứ tôi đọc qua mà không hành động.
+
+Nên luật có mệnh đề thứ hai: **trước khi đo vòng thứ ba, hỏi "biến quyết định có nằm trong tập biến tôi
+NHÌN THẤY được không?"** Nếu không — danh tính, phiên đăng nhập, quyền, thứ người dùng thấy trên màn hình
+của họ — thì một câu hỏi cho người dùng rẻ hơn năm phép đo, và không hỏi là cách sang trọng để đoán. Đọc
+kỹ thông báo lỗi cũng thuộc mục này: nó thường đã nêu đúng biến đó, và "đã đọc" không bằng "đã kiểm".
 
 Và một phản xạ: **triệu chứng chỉ xuất hiện dưới công cụ tự động mà "người thật bấm thì được" → nghi
 công cụ trước, đừng nghi framework.** Nghi framework sinh ra một giả thuyết nghe rất kỹ thuật (lần đó là
