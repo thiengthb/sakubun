@@ -11,14 +11,15 @@ import { HistoryCard } from '@/components/history/history-cards';
 import { HistoryFlashcards } from '@/components/history/history-flashcards';
 import {
   DEFAULT_FILTERS,
+  HistoryFilterPopover,
   HistoryFilters,
+  HistoryModeToggle,
   inDatePreset,
   inDurationBucket,
   isFail,
   type Filters,
 } from '@/components/history/history-filters';
 import { lengthBucket, type LengthBucketKey } from '@/lib/format';
-import { cn } from '@/lib/utils';
 import { furiganaInApp, type FuriganaMode } from '@/lib/settings-schema';
 import type { SentenceHistoryRow } from '@/lib/practice';
 
@@ -39,7 +40,6 @@ export function HistoryList({
   // refetch — so a filtered view is shareable + survives F5. Page/size are ephemeral (sessionStorage only).
   const [search, setSearch] = useSessionState('history.search', '', 'q');
   const [filters, setFilters] = useSessionState<Filters>('history.filters', DEFAULT_FILTERS, 'hf');
-  const [columns, setColumns] = useSessionState<1 | 2>('history.columns', 2, 'cols');
   // List vs flashcard. URL-synced like the other shareable view state, so a reload (or a link) keeps
   // you in the deck instead of dropping you back into the table.
   const [mode, setMode] = useSessionState<'list' | 'card'>('history.mode', 'list', 'view');
@@ -74,8 +74,9 @@ export function HistoryList({
     });
   }, [sentences, search, filters]);
 
-  // Cards estimated ~120px tall; the hook measures the real height once rendered. The grid is 1 or 2
-  // columns (the `columns` toggle × the lg breakpoint) — the hook reads the live column count.
+  // Cards estimated ~120px tall; the hook measures the real height once rendered. The grid is one
+  // column below lg and two from lg up — the hook reads the live column count off the DOM, so dropping
+  // the 1-cột/2-cột toggle (2026-08-11) changed nothing here.
   const paged = usePagedList(filtered, {
     topRef: listRef,
     footerRef,
@@ -126,25 +127,32 @@ export function HistoryList({
     resetPage();
   };
 
+  const resetFilters = () => {
+    setFilters(DEFAULT_FILTERS);
+    resetPage();
+  };
+
+  // Chế độ thẻ CÓ thẻ để lướt. Khi bộ lọc không còn khớp gì, deck không tồn tại — nên hàng tìm kiếm
+  // phải quay lại, nếu không người học bị kẹt trước một khoảng trống mà không có ô tìm để mở lại.
+  const deckMode = mode === 'card' && filtered.length > 0;
+
   return (
     <div className="space-y-4">
-      <HistoryFilters
-        search={search}
-        onSearchChange={(v) => {
-          setSearch(v);
-          resetPage();
-        }}
-        filters={filters}
-        onPatch={patch}
-        onResetFilters={() => {
-          setFilters(DEFAULT_FILTERS);
-          resetPage();
-        }}
-        columns={columns}
-        onColumnsChange={setColumns}
-        mode={mode}
-        onModeChange={setMode}
-      />
+      {/* Ở chế độ thẻ, hàng này biến mất và thanh tiến độ của deck lên chiếm đúng chỗ nó. */}
+      {!deckMode && (
+        <HistoryFilters
+          search={search}
+          onSearchChange={(v) => {
+            setSearch(v);
+            resetPage();
+          }}
+          filters={filters}
+          onPatch={patch}
+          onResetFilters={resetFilters}
+          mode={mode}
+          onModeChange={setMode}
+        />
+      )}
 
       {filtered.length === 0 ? (
         <EmptyState icon={SearchX} title="Không có lượt dịch nào khớp bộ lọc." className="py-12" />
@@ -156,17 +164,18 @@ export function HistoryList({
           voiceSpeaker={voiceSpeaker}
           speechRate={speechRate}
           showFurigana={showFurigana}
+          // Hai nút kẹp nút cài đặt deck ở giữa: [Danh sách] [Cài đặt] [Bộ lọc].
+          toolbarStart={<HistoryModeToggle mode={mode} onModeChange={setMode} />}
+          toolbarEnd={
+            <HistoryFilterPopover filters={filters} onPatch={patch} onResetFilters={resetFilters} />
+          }
         />
       ) : (
         <>
-          <ul
-            ref={listRef}
-            className={cn(
-              'grid grid-cols-1 gap-3',
-              // Only the large breakpoint splits — below it the cards need the full width regardless.
-              columns === 2 && 'lg:grid-cols-2',
-            )}
-          >
+          {/* Only the large breakpoint splits — below it the cards need the full width regardless. Đây
+              từng là một tuỳ chọn (nút 1 cột / 2 cột), bỏ 2026-08-11: nó chỉ có tác dụng từ lg trở lên
+              nên trên điện thoại là nút không làm gì, và hai cột vốn là mặc định người dùng vẫn để. */}
+          <ul ref={listRef} className="grid grid-cols-1 gap-3 lg:grid-cols-2">
             {visible.map((s) => (
               <HistoryCard
                 key={s.id}

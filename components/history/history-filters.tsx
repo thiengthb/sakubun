@@ -1,6 +1,6 @@
 'use client';
 
-import { Layers, LayoutGrid, List, Rows3 } from 'lucide-react';
+import { Layers, List } from 'lucide-react';
 import { ExpandingIconButton } from '@/components/shared/expanding-icon-button';
 import {
   Select,
@@ -94,15 +94,213 @@ export function inDurationBucket(s: SentenceHistoryRow, bucket: string): boolean
   return true;
 }
 
-/** The search box + full filter popover for the history view. All page-reset happens in the callbacks. */
+/**
+ * Nút lật giữa danh sách và flashcard.
+ *
+ * Tách khỏi hàng tìm kiếm 2026-08-11: ở chế độ flashcard hàng tìm kiếm không còn (gõ tìm một chuỗi
+ * trong khi đang lướt thẻ là việc không ai làm), nên nút này xuống hàng công cụ của deck và đứng cạnh
+ * nút cài đặt deck. Cùng một nút ở hai chỗ đặt — nên nó là một component, không phải hai bản sao.
+ */
+export function HistoryModeToggle({
+  mode,
+  onModeChange,
+}: {
+  /** Read the history as a list, or flip through it one card at a time. */
+  mode: 'list' | 'card';
+  onModeChange: (mode: 'list' | 'card') => void;
+}) {
+  return (
+    // Nhãn nói việc lần bấm TỚI làm, không nói chế độ đang ở.
+    <ExpandingIconButton
+      icon={mode === 'list' ? Layers : List}
+      label={mode === 'list' ? 'Flashcard' : 'Danh sách'}
+      aria-pressed={mode === 'card'}
+      onClick={() => onModeChange(mode === 'list' ? 'card' : 'list')}
+    />
+  );
+}
+
+/**
+ * Popover bộ lọc đầy đủ. Có mặt ở CẢ HAI chế độ, vì deck được chia từ đúng những gì bộ lọc đã thu hẹp
+ * (chỉ câu sai, có sao, N2, tuần trước) — đó là lý do nút lật chế độ nằm trong thanh công cụ chứ không
+ * nằm cạnh tiêu đề trang.
+ */
+export function HistoryFilterPopover({
+  filters,
+  onPatch,
+  onResetFilters,
+}: {
+  filters: Filters;
+  onPatch: (patch: Partial<Filters>) => void;
+  onResetFilters: () => void;
+}) {
+  const activeCount = activeFilterCount(filters);
+
+  return (
+    <FilterPopover activeCount={activeCount} align="end" onReset={onResetFilters}>
+      <FilterRow label="Chiều dịch">
+        <Select value={filters.direction} onValueChange={(v) => onPatch({ direction: v })}>
+          <SelectTrigger size="sm" className="w-full">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent position="popper">
+            <SelectItem value="all">Mọi chiều</SelectItem>
+            <SelectItem value="JA_VI">JP → VN</SelectItem>
+            <SelectItem value="VI_JA">VN → JP</SelectItem>
+          </SelectContent>
+        </Select>
+      </FilterRow>
+
+      <FilterRow label="Kết quả">
+        <Select value={filters.result} onValueChange={(v) => onPatch({ result: v })}>
+          <SelectTrigger size="sm" className="w-full">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent position="popper">
+            <SelectItem value="all">Mọi kết quả</SelectItem>
+            <SelectItem value="pass">Đạt (Good/Easy)</SelectItem>
+            <SelectItem value="fail">Có lỗi (Again/Hard)</SelectItem>
+          </SelectContent>
+        </Select>
+      </FilterRow>
+
+      <FilterRow label="Dạng bài">
+        <Select value={filters.type} onValueChange={(v) => onPatch({ type: v })}>
+          <SelectTrigger size="sm" className="w-full">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent position="popper">
+            <SelectItem value="all">Mọi dạng</SelectItem>
+            {Object.entries(EXERCISE_TYPE_LABELS).map(([v, l]) => (
+              <SelectItem key={v} value={v}>
+                {l}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </FilterRow>
+
+      <FilterRow label="Trạng thái">
+        <Select value={filters.status} onValueChange={(v) => onPatch({ status: v })}>
+          <SelectTrigger size="sm" className="w-full">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent position="popper">
+            <SelectItem value="all">Mọi trạng thái</SelectItem>
+            {Object.entries(STATUS_LABELS).map(([v, l]) => (
+              <SelectItem key={v} value={v}>
+                {l}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </FilterRow>
+
+      <FilterRow label="Độ khó (JLPT)">
+        <Select value={filters.level} onValueChange={(v) => onPatch({ level: v })}>
+          <SelectTrigger size="sm" className="w-full">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent position="popper">
+            <SelectItem value="all">Mọi cấp</SelectItem>
+            {JLPT_LEVELS.map((l) => (
+              <SelectItem key={l} value={l}>
+                {l}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </FilterRow>
+
+      <FilterRow label="Độ dài">
+        <Select value={filters.length} onValueChange={(v) => onPatch({ length: v })}>
+          <SelectTrigger size="sm" className="w-full">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent position="popper">
+            <SelectItem value="all">Mọi độ dài</SelectItem>
+            {LENGTH_BUCKETS.map((b) => (
+              <SelectItem key={b.key} value={b.key}>
+                {b.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </FilterRow>
+
+      <FilterRow label="Thời gian làm">
+        <Select value={filters.duration} onValueChange={(v) => onPatch({ duration: v })}>
+          <SelectTrigger size="sm" className="w-full">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent position="popper">
+            <SelectItem value="all">Mọi mức</SelectItem>
+            {DURATION_BUCKETS.map((b) => (
+              <SelectItem key={b.value} value={b.value}>
+                {b.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </FilterRow>
+
+      <FilterRow label="Ngày làm">
+        <Select value={filters.datePreset} onValueChange={(v) => onPatch({ datePreset: v })}>
+          <SelectTrigger size="sm" className="w-full">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent position="popper">
+            {DATE_PRESETS.map((d) => (
+              <SelectItem key={d.value} value={d.value}>
+                {d.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </FilterRow>
+
+      <FilterRow label="Đánh dấu sao">
+        <Select value={filters.starred} onValueChange={(v) => onPatch({ starred: v })}>
+          <SelectTrigger size="sm" className="w-full">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent position="popper">
+            <SelectItem value="all">Tất cả</SelectItem>
+            <SelectItem value="yes">Đã đánh dấu sao</SelectItem>
+          </SelectContent>
+        </Select>
+      </FilterRow>
+
+      <div className="col-span-2">
+        <FilterRow label={`Điểm số: ${filters.scoreMin}–${filters.scoreMax}`}>
+          <div className="flex h-8 items-center px-1">
+            <Slider
+              thumbLabel={['Điểm số tối thiểu', 'Điểm số tối đa']}
+              min={0}
+              max={100}
+              step={5}
+              value={[filters.scoreMin, filters.scoreMax]}
+              onValueChange={([lo, hi]) => onPatch({ scoreMin: lo, scoreMax: hi })}
+            />
+          </div>
+        </FilterRow>
+      </div>
+    </FilterPopover>
+  );
+}
+
+/**
+ * Hàng tìm kiếm của /history: ô tìm + nút lật chế độ + bộ lọc.
+ *
+ * CHỈ có ở chế độ danh sách. Ở chế độ flashcard, `HistoryList` không render hàng này nữa — thanh tiến
+ * độ của deck lên chiếm đúng hàng đó, và hai nút chuyển xuống thanh công cụ của deck.
+ */
 export function HistoryFilters({
   search,
   onSearchChange,
   filters,
   onPatch,
   onResetFilters,
-  columns,
-  onColumnsChange,
   mode,
   onModeChange,
 }: {
@@ -111,15 +309,9 @@ export function HistoryFilters({
   filters: Filters;
   onPatch: (patch: Partial<Filters>) => void;
   onResetFilters: () => void;
-  /** Cards per row on large screens (1 or 2). */
-  columns: 1 | 2;
-  onColumnsChange: (columns: 1 | 2) => void;
-  /** Read the history as a list, or flip through it one card at a time. */
   mode: 'list' | 'card';
   onModeChange: (mode: 'list' | 'card') => void;
 }) {
-  const activeCount = activeFilterCount(filters);
-
   return (
     // One row at EVERY width (it used to stack below sm). The toolbar rule for this app is that the
     // actions share the search box's row — a phone has vertical space to spare only in theory, and the
@@ -135,177 +327,8 @@ export function HistoryFilters({
         className="min-w-0 flex-1 sm:max-w-xs"
       />
       <div className="flex shrink-0 items-center gap-2 md:ml-auto">
-        {/* List <-> flashcard. Same expanding-label button as the rest of the toolbar, and labelled by
-            what the next click DOES. It stays in the toolbar (rather than moving up to the page header)
-            because the filters keep working in card mode — the deck is dealt from whatever the search
-            and the filter popover have narrowed to, so the two controls belong on the same row. */}
-        <ExpandingIconButton
-          icon={mode === 'list' ? Layers : List}
-          label={mode === 'list' ? 'Flashcard' : 'Danh sách'}
-          aria-pressed={mode === 'card'}
-          onClick={() => onModeChange(mode === 'list' ? 'card' : 'list')}
-        />
-        {/* Layout density — sits immediately LEFT of Bộ lọc and uses the same expanding-label button.
-            Hidden below lg because the grid is single-column there anyway, so the control would be a
-            no-op; hidden in card mode for the same reason (one card, no columns). */}
-        {mode === 'list' && (
-          <ExpandingIconButton
-            icon={columns === 2 ? Rows3 : LayoutGrid}
-            label={columns === 2 ? '1 cột' : '2 cột'}
-            className="hidden lg:inline-flex"
-            aria-pressed={columns === 1}
-            onClick={() => onColumnsChange(columns === 2 ? 1 : 2)}
-          />
-        )}
-        <FilterPopover activeCount={activeCount} align="end" onReset={onResetFilters}>
-          <FilterRow label="Chiều dịch">
-            <Select value={filters.direction} onValueChange={(v) => onPatch({ direction: v })}>
-              <SelectTrigger size="sm" className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent position="popper">
-                <SelectItem value="all">Mọi chiều</SelectItem>
-                <SelectItem value="JA_VI">JP → VN</SelectItem>
-                <SelectItem value="VI_JA">VN → JP</SelectItem>
-              </SelectContent>
-            </Select>
-          </FilterRow>
-
-          <FilterRow label="Kết quả">
-            <Select value={filters.result} onValueChange={(v) => onPatch({ result: v })}>
-              <SelectTrigger size="sm" className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent position="popper">
-                <SelectItem value="all">Mọi kết quả</SelectItem>
-                <SelectItem value="pass">Đạt (Good/Easy)</SelectItem>
-                <SelectItem value="fail">Có lỗi (Again/Hard)</SelectItem>
-              </SelectContent>
-            </Select>
-          </FilterRow>
-
-          <FilterRow label="Dạng bài">
-            <Select value={filters.type} onValueChange={(v) => onPatch({ type: v })}>
-              <SelectTrigger size="sm" className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent position="popper">
-                <SelectItem value="all">Mọi dạng</SelectItem>
-                {Object.entries(EXERCISE_TYPE_LABELS).map(([v, l]) => (
-                  <SelectItem key={v} value={v}>
-                    {l}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </FilterRow>
-
-          <FilterRow label="Trạng thái">
-            <Select value={filters.status} onValueChange={(v) => onPatch({ status: v })}>
-              <SelectTrigger size="sm" className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent position="popper">
-                <SelectItem value="all">Mọi trạng thái</SelectItem>
-                {Object.entries(STATUS_LABELS).map(([v, l]) => (
-                  <SelectItem key={v} value={v}>
-                    {l}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </FilterRow>
-
-          <FilterRow label="Độ khó (JLPT)">
-            <Select value={filters.level} onValueChange={(v) => onPatch({ level: v })}>
-              <SelectTrigger size="sm" className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent position="popper">
-                <SelectItem value="all">Mọi cấp</SelectItem>
-                {JLPT_LEVELS.map((l) => (
-                  <SelectItem key={l} value={l}>
-                    {l}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </FilterRow>
-
-          <FilterRow label="Độ dài">
-            <Select value={filters.length} onValueChange={(v) => onPatch({ length: v })}>
-              <SelectTrigger size="sm" className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent position="popper">
-                <SelectItem value="all">Mọi độ dài</SelectItem>
-                {LENGTH_BUCKETS.map((b) => (
-                  <SelectItem key={b.key} value={b.key}>
-                    {b.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </FilterRow>
-
-          <FilterRow label="Thời gian làm">
-            <Select value={filters.duration} onValueChange={(v) => onPatch({ duration: v })}>
-              <SelectTrigger size="sm" className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent position="popper">
-                <SelectItem value="all">Mọi mức</SelectItem>
-                {DURATION_BUCKETS.map((b) => (
-                  <SelectItem key={b.value} value={b.value}>
-                    {b.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </FilterRow>
-
-          <FilterRow label="Ngày làm">
-            <Select value={filters.datePreset} onValueChange={(v) => onPatch({ datePreset: v })}>
-              <SelectTrigger size="sm" className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent position="popper">
-                {DATE_PRESETS.map((d) => (
-                  <SelectItem key={d.value} value={d.value}>
-                    {d.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </FilterRow>
-
-          <FilterRow label="Đánh dấu sao">
-            <Select value={filters.starred} onValueChange={(v) => onPatch({ starred: v })}>
-              <SelectTrigger size="sm" className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent position="popper">
-                <SelectItem value="all">Tất cả</SelectItem>
-                <SelectItem value="yes">Đã đánh dấu sao</SelectItem>
-              </SelectContent>
-            </Select>
-          </FilterRow>
-
-          <div className="col-span-2">
-            <FilterRow label={`Điểm số: ${filters.scoreMin}–${filters.scoreMax}`}>
-              <div className="flex h-8 items-center px-1">
-                <Slider
-                  thumbLabel={['Điểm số tối thiểu', 'Điểm số tối đa']}
-                  min={0}
-                  max={100}
-                  step={5}
-                  value={[filters.scoreMin, filters.scoreMax]}
-                  onValueChange={([lo, hi]) => onPatch({ scoreMin: lo, scoreMax: hi })}
-                />
-              </div>
-            </FilterRow>
-          </div>
-        </FilterPopover>
+        <HistoryModeToggle mode={mode} onModeChange={onModeChange} />
+        <HistoryFilterPopover filters={filters} onPatch={onPatch} onResetFilters={onResetFilters} />
       </div>
     </div>
   );

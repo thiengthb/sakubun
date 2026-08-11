@@ -184,15 +184,63 @@ test('/history can be studied as a deck, dealt from the filtered rows', async ({
   await expect(page.getByText('曖昧な返事だった。')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Lật xem mặt sau' })).toBeVisible();
 
-  // The toolbar above keeps working WHILE the deck is open — that is the reason the mode toggle lives
-  // in the toolbar instead of the page header. Narrowing the search to one row leaves a one-card deck,
-  // and the deck must re-deal rather than keep pointing at a row that is no longer in the list.
-  await page.getByPlaceholder('Tìm trong đề / bài dịch…').fill('曖昧');
-  await expect(page.getByText('Lượt 1 / 1')).toBeVisible();
+  // ── Bố cục của chế độ thẻ, đổi 2026-08-11 theo yêu cầu của chủ repo ───────────────────────────────
+  // Hàng tìm kiếm biến mất (gõ tìm một chuỗi trong khi đang lướt thẻ là việc không ai làm), thanh tiến
+  // độ lên chiếm đúng hàng đó, và nút lật chế độ đứng cạnh nút cài đặt deck.
+  await expect(
+    page.getByPlaceholder('Tìm trong đề / bài dịch…'),
+    'ô tìm không còn ở chế độ thẻ',
+  ).toHaveCount(0);
 
-  // …and the toggle goes back to the list.
-  await page.getByRole('button', { name: 'Danh sách' }).click();
+  const bar = page.getByRole('progressbar', { name: 'Tiến độ chồng thẻ' });
+  await expect(bar).toBeVisible();
+  // "Cùng một hàng" đo bằng tâm dọc, không bằng thứ tự DOM: một hàng flex bị wrap vẫn đúng thứ tự mà
+  // sai bố cục, và cái người học thấy là bố cục.
+  const rowY = async (l: ReturnType<typeof page.locator>) => {
+    const b = (await l.boundingBox())!;
+    return b.y + b.height / 2;
+  };
+  const modeButton = page.getByRole('button', { name: 'Danh sách' });
+  const settingsButton = page.getByRole('button', { name: 'Cài đặt' });
+  const [barY, modeY, settingsY] = await Promise.all([
+    rowY(bar),
+    rowY(modeButton),
+    rowY(settingsButton),
+  ]);
+  expect(Math.abs(barY - modeY), 'thanh tiến độ phải cùng hàng với các nút').toBeLessThanOrEqual(8);
+  expect(Math.abs(settingsY - modeY), 'nút cài đặt cùng hàng với nút chế độ').toBeLessThanOrEqual(8);
+
+  // "Đứng cạnh nhau" chốt bằng DOM: không có gì chen giữa hai nút.
+  const adjacent = await page.evaluate(() => {
+    const buttons = [...document.querySelectorAll('button')];
+    const mode = buttons.find((b) => b.textContent?.includes('Danh sách'));
+    const settings = buttons.find((b) => b.textContent?.includes('Cài đặt'));
+    if (!mode || !settings) return 'thiếu một trong hai nút';
+    return mode.nextElementSibling === settings ? 'liền nhau' : 'có gì chen giữa';
+  });
+  expect(adjacent).toBe('liền nhau');
+
+  // Và bộ lọc vẫn chia thẻ cho deck khi deck đang mở — đó là lý do nút lật chế độ nằm trong thanh công
+  // cụ chứ không cạnh tiêu đề trang. Trước hôm nay phép chốt này đi qua ô tìm; giờ nó đi qua Bộ lọc,
+  // là controls duy nhất còn lại, nên nếu dây nối đó đứt thì ca này đỏ.
+  // Cách lái popover này đã được đo ở e2e/resources-tables.spec.ts: `getByLabel` KHÔNG resolve (FilterRow
+  // vẽ một <Label> không `htmlFor` với trigger Radix), nên nhận diện combobox bằng GIÁ TRỊ đang hiện; và
+  // `Escape` không đóng panel — chính trigger là toggle.
+  const filterTrigger = page.getByRole('button', { name: /^Bộ lọc/ });
+  await filterTrigger.click();
+  await page.getByRole('combobox').filter({ hasText: 'Mọi chiều' }).first().click();
+  await page.getByRole('option', { name: 'JP → VN', exact: true }).click();
+  await filterTrigger.click();
+  await expect(page.getByText('Lượt 1 / 1')).toBeVisible();
+  await expect(page.getByText('曖昧な返事だった。')).toBeVisible();
+
+  // …và nút lật đưa về danh sách, nơi ô tìm quay lại.
+  await modeButton.click();
   await expect(page.getByRole('button', { name: 'Thẻ sau' })).toHaveCount(0);
+  await expect(page.getByPlaceholder('Tìm trong đề / bài dịch…')).toBeVisible();
+
+  // Nút 1 cột / 2 cột đã bỏ (2026-08-11): danh sách luôn một cột dưới lg, hai cột từ lg lên.
+  await expect(page.getByRole('button', { name: /^(1 cột|2 cột)$/ })).toHaveCount(0);
 });
 
 test('both decks fit a phone: nothing off-screen, and the arrows are reachable', async ({ page }) => {

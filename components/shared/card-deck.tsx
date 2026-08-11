@@ -259,6 +259,7 @@ export function CardDeck({
   toolbar,
   done,
   unit = 'Thẻ',
+  inlineProgress = false,
   className,
 }: {
   deck: CardDeckState;
@@ -270,6 +271,14 @@ export function CardDeck({
   corner?: ReactNode;
   /** The caller's own controls for the top bar (a settings popover, a mode switch). */
   toolbar?: ReactNode;
+  /**
+   * Đặt thanh tiến độ NGAY trên hàng đếm thẻ thay vì một hàng riêng bên dưới.
+   *
+   * Opt-in, không phải mặc định: /history bật nó vì ở chế độ flashcard hàng tìm kiếm đã bỏ đi, nên
+   * thanh tiến độ lên chiếm đúng hàng đó và trang bớt được một tầng — deck của nhóm
+   * (`components/groups/group-flashcards.tsx`) không có hàng nào để thu, nên giữ nguyên bố cục cũ.
+   */
+  inlineProgress?: boolean;
   /** What replaces the card once you swipe past the last one. */
   done: ReactNode;
   /** Counter noun — "Thẻ 3 / 12" for a group, "Lượt 3 / 12" for history. */
@@ -319,6 +328,36 @@ export function CardDeck({
   // Cards LEFT BEHIND, so the bar is empty on the first card and full only past the last one.
   const pct = deck.done ? 100 : deck.count ? Math.round((deck.index / deck.count) * 100) : 0;
 
+  // Cùng một thanh, hai chỗ đặt: `flex-1` khi nằm chung hàng với bộ đếm và các nút, `w-full` khi có
+  // hàng riêng. `min-w-24` giữ cho nó còn đọc được là một thanh khi hàng chật trên điện thoại.
+  const progressBar = (
+    // `role="progressbar"` chứ không phải một div trơn: thanh này là thông tin (đã đi được bao xa trong
+    // chồng thẻ), nên nó phải đọc được bằng trình đọc màn hình chứ không chỉ nhìn được. Nó cũng là chỗ
+    // bám để phép kiểm bố cục chốt được rằng thanh nằm ĐÚNG hàng nào.
+    <div
+      role="progressbar"
+      aria-label="Tiến độ chồng thẻ"
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={pct}
+      className={cn(
+        'h-3 overflow-hidden rounded-full bg-muted',
+        inlineProgress ? 'min-w-24 flex-1' : 'w-full',
+      )}
+    >
+      {/* `initial` là bắt buộc, không phải trang trí: không có nó, motion lấy width ĐANG CÓ của DOM làm
+          điểm đầu, và một div không khai width trong khối này là `auto` = 100% — nên mỗi lần mở deck
+          thanh nháy ĐẦY rồi mới chảy về đúng chỗ. Chụp được lúc dựng lại bố cục 2026-08-11: ở thẻ 1/3
+          ảnh bắt được thanh đang ~75%, đọc thành "gần xong" trong khi người học chưa lướt thẻ nào. */}
+      <motion.div
+        className="h-full rounded-full bg-primary"
+        initial={{ width: 0 }}
+        animate={{ width: `${pct}%` }}
+        transition={{ duration: 0.3, ease: 'easeOut' }}
+      />
+    </div>
+  );
+
   return (
     // Fills the screen vertically — the card is the thing being read, so it gets everything left over
     // after the counter row, the progress bar and the nav row. `svh`, not `vh`, so a phone's collapsing
@@ -334,8 +373,8 @@ export function CardDeck({
         className,
       )}
     >
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="text-sm text-muted-foreground">
+      <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+        <div className="shrink-0 text-sm text-muted-foreground">
           {deck.done ? (
             <span>Hết thẻ</span>
           ) : (
@@ -344,16 +383,16 @@ export function CardDeck({
             </span>
           )}
         </div>
-        {toolbar && <div className="flex items-center gap-2">{toolbar}</div>}
+        {inlineProgress && progressBar}
+        {/* `ml-auto` chỉ cần khi thanh tiến độ KHÔNG ở đây — lúc đó không có gì đẩy các nút sang phải. */}
+        {toolbar && (
+          <div className={cn('flex items-center gap-2', !inlineProgress && 'ml-auto')}>
+            {toolbar}
+          </div>
+        )}
       </div>
 
-      <div className="h-3 w-full overflow-hidden rounded-full bg-muted">
-        <motion.div
-          className="h-full rounded-full bg-primary"
-          animate={{ width: `${pct}%` }}
-          transition={{ duration: 0.3, ease: 'easeOut' }}
-        />
-      </div>
+      {!inlineProgress && progressBar}
 
       {deck.done ? (
         <div className="flex-1">{done}</div>

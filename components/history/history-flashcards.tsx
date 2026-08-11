@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState, type ReactNode } from 'react';
 import { Shuffle, Volume2, SearchX } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -23,6 +23,7 @@ import {
   scoreClass,
 } from '@/components/history/history-cards';
 import { formatDateTimeVN } from '@/lib/format';
+import { scoreLabel } from '@/lib/score-label';
 import { stripEmoji } from '@/lib/text';
 import type { SentenceHistoryRow } from '@/lib/practice';
 
@@ -105,6 +106,7 @@ function AnswerFace({
 }) {
   const grammar = sentence.ratings.filter((r) => r.role !== 'VOCAB');
   const vocab = sentence.ratings.filter((r) => r.role === 'VOCAB');
+  const score = scoreLabel(sentence.status, sentence.score);
   // A JP → VN attempt's answer side is Vietnamese, so only the VN → JP direction has Japanese to play
   // or annotate here. (The JP text of a JP → VN row is the đề, and that plays on the front face.)
   const jaAnswer = sentence.direction === 'VI_JA';
@@ -114,12 +116,12 @@ function AnswerFace({
       {/* pr-16 keeps the timestamp clear of the star + info controls pinned to the card's top-right
           corner — they float above the face, so the face has to leave room for them. */}
       <div className="flex flex-wrap items-center gap-2 pr-16 text-xs text-muted-foreground">
-        {sentence.status === 'SKIPPED' ? (
-          <span className="font-medium">Bỏ qua</span>
-        ) : (
-          typeof sentence.score === 'number' && (
-            <span className={scoreClass(sentence.score)}>{sentence.score}/100</span>
-          )
+        {/* Cùng một nguồn nhãn với thẻ ở /history và trang chủ (`lib/score-label.ts`): mặt sau này là
+            chỗ THỨ BA từng để trống khi lượt không có điểm. */}
+        {score && (
+          <span className={score.muted ? 'font-medium' : scoreClass(sentence.score as number)}>
+            {score.text}
+          </span>
         )}
         <span className="ml-auto">{formatDateTimeVN(sentence.createdAt)}</span>
       </div>
@@ -197,12 +199,21 @@ export function HistoryFlashcards({
   voiceSpeaker,
   speechRate,
   showFurigana = false,
+  toolbarStart,
+  toolbarEnd,
 }: {
   /** Already filtered by the toolbar above — the deck studies exactly what the list would show. */
   sentences: SentenceHistoryRow[];
   voiceSpeaker?: number;
   speechRate?: number;
   showFurigana?: boolean;
+  /**
+   * Hai đầu của thanh công cụ, do `HistoryList` truyền xuống: nút lật về danh sách ở đầu, popover bộ
+   * lọc ở cuối. Chúng kẹp nút cài đặt deck ở giữa, nên nút chế độ và nút cài đặt đứng cạnh nhau —
+   * trước 2026-08-11 chúng ở hai hàng khác nhau vì hàng tìm kiếm chen vào giữa.
+   */
+  toolbarStart?: ReactNode;
+  toolbarEnd?: ReactNode;
 }) {
   const pool = useMemo(() => sentences.filter(studiable), [sentences]);
   const [shuffle, setShuffle] = useState(false);
@@ -279,23 +290,29 @@ export function HistoryFlashcards({
       // which a group's flashcard tab does not have. At the default the nav arrows sat ~15px below the
       // fold at 1280x720 (measured 2026-08-06) and the page grew a scrollbar to reach them.
       className="min-h-[calc(100svh-10rem)]"
+      // Hàng tìm kiếm không còn ở chế độ này, nên thanh tiến độ lên chiếm đúng hàng đó.
+      inlineProgress
       toolbar={
-        <DeckSettings>
-          <DeckSwitchRow
-            icon={Shuffle}
-            label="Trộn thẻ"
-            checked={shuffle}
-            onCheckedChange={toggleShuffle}
-            disabled={cards.length < 2}
-          />
-          <DeckSwitchRow
-            icon={Volume2}
-            label="Tự đọc tiếng Nhật"
-            hint="Đề tiếng Nhật đọc ngay khi thẻ hiện ra; đề tiếng Việt thì đọc bản tham khảo sau khi lật."
-            checked={autoSpeak}
-            onCheckedChange={setAutoSpeak}
-          />
-        </DeckSettings>
+        <>
+          {toolbarStart}
+          <DeckSettings>
+            <DeckSwitchRow
+              icon={Shuffle}
+              label="Trộn thẻ"
+              checked={shuffle}
+              onCheckedChange={toggleShuffle}
+              disabled={cards.length < 2}
+            />
+            <DeckSwitchRow
+              icon={Volume2}
+              label="Tự đọc tiếng Nhật"
+              hint="Đề tiếng Nhật đọc ngay khi thẻ hiện ra; đề tiếng Việt thì đọc bản tham khảo sau khi lật."
+              checked={autoSpeak}
+              onCheckedChange={setAutoSpeak}
+            />
+          </DeckSettings>
+          {toolbarEnd}
+        </>
       }
       front={
         current && (
