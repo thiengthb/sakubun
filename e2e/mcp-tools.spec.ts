@@ -331,3 +331,55 @@ test.afterEach(() => {
     db.close();
   }
 });
+
+/**
+ * NGÂN SÁCH BỀ MẶT — đo bằng BYTE, không đếm tool.
+ *
+ * `harness.config.json → mcp.maxTools: 20` đếm TOOL, trong khi thuế Claude trả là TOKEN, và không có
+ * gì trong repo đọc ngưỡng đó (issue #5). Kết quả: một ngưỡng đo sai đơn vị, không ai cưỡng chế. 31
+ * tool ở đây nặng ~53 KB, nhưng 20 tool toàn loại nặng thì còn nặng hơn — nên "cắt cho đủ 20" là tối
+ * ưu sai chỗ, đúng điều issue #20 đo được.
+ *
+ * Phép chốt này là **computational control** thay cho ngưỡng chết đó: `tools/list` là thứ Claude tải
+ * MỖI PHIÊN, nên nó là ngân sách thật. Trần đặt cao hơn số hiện tại một khoảng để việc thêm một tool
+ * bình thường không đỏ; vượt trần thì phải là một hành động CÓ Ý THỨC (đọc bảng phân tích đính kèm,
+ * rồi sửa con số này kèm lý do), chứ không phải một lần phình ra không ai thấy.
+ *
+ * Đo được 2026-08-11: **52.221 byte / 31 tool** (trước hôm nay là 55.576 — chênh lệch là bản sao
+ * schema nested trong `update_settings` và hai mô tả chết mà #22 bỏ). Trần dưới đây chừa ~7%.
+ */
+const SURFACE_BUDGET_BYTES = 56_000;
+
+test('ngân sách bề mặt tool: tools/list phải nằm trong trần BYTE', async ({ request }, testInfo) => {
+  await seed();
+  await initializeMcp(request);
+
+  const list = await rpc(request, 'tools/list', {});
+  const tools = ((list.result as { tools?: Record<string, unknown>[] })?.tools ?? []).map((t) => ({
+    name: String(t.name),
+    total: JSON.stringify(t).length,
+    description: String(t.description ?? '').length,
+    schema: JSON.stringify(t.inputSchema ?? {}).length,
+  }));
+  expect(tools.length, 'phải có tool để mà đo').toBeGreaterThan(20);
+
+  const total = tools.reduce((sum, t) => sum + t.total, 0);
+  const heaviest = [...tools].sort((a, b) => b.total - a.total);
+
+  // Đính kèm bảng phân tích: khi phép chốt này đỏ, câu hỏi tiếp theo luôn là "byte nằm ở đâu", và câu
+  // trả lời phải nằm ngay trong báo cáo chứ không phải trong một lần đo lại bằng tay.
+  await testInfo.attach('mcp-surface.txt', {
+    contentType: 'text/plain',
+    body:
+      `TỔNG: ${total} byte · ${tools.length} tool · trần ${SURFACE_BUDGET_BYTES}\n\n` +
+      heaviest
+        .map((t) => `${String(t.total).padStart(6)}  ${t.name}  (desc ${t.description} · schema ${t.schema})`)
+        .join('\n'),
+  });
+
+  expect(
+    total,
+    `tools/list = ${total} byte, vượt trần ${SURFACE_BUDGET_BYTES}. Xem attachment ` +
+      '"mcp-surface.txt" để biết byte nằm ở tool nào trước khi nâng trần.',
+  ).toBeLessThanOrEqual(SURFACE_BUDGET_BYTES);
+});
