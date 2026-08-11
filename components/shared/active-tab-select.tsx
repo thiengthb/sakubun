@@ -63,7 +63,7 @@ export function ActiveTabSelect({
             is called, and the full names are one tap away in the list below. */}
         <span className="flex min-w-0 items-center rounded-md bg-primary px-2.5 py-0.5 text-sm font-medium text-primary-foreground">
           <span className="max-w-[8.5rem] truncate">
-            <SelectValue />
+            <SelectValue>{items.find((i) => i.value === value)?.label}</SelectValue>
           </span>
         </span>
       </SelectTrigger>

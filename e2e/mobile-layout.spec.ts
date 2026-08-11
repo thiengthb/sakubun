@@ -282,7 +282,14 @@ test('item detail: level, state and star sit below the breadcrumb row', async ({
   expect(level!.y).toBeLessThan(tabs!.y);
 });
 
+// This one test walks EVERY page, so its wall clock is the sum of a dozen navigations against `next
+// dev` — measured 2026-08-12 at 50.9s running alone, i.e. inside the 60s global timeout by 9 seconds.
+// Under the full suite it crossed it and failed on `page.goto`, which reads as "a page hung" and sends
+// the next person hunting a bug that is not there. The budget belongs to THIS test, not to the global
+// timeout: raising the global one would hide a genuine hang in the other 45 tests, all of which finish
+// well under 30s.
 test('every page renders clean and fits a 390px viewport', async ({ page }) => {
+  test.setTimeout(180_000);
   await page.setViewportSize(VIEWPORT);
 
   const problems: string[] = [];

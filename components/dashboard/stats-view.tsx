@@ -183,7 +183,7 @@ export function StatsView({ stats }: { stats: StudyStats }) {
       <div className="flex flex-wrap items-center gap-3">
         <Select value={range} onValueChange={(v) => setRange(v as typeof range)}>
           <SelectTrigger size="sm" className="w-32">
-            <SelectValue />
+            <SelectValue>{RANGES.find((r) => r.value === range)?.label}</SelectValue>
           </SelectTrigger>
           <SelectContent>
             {RANGES.map((r) => (
@@ -195,7 +195,7 @@ export function StatsView({ stats }: { stats: StudyStats }) {
         </Select>
         <Select value={groupBy} onValueChange={(v) => setGroupBy(v as GroupBy)}>
           <SelectTrigger size="sm" className="w-40">
-            <SelectValue />
+            <SelectValue>{GROUPS.find((g) => g.value === groupBy)?.label}</SelectValue>
           </SelectTrigger>
           <SelectContent>
             {GROUPS.map((g) => (

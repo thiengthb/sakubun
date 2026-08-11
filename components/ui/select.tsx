@@ -21,6 +21,29 @@ function SelectGroup({ className, ...props }: React.ComponentProps<typeof Select
   );
 }
 
+/**
+ * Ô hiển thị giá trị đang chọn trên trigger. **Truyền nhãn làm children** ở mọi select mà giá trị đã có
+ * sẵn lúc render — `<SelectValue>{LABELS[value]}</SelectValue>`, không phải `<SelectValue />`.
+ *
+ * Vì sao: Radix tra nhãn từ chính `SelectItem` đang chọn, mà khi select ĐÓNG nó mount danh sách item vào
+ * một `DocumentFragment` trong bộ nhớ — tạo trong một layout effect, tức **chỉ ở client**. Nhãn được
+ * portal vào ô này sau đó. Nên với `<SelectValue />` trơn, HTML do server trả về là một `<span>` RỖNG, và
+ * nó rỗng cho tới khi React hydrate xong.
+ *
+ * Đo trên production 2026-08-12: mở `/settings` thì 6/6 ô rỗng; chúng điền ĐỒNG THỜI đúng lúc hydration
+ * chạy (cùng nhịp với núm `Slider` đổi từ `display:none` sang `block` — Radix ẩn núm khi chưa đo được
+ * track, cùng một lớp lý do). Người học ở kết nối nhanh chỉ thấy một nhịp nháy; ở cache lạnh qua tunnel
+ * thì lâu hơn, và cái họ đọc được là "mọi thiết lập của mình đã mất".
+ *
+ * `placeholder` KHÔNG thay được children: nó chỉ hiện khi giá trị rỗng, nên select đã có giá trị vẫn
+ * trống. Hai thứ dùng chung được — truyền cả children lẫn placeholder thì placeholder vẫn thắng đúng lúc
+ * giá trị rỗng.
+ *
+ * Lưới an toàn: `e2e/no-js-first-paint.spec.ts` tải các trang với **JavaScript tắt** (tức đúng bằng HTML
+ * server trả về) và đòi mọi `[data-slot=select-value]` trong DOM phải có chữ. Phép kiểm đó tự khoanh
+ * đúng phạm vi: select nằm trong popover/dialog không có trong HTML đầu tiên, nên nó không đòi hỏi gì ở
+ * những chỗ mà lúc mở ra React đã hydrate từ lâu.
+ */
 function SelectValue({ ...props }: React.ComponentProps<typeof SelectPrimitive.Value>) {
   return <SelectPrimitive.Value data-slot="select-value" {...props} />;
 }

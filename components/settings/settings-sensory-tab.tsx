@@ -34,7 +34,12 @@ export function SensoryTab({
               onValueChange={(v) => set('voiceSpeaker', Number(v))}
             >
               <SelectTrigger className="w-full">
-                <SelectValue placeholder="Chọn giọng" />
+                {/* Fallback theo id: `voiceSpeaker` nhận mọi số nguyên (engine có nhiều style hơn danh
+                    sách tuyển), nên một id ngoài danh sách vẫn phải đọc ra được thay vì để ô trống. */}
+                <SelectValue placeholder="Chọn giọng">
+                  {VOICE_SPEAKERS.find((v) => v.id === settings.voiceSpeaker)?.label ??
+                    `Giọng #${settings.voiceSpeaker}`}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {VOICE_SPEAKERS.map((v) => (

@@ -143,7 +143,9 @@ export function DataPagination({
               className="h-7 w-auto min-w-[4.25rem]"
               aria-labelledby={sizeLabelId}
             >
-              <SelectValue />
+              <SelectValue>
+                {autoFit ? `Tự động (${autoFitSize ?? pageSize})` : String(pageSize)}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent position="popper" className="min-w-[4.25rem]">
               {/* "Tự động (N)" — visible sign that the page size is fitted to the viewport, and the way

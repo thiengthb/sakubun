@@ -182,7 +182,7 @@ export function ContentTab({
               onValueChange={(v) => set('furiganaMode', v as FuriganaMode)}
             >
               <SelectTrigger size="sm" className="w-40 shrink-0">
-                <SelectValue />
+                <SelectValue>{FURIGANA_MODE_LABELS[settings.furiganaMode]}</SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {FURIGANA_MODES.map((m) => (
@@ -208,7 +208,10 @@ export function ContentTab({
             }
           >
             <SelectTrigger className="w-full">
-              <SelectValue />
+              <SelectValue>
+                {settings.vocabCeiling ??
+                  `Theo cấp ngữ pháp (${hardestLevel(settings.grammarLevels)})`}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value={AUTO_VOCAB_CEILING}>
@@ -229,7 +232,7 @@ export function ContentTab({
             onValueChange={(v) => set('direction', v as Settings['direction'])}
           >
             <SelectTrigger className="w-full">
-              <SelectValue />
+              <SelectValue>{DIRECTION_LABELS[settings.direction]}</SelectValue>
             </SelectTrigger>
             <SelectContent>
               {DIRECTIONS.map((d) => (
@@ -250,7 +253,7 @@ export function ContentTab({
             onValueChange={(v) => set('translationStyle', v as Settings['translationStyle'])}
           >
             <SelectTrigger className="w-full">
-              <SelectValue />
+              <SelectValue>{STYLE_LABELS[settings.translationStyle]}</SelectValue>
             </SelectTrigger>
             <SelectContent>
               {TRANSLATION_STYLES.map((s) => (
@@ -268,7 +271,7 @@ export function ContentTab({
             onValueChange={(v) => set('register', v as Settings['register'])}
           >
             <SelectTrigger className="w-full">
-              <SelectValue />
+              <SelectValue>{REGISTER_LABELS[settings.register]}</SelectValue>
             </SelectTrigger>
             <SelectContent>
               {REGISTERS.map((r) => (
