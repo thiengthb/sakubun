@@ -51,3 +51,26 @@ Ba thứ đi kèm, cụ thể cho repo này:
 - Một nhánh render kiểu `typeof x === 'number' && (...)` không có `else` — đó là một ô trống có chủ ý,
   và ô trống không giải thích được thì người dùng đọc thành "hỏng".
 - Một test có chữ "omits" / "không hiện" trong tên: hỏi lại nó đang bảo vệ hợp đồng hay bảo vệ im lặng.
+
+---
+
+## Phụ lục 2026-08-11 (chiều): cùng một lỗi, lần thứ ba
+
+Rà giao diện xong, tôi sửa cột `Level` bị cắt bằng cách **đoán** ngân sách bề rộng của ô tiêu đề
+("chắc mất ~40px cho tay kéo với nút sắp xếp") và đặt `size: 64`. Kết quả: tiêu đề cắt thành **"C."** —
+tệ hơn trước. Đo xong thì ngân sách là **48px**, nên sàn của "Cấp" là 75px.
+
+Đây là lần thứ ba cùng một lớp lỗi trong hai tuần:
+
+1. `errorDigest` — đoán hình dạng thông điệp lỗi Prisma (đầu chuỗi, rồi "đoạn cách bằng dòng trống"),
+   hai lần e2e đỏ.
+2. `score` optional — đoán rằng log không lỗi nghĩa là app lành.
+3. Ngân sách bề rộng ô tiêu đề — đoán con số thay vì đọc `clientWidth` / `scrollWidth`.
+
+**Luật rút ra, cụ thể hơn "hãy đo":** khi con số cần biết là một thuộc tính của thứ ĐANG CHẠY (bề rộng
+đã render, hình dạng chuỗi lỗi thật, hàng thật trong DB), thì viết một phép đo dùng-một-lần **trước** khi
+sửa. Ở repo này nó rẻ đến mức không có cớ: một spec Playwright tạm + `page.evaluate` trả về số, chạy 30
+giây. Cái đắt là vòng lặp sửa-đoán-đỏ, không phải phép đo.
+
+**Dấu hiệu nhận ra mình đang đoán:** trong comment hoặc trong đầu xuất hiện "chắc là", "khoảng", "~".
+Ba chữ đó là lệnh dừng lại và đi đo.
