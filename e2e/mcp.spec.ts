@@ -415,3 +415,55 @@ test('update_settings: dạng phẳng và dạng nested cũ đều chạy, dạn
   const after = await callTool(request, 'get_settings', {});
   expect(after.register, 'lời gọi bị từ chối không được ghi gì').toBe('casual');
 });
+
+test('điểm của lượt vừa chấm hiện trên TRANG CHỦ, không phụ thuộc Claude có chép khối ra hay không', async ({
+  page,
+  request,
+}) => {
+  // Vì sao ca này tồn tại (2026-08-11): người học báo "làm xong không thấy Claude chấm điểm", lặp lại
+  // từ thời sakubun cũ. Log production nói app KHÔNG hỏng: `submit_review ms=89`, không lỗi, điểm đã
+  // ghi. Cái hỏng là Claude không chép khối "Kết quả lượt này" ra — và `verbatimEnvelope` là một lời
+  // YÊU CẦU, server không thể bắt một client model hiển thị bất cứ thứ gì. Nên đường tất định duy nhất
+  // là app tự hiện điểm, và đây là phép chốt của đường đó: không có model nào trong vòng lặp này.
+  await seed();
+  await initialize(request);
+
+  const expression = 'HOME〜ばかりに';
+  await callTool(request, 'add_grammar', {
+    grammar: [{ expression, meaningVi: 'chỉ vì', level: 'N5' }],
+  });
+  const listed = await callTool(request, 'list_grammar', {});
+  const rows = ((listed.items ?? listed) as { itemId: string; expression: string }[]) ?? [];
+  const itemId = rows.find((r) => r.expression === expression)?.itemId;
+  expect(itemId, 'add_grammar phải vào được kho').toBeTruthy();
+
+  const sourceText = '疲れていたばかりに、約束を忘れた。';
+  const staged = await callTool(request, 'stage_sentence', {
+    direction: 'JA_VI',
+    sourceText,
+    suggested: 'Chỉ vì mệt mà tôi quên lời hẹn.',
+    items: [{ itemId, role: 'TARGET' }],
+  });
+  await callTool(request, 'submit_review', {
+    sentenceId: staged.sentenceId as string,
+    userAnswer: 'Chỉ vì mệt nên tôi đã quên mất lời hẹn.',
+    ratings: [{ itemId, rating: 3, role: 'TARGET' }],
+    score: 82,
+  });
+
+  await page.goto('/login');
+  await page.getByLabel('Email').fill(E2E_EMAIL);
+  await page.getByLabel('Mật khẩu').fill(E2E_LOGIN);
+  await page.getByRole('button', { name: 'Đăng nhập' }).click();
+  await page.waitForURL((u) => !u.pathname.startsWith('/login'), { timeout: 30_000 });
+
+  await page.goto('/');
+  // Không bấm gì, không mở modal nào: điểm phải nằm ngay trên trang hạ cánh.
+  await expect(page.getByRole('heading', { name: 'Lượt vừa chấm' })).toBeVisible();
+  await expect(page.getByText('82/100')).toBeVisible();
+  // Chính câu vừa làm, không phải một con số trừu tượng: người học phải nhận ra lượt của mình mà không
+  // bấm gì. (Rating từng mẫu nằm trong modal chi tiết của thẻ — thẻ gập lại mang điểm + câu đề.)
+  await expect(page.getByText(sourceText, { exact: false }).first()).toBeVisible();
+  // Và lời hứa được viết ra cho người học đọc — nó là hợp đồng mới, không phải trang trí.
+  await expect(page.getByText(/Điểm luôn được lưu ở đây/)).toBeVisible();
+});

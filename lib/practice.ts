@@ -1943,10 +1943,11 @@ export async function patchEnrichment(
  * audit) and SKIPPED rows (viewed-not-answered → all Again); `status` lets the card render each.
  * Single-user app: fetch a generous cap and filter/paginate client-side rather than truncating.
  */
-export async function listSentences(limit = 1000) {
+export async function listSentences(limit = 1000, status?: 'PENDING' | 'GRADED' | 'SKIPPED') {
   // Self-heal stale pendings on read so an open/reloaded history page never shows week-old "đang chờ".
   await autoSkipStalePending();
   const sentences = await prisma.sentence.findMany({
+    where: status ? { status } : undefined,
     orderBy: { createdAt: 'desc' },
     take: limit,
     include: {
