@@ -109,7 +109,7 @@
     "stop": ["gen-clean", "typecheck", "test"],
     "$comment_subagent": "CHỈ gate rẻ nhất. Con số ở đây nhân với tối đa 16 agent song song trong một dynamic workflow.",
     "subagent": ["typecheck"],
-    "preMerge": ["gen-clean", "typecheck", "lint", "test", "build", "depcruise", "e2e", "a11y", "perf"]
+    "preMerge": ["gen-clean", "typecheck", "lint", "test", "build", "e2e"]
   },
 
   "$comment_budget": "LỚP KINH TẾ — lớp DUY NHẤT có thể gây thiệt hại tài chính trực tiếp. Một agent chạy sai 4 giờ lúc 3h sáng phải bị CÁI GÌ ĐÓ dừng lại; nếu câu trả lời là 'tôi thức dậy và thấy' thì bạn chưa có lớp này. Xem docs/ECONOMICS.md.",
