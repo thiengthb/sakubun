@@ -36,6 +36,21 @@ describe('retentionVerdict', () => {
   it('still refuses when the sample is one short of the threshold', () => {
     const v = retentionVerdict(computeTrueRetention(rows(MIN_REVIEWS_FOR_VERDICT - 1, 0)), 0.9);
     expect(v.kind).toBe('insufficient');
+    // …and it says CÒN MỘT lượt, not just "cần 20, hiện có 19". The subtraction is the only actionable
+    // part of this state, and leaving it to the learner is leaving them to do arithmetic to find out how
+    // far they are from an answer.
+    expect(v.message).toContain('Còn 1 lượt nữa');
+  });
+
+  it('counts the shortfall from the actual sample, not from zero', () => {
+    // `rows(correct, wrong)` — 8 + 9 = 17 lượt, tức còn 3 so với ngưỡng 20. (Viết `rows(17, 8)` là 25
+    // lượt và verdict thành 'below': đọc sai chữ ký của helper, không phải lỗi của code.)
+    expect(retentionVerdict(computeTrueRetention(rows(8, 9)), 0.9).message).toContain(
+      'Còn 3 lượt nữa',
+    );
+    expect(retentionVerdict(computeTrueRetention([]), 0.9).message).toContain(
+      `Còn ${MIN_REVIEWS_FOR_VERDICT} lượt nữa`,
+    );
   });
 
   it('reports below-target for the real 73% against a 90% goal', () => {

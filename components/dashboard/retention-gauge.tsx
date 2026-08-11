@@ -29,6 +29,30 @@ export function RetentionGauge({
   };
   const tone = toneByKind[verdict.kind];
 
+  // Chưa đủ bằng chứng thì KHÔNG vẽ phép so sánh. Trước 2026-08-12 thẻ này vẫn in con số 53% ở cỡ 3xl
+  // và vẫn tô thanh tới 53% với vạch mục tiêu ở 90%, rồi mới nói bên dưới là chưa kết luận được. Hình
+  // ảnh đó là một phát biểu — "bạn thua xa mục tiêu" — và người đọc nhận cỡ chữ với màu trước khi đọc
+  // câu, nên phần chữ đúng bị phần hình sai đè. Cùng lớp lỗi với ô điểm trống (`lib/score-label.ts`):
+  // hiển thị một con số như thể nó có nghĩa trong khi app BIẾT là chưa.
+  //
+  // Ở trạng thái này, thứ duy nhất hành động được là "còn bao nhiêu lượt nữa" — nên nó thành nội dung
+  // chính, và con số thô tụt xuống hàng phụ để người học vẫn thấy nó đang lớn dần.
+  if (verdict.kind === 'insufficient') {
+    return (
+      <div className="space-y-2">
+        <p className="text-sm">{verdict.message}</p>
+        <p className="text-xs text-muted-foreground">
+          Đang có <span className="tabular-nums">{actual.correct}</span>/
+          <span className="tabular-nums">{actual.reviews}</span> lượt đúng
+          {actualPct === null ? '' : ` (${actualPct}%)`} ở những mẫu đã vào giai đoạn Ôn tập, trong{' '}
+          <span className="tabular-nums">{windowDays}</span> ngày qua. Chưa so với mục tiêu{' '}
+          <span className="tabular-nums">{targetPct}%</span> vì mẫu còn quá nhỏ để con số nói được điều
+          gì.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-3">
       <div className="flex items-baseline gap-2">

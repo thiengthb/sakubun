@@ -57,7 +57,10 @@ export function retentionVerdict(actual: TrueRetention, desired: number): Retent
     return {
       kind: 'insufficient',
       gapPts: null,
-      message: `Chưa đủ dữ liệu để kết luận (cần ${MIN_REVIEWS_FOR_VERDICT} lượt ôn ở trạng thái Ôn tập, hiện có ${actual.reviews}).`,
+      // Nói CÒN THIẾU bao nhiêu, không chỉ nói ngưỡng và số hiện có: đó là phép trừ mà người học đang
+      // phải tự làm để biết mình còn cách kết luận bao xa, và nó là phần duy nhất hành động được ở trạng
+      // thái này. "hiện có N" vẫn giữ vì nó cho biết con số đang lớn dần.
+      message: `Còn ${MIN_REVIEWS_FOR_VERDICT - actual.reviews} lượt nữa mới kết luận được (cần ${MIN_REVIEWS_FOR_VERDICT} lượt ôn ở trạng thái Ôn tập, hiện có ${actual.reviews}).`,
     };
   }
 

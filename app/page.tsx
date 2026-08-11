@@ -4,6 +4,7 @@ import {
   ArrowRight,
   BookOpenText,
   CalendarClock,
+  ChartLine,
   GraduationCap,
   Inbox,
   Target,
@@ -425,6 +426,18 @@ export default async function HomePage() {
           dueNow={stats.dueNow}
         />
       </section>
+
+      {/* Mốc phân cấp DUY NHẤT của trang, đặt đúng chỗ nội dung đổi vai.
+          Đo ở 390px (2026-08-12): trang cao 2535px = 3 màn, mười khối và không một mốc nào cho tới
+          "Điểm yếu 30 ngày" ở 1993px — nên mọi thứ đọc như một danh sách phẳng dài ba màn.
+          Nhưng đo cũng cho thấy THỨ TỰ đã đúng và không cần sắp lại: "Đến hạn bây giờ" ở 72px và
+          "Tiến độ hôm nay" kết ở 852px, tức vòng lặp hằng ngày vừa đúng một màn. Cái thiếu là chỗ NGẮT
+          giữa "việc hôm nay" và "phân tích kho" — nó bắt đầu chính xác ở đây (nhiệt đồ, 876px, khối đầu
+          tiên dưới fold). Một `<h2>` theo đúng idiom mục "Điểm yếu 30 ngày" bên dưới, không phải một
+          cấu trúc mới. */}
+      <h2 className="flex items-center gap-1.5 pt-2 text-sm font-medium text-muted-foreground">
+        <ChartLine className="size-4" aria-hidden /> Phân tích kho
+      </h2>
 
       <section>
         <ChartCard title="Hoạt động 1 năm (lượt ôn mỗi ngày)" action={<HeatmapLegend />}>
