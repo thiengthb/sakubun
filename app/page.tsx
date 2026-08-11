@@ -18,13 +18,14 @@ import { DailyProgress } from '@/components/dashboard/daily-progress';
 import { LiveRefresh } from '@/components/shell/live-refresh';
 import { StatsView } from '@/components/dashboard/stats-view';
 import { StreakCard } from '@/components/dashboard/streak-card';
+import { LastGradedCard } from '@/components/dashboard/last-graded-card';
 import { ContentGapNotice } from '@/components/resources/content-gap-notice';
 import { RetentionGauge } from '@/components/dashboard/retention-gauge';
 import { LearnerProfile } from '@/components/dashboard/learner-profile';
 import { WeakItemBadge } from '@/components/shared/weak-item-badge';
 import { ERROR_TAG_LABELS } from '@/lib/error-tags';
 import { getAnalytics } from '@/lib/analytics';
-import { getStats, getWeakReport } from '@/lib/practice';
+import { getSettings, getStats, getWeakReport, listSentences } from '@/lib/practice';
 import { computeDossier } from '@/lib/dossier';
 import { listLearnerNotesWithEvidence } from '@/lib/learner-notes';
 import { getStudyStats } from '@/lib/stats';
@@ -299,16 +300,21 @@ export default async function HomePage() {
   // bounced to /login by getSessionUserId() rather than shown marketing copy.
   // Auth gate: redirects to /login when there is no valid session.
   await getSessionUserId();
-  const [stats, weak, analytics, studyStats, dossier, learnerNotes] = await Promise.all([
-    getStats(),
-    getWeakReport(),
-    getAnalytics(),
-    getStudyStats(),
-    // The SAME student model the tutor reads (lib/dossier.ts) — one definition, two surfaces, so the
-    // dashboard can never disagree with what Claude was told about this learner.
-    computeDossier(),
-    listLearnerNotesWithEvidence(),
-  ]);
+  const [stats, weak, analytics, studyStats, dossier, learnerNotes, lastGraded, settings] =
+    await Promise.all([
+      getStats(),
+      getWeakReport(),
+      getAnalytics(),
+      getStudyStats(),
+      // The SAME student model the tutor reads (lib/dossier.ts) — one definition, two surfaces, so the
+      // dashboard can never disagree with what Claude was told about this learner.
+      computeDossier(),
+      listLearnerNotesWithEvidence(),
+      // The turn that was just graded. See LastGradedCard: the score reaches the learner by two
+      // routes and only this one is the app's to guarantee.
+      listSentences(1, 'GRADED'),
+      getSettings(),
+    ]);
   const totalItems = stats.totalItems;
   const hasWeakData =
     weak.tagCounts.length > 0 ||
@@ -355,6 +361,16 @@ export default async function HomePage() {
 
   const progress = (
     <>
+      {/* The score of the turn just finished, FIRST — it is the answer to the question the learner
+          arrives with. Absent only before the first graded turn. */}
+      {lastGraded[0] && (
+        <LastGradedCard
+          sentence={lastGraded[0]}
+          voiceSpeaker={settings.voiceSpeaker}
+          speechRate={settings.speechRate}
+          furiganaMode={settings.furiganaMode}
+        />
+      )}
       {/* Two columns from the smallest screen up (was one below sm): four stacked cards ate 310px, so a
           phone opened the dashboard on two KPIs and had to scroll for the other two. Paired up they all
           land above the fold, which is the entire job of this row. gap-3 below sm to buy label width. */}
