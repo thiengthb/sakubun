@@ -67,3 +67,43 @@ test('không có JS, mọi ô chọn trong HTML đầu tiên đã có chữ', as
 
   await noJs.close();
 });
+
+/**
+ * Nửa còn lại của cặp, và nó cần thiết vì phép kiểm trên KHÔNG BAO GIỜ chạy JS.
+ *
+ * Truyền nhãn làm children mở ra đúng một lớp lỗi ngược: nhãn có thể đứng im ở lần render đầu trong khi
+ * giá trị thật đã đổi — người học chọn "Việt → Nhật" mà ô vẫn đọc là "Nhật → Việt". Test SSR mù hoàn
+ * toàn với ca đó (nó tắt JS), nên nếu không có test này thì bản sửa được gác một nửa.
+ */
+test('chọn giá trị khác thì nhãn trên trigger đổi theo', async ({ page }) => {
+  await page.goto('/login');
+  await page.getByLabel('Email').fill(E2E_EMAIL);
+  await page.getByLabel('Mật khẩu').fill(E2E_LOGIN);
+  await page.getByRole('button', { name: 'Đăng nhập' }).click();
+  await page.waitForURL((u) => !u.pathname.startsWith('/login'), { timeout: 30_000 });
+
+  await page.goto('/settings');
+  // Nhận diện ô bằng TÊN KHẢ TRUY CẬP, rồi ĐỌC xem nó đang ở nhãn nào — không viết cứng một giá trị.
+  // Ba thứ đo được ở đây, mỗi thứ từng làm test này đỏ một lần:
+  //   1. `getByLabel('Hướng dịch')` KHÔNG khớp — `Field` không phát ra `htmlFor` (2026-08-11). Nhưng
+  //      `SelectTrigger` tự gắn `aria-labelledby` từ Field, nên `getByRole` + `name` thì khớp.
+  //   2. Viết cứng "Nhật → Việt" là sai: đó là giá trị của tài khoản THẬT; tài khoản e2e ở mặc định
+  //      `ALTERNATING`.
+  //   3. `LABELS.join('|')` trong `new RegExp` cũng sai: dấu ngoặc trong "(đổi chiều từng câu)" thành
+  //      NHÓM regex, nên nhánh đó không khớp gì. So sánh chuỗi thẳng, đừng dựng regex từ dữ liệu.
+  const LABELS = ['Nhật → Việt', 'Việt → Nhật', 'Song ngữ (đổi chiều từng câu)'];
+  const direction = page.getByRole('combobox', { name: 'Hướng dịch' });
+  await expect(direction).toBeVisible();
+  const before = ((await direction.textContent()) ?? '').trim();
+  const target = LABELS.find((l) => l !== before);
+  expect(target, 'phải tìm được một nhãn khác nhãn đang hiện').toBeTruthy();
+
+  await direction.click();
+  await page.getByRole('option', { name: target, exact: true }).click();
+  await expect(direction).toHaveText(target!);
+
+  // KHÔNG bấm Lưu: form này không tự lưu, nên tải lại là trả về đúng giá trị đã ghi — vừa dọn sạch cho
+  // spec sau, vừa là một khẳng định thật (nhãn đến từ server, không phải từ state còn sót).
+  await page.reload();
+  await expect(page.getByRole('combobox', { name: 'Hướng dịch' })).toHaveText(before);
+});
