@@ -14,6 +14,18 @@ test.beforeAll(seedE2eAccount);
 // AC-1 ("open a staged sentence") is out of scope for a pure web e2e — a sentence is staged by Claude via
 // MCP, not through the web UI — so this covers the web-reachable critical path: auth + a persisted write.
 test('login → dashboard → a settings change persists across reload', async ({ page }) => {
+  // A per-test budget above the 60s default (config), because this ONE test keeps being the gate's only
+  // red and the failure is always the same shape: `locator.fill` on the login form times out while the
+  // app itself is fine — 6.6s standalone, >60s in a full-suite run, on identical code (measured
+  // 2026-08-12, and the same signature as issue #7). It walks the two heaviest first-compile routes
+  // (/login then the authed dashboard) right after warmup, so a cold Turbopack compile lands inside its
+  // budget instead of beside it.
+  //
+  // This does NOT weaken any assertion: `expect` keeps its own 10s timeout, so a genuinely broken login
+  // still fails — it just fails on the assertion instead of on a stopwatch. What it buys is that a slow
+  // compile stops being REPORTED as a broken app. If this test ever goes red again, read the failure
+  // shape first: an assertion message is a real bug, a `fill`/`goto` timeout is this again.
+  test.setTimeout(180_000);
   await page.goto('/login');
   await page.getByLabel('Email').fill(E2E_EMAIL);
   await page.getByLabel('Mật khẩu').fill(E2E_LOGIN);

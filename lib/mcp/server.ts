@@ -161,7 +161,10 @@ export const mcpHandler = createMcpHandler(
                 `1. Ask which they want first, or do BOTH in order — the two libraries are separate and both have backlogs:\n` +
                 `   - GRAMMAR: list_grammar { quality: "needs-work", limit: 20 }\n` +
                 `   - VOCABULARY: list_vocab { quality: "needs-work", limit: 20 }\n` +
-                `   Each row carries \`card: { tier, missing, v }\` — the tier (missing / broken / thin / outdated) and which dimensions are absent. READ THEM: for a \`thin\` or \`outdated\` row a card already exists, so use patch_enrichment to ADD exactly what \`missing\` names — enrich_items would overwrite work that is already there. Only \`missing\` and \`broken\` rows get a whole card written with enrich_items.\n` +
+                `   Each row carries \`card: { tier, missing, v }\` — the tier (missing / broken / thin / outdated) and which dimensions are absent. READ THEM before writing anything:\n` +
+                `   - \`missing\` / \`broken\` → write a whole card with enrich_items.\n` +
+                `   - \`thin\` → the card exists and is worth keeping. patch_enrichment with EXACTLY what \`missing\` names. enrich_items here would overwrite content that is already good.\n` +
+                `   - \`outdated\` with \`missing: []\` → nothing is absent; the card only lacks the CURRENT format stamp. Call patch_enrichment { itemId } with NO add and NO set: that re-stamps it and changes not one word of the content. Do NOT rewrite these — after a format bump the whole library reports \`outdated\` at once, and rewriting it would throw away every card the learner already has.\n` +
                 `2. For each GRAMMAR pattern, write: structure (the ways it ATTACHES/CONJUGATES, e.g. "動詞辞書形 + 〜ばかりに", "名詞 + である + 〜ばかりに"), usage (one line on nuance / when it is used), ` +
                 `collocations (3–6 Japanese phrases it genuinely occurs with), example + examples (short sentences, EACH with its Vietnamese translation in \`vi\` and \`jaRuby\` in 漢字[かな] markup so the app can show furigana and read it aloud), ` +
                 `pitfalls (1–3 mistakes Vietnamese learners of Japanese typically make with it), contrasts (patterns it gets confused with + one line on the difference), ` +

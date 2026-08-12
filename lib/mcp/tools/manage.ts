@@ -283,8 +283,10 @@ export function registerManageTools(server: McpServer) {
           );
         case 'nothing-to-add':
           return mcpError(
-            'NOTHING was written: everything you sent is already on the card (or the arguments were ' +
-              'empty). Read the card with check_library / list_grammar before offering to add to it.',
+            'NOTHING was written: everything you sent is already on the card, AND the card was already ' +
+              'stamped with the current format (an empty patch on a complete OLDER-format card is not a ' +
+              'no-op — it re-stamps it). Read the card with check_library / list_grammar before ' +
+              'offering to add to it.',
           );
         case 'conflict':
           return mcpError(

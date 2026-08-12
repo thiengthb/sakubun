@@ -255,3 +255,26 @@ describe('vocabulary relations merge like every other list (2026-08-12)', () => 
     expect(report.card.antonyms).toHaveLength(1);
   });
 });
+
+describe('đường di trú của một thẻ ĐÃ ĐỦ nhưng format cũ', () => {
+  it('patch RỖNG vẫn đóng dấu lại, nên không phải viết lại nội dung đang đúng', () => {
+    // Đây là đường di trú cho cả kho sau khi bar lên v3: một thẻ v1/v2 đã đạt bar không thiếu gì cả,
+    // nó chỉ thiếu con dấu. Nếu patch rỗng bị từ chối thì cách duy nhất còn lại là enrich_items —
+    // tức GHI ĐÈ toàn bộ thẻ để sửa một con số, đúng thao tác mà mergeEnrichment tồn tại để tránh.
+    const report = mergeGrammar(card({ v: 1 }), {});
+    expect(report.vStamped).toBe(true);
+    expect(report.touched).toBe(true);
+    expect(report.card.v).toBe(CURRENT_ENRICHMENT_VERSION);
+    // Và không một mục nào bị thêm/bớt/đổi.
+    expect(report.added).toEqual({});
+    expect(report.replaced).toEqual([]);
+    expect(report.card.contrasts).toEqual(card().contrasts);
+  });
+
+  it('patch rỗng trên thẻ CHƯA đủ là no-op thật — không có gì để đóng dấu', () => {
+    const thin = card({ v: 1, pitfalls: [], contrasts: [] });
+    const report = mergeGrammar(thin, {});
+    expect(report.vStamped).toBe(false);
+    expect(report.touched).toBe(false);
+  });
+});
