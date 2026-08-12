@@ -20,7 +20,12 @@ import {
   type Confusion,
   type ErrorTag,
 } from '@/lib/error-tags';
-import { parseEnrichment, toTutorCard, type Enrichment } from '@/lib/enrichment';
+import {
+  CURRENT_ENRICHMENT_VERSION,
+  parseEnrichment,
+  toTutorCard,
+  type Enrichment,
+} from '@/lib/enrichment';
 import {
   mergeEnrichment,
   type EnrichmentAdd,
@@ -28,7 +33,13 @@ import {
   type EnrichmentSet,
   type MergeReport,
 } from '@/lib/enrichment-merge';
-import { needsWork, scoreEnrichment, type QualityTier } from '@/lib/enrichment-quality';
+import {
+  meetsCurrentBar,
+  needsWork,
+  scoreEnrichment,
+  type QualityTier,
+} from '@/lib/enrichment-quality';
+import { asItemKind, GRAMMAR_KIND, VOCAB_KIND } from '@/lib/item-kinds';
 import { coachTeachBack, type TeachBackHarvest } from '@/lib/coach';
 import {
   recordLearnerNote,
@@ -127,8 +138,11 @@ export interface AddItemsResult {
 // user looked up mid-practice, revived 2026-07-11 (demand-driven, in-context — NOT the top-down N5 list
 // purged 2026-07-07; the `kind` column was kept precisely so this revival stayed cheap). The `kind`
 // filter keeps the two loops separate so vocab can never crowd grammar (the N5-drag lesson).
-export const GRAMMAR_KIND = 'GRAMMAR';
-export const VOCAB_KIND = 'VOCAB';
+//
+// RE-EXPORTED, not declared: the pair now lives in the leaf module `lib/item-kinds.ts` so a client
+// component can branch on kind without importing this file (and with it Prisma). Every existing
+// `import { GRAMMAR_KIND } from '@/lib/practice'` keeps working.
+export { GRAMMAR_KIND, VOCAB_KIND };
 
 /** The exercise type whose answer is an EXPLANATION, not a translation (plan §10, shipped 2026-07-27). */
 export const TEACH_BACK_EXERCISE = 'TEACH_BACK';
@@ -1658,7 +1672,7 @@ export async function listItems(filter: ListItemsFilter = {}) {
   const scoped = filter.quality
     ? items
         .filter((i) => {
-          const tier = scoreEnrichment(i.enrichment).tier;
+          const tier = scoreEnrichment(i.enrichment, i.kind).tier;
           return filter.quality === 'needs-work' ? needsWork(tier) : tier === filter.quality;
         })
         .slice(0, filter.limit ?? 50)
@@ -1675,6 +1689,14 @@ export async function listItems(filter: ListItemsFilter = {}) {
     suspended: i.suspended,
     starred: i.starred,
     enrichment: i.enrichment,
+    // The card's own verdict on itself, scored against THIS kind's bar (2026-08-12). Added because the
+    // `quality` filter was only half a tool: it could select the rows needing work but the caller then
+    // had to re-derive WHAT was missing by parsing the raw card — and a tutor guessing at that is how a
+    // patch ends up re-sending what the card already has. `missing` names the dimensions in Vietnamese,
+    // so the repair is a direct read: patch exactly these.
+    card: (({ tier, missing, v }) => ({ tier, missing, v }))(
+      scoreEnrichment(i.enrichment, i.kind),
+    ),
     enrichedAt: i.enrichedAt,
     createdAt: i.createdAt,
     ...(filter.withGroupIds ? { groupIds: i.groups.map((g) => g.groupId) } : {}),
@@ -1865,6 +1887,29 @@ export interface EnrichmentInput {
 }
 
 /** Store Claude-generated enrichment cards. Unknown itemIds are reported, not fatal. */
+/**
+ * Stamp the card format version SERVER-SIDE when the card meets the current bar for its kind.
+ *
+ * Why this is the server's job (found 2026-08-12, and it had been live since versioning shipped):
+ * `enrichmentSchema` defaults `v` to 1, and NOTHING — not the tool description, not the sweep prompt —
+ * ever told Claude that `v` exists or what number to send. So every card written through `enrich_items`
+ * landed as v1, `scoreEnrichment` read it as `outdated`, `needsWork` said yes, and the card came back on
+ * the next sweep. The backlog could not shrink: you could enrich all 20 patterns in a batch and
+ * `quality: "needs-work"` would still return the same 20. `patch_enrichment` never had the bug, because
+ * `mergeEnrichment` already stamps (`vStamped`) — the two write paths simply disagreed.
+ *
+ * The right fix is not a better instruction. `v` describes the FORMAT, which this module defines; asking
+ * the author to restate a number they cannot verify is how the mismatch happened. A card that does not
+ * meet the bar is left at whatever it claimed, so `thin` still reads as thin rather than as "new format".
+ */
+function stampVersion(enrichmentJson: string, kind: string): string {
+  const card = parseEnrichment(enrichmentJson);
+  if (!card) return enrichmentJson; // unparseable is the caller's problem to see, not ours to rewrite
+  if (card.v >= CURRENT_ENRICHMENT_VERSION) return enrichmentJson;
+  if (!meetsCurrentBar(card, asItemKind(kind))) return enrichmentJson;
+  return JSON.stringify({ ...card, v: CURRENT_ENRICHMENT_VERSION });
+}
+
 export async function saveEnrichments(
   inputs: { itemId: string; enrichmentJson: string }[],
 ): Promise<{ updated: number; missing: string[] }> {
@@ -1872,25 +1917,26 @@ export async function saveEnrichments(
   // One existence probe for the whole batch (was a findUnique PER input — the N+1), then all updates in a
   // single transaction. Same semantics as the old sequential loop: an unknown id lands in `missing`, a
   // known id is updated, and a duplicate id in the batch is last-write-wins (its update runs twice).
-  const existing = new Set(
+  const existing = new Map(
     (
       await prisma.item.findMany({
         where: { id: { in: inputs.map((i) => i.itemId) } },
-        select: { id: true },
+        select: { id: true, kind: true },
       })
-    ).map((r) => r.id),
+    ).map((r) => [r.id, r.kind]),
   );
   const missing: string[] = [];
   const updates: Prisma.PrismaPromise<unknown>[] = [];
   for (const { itemId, enrichmentJson } of inputs) {
-    if (!existing.has(itemId)) {
+    const kind = existing.get(itemId);
+    if (kind === undefined) {
       missing.push(itemId);
       continue;
     }
     updates.push(
       prisma.item.update({
         where: { id: itemId },
-        data: { enrichment: enrichmentJson, enrichedAt: now },
+        data: { enrichment: stampVersion(enrichmentJson, kind), enrichedAt: now },
       }),
     );
   }
@@ -1977,7 +2023,9 @@ export async function patchEnrichment(
 ): Promise<PatchEnrichmentResult> {
   const item = await prisma.item.findFirst({
     where: { id: input.itemId },
-    select: { id: true, expression: true, enrichment: true },
+    // `kind` is selected because the completeness bar differs by kind (lib/enrichment-quality.ts):
+    // whether the merged card may be stamped v3, and what `stillMissing` names, both depend on it.
+    select: { id: true, kind: true, expression: true, enrichment: true },
   });
   if (!item) return { patched: false, reason: 'not-found' };
 
@@ -1990,7 +2038,7 @@ export async function patchEnrichment(
   // dụng. Giờ nó không còn được nhận nữa, ở cả hai đầu.
   const patch: EnrichmentPatch = { add: input.add, set: input.set };
 
-  const report = mergeEnrichment(base, patch);
+  const report = mergeEnrichment(base, patch, asItemKind(item.kind));
   if (!report.touched) return { patched: false, reason: 'nothing-to-add' };
 
   const json = JSON.stringify(report.card);
@@ -2001,7 +2049,7 @@ export async function patchEnrichment(
   });
   if (res.count === 0) return { patched: false, reason: 'conflict' };
 
-  const quality = scoreEnrichment(json);
+  const quality = scoreEnrichment(json, item.kind);
   return {
     patched: true,
     expression: item.expression,

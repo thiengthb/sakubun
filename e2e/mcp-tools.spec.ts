@@ -175,6 +175,52 @@ const STEPS: Step[] = [
     args: (ctx) => ({ itemId: ctx.grammarItemId, add: { pitfalls: ['Đừng lẫn với 〜はずだ'] } }),
     why: 'patch MERGE (`add`), khác enrich_items GHI ĐÈ — chạy sau nó để cả hai nhánh đều được chạm.',
   },
+  {
+    // Thẻ TỪ VỰNG đi qua đúng tool đó nhưng khác thước đo (lib/enrichment-quality.ts): không đòi
+    // `structure`, đòi ≥2 collocations · ≥2 ví dụ ĐỀU có `vi` · ít nhất một từ đồng nghĩa/trái nghĩa.
+    // Gọi thật qua HTTP là cách duy nhất chứng minh lược đồ nhận được hình dạng này — Zod bỏ IM LẶNG
+    // mọi key nó không biết, nên một field mới mà server chưa khai sẽ "thành công" và mất dữ liệu.
+    name: 'enrich_items',
+    args: (ctx) => ({
+      items: [
+        {
+          itemId: ctx.vocabItemId,
+          enrichment: {
+            usage: 'Thuốc lá; danh từ, dùng với 吸う chứ không dùng với 飲む.',
+            collocations: ['煙草を吸う', '煙草をやめる'],
+            example: { ja: '父は煙草をやめました。', vi: 'Bố tôi đã bỏ thuốc.' },
+            examples: [{ ja: 'ここで煙草を吸ってもいいですか。', vi: 'Tôi hút thuốc ở đây được không?' }],
+            pitfalls: ['Không nói 煙草を飲む — tiếng Nhật dùng 吸う.'],
+            synonyms: [{ term: 'タバコ', reading: 'たばこ', vi: 'thuốc lá', note: 'cách viết katakana, phổ biến hơn.' }],
+            antonyms: [],
+          },
+        },
+      ],
+    }),
+    why: 'Nhánh TỪ VỰNG của enrich_items chưa từng được gọi trong lưới này.',
+  },
+  {
+    name: 'patch_enrichment',
+    args: (ctx) => ({
+      itemId: ctx.vocabItemId,
+      add: { antonyms: [{ term: '禁煙', reading: 'きんえん', vi: 'sự cấm/bỏ thuốc' }] },
+    }),
+    why: '`add.synonyms` / `add.antonyms` là field mới — chỉ gọi thật mới biết server có nhận hay không.',
+  },
+  {
+    name: 'list_vocab',
+    args: () => ({ quality: 'needs-work' }),
+    capture: (json) => {
+      const rows = ((json.items ?? json) as { expression: string }[]) ?? [];
+      // Đây là cửa mà TỪ VỰNG không có cho tới 2026-08-12: không có bộ lọc chất lượng thì không có
+      // danh sách cần làm, nên vòng quét enrich không bao giờ với tới được từ vựng.
+      expect(
+        rows.some((r) => r.expression === '煙草'),
+        `từ vừa được soạn thẻ ĐỦ không được nằm trong danh sách cần làm: ${JSON.stringify(rows)}`,
+      ).toBe(false);
+    },
+    why: 'Vòng quét chỉ đóng được khi thẻ vừa ghi thôi báo là "cần làm" — lỗi v1-mãi-mãi của saveEnrichments.',
+  },
   { name: 'update_grammar', args: (ctx) => ({ itemId: ctx.grammarItemId, level: 'N2' }) },
   { name: 'update_vocab', args: (ctx) => ({ itemId: ctx.vocabItemId, meaningVi: 'thuốc lá (danh từ)' }) },
   { name: 'update_settings', args: () => ({ grammarLevels: ['N3', 'N2'] }) },

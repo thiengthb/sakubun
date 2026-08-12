@@ -21,6 +21,9 @@ import { ResourceCard } from '@/components/resources/resource-card';
 import { SpokenLine } from '@/components/shared/spoken-line';
 import { StarButton } from '@/components/shared/star-button';
 import { useSessionState } from '@/components/shared/use-session-state';
+import { CARD_FILTERS, matchesCardFilter } from '@/lib/card-filter';
+import { scoreEnrichment } from '@/lib/enrichment-quality';
+import { VOCAB_KIND } from '@/lib/item-kinds';
 import { PAGE_SIZE_OPTIONS } from '@/lib/pagination';
 import { DATE_PRESETS, type DatePreset, speakable, withinDatePreset } from '@/lib/format';
 import { JLPT_FILTERS, STAR_FILTERS, STATE_FILTERS } from '@/lib/srs-constants';
@@ -50,6 +53,12 @@ export interface VocabRow {
   meaningVi: string;
   notes: string | null;
   level: string;
+  /**
+   * The enrichment card, RAW (2026-08-12). It was absent from this row type entirely, which is why the
+   * vocab store had no card-quality filter and its detail dialog could not show a card even after the
+   * dialog learned how: the data never reached the component. `listItems` already returns it.
+   */
+  enrichment: string | null;
   captureReason: string | null;
   suspended: boolean;
   starred: boolean;
@@ -96,6 +105,9 @@ export function VocabTable({
   const [star, setStar] = useSessionState<string>('vocab.star', 'all', 'vstar');
   const [level, setLevel] = useSessionState<string>('vocab.level', 'all', 'vlvl');
   const [date, setDate] = useSessionState<DatePreset>('vocab.date', 'all', 'vdt');
+  // Own session/URL key (`vcard`), not the grammar table's `card`: the two tables are on the same page
+  // and share the query string, so one key would make filtering one store filter the other.
+  const [card, setCard] = useSessionState<string>('vocab.card', 'all', 'vcard');
 
   const filtered = useMemo(
     () =>
@@ -109,9 +121,12 @@ export function VocabTable({
         if (star === 'yes' && !it.starred) return false;
         if (level !== 'all' && it.level !== level) return false;
         if (!withinDatePreset(it.createdAt, date)) return false;
+        // Scored against the VOCAB bar (collocations + đồng nghĩa/trái nghĩa + ví dụ có dịch), which is
+        // a different set of dimensions from the grammar table's — same filter, right yardstick.
+        if (!matchesCardFilter(scoreEnrichment(it.enrichment, VOCAB_KIND).tier, card)) return false;
         return true;
       }),
-    [items, state, reason, star, level, date],
+    [items, state, reason, star, level, date, card],
   );
 
   const columns = useMemo<ColumnDef<VocabRow>[]>(() => {
@@ -188,6 +203,7 @@ export function VocabTable({
           hanviet: item.hanviet,
           meaningVi: item.meaningVi,
           notes: item.notes,
+          enrichment: item.enrichment,
           suspended: item.suspended,
           srs: item.srs,
         }),
@@ -200,6 +216,7 @@ export function VocabTable({
     (state !== 'all' ? 1 : 0) +
     (reason !== 'all' ? 1 : 0) +
     (star !== 'all' ? 1 : 0) +
+    (card !== 'all' ? 1 : 0) +
     (level !== 'all' ? 1 : 0) +
     (date !== 'all' ? 1 : 0) +
     0;
@@ -309,6 +326,7 @@ export function VocabTable({
             setStar('all');
             setLevel('all');
             setDate('all');
+            setCard('all');
           }}
         >
           <SelectFilterRow
@@ -316,6 +334,12 @@ export function VocabTable({
             value={state}
             onValueChange={setState}
             options={STATE_FILTERS}
+          />
+          <SelectFilterRow
+            label="Thẻ chi tiết"
+            value={card}
+            onValueChange={setCard}
+            options={CARD_FILTERS}
           />
           {/* Riêng của bảng từ vựng — ngữ pháp không có "lý do bắt được". */}
           <SelectFilterRow

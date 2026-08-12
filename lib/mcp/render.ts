@@ -453,9 +453,22 @@ export function renderLibraryHealth(result: LibraryHealthResult): string {
 
   const needsWork = h.quality.missing + h.quality.broken + h.quality.thin;
   lines.push(
-    `**Thẻ chi tiết:** ${h.quality.ok + h.quality.rich} thẻ đạt · ${needsWork} thẻ chưa đạt` +
+    `**Thẻ ngữ pháp:** ${h.quality.ok + h.quality.rich} thẻ đạt · ${needsWork} thẻ chưa đạt` +
       (h.cardVersion.outdated > 0 ? ` · ${h.cardVersion.outdated} thẻ theo format cũ` : ''),
   );
+
+  // Vocabulary cards, counted on their OWN bar and stated as their own line. They were invisible here
+  // until 2026-08-12 (the report only ever scored grammar), so a word backlog could grow with nothing
+  // ever naming it. The line is only printed when there ARE words: a learner with none should not read
+  // a row of zeros about a library they do not have.
+  if (h.vocabCards.total > 0) {
+    lines.push(
+      `**Thẻ từ vựng:** ${h.vocabCards.total - h.vocabCards.needsWork}/${h.vocabCards.total} thẻ đạt` +
+        (h.vocabCards.needsWork > 0
+          ? ` · ${h.vocabCards.needsWork} chưa đạt (thiếu cụm đi kèm, từ đồng nghĩa/trái nghĩa, hoặc ví dụ có dịch)`
+          : ''),
+    );
+  }
 
   const gaps = h.byStudiedLevel.filter((l) => l.needsWork > 0);
   if (gaps.length > 0) {

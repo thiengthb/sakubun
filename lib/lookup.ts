@@ -110,7 +110,7 @@ export async function checkLibrary(args: LookupInput): Promise<LibraryCheck> {
   const mine: MineEntry[] = byRelevance(query, mineRows)
     .slice(0, MAX_MATCHES)
     .map((i) => {
-      const q = scoreEnrichment(i.enrichment);
+      const q = scoreEnrichment(i.enrichment, i.kind);
       return {
         itemId: i.itemId,
         kind: i.kind,

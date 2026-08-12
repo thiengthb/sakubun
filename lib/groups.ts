@@ -4,6 +4,7 @@
 // organization + practice-scoping layer — they NEVER touch FSRS.
 
 import { prisma } from '@/lib/db';
+import { GRAMMAR_KIND, VOCAB_KIND } from '@/lib/item-kinds';
 import { cleanText, cleanTextOrNull } from '@/lib/text';
 import type { GroupKind } from '@/lib/group-kinds';
 
@@ -12,8 +13,8 @@ export { GROUP_KINDS, isGroupKind, type GroupKind } from '@/lib/group-kinds';
 
 // Item.kind is stored uppercase ('GRAMMAR' | 'VOCAB'); Group.kind is a lowercase soft constraint on
 // which item kinds may join. `mixed` accepts both. SQLite/Prisma can't enforce this — we do, here.
-const GRAMMAR_ITEM_KIND = 'GRAMMAR';
-const VOCAB_ITEM_KIND = 'VOCAB';
+const GRAMMAR_ITEM_KIND = GRAMMAR_KIND;
+const VOCAB_ITEM_KIND = VOCAB_KIND;
 
 /** Does an Item of `itemKind` belong in a group of `groupKind`? `mixed` takes anything. */
 function itemKindFitsGroup(itemKind: string, groupKind: GroupKind): boolean {

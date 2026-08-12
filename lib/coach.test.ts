@@ -21,6 +21,10 @@ import {
   TEACH_BACK_MIN_RATING,
 } from '@/lib/coach';
 import { scoreEnrichment } from '@/lib/enrichment-quality';
+import { GRAMMAR_KIND } from '@/lib/item-kinds';
+
+/** Every `ItemFacts` fixture here is the grammar pattern 〜ばかりに — bind the bar once. */
+const scoreGrammarCard = (raw: string | null | undefined) => scoreEnrichment(raw, GRAMMAR_KIND);
 import { CURRENT_ENRICHMENT_VERSION } from '@/lib/enrichment';
 import { LEECH_LAPSES } from '@/lib/srs';
 
@@ -47,7 +51,7 @@ function item(patch: Partial<ItemFacts> = {}): ItemFacts {
     suspended: false,
     hasKanji: false,
     hanviet: null,
-    quality: scoreEnrichment(OK_CARD),
+    quality: scoreGrammarCard(OK_CARD),
     contrastTargets: ['y'],
     srs: { state: 2, due: new Date('2026-08-01T00:00:00Z'), lapses: 0 },
     ...patch,
@@ -125,7 +129,7 @@ describe('coach — the scenarios the flagship depends on', () => {
 
   it('suspended → the BLOCKER wins over any card-polish offer', () => {
     const result = coach(
-      input({ mine: [item({ suspended: true, quality: scoreEnrichment(null) })] }),
+      input({ mine: [item({ suspended: true, quality: scoreGrammarCard(null) })] }),
     );
     expect(result.suggestions[0].code).toBe('UNSUSPEND');
     expect(result.suggestions[0].class).toBe('blocker');
@@ -189,7 +193,7 @@ describe('coach — the scenarios the flagship depends on', () => {
 
 describe('coach — the four card states each get their OWN repair', () => {
   const withCard = (raw: string | null) =>
-    codes(input({ mine: [item({ quality: scoreEnrichment(raw) })] }));
+    codes(input({ mine: [item({ quality: scoreGrammarCard(raw) })] }));
 
   it('no card → enrich_items', () => {
     expect(withCard(null)).toContain('ENRICH_MISSING');
@@ -197,7 +201,7 @@ describe('coach — the four card states each get their OWN repair', () => {
 
   it('unparseable card → REWRITE, and it outranks the other card offers', () => {
     const result = coach(
-      input({ mine: [item({ quality: scoreEnrichment('{"collocations":["x"]}') })] }),
+      input({ mine: [item({ quality: scoreGrammarCard('{"collocations":["x"]}') })] }),
     );
     expect(result.suggestions[0].code).toBe('ENRICH_BROKEN');
     expect(result.suggestions[0].tool).toBe('enrich_items');
@@ -205,7 +209,7 @@ describe('coach — the four card states each get their OWN repair', () => {
 
   it('thin card → PATCH the named gaps, never overwrite', () => {
     const thin = JSON.stringify({ usage: 'Chỉ vì gì đó xảy ra.', example: { ja: 'あ', vi: 'a' } });
-    const result = coach(input({ mine: [item({ quality: scoreEnrichment(thin) })] }));
+    const result = coach(input({ mine: [item({ quality: scoreGrammarCard(thin) })] }));
     const s = result.suggestions.find((x) => x.code === 'ENRICH_THIN');
     expect(s).toBeTruthy();
     expect(s!.tool).toBe('patch_enrichment'); // NOT enrich_items — that would wipe the rest
@@ -217,7 +221,7 @@ describe('coach — the four card states each get their OWN repair', () => {
     const old = JSON.parse(OK_CARD) as Record<string, unknown>;
     old.v = 1;
     const result = coach(
-      input({ mine: [item({ quality: scoreEnrichment(JSON.stringify(old)) })] }),
+      input({ mine: [item({ quality: scoreGrammarCard(JSON.stringify(old)) })] }),
     );
     const s = result.suggestions.find((x) => x.code === 'ENRICH_OUTDATED');
     expect(s).toBeTruthy();
@@ -230,7 +234,7 @@ describe('coach — the four card states each get their OWN repair', () => {
   // `patch_enrichment` chỉ biết MERGE.
   it('một item KHÔNG có thẻ đọc được thì nhận đề nghị ghi đủ, không phải một merge', () => {
     for (const raw of [null, '{"collocations":["x"]}']) {
-      const result = coach(input({ mine: [item({ quality: scoreEnrichment(raw) })] }));
+      const result = coach(input({ mine: [item({ quality: scoreGrammarCard(raw) })] }));
       const emitted = result.suggestions.map((s) => s.code);
       expect(emitted.some((c) => c === 'ENRICH_MISSING' || c === 'ENRICH_BROKEN')).toBe(true);
     }
@@ -293,7 +297,7 @@ describe('coach — a mined confusion is evidence the SERVER holds, so it IS a c
     ] as const) {
       const result = coach(
         input({
-          mine: [item({ quality: scoreEnrichment(raw), contrastTargets: [] })],
+          mine: [item({ quality: scoreGrammarCard(raw), contrastTargets: [] })],
           minedPairs: [pair],
         }),
       );
@@ -313,7 +317,7 @@ describe('coach — ranking and caps', () => {
         mine: [
           item({
             suspended: true,
-            quality: scoreEnrichment(null),
+            quality: scoreGrammarCard(null),
             srs: { state: 2, due: NOW, lapses: LEECH_LAPSES },
           }),
         ],
@@ -329,11 +333,11 @@ describe('coach — ranking and caps', () => {
           item({
             itemId: 'a',
             suspended: true,
-            quality: scoreEnrichment(null),
+            quality: scoreGrammarCard(null),
             srs: { state: 0, due: NOW, lapses: 0 },
             level: 'N1',
           }),
-          item({ itemId: 'b', expression: '〜つつある', quality: scoreEnrichment(null) }),
+          item({ itemId: 'b', expression: '〜つつある', quality: scoreGrammarCard(null) }),
         ],
       }),
     );
@@ -345,8 +349,8 @@ describe('coach — ranking and caps', () => {
     const result = coach(
       input({
         mine: [
-          item({ itemId: 'a', quality: scoreEnrichment(null) }),
-          item({ itemId: 'b', expression: '〜つつある', quality: scoreEnrichment(null) }),
+          item({ itemId: 'a', quality: scoreGrammarCard(null) }),
+          item({ itemId: 'b', expression: '〜つつある', quality: scoreGrammarCard(null) }),
         ],
       }),
     );
@@ -358,7 +362,7 @@ describe('coach — ranking and caps', () => {
     const result = coach(
       input({
         midSession: true,
-        mine: [item({ suspended: true, quality: scoreEnrichment(null) })],
+        mine: [item({ suspended: true, quality: scoreGrammarCard(null) })],
       }),
     );
     expect(result.suggestions.length).toBeLessThanOrEqual(MAX_SUGGESTIONS_MID_SESSION);
@@ -460,7 +464,7 @@ describe('coach — every suggestion is a call that would actually work', () => 
       input({ mine: [] }),
       input({ mine: [item({ suspended: true })] }),
       input({ mine: [item({ level: 'N1', srs: { state: 0, due: NOW, lapses: 0 } })] }),
-      input({ mine: [item({ quality: scoreEnrichment(THIN_CARD) })] }),
+      input({ mine: [item({ quality: scoreGrammarCard(THIN_CARD) })] }),
       input({ mine: [item({ kind: 'VOCAB', hasKanji: true, hanviet: null })] }),
       input({ withheldByNewCap: ['〜かねる'] }),
       input({ mine: [], kind: 'GRAMMAR' }), // the other ADD_MISSING branch — a different tool + key
@@ -502,7 +506,7 @@ describe('coach — every suggestion is actionable', () => {
     const cases: CoachInput[] = [
       input({ mine: [] }),
       input({ mine: [item({ suspended: true })] }),
-      input({ mine: [item({ quality: scoreEnrichment(null) })] }),
+      input({ mine: [item({ quality: scoreGrammarCard(null) })] }),
       input({ mine: [item({ srs: { state: 0, due: NOW, lapses: 0 } })] }),
       input({ mine: [item({ srs: { state: 2, due: NOW, lapses: LEECH_LAPSES } })] }),
     ];
@@ -604,7 +608,7 @@ describe('coachLibrary — the whole-kho sweeps', () => {
 describe('autoCapture — pre-authorisation marks the offer, it never writes', () => {
   const off = { vocab: false, enrichPatch: false };
   /** Thẻ mỏng → đề nghị `ENRICH_THIN`, tool `patch_enrichment` — offer duy nhất còn có cờ auto. */
-  const thinOne = () => input({ mine: [item({ quality: scoreEnrichment(THIN_CARD) })] });
+  const thinOne = () => input({ mine: [item({ quality: scoreGrammarCard(THIN_CARD) })] });
 
   // Hai ca dưới đây trước 2026-08-10 lái bằng `FORK_SHARED` + cờ `autoCapture.fork`. Cả hai đã bị bỏ
   // (không còn thư viện chung, và `fork_shared_items` không còn được đăng ký), nên chúng được viết lại
@@ -619,7 +623,7 @@ describe('autoCapture — pre-authorisation marks the offer, it never writes', (
   it('marks ONLY the class the learner turned on', () => {
     const r = coach(
       input({
-        mine: [item({ quality: scoreEnrichment(THIN_CARD) })],
+        mine: [item({ quality: scoreGrammarCard(THIN_CARD) })],
         settings: { grammarLevels: ['N3'], autoCapture: { ...off, enrichPatch: true } },
       }),
     );
@@ -628,7 +632,7 @@ describe('autoCapture — pre-authorisation marks the offer, it never writes', (
     // Một cờ KHÁC không được tràn sang offer này.
     const other = coach(
       input({
-        mine: [item({ quality: scoreEnrichment(THIN_CARD) })],
+        mine: [item({ quality: scoreGrammarCard(THIN_CARD) })],
         settings: { grammarLevels: ['N3'], autoCapture: { ...off, vocab: true } },
       }),
     );
@@ -639,7 +643,7 @@ describe('autoCapture — pre-authorisation marks the offer, it never writes', (
     const settings = { grammarLevels: ['N3'] as const, autoCapture: { ...off, enrichPatch: true } };
     const thin = coach(
       input({
-        mine: [item({ quality: scoreEnrichment(THIN_CARD) })],
+        mine: [item({ quality: scoreGrammarCard(THIN_CARD) })],
         settings: { grammarLevels: [...settings.grammarLevels], autoCapture: settings.autoCapture },
       }),
     ).suggestions.find((s) => s.tool === 'patch_enrichment');
@@ -648,7 +652,7 @@ describe('autoCapture — pre-authorisation marks the offer, it never writes', (
     // enrich_items REWRITES a whole card, so no flag may ever pre-authorise it.
     const broken = coach(
       input({
-        mine: [item({ quality: scoreEnrichment('{"collocations":["x"]}') })],
+        mine: [item({ quality: scoreGrammarCard('{"collocations":["x"]}') })],
         settings: {
           grammarLevels: [...settings.grammarLevels],
           autoCapture: { vocab: true, enrichPatch: true },

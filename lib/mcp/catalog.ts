@@ -214,6 +214,7 @@ export const MCP_CATALOG: CatalogEntry[] = [
   {
     name: 'enrich_backlog',
     kind: 'prompt',
-    summary: 'Soạn thẻ enrichment cho các mục chưa có (duyệt trước 3 thẻ mẫu rồi chạy theo lô)',
+    summary:
+      'Soạn thẻ enrichment cho mẫu ngữ pháp VÀ từ vựng còn thiếu (duyệt trước 3 thẻ mẫu rồi chạy theo lô)',
   },
 ];

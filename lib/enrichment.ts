@@ -27,7 +27,34 @@ export const ENRICHMENT_CAPS = {
   examples: 4,
   pitfalls: 5,
   contrasts: 5,
+  synonyms: 6,
+  antonyms: 4,
 } as const;
+
+/**
+ * A related WORD — a synonym (同義語 / 類義語) or an antonym (対義語).
+ *
+ * Added 2026-08-12, for vocabulary. `contrasts` already existed and was doing this job badly: it is
+ * `{ with, note }`, a Japanese expression plus a Vietnamese note, which is right for grammar (the
+ * confusable thing is a PATTERN the learner is already studying, so it needs no gloss) and wrong for
+ * words (a bare list of 同義語 is a list of words the learner cannot read yet — no reading, no meaning,
+ * so it teaches nothing and cannot be spoken aloud). Hence `vi` REQUIRED and `reading` available.
+ *
+ * `note` stays optional because the two directions differ: a synonym without a "how it differs" note is
+ * still useful (it widens the learner's options), while a contrast without one is just a name.
+ */
+export const relatedSchema = z.object({
+  /** JA surface form of the related word. */
+  term: z.string().min(1),
+  /** Kana reading — optional only because a kana-only word does not need one. */
+  reading: z.string().optional(),
+  /** Vietnamese gloss. REQUIRED: this is what makes the entry readable rather than decorative. */
+  vi: z.string().min(1),
+  /** How it differs / when to prefer it (vi). Optional — a plain synonym still earns its place. */
+  note: z.string().optional(),
+});
+
+export type Related = z.infer<typeof relatedSchema>;
 
 /**
  * WHERE a card came from and how sure its author was (2026-07-27, plan §12).
@@ -72,6 +99,13 @@ export const enrichmentSchema = z.object({
   pitfalls: z.array(z.string()).max(ENRICHMENT_CAPS.pitfalls).default([]),
   // Near-synonyms / easily-confused items and how they differ (vi note).
   contrasts: z.array(contrastSchema).max(ENRICHMENT_CAPS.contrasts).default([]),
+  // 同義語 / 類義語 — words that could stand in this one's place, each with a Vietnamese gloss.
+  // `.default([])` (like every list here) is what keeps every card written before 2026-08-12 parsing.
+  synonyms: z.array(relatedSchema).max(ENRICHMENT_CAPS.synonyms).default([]),
+  // 対義語 — the opposite. Deliberately NOT part of the completeness bar on its own: plenty of words
+  // (会議, 準備, ほとんど) have no honest antonym, and a required field would be filled with an invented
+  // one. See lib/enrichment-quality.ts: synonyms ∪ antonyms is what must be non-empty.
+  antonyms: z.array(relatedSchema).max(ENRICHMENT_CAPS.antonyms).default([]),
   // Register/formality note when relevant (vi), e.g. "trang trọng, văn viết".
   register: z.string().optional(),
   // CARD FORMAT VERSION (2026-07-26). Every card written before this existed parses as v1 (the
@@ -91,7 +125,13 @@ export const enrichmentSchema = z.object({
  * re-enrich sweep has a precise target list. Never bump it for a cosmetic change: each bump asks the
  * learner (or a batch job) to regenerate real content.
  */
-export const CURRENT_ENRICHMENT_VERSION = 2;
+export const CURRENT_ENRICHMENT_VERSION = 3;
+// v3 (2026-08-12): the completeness bar became KIND-AWARE, and a vocabulary card now owes what a
+// dictionary entry owes — collocations, worked examples WITH a Vietnamese translation, and at least one
+// synonym or antonym carrying its own reading + gloss. v1/v2 vocabulary cards were measured against
+// grammar dimensions ("cách chia / cách gắn", "phân biệt mẫu gần nghĩa"), which is why a card could be
+// scored `ok` while telling the learner nothing a word card is for. A bump is the right instrument here
+// by the rule above — it asks for real new content, it is not cosmetic.
 
 export type Enrichment = z.infer<typeof enrichmentSchema>;
 
@@ -105,10 +145,20 @@ export interface TutorCard {
   register?: string;
   /** Worked examples, WITHOUT ruby. Present only for a pattern being introduced. */
   examples?: { ja: string; vi: string }[];
+  /**
+   * Synonyms / antonyms, trimmed to term + gloss. Present only for an item being introduced, on the
+   * same reasoning as `examples`: they belong to the mini-lesson ("cùng nghĩa với X, trái với Y"), and a
+   * review item would carry them on every turn of the session for nothing.
+   */
+  synonyms?: { term: string; vi: string }[];
+  antonyms?: { term: string; vi: string }[];
 }
 
 /** Examples shown when introducing a new pattern; the protocol's mini-lesson asks for two. */
 const INTRO_EXAMPLES = 2;
+
+/** Synonyms/antonyms shown when introducing a new item. Two of each is a contrast, not a word list. */
+const INTRO_RELATIONS = 2;
 
 /**
  * Trim a stored enrichment card down to what the MCP tutor protocol actually references, before it
@@ -141,6 +191,12 @@ export function toTutorCard(raw: string | null | undefined, isNew: boolean): Tut
     trimmed.examples = [card.example, ...card.examples]
       .slice(0, INTRO_EXAMPLES)
       .map(({ ja, vi }) => ({ ja, vi }));
+    // `reading` and `note` are dropped: the reading is the app renderer's business (the `jaRuby` cut
+    // above, same reasoning), and a synonym's note is a longer explanation the tutor writes itself.
+    const relation = (list: Related[]) =>
+      list.slice(0, INTRO_RELATIONS).map(({ term, vi }) => ({ term, vi }));
+    if (card.synonyms.length > 0) trimmed.synonyms = relation(card.synonyms);
+    if (card.antonyms.length > 0) trimmed.antonyms = relation(card.antonyms);
   }
   return trimmed;
 }

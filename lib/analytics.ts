@@ -18,9 +18,8 @@ import {
   computeTrueRetention,
   type TrueRetention,
 } from '@/lib/retention';
+import { GRAMMAR_KIND, VOCAB_KIND } from '@/lib/item-kinds';
 
-const GRAMMAR_KIND = 'GRAMMAR';
-const VOCAB_KIND = 'VOCAB';
 const DAY_MS = 86_400_000;
 const HEATMAP_DAYS = 364; // 52 weeks (GitHub-style density)
 const ACCURACY_WEEKS = 8;
@@ -282,10 +281,14 @@ export async function getAnalytics(now: Date = new Date()): Promise<Analytics> {
     trueRetention: computeTrueRetention(logs.filter((l) => l.state === REVIEW_STATE)),
     desiredRetention: settings.desiredRetention,
     retentionWindowDays: HEATMAP_DAYS,
-    enrichedGrammar: allCards.filter((c) => !needsWork(scoreEnrichment(c.enrichment).tier)).length,
-    grammarTotal: allCards.length,
-    studiedWithoutCard: studiedCards.filter((c) => needsWork(scoreEnrichment(c.enrichment).tier))
+    // Both lists are queried `where: { kind: GRAMMAR_KIND }` — hence the literal rather than a per-row
+    // kind. The field names say so too: this pair is about the GRAMMAR library.
+    enrichedGrammar: allCards.filter((c) => !needsWork(scoreEnrichment(c.enrichment, GRAMMAR_KIND).tier))
       .length,
+    grammarTotal: allCards.length,
+    studiedWithoutCard: studiedCards.filter((c) =>
+      needsWork(scoreEnrichment(c.enrichment, GRAMMAR_KIND).tier),
+    ).length,
     watchlist: hardRows.map((s) => ({
       itemId: s.itemId,
       expression: s.item.expression,

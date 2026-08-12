@@ -91,4 +91,43 @@ describe('toTutorCard', () => {
     expect(toTutorCard(null, true)).toBeNull();
     expect(toTutorCard('not json', false)).toBeNull();
   });
+
+  it('carries synonyms/antonyms ONLY when introducing the item, trimmed to term + gloss', () => {
+    const word = JSON.stringify({
+      usage: 'Giữ đúng điều đã hứa.',
+      collocations: ['約束を守る'],
+      example: { ja: '約束を守る。', vi: 'Giữ lời hứa.' },
+      examples: [],
+      pitfalls: [],
+      contrasts: [],
+      synonyms: [
+        { term: '果たす', reading: 'はたす', vi: 'thực hiện xong', note: 'nghĩa vụ, không phải lời hứa' },
+        { term: '遵守する', reading: 'じゅんしゅする', vi: 'tuân thủ' },
+        { term: '護る', reading: 'まもる', vi: 'bảo vệ' },
+      ],
+      antonyms: [{ term: '破る', reading: 'やぶる', vi: 'phá lời hứa' }],
+    });
+
+    // A review turn pays nothing: the relations belong to the mini-lesson, like the examples.
+    expect(toTutorCard(word, false)!.synonyms).toBeUndefined();
+    expect(toTutorCard(word, false)!.antonyms).toBeUndefined();
+
+    const intro = toTutorCard(word, true)!;
+    expect(intro.synonyms).toEqual([
+      { term: '果たす', vi: 'thực hiện xong' },
+      { term: '遵守する', vi: 'tuân thủ' },
+    ]);
+    expect(intro.antonyms).toEqual([{ term: '破る', vi: 'phá lời hứa' }]);
+    // `reading` is the app renderer's business (the same cut as jaRuby) and `note` is a longer
+    // explanation the tutor writes itself — neither is re-sent on every turn.
+    expect(intro.synonyms!.every((r) => !('reading' in r) && !('note' in r))).toBe(true);
+  });
+
+  it('a card with no relations does not grow empty keys', () => {
+    // `undefined` rather than `[]`: an empty array still costs bytes in every tool result, and the
+    // protocol asks "does the card mention synonyms", not "is the list empty".
+    const intro = toTutorCard(raw, true)!;
+    expect(intro.synonyms).toBeUndefined();
+    expect(intro.antonyms).toBeUndefined();
+  });
 });

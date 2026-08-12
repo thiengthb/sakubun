@@ -9,6 +9,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { createTestDb } from '@/lib/test-db';
+import { CURRENT_ENRICHMENT_VERSION } from '@/lib/enrichment';
 import type { RatingValue } from '@/lib/srs';
 
 createTestDb('sakubun-practice-');
@@ -37,10 +38,10 @@ async function resetData(): Promise<void> {
   P.invalidateStreak();
 }
 
-/** Add one grammar item for `user` and return its itemId (addItems returns counts, not ids). */
-async function addOneItem(expression: string, meaningVi = 'nghĩa'): Promise<string> {
-  await P.addItems([{ expression, meaningVi }]);
-  const row = (await P.listItems()).find((i) => i.expression === expression);
+/** Add one item and return its itemId (addItems returns counts, not ids). GRAMMAR unless told otherwise. */
+async function addOneItem(expression: string, kind = 'GRAMMAR'): Promise<string> {
+  await P.addItems([{ expression, meaningVi: 'nghĩa' }], 'MCP', kind);
+  const row = (await P.listItems({ kind })).find((i) => i.expression === expression);
   if (!row) throw new Error(`seed failed: ${expression}`);
   return row.itemId;
 }
@@ -136,6 +137,80 @@ describe('saveEnrichments', () => {
     expect(row!.enrichment).toBe('{"summary":"x"}');
     expect(row!.enrichedAt).not.toBeNull();
   });
+
+  it('a COMPLETE card is stamped with the current format version by the SERVER', async () => {
+    // The bug this pins (live from the day versioning shipped until 2026-08-12): `enrichmentSchema`
+    // defaults `v` to 1 and nothing ever asked Claude to send it, so every card written here landed as
+    // v1 → scored `outdated` → `needsWork` → returned by the very next sweep. The backlog could not
+    // shrink. `patch_enrichment` never had it (mergeEnrichment stamps), so the two write paths disagreed.
+    await resetData();
+    const itemId = await addOneItem('ENRICH_stamp');
+    // No `v` sent — exactly what a tutor with only the tool description in hand produces.
+    const complete = JSON.stringify({
+      structure: ['動詞辞書形 + 〜わけだ'],
+      usage: 'Dùng khi rút ra một kết luận hợp lý từ điều vừa mới biết.',
+      collocations: ['そういうわけだ'],
+      example: { ja: '道が混んでいるわけだ。', vi: 'Thì ra là đường đang tắc.' },
+      examples: [{ ja: '寝ていたわけだ。', vi: 'Thì ra là đang ngủ.' }],
+      pitfalls: ['Không lẫn với 〜はずだ.'],
+      contrasts: [{ with: '〜はずだ', note: '〜はずだ là suy đoán, 〜わけだ là kết luận.' }],
+    });
+    await P.saveEnrichments([{ itemId, enrichmentJson: complete }]);
+
+    const row = await prisma.item.findFirst({ where: { id: itemId } });
+    const stored = JSON.parse(row!.enrichment!) as { v: number };
+    expect(stored.v).toBe(CURRENT_ENRICHMENT_VERSION);
+
+    // And the consequence that actually matters: the sweep's target list no longer returns it.
+    const ids = (await P.listItems({ quality: 'needs-work' })).map((r) => r.itemId);
+    expect(ids).not.toContain(itemId);
+  });
+
+  it('an INCOMPLETE card is NOT stamped — thin must keep reading as thin', async () => {
+    // The stamp is a claim about meeting the bar. Stamping on every write would let a one-line card
+    // announce the new format, and `outdated` is exactly the state that would stop being measurable.
+    await resetData();
+    const itemId = await addOneItem('ENRICH_nostamp');
+    await P.saveEnrichments([
+      {
+        itemId,
+        enrichmentJson: JSON.stringify({
+          usage: 'Một dòng cách dùng đủ dài để vượt ngưỡng tối thiểu của thẻ.',
+          example: { ja: 'あ', vi: 'a' },
+        }),
+      },
+    ]);
+
+    // Not stamped means not TOUCHED: the stored string is byte-for-byte what was sent, so a thin card
+    // cannot come back from a write claiming a format it does not meet.
+    const row = await prisma.item.findFirst({ where: { id: itemId } });
+    expect(row!.enrichment).not.toContain('"v"');
+    expect((await P.listItems({ quality: 'thin' })).map((r) => r.itemId)).toContain(itemId);
+  });
+
+  it('a VOCAB card is stamped against the VOCAB bar, not the grammar one', async () => {
+    // Same card, two kinds, two outcomes — a word owes no `structure`, so a card that would be thin as
+    // grammar is complete as vocabulary and must be stamped.
+    await resetData();
+    const wordId = await addOneItem('ENRICH_word', 'VOCAB');
+    await P.saveEnrichments([
+      {
+        itemId: wordId,
+        enrichmentJson: JSON.stringify({
+          usage: 'Việc chuẩn bị trước cho một việc cụ thể; trung tính.',
+          collocations: ['準備をする', '準備が整う'],
+          example: { ja: '会議の準備をしています。', vi: 'Tôi đang chuẩn bị cho cuộc họp.' },
+          examples: [{ ja: '準備が整いました。', vi: 'Đã chuẩn bị xong.' }],
+          pitfalls: ['Không nhầm với 用意.'],
+          synonyms: [{ term: '用意', reading: 'ようい', vi: 'sự sắm sẵn' }],
+        }),
+      },
+    ]);
+
+    const row = await prisma.item.findFirst({ where: { id: wordId } });
+    expect((JSON.parse(row!.enrichment!) as { v: number }).v).toBe(CURRENT_ENRICHMENT_VERSION);
+    expect((await P.listItems({ kind: 'VOCAB', quality: 'needs-work' })).length).toBe(0);
+  });
 });
 
 describe('a long aside cannot lose the pending sentence (plan 2026-07-26-agentic-tutor-loop step 2.5)', () => {
@@ -189,9 +264,12 @@ describe('patchEnrichment — a merge that cannot destroy what is already there'
     contrasts: [{ with: '〜せいで', note: 'Hối tiếc mạnh hơn.' }],
   });
 
+  // Straight to the column, NOT through saveEnrichments: that path now normalizes the JSON and stamps
+  // the format version on a complete card, so seeding through it could not produce the v1 row these
+  // cases are about — the fixture would silently arrive already migrated.
   async function seedCarded(expression: string, card = V1_CARD): Promise<string> {
     const itemId = await addOneItem(expression);
-    await P.saveEnrichments([{ itemId, enrichmentJson: card }]);
+    await prisma.item.update({ where: { id: itemId }, data: { enrichment: card } });
     return itemId;
   }
 
@@ -214,8 +292,10 @@ describe('patchEnrichment — a merge that cannot destroy what is already there'
     expect(after.collocations).toEqual(before.collocations);
     expect(after.pitfalls).toEqual(before.pitfalls);
     expect(after.examples).toEqual(before.examples);
-    // The card was already complete, so bringing it to the current format is just the stamp.
-    expect((after as unknown as { v: number }).v).toBe(2);
+    // The card was already complete, so bringing it to the current format is just the stamp. Read from
+    // the constant, NOT a literal: pinning `2` here is what made this test fail on the v3 bump for a
+    // reason that had nothing to do with what it tests.
+    expect((after as unknown as { v: number }).v).toBe(CURRENT_ENRICHMENT_VERSION);
   });
 
   it('refuses on an item with no readable card instead of inventing one', async () => {
@@ -235,7 +315,12 @@ describe('patchEnrichment — a merge that cannot destroy what is already there'
 
   it('reports a no-op rather than a success when everything sent is already on the card', async () => {
     await resetData();
-    const itemId = await seedCarded('PATCH_noop', V1_CARD.replace('"v":1', '"v":2'));
+    const itemId = await seedCarded(
+      'PATCH_noop',
+      // ALREADY at the current version: otherwise the merge has something real to do (stamp `v`) and
+      // "nothing to add" would be a lie. Derived from the constant so a future bump keeps this honest.
+      V1_CARD.replace('"v":1', `"v":${CURRENT_ENRICHMENT_VERSION}`),
+    );
     const res = await P.patchEnrichment({
       itemId,
       add: { contrasts: [{ with: '「〜せいで」', note: 'Viết lại ghi chú.' }] },
@@ -540,7 +625,7 @@ describe('calibration rides submitReview without touching FSRS', () => {
 
 describe('listItems quality filter — the sweep needs a target list', () => {
   const OK = JSON.stringify({
-    v: 2,
+    v: CURRENT_ENRICHMENT_VERSION,
     structure: ['動詞 + X'],
     usage: 'Một câu giải thích đủ dài để vượt ngưỡng tối thiểu của thẻ.',
     collocations: [],

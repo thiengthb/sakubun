@@ -190,10 +190,22 @@ export const GUIDE_TOPIC_META = [
   {
     id: 'enrichment',
     group: 'store',
-    title: 'Thẻ chi tiết mẫu (enrichment)',
+    title: 'Thẻ chi tiết mẫu và từ (enrichment)',
     summary:
-      'Mỗi mẫu có một “thẻ” do Claude soạn: cách dùng, cụm đi kèm, ví dụ, bẫy hay gặp, phân biệt với mẫu gần nghĩa.',
-    keywords: ['thẻ chi tiết', 'enrichment', 'enrich_backlog', 'bẫy', 'phân biệt', 'ví dụ'],
+      'Mỗi mẫu và mỗi từ có một “thẻ” do Claude soạn: cách dùng, cụm đi kèm, ví dụ có dịch, bẫy hay gặp, phân biệt mẫu gần nghĩa — với từ vựng thì thêm từ đồng nghĩa và trái nghĩa.',
+    keywords: [
+      'thẻ chi tiết',
+      'enrichment',
+      'enrich_backlog',
+      'bẫy',
+      'phân biệt',
+      'ví dụ',
+      'từ đồng nghĩa',
+      'từ trái nghĩa',
+      'đồng nghĩa',
+      'trái nghĩa',
+      'cụm đi kèm',
+    ],
     addedOn: '2026-07-13',
   },
   {

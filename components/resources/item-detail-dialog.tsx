@@ -16,6 +16,7 @@ import { EnrichmentCard } from '@/components/resources/enrichment-card';
 import { SectionTag } from '@/components/shared/section-tag';
 import { SpokenLine } from '@/components/shared/spoken-line';
 import { parseEnrichment } from '@/lib/enrichment';
+import { GRAMMAR_KIND, VOCAB_KIND } from '@/lib/item-kinds';
 import { humanizeUntil, speakable } from '@/lib/format';
 import { buildFuriganaMarkup } from '@/lib/furigana';
 import { hasKanji } from '@/lib/text';
@@ -167,15 +168,10 @@ export function ItemDetailDialog({
             </div>
           )}
 
-          {kind === 'grammar' && (
-            <EnrichmentCard
-              raw={item.enrichment}
-              voiceSpeaker={voiceSpeaker}
-              speechRate={speechRate}
-              showFurigana={showFurigana}
-            />
-          )}
-
+          {/* The stored example sentence (`notes`) is a VOCAB-only field of the Item row, so it stays
+              vocab-only — but the CARD is rendered for both kinds now. Until 2026-08-12 this was
+              `kind === 'grammar' && …`, which meant a word's synonyms/collocations/examples existed in
+              the DB and appeared on no screen. */}
           {kind === 'vocab' && item.notes && (
             <section className="space-y-1">
               <SectionTag>Ví dụ</SectionTag>
@@ -190,6 +186,14 @@ export function ItemDetailDialog({
               />
             </section>
           )}
+
+          <EnrichmentCard
+            raw={item.enrichment}
+            kind={kind === 'vocab' ? VOCAB_KIND : GRAMMAR_KIND}
+            voiceSpeaker={voiceSpeaker}
+            speechRate={speechRate}
+            showFurigana={showFurigana}
+          />
         </div>
 
         {detailHref && (

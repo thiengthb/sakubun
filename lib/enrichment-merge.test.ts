@@ -1,6 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { CURRENT_ENRICHMENT_VERSION, ENRICHMENT_CAPS, type Enrichment } from '@/lib/enrichment';
-import { mergeEnrichment, patchFromDonor } from '@/lib/enrichment-merge';
+import { mergeEnrichment, patchFromDonor, type EnrichmentPatch } from '@/lib/enrichment-merge';
+import { GRAMMAR_KIND, VOCAB_KIND } from '@/lib/item-kinds';
+
+/**
+ * Every fixture in this file is the grammar pattern 〜ばかりに, so the kind is fixed here rather than
+ * repeated at ~14 call sites. The VOCAB side of the merge (synonyms/antonyms, the vocab completeness
+ * bar deciding whether `v` may be stamped) has its own describe block at the bottom.
+ */
+const mergeGrammar = (base: Enrichment, patch: EnrichmentPatch) =>
+  mergeEnrichment(base, patch, GRAMMAR_KIND);
 
 /** A COMPLETE v1 card — the state that made the destructive overwrite expensive in the first place. */
 function card(over: Partial<Enrichment> = {}): Enrichment {
@@ -15,6 +24,8 @@ function card(over: Partial<Enrichment> = {}): Enrichment {
     examples: [{ ja: '寝坊したばかりに試験を落ちた。', vi: 'Chỉ vì ngủ quên mà trượt kỳ thi.' }],
     pitfalls: ['Không dùng cho kết quả tốt.'],
     contrasts: [{ with: '〜せいで', note: '〜ばかりに nhấn vào hối tiếc mạnh hơn.' }],
+    synonyms: [],
+    antonyms: [],
     v: 1,
     ...over,
   };
@@ -23,7 +34,7 @@ function card(over: Partial<Enrichment> = {}): Enrichment {
 describe('mergeEnrichment — existing content is never lost (the whole reason it exists)', () => {
   it('appending one contrast keeps every other field intact', () => {
     const base = card();
-    const { card: out } = mergeEnrichment(base, {
+    const { card: out } = mergeGrammar(base, {
       add: { contrasts: [{ with: '〜おかげで', note: 'Ngược nghĩa: kết quả tốt.' }] },
     });
 
@@ -39,7 +50,7 @@ describe('mergeEnrichment — existing content is never lost (the whole reason i
   });
 
   it('reports a no-op instead of pretending to have written something', () => {
-    const report = mergeEnrichment(card({ v: CURRENT_ENRICHMENT_VERSION }), { add: {} });
+    const report = mergeGrammar(card({ v: CURRENT_ENRICHMENT_VERSION }), { add: {} });
     expect(report.touched).toBe(false);
     expect(report.added).toEqual({});
     expect(report.replaced).toEqual([]);
@@ -48,7 +59,7 @@ describe('mergeEnrichment — existing content is never lost (the whole reason i
 
 describe('mergeEnrichment — dedup uses the SAME key as "do I already have this?"', () => {
   it('a differently-decorated contrast target is a duplicate, not a second entry', () => {
-    const report = mergeEnrichment(card(), {
+    const report = mergeGrammar(card(), {
       add: {
         contrasts: [{ with: '「〜せいで」', note: 'Một cách diễn đạt khác của cùng ghi chú.' }],
       },
@@ -61,7 +72,7 @@ describe('mergeEnrichment — dedup uses the SAME key as "do I already have this
   });
 
   it('dedups within the incoming batch too', () => {
-    const report = mergeEnrichment(card(), {
+    const report = mergeGrammar(card(), {
       add: { pitfalls: ['Chỉ dùng cho hậu quả xấu.', 'chỉ  dùng cho hậu quả xấu'] },
     });
     expect(report.added.pitfalls).toBe(1);
@@ -69,7 +80,7 @@ describe('mergeEnrichment — dedup uses the SAME key as "do I already have this
   });
 
   it('an all-decoration entry is refused rather than stored as noise', () => {
-    const report = mergeEnrichment(card(), { add: { collocations: ['〜〜', '   '] } });
+    const report = mergeGrammar(card(), { add: { collocations: ['〜〜', '   '] } });
     expect(report.added.collocations).toBeUndefined();
     expect(report.skipped.every((s) => s.reason === 'empty')).toBe(true);
   });
@@ -78,7 +89,7 @@ describe('mergeEnrichment — dedup uses the SAME key as "do I already have this
 describe('mergeEnrichment — the schema cap can only ever drop something NEW', () => {
   it('overflow is skipped with a reason, existing entries survive', () => {
     const full = Array.from({ length: ENRICHMENT_CAPS.pitfalls }, (_, i) => `bẫy số ${i}`);
-    const report = mergeEnrichment(card({ pitfalls: full }), {
+    const report = mergeGrammar(card({ pitfalls: full }), {
       add: { pitfalls: ['một bẫy nữa'] },
     });
     expect(report.card.pitfalls).toEqual(full);
@@ -89,14 +100,14 @@ describe('mergeEnrichment — the schema cap can only ever drop something NEW', 
 describe('mergeEnrichment — scalars replace, and the old canonical example is demoted not dropped', () => {
   it('usage and register replace; an identical value is not a change', () => {
     const base = card();
-    const report = mergeEnrichment(base, {
+    const report = mergeGrammar(base, {
       set: { usage: 'Cách dùng đã được viết lại rõ hơn.', register: 'văn viết' },
     });
     expect(report.card.usage).toBe('Cách dùng đã được viết lại rõ hơn.');
     expect(report.card.register).toBe('văn viết');
     expect(report.replaced).toEqual(['usage', 'register']);
 
-    const again = mergeEnrichment(report.card, { set: { usage: report.card.usage } });
+    const again = mergeGrammar(report.card, { set: { usage: report.card.usage } });
     expect(again.replaced).toEqual([]);
     expect(again.touched).toBe(false);
   });
@@ -104,7 +115,7 @@ describe('mergeEnrichment — scalars replace, and the old canonical example is 
   it('replacing the canonical example moves the old one into the extras', () => {
     const base = card();
     const fresh = { ja: '新しい例文です。', vi: 'Câu ví dụ mới.' };
-    const report = mergeEnrichment(base, { set: { example: fresh } });
+    const report = mergeGrammar(base, { set: { example: fresh } });
 
     expect(report.card.example).toEqual(fresh);
     expect(report.card.examples).toContainEqual(base.example);
@@ -116,7 +127,7 @@ describe('mergeEnrichment — `v` means "complete under the current format", not
   it('stamps the current version once the patch completes the card', () => {
     // Missing contrasts => `thin`. The patch supplies the last dimension.
     const thin = card({ contrasts: [], v: 1 });
-    const report = mergeEnrichment(thin, {
+    const report = mergeGrammar(thin, {
       add: { contrasts: [{ with: '〜せいで', note: 'Sắc thái hối tiếc mạnh hơn.' }] },
     });
     expect(report.vStamped).toBe(true);
@@ -125,7 +136,7 @@ describe('mergeEnrichment — `v` means "complete under the current format", not
 
   it('does NOT stamp a card that is still incomplete', () => {
     const thin = card({ contrasts: [], pitfalls: [], v: 1 });
-    const report = mergeEnrichment(thin, { add: { collocations: ['ちょっと言ったばかりに'] } });
+    const report = mergeGrammar(thin, { add: { collocations: ['ちょっと言ったばかりに'] } });
     expect(report.vStamped).toBe(false);
     expect(report.card.v).toBe(1);
   });
@@ -143,7 +154,7 @@ describe('patchFromDonor — take what I lack, never overwrite what is mine', ()
       register: 'trang trọng',
     });
 
-    const report = mergeEnrichment(mine, patchFromDonor(mine, theirs));
+    const report = mergeGrammar(mine, patchFromDonor(mine, theirs));
 
     expect(report.card.usage).toBe(mine.usage);
     expect(report.card.example).toEqual(mine.example);
@@ -158,8 +169,89 @@ describe('patchFromDonor — take what I lack, never overwrite what is mine', ()
   it('never overwrites a register I already set', () => {
     const mine = card({ register: 'thân mật' });
     const theirs = card({ register: 'trang trọng' });
-    const report = mergeEnrichment(mine, patchFromDonor(mine, theirs));
+    const report = mergeGrammar(mine, patchFromDonor(mine, theirs));
     expect(report.card.register).toBe('thân mật');
     expect(report.replaced).not.toContain('register');
+  });
+});
+
+describe('vocabulary relations merge like every other list (2026-08-12)', () => {
+  /** A word card, thin on purpose: no synonyms yet. */
+  function word(over: Partial<Enrichment> = {}): Enrichment {
+    return {
+      structure: [],
+      usage: 'Giữ đúng điều đã hứa; trang trọng hơn khi nói về nghĩa vụ.',
+      collocations: ['約束を守る', '約束を破る'],
+      example: { ja: '約束を守ってくれてありがとう。', vi: 'Cảm ơn vì đã giữ lời hứa.' },
+      examples: [{ ja: '彼は約束を守らない。', vi: 'Anh ấy không giữ lời hứa.' }],
+      pitfalls: ['Không nhầm với 護る (bảo vệ).'],
+      contrasts: [],
+      synonyms: [],
+      antonyms: [],
+      v: 1,
+      ...over,
+    };
+  }
+  const mergeVocab = (base: Enrichment, patch: EnrichmentPatch) =>
+    mergeEnrichment(base, patch, VOCAB_KIND);
+
+  it('adding a synonym reports it and keeps everything else', () => {
+    const base = word();
+    const report = mergeVocab(base, {
+      add: { synonyms: [{ term: '果たす', reading: 'はたす', vi: 'thực hiện xong (nghĩa vụ)' }] },
+    });
+    expect(report.added.synonyms).toBe(1);
+    expect(report.card.synonyms[0]?.term).toBe('果たす');
+    expect(report.card.collocations).toEqual(base.collocations);
+    expect(report.card.pitfalls).toEqual(base.pitfalls);
+  });
+
+  it('the SAME word with a reworded gloss is a duplicate — the stored gloss wins', () => {
+    // Identity is the term, exactly like a contrast's `with`: the learner has already read the note that
+    // is on the card, and a second entry for one word would read as two different words.
+    const base = word({ synonyms: [{ term: '果たす', vi: 'thực hiện xong' }] });
+    const report = mergeVocab(base, {
+      add: { synonyms: [{ term: '果たす', vi: 'hoàn thành (cách nói khác)' }] },
+    });
+    expect(report.added.synonyms).toBeUndefined();
+    expect(report.card.synonyms).toHaveLength(1);
+    expect(report.card.synonyms[0]?.vi).toBe('thực hiện xong');
+    expect(report.skipped).toEqual([
+      { field: 'synonyms', value: '果たす', reason: 'duplicate' },
+    ]);
+  });
+
+  it('overflow past the cap is REPORTED, never silently dropped', () => {
+    const full = Array.from({ length: ENRICHMENT_CAPS.synonyms }, (_, i) => ({
+      term: `語${i}`,
+      vi: `nghĩa ${i}`,
+    }));
+    const report = mergeVocab(word({ synonyms: full }), {
+      add: { synonyms: [{ term: '果たす', vi: 'thực hiện xong' }] },
+    });
+    expect(report.card.synonyms).toHaveLength(ENRICHMENT_CAPS.synonyms);
+    expect(report.skipped).toEqual([{ field: 'synonyms', value: '果たす', reason: 'cap' }]);
+  });
+
+  it('a patch that completes a word card stamps the CURRENT version', () => {
+    // The bar being kind-aware is what makes this work: the same patch on the same card must NOT stamp
+    // when scored as grammar, because a word card has no `structure` and grammar requires one.
+    const base = word();
+    const patch: EnrichmentPatch = {
+      add: { antonyms: [{ term: '破る', reading: 'やぶる', vi: 'phá, không giữ (lời hứa)' }] },
+    };
+    expect(mergeVocab(base, patch).vStamped).toBe(true);
+    expect(mergeVocab(base, patch).card.v).toBe(CURRENT_ENRICHMENT_VERSION);
+    expect(mergeGrammar(base, patch).vStamped).toBe(false);
+  });
+
+  it('taking the missing parts from a better copy brings the relations along', () => {
+    const donor = word({
+      synonyms: [{ term: '果たす', vi: 'thực hiện xong (nghĩa vụ)' }],
+      antonyms: [{ term: '破る', vi: 'phá lời hứa' }],
+    });
+    const report = mergeVocab(word(), patchFromDonor(word(), donor));
+    expect(report.card.synonyms).toHaveLength(1);
+    expect(report.card.antonyms).toHaveLength(1);
   });
 });

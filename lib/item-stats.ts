@@ -5,10 +5,10 @@
 import { prisma } from '@/lib/db';
 import { parseEnrichment } from '@/lib/enrichment';
 import { parseErrorTags, type ErrorTag } from '@/lib/error-tags';
+import { GRAMMAR_KIND } from '@/lib/item-kinds';
 import { getSettings } from '@/lib/practice';
 import { forgettingCurve, retrievability, type SrsFields } from '@/lib/srs';
 
-const GRAMMAR_KIND = 'GRAMMAR';
 const DAY_MS = 86_400_000;
 
 export interface ItemReviewRow {
@@ -123,7 +123,7 @@ export async function getItemStats(
 
   // One query for every contrast target; a contrast naming a pattern the user does not own simply
   // stays plain text rather than becoming a dead link.
-  const contrastLinks = await resolveContrastLinks(item.enrichment, item.id);
+  const contrastLinks = await resolveContrastLinks(item.enrichment, item.id, item.kind);
 
   return {
     itemId: item.id,
@@ -167,20 +167,32 @@ export async function getItemStats(
 }
 
 /**
- * Look up which of an enrichment card's `contrasts[].with` entries are themselves items in the
- * library, so the detail page can link to their pages. Returns [] when the card has no contrasts or
- * cannot be parsed — a missing link degrades to plain text, never to an error.
+ * Look up which of an enrichment card's cross-references are themselves items in the library, so the
+ * detail page can link to their pages. Returns [] when the card has none or cannot be parsed — a
+ * missing link degrades to plain text, never to an error.
+ *
+ * Covers `contrasts[].with` AND (2026-08-12) `synonyms[].term` / `antonyms[].term`. For vocabulary those
+ * two are where the cross-references actually are, and a word card whose 同義語 are silently unlinkable
+ * is a word card that cannot be walked — the graph exists in the data and stopped at the query.
+ *
+ * The kind filter follows the ITEM being viewed: a grammar pattern's contrasts are patterns, a word's
+ * synonyms are words. Searching both kinds would let a word link to a same-spelled grammar entry.
  */
 async function resolveContrastLinks(
   enrichment: string | null,
   selfId: string,
+  kind: string,
 ): Promise<ContrastLink[]> {
   const parsed = parseEnrichment(enrichment);
-  const wanted = parsed?.contrasts.map((c) => c.with) ?? [];
+  const wanted = [
+    ...(parsed?.contrasts.map((c) => c.with) ?? []),
+    ...(parsed?.synonyms.map((r) => r.term) ?? []),
+    ...(parsed?.antonyms.map((r) => r.term) ?? []),
+  ];
   if (wanted.length === 0) return [];
 
   const rows = await prisma.item.findMany({
-    where: { kind: GRAMMAR_KIND, expression: { in: wanted }, id: { not: selfId } },
+    where: { kind, expression: { in: wanted }, id: { not: selfId } },
     select: { id: true, expression: true },
   });
   return rows.map((r) => ({ expression: r.expression, itemId: r.id }));

@@ -7,6 +7,7 @@ import type { Suggestion } from '@/lib/coach';
 import {
   renderConsentGuard,
   renderDueBatch,
+  renderLibraryHealth,
   renderScaffold,
   renderGradeResult,
   renderStats,
@@ -17,6 +18,7 @@ import { MODE_DISPATCH, TEACH_BACK_PROTOCOL, TEACH_BACK_SESSION } from '@/lib/mc
 import { EXERCISE_TYPE } from '@/lib/mcp/tool-kit';
 import { DEFAULT_SETTINGS } from '@/lib/settings-schema';
 import type { DueBatch, SubmitReviewResult } from '@/lib/practice';
+import type { LibraryHealth, LibraryHealthResult } from '@/lib/library-health';
 
 const NOW = new Date('2026-07-06T10:00:00Z');
 
@@ -1311,5 +1313,44 @@ describe('renderScaffold — declared scaffolding', () => {
       { expression: '〜つつ', status: 'newToLearner', level: null, aboveDrilledLevel: false },
     ]);
     expect(md).toContain('NOT graded');
+  });
+});
+
+describe('renderLibraryHealth — vocabulary cards are their own line (2026-08-12)', () => {
+  const health = (over: Partial<LibraryHealth> = {}): LibraryHealthResult => ({
+    health: {
+      totals: { grammar: 10, vocab: 0, suspended: 0 },
+      quality: { missing: 0, broken: 0, thin: 0, outdated: 0, ok: 10, rich: 0 },
+      cardVersion: { current: 3, outdated: 0 },
+      byStudiedLevel: [],
+      belowTargetActive: 0,
+      retention: { measured: null, desired: 0.9, reviews: 0, verdict: 'chưa đủ dữ liệu', gapPts: null },
+      vocabMissingHanviet: 0,
+      vocabCards: { total: 0, needsWork: 0 },
+      weakCluster: null,
+      ...over,
+    },
+    suggestions: [],
+    remaining: 0,
+  });
+
+  it('names the word backlog, and says WHAT is missing rather than only a number', () => {
+    const md = renderLibraryHealth(health({ vocabCards: { total: 12, needsWork: 9 } }));
+    expect(md).toContain('**Thẻ từ vựng:** 3/12 thẻ đạt');
+    expect(md).toContain('9 chưa đạt');
+    expect(md).toContain('từ đồng nghĩa/trái nghĩa');
+    // The grammar line must stay separate and stay labelled: two bars, two numbers, never merged.
+    expect(md).toContain('**Thẻ ngữ pháp:**');
+  });
+
+  it('a library with NO words prints no vocab line at all', () => {
+    // A row of zeros about a library the learner does not have reads as a chore they have not done.
+    expect(renderLibraryHealth(health())).not.toContain('Thẻ từ vựng');
+  });
+
+  it('all words carded → the line states the win without inventing work', () => {
+    const md = renderLibraryHealth(health({ vocabCards: { total: 5, needsWork: 0 } }));
+    expect(md).toContain('**Thẻ từ vựng:** 5/5 thẻ đạt');
+    expect(md).not.toContain('chưa đạt (thiếu');
   });
 });

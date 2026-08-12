@@ -12,6 +12,18 @@
 // carries in Bunpro — conjugation/structure, usage explanation, synonymous points, warnings about
 // common mistakes, and multiple examples — so this is a check against a known-good reference product
 // rather than an opinion.
+//
+// KIND-AWARE since 2026-08-12, and that is the second bug of the same shape as the first. Those five
+// dimensions describe a GRAMMAR entry, and every caller scored vocabulary against them too, so a word
+// card was measured on "cách chia / cách gắn" and "phân biệt mẫu gần nghĩa" — one dimension a word does
+// not have, one that means something different for a word. Both directions were wrong, not just the
+// pedantic one: a word card with a single junk `structure` line and no synonyms scored `ok`, while an
+// honest one carrying 同義語 + 対義語 + collocations scored `thin` forever and kept reappearing in the
+// health proposals. So the bar was simultaneously too lax and impossible to satisfy, on half the library.
+//
+// `kind` is a REQUIRED parameter rather than an optional one defaulting to GRAMMAR. An optional flag is
+// a flag that must be remembered at 8 call sites; a required one makes the compiler visit all 8. That is
+// the rule this repo arrived at the hard way (lib/exercise-types.ts, lib/turn-labels.ts).
 
 import {
   CURRENT_ENRICHMENT_VERSION,
@@ -20,6 +32,7 @@ import {
   type Enrichment,
   type Provenance,
 } from '@/lib/enrichment';
+import { VOCAB_KIND, asItemKind, type ItemKind } from '@/lib/item-kinds';
 
 /**
  * Quality tiers, worst to best. Each maps to a DIFFERENT repair, which is the reason they are separate
@@ -49,48 +62,115 @@ interface Dimension {
  */
 const MIN_USAGE_CHARS = 25;
 
-/** How many worked examples a v2 card owes (the mini-lesson asks for two). */
+/** How many worked examples a card owes (the mini-lesson asks for two). */
 const MIN_EXAMPLES = 2;
 
-const DIMENSIONS: readonly Dimension[] = [
+/** How many collocations make a word card useful for COMPOSING rather than just recognising. */
+const MIN_VOCAB_COLLOCATIONS = 2;
+
+/** All worked examples on the card, canonical one included. */
+function allExamples(c: Enrichment): Enrichment['examples'] {
+  return [c.example, ...c.examples];
+}
+
+/** Synonyms and antonyms together — what "the card places this word among its neighbours" means. */
+function relationCount(c: Enrichment): number {
+  return c.synonyms.length + c.antonyms.length;
+}
+
+// The canonical `example` counts toward the total: a card with one good example plus one extra meets
+// the bar, and old cards are not punished for the shape the schema used to have.
+const usageDimension: Dimension = {
+  key: 'usage',
+  label: 'cách dùng',
+  present: (c) => c.usage.trim().length >= MIN_USAGE_CHARS,
+};
+const pitfallsDimension: Dimension = {
+  key: 'pitfalls',
+  label: 'bẫy hay gặp',
+  present: (c) => c.pitfalls.length >= 1,
+};
+
+const GRAMMAR_DIMENSIONS: readonly Dimension[] = [
   {
     key: 'structure',
     label: 'cách chia / cách gắn',
     present: (c) => c.structure.length >= 1,
   },
-  {
-    key: 'usage',
-    label: 'cách dùng',
-    present: (c) => c.usage.trim().length >= MIN_USAGE_CHARS,
-  },
+  usageDimension,
   {
     key: 'examples',
     label: 'ví dụ',
-    // The canonical `example` counts toward the total: a card with one good example plus one extra
-    // meets the bar, and old cards are not punished for the shape the schema used to have.
-    present: (c) => 1 + c.examples.length >= MIN_EXAMPLES,
+    present: (c) => allExamples(c).length >= MIN_EXAMPLES,
   },
-  { key: 'pitfalls', label: 'bẫy hay gặp', present: (c) => c.pitfalls.length >= 1 },
+  pitfallsDimension,
   { key: 'contrasts', label: 'phân biệt mẫu gần nghĩa', present: (c) => c.contrasts.length >= 1 },
 ];
 
+const VOCAB_DIMENSIONS: readonly Dimension[] = [
+  usageDimension,
+  {
+    key: 'examples',
+    // The label names the translation on purpose: it is the half that goes missing. `vi` is required by
+    // `exampleSchema`, but `min(1)` accepts a single space — so a whitespace-only gloss parses, renders
+    // as an empty line under the Japanese, and would otherwise count as a satisfied dimension.
+    label: 'ví dụ có dịch tiếng Việt',
+    present: (c) => {
+      const examples = allExamples(c);
+      return examples.length >= MIN_EXAMPLES && examples.every((e) => e.vi.trim().length > 0);
+    },
+  },
+  {
+    key: 'collocations',
+    // For a word this is the analogue of grammar's `structure`: 会議[に]出る, 約束[を]守る — the frame it
+    // actually appears in. Knowing a gloss without the frame is what produces textbook-correct,
+    // unnatural Japanese, so it is a completeness dimension for vocabulary rather than a bonus.
+    label: 'cụm / khung câu hay đi kèm',
+    present: (c) => c.collocations.length >= MIN_VOCAB_COLLOCATIONS,
+  },
+  {
+    key: 'relations',
+    label: 'từ đồng nghĩa / trái nghĩa',
+    // Synonyms OR antonyms — never both required. 会議, 準備, ほとんど have no honest 対義語, and a bar
+    // that demands one is a bar satisfied by inventing one. Having both is scored as richness instead.
+    present: (c) => relationCount(c) >= 1,
+  },
+  pitfallsDimension,
+];
+
+export function dimensionsFor(kind: ItemKind): readonly Dimension[] {
+  return kind === VOCAB_KIND ? VOCAB_DIMENSIONS : GRAMMAR_DIMENSIONS;
+}
+
 /**
- * Does this card carry all five dimensions? Exported because `lib/enrichment-merge.ts` decides whether
- * a patched card may be STAMPED with the current version, and that decision must use this definition
- * of "complete" rather than a second copy of it.
+ * Does this card carry all five dimensions for its kind? Exported because `lib/enrichment-merge.ts`
+ * decides whether a patched card may be STAMPED with the current version, and that decision must use
+ * this definition of "complete" rather than a second copy of it.
  */
-export function meetsCurrentBar(card: Enrichment): boolean {
-  return DIMENSIONS.every((d) => d.present(card));
+export function meetsCurrentBar(card: Enrichment, kind: ItemKind): boolean {
+  return dimensionsFor(kind).every((d) => d.present(card));
 }
 
 /** Everything past the completeness bar that makes a card genuinely good rather than merely valid. */
-function richnessBonus(card: Enrichment): number {
+function richnessBonus(card: Enrichment, kind: ItemKind): number {
   let bonus = 0;
-  if (card.collocations.length >= 2) bonus += 1;
-  if (card.contrasts.length >= 2) bonus += 1;
-  if (card.pitfalls.length >= 2) bonus += 1;
   if (card.register) bonus += 1;
   if (card.examples.some((e) => e.jaRuby)) bonus += 1; // furigana-ready examples
+  if (card.pitfalls.length >= 2) bonus += 1;
+
+  if (kind === VOCAB_KIND) {
+    if (card.synonyms.length >= 2) bonus += 1;
+    // Having a real antonym is worth points precisely BECAUSE it is not required — this is where a card
+    // that names the opposite gets credit without a card that honestly cannot being called incomplete.
+    if (card.antonyms.length >= 1) bonus += 1;
+    if (card.collocations.length >= 4) bonus += 1;
+    // Part of speech / conjugation class / transitivity pair, when the author bothered.
+    if (card.structure.length >= 1) bonus += 1;
+    return bonus;
+  }
+
+  if (card.collocations.length >= 2) bonus += 1;
+  if (card.contrasts.length >= 2) bonus += 1;
   return bonus;
 }
 
@@ -115,12 +195,14 @@ export interface QualityReport {
  * states being reported, and a caller that had to parse first could not distinguish `broken` from
  * `missing`.
  */
-export function scoreEnrichment(raw: string | null | undefined): QualityReport {
+export function scoreEnrichment(raw: string | null | undefined, kind: string): QualityReport {
+  const dimensions = dimensionsFor(asItemKind(kind));
+
   if (!raw || !raw.trim()) {
     return {
       tier: 'missing',
       score: 0,
-      missing: DIMENSIONS.map((d) => d.label),
+      missing: dimensions.map((d) => d.label),
       v: 0,
       broken: false,
     };
@@ -139,25 +221,26 @@ export function scoreEnrichment(raw: string | null | undefined): QualityReport {
     return {
       tier: 'broken',
       score: 0,
-      missing: DIMENSIONS.map((d) => d.label),
+      missing: dimensions.map((d) => d.label),
       v,
       broken: true,
     };
   }
 
-  const missingDims = DIMENSIONS.filter((d) => !d.present(card));
-  const met = DIMENSIONS.length - missingDims.length;
+  const missingDims = dimensions.filter((d) => !d.present(card));
+  const met = dimensions.length - missingDims.length;
+  const bonus = richnessBonus(card, asItemKind(kind));
   // Completeness is worth 80 of the 100 points; richness the remaining 20. A card can therefore be
   // "complete but plain" (80) or "incomplete but detailed" (< 80) — the tier, not the score, decides
   // what to DO about it.
-  const score = Math.round((met / DIMENSIONS.length) * 80 + Math.min(richnessBonus(card), 5) * 4);
+  const score = Math.round((met / dimensions.length) * 80 + Math.min(bonus, 5) * 4);
 
   const tier: QualityTier =
     missingDims.length > 0
       ? 'thin'
       : card.v < CURRENT_ENRICHMENT_VERSION
         ? 'outdated'
-        : richnessBonus(card) >= 3
+        : bonus >= 3
           ? 'rich'
           : 'ok';
 

@@ -12,6 +12,7 @@
 import { coachLibrary, type CoachResult, type LibraryHealthFacts } from '@/lib/coach';
 import {
   CURRENT_ENRICHMENT_VERSION,
+  needsWork,
   scoreEnrichment,
   type QualityTier,
 } from '@/lib/enrichment-quality';
@@ -26,7 +27,7 @@ const RETENTION_WINDOW_DAYS = 30;
 
 export interface LibraryHealth {
   totals: { grammar: number; vocab: number; suspended: number };
-  /** Card-quality histogram over GRAMMAR items (vocab cards are not part of the enrichment contract). */
+  /** Card-quality histogram over GRAMMAR items. Vocabulary is counted separately in `vocabCards`. */
   quality: Record<QualityTier, number>;
   cardVersion: { current: number; outdated: number };
   /** Coverage per STUDIED level — where a gap actually costs the learner something today. */
@@ -42,6 +43,8 @@ export interface LibraryHealth {
   };
   /** Kanji vocabulary still missing its âm Hán Việt. */
   vocabMissingHanviet: number;
+  /** Word cards measured against the VOCABULARY bar — collocations, đồng nghĩa/trái nghĩa, ví dụ có dịch. */
+  vocabCards: { total: number; needsWork: number };
   weakCluster: { tag: ErrorTag; label: string; misses: number; itemIds: string[] } | null;
 }
 
@@ -67,7 +70,11 @@ export async function getLibraryHealth(
     }),
     prisma.item.findMany({
       where: { kind: VOCAB_KIND },
-      select: { expression: true, hanviet: true, suspended: true },
+      // `enrichment` joined the selection on 2026-08-12: until then this file said in a comment that
+      // "vocab cards are not part of the enrichment contract", so the one report that answers "what
+      // should I clean up" could not see a single word card. A backlog nothing measures is a backlog
+      // nobody closes.
+      select: { expression: true, hanviet: true, suspended: true, enrichment: true },
     }),
     prisma.reviewLog.findMany({
       where: {
@@ -94,7 +101,10 @@ export async function getLibraryHealth(
   let suspended = 0;
 
   for (const row of grammarRows) {
-    const report = scoreEnrichment(row.enrichment);
+    // GRAMMAR_KIND, not the row's own kind: `grammarRows` is queried `where: { kind: GRAMMAR_KIND }`.
+    // Passing the literal keeps that fact visible here — this report is grammar-scoped by design (the
+    // same anti-N5-drag guarantee as the daily counters), it is not "the whole library".
+    const report = scoreEnrichment(row.enrichment, GRAMMAR_KIND);
     quality[report.tier] += 1;
     if (report.tier === 'outdated') outdated += 1;
     if (row.suspended) suspended += 1;
@@ -151,6 +161,14 @@ export async function getLibraryHealth(
       gapPts: verdict.gapPts,
     },
     vocabMissingHanviet: vocabRows.filter((v) => hasKanji(v.expression) && !v.hanviet).length,
+    vocabCards: {
+      total: vocabRows.length,
+      // Scored against the VOCAB bar, and counting only ACTIVE words: a suspended word is not on the
+      // learner's plate, so putting it in a clean-up number would inflate the work they can see.
+      needsWork: vocabRows.filter(
+        (v) => !v.suspended && needsWork(scoreEnrichment(v.enrichment, VOCAB_KIND).tier),
+      ).length,
+    },
     weakCluster,
   };
 

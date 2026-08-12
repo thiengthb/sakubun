@@ -7,6 +7,14 @@ import {
   TIER_LABELS,
   type QualityTier,
 } from '@/lib/enrichment-quality';
+import { GRAMMAR_KIND, VOCAB_KIND } from '@/lib/item-kinds';
+
+/**
+ * Every fixture in the blocks below is the grammar pattern 〜ばかりに. The kind is bound once here rather
+ * than threaded through ~16 call sites; the VOCAB bar — a different set of dimensions entirely — is
+ * exercised in its own describe block at the bottom of the file.
+ */
+const score = (raw: string | null | undefined) => scoreEnrichment(raw, GRAMMAR_KIND);
 
 /** A card that meets every completeness dimension at the CURRENT version. */
 function completeCard(patch: Record<string, unknown> = {}): string {
@@ -26,7 +34,7 @@ function completeCard(patch: Record<string, unknown> = {}): string {
 describe('scoreEnrichment — the six states', () => {
   it('no card at all is `missing`, and lists every dimension as absent', () => {
     for (const raw of [null, undefined, '', '   ']) {
-      const r = scoreEnrichment(raw);
+      const r = score(raw);
       expect(r.tier).toBe('missing');
       expect(r.score).toBe(0);
       expect(r.missing.length).toBeGreaterThan(0);
@@ -38,15 +46,15 @@ describe('scoreEnrichment — the six states', () => {
     // The lab case: a 44-char card with no `usage`. parseEnrichment returns null, so the tutor reads
     // NOTHING — yet `list_grammar { enriched: true }` counted it as done and the backlog filter
     // (enriched: false) would never revisit it.
-    const r = scoreEnrichment('{"collocations":["x"],"example":{"ja":"a","vi":"b"}}');
+    const r = score('{"collocations":["x"],"example":{"ja":"a","vi":"b"}}');
     expect(r.tier).toBe('broken');
     expect(r.broken).toBe(true);
     expect(needsWork(r.tier)).toBe(true);
   });
 
   it('not even JSON is `broken` rather than a crash', () => {
-    expect(scoreEnrichment('not json at all').tier).toBe('broken');
-    expect(scoreEnrichment('not json at all').v).toBe(1);
+    expect(score('not json at all').tier).toBe('broken');
+    expect(score('not json at all').v).toBe(1);
   });
 
   it('a one-line card parses but is `thin`, and NAMES what is missing', () => {
@@ -54,7 +62,7 @@ describe('scoreEnrichment — the six states', () => {
       usage: 'Chỉ vì.',
       example: { ja: 'あ', vi: 'a' },
     });
-    const r = scoreEnrichment(raw);
+    const r = score(raw);
     expect(r.tier).toBe('thin');
     // Specificity is the point: a vague nudge is useless, "thiếu: bẫy, phân biệt" is actionable.
     expect(r.missing).toContain('bẫy hay gặp');
@@ -64,14 +72,14 @@ describe('scoreEnrichment — the six states', () => {
   });
 
   it('a too-short usage line does not count as an explanation', () => {
-    const r = scoreEnrichment(completeCard({ usage: 'Chỉ vì.' }));
+    const r = score(completeCard({ usage: 'Chỉ vì.' }));
     expect(r.tier).toBe('thin');
     expect(r.missing).toContain('cách dùng');
   });
 
   it('a card COMPLETE for an older version is `outdated`, not thin', () => {
     // This is what makes "the new format" measurable: the content is fine, the SHAPE is old.
-    const r = scoreEnrichment(completeCard({ v: 1 }));
+    const r = score(completeCard({ v: 1 }));
     expect(r.tier).toBe('outdated');
     expect(r.missing).toEqual([]);
     expect(r.v).toBe(1);
@@ -79,14 +87,14 @@ describe('scoreEnrichment — the six states', () => {
   });
 
   it('a complete plain card at the current version is `ok` and needs nothing', () => {
-    const r = scoreEnrichment(completeCard({ collocations: [], register: undefined }));
+    const r = score(completeCard({ collocations: [], register: undefined }));
     expect(r.tier).toBe('ok');
     expect(r.missing).toEqual([]);
     expect(needsWork(r.tier)).toBe(false);
   });
 
   it('a detailed card is `rich`', () => {
-    const r = scoreEnrichment(
+    const r = score(
       completeCard({
         collocations: ['油断したばかりに', '一言言ったばかりに'],
         pitfalls: ['Không dùng cho kết quả TỐT.', 'Không dùng với thể ý chí.'],
@@ -116,14 +124,14 @@ describe('back-compat (the jaRuby rule: an old card must never stop parsing)', (
       pitfalls: ['x'],
       contrasts: [{ with: 'y', note: 'z' }],
     });
-    const r = scoreEnrichment(preVersioning);
+    const r = score(preVersioning);
     expect(r.broken).toBe(false);
     expect(r.v).toBe(1);
     expect(r.tier).toBe('outdated'); // complete, just an older shape
   });
 
   it('an example WITHOUT jaRuby is still a valid example', () => {
-    const r = scoreEnrichment(completeCard());
+    const r = score(completeCard());
     expect(r.broken).toBe(false);
     expect(r.missing).not.toContain('ví dụ');
   });
@@ -159,8 +167,8 @@ describe('provenance — additive, optional, and never a reason a card stops par
   };
 
   it('a card written BEFORE provenance existed still parses and scores the same', () => {
-    const before = scoreEnrichment(JSON.stringify(complete));
-    const after = scoreEnrichment(
+    const before = score(JSON.stringify(complete));
+    const after = score(
       JSON.stringify({ ...complete, provenance: { confidence: 'high' } }),
     );
     expect(before.tier).toBe(after.tier);
@@ -170,7 +178,7 @@ describe('provenance — additive, optional, and never a reason a card stops par
   });
 
   it('is reported when present, and does NOT move the quality score', () => {
-    const report = scoreEnrichment(
+    const report = score(
       JSON.stringify({
         ...complete,
         provenance: { by: 'claude-opus-5', confidence: 'low', basedOn: 'lỗi của người học' },
@@ -179,17 +187,101 @@ describe('provenance — additive, optional, and never a reason a card stops par
     expect(report.provenance?.by).toBe('claude-opus-5');
     expect(report.provenance?.confidence).toBe('low');
     // Who wrote it is NOT evidence about how complete it is — the tier must ignore it entirely.
-    expect(report.tier).toBe(scoreEnrichment(JSON.stringify(complete)).tier);
+    expect(report.tier).toBe(score(JSON.stringify(complete)).tier);
   });
 
   it('a malformed provenance drops ITSELF, never the card', () => {
     // Found by writing this test: without `.catch(undefined)` on the field, one bad optional value made
     // the whole card unparseable — so the tutor would read NOTHING from an otherwise perfect card.
     // Losing an attribution is recoverable; losing the card is the failure `broken` exists to describe.
-    const report = scoreEnrichment(
+    const report = score(
       JSON.stringify({ ...complete, provenance: { confidence: 'khá chắc' } }),
     );
     expect(report.tier).not.toBe('broken');
     expect(report.provenance).toBeUndefined();
+  });
+});
+
+describe('the VOCAB bar is a different bar (2026-08-12)', () => {
+  /** A word card that meets every VOCAB dimension at the current version. */
+  function vocabCard(patch: Record<string, unknown> = {}): string {
+    return JSON.stringify({
+      v: CURRENT_ENRICHMENT_VERSION,
+      usage: 'Giữ đúng điều đã hứa; trang trọng hơn 守る dùng cho quy tắc.',
+      collocations: ['約束を守る', '約束を破る'],
+      example: { ja: '約束を守ってくれてありがとう。', vi: 'Cảm ơn vì đã giữ lời hứa.' },
+      examples: [{ ja: '彼は約束を守らない。', vi: 'Anh ấy không giữ lời hứa.' }],
+      pitfalls: ['Không nói 約束をする＋守る cùng lúc trong một câu ngắn.'],
+      synonyms: [{ term: '果たす', reading: 'はたす', vi: 'thực hiện xong (nghĩa vụ)' }],
+      antonyms: [{ term: '破る', reading: 'やぶる', vi: 'phá, không giữ (lời hứa)' }],
+      ...patch,
+    });
+  }
+  const scoreVocab = (raw: string) => scoreEnrichment(raw, VOCAB_KIND);
+
+  it('a word card with NO synonym and NO antonym is thin, and says so in Vietnamese', () => {
+    const r = scoreVocab(vocabCard({ synonyms: [], antonyms: [] }));
+    expect(r.tier).toBe('thin');
+    expect(r.missing).toContain('từ đồng nghĩa / trái nghĩa');
+  });
+
+  it('a synonym ALONE is enough — a word with no honest opposite is still complete', () => {
+    // The point of the dimension being synonyms ∪ antonyms: 会議 has no 対義語, and a bar demanding one
+    // is a bar satisfied by inventing one. Antonyms earn richness instead of completeness.
+    const r = scoreVocab(vocabCard({ antonyms: [] }));
+    expect(r.missing).toEqual([]);
+    expect(r.tier).not.toBe('thin');
+  });
+
+  it('an example whose Vietnamese translation is only whitespace does NOT count', () => {
+    // `exampleSchema` requires `vi` with min(1), which a single space satisfies — so this card PARSES
+    // and would otherwise be scored as carrying two examples while showing the learner a blank line.
+    const r = scoreVocab(
+      vocabCard({ examples: [{ ja: '彼は約束を守らない。', vi: '  ' }] }),
+    );
+    expect(r.tier).toBe('thin');
+    expect(r.missing).toContain('ví dụ có dịch tiếng Việt');
+  });
+
+  it('one collocation is not enough for a word (the frame is how a word is USED)', () => {
+    const r = scoreVocab(vocabCard({ collocations: ['約束を守る'] }));
+    expect(r.tier).toBe('thin');
+    expect(r.missing).toContain('cụm / khung câu hay đi kèm');
+  });
+
+  it('a word is NOT asked for conjugation forms, and a pattern is NOT asked for synonyms', () => {
+    // The two directions of the bug this split fixed. Same card, two kinds, two verdicts.
+    const wordWithoutStructure = vocabCard();
+    expect(scoreVocab(wordWithoutStructure).missing).toEqual([]);
+    expect(scoreEnrichment(wordWithoutStructure, GRAMMAR_KIND).missing).toContain(
+      'cách chia / cách gắn',
+    );
+
+    const patternWithoutSynonyms = completeCard();
+    expect(score(patternWithoutSynonyms).missing).toEqual([]);
+    expect(scoreEnrichment(patternWithoutSynonyms, VOCAB_KIND).missing).toContain(
+      'từ đồng nghĩa / trái nghĩa',
+    );
+  });
+
+  it('a word card carrying BOTH directions plus frames is rich', () => {
+    const r = scoreVocab(
+      vocabCard({
+        collocations: ['約束を守る', '約束を破る', '約束の時間', '固い約束'],
+        synonyms: [
+          { term: '果たす', reading: 'はたす', vi: 'thực hiện xong (nghĩa vụ)' },
+          { term: '遵守する', reading: 'じゅんしゅする', vi: 'tuân thủ (văn bản, quy định)' },
+        ],
+        register: 'trung tính, dùng được cả nói và viết',
+      }),
+    );
+    expect(r.tier).toBe('rich');
+    expect(needsWork(r.tier)).toBe(false);
+  });
+
+  it('an unknown kind string is scored as GRAMMAR rather than crashing', () => {
+    // `Item.kind` is a plain TEXT column (legacy "WORD" rows lived there), so a caller cannot prove it
+    // holds one of the two. Defaulting is the documented behaviour of asItemKind.
+    expect(scoreEnrichment(completeCard(), 'WORD').missing).toEqual([]);
   });
 });

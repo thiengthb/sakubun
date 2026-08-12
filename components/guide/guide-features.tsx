@@ -332,6 +332,14 @@ export function GuideFeaturesTab() {
             bảng <em>Ngữ pháp</em> — bấm vào mẫu để đọc thẻ ở tab <em>Thẻ chi tiết</em>.
           </p>
           <p>
+            <strong>Từ vựng cũng có thẻ</strong>, và thước đo của nó khác: một từ không cần «cách
+            chia», nhưng cần <strong>cụm / khung câu hay đi kèm</strong> (約束を守る, 会議に出る),{' '}
+            <strong>từ đồng nghĩa và từ trái nghĩa</strong> — mỗi từ kèm cách đọc và nghĩa tiếng Việt,
+            bấm nghe được, và nếu từ đó cũng nằm trong kho thì có link sang thẳng nó — cùng ít nhất
+            hai ví dụ <strong>đều có bản dịch</strong>. Bảng <em>Từ vựng</em> có bộ lọc{' '}
+            <em>Thẻ chi tiết</em> y như bảng ngữ pháp, nên bạn thấy ngay từ nào còn thiếu.
+          </p>
+          <p>
             Thẻ không chỉ để đọc: câu luyện và lời giảng của Claude <strong>bám theo thẻ</strong>{' '}
             nên sắc và đúng trọng tâm hơn, còn đáp án nhiễu của <em>quiz</em> lấy từ phần “phân biệt
             mẫu gần nghĩa”. Trang <em>Phân tích</em> còn <strong>nhắc</strong> khi mẫu ở đúng trình

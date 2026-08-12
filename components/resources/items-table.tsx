@@ -21,24 +21,16 @@ import { useSessionState } from '@/components/shared/use-session-state';
 import { PAGE_SIZE_OPTIONS } from '@/lib/pagination';
 import { DATE_PRESETS, type DatePreset, speakable, withinDatePreset } from '@/lib/format';
 import { JLPT_FILTERS, STAR_FILTERS, STATE_FILTERS } from '@/lib/srs-constants';
-import { needsWork, scoreEnrichment } from '@/lib/enrichment-quality';
+import { CARD_FILTERS, matchesCardFilter } from '@/lib/card-filter';
+import { scoreEnrichment } from '@/lib/enrichment-quality';
+import { GRAMMAR_KIND } from '@/lib/item-kinds';
 import { buildFuriganaMarkup } from '@/lib/furigana';
 import { toRomaji } from '@/lib/romaji';
 
-// Enrichment-card presence. Surfaced as a filter because a 30% content hole (150 of 153 N5 patterns
-// with no card) stayed invisible for weeks: the data was queryable and nothing in the UI asked.
-// Widened from a yes/no presence check to the QUALITY tiers (2026-07-27): "has a card" counted a
-// one-line card as done forever, so the web disagreed with what the tutor already knew. `needs-work`
-// is the one a sweep actually starts from; `broken` is deliberately folded into it rather than given
-// its own row (it is rare, and the card itself names the state when you open it).
-const CARD_FILTERS = [
-  { value: 'all', label: 'Mọi mục' },
-  { value: 'needs-work', label: 'Thẻ chưa đạt' },
-  { value: 'no', label: 'Chưa có thẻ' },
-  { value: 'thin', label: 'Thẻ còn thiếu' },
-  { value: 'outdated', label: 'Thẻ format cũ' },
-  { value: 'yes', label: 'Thẻ đủ' },
-] as const;
+// The enrichment-card filter (`CARD_FILTERS`) moved to lib/card-filter.ts when the vocab table gained
+// the same filter — one definition, two tables. It was surfaced as a filter in the first place because a
+// 30% content hole (150 of 153 N5 patterns with no card) stayed invisible for weeks: the data was
+// queryable and nothing in the UI asked.
 
 export interface ItemRow {
   itemId: string;
@@ -101,15 +93,9 @@ export function ItemsTable({
     () =>
       items.filter((it) => {
         if (level !== 'all' && it.level !== level) return false;
-        if (card !== 'all') {
-          const tier = scoreEnrichment(it.enrichment).tier;
-          if (card === 'no' && tier !== 'missing') return false;
-          if (card === 'thin' && tier !== 'thin') return false;
-          if (card === 'outdated' && tier !== 'outdated') return false;
-          if (card === 'needs-work' && !needsWork(tier)) return false;
-          // "Thẻ đủ" = actually good, not merely present — the distinction this filter now draws.
-          if (card === 'yes' && needsWork(tier)) return false;
-        }
+        // This table IS the grammar store (`listItems({ kind: GRAMMAR_KIND })` feeds it), so the bar is
+        // the grammar one. The vocab store has its own table, scored against the vocab bar.
+        if (!matchesCardFilter(scoreEnrichment(it.enrichment, GRAMMAR_KIND).tier, card)) return false;
         if (star === 'yes' && !it.starred) return false;
         if (!withinDatePreset(it.createdAt, date)) return false;
         if (state === 'suspended') return it.suspended;
@@ -261,7 +247,7 @@ export function ItemsTable({
             onValueChange={setState}
             options={STATE_FILTERS}
           />
-          {/* Riêng của bảng ngữ pháp — từ vựng không có thẻ chi tiết. */}
+          {/* Bảng từ vựng có đúng bộ lọc này (cùng `CARD_FILTERS`), chỉ khác thước đo theo kind. */}
           <SelectFilterRow
             label="Thẻ chi tiết"
             value={card}

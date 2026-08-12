@@ -5,6 +5,7 @@ import {
   enrichmentSchema,
   exampleSchema,
   provenanceSchema,
+  relatedSchema,
 } from '@/lib/enrichment';
 import {
   getStats,
@@ -137,13 +138,34 @@ export function registerManageTools(server: McpServer) {
   server.tool(
     'list_vocab',
     'Search/filter the VOCABULARY library (READ-ONLY). Filters: level, search (matches ' +
-      'term/reading/meaning), suspended, limit (default 50). Use to check whether a word already ' +
-      'exists, list suspended words, or before adding a Sino-Vietnamese reading/meaning. Returns ' +
+      'term/reading/meaning), suspended, enriched, quality, limit (default 50). Use to check whether a ' +
+      'word already exists, list suspended words, get the target list for an enrichment sweep, or ' +
+      'before adding a Sino-Vietnamese reading/meaning. Returns ' +
       'VOCABULARY ONLY — to look up GRAMMAR use list_grammar.',
     {
       level: LEVEL.optional(),
       search: z.string().optional(),
       suspended: z.boolean().optional(),
+      // Both card filters were GRAMMAR-ONLY until 2026-08-12, which meant there was no way to ask "which
+      // words still need a card" — the sweep prompt could only ever target patterns. A word carries the
+      // same `enrichment` column and is scored against the VOCAB bar (collocations, đồng nghĩa/trái
+      // nghĩa, ví dụ có dịch), so the same two filters belong here.
+      enriched: z
+        .boolean()
+        .optional()
+        .describe(
+          'true = only words that already have an enrichment card; false = only words that do NOT',
+        ),
+      quality: z
+        .enum(['missing', 'broken', 'thin', 'outdated', 'ok', 'rich', 'needs-work'])
+        .optional()
+        .describe(
+          'Filter by CARD QUALITY, which `enriched` cannot express (a one-line card counted as done ' +
+            'forever). missing = no card · broken = unreadable, the tutor gets NOTHING · thin = parses ' +
+            'but incomplete (for a word: no collocations, or no synonym/antonym, or fewer than 2 ' +
+            'examples with a Vietnamese translation) · outdated = complete on an older format · ' +
+            'needs-work = any of those four. This is how you get the target list for a vocab sweep.',
+        ),
       limit: z.number().int().min(1).max(200).optional(),
     },
     guard('list_vocab', async (filter, _extra: unknown) =>
@@ -153,26 +175,29 @@ export function registerManageTools(server: McpServer) {
 
   server.tool(
     'enrich_items',
-    'SAVE an enrichment card (composed by YOU) for items — reference material for composing better ' +
-      'sentences and introducing new items in more depth. Each card: structure (array of ≤6 ' +
-      'ATTACHMENT/CONJUGATION FORMS of the pattern — e.g. "動詞辞書形 + 〜ばかりに", "な形容詞 + な + ' +
-      '〜ばかりに", "名詞 + である + 〜ばかりに"; THIS is the structure/conjugation part, it should be ' +
-      'present for every grammar pattern), usage (1 line of nuance/when to use it, in Vietnamese), ' +
-      'collocations (≤8 ja phrases that commonly go with it), example {ja, vi, jaRuby} (ONE short ' +
-      'canonical example) + examples ' +
-      '(≤4 ADDITIONAL examples {ja, vi, jaRuby} for variety) — ALWAYS send jaRuby: the same ja ' +
-      'sentence in 漢字[かな] markup (e.g. 一言[ひとこと]言[い]ったばかりに) so the app can show ' +
-      'furigana and read it aloud in sync; omit it only for a sentence with no kanji, pitfalls ' +
-      '(≤5 mistakes learners commonly make, in Vietnamese), contrasts (≤5 easily-confused entries + ' +
-      'how they differ, in Vietnamese), ' +
-      'register (formality nuance, if worth noting), provenance { by: your own model name, ' +
-      'confidence: low|medium|high, basedOn: what you drew on } — the confidence is YOUR honest reading, ' +
-      'and a low one is useful (it tells a later session, and anyone who forks this card, to check it). ' +
-      'Quality over quantity — content must be ' +
-      'CORRECT and concise. **OVERWRITES the whole existing card.** Use it to WRITE a card the item ' +
-      'does not have yet, or to REPLACE one that is wrong/unparseable (read it with list_grammar ' +
-      'first and send back the full corrected card). To ADD to a card that is already fine — one more ' +
-      'example, pitfall, contrast — use patch_enrichment instead: it merges instead of overwriting.',
+    'SAVE an enrichment card (composed by YOU) - reference material for composing better sentences ' +
+      'and introducing items in depth. GRAMMAR and VOCABULARY owe DIFFERENT fields; each is scored ' +
+      'against its own bar.\n' +
+      'BOTH: usage (nuance / when to reach for it, Vietnamese, 25+ chars - an explanation, not a ' +
+      'label); example + examples (≤4 more). EVERY example needs `vi`, a real Vietnamese translation ' +
+      'of that sentence - untranslated Japanese is unusable and scores as incomplete - plus `jaRuby`, ' +
+      'the same sentence in 漢字[かな] markup (一言[ひとこと]言[い]った...) for furigana + audio; omit ' +
+      'jaRuby only if there is no kanji. pitfalls (≤5, what Vietnamese learners get wrong). register ' +
+      'if worth noting. provenance { by: your model name, confidence, basedOn } - an honest `low` is ' +
+      'useful.\n' +
+      'GRAMMAR: structure (≤6 ATTACHMENT/CONJUGATION forms - "動詞辞書形 + 〜ばかりに", ' +
+      '"名詞 + である + 〜ばかりに"); collocations (≤8); contrasts (≤5 confusable PATTERNS + the ' +
+      'difference).\n' +
+      'VOCABULARY: collocations (≥2, ideally 4+ - the real frames 約束を守る, 会議に出る; this is what ' +
+      'stops correct-but-unnatural Japanese); synonyms (≤6 as {term, reading, vi, note} - `vi` is ' +
+      'REQUIRED, the learner cannot read a word they have not met, `note` = how it differs); antonyms ' +
+      '(≤4, same shape) ONLY if a real opposite exists - never invent one, [] is a correct answer; ' +
+      'optionally structure for word class / frame ("名詞 + する", "自動詞 開く / 他動詞 開ける"). At ' +
+      'least ONE synonym or antonym is required for completeness.\n' +
+      'CORRECT and concise beats exhaustive; leave a field empty rather than guess. **OVERWRITES the ' +
+      'whole card** - use it for an item with no card, or to REPLACE a wrong/unparseable one (read it ' +
+      'with list_grammar / list_vocab first, send the full corrected card). To ADD to a card that is ' +
+      'already fine, use patch_enrichment: it merges.',
     {
       items: z
         .array(z.object({ itemId: ID, enrichment: enrichmentSchema }))
@@ -210,8 +235,9 @@ export function registerManageTools(server: McpServer) {
     'patch_enrichment',
     "MERGE new material into an item's enrichment card WITHOUT overwriting the rest of it. Use this " +
       '(not enrich_items) whenever the card already exists and you only want to ADD or fix a part: ' +
-      'a contrast you just explained, a pitfall the learner just fell into, an extra example, the ' +
-      'missing conjugation forms, a clearer usage line. `add` APPENDS (duplicates and overflow past ' +
+      'a contrast you just explained, a pitfall the learner just fell into, an extra example, a ' +
+      'synonym/antonym for a word, the missing conjugation forms, a clearer usage line. ' +
+      '`add` APPENDS (duplicates and overflow past ' +
       'the field cap are skipped and reported); `set` REPLACES usage/register/example (the old ' +
       'canonical example is kept as an extra). Refuses when the item ' +
       'has no readable card yet: write one with enrich_items first. Returns what landed, what was ' +
@@ -226,6 +252,10 @@ export function registerManageTools(server: McpServer) {
           pitfalls: z.array(z.string().min(1)).optional(),
           contrasts: z.array(contrastSchema).optional(),
           examples: z.array(exampleSchema).optional(),
+          // {term, reading, vi, note} — a relation is identified by `term`, so re-sending one with a
+          // reworded gloss is reported as a duplicate rather than appended twice.
+          synonyms: z.array(relatedSchema).optional(),
+          antonyms: z.array(relatedSchema).optional(),
         })
         .optional(),
       set: z
@@ -407,7 +437,7 @@ export function registerManageTools(server: McpServer) {
   server.tool(
     'list_calibration_proposals',
     'READ-ONLY. The calibration controller runs in SHADOW mode: after a graded turn it may record ' +
-      'what it WOULD have changed about the learner\'s settings (difficulty / sentence size / ' +
+      "what it WOULD have changed about the learner's settings (difficulty / sentence size / " +
       'scaffolding rung) and why, without changing anything. This lists those proposals, newest ' +
       'first, each with `verdict` = null (not reviewed yet) | "agree" | "disagree".\n' +
       'Use it when the learner asks whether the app is reading their level right, or when you want ' +

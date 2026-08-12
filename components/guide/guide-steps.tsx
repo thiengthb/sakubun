@@ -270,9 +270,10 @@ export const START_STEPS: TutorialStep[] = [
     need: <>Bước ③ (Claude đã nối) và bước ④ (kho đã có mẫu).</>,
     body: (
       <>
-        Chạy prompt <code>enrich_backlog</code> một lần — Claude soạn «thẻ enrichment» (cách dùng,
-        cụm đi kèm, ví dụ, bẫy, phân biệt mẫu gần nghĩa) cho từng mẫu; câu luyện và lời giảng sẽ sắc
-        hơn hẳn.
+        Chạy prompt <code>enrich_backlog</code> một lần — Claude soạn «thẻ enrichment» cho từng mẫu
+        (cách dùng, cụm đi kèm, ví dụ, bẫy, phân biệt mẫu gần nghĩa) và cho từng <em>từ vựng</em>
+        (cụm/khung câu hay đi kèm, <strong>từ đồng nghĩa và trái nghĩa</strong>, ví dụ kèm bản dịch);
+        câu luyện và lời giảng sẽ sắc hơn hẳn.
       </>
     ),
     done: (

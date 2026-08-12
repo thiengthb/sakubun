@@ -19,8 +19,10 @@ import {
   ENRICHMENT_CAPS,
   enrichmentSchema,
   type Enrichment,
+  type Related,
 } from '@/lib/enrichment';
 import { meetsCurrentBar } from '@/lib/enrichment-quality';
+import { type ItemKind } from '@/lib/item-kinds';
 import { normalizeExpression } from '@/lib/normalize';
 
 type Example = Enrichment['example'];
@@ -33,6 +35,8 @@ export interface EnrichmentAdd {
   pitfalls?: string[];
   contrasts?: Contrast[];
   examples?: Example[];
+  synonyms?: Related[];
+  antonyms?: Related[];
 }
 
 /** The scalar fields — replaceable. */
@@ -121,7 +125,11 @@ function appendUnique<T>(
  * expected path: writing a card the app can no longer parse would turn a `thin` item into a `broken`
  * one, which is strictly worse than refusing the patch.
  */
-export function mergeEnrichment(base: Enrichment, patch: EnrichmentPatch): MergeReport {
+export function mergeEnrichment(
+  base: Enrichment,
+  patch: EnrichmentPatch,
+  kind: ItemKind,
+): MergeReport {
   const skipped: MergeSkip[] = [];
   const added: Partial<Record<keyof EnrichmentAdd, number>> = {};
   const replaced: (keyof EnrichmentSet)[] = [];
@@ -179,7 +187,28 @@ export function mergeEnrichment(base: Enrichment, patch: EnrichmentPatch): Merge
     skipped,
   );
 
+  // A relation is identified by the WORD, like a contrast by `with`: re-sending 同義語 with a reworded
+  // gloss is the same entry, and the stored gloss is the one the learner has already read.
+  const synonyms = appendUnique(
+    'synonyms',
+    base.synonyms,
+    patch.add?.synonyms,
+    (r) => r.term,
+    ENRICHMENT_CAPS.synonyms,
+    skipped,
+  );
+  const antonyms = appendUnique(
+    'antonyms',
+    base.antonyms,
+    patch.add?.antonyms,
+    (r) => r.term,
+    ENRICHMENT_CAPS.antonyms,
+    skipped,
+  );
+
   if (structure.added) added.structure = structure.added;
+  if (synonyms.added) added.synonyms = synonyms.added;
+  if (antonyms.added) added.antonyms = antonyms.added;
   if (collocations.added) added.collocations = collocations.added;
   if (pitfalls.added) added.pitfalls = pitfalls.added;
   if (contrasts.added) added.contrasts = contrasts.added;
@@ -224,6 +253,8 @@ export function mergeEnrichment(base: Enrichment, patch: EnrichmentPatch): Merge
     pitfalls: pitfalls.list,
     contrasts: contrasts.list,
     examples: examples.list,
+    synonyms: synonyms.list,
+    antonyms: antonyms.list,
     usage,
     example,
     ...(register === undefined ? {} : { register }),
@@ -233,7 +264,7 @@ export function mergeEnrichment(base: Enrichment, patch: EnrichmentPatch): Merge
   // `v` means "complete under the CURRENT format", so it is stamped only when the merged card actually
   // meets the bar. Stamping on every touch would let a one-collocation patch claim the new format for a
   // card still missing three dimensions — and `v` is what `ENRICH_OUTDATED` reasons about.
-  const vStamped = base.v < CURRENT_ENRICHMENT_VERSION && meetsCurrentBar(merged);
+  const vStamped = base.v < CURRENT_ENRICHMENT_VERSION && meetsCurrentBar(merged, kind);
   if (vStamped) merged.v = CURRENT_ENRICHMENT_VERSION;
 
   const parsed = enrichmentSchema.safeParse(merged);
@@ -264,6 +295,8 @@ export function patchFromDonor(base: Enrichment, donor: Enrichment): EnrichmentP
       collocations: donor.collocations,
       pitfalls: donor.pitfalls,
       contrasts: donor.contrasts,
+      synonyms: donor.synonyms,
+      antonyms: donor.antonyms,
       // Their canonical example is just another worked example from my side.
       examples: [donor.example, ...donor.examples],
     },

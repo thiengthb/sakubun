@@ -14,8 +14,9 @@ import { SectionTag } from '@/components/shared/section-tag';
 import { SpokenLine } from '@/components/shared/spoken-line';
 import { useSessionState } from '@/components/shared/use-session-state';
 import Link from 'next/link';
-import { parseEnrichment } from '@/lib/enrichment';
+import { parseEnrichment, type Related } from '@/lib/enrichment';
 import { needsWork, scoreEnrichment, TIER_LABELS } from '@/lib/enrichment-quality';
+import { VOCAB_KIND, type ItemKind } from '@/lib/item-kinds';
 import type { ContrastLink } from '@/lib/item-stats';
 import { cn } from '@/lib/utils';
 
@@ -50,8 +51,65 @@ function Section({
   );
 }
 
+/**
+ * A synonym/antonym list. Every Japanese term goes through `<SpokenLine>` — the repo-wide rule for any
+ * Japanese string a learner reads — which also gets furigana for free: `term` + `reading` is exactly the
+ * 漢字[かな] markup SpokenLine already parses.
+ *
+ * A term that is ITSELF in the library links to its own page, reusing the `contrastLinks` table the
+ * detail page already resolves. That is what turns "read a word card" into walking a graph of words.
+ */
+function RelationList({
+  entries,
+  links,
+  voiceSpeaker,
+  speechRate,
+  showFurigana,
+}: {
+  entries: Related[];
+  links: ContrastLink[];
+  voiceSpeaker?: number;
+  speechRate?: number;
+  showFurigana: boolean;
+}) {
+  return (
+    <ul className="space-y-2">
+      {entries.map((r) => {
+        const link = links.find((l) => l.expression === r.term);
+        // Only when the reading ADDS something: a kana-only word repeating itself as ruby is noise.
+        const ruby = r.reading && r.reading !== r.term ? `${r.term}[${r.reading}]` : undefined;
+        return (
+          <li key={r.term} className="space-y-0.5">
+            <div className="flex flex-wrap items-baseline gap-x-2">
+              <SpokenLine
+                text={r.term}
+                ruby={ruby}
+                showFurigana={showFurigana}
+                speaker={voiceSpeaker}
+                rate={speechRate}
+                label={`Nghe từ ${r.term}`}
+              />
+              <span className="text-muted-foreground">{r.vi}</span>
+              {link && (
+                <Link
+                  href={`/resources/${link.itemId}`}
+                  className="text-xs text-accent-brand underline-offset-2 hover:underline"
+                >
+                  trong kho
+                </Link>
+              )}
+            </div>
+            {r.note && <p className="text-muted-foreground">{r.note}</p>}
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
 export function EnrichmentCard({
   raw,
+  kind,
   className,
   voiceSpeaker,
   speechRate,
@@ -60,6 +118,12 @@ export function EnrichmentCard({
   persist = false,
 }: {
   raw: string | null | undefined;
+  /**
+   * GRAMMAR or VOCAB. Required, not defaulted: it decides which completeness bar the quality line
+   * reports against, and what the first section is called. A default would silently score every word
+   * card as a grammar card — the bug lib/enrichment-quality.ts was split by kind to end.
+   */
+  kind: ItemKind;
   className?: string;
   /** TTS settings, threaded from the caller so examples can be played + read in sync. */
   voiceSpeaker?: number;
@@ -75,6 +139,7 @@ export function EnrichmentCard({
   // collapsing a section stays collapsed as you move between item detail pages — a "sticky" accordion,
   // mirroring the sticky `item.tab`. Unknown values (a section absent on another item) are ignored.
   const [stored, setStored] = useSessionState<string[] | null>('enrichment.open', null);
+  const isVocabCard = kind === VOCAB_KIND;
   const enrichment = parseEnrichment(raw);
   if (!enrichment) {
     return (
@@ -84,7 +149,8 @@ export function EnrichmentCard({
         action={<GuideLink topic="enrichment" label="Thẻ chi tiết là gì?" />}
       >
         Chưa có thẻ chi tiết. Trong Claude Desktop chạy prompt <code>enrich_backlog</code> để Claude
-        soạn cấu trúc, ví dụ, bẫy… cho mẫu này.
+        soạn {isVocabCard ? 'nghĩa, cụm hay đi kèm, từ đồng nghĩa/trái nghĩa, ví dụ' : 'cấu trúc, ví dụ, bẫy'}
+        … cho {isVocabCard ? 'từ' : 'mẫu'} này.
       </EmptyState>
     );
   }
@@ -95,6 +161,8 @@ export function EnrichmentCard({
     'usage',
     'examples',
     enrichment.collocations.length > 0 && 'collocations',
+    enrichment.synonyms.length > 0 && 'synonyms',
+    enrichment.antonyms.length > 0 && 'antonyms',
     enrichment.pitfalls.length > 0 && 'pitfalls',
     enrichment.contrasts.length > 0 && 'contrasts',
     enrichment.register && 'register',
@@ -109,7 +177,7 @@ export function EnrichmentCard({
   // The card can be PRESENT and still not carry what the tutor reads from it. Saying so here — with the
   // parts that are absent — is what makes the web agree with `check_library`; before this the page was
   // as blind as the old `enriched: true` filter and a one-line card looked finished.
-  const report = scoreEnrichment(raw);
+  const report = scoreEnrichment(raw, kind);
 
   return (
     <div className={cn('w-full', className)}>
@@ -124,7 +192,12 @@ export function EnrichmentCard({
       )}
       <Accordion type="multiple" {...accordionProps} className="w-full">
         {enrichment.structure.length > 0 && (
-          <Section value="structure" title="Cấu trúc / cách chia">
+          <Section
+            value="structure"
+            // A word has no conjugation TABLE to show; what belongs here for vocabulary is the word
+            // class + the frame it takes (自動詞/他動詞, 名詞 + する, 〜に〜を).
+            title={isVocabCard ? 'Loại từ / khung câu' : 'Cấu trúc / cách chia'}
+          >
             {/* Plain lines, NOT a notation table. Bunpro's structure legend is the single most
               complained-about part of that product ("comically difficult to read", "unnecessarily
               verbose notation"), and our own data says the same from the other side: `structure` is
@@ -174,6 +247,30 @@ export function EnrichmentCard({
                 </Badge>
               ))}
             </div>
+          </Section>
+        )}
+
+        {enrichment.synonyms.length > 0 && (
+          <Section value="synonyms" title="Từ đồng nghĩa">
+            <RelationList
+              entries={enrichment.synonyms}
+              links={contrastLinks}
+              voiceSpeaker={voiceSpeaker}
+              speechRate={speechRate}
+              showFurigana={showFurigana}
+            />
+          </Section>
+        )}
+
+        {enrichment.antonyms.length > 0 && (
+          <Section value="antonyms" title="Từ trái nghĩa">
+            <RelationList
+              entries={enrichment.antonyms}
+              links={contrastLinks}
+              voiceSpeaker={voiceSpeaker}
+              speechRate={speechRate}
+              showFurigana={showFurigana}
+            />
           </Section>
         )}
 

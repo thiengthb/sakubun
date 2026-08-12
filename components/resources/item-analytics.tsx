@@ -18,7 +18,6 @@ import { CopyCommandButton } from '@/components/shared/copy-command-button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { EmptyState } from '@/components/shared/empty-state';
 import { EnrichmentCard } from '@/components/resources/enrichment-card';
 import { InfoTooltip } from '@/components/shared/info-tooltip';
 import { SectionTag } from '@/components/shared/section-tag';
@@ -28,6 +27,7 @@ import { ForgettingCurve } from '@/components/resources/item-forgetting-curve';
 import { ReviewLog } from '@/components/resources/item-review-log';
 import { useSessionState } from '@/components/shared/use-session-state';
 import { parseEnrichment } from '@/lib/enrichment';
+import { GRAMMAR_KIND, VOCAB_KIND } from '@/lib/item-kinds';
 import { formatDateVN, formatDueExact, humanizeUntil, speakable } from '@/lib/format';
 import { buildFuriganaMarkup } from '@/lib/furigana';
 import { cn } from '@/lib/utils';
@@ -115,14 +115,23 @@ export function ItemAnalytics({
   // — the answer to "where does the content come from", stated where the gap is noticed. Scoped to the
   // detail-card CONTENT only: furigana rides the unified enrich now (jaRuby comes bundled), so there is
   // no separate "add furigana" patch instruction anymore (2026-07-25).
-  const enrichment = stats.kind === 'grammar' ? parseEnrichment(stats.enrichment) : null;
-  const missing =
-    stats.kind === 'grammar'
-      ? ([
-          !enrichment && 'thẻ chi tiết (cách dùng, ví dụ, bẫy, phân biệt)',
-          enrichment && enrichment.pitfalls.length === 0 && 'bẫy hay gặp',
-        ].filter(Boolean) as string[])
-      : [];
+  //
+  // NOT grammar-only any more (2026-08-12). A vocabulary word has an enrichment card too — it just was
+  // never shown: this page rendered `kind === 'grammar' ? <EnrichmentCard/> : <hanviet + notes>`, so
+  // every synonym, collocation and worked example Claude wrote for a WORD was stored and never read by
+  // anyone. That is the whole reason vocabulary enrichment felt weak: not that the cards were thin, but
+  // that the web had no door to them.
+  const enrichment = parseEnrichment(stats.enrichment);
+  const isVocab = stats.kind === 'vocab';
+  const missing = [
+    !enrichment &&
+      (isVocab
+        ? 'thẻ chi tiết (nghĩa, cụm hay đi kèm, đồng nghĩa/trái nghĩa, ví dụ)'
+        : 'thẻ chi tiết (cách dùng, ví dụ, bẫy, phân biệt)'),
+    enrichment && enrichment.pitfalls.length === 0 && 'bẫy hay gặp',
+    enrichment && isVocab && enrichment.synonyms.length + enrichment.antonyms.length === 0 &&
+      'từ đồng nghĩa / trái nghĩa',
+  ].filter(Boolean) as string[];
 
   return (
     // Detail page: PageShell owns the frame; its tabs (Chỉ số / Thẻ) are content sub-tabs under the
@@ -353,16 +362,9 @@ export function ItemAnalytics({
         </TabsContent>
 
         <TabsContent value="detail" className="space-y-4">
-          {stats.kind === 'grammar' ? (
-            <EnrichmentCard
-              raw={stats.enrichment}
-              voiceSpeaker={voiceSpeaker}
-              speechRate={speechRate}
-              showFurigana={showFurigana}
-              contrastLinks={stats.contrastLinks}
-              persist
-            />
-          ) : (
+          {/* Âm Hán Việt and the stored example sentence are VOCAB-only and come from the Item row, not
+              from the card — so they sit ABOVE the card rather than instead of it. */}
+          {isVocab && (
             <div className="space-y-4 text-sm">
               {stats.hanviet && (
                 <section className="space-y-1">
@@ -381,15 +383,19 @@ export function ItemAnalytics({
                     label="Nghe ví dụ"
                   />
                 </section>
-              ) : (
-                !stats.hanviet && (
-                  <EmptyState icon={null} className="p-4">
-                    Chưa có chi tiết cho từ này.
-                  </EmptyState>
-                )
-              )}
+              ) : null}
             </div>
           )}
+
+          <EnrichmentCard
+            raw={stats.enrichment}
+            kind={isVocab ? VOCAB_KIND : GRAMMAR_KIND}
+            voiceSpeaker={voiceSpeaker}
+            speechRate={speechRate}
+            showFurigana={showFurigana}
+            contrastLinks={stats.contrastLinks}
+            persist
+          />
         </TabsContent>
       </Tabs>
     </PageShell>

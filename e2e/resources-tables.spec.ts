@@ -12,6 +12,7 @@
 import path from 'node:path';
 import Database from 'better-sqlite3';
 import { expect, test, type Page } from '@playwright/test';
+import { CURRENT_ENRICHMENT_VERSION } from '@/lib/enrichment';
 import { E2E_DB_FILE, E2E_EMAIL, E2E_LOGIN, seedE2eAccount } from './fixtures';
 
 const iso = (ms: number) => new Date(ms).toISOString().replace('Z', '+00:00');
@@ -19,15 +20,16 @@ const iso = (ms: number) => new Date(ms).toISOString().replace('Z', '+00:00');
 /**
  * Một thẻ enrichment ĐỦ, để bộ lọc "Thẻ chi tiết" của tab ngữ pháp có cả hai phía.
  *
- * `v: 2` — tên field là `v`, KHÔNG phải `version`, và phải bằng `CURRENT_ENRICHMENT_VERSION`
- * (lib/enrichment.ts). Bản đầu của fixture này viết `version: 3`; Zod bỏ qua field lạ và điền `v: 1`
- * mặc định, nên `scoreEnrichment` xếp thẻ vào tier `outdated` và bộ lọc "Thẻ đủ" trả về 0 dòng.
- * Test đỏ vì FIXTURE sai, không vì app sai — đúng loại lỗi mà một fixture bịa ra theo trí nhớ sinh ra.
+ * Tên field là `v`, KHÔNG phải `version`, và giá trị được IMPORT từ `CURRENT_ENRICHMENT_VERSION`
+ * (lib/enrichment.ts) chứ không gõ tay — fixture này đã sai vì gõ tay HAI lần: bản đầu viết
+ * `version: 3` (Zod bỏ field lạ, điền `v: 1` mặc định), bản sau ghim `v: 2` rồi bar lên v3 ngày
+ * 2026-08-12. Cả hai lần thẻ tụt xuống tier `outdated`, bộ lọc "Thẻ đủ" trả 0 dòng, và test đỏ vì
+ * FIXTURE sai chứ không vì app sai.
  * Cả năm chiều (structure · usage · collocations · example(s) · pitfalls/contrasts) phải có mặt, nếu
  * thiếu một chiều thì tier là `thin`.
  */
 const FULL_CARD = JSON.stringify({
-  v: 2,
+  v: CURRENT_ENRICHMENT_VERSION,
   usage: 'Diễn tả nguyên nhân dẫn tới kết quả xấu, người nói thường hối tiếc.',
   structure: ['Vる + ばかりに', 'Aい + ばかりに'],
   collocations: ['油断したばかりに', '一言言ったばかりに'],
@@ -36,6 +38,23 @@ const FULL_CARD = JSON.stringify({
   pitfalls: ['Không dùng cho kết quả tốt.'],
   contrasts: [{ with: '〜せいで', note: 'ばかりに nhấn sự hối tiếc của người nói.' }],
   register: 'văn viết / kể lại',
+});
+
+/**
+ * Một thẻ ĐỦ cho TỪ VỰNG — thước đo khác hẳn thẻ ngữ pháp (lib/enrichment-quality.ts): không đòi
+ * `structure`, nhưng đòi ≥2 collocations, ≥2 ví dụ ĐỀU có `vi`, và ít nhất một từ đồng nghĩa hoặc
+ * trái nghĩa. Đây là thứ mà tới 2026-08-12 web KHÔNG hề vẽ ra: cả hai bề mặt chi tiết đều gác
+ * `kind === 'grammar'`, nên mọi thẻ từ vựng nằm trong DB và không xuất hiện ở đâu.
+ */
+const VOCAB_CARD = JSON.stringify({
+  v: CURRENT_ENRICHMENT_VERSION,
+  usage: 'Việc chuẩn bị trước cho một việc cụ thể; trung tính, dùng cả nói và viết.',
+  collocations: ['準備をする', '準備が整う', '準備中'],
+  example: { ja: '会議の準備をしています。', vi: 'Tôi đang chuẩn bị cho cuộc họp.' },
+  examples: [{ ja: '準備が整いました。', vi: 'Đã chuẩn bị xong.' }],
+  pitfalls: ['Không nhầm với 用意 khi nói về chuẩn bị dài hạn.'],
+  synonyms: [{ term: '用意', reading: 'ようい', vi: 'sự sắm sẵn', note: 'thiên về vật cụ thể.' }],
+  antonyms: [{ term: '本番', reading: 'ほんばん', vi: 'lúc diễn thật', note: 'ngược với lúc chuẩn bị.' }],
 });
 
 async function seed() {
@@ -170,7 +189,7 @@ async function seed() {
     null,
     0,
     0,
-    null,
+    VOCAB_CARD,
     iso(now - 4000),
   );
 
@@ -318,11 +337,16 @@ test('phần RIÊNG của mỗi bảng: thẻ chi tiết (ngữ pháp) · lý do
   // --- từ vựng: bộ lọc riêng của nó, và bộ lọc của tab kia KHÔNG được có ở đây ---
   await page.goto('/resources?tab=vocab', { waitUntil: 'networkidle' });
   await withFilters(page, async () => {
-    // Nhận diện hai hàng bộ lọc riêng bằng GIÁ TRỊ MẶC ĐỊNH của chúng, không bằng nhãn: "Lý do" cũng
-    // là tên một cột trong bảng, nên nhãn khớp 2 element và assert không chốt được gì. "Mọi mục" (bộ
-    // lọc thẻ của tab ngữ pháp) và "Mọi lý do" thì mỗi cái chỉ có một chỗ.
-    await expect(page.getByRole('combobox').filter({ hasText: 'Mọi mục' })).toHaveCount(0);
+    // Nhận diện hàng bộ lọc riêng bằng GIÁ TRỊ MẶC ĐỊNH của nó, không bằng nhãn: "Lý do" cũng là tên
+    // một cột trong bảng, nên nhãn khớp 2 element và assert không chốt được gì. "Mọi lý do" chỉ có một chỗ.
     await expect(page.getByRole('combobox').filter({ hasText: 'Mọi lý do' })).toBeVisible();
+    // "Thẻ chi tiết" giờ có ở CẢ HAI bảng (2026-08-12). Trước đó test này chốt `toHaveCount(0)` — nó ghim
+    // niềm tin "từ vựng không có thẻ chi tiết", đúng cái niềm tin làm cho mọi thẻ từ vựng vô hình.
+    await expect(page.getByRole('combobox').filter({ hasText: 'Mọi mục' })).toBeVisible();
+    await pickFilter(page, 'Mọi mục', 'Thẻ đủ');
+    expect(await shownCount(page, 'từ'), 'chỉ 準備 có thẻ đủ theo thước đo TỪ VỰNG').toBe(1);
+    await expect(body.getByText('準備').first()).toBeVisible();
+    await pickFilter(page, 'Thẻ đủ', 'Mọi mục');
 
     await pickFilter(page, 'Mọi lý do', 'Dùng sai');
     expect(await shownCount(page, 'từ'), 'chỉ 把握 là "Dùng sai"').toBe(1);
@@ -422,4 +446,35 @@ test('bảng ngữ pháp không sinh thanh cuộn ngang ở 1440px, và không t
   expect(fit, 'bảng phải render').not.toHaveProperty('error');
   expect(fit.cut, 'không tiêu đề cột nào được phép bị cắt').toEqual([]);
   expect(fit.overflowPx, 'không phần tử nào quanh bảng được cuộn ngang ở 1440px').toBe(0);
+});
+
+test('thẻ chi tiết của TỪ VỰNG hiện trên web: đồng nghĩa, trái nghĩa, ví dụ kèm dịch', async ({
+  page,
+}) => {
+  // Lỗi mà test này gác: tới 2026-08-12 cả hai bề mặt chi tiết đều gác `kind === 'grammar'`, nên thẻ
+  // enrichment của một TỪ nằm trong DB và không xuất hiện ở bất kỳ đâu — người học không có cách nào
+  // đọc được từ đồng nghĩa hay ví dụ mà Claude đã soạn. Không unit test nào bắt được: hàm chấm thẻ
+  // đúng, lược đồ đúng, chỉ có đường từ dữ liệu ra mắt người là bị cắt.
+  await seed();
+  await login(page);
+  await page.goto('/resources/v4', { waitUntil: 'networkidle' });
+
+  await page.getByRole('tab', { name: 'Chi tiết từ' }).click();
+
+  // Hai mục mới, và nội dung của chúng — cả từ tiếng Nhật lẫn nghĩa tiếng Việt.
+  await expect(page.getByRole('button', { name: /Từ đồng nghĩa/ })).toBeVisible();
+  await expect(page.getByText('sự sắm sẵn')).toBeVisible();
+  await expect(page.getByRole('button', { name: /Từ trái nghĩa/ })).toBeVisible();
+  await expect(page.getByText('lúc diễn thật')).toBeVisible();
+
+  // Ví dụ phải đi kèm bản dịch tiếng Việt — đúng chiều mà thước đo từ vựng đòi.
+  await expect(page.getByText('Đã chuẩn bị xong.')).toBeVisible();
+  await expect(page.getByText('Tôi đang chuẩn bị cho cuộc họp.')).toBeVisible();
+
+  // Mọi chuỗi tiếng Nhật người học đọc phải nghe được — luật của repo, và ở đây nó có nghĩa cụ thể:
+  // nghe được TỪ ĐỒNG NGHĨA, không chỉ nghe được từ chính.
+  await expect(page.locator('button[aria-label*="Nghe từ 用意"]')).toBeVisible();
+
+  // Và thẻ ĐỦ thì không được kèm dòng "còn thiếu" nào.
+  await expect(page.getByText(/thiếu:/)).toHaveCount(0);
 });
