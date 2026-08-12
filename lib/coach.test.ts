@@ -83,6 +83,46 @@ describe('coach — the scenarios the flagship depends on', () => {
     expect(codes(input({ mine: [] }))).toContain('ADD_MISSING');
   });
 
+  // WHICH TOOL, and with WHICH ARGS. This branch used to answer `add_grammar` + `{ items: [...] }` for
+  // every query. Found in the lab 2026-08-12 by asking about 「台所」 (a noun): a word filed as grammar
+  // takes grammar slots and spends `dailyNewGrammar`, which the settings schema promises vocabulary can
+  // never do; `{ items: [...] }` is the argument key of neither tool; and `renderConsentGuard` builds
+  // its hold-back list from `tool`, so naming the wrong one left the real write unguarded.
+  describe('ADD_MISSING names the right tool', () => {
+    const missing = (kind?: 'GRAMMAR' | 'VOCAB') =>
+      coach({ ...input({ mine: [] }), kind }).suggestions.find((s) => s.code === 'ADD_MISSING')!;
+
+    it('a VOCAB lookup points at add_vocab, with add_vocab’s own argument key', () => {
+      const s = missing('VOCAB');
+      expect(s.tool).toBe('add_vocab');
+      expect(s.alsoTool).toBeUndefined();
+      expect(s.args).toHaveProperty('vocab');
+    });
+
+    it('a GRAMMAR lookup points at add_grammar, with add_grammar’s own argument key', () => {
+      const s = missing('GRAMMAR');
+      expect(s.tool).toBe('add_grammar');
+      expect(s.alsoTool).toBeUndefined();
+      expect(s.args).toHaveProperty('grammar');
+    });
+
+    // The usual case: the learner asked about a THING, so `kind` is absent. Defaulting to vocabulary is
+    // deliberate and asymmetric — mis-filing a word as grammar breaks the budget guarantee, mis-filing a
+    // pattern as vocabulary only puts it in the wrong pool. Both tools stay named so neither escapes the
+    // consent guard.
+    it('an unqualified lookup defaults to vocabulary and still names grammar', () => {
+      const s = missing();
+      expect(s.tool).toBe('add_vocab');
+      expect(s.alsoTool).toBe('add_grammar');
+    });
+
+    it('never proposes the argument key that belongs to neither tool', () => {
+      for (const kind of ['GRAMMAR', 'VOCAB', undefined] as const) {
+        expect(missing(kind).args).not.toHaveProperty('items');
+      }
+    });
+  });
+
   it('suspended → the BLOCKER wins over any card-polish offer', () => {
     const result = coach(
       input({ mine: [item({ suspended: true, quality: scoreEnrichment(null) })] }),
@@ -340,21 +380,79 @@ describe('coach — ranking and caps', () => {
  * pre-fill `missing`, which `patch_enrichment` does not accept, so a yes would have silently sent a
  * patch with nothing in it.
  */
+// RE-DERIVED 2026-08-12 by dumping `tools/list` from a running server, because this table had drifted
+// in FIVE places and one of them was hiding a live bug:
+//   - add_grammar took `items` here; the real key is `grammar`, and the ADD_MISSING offer was pre-filling
+//     `items` — so the guard meant to catch exactly this drift was VALIDATING it. A contract copied from
+//     the code under test is not a contract.
+//   - add_vocab was absent entirely (nothing pointed at it until 2026-08-12).
+//   - get_due_items listed `limit`, `includeVocab`, `exerciseType`, `direction` — none of which exist.
+//   - update_settings listed `dailyReviewCap` (the real name is `maxReviewsPerDay`) and omitted
+//     `desiredRetention`, which TUNE_RETENTION does send.
+//   - update_vocab listed `hanviet`; the parameter is `sinoVietnamese`.
+// A too-permissive row is worse than a missing one: it passes silently. Re-dump rather than edit by hand:
+//     node tooling/learning-lab.mjs   # then tools/list — see docs/LEARNING-LAB.md
 const TOOL_ARGS: Record<string, readonly string[]> = {
-  add_grammar: ['items'],
-  get_due_items: ['focusPatterns', 'limit', 'includeVocab', 'exerciseType', 'direction'],
+  add_grammar: ['grammar'],
+  add_vocab: ['vocab'],
+  get_due_items: ['maxItems', 'focusLevels', 'focusPatterns', 'focusWeak', 'groupId'],
   set_item_suspended: ['itemId', 'suspended'],
+  set_below_target_suspended: ['suspended'],
+  suggest_group: ['name', 'kind', 'itemIds'],
+  list_grammar: ['level', 'search', 'suspended', 'enriched', 'quality', 'limit'],
   update_settings: [
     'grammarLevels',
     'vocabCeiling',
+    'direction',
+    'difficulty',
+    'sentenceSize',
+    'translationStyle',
+    'register',
+    'topics',
     'dailyNewGrammar',
-    'dailyReviewCap',
     'maxNewPerSentence',
+    'maxReviewsPerDay',
+    'vocabPerSentence',
+    'sessionGoal',
+    'desiredRetention',
+    'furiganaMode',
+    'promptModality',
+    'answerModality',
+    'voiceSpeaker',
+    'speechRate',
+    'dayCutoffHour',
+    'autoCapture',
+    'patch',
   ],
   enrich_items: ['items'],
   patch_enrichment: ['itemId', 'add', 'set'],
-  update_vocab: ['itemId', 'expression', 'reading', 'hanviet', 'meaningVi', 'notes', 'level'],
+  update_vocab: ['itemId', 'expression', 'reading', 'sinoVietnamese', 'meaningVi', 'notes', 'level'],
 };
+
+/**
+ * Health snapshots for `coachLibrary`, ONE PER OFFER. A single snapshot that trips everything cannot be
+ * used here: `rankAndCap` keeps only MAX_SUGGESTIONS, so the lower-priority codes get dropped and never
+ * reach the contract check — which is how a "covers everything" fixture quietly covers three of five.
+ */
+const HEALTH_BASE: LibraryHealthFacts = {
+  needsWorkAtStudiedLevels: 0,
+  outdatedCards: 0,
+  belowTargetActive: 0,
+  retention: { kind: 'on-target', gapPts: 0 },
+  desiredRetention: 0.9,
+  weakCluster: null,
+};
+const SWEEP_CASES: LibraryHealthFacts[] = [
+  { ...HEALTH_BASE, needsWorkAtStudiedLevels: 99 }, // SWEEP_ENRICH
+  { ...HEALTH_BASE, outdatedCards: 99 }, // SWEEP_MIGRATE
+  { ...HEALTH_BASE, belowTargetActive: 99 }, // FASTTRACK
+  { ...HEALTH_BASE, retention: { kind: 'below', gapPts: -18 } }, // TUNE_RETENTION (tighten)
+  { ...HEALTH_BASE, retention: { kind: 'above', gapPts: 8 } }, // TUNE_RETENTION (loosen)
+  {
+    ...HEALTH_BASE,
+    weakCluster: { tag: 'particle', label: 'Trợ từ', misses: 12, itemIds: ['a', 'b', 'c', 'd'] },
+  }, // SUGGEST_GROUP
+];
 
 describe('coach — every suggestion is a call that would actually work', () => {
   it('pre-fills only arguments the named tool accepts', () => {
@@ -365,14 +463,26 @@ describe('coach — every suggestion is a call that would actually work', () => 
       input({ mine: [item({ quality: scoreEnrichment(THIN_CARD) })] }),
       input({ mine: [item({ kind: 'VOCAB', hasKanji: true, hanviet: null })] }),
       input({ withheldByNewCap: ['〜かねる'] }),
+      input({ mine: [], kind: 'GRAMMAR' }), // the other ADD_MISSING branch — a different tool + key
     ];
     const seen = new Set<string>();
-    for (const c of cases) {
-      for (const s of coach(c).suggestions) {
+    // `coachLibrary` shares the Suggestion shape and the same "a yes calls this tool" promise, but its
+    // five codes were never contract-checked — the cases list only ever held lookups. Nothing was
+    // holding them; they happen to be correct, which is not the same as being guarded.
+    const produced = [...cases.map((c) => coach(c)), ...SWEEP_CASES.map(coachLibrary)];
+    for (const c of produced) {
+      for (const s of c.suggestions) {
         const allowed = TOOL_ARGS[s.tool];
         expect(allowed, `no arg contract known for tool ${s.tool}`).toBeDefined();
-        for (const key of Object.keys(s.args)) {
+        for (const [key, value] of Object.entries(s.args)) {
           expect(allowed, `${s.code} → ${s.tool} { ${key} }`).toContain(key);
+          // VALUES too, not just keys. RAISE_NEW_CAP pre-filled `{ dailyNewGrammar: null }` and the
+          // real tool answers "expected number" — the top-priority blocker-class offer in the coach
+          // invited a yes that could not be carried out, and a key-only contract passed it happily.
+          // A placeholder is exactly the thing a pre-filled argument must never be.
+          expect(value, `${s.code} → ${s.tool} { ${key}: ${String(value)} } is a placeholder`).not
+            .toBeNull();
+          expect(value, `${s.code} → ${s.tool} { ${key} } is undefined`).toBeDefined();
         }
         seen.add(s.code);
       }
@@ -381,7 +491,9 @@ describe('coach — every suggestion is a call that would actually work', () => 
     // Ngưỡng 7 → 6 (2026-08-10): `FORK_SHARED` và `ENRICH_FROM_SHARED` đã bị bỏ khỏi bề mặt cùng lớp
     // multiuser, nên 6 là con số THẬT ở đây. Hạ ngưỡng chứ không xoá phép kiểm — nó vẫn đỏ nếu độ phủ
     // sụp xuống, và một ngưỡng cao hơn thực tế thì chỉ đỏ mãi mà không nói được điều gì.
-    expect(seen.size).toBeGreaterThanOrEqual(6);
+    // 6 → 11 (2026-08-12): the five `coachLibrary` codes now run through the same contract. Raising the
+    // floor is the point — it is what stops a future case list from quietly covering less.
+    expect(seen.size).toBeGreaterThanOrEqual(11);
   });
 });
 

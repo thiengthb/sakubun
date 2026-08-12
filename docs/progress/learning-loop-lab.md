@@ -51,6 +51,47 @@ Kèm theo: lượt quiz bị gán nhãn dịch (`Đề (Nhật → Việt)` / `B
 khi câu trả lời là một chữ cái) — đúng lỗi đã sửa cho teach-back ngày 2026-07-27, sống sót vì chỉ
 teach-back được đặt tên. → `QUIZ_EXERCISE` + `Câu hỏi` / `Bạn chọn` / `Đáp án`.
 
+## Vòng hai — bốn lỗi nữa, ở các luồng chưa đi
+
+Đi tiếp những luồng còn trống: hỏi ngang giữa buổi, từ vựng theo yêu cầu, hội thoại, giảng lại, bỏ qua.
+
+7. **`check_library` đề xuất sai tool cho một TỪ.** Hỏi về 「台所」 (danh từ) thì app đề xuất
+   `add_grammar` — nghĩa là một danh từ vào pool NGỮ PHÁP, chiếm slot mẫu trong mọi câu và tiêu
+   `dailyNewGrammar`, đúng thứ mà `settings-schema.ts` hứa từ vựng không bao giờ được làm ("the
+   anti-N5-drag guarantee"). Kèm hai lỗi nữa trong cùng một đề xuất: `args: { items: [...] }` không phải
+   khoá của tool nào (`add_grammar` nhận `grammar`, `add_vocab` nhận `vocab`), và `renderConsentGuard`
+   dựng danh sách "chưa được phép gọi" TỪ trường `tool` — nên gọi tên sai tool để lại đúng cái tool sẽ
+   ghi thật (`add_vocab`) **không được lá chắn nào phủ**. Lá chắn vẫn in ra, vẫn trông yên tâm.
+   → chọn tool theo `kind`; mặc định `add_vocab` khi không biết (đoán sai hướng này không phá ngân sách);
+   thêm `alsoTool` để lá chắn phủ cả hai.
+
+8. **Bảng hợp đồng tham số — dựng để bắt lỗi (7) — cũng sai, và vì thế hợp thức hoá nó.**
+   `TOOL_ARGS` trong `lib/coach.test.ts` ghi `add_grammar: ['items']`. Đối chiếu với `tools/list` của
+   server thật: lệch **năm** chỗ (`add_grammar`, `add_vocab` thiếu hẳn, `get_due_items` liệt kê 4 tham số
+   không tồn tại, `update_settings` ghi `dailyReviewCap` thay vì `maxReviewsPerDay`, `update_vocab` ghi
+   `hanviet` thay vì `sinoVietnamese`). Và nó không phủ nhóm `sweep` chút nào — 5 code không ai gác.
+   → dựng lại bảng từ `tools/list`, phủ thêm `coachLibrary`, nâng sàn độ phủ 6 → 11 code.
+   **Một hàng quá rộng tệ hơn một hàng thiếu: nó xanh trong im lặng.**
+
+9. **`RAISE_NEW_CAP` mời một cái "vâng" không thực hiện được.** Đề xuất `blocker` ưu tiên cao nhất (85)
+   điền sẵn `{ dailyNewGrammar: null }`; gọi thẳng vào server thì bị Zod chặn — "expected number". Người
+   học đồng ý và nhận về một lỗi validation thay vì cài đặt họ vừa đồng ý.
+   → đề xuất số thật (`hiện tại + 1`, chặn ở ngưỡng 20 của schema), và lưới giờ kiểm cả GIÁ TRỊ chứ
+   không chỉ khoá — `null`/`undefined` trong `args` là đỏ.
+
+10. **Lượt HỘI THOẠI bị gán nhãn dịch.** `Đề (Việt → Nhật):` cho một bối cảnh
+    ("Bối cảnh: … Bạn cần: … Văn phong: …"), và `Bạn dịch:` cho một câu người học **tự nói ra**.
+    Đây là lần thứ BA của cùng một lớp lỗi (teach-back 27/07, quiz sáng nay, hội thoại chiều nay), và cả
+    ba lần trước đều được sửa bằng cách thêm một cờ `isX`. Đó chính là lý do có lần thứ ba: **một cái cờ
+    thì phải NHỚ, một cái bảng thì phải ĐIỀN.**
+    → `TURN_LABELS` theo `exerciseType`, và một phép kiểm đi qua **mọi** giá trị của `EXERCISE_TYPE`, nên
+    một kiểu luyện mới tới sẽ phải chọn nhãn có ý thức thay vì thừa hưởng nhãn dịch trong im lặng.
+
+Đã đi và ĐÚNG, không cần sửa: `skip_sentence` (lưu vào lịch sử, không tính FSRS), từ vựng theo yêu cầu
+(`[VOCAB · NEW]` nằm ngoài số mẫu ngữ pháp, chấm riêng, có ngân sách riêng), `get_protocol` cho cả hai
+kiểu luyện, `suggest_group` và `set_below_target_suspended` (tôi nghi tham số sai — kiểm ra là đúng).
+`today.reviews` đếm 1 khi có 2 mục được chấm cũng là chủ ý: nó là ngân sách NGỮ PHÁP.
+
 ## Một phát hiện KHÔNG sửa được bằng code
 
 **Cài đặt mặc định không đóng nổi chỉ tiêu ngày.** Đo trên tài khoản mới, mặc định nguyên bản

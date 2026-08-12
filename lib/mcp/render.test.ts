@@ -168,6 +168,55 @@ describe('renderGradeResult', () => {
     expect(md).toContain('1. Câu tiếp'); // the numbered menu is still intact
   });
 
+  // A CONVERSATION turn: the learner composed an utterance from a situation. Third instance of the same
+  // defect (after TEACH_BACK 2026-07-27 and QUIZ), found in the lab 2026-08-12 — the scenario brief was
+  // labelled "Đề (Việt → Nhật)" and their own utterance "Bạn dịch".
+  it('a CONVERSATION turn is labelled as a situation and a spoken answer', () => {
+    const md = renderGradeResult(
+      {
+        ...result,
+        exerciseType: 'CONVERSATION',
+        direction: 'VI_JA',
+        sourceText: 'Bối cảnh: gọi điện cho cấp trên. Bạn cần: xin phép đến muộn. Văn phong: kính ngữ',
+        userAnswer: 'すみません、30分遅れて行ってもいいですか。',
+        suggested: '申し訳ございません、30分ほど遅れて出社してもいいでしょうか。',
+        items: [{ ...result.items[0], rating: 2 }],
+      },
+      NOW,
+    );
+    expect(md).toContain('**Tình huống:** Bối cảnh');
+    expect(md).toContain('**Bạn nói:**');
+    expect(md).toContain('**Câu mẫu:**');
+    expect(md).not.toContain('Đề (Việt → Nhật)');
+    expect(md).not.toContain('Bạn dịch');
+    expect(md).toContain('Nói lại câu đã sửa'); // a retry here is speaking again, not re-translating
+  });
+
+  // THE STRUCTURAL GUARD, and the reason this stopped being a chain of flags. Each of the three fixes
+  // above added one more `isX`, which is exactly why there was a third one to find: a flag has to be
+  // remembered. Walking the enum means a NEW exercise type arrives with its labels chosen on purpose —
+  // either an entry in TURN_LABELS, or a conscious decision that it really is a translation.
+  it('every exercise type renders labels that match what the learner actually did', () => {
+    // The types on which the learner genuinely TRANSLATES a given source — the translation defaults are
+    // right for these, including the two scaffolded rungs (still translating, just with support).
+    const translations = new Set([
+      'TRANSLATION',
+      'CLOZE',
+      'DIALOGUE',
+      'CLOZE_PRODUCTION',
+      'GUIDED_PRODUCTION',
+    ]);
+    for (const type of EXERCISE_TYPE.options) {
+      const md = renderGradeResult({ ...result, exerciseType: type }, NOW);
+      if (translations.has(type)) {
+        expect(md, `${type} should read as a translation`).toContain('**Bạn dịch:**');
+      } else {
+        expect(md, `${type} must NOT claim the learner translated`).not.toContain('**Bạn dịch:**');
+        expect(md, `${type} must NOT be headed as a translation prompt`).not.toContain('**Đề (');
+      }
+    }
+  });
+
   it('celebrates when the daily sentence goal is reached', () => {
     const md = renderGradeResult({ ...result, today: { ...result.today, sentences: 10 } }, NOW);
     expect(md).toContain('Đạt mục tiêu hôm nay (10 câu)');
@@ -1059,6 +1108,18 @@ describe('renderConsentGuard — a write needs a yes, and absence is not a signa
 
   it('says nothing when there was no proposal — a quiet result stays quiet', () => {
     expect(renderConsentGuard([])).toBeNull();
+  });
+
+  // An offer the server cannot pin to ONE tool must hold BOTH back. Found in the lab 2026-08-12: the
+  // ADD_MISSING offer for a looked-up word named `add_grammar` while the write Claude would actually
+  // reach for was `add_vocab` — so the guard printed, looked reassuring, and covered the wrong tool. A
+  // consent guard with a hole in it reads exactly like one without.
+  it('holds back the second candidate tool too, not just the first', () => {
+    const note = renderConsentGuard([
+      offer({ code: 'ADD_MISSING', class: 'enable', tool: 'add_vocab', alsoTool: 'add_grammar' }),
+    ])!;
+    expect(note).toContain('add_vocab');
+    expect(note).toContain('add_grammar');
   });
 
   it('names the exact tool that must WAIT, not just the rule', () => {

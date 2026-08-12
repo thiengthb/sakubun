@@ -179,9 +179,18 @@ export async function checkLibrary(args: LookupInput): Promise<LibraryCheck> {
     // trường này không còn gì để truyền.
     // grammarLevels drives WIDEN_LEVELS; autoCapture decides which offers the learner has already
     // pre-authorised. Nothing else of the settings blob is the coach's business.
-    settings: { grammarLevels: settings.grammarLevels, autoCapture: settings.autoCapture },
+    // dailyNewGrammar rides along so RAISE_NEW_CAP can propose a real number instead of a null the
+    // tool rejects — the offer is only useful if the yes it invites can actually be carried out.
+    settings: {
+      grammarLevels: settings.grammarLevels,
+      autoCapture: settings.autoCapture,
+      dailyNewGrammar: settings.dailyNewGrammar,
+    },
     now,
     midSession: args.midSession,
+    // Forwarded so an ADD_MISSING offer names the RIGHT tool. Absent when the learner asked about a
+    // "thing" rather than a table, which is the usual case and is handled in `coach`.
+    kind: args.kind,
     minedPairs,
     withheldByNewCap,
   });

@@ -17,6 +17,9 @@ import { sameExpression } from '@/lib/normalize';
 import type { Settings } from '@/lib/settings-schema';
 import { LEECH_LAPSES } from '@/lib/srs';
 
+/** Ceiling of `settings.dailyNewGrammar` (lib/settings-schema.ts) — a proposal must not exceed it. */
+const MAX_DAILY_NEW_GRAMMAR = 20;
+
 /**
  * The per-item proposals the SERVER can compute (the coverage matrix in the plan, §2).
  *
@@ -66,6 +69,14 @@ export interface Suggestion {
   line: string;
   /** The REAL tool to call on yes. */
   tool: string;
+  /**
+   * A SECOND tool that could carry the same offer out, when the server genuinely cannot know which is
+   * right. Only `ADD_MISSING` sets it: a lookup does not say whether 「台所」 is a word or a grammar
+   * pattern. It exists because `renderConsentGuard` builds its "you may not call X" list from these
+   * fields — so an unnamed tool is an UNGUARDED write, and naming only one of two possibilities left
+   * exactly that hole (found in the lab 2026-08-12).
+   */
+  alsoTool?: string;
   /** Pre-filled arguments, so a yes is one call and not an interrogation. */
   args: Record<string, unknown>;
   /**
@@ -132,10 +143,16 @@ export interface CoachInput {
   query: string;
   /** Matches in the learner's OWN library — the only library there is. */
   mine: ItemFacts[];
-  settings: Pick<Settings, 'grammarLevels'> & Partial<Pick<Settings, 'autoCapture'>>;
+  settings: Pick<Settings, 'grammarLevels'> &
+    Partial<Pick<Settings, 'autoCapture' | 'dailyNewGrammar'>>;
   now: Date;
   /** An aside during practice → tighter cap, because there is an exercise to return to. */
   midSession?: boolean;
+  /**
+   * Which table the learner's question was about, when they said. Decides whether an ADD_MISSING offer
+   * points at `add_vocab` or `add_grammar` — see that branch for why guessing wrong is not symmetric.
+   */
+  kind?: 'GRAMMAR' | 'VOCAB';
   /** Expressions the scheduler withheld because the DAILY new quota was spent (lib/select.ts). */
   withheldByNewCap?: readonly string[];
   /**
@@ -339,13 +356,37 @@ export function coach(input: CoachInput): CoachResult {
   // `shared` chỉ có một nguồn duy nhất trong app (`lib/lookup.ts`) và nguồn đó truyền `[]` từ khi lớp
   // multiuser bị cắt. Nó gợi ý một tool `fork_shared_items` cũng đã không còn được đăng ký.
   if (input.mine.length === 0) {
+    // WHICH TOOL depends on what the learner asked about, and this branch used to answer "add_grammar"
+    // no matter what. Measured in the lab 2026-08-12: asking about 「台所」 (a noun — kitchen) produced
+    // `tool: 'add_grammar'` with `args: { items: [...] }`, which is wrong three times over.
+    //
+    //  1. WRONG POOL. A noun filed as GRAMMAR gets scheduled as a grammar pattern: it takes grammar
+    //     slots in every sentence and spends `dailyNewGrammar`. That budget separation is a stated
+    //     guarantee of this app (`settings-schema.ts`: vocabulary "never eats the grammar pattern count
+    //     or the grammar review/new caps — the anti-N5-drag guarantee"), and this offer walked through it.
+    //  2. WRONG SHAPE. `add_grammar` takes `{ grammar: [...] }` and `add_vocab` takes `{ vocab: [...] }`;
+    //     `{ items: [...] }` is neither, and both tools also require more than an expression.
+    //  3. IT BROKE THE CONSENT GUARD. `renderConsentGuard` names the tools that may NOT be called from
+    //     `tool`, so naming add_grammar for a vocabulary word left the tool that would ACTUALLY write
+    //     (`add_vocab`) unnamed — the guard was still printed, and no longer covered the real write.
+    //
+    // `kind` is what the learner's own question said, when it said anything. With nothing to go on the
+    // default is add_vocab, and that direction is deliberate: mis-filing a word as grammar violates the
+    // budget guarantee above, while mis-filing a pattern as vocabulary only puts it in the wrong pool.
+    // `alsoTool` keeps the other one named so the consent guard covers both.
+    const addTool =
+      input.kind === 'GRAMMAR' ? 'add_grammar' : input.kind === 'VOCAB' ? 'add_vocab' : null;
     all.push({
       code: 'ADD_MISSING',
       class: 'enable',
       priority: 74,
       line: `「${input.query}」 chưa có trong kho của bạn — thêm vào để học chứ?`,
-      tool: 'add_grammar',
-      args: { items: [{ expression: input.query }] },
+      tool: addTool ?? 'add_vocab',
+      alsoTool: addTool ? undefined : 'add_grammar',
+      args:
+        addTool === 'add_grammar'
+          ? { grammar: [{ expression: input.query }] }
+          : { vocab: [{ term: input.query }] },
     });
   }
 
@@ -360,7 +401,18 @@ export function coach(input: CoachInput): CoachResult {
       priority: 85,
       line: `「${expression}」 bị hoãn vì hết hạn mức mẫu mới hôm nay — nâng hạn mức lên chứ?`,
       tool: 'update_settings',
-      args: { dailyNewGrammar: null },
+      // A CONCRETE number, because `null` was REJECTED. Measured against the live tool 2026-08-12:
+      // `update_settings { dailyNewGrammar: null }` fails Zod with "expected number" — so the
+      // highest-priority blocker-class offer in the whole coach carried a call that could not run, and
+      // a learner's yes would land on a validation error instead of the setting they agreed to.
+      // +1 rather than a bigger jump: they chose this pace, and one more pattern is all that is needed
+      // to serve the one they just asked about. Clamped to the schema's own ceiling (20).
+      args: {
+        dailyNewGrammar: Math.min(
+          MAX_DAILY_NEW_GRAMMAR,
+          (input.settings.dailyNewGrammar ?? 3) + 1,
+        ),
+      },
     });
   }
 

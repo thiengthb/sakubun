@@ -101,6 +101,50 @@ export function verbatimEnvelope(markdown: string): string {
  * bản dịch tham khảo comparison and the next-action menu are rendered HERE (not left to the
  * prompt) so they can never be forgotten — same rationale as the display contract itself.
  */
+/**
+ * What to CALL each part of the result block, per exercise type. A table rather than a chain of flags,
+ * because the same defect has now been found three times, one exercise type at a time:
+ *
+ *   2026-07-27  TEACH_BACK — the learner's EXPLANATION was labelled "Bạn dịch" under "Đề (Nhật → Việt)".
+ *   2026-08-12  QUIZ       — "Bạn dịch: Chọn C", and `suggested` (the ANSWER KEY) called "Tham khảo".
+ *   2026-08-12  CONVERSATION — a scenario brief ("Bối cảnh: … Bạn cần: … Văn phong: …") labelled
+ *               "Đề (Việt → Nhật)", and an utterance the learner COMPOSED called "Bạn dịch".
+ *
+ * Each was fixed by adding one more `isX` flag, which is why the third one existed: a flag has to be
+ * remembered, a table has to be filled in. A type absent from this table takes the translation defaults,
+ * and that is correct for the ones that ARE translations (TRANSLATION, CLOZE, DIALOGUE, and the two
+ * scaffolded production rungs — the learner does translate on all of them). `render.test.ts` walks every
+ * value of EXERCISE_TYPE so a NEW type shows up as a deliberate choice instead of a silent default.
+ *
+ * This matters more than wording: the block is the one thing Claude must copy verbatim, and a block that
+ * tells the learner they did something they did not do is a block they learn to stop reading.
+ */
+const TURN_LABELS: Record<
+  string,
+  { prompt: string; answer: string; reference: string; retry: string }
+> = {
+  TEACH_BACK: {
+    prompt: 'Mẫu',
+    answer: 'Bạn giảng',
+    reference: 'Tham khảo',
+    retry: 'Giảng lại cho đủ phần còn thiếu',
+  },
+  QUIZ: {
+    prompt: 'Câu hỏi',
+    answer: 'Bạn chọn',
+    reference: 'Đáp án',
+    // Unreachable today (a quiz suppresses the retry offer — nothing to retype when the answer was a
+    // letter) and present anyway, so the table stays a complete description of the type.
+    retry: 'Chọn lại',
+  },
+  CONVERSATION: {
+    prompt: 'Tình huống',
+    answer: 'Bạn nói',
+    reference: 'Câu mẫu',
+    retry: 'Nói lại câu đã sửa',
+  },
+};
+
 export function renderGradeResult(result: SubmitReviewResult, now: Date = new Date()): string {
   const rows = result.items.map(
     (i) => `| ${i.expression} | ${ratingLabel(i.rating)} | ${humanizeUntil(i.nextDue, now)} |`,
@@ -110,14 +154,14 @@ export function renderGradeResult(result: SubmitReviewResult, now: Date = new Da
   // explanation "Bạn dịch" under an "Đề (Nhật → Việt)" heading tells them they did something they did
   // not do. Direction alone cannot express that — hence the exerciseType echo (found in the lab).
   const isTeachBack = result.exerciseType === TEACH_BACK_EXERCISE;
-  // A QUIZ turn is the same defect one exercise type over, and it survived the teach-back fix because
-  // only teach-back got a name. Measured in the lab 2026-08-12: a multiple-choice turn rendered
-  // "**Đề (Nhật → Việt):** すみません、ここで写真を撮っ（＿＿）か。" and "**Bạn dịch:** Chọn C" — the
-  // learner translated nothing, they picked a letter, and `suggested` on a quiz is not a reference
-  // translation, it is the ANSWER KEY. Labels that describe work the learner did not do are how a block
-  // meant to be trusted stops being read.
   const isQuiz = result.exerciseType === QUIZ_EXERCISE;
   const dirLabel = result.direction === 'JA_VI' ? 'Nhật → Việt' : 'Việt → Nhật';
+  const labels = TURN_LABELS[result.exerciseType] ?? {
+    prompt: `Đề (${dirLabel})`,
+    answer: 'Bạn dịch',
+    reference: 'Tham khảo',
+    retry: 'Gõ lại bản dịch đã sửa lỗi',
+  };
   // Failed item → the menu leads with a rewrite step (feedback→revise→rewrite beats one-shot
   // correction). Consolidation only: the rewrite is never re-graded. NOT offered on a quiz: there is
   // nothing to retype when the answer was a letter, and the offer sent the learner looking for a
@@ -130,13 +174,9 @@ export function renderGradeResult(result: SubmitReviewResult, now: Date = new Da
   return joinLines([
     '### Kết quả lượt này',
     '',
-    isTeachBack
-      ? `**Mẫu:** ${result.sourceText}`
-      : isQuiz
-        ? `**Câu hỏi:** ${result.sourceText}`
-        : `**Đề (${dirLabel}):** ${result.sourceText}`,
-    `**${isTeachBack ? 'Bạn giảng' : isQuiz ? 'Bạn chọn' : 'Bạn dịch'}:** ${result.userAnswer}`,
-    result.suggested ? `**${isQuiz ? 'Đáp án' : 'Tham khảo'}:** ${result.suggested}` : null,
+    `**${labels.prompt}:** ${result.sourceText}`,
+    `**${labels.answer}:** ${result.userAnswer}`,
+    result.suggested ? `**${labels.reference}:** ${result.suggested}` : null,
     // The /100 score lives in the server-owned block so it appears in EVERY chat, not just history:
     // Claude sent it to submit_review, but a score outside this verbatim block was being dropped from
     // the reply (the 2026-07-25 fix). The line used to be OMITTED when score was null — silence in the
@@ -169,9 +209,7 @@ export function renderGradeResult(result: SubmitReviewResult, now: Date = new Da
       : null,
     '',
     hasFail
-      ? `**Tiếp theo?** ${
-          isTeachBack ? 'Giảng lại cho đủ phần còn thiếu' : 'Gõ lại bản dịch đã sửa lỗi'
-        } (khuyến nghị — để khắc sâu, KHÔNG chấm lại) · ${baseMenu}`
+      ? `**Tiếp theo?** ${labels.retry} (khuyến nghị — để khắc sâu, KHÔNG chấm lại) · ${baseMenu}`
       : `**Tiếp theo?** ${baseMenu}`,
   ]);
 }
@@ -392,8 +430,12 @@ export function renderLibraryCheck(check: LibraryCheck): string {
  */
 export function renderConsentGuard(suggestions: readonly Suggestion[]): string | null {
   if (suggestions.length === 0) return null;
-  const waiting = [...new Set(suggestions.filter((s) => !s.auto).map((s) => s.tool))];
-  const allowed = [...new Set(suggestions.filter((s) => s.auto).map((s) => s.tool))];
+  // BOTH fields, not just `tool`: an offer the server cannot pin to one tool (see `alsoTool`) would
+  // otherwise leave the other one unnamed, and a tool the guard does not name is a tool the guard does
+  // not hold back — a consent guard with a hole in it reads exactly like one without.
+  const toolsOf = (s: Suggestion) => [s.tool, s.alsoTool].filter((t): t is string => Boolean(t));
+  const waiting = [...new Set(suggestions.filter((s) => !s.auto).flatMap(toolsOf))];
+  const allowed = [...new Set(suggestions.filter((s) => s.auto).flatMap(toolsOf))];
   const parts: string[] = [];
   if (waiting.length > 0) {
     parts.push(
