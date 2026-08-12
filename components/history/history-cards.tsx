@@ -21,6 +21,7 @@ import { hasFurigana } from '@/lib/furigana';
 import { scoreLabel } from '@/lib/score-label';
 import { stripEmoji } from '@/lib/text';
 import type { SentenceHistoryRow } from '@/lib/practice';
+import type { ExerciseType } from '@/lib/exercise-types';
 import { turnLabels } from '@/lib/turn-labels';
 import { cn } from '@/lib/utils';
 
@@ -46,7 +47,10 @@ export function scoreClass(score: number): string {
 }
 
 // Shared with the filter layer (history-filters.tsx) — one source of truth for the exercise-type copy.
-export const EXERCISE_TYPE_LABELS: Record<string, string> = {
+// `Record<ExerciseType, …>`, not `Record<string, …>`: this table also GENERATES the /history type
+// filter, so a type missing from it cannot be filtered for at all — the learner's own practice goes
+// missing from their history with no error anywhere. The compiler now refuses an incomplete table.
+export const EXERCISE_TYPE_LABELS: Record<ExerciseType, string> = {
   TRANSLATION: 'Dịch câu',
   QUIZ: 'Quiz',
   CLOZE: 'Điền khuyết',
@@ -62,6 +66,19 @@ export const EXERCISE_TYPE_LABELS: Record<string, string> = {
   // The learner explains the pattern in their own words and the explanation is graded (2026-07-27).
   TEACH_BACK: 'Giảng lại',
 };
+
+/**
+ * Label for an exercise type as it comes OUT OF THE DATABASE — i.e. a plain `string`, which is what
+ * `Sentence.exerciseType` is. `undefined` for a value the table does not know, and every caller already
+ * treats that as "no badge".
+ *
+ * The pair is the point: the TABLE is exhaustive (the compiler refuses a missing type, so a new type
+ * cannot silently vanish from the /history filter that is generated from it), while READING it tolerates
+ * an unknown string — because a row written by an older version of the app is data, not a type error.
+ */
+export function exerciseTypeLabel(type: string): string | undefined {
+  return (EXERCISE_TYPE_LABELS as Record<string, string>)[type];
+}
 
 /** Direction as a compact code badge, e.g. "JP → VN" / "VN → JP". Shared with the community feed. */
 export function dirLabel(direction: string): string {
@@ -248,7 +265,7 @@ function HistoryDetail({
   const detailScore = scoreLabel(sentence.status, sentence.score);
   const grammar = sentence.ratings.filter((r) => r.role !== 'VOCAB');
   const vocab = sentence.ratings.filter((r) => r.role === 'VOCAB');
-  const typeLabel = EXERCISE_TYPE_LABELS[sentence.exerciseType];
+  const typeLabel = exerciseTypeLabel(sentence.exerciseType);
   // The web's translation wording is DELIBERATELY shorter than the chat block's ("Đề", not
   // "Đề (Nhật → Việt)") — a direction badge sits right above this. Shared table, own default.
   const labels = turnLabels(sentence.exerciseType, {
@@ -438,7 +455,7 @@ export function HistoryCard({
 }) {
   if (sentence.status === 'PENDING') return <PendingCard sentence={sentence} />;
   const score = scoreLabel(sentence.status, sentence.score);
-  const typeLabel = EXERCISE_TYPE_LABELS[sentence.exerciseType];
+  const typeLabel = exerciseTypeLabel(sentence.exerciseType);
 
   return (
     <SentenceCardShell

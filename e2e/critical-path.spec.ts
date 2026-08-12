@@ -36,3 +36,34 @@ test('login → dashboard → a settings change persists across reload', async (
   await page.getByRole('tab', { name: 'Nhịp học' }).click();
   await expect(page.getByLabel('Mẫu ngữ pháp mới / ngày')).toHaveValue('11');
 });
+
+// A slider whose NUMBER is an index must announce the WORD the screen shows.
+//
+// Measured on production 2026-08-12: «Cỡ câu» carried `aria-valuenow="1"` on a 0..6 scale while the label
+// under the thumb read «Ngắn» — so assistive tech got a position where the learner reads a word. The
+// Slider wrapper's own docblock justified having no `aria-valuetext` with "the value is already announced
+// via aria-valuenow", which is true of the difficulty scale (3 of 5 means something) and false of an
+// index. Pinned here rather than in a unit test because `aria-valuenow` is only populated after Radix
+// hydrates — and that is the same property that made the first measurement of this read `null` (see the
+// hidden-tab trap in e2e/no-js-first-paint.spec.ts).
+test('slider «Cỡ câu» đọc ra CHỮ, không phải chỉ số', async ({ page }) => {
+  await page.goto('/login');
+  await page.getByLabel('Email').fill(E2E_EMAIL);
+  await page.getByLabel('Mật khẩu').fill(E2E_LOGIN);
+  await page.getByRole('button', { name: 'Đăng nhập' }).click();
+  await page.waitForURL((u) => !u.pathname.startsWith('/login'), { timeout: 30_000 });
+
+  await page.goto('/settings');
+  const size = page.getByRole('slider', { name: 'Cỡ câu' });
+  await expect(size).toBeVisible();
+  // Hydrated → the numeric position is there…
+  await expect(size).toHaveAttribute('aria-valuenow', /\d+/);
+  // …and next to it, the word. Default sentenceSize is "medium" → «Vừa».
+  await expect(size).toHaveAttribute('aria-valuetext', 'Vừa');
+
+  // The difficulty slider deliberately has NO valuetext: 3 of 5 already means what it says, and a
+  // redundant one only makes the announcement longer.
+  const difficulty = page.getByRole('slider', { name: 'Độ phức tạp của câu' });
+  await expect(difficulty).toHaveAttribute('aria-valuenow', /\d+/);
+  expect(await difficulty.getAttribute('aria-valuetext')).toBeNull();
+});

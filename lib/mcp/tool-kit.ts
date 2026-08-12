@@ -1,6 +1,7 @@
 import type { createMcpHandler } from 'mcp-handler';
 import { z, ZodError } from 'zod';
 import { ERROR_TAGS } from '@/lib/error-tags';
+import { EXERCISE_TYPES } from '@/lib/exercise-types';
 import { verbatimEnvelope } from '@/lib/mcp/render';
 import { JLPT_LEVELS } from '@/lib/settings-schema';
 
@@ -237,30 +238,7 @@ export const DIRECTION = z.enum(['JA_VI', 'VI_JA']);
 export const ROLE = z.enum(['TARGET', 'SECONDARY', 'VOCAB']);
 export const LEVEL = z.enum(JLPT_LEVELS);
 export const ERROR_TAG = z.enum(ERROR_TAGS);
-export const EXERCISE_TYPE = z.enum([
-  'TRANSLATION',
-  'CLOZE',
-  'DIALOGUE',
-  'QUIZ',
-  // CONVERSATION (2026-07-23): situational PRODUCTION practice — sourceText holds the scenario brief
-  // (context + register + required items), userAnswer is the learner's own Japanese utterance. Graded +
-  // FSRS-rated via the same stage_sentence/submit_review path.
-  'CONVERSATION',
-  // The two SCAFFOLDED production rungs (2026-07-26). Producing Japanese is a cliff, not a step: the
-  // involvement-load ladder runs JA→VI (read) < quiz (recognise) < CLOZE_PRODUCTION < GUIDED_PRODUCTION
-  // < VI→JA free < CONVERSATION, and until now the app only offered the two ends. Both reuse the
-  // existing get_due_items → stage_sentence → submit_review pipeline with no schema change — the same
-  // trick CONVERSATION used.
-  'CLOZE_PRODUCTION',
-  'GUIDED_PRODUCTION',
-  // TEACH_BACK (2026-07-27): the learner EXPLAINS a pattern in Vietnamese and the explanation is
-  // graded — the protégé effect / self-explanation (plan 2026-07-26-agentic-tutor-loop §10). Same
-  // stage_sentence → submit_review pipeline, no schema change, like CONVERSATION.
-  //
-  // direction is JA_VI, NOT the VI_JA the plan wrote. History renders by DIRECTION, not exerciseType
-  // (components/history/history-cards.tsx): under VI_JA the learner's answer is treated as Japanese
-  // content and handed to SpokenLine + Japanese TTS — which would try to read a Vietnamese
-  // explanation aloud in Japanese. JA_VI puts the Japanese where it actually is: sourceText = the
-  // pattern being explained (playable, invariant 9), userAnswer/suggested = Vietnamese prose (plain).
-  'TEACH_BACK',
-]);
+// The list itself lives in `lib/exercise-types.ts` — a leaf module the WEB can import too, so the
+// history labels/filters can be exhaustiveness-checked against it instead of keeping a second copy
+// (see the note there). The narrative comments per type moved with the list.
+export const EXERCISE_TYPE = z.enum(EXERCISE_TYPES);

@@ -321,6 +321,9 @@ export function ContentTab({
         <div className="space-y-2 px-1 pt-2">
           <Slider
             thumbLabel="Cỡ câu"
+            // The thumb sits at an INDEX (0..6); the value the learner reads is a word. Without this,
+            // assistive tech announces "1" where the screen says «Ngắn».
+            valueText={(i) => SIZE_LABELS[SENTENCE_SIZES[i]] ?? String(i)}
             min={0}
             max={SENTENCE_SIZES.length - 1}
             step={1}

@@ -10,6 +10,7 @@ function Slider({
   trackClassName,
   ticks,
   thumbLabel,
+  valueText,
   defaultValue,
   value,
   min = 0,
@@ -28,6 +29,18 @@ function Slider({
    * multi-thumb range.
    */
   thumbLabel: string | string[];
+  /**
+   * Human reading of the current value, for sliders whose NUMBER is not the value the user sees.
+   *
+   * The note above says "the value is already announced via `aria-valuenow`" — true for a scale that
+   * means what it says (difficulty 3 of 5), and false for an INDEX. Measured on production 2026-08-12:
+   * the «Cỡ câu» slider announces `aria-valuenow="1"` on a 0..6 scale, while the value the learner reads
+   * under the thumb is «Ngắn» — so assistive tech gets a position where the screen shows a word. That is
+   * exactly what `aria-valuetext` is for (WAI-ARIA: use it when the numeric value is not meaningful).
+   *
+   * Omit it whenever the number IS the value; a redundant valuetext just makes the announcement longer.
+   */
+  valueText?: (value: number) => string;
 }) {
   const _values = React.useMemo(
     () => (Array.isArray(value) ? value : Array.isArray(defaultValue) ? defaultValue : [min, max]),
@@ -75,6 +88,7 @@ function Slider({
           data-slot="slider-thumb"
           key={index}
           aria-label={Array.isArray(thumbLabel) ? (thumbLabel[index] ?? thumbLabel[0]) : thumbLabel}
+          aria-valuetext={valueText ? valueText(_values[index]) : undefined}
           className="relative block size-4 shrink-0 rounded-full border border-ring bg-white ring-ring/50 transition-[color,box-shadow] select-none after:absolute after:-inset-2 hover:ring-3 focus-visible:ring-3 focus-visible:outline-hidden active:ring-3 disabled:pointer-events-none disabled:opacity-50"
         />
       ))}

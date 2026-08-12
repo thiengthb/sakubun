@@ -143,6 +143,51 @@ chấp compile lần đầu mà `warmup.setup.ts` tồn tại để giảm. Ghi 
 nào nữa cũng ánh xạ thứ này?"* Ba lần đầu đều sửa đúng chỗ đang cháy, và không lần nào có ai đi tìm bản
 sao thứ hai — nên bản sao đó sống thêm hai tuần trên trang người học mở mỗi ngày.
 
+## Vòng năm — soi ba trang web còn lại, và một flake bị truy tới cùng
+
+Đi `/settings`, `/guide`, cùng một lượt tìm những ánh xạ có bản sao (theo đúng bài học của lỗi 13).
+
+14. **`EXERCISE_TYPE_LABELS` không được ràng buộc đủ.** Khai là `Record<string, string>` nên không có gì
+    bắt nó phủ hết 8 kiểu luyện. Nó ĐỦ ở thời điểm đo — nhưng hệ quả của việc thiếu thì im lặng và
+    không nhỏ: **bộ lọc kiểu trên `/history` được sinh TỪ chính bảng đó**, nên một kiểu thiếu là cả một
+    lớp lượt của người học không lọc được, không lỗi ở đâu cả. Badge cũng mất, đó là nửa thấy được.
+    → danh sách kiểu ra `lib/exercise-types.ts` (module lá, KHÔNG import gì, để web dùng được mà không
+    kéo zod/Prisma vào client), `z.enum` đọc từ đó, và bảng nhãn thành `Record<ExerciseType, string>`.
+    Đọc bảng thì vẫn nhận `string` qua `exerciseTypeLabel()` — vì một dòng do bản app cũ ghi là DỮ LIỆU,
+    không phải lỗi kiểu. Chứng minh ràng buộc cắn thật: bỏ `TEACH_BACK` khỏi bảng → build ĐỎ.
+
+15. **Slider «Cỡ câu» đọc ra chỉ số thay vì chữ.** `aria-valuenow="1"` trên thang 0..6, trong khi nhãn
+    dưới núm ghi «Ngắn». Docblock của `Slider` tự biện hộ cho việc không có `aria-valuetext` bằng câu
+    "giá trị đã được đọc qua aria-valuenow" — đúng với thang độ khó (3/5 có nghĩa), sai với một CHỈ SỐ.
+    → thêm prop `valueText`, dùng cho «Cỡ câu», KHÔNG dùng cho độ khó (dư thừa chỉ làm câu đọc dài hơn).
+    Chốt trong `e2e/critical-path.spec.ts`, chứng minh hai chiều.
+
+16. **Flake `critical-path` bị truy tới cùng.** Nó đỏ **2 trong 4** lần gate, luôn xanh khi chạy riêng
+    (6-8.6s so với vượt 60s). Không phải flake vô danh: `warmup.setup.ts` đã ghi đúng ca này từ issue #7.
+    Thứ warmup CHƯA trả là phần client — `request.get` không làm Turbopack sinh chunk client, nên lần đầu
+    một trang mở trong chromium vẫn phải chờ compile, đúng lúc spec đầu tiên đang bấm tab rồi `fill`.
+    → warmup mở thêm `/login` và `/settings` TRONG BROWSER (ngân sách 240s), và `critical-path` được
+    ngân sách riêng 180s như `mobile-layout` — vì thứ hỏng là cái đồng hồ, không phải assertion.
+    **Khai rõ:** "chunk client chưa trả trước" là chẩn đoán CHƯA kiểm trực tiếp được (không tái hiện
+    trên máy rảnh). Đã đo được là biên độ 10 lần. Bản sửa đứng vững kể cả khi chẩn đoán sai vì nó chỉ
+    CHUYỂN chi phí vào bước có nhiệm vụ gánh. Và một lần gate xanh **chưa** chứng minh hết flake.
+
+### Ba lần dụng cụ sai trong một buổi
+
+Cả ba đều do tab Chrome bị che, và cả ba đều suýt thành một "lỗi app":
+`getByRole` bắt vào cả thẻ thay vì nút 24px · `aria-valuenow` trả `null` · `innerText` trả 74 ký tự
+trong khi `textContent` trả 99.894. Thêm một ca nữa ở lưới: một assertion khớp lỏng làm nhãn `Đáp án:`
+trùng với nội dung. **"App hỏng theo cách kỳ lạ" hầu như luôn rẻ hơn nếu đọc là "phép đo của tôi hỏng
+theo cách bình thường".**
+
+### Và một chỗ tôi nói chưa chính xác, đã sửa
+
+Tôi trình bày mâu thuẫn chỉ tiêu-ngày như một quyết định đang chờ chủ tài khoản. Đo trên production:
+`dailyNewGrammar` = **10**, `sessionGoal` = **10** — **không có mâu thuẫn nào trên tài khoản thật.** Nó là
+mâu thuẫn của giá trị MẶC ĐỊNH, và mặc định chỉ chạm tới một tài khoản mới, mà đăng ký thì đã đóng sau
+tài khoản đầu tiên. Bản sửa (14) — in cả hai con số ở khối mở buổi — vẫn đúng, nhưng giá trị của nó với
+người dùng này thấp hơn tôi đã nói.
+
 ## Một phát hiện KHÔNG sửa được bằng code
 
 **Cài đặt mặc định không đóng nổi chỉ tiêu ngày.** Đo trên tài khoản mới, mặc định nguyên bản

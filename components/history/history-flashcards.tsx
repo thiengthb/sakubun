@@ -18,9 +18,9 @@ import { StarButton } from '@/components/shared/star-button';
 import { turnLabels } from '@/lib/turn-labels';
 import { useSessionState } from '@/components/shared/use-session-state';
 import {
-  EXERCISE_TYPE_LABELS,
   RatingChip,
   dirLabel,
+  exerciseTypeLabel,
   scoreClass,
 } from '@/components/history/history-cards';
 import { formatDateTimeVN } from '@/lib/format';
@@ -63,8 +63,8 @@ function PromptFace({
     <>
       <div className="absolute top-3 left-4 flex flex-wrap items-center gap-1.5">
         <Badge variant="secondary">{dirLabel(sentence.direction)}</Badge>
-        {EXERCISE_TYPE_LABELS[sentence.exerciseType] && (
-          <Badge variant="outline">{EXERCISE_TYPE_LABELS[sentence.exerciseType]}</Badge>
+        {exerciseTypeLabel(sentence.exerciseType) && (
+          <Badge variant="outline">{exerciseTypeLabel(sentence.exerciseType)}</Badge>
         )}
       </div>
       <div className="flex w-full flex-col items-center gap-2 px-1 pt-8 text-center">
