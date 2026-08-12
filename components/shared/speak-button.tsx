@@ -9,6 +9,10 @@ import { cn } from '@/lib/utils';
 // the SAME button again (within the idle window) plays slower, then alternates back to normal, etc.
 const SLOW_FACTOR = 0.6; // slow = default × this (clamped to VOICEVOX's 0.5 floor)
 const IDLE_RESET_MS = 6000; // after this long idle, the next press starts at normal again
+// How long to wait for Web Speech to actually START before giving the button back (see the watchdog in
+// `speakWebSpeech`). Generous: a slow device can take a moment to warm an OS voice, and cutting a real
+// utterance short would be worse than the state this guards against.
+const SPEECH_START_TIMEOUT_MS = 2500;
 
 // Detect Web Speech support without a setState-in-effect (SSR snapshot = false, client = real check) —
 // useSyncExternalStore reconciles the two without a hydration mismatch.
@@ -194,8 +198,26 @@ export function SpeakButton({
       setSpeaking(false);
       onProgress?.(0);
     };
+    // WATCHDOG on the fallback path. Web Speech may ACCEPT an utterance and then do nothing at all,
+    // silently: iOS Safari discards the first utterance on a page that has had no user activation, and
+    // several in-app webviews accept-and-drop when no voice matches the language. Neither case fires
+    // `onstart`, `onend` OR `onerror` — so `speaking` stayed true with no event able to clear it, and
+    // the button sat on its spinner until the user thought to press it a second time. That second press
+    // was the ONLY exit from this state, which makes it a dead end for anyone who reads the spinner as
+    // "it is working" and waits. NOT a reproduction of a reported bug: measured 2026-08-12, this
+    // component plays correctly on Chromium-mobile at 390px even with ZERO Japanese voices installed
+    // (the server path carries it). This closes the hole by inspection, not by symptom.
+    const started = { current: false };
+    utterance.onstart = () => {
+      started.current = true;
+    };
     setSpeaking(true);
     synth.speak(utterance);
+    window.setTimeout(() => {
+      if (started.current) return; // a real utterance is running — its own events own the state now
+      setSpeaking(false);
+      onProgress?.(0);
+    }, SPEECH_START_TIMEOUT_MS);
   };
 
   /**

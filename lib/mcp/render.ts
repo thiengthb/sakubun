@@ -10,6 +10,7 @@ import type { SessionRecap } from '@/lib/session-recap';
 import { ERROR_TAG_LABELS } from '@/lib/error-tags';
 import { humanizeUntil, ratingLabel } from '@/lib/format';
 import {
+  QUIZ_EXERCISE,
   TEACH_BACK_EXERCISE,
   type CalibrationShadow,
   type DueBatch,
@@ -109,10 +110,19 @@ export function renderGradeResult(result: SubmitReviewResult, now: Date = new Da
   // explanation "Bạn dịch" under an "Đề (Nhật → Việt)" heading tells them they did something they did
   // not do. Direction alone cannot express that — hence the exerciseType echo (found in the lab).
   const isTeachBack = result.exerciseType === TEACH_BACK_EXERCISE;
+  // A QUIZ turn is the same defect one exercise type over, and it survived the teach-back fix because
+  // only teach-back got a name. Measured in the lab 2026-08-12: a multiple-choice turn rendered
+  // "**Đề (Nhật → Việt):** すみません、ここで写真を撮っ（＿＿）か。" and "**Bạn dịch:** Chọn C" — the
+  // learner translated nothing, they picked a letter, and `suggested` on a quiz is not a reference
+  // translation, it is the ANSWER KEY. Labels that describe work the learner did not do are how a block
+  // meant to be trusted stops being read.
+  const isQuiz = result.exerciseType === QUIZ_EXERCISE;
   const dirLabel = result.direction === 'JA_VI' ? 'Nhật → Việt' : 'Việt → Nhật';
   // Failed item → the menu leads with a rewrite step (feedback→revise→rewrite beats one-shot
-  // correction). Consolidation only: the rewrite is never re-graded.
-  const hasFail = result.items.some((i) => i.rating <= 2);
+  // correction). Consolidation only: the rewrite is never re-graded. NOT offered on a quiz: there is
+  // nothing to retype when the answer was a letter, and the offer sent the learner looking for a
+  // sentence to fix that the turn never asked them to write.
+  const hasFail = !isQuiz && result.items.some((i) => i.rating <= 2);
   const goalReached = t.sentences >= result.sessionGoal;
   const baseMenu = isTeachBack
     ? '1. Mẫu tiếp · 2. Giảng kỹ mẫu này · 3. Đổi cài đặt · 4. Xem tiến độ · 5. Kết thúc buổi'
@@ -120,9 +130,13 @@ export function renderGradeResult(result: SubmitReviewResult, now: Date = new Da
   return joinLines([
     '### Kết quả lượt này',
     '',
-    isTeachBack ? `**Mẫu:** ${result.sourceText}` : `**Đề (${dirLabel}):** ${result.sourceText}`,
-    `**${isTeachBack ? 'Bạn giảng' : 'Bạn dịch'}:** ${result.userAnswer}`,
-    result.suggested ? `**Tham khảo:** ${result.suggested}` : null,
+    isTeachBack
+      ? `**Mẫu:** ${result.sourceText}`
+      : isQuiz
+        ? `**Câu hỏi:** ${result.sourceText}`
+        : `**Đề (${dirLabel}):** ${result.sourceText}`,
+    `**${isTeachBack ? 'Bạn giảng' : isQuiz ? 'Bạn chọn' : 'Bạn dịch'}:** ${result.userAnswer}`,
+    result.suggested ? `**${isQuiz ? 'Đáp án' : 'Tham khảo'}:** ${result.suggested}` : null,
     // The /100 score lives in the server-owned block so it appears in EVERY chat, not just history:
     // Claude sent it to submit_review, but a score outside this verbatim block was being dropped from
     // the reply (the 2026-07-25 fix). The line used to be OMITTED when score was null — silence in the
@@ -140,8 +154,16 @@ export function renderGradeResult(result: SubmitReviewResult, now: Date = new Da
       ? ['', ...result.ratingNotes.map((n) => `> **Đánh giá đã hạ:** ${n}`)]
       : []),
     '',
+    // Ba trạng thái, không phải hai. `dueNow === 0` từng in thẳng "đã sạch hàng đợi", nên trên một
+    // tài khoản mới dòng này nói "câu 2/10 — đã sạch hàng đợi": nửa đầu bảo còn 8 câu, nửa sau bảo
+    // hết việc. Đo trong lab 2026-08-12: ba mẫu vừa học đang ở learning step, đến hạn sau 5-10 phút,
+    // và `dueNow` không đếm chúng. "Hết việc" chỉ đúng khi KHÔNG CÒN GÌ trong hàng đợi cả.
     `**Hôm nay:** ${t.reviews} lượt ôn · ${t.newGrammar} mẫu mới · câu **${t.sentences}/${result.sessionGoal}**` +
-      (result.dueNow > 0 ? ` — còn **${result.dueNow}** mẫu đến hạn` : ' — đã sạch hàng đợi'),
+      (result.dueNow > 0
+        ? ` — còn **${result.dueNow}** mẫu đến hạn`
+        : result.nextDueAt
+          ? ` — hàng đợi trống lúc này, mẫu tiếp đến hạn ${humanizeUntil(result.nextDueAt, now)}`
+          : ' — đã sạch hàng đợi'),
     goalReached
       ? `**Đạt mục tiêu hôm nay (${result.sessionGoal} câu)!** Kết thúc đẹp tại đây (chọn 5.) hoặc cứ tiếp tục.`
       : null,
@@ -262,7 +284,19 @@ export function renderStats(
     '### Tiến độ',
     '',
     `- **Đến hạn bây giờ:** ${stats.dueNow} · **chưa học lần nào:** ${stats.newItems}`,
-    `- **Hôm nay:** ${stats.today.reviews} lượt · ${stats.today.newGrammar} mẫu mới`,
+    // THE DAY'S PLAN, at the one moment it can still change the day. The result block after every turn
+    // says "câu X/10", but this block — the session OPENER — said only "N lượt · M mẫu mới", so the
+    // learner met the daily goal for the first time at the END of turn one, and the cap that governs
+    // whether the goal is even reachable appeared nowhere at all.
+    //
+    // Measured in the lab 2026-08-12, fresh account on stock defaults (sessionGoal 10,
+    // dailyNewGrammar 3, maxNewPerSentence 1): three new patterns bought three sentences, their
+    // learning-step returns came back BUNDLED three-to-a-sentence, and mastery mode could not take
+    // over (MASTERY_MIN_GRADUATED is 8, the account had 2 graduated). The day tops out around FIVE of
+    // ten and then reports no items — which reads as the app breaking, not as two settings disagreeing.
+    // Stating both numbers here does not resolve that disagreement; it makes it visible on turn zero,
+    // to the one person entitled to resolve it.
+    `- **Hôm nay:** ${stats.today.reviews} lượt · câu **${stats.today.sentences}/${stats.settings.sessionGoal}** · mẫu mới ${stats.today.newGrammar}/${stats.settings.dailyNewGrammar} (hạn mức ngày)`,
     `- **Chuỗi ngày học:** ${stats.streak.current} ngày (kỷ lục ${stats.streak.longest})`,
     `- **Kho:** ${total} mẫu ngữ pháp · 7 ngày qua: ${stats.reviewsLast7Days} lượt`,
     `- **Dự báo 7 ngày tới:** ${forecast}`,
@@ -657,8 +691,16 @@ export function renderDueBatch(batch: DueBatch): string {
       : '';
     // New patterns exist but sit outside the study levels → the batch is empty for a fixable
     // reason, not because the user is truly done. Tell Claude so it doesn't wrongly close the day.
+    // GUARDED on there being nothing new left AT the studied levels. `newBeyondLevels` counts new
+    // patterns at OTHER levels, and on its own it says nothing about whether the learner is out of
+    // material — so this note used to fire while the library still held plenty at the level they
+    // study. Measured in the lab 2026-08-12, on a fresh N5 account: 12 N5 patterns, 3 learned, the
+    // batch emptied by settings.dailyNewGrammar — and this note told the tutor to offer a day-one N5
+    // learner "widen your levels (N4)" or "import grammar at the level you are studying", with NINE
+    // untouched N5 patterns sitting right there. Both offers were wrong, and the correct fix (raise
+    // the daily cap, or wait for the learning step) was already on the HELD BACK line below it.
     const beyond =
-      batch.newBeyondLevels > 0
+      batch.newBeyondLevels > 0 && batch.newAvailable.grammar === 0
         ? ` NOTE: ${batch.newBeyondLevels} unlearned NEW patterns remain, but at levels OUTSIDE ` +
           `settings.grammarLevels (currently studying: ${batch.settings.grammarLevels.join(', ')}). Do NOT ` +
           `conclude ` +
@@ -714,6 +756,29 @@ export function renderDueBatch(batch: DueBatch): string {
   const srcChars = srcIsJa ? size.ja : size.vi;
   const srcLang = srcIsJa ? 'Japanese' : 'Vietnamese';
   const vocabLevel = vocabTargetLevel(batch);
+  // GRADED pattern count = what the batch ACTUALLY holds, not what the size setting asks for. The two
+  // diverge on nearly every early sentence, because the new-pattern quotas hold patterns back — and
+  // this line used to print the SETTING while the list right below it carried fewer. Measured in the
+  // lab 2026-08-12 on a fresh account: "weave in **3** grammar pattern(s)" above a list of exactly
+  // ONE, on all three of the first sentences. The protocol reads this line AND "the number of grammar
+  // patterns woven in = exactly the number of items in the batch" AND "NEVER compose around a pattern
+  // that is not listed in the batch", so the sheet was handing Claude two different numbers for one
+  // decision — the conflicting-directive failure `.claude/rules/README.md` names as the thing that
+  // makes a model worse, and here it sat in the hottest path in the app.
+  // VOCAB riders are excluded on purpose: they are graded but sit OUTSIDE the grammar-pattern count.
+  const gradedPatterns = batch.items.filter((i) => i.role !== 'VOCAB').length;
+  const patternNote =
+    gradedPatterns === size.patterns
+      ? `weave in **${gradedPatterns}** grammar pattern(s)`
+      : `weave in **${gradedPatterns}** grammar pattern(s) — sentenceSize "${batch.settings.sentenceSize}" ` +
+        `asks for ${size.patterns}, but only ${gradedPatterns} ${gradedPatterns === 1 ? 'is' : 'are'} ` +
+        `scheduled right now` +
+        // Only point at that line when it EXISTS. Naming a line that is not on the sheet sends Claude
+        // looking for a reason it cannot find, and then improvising one to the learner.
+        (batch.withheld.length > 0 ? ' (a HELD BACK line below names the cap that did it)' : '') +
+        `. Reach the character target with LOWER-level SCAFFOLDING, never with a pattern that is not ` +
+        `listed below — an unlisted pattern gets no rating and no review, so that part of the sentence ` +
+        `is wasted work`;
   // Whole-level focus: scheduled slots are pure to the level; naturalness is scaffolded, not filled.
   const levelFocusOnly = !!batch.focus?.levels?.length && !batch.focus?.patterns?.length;
   // A focus request where NO requested pattern survived into the batch. The sheet used to assert
@@ -791,7 +856,7 @@ export function renderDueBatch(batch: DueBatch): string {
     furiganaNote,
     rubyNote,
     '',
-    `Direction: **${batch.direction}** · source length: ~${srcChars} characters (${srcLang}, ±30%) · weave in **${size.patterns}** grammar pattern(s) · register: ${batch.settings.register} · grading: ${batch.settings.translationStyle}`,
+    `Direction: **${batch.direction}** · source length: ~${srcChars} characters (${srcLang}, ±30%) · ${patternNote} · register: ${batch.settings.register} · grading: ${batch.settings.translationStyle}`,
     // difficulty used to be shipped as a bare "2/5" — an integer the grader and the composer could
     // read differently. Ship the ANCHOR text instead, so the setting means one thing (2026-07-26).
     `STRUCTURE (difficulty ${batch.settings.difficulty}/5): ${DIFFICULTY_ANCHORS[batch.settings.difficulty]?.en ?? ''} — this is about SHAPE only; vocabulary hardness is the VOCABULARY line, novelty is capped separately, length is the character target above`,

@@ -11,13 +11,19 @@ export function registerQuizTools(server: McpServer) {
       '{ kind, count, items[{ itemId, expression, reading, meaningVi, notes, level, enrichment ' +
       '(structure/examples/pitfalls/CONTRASTS — use enrichment.contrasts to build the 3 confusable ' +
       'DISTRACTORS, compose the sentence and explain it), isNew ], contrastCandidates, ' +
-      'sameLevelCandidates }. **Build the 3 distractors from `contrastCandidates`** — real patterns ' +
+      'sameLevelCandidates, newCapReached }. **Build the 3 distractors from `contrastCandidates`** — real patterns ' +
       "from this learner's library that are confusable with the target (its own contrasts PLUS every " +
       'card that names it as a contrast, a reverse link no single card holds). `sameLevelCandidates` ' +
       'is a weaker top-up; inventing a pattern from memory is the last resort and is where option sets ' +
       'with no single correct answer come from (cards average 1.6 contrasts against the 3 a question ' +
       'needs). Cannot assemble 3 genuinely confusable ones? Choose a DIFFERENT target pattern rather ' +
-      'than ship a bad question. You do NOT choose where the correct ' +
+      'than ship a bad question. The daily NEW-pattern cap (settings.dailyNewGrammar) applies HERE TOO, ' +
+      'exactly as it does in get_due_items — it is a budget for the DAY, not for one loop. ' +
+      '`newCapReached: true` means today’s new-pattern budget is spent, so this batch was NOT topped up ' +
+      'with a never-seen pattern: with items still returned, quiz those (they are reviews); with items ' +
+      'EMPTY, say plainly that today’s new-pattern quota is used up and offer either raising ' +
+      'settings.dailyNewGrammar (update_settings) or coming back tomorrow — never imply the library is ' +
+      'empty. You do NOT choose where the correct ' +
       'answer sits: send the target + 3 distractors to stage_sentence as `quiz` (REQUIRED — the call ' +
       'is refused without it) and the server lays ' +
       'them out into A-D and hands you back the line to display. Due items come first per FSRS, topped up with NEW items ' +

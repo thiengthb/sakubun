@@ -3,7 +3,9 @@ import {
   buildQuizOptions,
   MAX_DISTRACTOR_CANDIDATES,
   mergeDistractorCandidates,
+  parseQuizOptionLine,
   QUIZ_LETTERS,
+  quizAnswerMismatch,
 } from '@/lib/quiz-options';
 
 // A cycling rand, so a test can pin the shuffle instead of hoping.
@@ -111,5 +113,67 @@ describe('candidate distractors come from the library, not from memory', () => {
 
   it('skips blanks instead of emitting empty options', () => {
     expect(mergeDistractorCandidates('t', [['', '  ', 'real']])).toEqual(['real']);
+  });
+});
+
+// Reading the layout back, and catching a grade written against the WRONG letter.
+//
+// The 2026-07-28 change took placement away from Claude, which fixed WHERE the answer sits and left the
+// other half open: nothing checked that whoever graded the turn read that placement correctly. Caught in
+// the lab 2026-08-12 — the server put the target at D and the turn was recorded as "Chọn A: <pattern at
+// D>". A mis-mapped letter can tell a learner they were wrong when they were right, and writes an FSRS
+// row from it.
+describe('parseQuizOptionLine', () => {
+  const line = '**A.** 〜ないでください · **B.** 〜ながら · **C.** 〜たほうがいいです · **D.** 〜てもいいです';
+
+  it('reads the four options back out of the rendered line', () => {
+    expect(parseQuizOptionLine(line)).toEqual([
+      { letter: 'A', pattern: '〜ないでください' },
+      { letter: 'B', pattern: '〜ながら' },
+      { letter: 'C', pattern: '〜たほうがいいです' },
+      { letter: 'D', pattern: '〜てもいいです' },
+    ]);
+  });
+
+  it('finds the line where it actually lives — appended under the question', () => {
+    const stored = `この部屋でご飯を食べ（＿＿）か。\n\n${line}`;
+    expect(parseQuizOptionLine(stored)).toHaveLength(4);
+  });
+
+  it('round-trips whatever buildQuizOptions rendered', () => {
+    const built = buildQuizOptions('〜わけにはいかない', ['〜ざるをえない', '〜ようがない', '〜どころか']);
+    expect(parseQuizOptionLine(built.line)).toEqual(built.options);
+  });
+});
+
+describe('quizAnswerMismatch', () => {
+  const line = '**A.** 〜ないでください · **B.** 〜ながら · **C.** 〜たほうがいいです · **D.** 〜てもいいです';
+  const src = `この部屋でご飯を食べ（＿＿）か。\n\n${line}`;
+
+  it('flags the exact lab case: says A, quotes the pattern sitting at D', () => {
+    expect(quizAnswerMismatch(src, 'Chọn A: 〜てもいいです')).toEqual({
+      named: 'A',
+      shouldBe: 'D',
+      patternAtNamed: '〜ないでください',
+    });
+  });
+
+  it('stays silent when the letter and the pattern agree', () => {
+    expect(quizAnswerMismatch(src, 'Chọn D: 〜てもいいです')).toBeNull();
+    expect(quizAnswerMismatch(src, 'Đáp án B — 〜ながら')).toBeNull();
+  });
+
+  it('tolerates a decorated quote of the same pattern (normalised comparison)', () => {
+    expect(quizAnswerMismatch(src, 'Chọn D: 「てもいいです」')).toBeNull();
+  });
+
+  // The conservative half, and it is the half that keeps the guard usable: `userAnswer` is free text a
+  // model writes, so anything it cannot resolve to a DIFFERENT option must pass. A guard that fires on
+  // unfamiliar phrasing rejects honest turns, which costs more than the bug it prevents.
+  it('says nothing when there is no letter, no pattern, or no recognisable option', () => {
+    expect(quizAnswerMismatch(src, '〜てもいいです')).toBeNull(); // no letter
+    expect(quizAnswerMismatch(src, 'Chọn A')).toBeNull(); // no pattern quoted
+    expect(quizAnswerMismatch(src, 'Chọn A: không biết')).toBeNull(); // quotes nothing on the line
+    expect(quizAnswerMismatch('không có dòng phương án', 'Chọn A: 〜ながら')).toBeNull();
   });
 });

@@ -42,6 +42,7 @@ import {
   MAX_DISTRACTOR_CANDIDATES,
   mergeDistractorCandidates,
   type QuizOptions,
+  quizAnswerMismatch,
 } from '@/lib/quiz-options';
 import { earnedRating, type Rating } from '@/lib/rating-guard';
 import { type Streak, computeStreak, studyDayKey } from '@/lib/streak';
@@ -131,6 +132,12 @@ export const VOCAB_KIND = 'VOCAB';
 
 /** The exercise type whose answer is an EXPLANATION, not a translation (plan §10, shipped 2026-07-27). */
 export const TEACH_BACK_EXERCISE = 'TEACH_BACK';
+/**
+ * A multiple-choice turn. Named for the SAME reason as TEACH_BACK: the result block is server-owned and
+ * labels the turn, and a quiz is not a translation — the learner picked a letter, they did not translate
+ * anything (see `renderGradeResult`).
+ */
+export const QUIZ_EXERCISE = 'QUIZ';
 
 export async function addItems(
   entries: ItemInput[],
@@ -824,6 +831,12 @@ export interface SubmitReviewResult {
   ratingNotes: string[];
   today: TodayCounts;
   dueNow: number;
+  /**
+   * Soonest GRAMMAR review still ahead (`null` = nothing queued at all). Distinct from `dueNow`, and
+   * the distinction is the point: `dueNow === 0` means "nothing to do THIS SECOND", which is not the
+   * same as "done for today" while a learning step is five minutes out.
+   */
+  nextDueAt: Date | null;
   /** Daily sentence goal (settings.sessionGoal) — rendered as "câu X/goal" progress. */
   sessionGoal: number;
   /**
@@ -1061,6 +1074,23 @@ export async function submitReview(
     );
   }
 
+  // QUIZ ONLY — refuse a recorded answer that contradicts the option layout the server itself chose.
+  // Refusing rather than tolerating, for the same reason stage_sentence refuses a quiz with no options:
+  // the rating was produced by reading that letter, so a mis-read letter makes the rating wrong, not
+  // merely the wording. Nothing is written yet, so a corrected retry loses no rating.
+  if (sentence.exerciseType === QUIZ_EXERCISE) {
+    const clash = quizAnswerMismatch(sentence.sourceText, input.userAnswer);
+    if (clash) {
+      throw new Error(
+        `Lượt quiz này ghi "chọn ${clash.named}" nhưng mẫu bạn nêu kèm lại là phương án ` +
+          `${clash.shouldBe}; phương án ${clash.named} là 「${clash.patternAtNamed}」. Vị trí đáp án do ` +
+          `SERVER xếp ở bước stage_sentence, nên hãy đọc lại đúng dòng phương án đã trả về. ` +
+          `KHÔNG ghi gì cả: hãy gọi lại submit_review với cùng sentenceId, userAnswer đúng chữ cái người ` +
+          `học đã chọn, và rating chấm theo phương án ở chữ cái ĐÓ.`,
+      );
+    }
+  }
+
   // Dedupe ratings (one signal per item per sentence).
   const unique = new Map<string, RatingInput>();
   for (const r of input.ratings) if (!unique.has(r.itemId)) unique.set(r.itemId, r);
@@ -1237,7 +1267,7 @@ export async function submitReview(
   await prisma.$transaction(writes);
   invalidateStreak(); // a fresh review may tick the streak up — drop the cache so the beacon sees it
 
-  const [today, dueNow, calibration, learnerNote] = await Promise.all([
+  const [today, dueNow, nextDueAt, calibration, learnerNote] = await Promise.all([
     todayCounts(settings, now),
     // GRAMMAR-scoped like every other due-count (getDueBatch/getStats): the "Kết quả lượt này" block's "còn N mẫu đến
     // hạn" is the grammar queue — due VOCAB rides its own budget and must never inflate it (anti-N5-drag).
@@ -1247,6 +1277,20 @@ export async function submitReview(
         state: { not: 0 },
         item: { suspended: false, kind: GRAMMAR_KIND },
       },
+    }),
+    // The SOONEST upcoming review, so the result block can say when work comes back instead of
+    // claiming the queue is empty. `dueNow` counts only `due <= now`, so an item sitting in a
+    // learning step (minutes away) made the block print "đã sạch hàng đợi" next to "câu 2/10" —
+    // two halves of one line contradicting each other, measured in the lab 2026-08-12 on a fresh
+    // account whose three learning-step items were 5-10 minutes out.
+    prisma.srsState.findFirst({
+      where: {
+        due: { gt: now },
+        state: { not: 0 },
+        item: { suspended: false, kind: GRAMMAR_KIND },
+      },
+      orderBy: { due: 'asc' },
+      select: { due: true },
     }),
     // SHADOW ONLY: runs AFTER the write so it sees the ability this turn just produced, and returns a
     // proposal nobody applies. A failure here must never fail a graded review — the review is the
@@ -1305,6 +1349,7 @@ export async function submitReview(
     score: input.score ?? null, // echo Claude's /100 score back so the result block can show it
     today,
     dueNow,
+    nextDueAt: nextDueAt?.due ?? null,
     sessionGoal: settings.sessionGoal,
     calibration,
     learnerNote,
@@ -1663,6 +1708,12 @@ export interface QuizBatch {
    * an obviously-wrong option, which is its own kind of broken question.
    */
   sameLevelCandidates: string[];
+  /**
+   * TRUE when today's `dailyNewGrammar` budget is spent, so this batch was NOT topped up with a
+   * never-seen pattern. Reported rather than left silent: an empty `items` here is otherwise
+   * indistinguishable from an empty library, and Claude would tell the learner the wrong thing.
+   */
+  newCapReached: boolean;
 }
 
 /**
@@ -1743,7 +1794,19 @@ export async function getQuizBatch(
     item: s.item,
     isNew: false,
   }));
-  if (picked.length < n) {
+  // The daily NEW-pattern cap belongs to the DAY, not to one loop. This top-up used to ignore it
+  // entirely, so the same setting meant two different things depending on which loop the learner was
+  // in: measured 2026-08-12 in the lab, a quiz turn taken straight after the translation loop had spent
+  // all 3 of `settings.dailyNewGrammar` introduced a FOURTH never-seen pattern, and the day's counter
+  // read "4 mẫu mới" against a cap of 3. A learner who deliberately sets a slow pace and then does
+  // twenty quiz questions would have twenty new patterns pushed into FSRS by a setting that says it
+  // prevents exactly that. GRAMMAR only — `dailyNewGrammar` is a grammar budget, and vocab rides its own.
+  const newBudget =
+    kind === GRAMMAR_KIND
+      ? Math.max(0, settings.dailyNewGrammar - (await todayCounts(settings, now)).newGrammar)
+      : n;
+  const newCapReached = kind === GRAMMAR_KIND && newBudget === 0;
+  if (picked.length < n && newBudget > 0) {
     const newItems = await prisma.item.findMany({
       where: {
         kind,
@@ -1752,7 +1815,7 @@ export async function getQuizBatch(
         ...(kind === GRAMMAR_KIND ? { level: { in: settings.grammarLevels } } : {}),
       },
       orderBy: { createdAt: 'asc' },
-      take: n - picked.length,
+      take: Math.min(n - picked.length, newBudget),
     });
     for (const item of newItems) picked.push({ item, isNew: true });
   }
@@ -1768,6 +1831,7 @@ export async function getQuizBatch(
   return {
     kind,
     count: picked.length,
+    newCapReached,
     ...candidates,
     items: picked.map(({ item, isNew }) => ({
       itemId: item.id,

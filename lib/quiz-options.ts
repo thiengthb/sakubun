@@ -126,3 +126,63 @@ export function buildQuizOptions(
     line: options.map((o) => `**${o.letter}.** ${o.pattern}`).join(' · '),
   };
 }
+
+/**
+ * Read an option line back into its letter → pattern map — the inverse of `line` above.
+ *
+ * The layout is persisted ONLY as that rendered line, appended to `Sentence.sourceText` at stage time
+ * (there is no quiz column). So this is the only way to audit a quiz turn after the fact, which is what
+ * `quizAnswerMismatch` below needs.
+ */
+export function parseQuizOptionLine(text: string): { letter: QuizLetter; pattern: string }[] {
+  const out: { letter: QuizLetter; pattern: string }[] = [];
+  for (const letter of QUIZ_LETTERS) {
+    // Each entry runs to the next "**X.**" marker or end of line, so a pattern containing · survives.
+    const m = new RegExp(`\\*\\*${letter}\\.\\*\\*\\s*([^\\n]*?)(?=\\s*·\\s*\\*\\*[A-D]\\.\\*\\*|\\s*$)`, 'm').exec(text);
+    if (m?.[1]?.trim()) out.push({ letter, pattern: m[1].trim() });
+  }
+  return out;
+}
+
+/**
+ * A quiz answer that CONTRADICTS ITSELF: it names a letter, and it names a pattern, and the pattern at
+ * that letter is a different one.
+ *
+ * Why this is worth a machine check. The server took placement away from Claude in 2026-07-28 because
+ * position bias could not be confirmed or denied from the data. It fixed WHERE the answer sits, and left
+ * the other half open: nothing verified that the grader READ the placement correctly. Caught in the lab
+ * 2026-08-12 — the server put the target at D, the turn was recorded as "Chọn A: <the pattern at D>",
+ * and both the rating and the learner-facing block were written from that. A mis-mapped letter means the
+ * learner can be told they were wrong when they were right, and an FSRS row is written from it.
+ *
+ * DELIBERATELY CONSERVATIVE — it reports a mismatch only when it can point at the letter the answer
+ * should have carried. A userAnswer with no letter, no pattern, or no recognisable option is not a
+ * finding: `userAnswer` is free text written by a model, and a guard that fires on unfamiliar phrasing
+ * would reject honest turns, which costs more than the bug it prevents.
+ */
+export function quizAnswerMismatch(
+  sourceText: string,
+  userAnswer: string,
+): { named: QuizLetter; shouldBe: QuizLetter; patternAtNamed: string } | null {
+  const options = parseQuizOptionLine(sourceText);
+  if (options.length !== QUIZ_OPTION_COUNT) return null;
+
+  // First standalone A-D in the answer, so "Chọn C: …" and "Đáp án B — …" and a bare "C" all read.
+  const letterMatch = /(?:^|[^A-Za-z])([A-D])(?![A-Za-z])/.exec(userAnswer);
+  if (!letterMatch) return null;
+  const named = letterMatch[1] as QuizLetter;
+
+  const rest = normalizeExpression(userAnswer.slice(letterMatch.index + letterMatch[0].length));
+  if (!rest) return null;
+
+  const at = options.find((o) => o.letter === named);
+  if (!at) return null;
+  if (rest.includes(normalizeExpression(at.pattern))) return null; // letter and pattern agree
+
+  // Only a finding when some OTHER option is the one actually named — otherwise the answer simply does
+  // not quote a pattern we can recognise, and silence is the honest response.
+  const shouldBe = options.find(
+    (o) => o.letter !== named && rest.includes(normalizeExpression(o.pattern)),
+  );
+  return shouldBe ? { named, shouldBe: shouldBe.letter, patternAtNamed: at.pattern } : null;
+}

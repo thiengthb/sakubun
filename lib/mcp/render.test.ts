@@ -72,6 +72,7 @@ describe('renderGradeResult', () => {
     score: 85,
     today: { reviews: 5, newGrammar: 0, sentences: 2 },
     dueNow: 2,
+    nextDueAt: null,
     sessionGoal: 10,
     calibration: null,
     learnerNote: null,
@@ -114,6 +115,56 @@ describe('renderGradeResult', () => {
     const md = renderGradeResult({ ...result, items: [{ ...result.items[0], rating: 1 }] }, NOW);
     expect(md).toContain('Gõ lại bản dịch đã sửa lỗi');
     expect(md).toContain('KHÔNG chấm lại');
+    expect(md).toContain('1. Câu tiếp'); // the numbered menu is still intact
+  });
+
+  // "Đã sạch hàng đợi" is a claim about the DAY, and `dueNow` only knows about this second. Measured in
+  // the lab 2026-08-12 on a fresh account: after sentence 2 the line read "câu **2/10** — đã sạch hàng
+  // đợi", while three just-learned patterns sat in learning steps 5-10 minutes out. Half the line said
+  // eight sentences to go, the other half said there was nothing to do, and it is the line the learner
+  // reads after EVERY turn.
+  it('an empty-right-now queue with work coming back says WHEN, not "đã sạch"', () => {
+    const md = renderGradeResult(
+      {
+        ...result,
+        dueNow: 0,
+        nextDueAt: new Date('2026-07-06T10:06:00Z'), // a learning step, 6 minutes out
+      },
+      NOW,
+    );
+    expect(md).toContain('mẫu tiếp đến hạn 6 phút nữa');
+    expect(md).not.toContain('đã sạch hàng đợi');
+  });
+
+  it('"đã sạch hàng đợi" is reserved for a queue with nothing left in it at all', () => {
+    const md = renderGradeResult({ ...result, dueNow: 0, nextDueAt: null }, NOW);
+    expect(md).toContain('đã sạch hàng đợi');
+  });
+
+  // A QUIZ turn is not a translation. Same defect as the teach-back one fixed on 2026-07-27, one
+  // exercise type over — it survived because only teach-back had been given a name. Found in the lab
+  // 2026-08-12 driving a real quiz over MCP.
+  it('a QUIZ turn is labelled as a choice, with an answer key and no rewrite offer', () => {
+    const md = renderGradeResult(
+      {
+        ...result,
+        exerciseType: 'QUIZ',
+        sourceText: 'すみません、ここで写真を撮っ（＿＿）か。',
+        userAnswer: 'Chọn C: 〜たことがあります',
+        suggested: 'Đáp án: 〜てもいいです',
+        items: [{ ...result.items[0], rating: 1 }],
+      },
+      NOW,
+    );
+    expect(md).toContain('**Câu hỏi:** すみません');
+    expect(md).toContain('**Bạn chọn:** Chọn C');
+    expect(md).toContain('**Đáp án:** Đáp án: 〜てもいいです');
+    expect(md).not.toContain('Đề (Nhật → Việt)');
+    expect(md).not.toContain('Bạn dịch');
+    expect(md).not.toContain('**Tham khảo:**');
+    // Nothing to retype when the answer was a letter — the menu must not send them looking for a
+    // sentence the turn never asked them to write.
+    expect(md).not.toContain('Gõ lại bản dịch');
     expect(md).toContain('1. Câu tiếp'); // the numbered menu is still intact
   });
 
@@ -245,6 +296,58 @@ describe('renderDueBatch', () => {
       items: [{ ...plainItem, id: 'a', expression: '〜けど', meaningVi: 'nhưng', role: 'TARGET' }],
     });
     expect(md).not.toContain('HELD BACK');
+  });
+
+  // THE SHEET MAY NEVER ASK FOR MORE PATTERNS THAN IT HANDS OVER.
+  //
+  // Measured in the lab 2026-08-12, driving a real session over MCP on a fresh N5 account: every one
+  // of the first three sentences got a sheet reading "weave in **3** grammar pattern(s)" above a list
+  // of exactly ONE, because `maxNewPerSentence` had held the others back. The protocol simultaneously
+  // tells Claude "the number of grammar patterns woven in = exactly the number of items in the batch"
+  // and "NEVER compose around a pattern that is not listed in the batch" — so this line was handing it
+  // a third, contradicting number for the same decision, on the hottest path in the app.
+  //
+  // Both directions are pinned: the count must FOLLOW the batch, and it must not gain a spurious
+  // explanation when the batch is already full. VOCAB riders are excluded because they are graded but
+  // sit outside the grammar-pattern budget.
+  it('the pattern count follows the BATCH, not the sentenceSize setting', () => {
+    const one = renderDueBatch({
+      ...baseBatch,
+      items: [{ ...plainItem, id: 'a', expression: '〜けど', meaningVi: 'nhưng', role: 'TARGET' }],
+      withheld: [{ expression: '〜のに', reason: 'per-sentence-new-cap', focusHit: false }],
+    });
+    expect(one).toContain('weave in **1** grammar pattern(s)');
+    expect(one).not.toContain('weave in **3**');
+    // …and it says WHY the two numbers differ, plus what to do about the leftover length.
+    expect(one).toContain('sentenceSize "medium" asks for 3');
+    expect(one).toContain('LOWER-level SCAFFOLDING');
+    expect(one).toContain('HELD BACK line below names the cap');
+  });
+
+  it('a VOCAB rider does not count toward the grammar-pattern budget', () => {
+    const md = renderDueBatch({
+      ...baseBatch,
+      items: [
+        { ...plainItem, id: 'a', expression: '〜けど', meaningVi: 'nhưng', role: 'TARGET' },
+        { ...plainItem, id: 'v', expression: '台所', meaningVi: 'nhà bếp', role: 'VOCAB' },
+      ],
+    });
+    expect(md).toContain('weave in **1** grammar pattern(s)');
+  });
+
+  it('a batch that already matches the size setting gets the plain line, with no excuse attached', () => {
+    const md = renderDueBatch({
+      ...baseBatch,
+      items: ['a', 'b', 'c'].map((id) => ({
+        ...plainItem,
+        id,
+        expression: `〜${id}`,
+        meaningVi: id,
+        role: 'SECONDARY' as const,
+      })),
+    });
+    expect(md).toContain('weave in **3** grammar pattern(s) ·');
+    expect(md).not.toContain('asks for');
   });
 
   it('weakness focus (matched > 0) leads with the WEAK-SPOT DRILL header', () => {
@@ -533,6 +636,30 @@ describe('renderDueBatch', () => {
     expect(md).toContain('Do NOT conclude');
   });
 
+  // The other half, and it is the half that was wrong. `newBeyondLevels > 0` says nothing about
+  // whether the learner is out of material at the level they STUDY, so on its own it must not send
+  // Claude to offer "widen your levels" or "import grammar at your level".
+  //
+  // Measured in the lab 2026-08-12 on a fresh N5 account: 12 N5 patterns, 3 learned, the batch emptied
+  // by settings.dailyNewGrammar with NINE untouched N5 patterns left — and the sheet asked the tutor to
+  // push a day-one N5 learner up to N4, or to import more of the very level they already had plenty
+  // of. Neither offer could help; the fix that would (raise the daily cap, or wait out the learning
+  // step) was already on the HELD BACK line right beside it.
+  it('does NOT offer to widen levels while new patterns remain AT the studied level', () => {
+    const md = renderDueBatch({
+      ...baseBatch,
+      newBeyondLevels: 3,
+      newAvailable: { grammar: 9 }, // nine unlearned N5 patterns still sitting there
+      withheld: [{ expression: '〜てもいいです', reason: 'daily-new-cap', focusHit: false }],
+      settings: { ...DEFAULT_SETTINGS, grammarLevels: ['N5'] },
+    });
+    expect(md).not.toContain('unlearned NEW patterns');
+    expect(md).not.toContain('widen levels');
+    // The actionable reason is still there — that is what should carry the turn.
+    expect(md).toContain('HELD BACK');
+    expect(md).toContain('settings.dailyNewGrammar');
+  });
+
   it('carries the do-not-show warning, enrichment digest, leech marker and context guard', () => {
     const md = renderDueBatch({
       ...baseBatch,
@@ -564,7 +691,10 @@ describe('renderDueBatch', () => {
     // Every prompt-enforced knob must be ON the sheet (vocab target, char length, patterns, furigana).
     expect(md).toContain('VOCABULARY: **target N5 exactly**');
     expect(md).toContain('~32 characters (Japanese');
-    expect(md).toContain('weave in **3** grammar pattern(s)');
+    // ONE item in the batch ⇒ the sheet says ONE, even though sentenceSize "medium" asks for 3. This
+    // line used to print the SETTING (3) above a list of one, which is the number Claude then tried to
+    // hit — see the pair of tests below.
+    expect(md).toContain('weave in **1** grammar pattern(s)');
     expect(md).toContain('FURIGANA (Claude does NOT insert it'); // default mode 'app' → Claude doesn't inline
     expect(md).toContain('〜けど');
     expect(md).toContain('usage: Mệnh đề thường + けど');
@@ -727,6 +857,20 @@ describe('renderStats — the session-open block stays a single control surface'
     expect(md).not.toContain('Gợi ý dọn kho');
   });
 
+  // The session OPENER must carry the day's plan, not just the day's tally. Both numbers matter and
+  // for different reasons: the goal is what "done" means, and the daily new-pattern cap is what decides
+  // whether the goal is reachable at all. On stock defaults they disagree (goal 10, cap 3 — measured in
+  // the lab 2026-08-12 to top out near five sentences on day one), and this line is the only place the
+  // learner can see that BEFORE spending the day discovering it.
+  it('carries the daily goal and the new-pattern cap, not just the tally', () => {
+    const md = renderStats({
+      ...baseStats,
+      today: { reviews: 4, newGrammar: 3, sentences: 2 },
+    } as unknown as Parameters<typeof renderStats>[0]);
+    expect(md).toContain('câu **2/10**');
+    expect(md).toContain('mẫu mới 3/3 (hạn mức ngày)');
+  });
+
   it('shows retention with its verdict, and AT MOST ONE unnumbered suggestion', () => {
     const md = renderStats(baseStats, health());
     expect(md).toContain('**Ghi nhớ thực tế:** 72% (mục tiêu 90%)');
@@ -794,6 +938,7 @@ describe('the result block names what the learner actually DID', () => {
     score: 90,
     today: { reviews: 1, newGrammar: 0, sentences: 1 },
     dueNow: 0,
+    nextDueAt: null,
     sessionGoal: 10,
     calibration: null,
     learnerNote: null,
