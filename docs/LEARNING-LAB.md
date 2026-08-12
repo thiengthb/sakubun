@@ -1,7 +1,7 @@
 # Phòng lab học tập — quy trình đi hết MỘT BUỔI, không phải một lượt
 
 > Chủ: `@thi3n` · thêm 2026-08-12 · xem lại: 2026-11-12
-> Vì sao có file này: **mười** lỗi được tìm ra trong đúng một buổi chạy quy trình dưới đây, và **không
+> Vì sao có file này: **mười ba** lỗi được tìm ra trong đúng một buổi chạy quy trình dưới đây, và **không
 > lỗi nào trong số đó bị bất kỳ unit test hay e2e nào bắt được** — vì không lượt nào tự sai. Chúng chỉ
 > hiện ra khi đi liên tiếp nhiều lượt trên MỘT tài khoản. Danh sách đầy đủ:
 > `docs/progress/learning-loop-lab.md`.
