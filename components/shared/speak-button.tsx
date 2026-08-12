@@ -13,6 +13,12 @@ const IDLE_RESET_MS = 6000; // after this long idle, the next press starts at no
 // `speakWebSpeech`). Generous: a slow device can take a moment to warm an OS voice, and cutting a real
 // utterance short would be worse than the state this guards against.
 const SPEECH_START_TIMEOUT_MS = 2500;
+// How long the VOICEVOX path may go without playback actually STARTING before it is treated as stalled
+// and handed to Web Speech. Must clear the real worst case comfortably: measured 2026-08-12 against
+// production, one synthesis of a reference sentence took 2.0s cold, and a phone on mobile data adds to
+// that — so this is deliberately much longer than it "should" need. Cutting a slow-but-working play
+// short would trade a visible bug for an intermittent one.
+const AUDIO_START_TIMEOUT_MS = 9000;
 
 // Detect Web Speech support without a setState-in-effect (SSR snapshot = false, client = real check) —
 // useSyncExternalStore reconciles the two without a hydration mismatch.
@@ -126,6 +132,10 @@ export function SpeakButton({
       window.speechSynthesis.removeEventListener('voiceschanged', load);
       window.speechSynthesis.cancel(); // stop any in-flight utterance on unmount
       audioRef.current?.pause();
+      // NULL it, don't just pause it: the stall watchdog in `startPlay` checks this ref to decide
+      // whether the play it was hired to guard is still current, and a fallback that fires after the
+      // component is gone would speak into an unmounted card.
+      audioRef.current = null;
     };
   }, []);
 
@@ -259,14 +269,38 @@ export function SpeakButton({
       const fallback = () => {
         if (fellBack) return;
         fellBack = true;
+        window.clearTimeout(stallTimer);
+        audio.pause();
         audioRef.current = null;
         speakWebSpeech();
       };
+      // STALL WATCHDOG — the branch that produced the reported bug (learner, 2026-08-12, Safari on
+      // iPhone: "không có tiếng, nút quay mãi").
+      //
+      // Every exit from this path was EVENT-driven: `onended`, `onerror`, or a rejected `play()`. iOS
+      // Safari has a state that fires none of the three — it resolves `play()` and then simply never
+      // begins playback (no user-activation credit for this element, or the media decision was made
+      // before the 2-second VOICEVOX synthesis returned any bytes). With no event, `speaking` stayed
+      // true forever and the only way out was pressing the button a second time, which reads as
+      // "stop" — so the learner saw a spinner that never resolved and never heard anything. Desktop
+      // Chrome never hits it, which is exactly why this looked like "the speaker is broken on my phone".
+      //
+      // So the guard is TIME-driven, not event-driven, and it does not merely reset the button: it falls
+      // back to Web Speech, which on iOS has a real Japanese voice (Kyoko ships with the OS). Silence
+      // with a tidy button would still be a broken speaker.
+      const stallTimer = window.setTimeout(() => {
+        // Still OUR play? `stopAll()` (a second press) and unmount both null the ref, and a fallback
+        // fired after either of those would start talking when nobody asked — worse than the stall.
+        if (audioRef.current !== audio) return;
+        if (audio.currentTime > 0 && !audio.paused) return; // really playing — its events own the state
+        fallback();
+      }, AUDIO_START_TIMEOUT_MS);
       // Smooth karaoke sweep: highlight fraction = how far through the audio we are.
       audio.ontimeupdate = () => {
         if (audio.duration) onProgress?.(Math.min(1, audio.currentTime / audio.duration));
       };
       audio.onended = () => {
+        window.clearTimeout(stallTimer);
         audioRef.current = null;
         setSpeaking(false);
         onProgress?.(0);
