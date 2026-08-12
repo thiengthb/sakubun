@@ -1,7 +1,7 @@
 # Phòng lab học tập — quy trình đi hết MỘT BUỔI, không phải một lượt
 
 > Chủ: `@thi3n` · thêm 2026-08-12 · xem lại: 2026-11-12
-> Vì sao có file này: **mười ba** lỗi được tìm ra trong đúng một buổi chạy quy trình dưới đây, và **không
+> Vì sao có file này: **mười sáu** lỗi được tìm ra trong đúng một buổi chạy quy trình dưới đây, và **không
 > lỗi nào trong số đó bị bất kỳ unit test hay e2e nào bắt được** — vì không lượt nào tự sai. Chúng chỉ
 > hiện ra khi đi liên tiếp nhiều lượt trên MỘT tài khoản. Danh sách đầy đủ:
 > `docs/progress/learning-loop-lab.md`.
@@ -58,7 +58,7 @@ một app khác với app người học dùng.
 Một lỗi tìm được ở đây **chưa xong** khi đã sửa code. Nó xong khi có một phép kiểm tất định giữ chỗ,
 theo thứ tự rẻ dần của `.claude/rules/README.md`: `test > generator > lint/hook > … > RULE`.
 
-Mười ba lỗi của buổi 2026-08-12 và chỗ mỗi lỗi được ghim lại:
+Mười sáu lỗi của buổi 2026-08-12 và chỗ mỗi lỗi được ghim lại:
 
 | Lỗi | Ghim ở |
 |---|---|
@@ -75,6 +75,9 @@ Mười ba lỗi của buổi 2026-08-12 và chỗ mỗi lỗi được ghim l�
 | Sheet gửi `REQUIRED: suggestedRuby` cho chế độ mà giao thức CẤM trường đó | `lib/mcp/render.test.ts` — 3 ca, theo `exerciseType` |
 | Luật hiển thị mô tả một biên KHÔNG tồn tại, trên 3 trong 4 khối | `lib/mcp/render.test.ts` — 2 ca |
 | Thẻ lịch sử WEB gọi mọi lượt là "dịch" (lần thứ TƯ, bề mặt thứ hai) | `lib/turn-labels.test.ts` + `e2e/history-turn-labels.spec.ts` (đỏ↔xanh) |
+| `EXERCISE_TYPE_LABELS` không ràng buộc đủ → một kiểu thiếu là không lọc được | `lib/exercise-types.ts` — ràng buộc bằng KIỂU (bỏ một kiểu → build đỏ) |
+| Slider «Cỡ câu» đọc ra chỉ số `1` thay vì chữ «Ngắn» | `e2e/critical-path.spec.ts` — 1 ca, đỏ↔xanh |
+| Flake `critical-path` (đỏ 2/4 lần gate) | warmup mở route trong BROWSER + ngân sách riêng 180s |
 
 Lỗi thứ sáu là ví dụ tốt nhất cho luật này: nó bắt đầu là **lỗi của chính tôi khi đóng vai** (tôi ghi
 "chọn A" trong khi server xếp đáp án ở D), và trở thành một phép kiểm chặn được cả lớp lỗi đó mãi mãi.

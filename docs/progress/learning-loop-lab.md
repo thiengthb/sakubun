@@ -1,4 +1,4 @@
-# Vòng lặp học tập — đi hết một buổi, và mười lỗi rơi ra
+# Vòng lặp học tập — đi hết một buổi, và mười sáu lỗi rơi ra
 
 **2026-08-12.** Dựng phòng lab (`tooling/learning-lab.mjs`), đóng cả hai vai — Claude Desktop gọi MCP
 và người học trả lời — đi liên tiếp 8 lượt trên một tài khoản mới: 4 lượt dịch, 3 lượt quiz, một lượt
