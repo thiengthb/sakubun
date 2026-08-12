@@ -139,8 +139,9 @@ chấp compile lần đầu mà `warmup.setup.ts` tồn tại để giảm. Ghi 
     mặt, không được chỉ một", và `e2e/history-turn-labels.spec.ts` chốt việc trang có THẬT SỰ đọc bảng
     đó — chứng minh hai chiều: trả nhãn về bản in cứng thì ĐỎ.
 
-**Luật rút ra, đắt hơn cả bốn ca cộng lại:** sửa cùng một lớp lỗi lần thứ hai thì hỏ�i *còn bề mặt nào
-nữa cũng ánh xạ thứ này?* Ba lần đầu đều sửa đúng chỗ đang cháy và không ai đi tìm bản sao thứ hai.
+**Luật rút ra, đắt hơn cả bốn ca cộng lại:** sửa cùng một lớp lỗi lần thứ HAI thì hỏi ngay *"còn bề mặt
+nào nữa cũng ánh xạ thứ này?"* Ba lần đầu đều sửa đúng chỗ đang cháy, và không lần nào có ai đi tìm bản
+sao thứ hai — nên bản sao đó sống thêm hai tuần trên trang người học mở mỗi ngày.
 
 ## Một phát hiện KHÔNG sửa được bằng code
 
