@@ -8,12 +8,13 @@ status: active
 owner: "@ai"
 added: 2026-08-12
 expires-review: 2027-02-12
-occurrences: 5
+occurrences: 6
 evidence:
   - "sakubun 2026-07: `errorDigest` — đoán hình dạng chuỗi lỗi Prisma (đầu chuỗi, rồi 'đoạn cách bằng dòng trống'), e2e đỏ hai lần trước khi đọc chuỗi thật."
   - "sakubun 2026-08-11: điểm không hiện trên UI — đoán rằng log production không có lỗi nghĩa là app lành. Thật ra `score` là `.optional()` ở biên MCP (xem [[0004-prose-doi-truong-ma-schema-cho-phep-thieu]])."
   - "sakubun 2026-08-11: đoán ô tiêu đề bảng mất '~40px cho tay kéo + nút sắp xếp', đặt cột 64px → tiêu đề bị cắt thành 'C.', TỆ HƠN trước khi sửa. Đo ra: đúng 48px."
   - "sakubun 2026-08-11: mở issue #30 gọi một lỗi là lỗi production, kèm giả thuyết selective hydration của React. Hôm sau đo lại: tab đang `visibilityState: hidden` nên Chrome không render. Không có lỗi production nào."
+  - "sakubun 2026-08-12: đo nút loa trên hồ sơ iPhone, thấy cú bấm rơi vào một <span> và TUYÊN BỐ 'tìm ra: nút bị che'. Phép đo sai dụng cụ: `getByRole('button', {name:/phát âm/})` khớp cả THẺ lịch sử (role=button, tên tính từ nội dung), 358x114, nên tôi bấm giữa thẻ. Selector đúng → play() được gọi và phát bình thường."
   - "sakubun 2026-08-12: extension Chrome không nối. Đo registry key, manifest, allowed_origins, mtime của exe, thời điểm Chrome khởi động, số profile — LÀNH HẾT. Nguyên nhân thật: extension đăng nhập claude.ai bằng tài khoản khác Claude Code, đúng điều thông báo lỗi nói ở dòng đầu. Chủ repo tự tìm ra."
 artifacts:
   - "e2e/resources-tables.spec.ts (phép đo dùng-một-lần đã thành lưới thường trú: cộng scrollWidth-clientWidth, và bắt mọi th có span.truncate bị cắt)"
@@ -78,6 +79,17 @@ Nên luật có mệnh đề thứ hai: **trước khi đo vòng thứ ba, hỏi
 NHÌN THẤY được không?"** Nếu không — danh tính, phiên đăng nhập, quyền, thứ người dùng thấy trên màn hình
 của họ — thì một câu hỏi cho người dùng rẻ hơn năm phép đo, và không hỏi là cách sang trọng để đoán. Đọc
 kỹ thông báo lỗi cũng thuộc mục này: nó thường đã nêu đúng biến đó, và "đã đọc" không bằng "đã kiểm".
+
+**Và mệnh đề thứ ba: khi phép đo cho kết quả BẤT NGỜ, kiểm DỤNG CỤ trước khi kết luận.** Ca thứ sáu ở
+trên là loại này, và nó khác hai loại kia: tôi có đo, biến môi trường có khai, con số có thật — chỉ là
+nó đo một phần tử khác với phần tử tôi tưởng. `getByRole` tính tên phần tử TỪ NỘI DUNG, nên một thẻ
+`role=button` cũng khớp `/phát âm/` vì nó CHỨA cái nút đó; ô 358x114 trong log đã nói ra điều ấy ngay,
+và tôi đọc qua nó để đi tuyên bố "tìm ra". Một dòng in thêm — ô của phần tử tôi đang bấm — trả lời được
+tất cả.
+
+Dấu hiệu là chính cảm giác *bất ngờ*: "app hỏng theo cách kỳ lạ" gần như luôn rẻ hơn nếu đọc là "phép đo
+của tôi hỏng theo cách bình thường". Nên: **một kết quả bất ngờ mua thêm MỘT phép đo về dụng cụ, không
+mua một kết luận.**
 
 Và một phản xạ: **triệu chứng chỉ xuất hiện dưới công cụ tự động mà "người thật bấm thì được" → nghi
 công cụ trước, đừng nghi framework.** Nghi framework sinh ra một giả thuyết nghe rất kỹ thuật (lần đó là
