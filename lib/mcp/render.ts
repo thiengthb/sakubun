@@ -29,6 +29,7 @@ import {
   resolveVocabCeiling,
 } from '@/lib/settings-schema';
 import { LEECH_LAPSES, SUSPEND_SUGGEST_LAPSES } from '@/lib/srs';
+import { turnLabels } from '@/lib/turn-labels';
 
 /**
  * Level the sentence's VOCABULARY should aim at. An active whole-level focus wins over the settings —
@@ -79,15 +80,15 @@ function withheldLines(withheld: WithheldItem[]): string[] {
   });
 }
 
+/** Reference-line labels a result block can carry — one per exercise type (`lib/turn-labels.ts`). */
+const REFERENCE_LABELS = ['Tham khảo', 'Đáp án', 'Câu mẫu'] as const;
+
 /**
  * Display order prepended to blocks the user MUST see. Written as a direct instruction inside the
  * tool RESULT because that is what the client model reads right before composing its reply —
  * protocol text alone proved insufficient (live 2026-07-09: Claude paraphrased the "Kết quả lượt này" block and
  * dropped the reference translation).
  */
-/** Reference-line labels a result block can carry — one per exercise type (see `TURN_LABELS`). */
-const REFERENCE_LABELS = ['Tham khảo', 'Đáp án', 'Câu mẫu'] as const;
-
 export function verbatimEnvelope(markdown: string): string {
   // The rule DESCRIBES THE BLOCK IT IS WRAPPING, instead of describing one particular block.
   //
@@ -123,50 +124,6 @@ export function verbatimEnvelope(markdown: string): string {
  * bản dịch tham khảo comparison and the next-action menu are rendered HERE (not left to the
  * prompt) so they can never be forgotten — same rationale as the display contract itself.
  */
-/**
- * What to CALL each part of the result block, per exercise type. A table rather than a chain of flags,
- * because the same defect has now been found three times, one exercise type at a time:
- *
- *   2026-07-27  TEACH_BACK — the learner's EXPLANATION was labelled "Bạn dịch" under "Đề (Nhật → Việt)".
- *   2026-08-12  QUIZ       — "Bạn dịch: Chọn C", and `suggested` (the ANSWER KEY) called "Tham khảo".
- *   2026-08-12  CONVERSATION — a scenario brief ("Bối cảnh: … Bạn cần: … Văn phong: …") labelled
- *               "Đề (Việt → Nhật)", and an utterance the learner COMPOSED called "Bạn dịch".
- *
- * Each was fixed by adding one more `isX` flag, which is why the third one existed: a flag has to be
- * remembered, a table has to be filled in. A type absent from this table takes the translation defaults,
- * and that is correct for the ones that ARE translations (TRANSLATION, CLOZE, DIALOGUE, and the two
- * scaffolded production rungs — the learner does translate on all of them). `render.test.ts` walks every
- * value of EXERCISE_TYPE so a NEW type shows up as a deliberate choice instead of a silent default.
- *
- * This matters more than wording: the block is the one thing Claude must copy verbatim, and a block that
- * tells the learner they did something they did not do is a block they learn to stop reading.
- */
-const TURN_LABELS: Record<
-  string,
-  { prompt: string; answer: string; reference: string; retry: string }
-> = {
-  TEACH_BACK: {
-    prompt: 'Mẫu',
-    answer: 'Bạn giảng',
-    reference: 'Tham khảo',
-    retry: 'Giảng lại cho đủ phần còn thiếu',
-  },
-  QUIZ: {
-    prompt: 'Câu hỏi',
-    answer: 'Bạn chọn',
-    reference: 'Đáp án',
-    // Unreachable today (a quiz suppresses the retry offer — nothing to retype when the answer was a
-    // letter) and present anyway, so the table stays a complete description of the type.
-    retry: 'Chọn lại',
-  },
-  CONVERSATION: {
-    prompt: 'Tình huống',
-    answer: 'Bạn nói',
-    reference: 'Câu mẫu',
-    retry: 'Nói lại câu đã sửa',
-  },
-};
-
 export function renderGradeResult(result: SubmitReviewResult, now: Date = new Date()): string {
   const rows = result.items.map(
     (i) => `| ${i.expression} | ${ratingLabel(i.rating)} | ${humanizeUntil(i.nextDue, now)} |`,
@@ -178,12 +135,14 @@ export function renderGradeResult(result: SubmitReviewResult, now: Date = new Da
   const isTeachBack = result.exerciseType === TEACH_BACK_EXERCISE;
   const isQuiz = result.exerciseType === QUIZ_EXERCISE;
   const dirLabel = result.direction === 'JA_VI' ? 'Nhật → Việt' : 'Việt → Nhật';
-  const labels = TURN_LABELS[result.exerciseType] ?? {
+  // ONE table, shared with the history cards (lib/turn-labels.ts) — see the note there for why it
+  // is not defined at either call site any more.
+  const labels = turnLabels(result.exerciseType, {
     prompt: `Đề (${dirLabel})`,
     answer: 'Bạn dịch',
     reference: 'Tham khảo',
     retry: 'Gõ lại bản dịch đã sửa lỗi',
-  };
+  });
   // Failed item → the menu leads with a rewrite step (feedback→revise→rewrite beats one-shot
   // correction). Consolidation only: the rewrite is never re-graded. NOT offered on a quiz: there is
   // nothing to retype when the answer was a letter, and the offer sent the learner looking for a

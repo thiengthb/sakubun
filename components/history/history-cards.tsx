@@ -21,6 +21,7 @@ import { hasFurigana } from '@/lib/furigana';
 import { scoreLabel } from '@/lib/score-label';
 import { stripEmoji } from '@/lib/text';
 import type { SentenceHistoryRow } from '@/lib/practice';
+import { turnLabels } from '@/lib/turn-labels';
 import { cn } from '@/lib/utils';
 
 // Rating → OUTLINE color chip (colored border + text, no fill). The 4 semantic tokens
@@ -248,6 +249,14 @@ function HistoryDetail({
   const grammar = sentence.ratings.filter((r) => r.role !== 'VOCAB');
   const vocab = sentence.ratings.filter((r) => r.role === 'VOCAB');
   const typeLabel = EXERCISE_TYPE_LABELS[sentence.exerciseType];
+  // The web's translation wording is DELIBERATELY shorter than the chat block's ("Đề", not
+  // "Đề (Nhật → Việt)") — a direction badge sits right above this. Shared table, own default.
+  const labels = turnLabels(sentence.exerciseType, {
+    prompt: 'Đề',
+    answer: 'Bạn dịch',
+    reference: 'Tham khảo',
+    retry: '', // no menu on this surface
+  });
 
   return (
     <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
@@ -277,9 +286,12 @@ function HistoryDetail({
 
       <div className="space-y-4 text-sm">
         {/* Đề — JA source gets the karaoke play line (chars light up in the theme color with the audio);
-            a VI đề is plain text (no JA audio). */}
+            a VI đề is plain text (no JA audio). The HEADING follows the exercise type: on a quiz, a
+            teach-back or a conversation the learner was not given a sentence to translate, and calling
+            it "Đề" beside a badge reading "Quiz" contradicts itself on one screen (found 2026-08-12 —
+            the chat block had already been fixed three times while this copy of the labels sat here). */}
         <div className="space-y-1">
-          <div className="text-xs font-medium text-muted-foreground">Đề</div>
+          <div className="text-xs font-medium text-muted-foreground">{labels.prompt}</div>
           {sentence.direction === 'JA_VI' ? (
             <SpokenLine
               text={sentence.sourceText}
@@ -306,7 +318,7 @@ function HistoryDetail({
               degrades to audio + highlight without furigana. JA→VI answers are Vietnamese → plain. */}
           {sentence.direction === 'VI_JA' ? (
             <div className="flex flex-wrap items-end gap-1.5">
-              <span className="text-muted-foreground">Bạn dịch:</span>
+              <span className="text-muted-foreground">{labels.answer}:</span>
               <SpokenLine
                 text={sentence.userAnswer}
                 showFurigana={showFurigana}
@@ -317,7 +329,7 @@ function HistoryDetail({
             </div>
           ) : (
             <p>
-              <span className="text-muted-foreground">Bạn dịch: </span>
+              <span className="text-muted-foreground">{labels.answer}: </span>
               {sentence.userAnswer}
             </p>
           )}
@@ -325,7 +337,7 @@ function HistoryDetail({
             // VI→JA: reference is Japanese → karaoke play line right after "Tham khảo:". JA→VI answers
             // are Vietnamese → plain text (that side's audio is the đề above).
             <div className="flex flex-wrap items-end gap-1.5">
-              <span className="text-muted-foreground">Tham khảo:</span>
+              <span className="text-muted-foreground">{labels.reference}:</span>
               {sentence.direction === 'VI_JA' ? (
                 <SpokenLine
                   text={sentence.suggested}

@@ -126,6 +126,22 @@ grep vào lần bị từ chối — lỗi phép đo, không phải lỗi app), 
 khi chạy riêng và xanh 48/48 khi chạy lại cả bộ. Chênh 10 lần so với thời gian thường, đúng lớp tranh
 chấp compile lần đầu mà `warmup.setup.ts` tồn tại để giảm. Ghi ra chứ không im.
 
+## Vòng bốn — lần thứ TƯ của cùng một lỗi, ở bề mặt thứ hai
+
+13. **Thẻ lịch sử trên WEB gọi mọi lượt là "dịch".** `Đề` / `Bạn dịch:` / `Tham khảo:` in cứng cho mọi
+    kiểu luyện — ngay cạnh một badge ghi "Quiz" hoặc "Giảng lại", nên mâu thuẫn hiện ra trong đúng một
+    cái nhìn. Đây là lần thứ TƯ của lớp lỗi ở mục (10), và nó **vô hình từ chỗ ba lần trước được sửa**:
+    ba lần đó sửa `renderGradeResult`, còn web giữ bản sao nhãn riêng.
+    → bảng ra file riêng `lib/turn-labels.ts`; cả khối chat, thẻ lịch sử và flashcard cùng đọc một nguồn.
+    Hai bề mặt giữ **wording mặc định riêng** một cách có ý (chat nêu chiều dịch vì không gì khác nêu;
+    web đã có badge chiều ngay trên), nhưng phần đổi tên thì dùng chung.
+    → lưới: `lib/turn-labels.test.ts` chốt "mọi kiểu KHÔNG-phải-dịch phải được đổi tên trên CẢ HAI bề
+    mặt, không được chỉ một", và `e2e/history-turn-labels.spec.ts` chốt việc trang có THẬT SỰ đọc bảng
+    đó — chứng minh hai chiều: trả nhãn về bản in cứng thì ĐỎ.
+
+**Luật rút ra, đắt hơn cả bốn ca cộng lại:** sửa cùng một lớp lỗi lần thứ hai thì hỏ�i *còn bề mặt nào
+nữa cũng ánh xạ thứ này?* Ba lần đầu đều sửa đúng chỗ đang cháy và không ai đi tìm bản sao thứ hai.
+
 ## Một phát hiện KHÔNG sửa được bằng code
 
 **Cài đặt mặc định không đóng nổi chỉ tiêu ngày.** Đo trên tài khoản mới, mặc định nguyên bản

@@ -15,6 +15,7 @@ import {
 import { EmptyState } from '@/components/shared/empty-state';
 import { SpokenLine } from '@/components/shared/spoken-line';
 import { StarButton } from '@/components/shared/star-button';
+import { turnLabels } from '@/lib/turn-labels';
 import { useSessionState } from '@/components/shared/use-session-state';
 import {
   EXERCISE_TYPE_LABELS,
@@ -128,7 +129,16 @@ function AnswerFace({
 
       {sentence.suggested && (
         <div className="space-y-0.5">
-          <p className="text-xs tracking-wide text-muted-foreground uppercase">Tham khảo</p>
+          {/* Same shared table as the history cards and the chat block: on a quiz this line is the
+              ANSWER KEY, in conversation it is a model utterance — neither is a "reference translation". */}
+          <p className="text-xs tracking-wide text-muted-foreground uppercase">
+            {turnLabels(sentence.exerciseType, {
+              prompt: 'Đề',
+              answer: 'Bạn dịch',
+              reference: 'Tham khảo',
+              retry: '',
+            }).reference}
+          </p>
           {jaAnswer ? (
             <SpokenLine
               text={sentence.suggested}
