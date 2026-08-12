@@ -92,6 +92,40 @@ teach-back được đặt tên. → `QUIZ_EXERCISE` + `Câu hỏi` / `Bạn ch�
 kiểu luyện, `suggest_group` và `set_below_target_suspended` (tôi nghi tham số sai — kiểm ra là đúng).
 `today.reviews` đếm 1 khi có 2 mục được chấm cũng là chủ ý: nó là ngân sách NGỮ PHÁP.
 
+## Vòng ba — hai lỗi ở chỗ dùng chung
+
+Đi hai kiểu luyện chưa từng chạy (giảng lại, hội thoại) và ba bề mặt cuối buổi.
+
+11. **Composition sheet MÂU THUẪN với giao thức của chế độ nó đang phục vụ.** Trên một lượt GIẢNG LẠI
+    thật, sheet gửi `↳ **REQUIRED**: pass suggestedRuby` — trường mà `TEACH_BACK_PROTOCOL` **cấm** — và
+    `Direction: **VI_JA**` trong khi giao thức đó **luôn** stage `JA_VI`. Hội thoại bị y hệt trên khoảng
+    một nửa số lượt, vì `batch.direction` lật theo `ALTERNATING` còn giao thức luôn stage `VI_JA`.
+    Đây không phải nhiễu mà là mâu thuẫn, bằng chữ mạnh nhất sheet có (`REQUIRED`), và **tới đúng lúc
+    quyết định** trong khi giao thức tới từ đầu buổi. `TEACH_BACK_PROTOCOL` đã phải dành một đoạn để
+    nói "bỏ qua nửa cái sheet" — văn xuôi vá một lỗi dữ liệu.
+    → `get_due_items` nhận `exerciseType`; sheet bỏ hoặc sửa đúng những dòng không áp dụng. 3 ca test.
+
+12. **Luật hiển thị mô tả một biên KHÔNG tồn tại — trên 3 trong 4 khối dùng nó.**
+    `verbatimEnvelope` là chuỗi cố định, gọi menu "Tiếp theo?" là điểm kết và "Bản dịch tham khảo" là
+    dòng không được bỏ. Nhưng chỉ `renderGradeResult` sinh ra menu đó, còn envelope còn bọc "Tiến độ",
+    "Tra cứu" và "Điểm yếu" — nên nó trỏ tới một điểm kết không có và bảo vệ hai dòng chưa bao giờ ở đó.
+    Nó cũng gọi "Bản dịch tham khảo" trong khi khối in ra `Tham khảo`, và từ khi có `TURN_LABELS` thì
+    nhãn ấy còn đổi theo kiểu luyện (`Đáp án`, `Câu mẫu`).
+    Vì sao tệ hơn là cẩu thả: gọi tên một dòng KHÔNG có làm chỉ dẫn thoả mãn được một cách tầm thường,
+    và đây là chỉ dẫn mà **toàn bộ hợp đồng hiển thị dựa lên** — bug mất điểm từng sống một tuần sau
+    đúng cái envelope này. Một chỉ dẫn sai ở phần lớn nơi nó xuất hiện dạy người đọc đọc lướt nó ở đúng
+    nơi nó quan trọng.
+    → envelope tự đọc khối nó bọc: nêu menu chỉ khi có menu, gọi đúng nhãn tham khảo khối in ra, và
+    không bảo vệ dòng nào nó không thấy. 2 ca test.
+
+Đã đi và ĐÚNG: harvest của giảng lại (nó KHÔNG hiện lần đầu chỉ vì tôi gọi `submit_review` hai lần rồi
+grep vào lần bị từ chối — lỗi phép đo, không phải lỗi app), `list_calibration_proposals`,
+`get_weak_report`, `stage_sentence` từ chối `exerciseType` viết sai.
+
+**Một flake đã gặp, chưa truy:** `e2e/critical-path.spec.ts` timeout 60s ở một lượt gate rồi xanh 6.4s
+khi chạy riêng và xanh 48/48 khi chạy lại cả bộ. Chênh 10 lần so với thời gian thường, đúng lớp tranh
+chấp compile lần đầu mà `warmup.setup.ts` tồn tại để giảm. Ghi ra chứ không im.
+
 ## Một phát hiện KHÔNG sửa được bằng code
 
 **Cài đặt mặc định không đóng nổi chỉ tiêu ngày.** Đo trên tài khoản mới, mặc định nguyên bản

@@ -85,12 +85,34 @@ function withheldLines(withheld: WithheldItem[]): string[] {
  * protocol text alone proved insufficient (live 2026-07-09: Claude paraphrased the "Kết quả lượt này" block and
  * dropped the reference translation).
  */
+/** Reference-line labels a result block can carry — one per exercise type (see `TURN_LABELS`). */
+const REFERENCE_LABELS = ['Tham khảo', 'Đáp án', 'Câu mẫu'] as const;
+
 export function verbatimEnvelope(markdown: string): string {
+  // The rule DESCRIBES THE BLOCK IT IS WRAPPING, instead of describing one particular block.
+  //
+  // It used to be a fixed string naming the menu "Tiếp theo?" as the end boundary and "Bản dịch tham
+  // khảo" as a line not to drop. Measured 2026-08-12: only `renderGradeResult` produces that menu, and
+  // this envelope also wraps "Tiến độ" (get_stats), "Tra cứu" (check_library) and "Điểm yếu"
+  // (get_weak_report) — so on three of its four blocks it named a terminator that does not exist and
+  // told Claude not to drop two lines that were never there. It also said "Bản dịch tham khảo" while
+  // the block prints "Tham khảo", and since TURN_LABELS that label varies by exercise type ("Đáp án"
+  // on a quiz, "Câu mẫu" in conversation).
+  //
+  // Why that is worse than sloppy: naming a line that is absent makes the instruction trivially
+  // satisfiable, and this is the ONE instruction the whole display contract rests on — the
+  // missing-score bug lived for a week behind exactly this envelope. An instruction that is false on
+  // most of its uses teaches the reader to skim it on the use where it matters.
+  const menu = markdown.includes('**Tiếp theo?**');
+  const reference = REFERENCE_LABELS.find((label) => markdown.includes(`**${label}:**`));
+  const mustKeep = [reference && `"${reference}"`, menu && 'menu "Tiếp theo?"'].filter(Boolean);
   return (
     '**QUY TẮC HIỂN THỊ** (bắt buộc): câu trả lời tiếp theo của bạn PHẢI BẮT ĐẦU bằng khối markdown ' +
-    'bên dưới, chép NGUYÊN VĂN 100% — từ dòng "###" đến HẾT DÒNG MENU "Tiếp theo?" — KHÔNG tóm tắt, ' +
-    'không viết lại, không bỏ bất kỳ dòng nào (kể cả "Bản dịch tham khảo" và menu "Tiếp theo?"). ' +
-    'Khối ```json``` phía sau là dữ liệu riêng cho bạn — TUYỆT ĐỐI KHÔNG hiển thị nó. ' +
+    `bên dưới, chép NGUYÊN VĂN 100% — từ dòng "###" đến ${
+      menu ? 'HẾT DÒNG MENU "Tiếp theo?"' : 'hết khối'
+    } — KHÔNG tóm tắt, không viết lại, không bỏ bất kỳ dòng nào` +
+    (mustKeep.length > 0 ? ` (kể cả ${mustKeep.join(' và ')})` : '') +
+    '. Khối ```json``` phía sau là dữ liệu riêng cho bạn — TUYỆT ĐỐI KHÔNG hiển thị nó. ' +
     'Lời giảng của bạn chỉ được đặt SAU khối.\n\n' +
     markdown
   );
@@ -793,6 +815,21 @@ export function renderDueBatch(batch: DueBatch): string {
         .filter(Boolean)
         .join(' + ')
     : null;
+  // WHAT THE TUTOR IS ABOUT TO BUILD. The sheet is written for composing a sentence to translate, and
+  // for the modes that build something else it was contradicting their own protocol rather than merely
+  // being irrelevant. Measured 2026-08-12 on a real teach-back turn: the sheet said `REQUIRED: pass
+  // suggestedRuby` (TEACH_BACK_PROTOCOL forbids it and stages sourceRuby instead) and
+  // `Direction: **VI_JA**` (that protocol ALWAYS stages JA_VI) — in the strongest word the sheet has.
+  // Conversation gets it too, on roughly half of turns: `batch.direction` alternates, while
+  // CONVERSATION_PROTOCOL always stages VI_JA.
+  //
+  // Contradiction beats irrelevance for damage, and the timing makes it worse: the sheet lands at the
+  // moment of the decision, the protocol landed at the start of the session. TEACH_BACK_PROTOCOL already
+  // spends a paragraph telling Claude to ignore half of this block — prose patching a data problem.
+  const forTeachBack = batch.forExerciseType === TEACH_BACK_EXERCISE;
+  const forConversation = batch.forExerciseType === 'CONVERSATION';
+  // The direction the tutor will ACTUALLY stage, which is what the ruby/furigana notes must follow.
+  const stagedDirection = forTeachBack ? 'JA_VI' : forConversation ? 'VI_JA' : batch.direction;
   const srcIsJa = batch.direction === 'JA_VI';
   const size = SENTENCE_SIZE_SPEC[batch.settings.sentenceSize];
   const srcChars = srcIsJa ? size.ja : size.vi;
@@ -855,7 +892,7 @@ export function renderDueBatch(batch: DueBatch): string {
   // (insert 「（かな）」 when furigana is on; ALWAYS send sourceRuby for hover in history) lived only in
   // PRACTICE_PROTOCOL, so a passive "furiganaHint: BẬT" flag got ignored. Surface the actions here.
   const furiganaNote =
-    batch.direction === 'JA_VI'
+    stagedDirection === 'JA_VI'
       ? furiganaForClaude(batch.settings.furiganaMode)
         ? '**FURIGANA (Claude renders it):** in the EXERCISE SENTENCE you show the user, add the ' +
           'hiragana reading in ROUND brackets 「（かな）」 RIGHT AFTER each hard kanji cluster — EXCEPT ' +
@@ -868,7 +905,7 @@ export function renderDueBatch(batch: DueBatch): string {
   // sourceRuby powers the hover-furigana in history and is independent of furiganaHint — request it
   // for every JA source so coverage stops depending on whether the `practice` prompt was invoked.
   const rubyNote =
-    batch.direction === 'JA_VI'
+    stagedDirection === 'JA_VI'
       ? '↳ **REQUIRED**: pass `sourceRuby` to stage_sentence — the exercise sentence itself rewritten ' +
         'as 漢字[かな] (SQUARE brackets, each kanji cluster followed by its reading, e.g. ' +
         '彼[かれ]は忙[いそが]しい) so the history card can show furigana on hover. Never leave it empty ' +
@@ -895,14 +932,26 @@ export function renderDueBatch(batch: DueBatch): string {
       : null,
     promptNote,
     answerNote,
-    furiganaNote,
-    rubyNote,
+    // Both of these describe an exercise SENTENCE the learner reads; a teach-back turn shows a bare
+    // pattern and its own line above already says which ruby field to send.
+    forTeachBack ? null : furiganaNote,
+    forTeachBack ? null : rubyNote,
     '',
-    `Direction: **${batch.direction}** · source length: ~${srcChars} characters (${srcLang}, ±30%) · ${patternNote} · register: ${batch.settings.register} · grading: ${batch.settings.translationStyle}`,
+    forTeachBack
+      ? 'TEACH-BACK TURN: **nothing is composed here**, so this sheet carries no sentence spec — no ' +
+        'direction to pick, no character target, no pattern count, no register. Stage `direction: ' +
+        '"JA_VI"` with `exerciseType: "TEACH_BACK"`, `sourceText` = the pattern exactly as spelled ' +
+        'below, and `sourceRuby` when it holds kanji. What you want from this sheet is the item, its ' +
+        'enrichment (your marking scheme) and the WEAK SPOTS line.'
+      : `Direction: **${stagedDirection}** · source length: ~${srcChars} characters (${srcLang}, ±30%) · ${patternNote} · register: ${batch.settings.register} · grading: ${batch.settings.translationStyle}`,
     // difficulty used to be shipped as a bare "2/5" — an integer the grader and the composer could
     // read differently. Ship the ANCHOR text instead, so the setting means one thing (2026-07-26).
-    `STRUCTURE (difficulty ${batch.settings.difficulty}/5): ${DIFFICULTY_ANCHORS[batch.settings.difficulty]?.en ?? ''} — this is about SHAPE only; vocabulary hardness is the VOCABULARY line, novelty is capped separately, length is the character target above`,
-    `VOCABULARY: **target ${vocabLevel} exactly** — drop to an easier level only for FUNCTION WORDS (particles, conjunctions…) or when the grammar pattern forces it; go HARDER only when difficulty ≥ 4. Don't let the whole sentence drift down to easy vocabulary just because the grammar pattern sits at a low level`,
+    forTeachBack
+      ? null
+      : `STRUCTURE (difficulty ${batch.settings.difficulty}/5): ${DIFFICULTY_ANCHORS[batch.settings.difficulty]?.en ?? ''} — this is about SHAPE only; vocabulary hardness is the VOCABULARY line, novelty is capped separately, length is the character target above`,
+    forTeachBack
+      ? null
+      : `VOCABULARY: **target ${vocabLevel} exactly** — drop to an easier level only for FUNCTION WORDS (particles, conjunctions…) or when the grammar pattern forces it; go HARDER only when difficulty ≥ 4. Don't let the whole sentence drift down to easy vocabulary just because the grammar pattern sits at a low level`,
     focusServedNone
       ? `FOCUS NOT SERVED — do NOT compose around it: the user asked for ${
           focusAsked || (batch.focus?.weak ? 'a weak-spot drill' : 'a specific focus')
@@ -940,12 +989,20 @@ export function renderDueBatch(batch: DueBatch): string {
           .map((w) => `${ERROR_TAG_LABELS[w.tag] ?? w.tag} (${w.count}×)`)
           .join(
             ' · ',
-          )} — design the sentence to TOUCH these naturally (a fair trap, not a gotcha); when explaining, name them outright.`
+          )}${
+          forTeachBack
+            ? ' — aim your MARKING at these: if one of them is the very thing this pattern is usually got wrong on, ask about it and say so outright.'
+            : ' — design the sentence to TOUCH these naturally (a fair trap, not a gotcha); when explaining, name them outright.'
+        }`
       : null,
-    batch.settings.topics.length > 0
+    // Topics steer a composed scene, and a teach-back turn has none.
+    !forTeachBack && batch.settings.topics.length > 0
       ? `Preferred topics: ${batch.settings.topics.join(', ')}`
       : null,
-    batch.items.some((i) => i.role === 'VOCAB')
+    // A [VOCAB] rider can still arrive on a teach-back batch, and TEACH_BACK_PROTOCOL says to ignore it
+    // ("it is not what you ask about") — so this whole block, which is about weaving words into a
+    // sentence, must not be here to argue with that.
+    !forTeachBack && batch.items.some((i) => i.role === 'VOCAB')
       ? 'VOCABULARY (the [VOCAB] entries): words the user looked up — USE them NATURALLY in the ' +
         'sentence (they sit OUTSIDE the grammar-pattern count, do NOT count toward it) and GRADE them ' +
         'like any other entry (their own ratings, role="VOCAB"): used/understood correctly → high ' +

@@ -364,6 +364,17 @@ export interface DueBatch extends PickedBatch {
    * can't be introduced. Non-zero + empty batch = "not done, your study levels just exclude them".
    */
   newBeyondLevels: number;
+  /**
+   * What the tutor is about to BUILD with this batch, when it says. The sheet is written for composing a
+   * sentence, and for the modes that compose something else it was shipping instructions that CONTRADICT
+   * their own protocol — measured 2026-08-12 on a teach-back turn: the sheet said `REQUIRED: pass
+   * suggestedRuby` (the teach-back protocol forbids it) and `Direction: VI_JA` (that protocol always
+   * stages JA_VI). Contradicting the protocol is worse than being irrelevant, and the sheet arrives at
+   * the moment of the decision while the protocol arrived at the start of the session.
+   *
+   * Absent → the sheet keeps its full composing form, which is right for translation practice.
+   */
+  forExerciseType?: string;
   /** Earliest upcoming due (learning steps land here) — lets the tutor say "quay lại sau X phút". */
   nextDueAt: Date | null;
   /** itemId → last few sentence contexts (novelty guard: the next sentence must avoid these). */
@@ -512,6 +523,7 @@ export async function getDueBatch(
   now: Date = new Date(),
   maxItems?: number,
   focus?: FocusInput,
+  forExerciseType?: string,
 ): Promise<DueBatch> {
   const settings = await getSettings();
   const today = await todayCounts(settings, now);
@@ -673,6 +685,7 @@ export async function getDueBatch(
     focus: focusMeta,
     weakSpots,
     newBeyondLevels,
+    forExerciseType,
     nextDueAt: upcoming?.due ?? null,
     recentContexts,
   };

@@ -232,6 +232,41 @@ describe('verbatimEnvelope', () => {
     expect(out).toContain('KHÔNG hiển thị'); // the json-payload ban (eval finding 2026-07-09)
     expect(out.endsWith('### Kết quả lượt này\nnội dung')).toBe(true);
   });
+
+  // THE RULE MUST BE TRUE OF THE BLOCK IT WRAPS. It was a fixed string naming the "Tiếp theo?" menu as
+  // the end boundary and "Bản dịch tham khảo" as a line not to drop — but only `renderGradeResult`
+  // produces that menu, and this envelope also wraps "Tiến độ", "Tra cứu" and "Điểm yếu". Measured
+  // 2026-08-12: on three of its four blocks it pointed at a terminator that does not exist and defended
+  // two lines that were never there. This is the instruction the entire display contract rests on (the
+  // missing-score bug lived behind it for a week), and one that is false on most of its uses is one the
+  // reader learns to skim on the use where it matters.
+  it('names the menu as the boundary only when the block HAS a menu', () => {
+    const withMenu = verbatimEnvelope('### Kết quả lượt này\n**Tiếp theo?** 1. Câu tiếp');
+    expect(withMenu).toContain('đến HẾT DÒNG MENU "Tiếp theo?"');
+    expect(withMenu).toContain('menu "Tiếp theo?"');
+
+    const withoutMenu = verbatimEnvelope('### Tiến độ\n- **Đến hạn bây giờ:** 0');
+    expect(withoutMenu).toContain('đến hết khối');
+    expect(withoutMenu).not.toContain('Tiếp theo?');
+    // …and it defends nothing it cannot see.
+    expect(withoutMenu).not.toContain('kể cả');
+  });
+
+  it('names the reference line the block actually printed, whichever it is', () => {
+    for (const [label, others] of [
+      ['Tham khảo', ['Đáp án', 'Câu mẫu']],
+      ['Đáp án', ['Tham khảo', 'Câu mẫu']],
+      ['Câu mẫu', ['Tham khảo', 'Đáp án']],
+    ] as const) {
+      const out = verbatimEnvelope(`### Kết quả lượt này\n**${label}:** x\n**Tiếp theo?** 1.`);
+      expect(out, `${label} must be defended by name`).toContain(`(kể cả "${label}"`);
+      for (const other of others) expect(out).not.toContain(`"${other}"`);
+    }
+    // The old string named a label the block never prints — that is the shape of the bug.
+    expect(verbatimEnvelope('### Kết quả lượt này\n**Tham khảo:** x')).not.toContain(
+      'Bản dịch tham khảo',
+    );
+  });
 });
 
 describe('renderWeakReport', () => {
@@ -397,6 +432,73 @@ describe('renderDueBatch', () => {
     });
     expect(md).toContain('weave in **3** grammar pattern(s) ·');
     expect(md).not.toContain('asks for');
+  });
+
+  // THE SHEET MUST NOT ARGUE WITH THE PROTOCOL OF THE MODE IT IS SERVING.
+  //
+  // Measured 2026-08-12 on a real teach-back turn: the sheet shipped `↳ **REQUIRED**: pass
+  // suggestedRuby` — which TEACH_BACK_PROTOCOL forbids (it stages sourceRuby) — and `Direction:
+  // **VI_JA**`, while that protocol ALWAYS stages JA_VI. Not noise: a contradiction, in the strongest
+  // word the sheet has, arriving at the moment of the decision while the protocol arrived at the start
+  // of the session. TEACH_BACK_PROTOCOL was spending a paragraph telling Claude to ignore half of this
+  // block — prose patching a data problem.
+  describe('the composition sheet follows the mode it is serving', () => {
+    it('a TEACH-BACK batch carries no sentence spec at all', () => {
+      const md = renderDueBatch({
+        ...baseBatch,
+        forExerciseType: 'TEACH_BACK',
+        direction: 'VI_JA', // what ALTERNATING happened to pick — must NOT reach the sheet
+        items: [
+          { ...plainItem, id: 'a', expression: '〜ばかりに', meaningVi: 'chỉ vì', role: 'TARGET' },
+          { ...plainItem, id: 'v', expression: '台所', meaningVi: 'nhà bếp', role: 'VOCAB' },
+        ],
+        weakSpots: { topTags: [{ tag: 'particle', count: 2 }], byItem: {} },
+        settings: { ...DEFAULT_SETTINGS, topics: ['công việc'] },
+      });
+      expect(md).toContain('TEACH-BACK TURN');
+      expect(md).toContain('direction: "JA_VI"');
+      // None of the composing spec, and above all not the field the protocol forbids.
+      expect(md).not.toContain('suggestedRuby');
+      expect(md).not.toContain('Direction: **VI_JA**');
+      expect(md).not.toContain('source length');
+      expect(md).not.toContain('weave in');
+      expect(md).not.toContain('STRUCTURE (difficulty');
+      expect(md).not.toContain('Preferred topics');
+      // A VOCAB rider may still ride along; the protocol says ignore it, so the sheet must not spend a
+      // paragraph telling Claude to weave it into a sentence that does not exist.
+      expect(md).not.toContain('USE them NATURALLY in the');
+      // What it DOES keep: the item, its enrichment, and the weak spots — reworded for marking.
+      expect(md).toContain('〜ばかりに');
+      expect(md).toContain('aim your MARKING at these');
+      expect(md).not.toContain('design the sentence to TOUCH');
+    });
+
+    it('a CONVERSATION batch is pinned to the direction its protocol stages', () => {
+      // The half of turns where this bit: `batch.direction` alternates, CONVERSATION_PROTOCOL always
+      // stages VI_JA — so on a JA_VI turn the sheet named a direction the tutor was told never to use,
+      // and asked for the wrong ruby field with it.
+      const md = renderDueBatch({
+        ...baseBatch,
+        forExerciseType: 'CONVERSATION',
+        direction: 'JA_VI',
+        items: [{ ...plainItem, id: 'a', expression: '〜ばかりに', meaningVi: 'chỉ vì', role: 'TARGET' }],
+      });
+      expect(md).toContain('Direction: **VI_JA**');
+      expect(md).toContain('suggestedRuby'); // the Japanese here is the ANSWER, so this is the right field
+      expect(md).not.toContain('pass `sourceRuby`');
+    });
+
+    it('an unqualified batch keeps the full composing sheet — translation practice is the default', () => {
+      const md = renderDueBatch({
+        ...baseBatch,
+        direction: 'JA_VI',
+        items: [{ ...plainItem, id: 'a', expression: '〜ばかりに', meaningVi: 'chỉ vì', role: 'TARGET' }],
+      });
+      expect(md).toContain('Direction: **JA_VI**');
+      expect(md).toContain('source length');
+      expect(md).toContain('pass `sourceRuby`');
+      expect(md).not.toContain('TEACH-BACK TURN');
+    });
   });
 
   it('weakness focus (matched > 0) leads with the WEAK-SPOT DRILL header', () => {

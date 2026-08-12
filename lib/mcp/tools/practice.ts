@@ -102,10 +102,22 @@ export function registerPracticeTools(server: McpServer) {
             'list_groups). Turn it on when the user says "luyện nhóm X". focus.matched=0 → the group ' +
             'has no schedulable grammar in it yet; tell the user.',
         ),
+      exerciseType: EXERCISE_TYPE.optional().describe(
+        'WHAT YOU ARE ABOUT TO BUILD with this batch. Send it whenever you are NOT composing an ordinary ' +
+          'translation sentence — "TEACH_BACK" or "CONVERSATION" — and the composition sheet drops or ' +
+          'corrects the lines that do not apply to that mode. Without it the sheet keeps its full ' +
+          'sentence-composing form, which CONTRADICTS those two protocols rather than merely being ' +
+          'noise: it would tell you `REQUIRED: pass suggestedRuby` on a teach-back turn (that protocol ' +
+          'forbids it) and name a direction the protocol does not stage. Omit it for normal translation ' +
+          'practice and for the scaffolded rungs — the full sheet is correct there.',
+      ),
     },
     guard(
       'get_due_items',
-      async ({ maxItems, focusLevels, focusPatterns, focusWeak, groupId }, _extra: unknown) => {
+      async (
+        { maxItems, focusLevels, focusPatterns, focusWeak, groupId, exerciseType },
+        _extra: unknown,
+      ) => {
         const focus =
           focusLevels?.length || focusPatterns?.length || focusWeak || groupId
             ? {
@@ -120,7 +132,7 @@ export function registerPracticeTools(server: McpServer) {
         // Scenario G (2026-07-28) showed it changed no composed sentence across two confusion pairs,
         // so it moved to `get_stats` — read once per session. Dropping it also drops `computeDossier`
         // from this path, which was a second set of history scans on EVERY exercise, not just tokens.
-        const batch = await getDueBatch(now, maxItems, focus);
+        const batch = await getDueBatch(now, maxItems, focus, exerciseType);
         // Planning sheet is Claude-only — no verbatim display order here.
         return okWithMarkdown(renderDueBatch(batch), batch, {
           verbatim: false,
