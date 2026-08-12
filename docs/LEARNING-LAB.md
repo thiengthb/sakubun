@@ -1,9 +1,10 @@
 # Phòng lab học tập — quy trình đi hết MỘT BUỔI, không phải một lượt
 
 > Chủ: `@thi3n` · thêm 2026-08-12 · xem lại: 2026-11-12
-> Vì sao có file này: sáu lỗi được tìm ra trong đúng một buổi chạy quy trình dưới đây, và **không lỗi
-> nào trong số đó bị bất kỳ unit test hay e2e nào bắt được** — vì không lượt nào tự sai. Chúng chỉ hiện
-> ra khi đi liên tiếp nhiều lượt trên MỘT tài khoản.
+> Vì sao có file này: **mười** lỗi được tìm ra trong đúng một buổi chạy quy trình dưới đây, và **không
+> lỗi nào trong số đó bị bất kỳ unit test hay e2e nào bắt được** — vì không lượt nào tự sai. Chúng chỉ
+> hiện ra khi đi liên tiếp nhiều lượt trên MỘT tài khoản. Danh sách đầy đủ:
+> `docs/progress/learning-loop-lab.md`.
 
 ## Vấn đề mà quy trình này giải
 
@@ -57,7 +58,7 @@ một app khác với app người học dùng.
 Một lỗi tìm được ở đây **chưa xong** khi đã sửa code. Nó xong khi có một phép kiểm tất định giữ chỗ,
 theo thứ tự rẻ dần của `.claude/rules/README.md`: `test > generator > lint/hook > … > RULE`.
 
-Sáu lỗi của buổi 2026-08-12 và chỗ mỗi lỗi được ghim lại:
+Mười lỗi của buổi 2026-08-12 và chỗ mỗi lỗi được ghim lại:
 
 | Lỗi | Ghim ở |
 |---|---|
@@ -67,10 +68,18 @@ Sáu lỗi của buổi 2026-08-12 và chỗ mỗi lỗi được ghim lại:
 | Khối mở buổi không hề nói chỉ tiêu ngày | `lib/mcp/render.test.ts` |
 | Vòng quiz không đếm `dailyNewGrammar` | `lib/practice.ts` + mô tả tool |
 | Chấm quiz theo chữ cái SAI mà không ai đối chiếu | `lib/quiz-options.test.ts` — 10 ca, + chặn ở `submitReview` |
+| `check_library` đề xuất `add_grammar` cho một TỪ, và lá chắn đồng thuận không phủ tool sẽ ghi thật | `lib/coach.test.ts` · `lib/mcp/render.test.ts` |
+| Bảng hợp đồng tham số lệch 5 chỗ, và không phủ nhóm `sweep` | `lib/coach.test.ts` — dựng lại từ `tools/list`, sàn độ phủ 6 → 11 |
+| `RAISE_NEW_CAP` điền `null` vào chỗ server đòi số | `lib/coach.test.ts` — kiểm cả GIÁ TRỊ, không chỉ khoá |
+| Lượt HỘI THOẠI bị gán nhãn dịch (lần thứ BA của lớp lỗi này) | `lib/mcp/render.test.ts` — đi qua MỌI giá trị của `EXERCISE_TYPE` |
 
 Lỗi thứ sáu là ví dụ tốt nhất cho luật này: nó bắt đầu là **lỗi của chính tôi khi đóng vai** (tôi ghi
 "chọn A" trong khi server xếp đáp án ở D), và trở thành một phép kiểm chặn được cả lớp lỗi đó mãi mãi.
 Người đóng vai sai chỗ nào thì Claude thật cũng sai chỗ đó.
+
+Và lỗi thứ mười dạy thêm một điều: **sửa cùng một lớp lỗi lần thứ ba thì đừng sửa ca đó nữa — sửa cái
+làm cho nó bị bỏ sót.** Ba lần trước đều thêm một cờ `isX`; cái cờ phải NHỚ, cái bảng phải ĐIỀN. Nếu bạn
+đang viết `isX` thứ ba, đó là tín hiệu.
 
 ## Cái quy trình này KHÔNG đo
 

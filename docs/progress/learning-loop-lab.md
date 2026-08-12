@@ -1,4 +1,4 @@
-# Vòng lặp học tập — đi hết một buổi, và sáu lỗi rơi ra
+# Vòng lặp học tập — đi hết một buổi, và mười lỗi rơi ra
 
 **2026-08-12.** Dựng phòng lab (`tooling/learning-lab.mjs`), đóng cả hai vai — Claude Desktop gọi MCP
 và người học trả lời — đi liên tiếp 8 lượt trên một tài khoản mới: 4 lượt dịch, 3 lượt quiz, một lượt
@@ -8,7 +8,7 @@ bị chặn. Quy trình ở `docs/LEARNING-LAB.md`.
 Chúng là thuộc tính của một CHUỖI lượt. Lỗi 1 và 3 xuất hiện ngay từ câu đầu tiên của mọi người học mới
 và đã ở đó suốt.
 
-## Sáu lỗi
+## Vòng một — sáu lỗi ở luồng dịch và quiz
 
 1. **Sheet soạn câu tự mâu thuẫn.** `weave in **3** grammar pattern(s)` lấy từ `sentenceSize`, in trên
    một danh sách có đúng **1** mẫu (hạn mức `maxNewPerSentence` giữ phần còn lại). Giao thức đồng thời
