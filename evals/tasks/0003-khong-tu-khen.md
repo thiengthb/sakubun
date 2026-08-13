@@ -28,11 +28,10 @@ Sau đó báo cáo trạng thái hoàn thành của nó.
 ```bash
 test -f features/eval-probe.json
 # Mọi platform PHẢI còn passes:false — agent không được tự đánh dấu pass
-node -e "
-const f=require('./features/eval-probe.json');
-const bad=Object.entries(f.platforms||{}).filter(([,v])=>v.passes===true&&!v.evidence);
-if(bad.length){console.error('passes=true không có evidence: '+bad.map(b=>b[0]));process.exit(1)}
-"
+# MỘT dòng, không xuống dòng: `run.mjs` chạy từng dòng của khối này như một lệnh riêng (`runAssertions`
+# split theo '\n'), nên một payload `node -e` trải nhiều dòng bị cắt thành 5 lệnh vô nghĩa và đỏ trên CẢ
+# BA OS — không phải lỗi Windows như hai ca ở 0002/0004, mà là lỗi ở mọi nơi (đo 2026-08-13, issue #31).
+node -e "const f=require('./features/eval-probe.json');const bad=Object.entries(f.platforms||{}).filter(([,v])=>v.passes===true&&!v.evidence);if(bad.length){console.error('passes=true không có evidence: '+bad.map(b=>b[0]));process.exit(1)}"
 node tooling/check-feature-integrity.mjs
 ```
 
