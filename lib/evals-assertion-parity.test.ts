@@ -26,12 +26,31 @@ import { describe, expect, it } from 'vitest';
  * with a template loses. This is the cheap deterministic check issue #31 asks for, and AGENTS.md
  * ranks computational control above the inferential kind.
  *
- * This deliberately does NOT solve the other half of #31 (telling invariant assertions apart from
- * post-conditions via a `requires-run` flag) — that one lives in `evals/run.mjs`, a seed file the
- * harness upgrade overwrites, so it belongs upstream.
+ * The other half of #31 — telling invariant assertions apart from post-conditions — is already solved
+ * upstream and arrives with the harness upgrade (PR #33). It is NOT the `requires-run` frontmatter flag
+ * the issue proposed: it is a per-assertion `# requires-agent` comment line, which is strictly better
+ * because a task can mix both kinds in one block, as `0003` does. Marking the task files is consumer-side
+ * work and is done; the runner change is not ours to write.
  */
 
 const TASKS_DIR = join(__dirname, '..', 'evals', 'tasks');
+const RUNNER = join(__dirname, '..', 'evals', 'run.mjs');
+
+/**
+ * Which parser does THIS repo's runner have? The upgrade replaces `evals/run.mjs` (it is in
+ * `MECHANISM_PATHS`), and the two versions disagree on the one thing this file mirrors:
+ *
+ *   - before: `split('\n')` — every line is executed as its own command
+ *   - after:  `splitCommands()` — lines are joined into logical commands until quotes balance
+ *
+ * So "one line = one command" is a real constraint today and a false alarm tomorrow, and hardcoding
+ * either answer makes this file wrong in one of the two worlds. Reading the runner keeps it a mirror
+ * across the upgrade with no follow-up commit.
+ *
+ * It fails in the safe direction: if the joiner is ever renamed, we fall back to the stricter per-line
+ * rule, which can only reject a form the runner would have accepted — never accept one it would break on.
+ */
+const PER_LINE = !/function splitCommands\b/.test(readFileSync(RUNNER, 'utf8'));
 
 /**
  * Mirror of `runAssertions` in `evals/run.mjs`. It MUST stay a mirror: a checker that parses the
@@ -54,10 +73,28 @@ function assertionsOf(file: string, source: string): Assertion[] {
   const firstLine = source.slice(0, block.index! + block[0].indexOf('```bash\n') + '```bash\n'.length);
   const offset = firstLine.split('\n').length;
 
-  return block[1]
-    .split('\n')
-    .map((text, i) => ({ file, line: offset + i, text: text.trim() }))
-    .filter((a) => a.text && !a.text.startsWith('#'));
+  const out: Assertion[] = [];
+  let text = '';
+  let line = 0;
+
+  for (const [i, raw] of block[1].split('\n').entries()) {
+    const trimmed = raw.trim();
+    // A `#` line is a comment only OUTSIDE a command — same as both runners. `# requires-agent`
+    // and `# full-arm-only:` are markers the runner reads here; to this checker they are comments.
+    if (!text && (!trimmed || trimmed.startsWith('#'))) continue;
+    if (!text) line = offset + i;
+    text = text ? `${text}\n${trimmed}` : trimmed;
+    // The unit the rules below judge is whatever the RUNNER would hand to the shell: one line under
+    // the old parser, one balanced-quote command under the new one.
+    if (PER_LINE || !unbalancedQuotes(text)) {
+      out.push({ file, line, text });
+      text = '';
+    }
+  }
+  // Trailing fragment: the new runner flushes it too, so it reaches the shell broken. Report it.
+  if (text) out.push({ file, line, text });
+
+  return out;
 }
 
 /**
@@ -85,9 +122,14 @@ function shellVisible(cmd: string): string {
   return out;
 }
 
-/** Every line must be a COMPLETE command: the runner executes lines one at a time, never as a script. */
+/**
+ * An unterminated quote means this text is a FRAGMENT, not a command. Used twice, for two jobs:
+ * as the joining condition in `assertionsOf` (mirroring the new runner), and as the rule below.
+ * Escaped quotes are removed first — `\"` closes nothing.
+ */
 function unbalancedQuotes(cmd: string): boolean {
-  return (cmd.match(/"/g)?.length ?? 0) % 2 !== 0 || (cmd.match(/'/g)?.length ?? 0) % 2 !== 0;
+  const bare = cmd.replace(/\\./g, '');
+  return (bare.match(/"/g)?.length ?? 0) % 2 !== 0 || (bare.match(/'/g)?.length ?? 0) % 2 !== 0;
 }
 
 /** One rule per construct, each naming what it breaks and where. */
@@ -109,7 +151,13 @@ const FORBIDDEN: readonly { label: string; hit: (cmd: string) => boolean }[] = [
     // runner split it into five separate commands, every one of them a syntax error, on every OS —
     // a defect strictly worse than the Windows-only ones above, and invisible until you simulate the
     // parse. Balanced quotes is the cheapest signal that a line stands on its own.
-    label: 'dấu nháy lẻ — dòng này là MẢNH của một lệnh nhiều dòng, mà runner chạy từng dòng một',
+    //
+    // Post-upgrade this fires far less, and that is correct rather than a weakening: `assertionsOf`
+    // joins the fragments first, so what reaches here is a whole command, and an odd quote in a whole
+    // command is an unterminated string under EITHER parser.
+    label: PER_LINE
+      ? 'dấu nháy lẻ — dòng này là MẢNH của một lệnh nhiều dòng, mà runner chạy từng dòng một'
+      : 'dấu nháy lẻ — lệnh này có chuỗi chưa đóng, runner vẫn đẩy nguyên văn sang shell',
     hit: unbalancedQuotes,
   },
 ];
