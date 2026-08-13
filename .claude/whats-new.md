@@ -1,4 +1,4 @@
-<!-- version: 2026-08-11-a -->
+<!-- version: 2026-08-13-a -->
 <!--
   Thông báo thay đổi harness cho cả team.
   SessionStart hook so `version` ở trên với version người dùng đã xem
@@ -8,6 +8,19 @@
   Mỗi lần merge thay đổi vào .claude/, cập nhật version + viết 3 dòng ở đây.
   Giữ file NGẮN — xoá mục cũ hơn 1 tháng.
 -->
+
+## 2026-08-13 — harness nhảy 2.13.0 → 2.75.1 (62 phiên bản)
+
+1. **Không có BREAKING nào** giữa hai mốc — mọi mục BREAKING trong changelog đều thuộc 2.0.0,
+   đã áp từ lâu. Hai migration chạy tự động: cắm 3 hook vào sự kiện đã có, và khai
+   `limits.sessionPresenceMinutes` (bằng đúng fallback đang chạy, không đổi hành vi).
+2. **`tooling/lib/harness.mjs` nay là bản template**, không còn bản local. Bản vá `maxBuffer`
+   của repo mình đã được đẩy lên upstream trước (harness#201, v2.75.0) rồi mới lấy xuống —
+   giữ bản local thì 14/24 file tooling mới gãy import ngay lúc nạp module.
+3. **Phép kiểm mới nghiêm hơn.** Ba lỗ hổng project-side đã sửa trong cùng PR: một tham chiếu
+   chết ở `evals/run.mjs`, hai script exit khác 0 mà không có đường ra stderr. Còn nợ đúng một
+   mục: `budget.plan` chưa khai trong `harness.config.json` — cần `/harness-propose`, vì giá
+   trị đúng phụ thuộc gói cước đang trả (metered hay flat).
 
 ## 2026-08-11 — preMerge chạy hết được, lần đầu
 
