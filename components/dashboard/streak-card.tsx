@@ -15,7 +15,9 @@ export function StreakCard({ current, hint }: { current: number; hint?: string }
   // Bumping this replays the fire celebration — lets the user (re)watch the effect on demand.
   const [preview, setPreview] = useState(0);
   return (
-    <div className="relative overflow-hidden rounded-lg border border-border/70 p-4">
+    // rounded-xl + bg-card to match the KPI tiles it shares a row with (issue #38): the page background
+    // is ivory, so a transparent tile is a hairline rectangle rather than a card.
+    <div className="relative overflow-hidden rounded-xl border border-border/70 bg-card p-4">
       {current > 0 && (
         <div
           aria-hidden
