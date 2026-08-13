@@ -447,3 +447,73 @@ test('mobile: the sort sheet reorders the card list', async ({ page }) => {
   await page.getByRole('button', { name: 'Xem kết quả' }).click();
   await expect(cards.first()).toContainText('N2');
 });
+
+/**
+ * Tab switching — the state the page sweep above never enters (issue #25).
+ *
+ * `every page renders clean` does `goto` then measures. It opens /settings, and it is green — which is
+ * exactly why the hydration warning reported on 2026-08-11 slipped past it: that warning appeared AFTER
+ * a tab switch, and no test in this suite had ever clicked a tab while listening.
+ *
+ * Nine attempts on 2026-08-13 (6 warm + 3 with `.next` deleted, across both the original repro spec and
+ * a throwaway probe) failed to reproduce it, so the cause is NOT diagnosed and this test is not a fix.
+ * It is the thing worth having either way: a timing-dependent mismatch that shows up in 1 of 3 runs is
+ * precisely the kind that comes back, and the cost of noticing it next time should not be "someone
+ * happened to be reading the dev server log".
+ *
+ * Deliberately generic over `role=tab` rather than hardcoding /settings: the report was about /settings,
+ * but nothing about the failure mode is. A route that LOSES its tabs is reported too — a sweep that goes
+ * quiet because it found nothing to click is the same silent pass this test exists to remove.
+ */
+const TABBED: [string, string][] = [
+  ['settings', '/settings'],
+  ['dashboard', '/'],
+  ['guide', '/guide'],
+];
+
+test('switching tabs raises no client error — the state the page sweep never enters', async ({ page }) => {
+  test.setTimeout(120_000);
+  await signIn(page);
+
+  const problems: string[] = [];
+  page.on('pageerror', (e) => problems.push(`pageerror: ${e.message.split('\n')[0]}`));
+  page.on('console', (m) => {
+    // React 19 throws hydration failures (caught above as `pageerror`) but prints the DIFF — the half
+    // that says WHERE — as a separate console message. Keep both: the throw proves it happened, the
+    // message is the only thing that makes it debuggable.
+    if (m.type() === 'error') problems.push(`console.error: ${m.text().split('\n')[0]}`);
+    else if (/hydrat|server rendered HTML/i.test(m.text())) problems.push(`console.${m.type()}: ${m.text().slice(0, 400)}`);
+  });
+
+  const failures: string[] = [];
+  for (const [name, url] of TABBED) {
+    problems.length = 0;
+    await page.goto(url, { waitUntil: 'networkidle' });
+
+    const tabs = page.getByRole('tab');
+    const count = await tabs.count();
+    if (count < 2) {
+      failures.push(`${name}: found ${count} tab(s) — this route is in TABBED but has nothing to switch`);
+      continue;
+    }
+
+    for (let i = 0; i < count; i++) {
+      const tab = tabs.nth(i);
+      const label = (await tab.textContent())?.trim() ?? `#${i}`;
+      // Retry the click: a click landing BEFORE hydration finishes is dropped silently — Playwright sees
+      // the element, React has not attached the handler yet. `mcp.spec.ts` hit exactly that.
+      await expect(async () => {
+        await tab.click();
+        await expect(tab).toHaveAttribute('data-state', 'active', { timeout: 2000 });
+      }).toPass({ timeout: 20_000 });
+      // The panel is a client render; give it the same beat the sweep above gives the error boundary.
+      await page.waitForTimeout(400);
+      if (problems.length) {
+        failures.push(`${name} → tab "${label}": ${problems.join(' | ')}`);
+        problems.length = 0;
+      }
+    }
+  }
+
+  expect(failures, `client errors while switching tabs:\n${failures.join('\n')}`).toEqual([]);
+});
