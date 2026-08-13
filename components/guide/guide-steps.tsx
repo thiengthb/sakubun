@@ -315,9 +315,11 @@ export const START_STEPS: TutorialStep[] = [
     need: <>Bước ① xong.</>,
     body: (
       <>
-        Trang <em>Cài đặt</em> (3 tab): <em>Nội dung</em> (cấp JLPT cho mẫu mới, trần từ vựng, hướng
-        dịch, cỡ &amp; độ phức tạp câu, văn phong, chủ đề) · <em>Nhịp học</em> (mẫu mới/ngày, mẫu
-        mới tối đa/câu, lượt ôn, từ vựng/câu, giờ chốt ngày, mục tiêu ghi nhớ) ·{' '}
+        Trang <em>Cài đặt</em> có 5 tab; ba tab đầu là thứ bạn chỉnh hôm nay. <em>Nội dung</em> chia
+        làm ba nhóm: «Chọn gì để học» (cấp JLPT, trần từ vựng, chủ đề) · «Câu trông như thế nào»
+        (hướng dịch, văn phong, kiểu chấm, furigana, độ phức tạp, cỡ câu, từ vựng/câu, mẫu mới tối
+        đa/câu) · «Cho Claude tự làm giúp». <em>Nhịp học</em> giữ đúng hạn mức theo NGÀY (mẫu
+        mới/ngày, lượt ôn/ngày, mục tiêu câu/ngày, giờ chốt) và mục tiêu ghi nhớ. Rồi{' '}
         <em>Nghe &amp; nói</em>. Một bộ dùng chung cho cả dịch lẫn quiz.
       </>
     ),
