@@ -8,6 +8,10 @@
           {
             "type": "command",
             "command": "node .claude/hooks/session-start.mjs"
+          },
+          {
+            "type": "command",
+            "command": "node .claude/hooks/observe.mjs"
           }
         ]
       }
@@ -48,6 +52,10 @@
           {
             "type": "command",
             "command": "node .claude/hooks/protect-migrations.mjs"
+          },
+          {
+            "type": "command",
+            "command": "node .claude/hooks/protect-integration-branch.mjs"
           }
         ]
       }
@@ -81,6 +89,10 @@
           {
             "type": "command",
             "command": "node tooling/gates.mjs --stage subagent"
+          },
+          {
+            "type": "command",
+            "command": "node .claude/hooks/observe.mjs"
           }
         ]
       }

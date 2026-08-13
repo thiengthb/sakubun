@@ -13,7 +13,7 @@
 import { readdirSync, statSync, mkdirSync, cpSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { join, resolve, relative, sep } from 'node:path';
-import { REPO_ROOT, report, run, REQUIRED_IGNORE, REQUIRED_ATTRIBUTES, REQUIRED_UNIGNORE, missingLines, CI_ESCAPE_HATCH, MECHANISM_PATHS, repoRole } from './lib/harness.mjs';
+import { REPO_ROOT, report, run, REQUIRED_IGNORE, REQUIRED_ATTRIBUTES, REQUIRED_UNIGNORE, missingLines, CI_ESCAPE_HATCH, MECHANISM_PATHS, NOT_FOR_CONSUMER, repoRole } from './lib/harness.mjs';
 
 const args = process.argv.slice(2);
 const target = args.find(a => !a.startsWith('--'));
@@ -55,6 +55,11 @@ const SEED = [
   'knowledge/README.md', 'knowledge/lessons/_TEMPLATE.md',
   'knowledge/lessons/0001-lockfile-merge-tay.md', 'knowledge/lessons/0002-guard-ban-nham.md',
   'knowledge/lessons/0003-self-test-gia-dinh-repo-cua-no.md',
+  'knowledge/lessons/0004-gac-hong-thi-phai-chan.md',
+  'knowledge/lessons/0005-bo-dem-do-ve-phia-de-chiu.md',
+  'knowledge/lessons/0006-do-khong-duoc-khong-phai-la-khong.md',
+  'knowledge/lessons/0007-va-hai-chieu-thieu-mot-chieu.md',
+  'knowledge/lessons/0008-tin-hieu-toi-han-phai-tat-duoc.md',
   'features/_index.json', 'features/_TEMPLATE.json',
   'docs/CONFLICTS.md', 'docs/WIP.md', 'docs/BRANCH-PROTECTION.md',
   'docs/DOR-DOD.md', 'docs/onboarding.md', 'docs/ROADMAP-30D.md',
@@ -73,6 +78,10 @@ const SEED = [
   'evals/README.md', 'evals/tasks/_TEMPLATE.md',
   'evals/tasks/0001-harness-tu-kiem.md', 'evals/tasks/0002-ton-trong-guardrail.md',
   'evals/tasks/0003-khong-tu-khen.md', 'evals/tasks/0004-khong-merge-tay-lockfile.md',
+  'evals/tasks/0005-gac-hong-thi-chan.md',
+  'evals/tasks/0006-chua-do-khong-phai-on.md',
+  'evals/tasks/0007-va-hai-chieu-thieu-mot-chieu.md',
+  'evals/tasks/0008-tin-hieu-toi-han-phai-tat-duoc.md',
   'docs/MIGRATION.md',
   'reservations/README.md',
   '.github/CODEOWNERS', '.github/pull_request_template.md',
@@ -156,6 +165,12 @@ if (AUDIT) {
     // worktree) ⇒ không có `$` thì check này đỏ-giả cho gần như mọi người, và eval
     // `0001-harness-tu-kiem` đỏ theo. Cùng lớp với knowledge/lessons/0003.
     /^\.git(\/|$)/, /^node_modules\//, /^\.harness-pack\//, /^knowledge\/incoming\//,
+    // Xác do `evals/run.mjs --bare` để lại khi nó gỡ lớp harness ra khỏi một cây DÙNG MỘT LẦN.
+    // Chúng là bản gốc đã đổi tên, không phải file mới của repo — audit liệt chúng ra là mô tả
+    // CÁI CÂY, không phải phát hiện về template. Đo 2026-08-11: 9 mục `.bare-disabled` làm
+    // `apply-to --audit` exit 1 trên cây trần ⇒ task `0001` lệch mẫu số. Không cần
+    // `harnessStripped()` ở đây: hậu tố này không bao giờ hợp lệ trong một repo thật.
+    /\.bare-disabled(\/|$)/,
     /^\.claude\/(telemetry|state)\//, /^\.vscode\//,
     /^README\.md$/,                                   // README của chính template
     // `package.json` của TEMPLATE tồn tại chỉ để `npx github:...` chạy được. Project đích
@@ -177,7 +192,15 @@ if (AUDIT) {
     // chưa từng được commit ở đâu.)
     /^knowledge\/DECISIONS\.log$/,
     /^features\/example-feature\.json$/,              // ví dụ, không seed
-    /^docs\/progress\/[A-Z]/,                         // nhật ký issue thật
+    // Nhật ký thật — mọi thứ không phải `_TEMPLATE.md`/`_TEAM.md`. Cùng khuôn với dòng
+    // learnings ngay dưới, và KHÔNG dùng `[A-Z]` như bản cũ: dạng đó giả định nhật ký luôn
+    // tên theo mã issue viết hoa. Một phiên NGHI THỨC không có issue (`chore/…`), nên nhật
+    // ký của nó tên theo nhánh — chữ thường — và audit đỏ với chính file nó vừa tạo. Gặp
+    // thật với nhật ký vòng học tuần W32 (tên file chữ thường, không phải mã issue).
+    // Không viết đường dẫn nhật ký ra đây: `docs/progress/**` KHÔNG được ship xuống repo
+    // tiêu thụ, nên một trích dẫn dạng đường dẫn ở file NÀY thành con trỏ chết ở MỌI repo con
+    // — §9b của `entropy-scan` bắt được đúng vậy ở `sakubun`, 2026-08-07.
+    /^docs\/progress\/(?!_)/,                         // nhật ký thật
     /^\.claude\/learnings\/(?!_TEMPLATE)/,            // learnings thật
     // KHÔNG ignore evals/tasks/ — trong repo TEMPLATE, mọi eval task là nội dung
     // phải ship. Bỏ qua cả nhóm che đúng lớp bug này: thêm task seed, quên đưa vào
@@ -191,6 +214,11 @@ if (AUDIT) {
     // Thiếu file này ⇒ nghi thức báo `due`, và đó là câu trả lời ĐÚNG cho một repo mới.
     /^\.claude\/claude-code-baseline\.json$/,
     /^\.claude\/settings\.local\.json$/, /^\.env/,
+    // Lịch sử PHÁT TRIỂN harness. `upgrade.mjs` đọc cả hai từ `TPL`, không bao giờ từ cây ở
+    // repo con — nên trước 2.14.0 chúng là ~210 KB ghi đè lại mỗi lần nâng cấp, phục vụ
+    // không cơ chế nào phía nhận. Lý do đầy đủ ở `NOT_FOR_CONSUMER` trong lib/harness.mjs;
+    // hai đường dẫn này cũng nằm trong `REMOVED_PATHS` để repo đã áp được dọn khi nâng cấp.
+    ...NOT_FOR_CONSUMER.map(p => new RegExp(`^${p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(/|$)`)),
   ];
   const all = filesUnder('.').filter(f => !IGNORE.some(re => re.test(f)));
   const missing = all.filter(f => !covered.has(f));

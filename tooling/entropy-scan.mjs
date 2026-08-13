@@ -11,7 +11,7 @@
  * ("mục này còn đúng không?") vẫn thuộc về skill /entropy-sweep và con người.
  */
 import { readdirSync, readFileSync, existsSync, statSync } from 'node:fs';
-import { join, extname } from 'node:path';
+import { join, extname, basename, relative, sep } from 'node:path';
 import { parseFrontmatter } from './lib/frontmatter.mjs';
 import { repoPath, config, limit, report, git, matchAny, pathsFor, readJson, stateDir, repoRole } from './lib/harness.mjs';
 
@@ -32,15 +32,23 @@ function walk(dir, filter = () => true) {
   }
   return out;
 }
-// Dấu phân cách chuẩn hoá về `/`: trên Windows `join()` trả `\`, nên nếu không có bước này
-// mọi dòng báo cáo của file này in ra `\.claude\rules\README.md` — đọc được, nhưng không
-// copy-paste được vào lệnh nào, và không so được với đường dẫn viết trong tài liệu.
-const rel = p => p.split('\\').join('/').replace(repoPath('').split('\\').join('/') + '/', '').replace(/^\//, '');
+// PARITY CONTRACT. `walk()` dựng đường dẫn bằng `join()` ⇒ dấu phân cách của HỆ ĐIỀU HÀNH.
+// Bản cũ cắt chuỗi bằng `'/'`, nên trên Windows nó không cắt được gì và mọi đường dẫn in ra
+// thành `\.claude\rules\...` — thừa một dấu gạch, sai kiểu, và (tệ hơn) trùng đúng chỗ mà
+// `basename` phía dưới cũng hỏng. `relative()` + chuẩn hoá về POSIX là cách duy nhất cho ra
+// CÙNG một chuỗi trên cả ba OS, và đó là điều kiện để so sánh/allowlist hoạt động.
+const rel = p => relative(repoPath(''), p).split(sep).join('/');
 
 // ── 1. Rule: thiếu paths / owner / expires-review ────────────────────────────
 const GLOBAL_OK = ['danger-zones.md', 'README.md', '_TEMPLATE.md'];
 for (const f of walk(repoPath('.claude', 'rules'), p => extname(p) === '.md')) {
-  const name = f.split('/').pop();
+  // `basename()`, KHÔNG `split('/')`. Trên Windows `walk()` trả `...\rules\README.md`, nên
+  // `split('/')` trả về NGUYÊN đường dẫn — và `GLOBAL_OK.includes(<cả đường dẫn>)` luôn false.
+  // Hậu quả đo được 2026-08-06: allowlist ngay phía trên KHÔNG BAO GIỜ khớp trên Windows, và
+  // người dùng Windows thấy 5 cảnh báo vĩnh viễn về hai file đã được miễn từ đầu — trong khi
+  // Linux/macOS im lặng. Một công cụ nói hai chuyện khác nhau tuỳ máy thì không ai tin nó nữa,
+  // và cảnh báo thật nằm cạnh sẽ chết chung.
+  const name = basename(f);
   const { data } = parseFrontmatter(readFileSync(f, 'utf8'));
   if (GLOBAL_OK.includes(name)) continue;
 
@@ -231,108 +239,104 @@ if (touched.length) {
 
 // ── 9b. Đường dẫn trỏ vào hư không ───────────────────────────────────────────
 //
-// Loại hết hạn ĐẮT NHẤT với agent, và không có triệu chứng nào: với agent, mọi text
-// trong repo có thẩm quyền như nhau, nên một đường dẫn chết không báo lỗi — nó gửi
-// người đọc tới chỗ trống, và người đọc TỰ NGHĨ RA nội dung đáng lẽ ở đó.
+// NHẬN TỪ `sakubun` (pack upstream @0655730, 2026-08-07). Phép kiểm này ra đời ở repo con,
+// không ở đây — và nó là ca đầu tiên chiều ĐI LÊN thật sự chuyển được một cơ chế, sau khi
+// v2.27.0 làm bên nhận đọc được pack không-có-bài-học nào.
 //
-// Đo 2026-08-06: 16 chỗ trong SOURCE trỏ vào `docs/plans/*` (5 file kế hoạch được viện
-// dẫn như thẩm quyền thiết kế) — `git log --all -- docs/plans` TRỐNG: thư mục đó chưa
-// bao giờ được commit. §4 ở trên chỉ kiểm skill trỏ vào `tooling/*.mjs`, nên cả nhóm này
-// lọt lưới.
+// Loại hết hạn ĐẮT NHẤT với agent, và không có triệu chứng nào: với agent, mọi text trong
+// repo có thẩm quyền như nhau, nên một đường dẫn chết không báo lỗi — nó gửi người đọc tới
+// chỗ trống, và người đọc TỰ NGHĨ RA nội dung đáng lẽ ở đó.
 //
-// HAI LOẠI TRỪ CỐ Ý, vì nếu không thì tín hiệu chìm trong dương tính giả (bản đầu của
-// phép kiểm này báo 120 hit, phần lớn là văn xuôi như `origin/main` và `"n/a"`):
-//   · HARNESS-CHANGELOG.md, .claude/learnings/**, docs/progress/** — ba thứ này LÀ lịch sử,
-//     append-only. Một changelog PHẢI nhắc file đã đổi tên, và một nhật ký rà soát PHẢI
-//     trích dẫn chính những đường dẫn hỏng mà nó phát hiện; bắt lỗi chúng là bắt chúng làm
-//     sai việc của chúng. (Đo được ngay lần chạy đầu: docs/progress/optimize-sweep.md tự bị
-//     tố giác vì nó liệt kê các đường dẫn chết.)
-//   · chuỗi có glob/placeholder, và đường dẫn có segment đầu không phải thư mục thật ở
-//     gốc repo — đó là văn xuôi, không phải đường dẫn.
-const TOP_LEVEL = new Set(readdirSync(repoPath('')));
-const PROSE = p => /[*{}<>$]|\.\.|^https?:|^~|^@/.test(p);
-// Thư mục SINH RA LÚC CHẠY và gitignored: vắng mặt trên một cây sạch là ĐÚNG, không phải hỏng.
-const IGNORED_REF = p =>
-  p.startsWith('.git/') ||               // artifact lúc chạy (index.lock)
-  p.startsWith('knowledge/incoming') ||
-  p.startsWith('.claude/telemetry') ||
-  p.startsWith('.claude/state') ||
-  p.startsWith('.claude/worktrees');
+// Đo ở `sakubun` 2026-08-06: 16 chỗ trong SOURCE trỏ vào `docs/plans/*` (5 file kế hoạch
+// được viện dẫn như thẩm quyền thiết kế) — `git log --all` cho thư mục đó TRỐNG: nó chưa
+// bao giờ được commit. §4 ở trên chỉ kiểm skill trỏ vào `tooling/*.mjs` nên cả nhóm lọt lưới.
+//
+// HAI LOẠI TRỪ CỐ Ý — không có chúng thì tín hiệu chìm trong dương tính giả (bản đầu ở
+// `sakubun` báo 120 hit, phần lớn là văn xuôi như `origin/main` và `"n/a"`):
+//   · HỒ SƠ LỊCH SỬ (changelog · learnings · progress · whats-new) — chúng append-only và
+//     PHẢI nhắc file đã đổi tên hoặc đã xoá. Bắt lỗi chúng là bắt chúng làm sai việc của
+//     chúng. Cùng danh sách, cùng lý do với `HISTORICAL` ở `harness-doctor.mjs`.
+//   · chuỗi có glob/placeholder, và đường dẫn có segment đầu không phải thư mục thật ở gốc
+//     repo — đó là văn xuôi, không phải đường dẫn.
+//
+// KHÁC BẢN CỦA `sakubun` MỘT CHỖ: nó quét source bằng danh sách thư mục cứng
+// `['app','components','lib','e2e','tooling']` — hình dạng của một app Next.js. Ở template
+// thì `git ls-files` là nguồn đúng: repo-agnostic, tự bỏ file gitignore/generated, và không
+// có danh sách nào để mục.
+{
+  const TOP_LEVEL = new Set(readdirSync(repoPath('')));
+  const PROSE = p => /[*{}<>$]|\.\.|^https?:|^~|^@/.test(p);
+  // Thư mục SINH RA LÚC CHẠY và gitignored: vắng mặt trên một cây sạch là ĐÚNG, không phải hỏng.
+  // Dấu của repo TIÊU THỤ: KHÔNG BAO GIỜ tồn tại ở template (`repoRole()` dựa vào chính sự
+  // vắng mặt đó). Tài liệu ở đây phải giải thích được nó, nếu không repo con không biết mình
+  // đang cầm cái gì. Vắng mặt ở đây là ĐÚNG, không phải đường dẫn chết.
+  const IGNORED_REF = p => p.startsWith('.git/') || p === '.claude/harness-manifest.json';
 
-const dangling = new Map();              // đường dẫn -> nơi nhắc nó
-const noteRef = (p, where) => {
-  if (!p || PROSE(p) || IGNORED_REF(p)) return;
-  const clean = p.split('#')[0].split(':')[0].replace(/\/$/, '');
-  if (!clean.includes('/') || !TOP_LEVEL.has(clean.split('/')[0])) return;
-  if (existsSync(repoPath(clean))) return;
-  if (!dangling.has(clean)) dangling.set(clean, new Set());
-  dangling.get(clean).add(where);
-};
+  const dangling = new Map();
+  const noteRef = (p, where) => {
+    if (!p || PROSE(p) || IGNORED_REF(p)) return;
+    const clean = p.split('#')[0].split(':')[0].replace(/\/$/, '');
+    if (!clean.includes('/') || !TOP_LEVEL.has(clean.split('/')[0])) return;
+    if (existsSync(repoPath(clean))) return;
+    // TƯƠNG ĐỐI VỚI FILE ĐANG NHẮC, không chỉ với gốc repo. Một `README.md` trong thư mục con
+    // viết đường dẫn tương đối với CHÍNH NÓ — đó là cách đọc đúng cho người mở file đó.
+    //
+    // Đo ở `sakubun` 2026-08-07: `mobile/README.md` nhắc `lib/config.ts`, và file thật là
+    // `mobile/lib/config.ts`. Template có cấu trúc phẳng nên ca này KHÔNG hiện ra ở đây —
+    // lần thứ ba trong một ngày một khuyết tật chỉ lộ ra SAU KHI phân phối.
+    const whereDir = where.includes('/') ? where.slice(0, where.lastIndexOf('/')) : '';
+    if (whereDir && existsSync(repoPath(whereDir, clean))) return;
+    if (!dangling.has(clean)) dangling.set(clean, new Set());
+    dangling.get(clean).add(where);
+  };
 
-// `whats-new.md` thuộc cùng nhóm: nó KỂ những gì đã đổi, nên nó phải được phép nói
-// "`.claude/hooks/stop-gate.mjs` đã bị bỏ" — chính câu đó là giá trị của nó.
-const HISTORY = f => {
-  const r = rel(f);
-  return r.includes('HARNESS-CHANGELOG')
-    || r.startsWith('.claude/learnings/')
-    || r.startsWith('docs/progress/')
-    || r === '.claude/whats-new.md';
-};
-const mdRefs = [
-  ...walk(repoPath('docs'), p => extname(p) === '.md'),
-  ...walk(repoPath('.claude'), p => extname(p) === '.md'),
-  repoPath('AGENTS.md'), repoPath('CLAUDE.md'),
-].filter(f => existsSync(f) && !HISTORY(f));
-for (const f of mdRefs) {
-  for (const m of readFileSync(f, 'utf8').matchAll(/`([^`\s]+)`/g)) noteRef(m[1], rel(f));
-}
+  const HISTORY = (r) => r.includes('HARNESS-CHANGELOG') || r.startsWith('.claude/learnings/')
+    || r.startsWith('docs/progress/') || r === '.claude/whats-new.md'
+    // `evals/tasks/**` MÔ TẢ thứ agent phải TẠO RA khi chạy task — cùng lý do bỏ qua fixture.
+    // Một task nói "assert `features/eval-probe.json` tồn tại" đang làm đúng việc của nó;
+    // file đó không tồn tại LÚC NÀY chính là điều kiện ban đầu của phép đo.
+    || r.startsWith('evals/tasks/');
 
-// Comment trong SOURCE trỏ vào docs/ — chỗ duy nhất tìm ra nhóm plan doc không tồn tại.
-// Bỏ qua fixture của test: `tooling/test-hooks.mjs` CỐ Ý dựng những đường dẫn docs không tồn tại để
-// kiểm hook — một fixture trỏ vào chỗ trống là fixture đang làm đúng việc của nó.
-// (Không viết tên các đường dẫn đó ra đây: chính comment này sẽ thành con trỏ chết, và phép kiểm bên
-// dưới quét cả file này. Đã bị bắt đúng như vậy ở lần chạy thứ ba.)
-for (const root of ['app', 'components', 'lib', 'e2e', 'tooling']) {
-  for (const f of walk(repoPath(root), p => /\.(ts|tsx|mjs)$/.test(p)
-      && !p.includes('generated') && !rel(p).startsWith('tooling/test-') && !rel(p).includes('/fixtures/'))) {
-    for (const m of readFileSync(f, 'utf8').matchAll(/docs\/[A-Za-z0-9_./-]+\.md/g)) noteRef(m[0], rel(f));
+  const tracked = git(['ls-files']).stdout.split('\n').filter(Boolean);
+  for (const r of tracked.filter(r => r.endsWith('.md') && !HISTORY(r))) {
+    let txt = ''; try { txt = readFileSync(repoPath(r), 'utf8'); } catch { continue; }
+    for (const m of txt.matchAll(/`([^`\s]+)`/g)) noteRef(m[1], r);
   }
-}
-
-// Một đường dẫn bị GITIGNORE CÓ CHỦ Ý không phải con trỏ chết — nó là file cố ý không nằm trong
-// repo, và tài liệu nhắc tới nó là tài liệu đang làm đúng việc.
-//
-// Vì sao có đoạn này (issue #8): `harness-parity` chỉ chạy khi diff chạm `tooling/**`, nên PR đầu
-// tiên chạm vào đó cũng là lần đầu job này chạy — và nó đỏ trên CẢ BA OS vì đúng ba đường dẫn:
-// `lib/generated` + `lib/generated/prisma` (do `prisma generate` sinh, `npm run gen`) và
-// `.claude/settings.local.json` (per-machine theo đúng AGENTS.md §Parity Contract, có sẵn bản
-// `.example` bên cạnh). Cả ba CÓ trên máy người dùng và không bao giờ có trên checkout sạch của CI.
-//
-// MỘT lời gọi `git check-ignore` cho cả nhóm, không phải mỗi đường một lần: danh sách này nhỏ,
-// nhưng một subprocess mỗi đường là cách dễ nhất để biến scanner tài liệu thành thứ chậm nhất
-// trong gate. `check-ignore` in ra những đường BỊ ignore, exit 1 khi không có cái nào — nên `status`
-// khác 0 là chuyện bình thường, chỉ đọc stdout.
-if (dangling.size) {
-  // Hỏi CẢ HAI dạng `p` và `p/`, và đây không phải cho chắc — nó là điều kiện để phép kiểm đúng.
-  // Pattern thư mục trong `.gitignore` (`lib/generated/`, có dấu `/`) chỉ khớp với một THƯ MỤC, mà
-  // với đường dẫn KHÔNG TỒN TẠI thì git không biết nó là thư mục nên không khớp. Đo trong một
-  // worktree sạch: `check-ignore lib/generated` → không khớp, `lib/generated/` → IGNORED. Thiếu dạng
-  // thứ hai thì bản sửa này lọc được 2 trong 3 đường dẫn của issue #8 và gate vẫn đỏ.
-  const candidates = [...dangling.keys()];
-  const r = git(['check-ignore', ...candidates, ...candidates.map((p) => `${p}/`)]);
-  for (const line of (r.stdout || '').split('\n')) {
-    // git in đường dẫn bằng `/` trên mọi OS; chuẩn hoá thêm cho chắc, không cần `sep`.
-    const p = line.trim().replace(/\\/g, '/').replace(/\/$/, '');
-    if (p) dangling.delete(p);
+  // Comment trong SOURCE trỏ vào `docs/` — chỗ duy nhất tìm ra nhóm plan doc không tồn tại.
+  // Bỏ qua test và fixture: chúng CỐ Ý dựng đường dẫn không tồn tại để kiểm hook, và một
+  // fixture trỏ vào chỗ trống là fixture đang làm đúng việc. (Không viết ví dụ ra đây —
+  // chính comment này sẽ thành con trỏ chết. Bản của `sakubun` đã bị bắt đúng như vậy.)
+  for (const r of tracked.filter(r => /\.(ts|tsx|mjs|js)$/.test(r)
+      && !r.startsWith('tooling/test-') && !r.includes('/fixtures/') && !r.includes('generated'))) {
+    let txt = ''; try { txt = readFileSync(repoPath(r), 'utf8'); } catch { continue; }
+    for (const m of txt.matchAll(/docs\/[A-Za-z0-9_./-]+\.md/g)) noteRef(m[0], r);
   }
-}
 
-if (dangling.size) {
-  const rows = [...dangling.entries()].sort((a, b) => b[1].size - a[1].size);
-  const shown = rows.slice(0, 6).map(([p, w]) => `${p} (${[...w].slice(0, 2).join(', ')}${w.size > 2 ? `, +${w.size - 2}` : ''})`);
-  fail.push(`${dangling.size} đường dẫn được tài liệu/comment trỏ tới nhưng KHÔNG TỒN TẠI: ${shown.join(' · ')}`
-    + (rows.length > 6 ? ` … +${rows.length - 6} nữa` : '')
-    + ' — sửa đường dẫn, tạo file, hoặc xoá lời nhắc. Đừng để nguyên.');
+  // HỎI GIT, ĐỪNG GIỮ DANH SÁCH. Bản đầu liệt tay `.claude/telemetry`, `.claude/state`,
+  // `knowledge/incoming`, `.claude/worktrees` — và vẫn thiếu `.claude/settings.local.json`,
+  // thứ mà Parity Contract BẮT BUỘC dùng cho cơ chế đặc thù máy. Nó xanh trên máy tôi (file
+  // có thật ở đó) và ĐỎ trên cả ba OS của CI: một allowlist viết tay chỉ đúng với trạng thái
+  // cục bộ của người viết nó.
+  //
+  // Luật đúng là một câu: **file bị gitignore thì vắng mặt là ĐÚNG** — nó sinh ra lúc chạy,
+  // hoặc nó là của riêng máy này. `git check-ignore --stdin` trả lời đúng câu đó, một lần,
+  // cho cả tập; và nó tự cập nhật khi `.gitignore` đổi.
+  if (dangling.size) {
+    const cand = [...dangling.keys()];
+    // HỎI CẢ HAI DẠNG: `p` và `p + '/'`. Pattern thư mục trong `.gitignore` có dấu `/` cuối
+    // (`knowledge/incoming/`), và `check-ignore` trên một đường dẫn KHÔNG tồn tại thì không
+    // biết nó là thư mục ⇒ không khớp. Đo trên CI 2026-08-07: `knowledge/incoming` báo là
+    // đường dẫn chết ở cả ba OS, trong khi máy tôi im vì thư mục đó CÓ THẬT ở đây.
+    const ci = git(['check-ignore', '--stdin'], { input: [...cand, ...cand.map(p => p + '/')].join('\n') });
+    for (const p of ci.stdout.split('\n').map(s => s.trim().replace(/\/$/, '')).filter(Boolean)) dangling.delete(p);
+  }
+  if (dangling.size) {
+    const rows = [...dangling.entries()].sort((a, b) => b[1].size - a[1].size);
+    const shown = rows.slice(0, 6).map(([p, w]) => `${p} (${[...w].slice(0, 2).join(', ')}${w.size > 2 ? `, +${w.size - 2}` : ''})`);
+    fail.push(`${dangling.size} đường dẫn được tài liệu/comment trỏ tới nhưng KHÔNG TỒN TẠI: ${shown.join(' · ')}`
+      + (rows.length > 6 ? ` … +${rows.length - 6} nữa` : '')
+      + ' — sửa đường dẫn, tạo file, hoặc xoá lời nhắc. Đừng để nguyên.');
+  }
 }
 
 // ── 10. PHÒNG CHỜ NGHỈ HƯU — có bằng chứng, và KHÔNG có lệnh xoá ─────────────
@@ -369,7 +373,9 @@ const readAttic = () => { try { return JSON.parse(readFileSync(ATTIC, 'utf8')); 
  */
 function evidenceFor(target) {
   const t = String(target).replace(/^\.\//, '');
-  const base = t.split('/').pop().replace(/\.[^.]+$/, '');
+  // `basename()` xử lý cả hai dấu phân cách trên Windows — `target` ở đây là chuỗi người gõ,
+  // và người trên Windows hay dán đường dẫn có `\`.
+  const base = basename(t).replace(/\.[^.]+$/, '');
   const inbound = git(['grep', '-l', '--', base]).stdout.split('\n')
     .filter(Boolean).filter(f => f !== t);
   const commits = git(['log', '--oneline', '--', t]).stdout.split('\n').filter(Boolean).length;

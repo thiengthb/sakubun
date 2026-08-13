@@ -12,7 +12,7 @@
  */
 import { readFileSync, writeFileSync, statSync, unlinkSync, existsSync, mkdirSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { REPO_ROOT, repoPath, git, currentBranch, issueFromBranch, config, limit, readJson, writeJson, exists, hookRan, stateDir, declareFailMode } from '../../tooling/lib/harness.mjs';
+import { REPO_ROOT, repoPath, git, currentBranch, issueFromBranch, config, limit, readJson, writeJson, exists, hookRan, stateDir, sharedStateDir, declareFailMode, repoRole } from '../../tooling/lib/harness.mjs';
 
 declareFailMode(1, 'Không dựng được bản tin đầu phiên. Phiên vẫn phải mở được — nhưng crash phải HIỆN RA, không được im.');
 
@@ -128,8 +128,14 @@ try {
 // vùng nóng cho cả ĐỘI, quyết phạm vi) — phần đó không tự động hoá được, và nó được nhắc ở
 // mục 9 chỉ khi thật sự tới hạn.
 //
-// Ghi vào `stateDir()` (máy-cục-bộ, gitignore) chứ KHÔNG vào `reservations/` (được commit):
-// một hook tự ghi file được commit sẽ làm cây bẩn ở mọi phiên, và `gen-clean` sẽ báo về nó.
+// Ghi vào `sharedStateDir()` — tức `.git/harness-shared/`, KHÔNG vào `reservations/` (được
+// commit): một hook tự ghi file được commit sẽ làm cây bẩn ở mọi phiên, và `gen-clean` sẽ báo
+// về nó. `.git/` thì không bao giờ bị commit và không cần thêm dòng `.gitignore` nào.
+//
+// VÌ SAO `sharedStateDir()` CHỨ KHÔNG `stateDir()` (#108): `stateDir()` neo vào gốc WORKTREE.
+// Đo 2026-08-07/08 — ba phiên song song ~2 giờ ở ba worktree, mỗi phiên ghi vào sổ RIÊNG của
+// worktree mình, không phiên nào thấy phiên nào, **0 cảnh báo**. Sổ phiên thuộc về REPO.
+//
 // Đổi lại, phát hiện này chỉ thấy phiên TRÊN CÙNG MÁY — mà đó đúng là ca đã xảy ra.
 // Chồng lấn giữa hai MÁY vẫn cần `reservations/`, tức vẫn cần người.
 // PID của PHIÊN là `process.ppid`, không phải `process.pid`. Hook chạy trong một process con
@@ -142,7 +148,10 @@ try {
 // có. Một cảnh báo sai mỗi lần khởi động lại là đúng loại nhiễu mà mục này ra đời để diệt.
 // TTL giữ lại làm LƯỚI CUỐI cho ca pid bị hệ điều hành cấp lại sau reboot.
 try {
-  const dir = join(stateDir(), 'sessions');
+  // `sharedStateDir()`, KHÔNG phải `stateDir()` (#108). `stateDir()` neo vào gốc WORKTREE, nên
+  // ba phiên ở ba worktree ghi vào ba sổ khác nhau và không phiên nào thấy phiên nào — đo
+  // 2026-08-07/08, ~2 giờ song song, 0 cảnh báo. Sổ phiên thuộc về REPO, không thuộc về cây.
+  const dir = join(sharedStateDir(), 'sessions');
   mkdirSync(dir, { recursive: true });
   const ttlMin = limit('sessionPresenceMinutes', 240);
   const myPid = process.ppid;
@@ -166,7 +175,14 @@ try {
     lines.push('   Xảy ra thật 2026-08-05: file chưa tồn tại lúc `git status`, đã tồn tại lúc `git add`.');
   } else if (others.length) {
     lines.push('');
-    lines.push(`ℹ️  ${others.length} phiên khác trên máy này, nhánh khác: ${others.map(o => o.branch).join(' · ')} (trần ${limit('maxSessionsPerPerson', 2)}/người)`);
+    // NÓI RA CÁI GIÁ, không chỉ đếm. Một dòng "2 phiên khác" là thông tin; một dòng kèm CHI PHÍ
+    // là một quyết định. Đo 2026-08-07/08 trên chính repo này với 3 phiên song song ~2 giờ.
+    lines.push(`ℹ️  ${others.length} phiên KHÁC đang mở trên repo này (trần ${limit('maxSessionsPerPerson', 2)}/người):`);
+    for (const o of others) lines.push(`     ${o.branch}  ·  ${o.cwd}  ·  ${o.ageMin} phút trước`);
+    lines.push('   Song song KHÔNG bị cấm — nhưng nó KHÔNG rẻ gấp đôi, nó đắt hơn thế:');
+    lines.push('   mỗi phiên đọc lại cùng file vào context riêng (~2× là SÀN), cộng rebase,');
+    lines.push('   cộng nhiễu do tranh máy, cộng nguy cơ hai phiên sửa cùng một thứ.');
+    lines.push('   Chạm cùng file? → `node tooling/overlap-scan.mjs <đường-dẫn>` trước khi sửa.');
   }
 } catch {}
 
@@ -192,7 +208,35 @@ try {
   } else {
     lines.push(`▶️  Không có nghi thức nào tới hạn (${res.length} mục đã kiểm).`);
   }
-  if (unknown.length) lines.push(`   ? ${unknown.length} mục KHÔNG đo được — chúng không phải "ổn".`);
+  // NÊU TÊN, đừng đếm. `?` phần lớn sinh ra từ một phép đo CHẬP CHỜN — git đang bận, một file
+  // log đang được ghi — tức đúng loại tự khỏi. Nên lời khuyên "chạy `--all` để xem" không bao
+  // giờ trả lời được cho chính ca nó sinh ra để phục vụ: tới lúc bạn gõ thì mục đó đã hết.
+  //
+  // Gặp thật 2026-08-06: banner in `? 1 mục KHÔNG đo được`, chạy `--all` ngay sau đó ra
+  // `{"ok":9,"due":1}` — 0 mục `?`. Mục đó là gì thì không có cách nào biết.
+  //
+  // Chi phí context bằng 0 ở trạng thái bình thường (0 mục `?`), và chỉ tăng đúng lúc có gì
+  // cần nói. Cùng hình dạng với bản CLI ở `tooling/rituals.mjs` — một sự thật, một cách in.
+  //
+  // GỘP THEO NGUYÊN NHÂN, đừng cắt đuôi. Đo ngay lần chạy đầu sau khi sửa: một nhánh không
+  // theo quy ước đặt tên làm BA nghi thức cùng ra `?` vì CÙNG MỘT lý do (`/claim`, `/handoff`,
+  // `/verify-ui` đều cần issue), còn mục thứ tư có lý do khác hẳn.
+  //
+  // Bản đầu tôi chặn ở 3 như `due` — và trần đó giữ lại ba bản sao của một nguyên nhân rồi
+  // CẮT MẤT mục khác loại. Tệ hơn không chặn: nó biến một danh sách thành một mẫu thiên lệch.
+  // Gộp theo `why` cho cả hai thứ cùng lúc — ngắn, và không mục nào biến mất.
+  // Gộp theo `cause` — một KHOÁ, không phải văn xuôi. Ba nghi thức viết ba câu `why` khác
+  // nhau cho cùng một nguyên nhân, nên gộp theo `why` không gộp được gì (đã thử). Nghi thức
+  // nào chia chung gốc thì khai `cause`; nghi thức riêng lẻ dùng chính `id` làm khoá.
+  const byCause = new Map();
+  for (const r of unknown) {
+    const key = r.cause || r.id;
+    if (!byCause.has(key)) byCause.set(key, { cmds: [], why: r.why });
+    byCause.get(key).cmds.push(r.cmd);
+  }
+  for (const { cmds, why } of byCause.values()) {
+    lines.push(`   ? ${cmds.join(' · ')} — KHÔNG đo được: ${why}`);
+  }
   lines.push(`   Xem hết ${res.length} năng lực + vì sao: node tooling/rituals.mjs --all`);
 } catch (e) {
   // FAIL OPEN và NÓI RA. Một hook chỉ IN thì không được phép làm vỡ phiên; nhưng im lặng ở
@@ -200,7 +244,21 @@ try {
   lines.push(`▶️  ⚠️  không tính được việc tới hạn (${String(e.message || e).slice(0, 60)}) — chạy tay: node tooling/rituals.mjs --all`);
 }
 lines.push(`   Không tự sửa .claude/settings.json — dùng /harness-propose.`);
-if (!c.commands?.verify && !c.commands?.test) {
+// HAI TRẠNG THÁI, KHÔNG MỘT. `commands` rỗng ở repo TIÊU THỤ nghĩa là "project bị bỏ bê";
+// ở repo TEMPLATE nó là placeholder ĐÚNG, theo thiết kế — template khai mọi lệnh là `""`,
+// `project.id` là `CHANGEME-project-id`, và `AGENTS.md` ghi `| Verify toàn bộ | CHANGEME |`.
+//
+// Phép kiểm cũ chỉ nhìn `commands`, nên nó đọc "template chưa được áp dụng" thành "project bị
+// bỏ bê" — và in một dòng ⚠️ mà agent đọc nó KHÔNG CÓ QUYỀN làm theo (`harness.config.json`
+// ∈ `paths.harness`). Đo: 7/7 lần `session-start` chạy đều thoả điều kiện, từ commit ĐẦU TIÊN
+// của repo. 100% dương tính giả, mọi phiên, từ ngày đầu.
+//
+// Chi phí không phải một dòng thừa — là THÓI QUEN BỎ QUA. Dòng này đứng ngay dưới khối
+// `▶️ N việc ĐANG TỚI HẠN`, khối duy nhất có tín hiệu thật, và nó dạy người đọc rằng khối đó
+// luôn có một mục đỏ không cần làm gì.
+//
+// ĐIỀU KIỆN THOÁT: khi `repoRole()` bị bỏ khỏi harness, cắt cả mệnh đề này lẫn test khoá nó.
+if (repoRole() !== 'template' && !c.commands?.verify && !c.commands?.test) {
   lines.push(`   ⚠️  harness.config.json chưa khai báo lệnh verify/test — gate đang rỗng. Đây là việc số 1 cần làm.`);
 }
 

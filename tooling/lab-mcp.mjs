@@ -41,7 +41,8 @@ await rpc('initialize', {
 
 const [tool, rawArgs] = process.argv.slice(2);
 if (!tool) {
-  console.log('dùng: node tooling/lab-mcp.mjs <tool> \'<json>\' | --list | --prompt <tên>');
+  // stderr, không stdout: mã thoát khác 0 phải có đường ra sống sót qua `| tail`/`| grep`.
+  console.error('dùng: node tooling/lab-mcp.mjs <tool> \'<json>\' | --list | --prompt <tên>');
   process.exit(2);
 }
 if (tool === '--list') {
@@ -56,7 +57,7 @@ if (tool === '--prompt') {
 
 const out = await rpc('tools/call', { name: tool, arguments: rawArgs ? JSON.parse(rawArgs) : {} });
 if (!out.result) {
-  console.log('KHÔNG CÓ RESULT:', JSON.stringify(out).slice(0, 1200));
+  console.error('KHÔNG CÓ RESULT:', JSON.stringify(out).slice(0, 1200));
   process.exit(1);
 }
 if (out.result.isError) console.log('*** isError: true ***');

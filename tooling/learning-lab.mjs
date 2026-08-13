@@ -68,7 +68,13 @@ const child = spawn('npx', ['next', 'dev', '-p', String(LAB_PORT)], {
   stdio: 'inherit',
   shell: true,
 });
-child.on('exit', (code) => process.exit(code ?? 0));
+// Mã thoát khác 0 phải có MỘT dòng ra stderr. Người gọi hay đọc script này qua `| tail`/`| grep`,
+// mà ống dẫn trả mã của tiến trình CUỐI — nên nếu thất bại chỉ tồn tại dưới dạng exit code, nó biến
+// mất im lặng. stderr là kênh duy nhất sống sót qua mọi bộ lọc đặt lên stdout.
+child.on('exit', (code) => {
+  if (code) console.error(`✗ learning-lab — tiến trình con thoát với mã ${code}`);
+  process.exit(code ?? 0);
+});
 
 const deadline = Date.now() + 180_000;
 for (;;) {

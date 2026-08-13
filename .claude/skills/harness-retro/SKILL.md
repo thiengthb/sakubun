@@ -19,7 +19,7 @@ harness của một người rất dễ là sở thích cá nhân được đón
 ```
 node tooling/fixlog.mjs --top
 node tooling/fixlog.mjs --list
-node tooling/harness-doctor.mjs            # DANH MỤC HOOK: cột "N qua · M chặn"
+node tooling/harness-doctor.mjs            # cột "N qua · M chặn" + mục nào đỏ ≥14 ngày mà CHƯA lần nào xanh
 git log --oneline -50
 gh pr list --state merged --limit 30 --json number,title,additions,deletions
 node tooling/harness-size.mjs
@@ -102,10 +102,34 @@ Mỗi thay đổi promote phải kèm một đề xuất cắt bỏ. Không nh�
 Không có bước này, mọi retro chỉ thêm, và harness thành nghĩa địa của những
 giả định đã hết hạn.
 
-## Bước 5 — Ghi ra file
+## Bước 5 — Ghi ra file, VÀ đóng vòng trên chính cái sổ
 
 `.claude/learnings/<năm>-W<tuần>-<tên>.md`. **KHÔNG tự sửa harness.**
 Người quyết định promote → `/knowledge-promote`.
+
+**Nếu kết luận của bạn là "không có gì đáng promote"** — kể cả khi file chỉ chứa kết quả xét
+cắt ở bước 4 — hãy khai lý do vào frontmatter của chính file vừa ghi:
+
+```yaml
+---
+promote: là kết quả XÉT CẮT, chưa đủ 2 lần độc lập
+---
+```
+
+Không có dòng đó, bước 5 này **luôn** bật đỏ `/knowledge-promote`: nó đếm file ở
+`.claude/learnings/` mới hơn bài học mới nhất, nên chạy đúng hai nghi thức theo đúng thứ tự
+vẫn kết thúc bằng đèn đỏ y như lúc bắt đầu. Đo 2026-08-05, còn nguyên tới 2026-08-13.
+
+Rồi trả lời sổ fixlog, nếu không nó hỏi lại bạn đúng câu đó mỗi phiên:
+
+```
+node tooling/fixlog.mjs --track "<vài chữ>" "#<issue> — chờ gì"   # đã thành việc CÓ ĐỊA CHỈ
+node tooling/fixlog.mjs --close "<vài chữ>" "<đã sửa tận gốc thế nào>"
+```
+
+`--track` **không giấu** nhóm: nó vẫn in với đủ số đếm, và mỗi lần tái phát sau đó được đếm
+ra cạnh nó. Đừng dùng `--close` cho việc mới chỉ *đang chờ* — `✔` nghĩa là **đã sửa tận gốc**,
+và một nhóm đội `✔` sai làm bạn mù đúng chỗ lỗi vẫn đang xảy ra.
 
 ## Bước 6 — Nhìn ba con số
 

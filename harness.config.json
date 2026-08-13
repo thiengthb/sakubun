@@ -100,6 +100,8 @@
     "prWarnFiles": 15,
     "reservationTtlHours": 8,
     "staleLockMinutes": 5,
+    "$comment_sessionPresenceMinutes": "TTL của SỔ PHIÊN (.claude/state/sessions/). Phép kiểm chính là liveness thật (process.kill(pid,0)); TTL chỉ là LƯỚI CUỐI cho ca pid bị hệ điều hành cấp lại sau reboot. session-start.mjs ĐANG đọc field này; trước 2.49.0 nó không được khai ở đây nên 240 là hằng số cứng và người mở config để hiệu chỉnh không thấy nó tồn tại.",
+    "sessionPresenceMinutes": 240,
     "docStaleDays": 90,
     "maxSkills": 12
   },
@@ -123,8 +125,7 @@
 
   "$comment_mcp": "3–5 server/project. Tool definition ăn context ở MỌI request. Tổng tool phơi ra: mục tiêu ≤ 15–20. CLI luôn rẻ hơn MCP về token — có CLI thì dùng CLI. Chỉ dùng MCP khi cần session bền (browser) hoặc schema có cấu trúc mà CLI không cho.",
   "mcp": {
-    "maxServers": 5,
-    "maxTools": 20
+    "maxServers": 5
   },
 
   "$comment_evals": "Nối eval với agent. Để rỗng = chỉ chạy assertion tất định, KHÔNG gọi agent (gọi agent tốn tiền, phải là hành động chủ động). Placeholder: {prompt} {maxTurns} {maxMinutes} {id}. Ví dụ: \"claude -p {prompt} --max-turns {maxTurns} --permission-mode auto\"",

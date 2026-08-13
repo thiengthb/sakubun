@@ -28,7 +28,9 @@
  * Gate chưa khai báo lệnh bị BỎ QUA và NÓI RA. Nó không phải pass, không phải fail:
  * nó là "harness không chạy". Một gate xanh mà một nửa bị bỏ qua thì KHÔNG phải xanh.
  */
-import { config, runConfigured, git, spill, telemetry, report, unattended, exists, repoPath, matchAny, pathsFor } from './lib/harness.mjs';
+import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+import { config, runConfigured, git, spill, telemetry, report, unattended, exists, repoPath, matchAny, pathsFor, repoRole, declaredCommands, TEST_TELEMETRY_DIR } from './lib/harness.mjs';
 
 const argv = process.argv.slice(2);
 const arg = (name) => { const i = argv.indexOf(name); return i >= 0 ? argv[i + 1] : null; };
@@ -97,6 +99,36 @@ function runGate(name) {
   return { name, state: 'pass', ms, note: r.note };
 }
 
+/**
+ * CHI PHÍ SÀN của chính runner này ở một stage KHÔNG gate nào có lệnh: một tiến trình Node,
+ * một lần nạp config, một vòng lặp qua danh sách gate, một lần ghi telemetry. Trả đủ, mỗi
+ * lần hook kích hoạt, kể cả khi nó không làm gì.
+ *
+ * ĐO ĐÚNG LỆNH THẬT (`--stage <stage>`), không đo một probe rút gọn. Bản đầu tôi viết một
+ * `--floor-probe` thoát ngay sau khi nạp module: nó cho 64ms trong khi lần gọi thật tốn
+ * 104ms — **báo thấp hơn thực tế 40%**, đúng cái sai mà chính bản vá này ra đời để sửa.
+ *
+ * TELEMETRY CHUYỂN HƯỚNG sang thư mục test: phép đo phải chạy 5 lần, và 5 dòng giả trong
+ * `gate-runs.log` là công cụ đo tự làm nhiễu số của chính nó (issue #66, sửa ở v2.25.0).
+ *
+ * Chỉ gọi ở nhánh `!ran` — nơi đã biết chắc không gate nào có lệnh, nên không có gì để chạy
+ * và không có tác dụng phụ nào ngoài telemetry.
+ *
+ * Đo trực tiếp thay vì hằng số cứng: một con số viết cứng sẽ sai ở máy chậm hơn đúng vào lúc
+ * nó quan trọng nhất. Trung vị 5 lần, không phải trung bình — lần đầu hay dính cache lạnh,
+ * và một outlier kéo trung bình đi trong khi cái cần biết là "bình thường tốn bao nhiêu".
+ */
+function floorMs(stage) {
+  const t = [];
+  for (let i = 0; i < 5; i++) {
+    const a = Date.now();
+    spawnSync(process.execPath, [fileURLToPath(import.meta.url), '--stage', stage],
+      { stdio: 'ignore', env: { ...process.env, HARNESS_TELEMETRY_DIR: TEST_TELEMETRY_DIR } });
+    t.push(Date.now() - a);
+  }
+  return t.sort((x, y) => x - y)[2];
+}
+
 // ── --list : gate nào đang THẬT SỰ chạy ──────────────────────────────────────
 if (has('--list')) {
   const cfg = config().gates ?? {};
@@ -120,7 +152,22 @@ if (has('--list')) {
       // Báo `OK stage: tổng 0ms / ngân sách 30000ms` cho một stage mà mọi gate đều `n/a`
       // là chính phép gộp `0` với `n/a` mà file này cấm ở §TRẠNG THÁI THỨ BA — và nó nói
       // dối đúng hướng dễ chịu: nó bảo "harness không cản gì cả".
-      if (!ran) na.push(`${stage}: KHÔNG đo được độ trễ — 0/${names.length} gate có lệnh. \`0ms\` ở đây là "không có gì chạy", không phải "nhanh"`);
+      if (!ran) {
+        // "Không gate nào có lệnh" KHÔNG phải "không có gì chạy". CHÍNH FILE NÀY chạy: mỗi
+        // stage là một lời gọi `node tooling/gates.mjs` từ hook, và một tiến trình Node cộng
+        // một lần nạp config là chi phí SÀN — trả đủ, mỗi lần, kể cả khi nó không làm gì.
+        //
+        // Đo 2026-08-07, trung vị 7 lần: 104ms. Ở `subagent` con số đó nhân với số agent
+        // song song, và Claude Code 2.1.224 vừa **bỏ trần 200 subagent mỗi phiên** — trần
+        // của vendor từng che cho ta, giờ không còn.
+        //
+        // Bản trước gọi cả cụm này là "KHÔNG đo được". Đúng về phần VIỆC của gate, sai về
+        // CHI PHÍ — và nó sai theo hướng dễ chịu, đúng lớp lỗi mà §TRẠNG THÁI THỨ BA của
+        // file này cấm. Hai con số, hai câu khác nhau: sàn ĐO ĐƯỢC, việc thật thì CHƯA.
+        na.push(`${stage}: sàn runner ${floorMs(stage)}ms mỗi lần gọi — trả kể cả khi 0/${names.length} gate có lệnh`
+          + (stage === 'subagent' ? ` (×N agent song song; Claude Code 2.1.224 đã bỏ trần 200)` : '')
+          + `. Phần VIỆC của gate thì CHƯA đo được — hai chuyện khác nhau, đừng đọc \`0ms\` thành "nhanh"`);
+      }
       else if (total > budget) warn.push(`${stage}: ${total}ms VƯỢT ngân sách ${budget}ms — đẩy gate đắt xuống CI. Ở subagent, con số này nhân với tối đa 16 agent song song.`);
       else if (budget !== Infinity) ok.push(`${stage}: tổng ${total}ms / ngân sách ${budget}ms (${ran}/${names.length} gate có lệnh)`);
     }
@@ -178,12 +225,49 @@ if (fail.length) {
   process.exit(2);
 }
 
+// ── REPO TEMPLATE: điều kiện của gác này KHÔNG THỂ THOẢ ─────────────────────
+//
+// Gác dưới đây bảo *"khai đủ lệnh trong harness.config.json"*. Ở repo TEMPLATE lời khuyên đó
+// **bất khả thi**: `setup.mjs` TỪ CHỐI `--apply` ở đây, bằng chính lý do đúng — *"ghi cấu hình
+// thật vào đây sẽ biến placeholder của template thành cấu hình của MỘT project, và mọi project
+// áp sau đó thừa hưởng nó"*. `commands` rỗng là trạng thái ĐÚNG và VĨNH VIỄN của template.
+//
+// Nên ở template, gác này chỉ còn đúng MỘT lối ra: đi vòng bằng `HARNESS_ALLOW_SKIPPED_GATES`.
+// Đó đúng tiêu chí mà nghi thức `guard-nhanh-tich-hop` dùng để đề nghị CẮT một cái gác:
+// *"cửa thoát dùng nhiều hơn được tuân theo là một guard đang dạy người ta đi vòng"*.
+//
+// Và cái giá không phải lý thuyết. Đo 2026-08-09 (#145): `claude -p` đặt
+// `CLAUDE_CODE_ENTRYPOINT=sdk-cli` ⇒ `unattended()` ⇒ mọi lượt Stop exit 2 ⇒ Claude Code
+// re-invoke agent ⇒ Stop lại đỏ. **Không có điều kiện hội tụ.** Một prompt tầm thường
+// ("trả lời hai chữ OK") cũng chạm `max turns`, và mỗi lượt tốn token thật. Nó chặn eval
+// runner, scheduled agent, canary — mọi thứ chạy không có người, ở đúng repo mà lớp eval
+// phải chạy để chứng minh harness có giá trị.
+//
+// PHẠM VI HẸP, CỐ Ý. Ba điều kiện phải cùng đúng, và điều kiện giữa là điều kiện quan trọng:
+//   · `repoRole() === 'template'`  — repo tiêu thụ có `.claude/harness-manifest.json` ⇒ KHÔNG
+//     rơi vào đây, và với họ `commands` rỗng đúng là cấu hình sai cần chặn.
+//   · `declaredCommands().length === 0` — khai được MỘT lệnh nghĩa là khai được nhiều hơn.
+//     Template khai 1/3 rồi bỏ 2 thì gác cũ vẫn áp: đó là thiếu sót, không phải cấu trúc.
+//   · `skipped && unattended()` — như cũ.
+const noCommandsHere = declaredCommands(config()).length === 0;
+const templateCannotComply = repoRole() === 'template' && noCommandsHere;
+
 // Phiên KHÔNG có người ngồi xem thì một gate bị bỏ qua là rủi ro thật, không phải
 // một dòng cảnh báo ai đó sẽ đọc. Không ai đọc. Fail đóng, đừng fail mở.
-if (skipped && unattended() && process.env.HARNESS_ALLOW_SKIPPED_GATES !== '1') {
+if (skipped && unattended() && !templateCannotComply && process.env.HARNESS_ALLOW_SKIPPED_GATES !== '1') {
   console.error(`\n⛔ Phiên KHÔNG có người ngồi xem và ${skipped} gate bị BỎ QUA.`);
   console.error('   Ở phiên có người, dòng cảnh báo là đủ — có người đọc nó. Ở đây thì không.');
   console.error('   Khai đủ lệnh trong harness.config.json, hoặc đặt HARNESS_ALLOW_SKIPPED_GATES=1 nếu đây là chủ ý.');
   process.exit(2);
+}
+
+// CHO QUA, NHƯNG NÓI RA. Im lặng ở đây biến một ca "không thể thoả" thành một ca "đã thoả",
+// và đó đúng phép gộp mà cả file này tồn tại để chống. Dòng này in ở stderr của MỌI lượt Stop
+// headless trong template — nó phải ngắn, và nó phải nói ra rằng KHÔNG CÓ GÌ ĐƯỢC KIỂM.
+if (skipped && unattended() && templateCannotComply) {
+  console.error(`\n⚠️  REPO TEMPLATE, phiên không người: ${skipped} gate bị BỎ QUA và KHÔNG có gì được kiểm.`);
+  console.error('   KHÔNG chặn — `commands` rỗng là trạng thái ĐÚNG của template (`setup.mjs` từ chối --apply ở đây),');
+  console.error('   nên chặn ở đây là một gác không có đường thoả, và nó làm phiên headless lặp vô hạn (#145).');
+  console.error('   Ở repo TIÊU THỤ, cùng tình huống này VẪN CHẶN — ở đó `commands` rỗng là cấu hình sai.');
 }
 process.exit(0);
