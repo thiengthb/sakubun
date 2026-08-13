@@ -217,9 +217,10 @@ export function GuideFeaturesTab() {
           <p>
             Mẫu chưa gặp lần nào được đưa vào <strong>từng cái một</strong>: mỗi mẫu mới đều kèm một
             bài giảng nhỏ, nên nhồi 2–3 mẫu lạ vào cùng một câu vừa quá tải vừa làm câu mất tự
-            nhiên. Đây là hai hạn mức <em>khác nhau</em> trong Cài đặt → <em>Nhịp học</em>:{' '}
-            <strong>mẫu mới/ngày</strong> (nhịp học cả ngày) và <strong>mẫu mới tối đa/câu</strong>{' '}
-            (mặc định 1).
+            nhiên. Đây là hai hạn mức <em>khác nhau</em>, và chúng nằm ở hai tab khác nhau đúng vì
+            chúng đo hai thứ khác nhau: <strong>mẫu mới/ngày</strong> (hạn mức theo NGÀY, ở{' '}
+            <em>Nhịp học</em>) và <strong>mẫu mới tối đa/câu</strong> (ngân sách của MỘT câu, ở{' '}
+            <em>Nội dung</em> → «Câu trông như thế nào», mặc định 1).
           </p>
           <p>
             Mẫu bị hoãn <strong>không mất đi</strong> — nó xuất hiện ở câu kế tiếp, và Claude sẽ nói
