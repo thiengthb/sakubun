@@ -417,7 +417,7 @@ test('update_settings: dạng phẳng và dạng nested cũ đều chạy, dạn
   expect(after.register, 'lời gọi bị từ chối không được ghi gì').toBe('casual');
 });
 
-test('điểm của lượt vừa chấm hiện trên TRANG CHỦ, không phụ thuộc Claude có chép khối ra hay không', async ({
+test('điểm của lượt vừa chấm đọc được ở LỊCH SỬ, không phụ thuộc Claude có chép khối ra hay không', async ({
   page,
   request,
 }) => {
@@ -458,15 +458,14 @@ test('điểm của lượt vừa chấm hiện trên TRANG CHỦ, không phụ 
   await page.getByRole('button', { name: 'Đăng nhập' }).click();
   await page.waitForURL((u) => !u.pathname.startsWith('/login'), { timeout: 30_000 });
 
-  await page.goto('/');
-  // Không bấm gì, không mở modal nào: điểm phải nằm ngay trên trang hạ cánh.
-  await expect(page.getByRole('heading', { name: 'Lượt vừa chấm' })).toBeVisible();
-  await expect(page.getByText('82/100')).toBeVisible();
-  // Chính câu vừa làm, không phải một con số trừu tượng: người học phải nhận ra lượt của mình mà không
-  // bấm gì. (Rating từng mẫu nằm trong modal chi tiết của thẻ — thẻ gập lại mang điểm + câu đề.)
+  // Thẻ "Lượt vừa chấm" trên trang chủ đã bị GỠ theo yêu cầu chủ repo (2026-08-14). Bảo đảm phía app
+  // của #28 vì thế yếu đi một bậc — điểm không còn nằm trên trang hạ cánh — nhưng nó KHÔNG biến mất:
+  // lượt vẫn được ghi và vẫn đọc được ở /history mà không cần Claude chép khối kết quả ra.
+  // Phép chốt đi theo chỗ bảo đảm còn đứng, thay vì bị xoá cùng thẻ.
+  await page.goto('/history');
+  await expect(page.getByText('82/100').first()).toBeVisible();
+  // Chính câu vừa làm, không phải một con số trừu tượng: người học phải nhận ra lượt của mình.
   await expect(page.getByText(sourceText, { exact: false }).first()).toBeVisible();
-  // Và lời hứa được viết ra cho người học đọc — nó là hợp đồng mới, không phải trang trí.
-  await expect(page.getByText(/Điểm luôn được lưu ở đây/)).toBeVisible();
 });
 
 test('lượt được chấm mà Claude KHÔNG gửi score thì UI phải nói ra, không im lặng', async ({
@@ -557,8 +556,8 @@ test('lượt được chấm mà Claude KHÔNG gửi score thì UI phải nói 
   await page.getByRole('button', { name: 'Đăng nhập' }).click();
   await page.waitForURL((u) => !u.pathname.startsWith('/login'), { timeout: 30_000 });
 
-  await page.goto('/');
-  await expect(page.getByRole('heading', { name: 'Lượt vừa chấm' })).toBeVisible();
+  // Cùng lý do như phép chốt trên: thẻ trên trang chủ đã gỡ, hợp đồng chuyển sang /history.
+  await page.goto('/history');
   await expect(page.getByText(sourceText, { exact: false }).first()).toBeVisible();
   // Thứ đã hỏng cho tới hôm nay: một chỗ trống không giải thích được, mà người học đọc thành "app không
   // chấm". Ô điểm phải luôn có chữ.
