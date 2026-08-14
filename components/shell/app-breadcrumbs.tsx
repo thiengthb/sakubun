@@ -1,7 +1,6 @@
 'use client';
 
 import {
-  BookOpenText,
   BookText,
   ChartColumn,
   FolderOpen,
@@ -66,12 +65,6 @@ const CRUMBS = {
     icon: Settings,
     description:
       'Tuỳ chỉnh nội dung, nhịp học, nghe & nói; dữ liệu; tài khoản và token MCP. Claude đọc các cài đặt học này qua MCP mỗi khi soạn câu.',
-  },
-  guide: {
-    label: 'Hướng dẫn',
-    href: '/guide',
-    icon: BookOpenText,
-    description: 'Cách dùng app + kết nối Claude Desktop (MCP).',
   },
 } satisfies Record<string, Crumb>;
 

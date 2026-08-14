@@ -100,12 +100,6 @@ describe('loading skeletons match their routes', () => {
       tabsVar: /const SETTINGS_TABS = \[([\s\S]*?)\] as const/,
     },
     {
-      name: 'guide',
-      source: 'components/guide/guide-tabs.tsx',
-      loading: 'app/guide/loading.tsx',
-      tabsVar: /const GUIDE_TAB_ITEMS = \[([\s\S]*?)\] as const/,
-    },
-    {
       name: 'group detail',
       source: 'components/groups/group-detail-view.tsx',
       loading: 'app/groups/[id]/loading.tsx',

@@ -59,7 +59,6 @@ const PAIRS: Pair[] = [
   { name: 'resources/new', page: '/resources/new?kind=grammar', skeleton: 'resources-new' },
   { name: 'history', page: '/history', skeleton: 'history' },
   { name: 'settings', page: '/settings', skeleton: 'settings' },
-  { name: 'guide', page: '/guide', skeleton: 'guide' },
   // The group's own name is the last crumb, so the skeleton renders a placeholder pill for it and the
   // aside cannot land in the same place at md+ (below md both are pinned right, which IS asserted).
   { name: 'group detail', page: '/groups/grp-sk/', skeleton: 'group', asideTol: 260 },

@@ -1,6 +1,5 @@
 import { notFound } from 'next/navigation';
 import DashboardLoading from '@/app/loading';
-import GuideLoading from '@/app/guide/loading';
 import HistoryLoading from '@/app/history/loading';
 import SettingsLoading from '@/app/settings/loading';
 import ResourcesLoading from '@/app/resources/loading';
@@ -35,7 +34,6 @@ const SKELETONS: Record<string, () => React.ReactElement> = {
   'item-edit': ItemEditLoading,
   history: HistoryLoading,
   settings: SettingsLoading,
-  guide: GuideLoading,
   group: GroupLoading,
   'group-new': GroupNewLoading,
   'group-edit': GroupEditLoading,

@@ -28,7 +28,6 @@ const ROUTES = [
   '/resources',
   '/history',
   '/settings',
-  '/guide',
   '/groups',
 ];
 

@@ -151,7 +151,6 @@ const PAGES: [string, string][] = [
   ['items', '/items'],
   ['history', '/history'],
   ['settings', '/settings'],
-  ['guide', '/guide'],
   ['resources/new', '/resources/new?kind=grammar'],
   ['resources/new (vocab)', '/resources/new?kind=vocab'],
   // The edit route, on a seeded grammar id. Both form routes now render their tab switcher / breadcrumb
@@ -167,14 +166,11 @@ const PAGES: [string, string][] = [
   // NON-DEFAULT TABS, reached by `?tab=` (every tabbed page mirrors its active tab to the URL, so no
   // clicking is needed). Added 2026-08-05 because this sweep only ever opened each page's FIRST tab, and
   // two hard overflows were living in tabs it never reached:
-  //   · /guide?tab=reference — 234px. Two <pre> config blocks have a min-content width of ~600px, and
-  //     PageShell (a flex item of the Tabs root) was sized from its CONTENT, so the PAGE scrolled
-  //     sideways instead of the code block scrolling inside itself. Fixed with `w-full` on the shell.
-  //   · /settings?tab=data — carries the only other code block in the app, same shape.
-  // Guide "features" is included as the widest PROSE tab (the topic browser), and settings "account"
-  // as the one settings tab built from cards + inline forms rather than fields.
-  ['guide (reference)', '/guide?tab=reference'],
-  ['guide (features)', '/guide?tab=features'],
+  //   · /settings?tab=data — carries the only other code block in the app. Until 2026-08-14 the widest
+  //     case here was /guide?tab=reference (234px of overflow, two <pre> config blocks with a
+  //     ~600px min-content width) — that page is gone, so settings "data" is now the only code block
+  //     in the app and this sweep's widest case. Settings "account" stays as the one settings tab
+  //     built from cards + inline forms rather than fields.
   ['settings (data)', '/settings?tab=data'],
   ['settings (account)', '/settings?tab=account'],
 
@@ -213,7 +209,6 @@ test('the header row stays one line at 360px', async ({ page }) => {
     ['resources', '/resources', null],
     ['history', '/history', null],
     ['settings', '/settings', null],
-    ['guide', '/guide', null],
     ['new (grammar)', '/resources/new?kind=grammar', 'Dán danh sách'],
     ['new (vocab)', '/resources/new?kind=vocab', 'Dán danh sách'],
     // The item detail page, on the LONGEST seeded pattern name. It has nothing in `headerAside` since
@@ -468,7 +463,6 @@ test('mobile: the sort sheet reorders the card list', async ({ page }) => {
 const TABBED: [string, string][] = [
   ['settings', '/settings'],
   ['dashboard', '/'],
-  ['guide', '/guide'],
 ];
 
 test('switching tabs raises no client error — the state the page sweep never enters', async ({ page }) => {
