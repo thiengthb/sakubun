@@ -168,31 +168,18 @@ export function ItemDetailDialog({
             </div>
           )}
 
-          {/* The stored example sentence (`notes`) is a VOCAB-only field of the Item row, so it stays
-              vocab-only — but the CARD is rendered for both kinds now. Until 2026-08-12 this was
-              `kind === 'grammar' && …`, which meant a word's synonyms/collocations/examples existed in
-              the DB and appeared on no screen. */}
-          {kind === 'vocab' && item.notes && (
-            <section className="space-y-1">
-              <SectionTag>Ví dụ</SectionTag>
-              {/* The stored example sentence carries no ruby markup of its own — it is plain text
-                  Claude sent with the word — so this plays but shows no furigana. */}
-              <SpokenLine
-                text={item.notes}
-                showFurigana={showFurigana}
-                speaker={voiceSpeaker}
-                rate={speechRate}
-                label="Nghe ví dụ"
-              />
-            </section>
-          )}
-
+          {/* The stored example sentence (`notes`) is a VOCAB-only field of the Item row, and it used
+              to render HERE under its own «Ví dụ» heading — immediately above a card that renders a
+              second «Ví dụ» of its own. Two headings, same name, same dialog. It now goes into the
+              card through `storedExample`, which is also where it can be deduped against the card's
+              own examples. Same fix as the detail page; both surfaces had the defect. */}
           <EnrichmentCard
             raw={item.enrichment}
             kind={kind === 'vocab' ? VOCAB_KIND : GRAMMAR_KIND}
             voiceSpeaker={voiceSpeaker}
             speechRate={speechRate}
             showFurigana={showFurigana}
+            storedExample={kind === 'vocab' ? item.notes : null}
           />
         </div>
 
