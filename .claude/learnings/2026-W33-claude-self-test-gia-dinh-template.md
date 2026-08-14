@@ -91,10 +91,21 @@ lỗi cứng chứ không phải im lặng.
 
 ## Đề xuất CẮT BỎ
 
-- [x] `entropy-scan` báo skill `verify-ui` **gần như không được nhắc tới ở đâu — ứng viên GỠ BỎ**.
-      Đã kiểm: nó không xuất hiện trong `.claude/settings.json`, không được skill nào gọi, và
-      không có PR nào tuần qua dùng tới. Đề nghị DRI quyết định gỡ hoặc gắn nó vào một điểm vào
-      thật (ví dụ `/pre-merge` khi diff chạm `components/**`).
+- [x] ~~`entropy-scan` báo skill `verify-ui` **gần như không được nhắc tới ở đâu — ứng viên GỠ BỎ**.~~
+      **BÁC — 2026-08-14, sau khi DRI uỷ quyền quyết.** Lần kiểm trước SAI, và sai theo cách đáng ghi:
+      tôi kiểm `.claude/settings.json` và "PR tuần qua", tức đúng những chỗ một skill KHÔNG sống.
+      Đo lại đúng chỗ thì nó có hai điểm vào, chỗ thứ hai mạnh hơn văn xuôi:
+      · `.claude/skills/ship-feature/SKILL.md:63` — một GATE trong quy trình ship;
+      · `tooling/check-feature-integrity.mjs:127` — thông điệp lỗi do MÁY sinh.
+      Và `HARNESS-CHANGELOG.md:1117` ghi rằng skill này ĐÃ từng mồ côi thật rồi được chữa
+      *"bằng cách nối vào vòng lặp, không phải xoá"* — nên gỡ nó là hoàn tác một bản sửa có chủ ý.
+      Lỗi thật nằm ở công cụ: `entropy-scan` chỉ đọc `.md` nên không thấy tham chiếu trong code, và
+      ngưỡng `mentions <= 1` phạt đúng trạng thái mà LUẬT 1 của `.claude/rules/README.md` yêu cầu
+      (một chủ đề, một file ⇒ một điểm vào là ĐÚNG). Mở issue #45 — phát hiện thứ BẢY cùng lớp
+      "công cụ chẩn đoán tự tin nhưng sai" (#4, #5, #8, #13).
+      Bài học riêng cho chính tôi: khi định xoá một thứ vì "không ai dùng", `grep` phải quét CODE
+      chứ không chỉ tài liệu — thông điệp lỗi do máy sinh là tham chiếu đáng tin nhất, vì nó hỏng
+      lộ ra ngay còn văn xuôi thì mục im lặng.
 - [x] `AGENTS.md` đang **154 dòng (>150)** — chính file đó đặt ngưỡng cho mình. Ứng viên chuyển đi:
       mục **Đa hệ điều hành — Parity Contract** đã được cưỡng chế bằng máy (`harness-parity.yml`
       chạy 3 OS + `no-bash-in-harness`), nên nó thuộc `.claude/rules/` theo path chứ không cần
