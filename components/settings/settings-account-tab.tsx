@@ -16,7 +16,6 @@ import {
 import { toast } from 'sonner';
 import { authClient } from '@/lib/auth-client';
 import { createMcpKeyAction, revokeMcpKeyAction } from '@/app/settings/actions';
-import { GuideLink } from '@/components/shared/guide-link';
 import { UserAvatar } from '@/components/shell/user-avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -348,10 +347,6 @@ export function AccountTab({
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            {/* The token is useless until it is pasted into claude_desktop_config.json — link the
-                  recipe that shows where, right where the token is created. */}
-            <GuideLink recipe="mcp" label="Cách dán token vào Claude Desktop" />
-
             <form onSubmit={onCreate} className="flex items-end gap-3">
               <div className="min-w-0 flex-1 space-y-2">
                 <Label htmlFor="token-name">Tên token</Label>

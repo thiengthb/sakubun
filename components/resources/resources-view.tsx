@@ -3,7 +3,6 @@
 import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { TabSelect } from '@/components/shared/tab-select';
 import { EmptyState } from '@/components/shared/empty-state';
-import { GuideLink } from '@/components/shared/guide-link';
 import { ItemsTable, type ItemRow } from '@/components/resources/items-table';
 import { PageShell } from '@/components/shell/page-shell';
 import { ResourceAddButton } from '@/components/resources/resource-add-button';
@@ -65,10 +64,7 @@ export function ResourcesView({
                 </>
               }
               action={
-                <div className="flex flex-col items-center gap-2">
-                  <ResourceAddButton kind="grammar" />
-                  <GuideLink topic="library" label="Ba cách nhập kho" />
-                </div>
+                <ResourceAddButton kind="grammar" />
               }
             />
           ) : (
@@ -94,10 +90,7 @@ export function ResourcesView({
                 </>
               }
               action={
-                <div className="flex flex-col items-center gap-2">
-                  <ResourceAddButton kind="vocab" />
-                  <GuideLink topic="vocab" label="Cách học từ vựng trong ngữ cảnh" />
-                </div>
+                <ResourceAddButton kind="vocab" />
               }
             />
           ) : (

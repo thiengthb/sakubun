@@ -12,7 +12,6 @@ import {
 } from 'lucide-react';
 import { PageShell } from '@/components/shell/page-shell';
 import { EmptyState } from '@/components/shared/empty-state';
-import { GuideLink } from '@/components/shared/guide-link';
 import { ScrollEndOnMount } from '@/components/shared/scroll-end-on-mount';
 import { Badge } from '@/components/ui/badge';
 import { AnalyticsTabs } from '@/components/dashboard/analytics-tabs';
@@ -422,16 +421,12 @@ export default async function HomePage() {
           title="Chưa có gì để học"
           description="Bắt đầu bằng cách nhập mẫu ngữ pháp vào kho."
           action={
-            <div className="flex flex-col items-center gap-2">
-              <Link
-                href="/resources"
-                className="inline-flex items-center gap-1 text-sm text-accent-brand hover:underline"
-              >
-                Mở kho tài nguyên <ArrowRight className="size-4" aria-hidden />
-              </Link>
-              {/* A brand-new account lands here: the 7-step tutorial is the honest next click. */}
-              <GuideLink tab="start" label="Hướng dẫn bắt đầu (7 bước)" />
-            </div>
+            <Link
+              href="/resources"
+              className="inline-flex items-center gap-1 text-sm text-accent-brand hover:underline"
+            >
+              Mở kho tài nguyên <ArrowRight className="size-4" aria-hidden />
+            </Link>
           }
         />
       </PageShell>

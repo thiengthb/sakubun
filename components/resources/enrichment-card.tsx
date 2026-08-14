@@ -9,7 +9,6 @@ import {
 } from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
 import { EmptyState } from '@/components/shared/empty-state';
-import { GuideLink } from '@/components/shared/guide-link';
 import { SectionTag } from '@/components/shared/section-tag';
 import { SpokenLine } from '@/components/shared/spoken-line';
 import { useSessionState } from '@/components/shared/use-session-state';
@@ -175,11 +174,7 @@ export function EnrichmentCard({
             />
           </section>
         )}
-        <EmptyState
-          icon={null}
-          className="p-4"
-          action={<GuideLink topic="enrichment" label="Thẻ chi tiết là gì?" />}
-        >
+        <EmptyState icon={null} className="p-4">
           Chưa có thẻ chi tiết. Trong Claude Desktop chạy prompt <code>enrich_backlog</code> để Claude
           soạn{' '}
           {isVocabCard ? 'nghĩa, cụm hay đi kèm, từ đồng nghĩa/trái nghĩa, ví dụ' : 'cấu trúc, ví dụ, bẫy'}

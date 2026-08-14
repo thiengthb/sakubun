@@ -1,17 +1,10 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import {
-  BookOpenText,
-  History,
-  LayoutDashboard,
-  Library,
-  Settings,
-} from 'lucide-react';
+import { History, LayoutDashboard, Library, Settings } from 'lucide-react';
 import { AppLogo } from '@/components/shell/app-logo';
 import { AppSidebar, type AppSidebarGroup } from '@/components/shell/app-sidebar';
 import { EdgeNavRail } from '@/components/shell/edge-nav-rail';
-import { PublicTopBar } from '@/components/shell/public-top-bar';
 import { ScrollToTop } from '@/components/shell/scroll-to-top';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import { StreakBeacon } from '@/components/dashboard/streak-beacon';
@@ -24,19 +17,11 @@ import { useSession } from '@/lib/auth-client';
 // and a guest never reaches it (getSessionUserId redirects to /login).
 const CHROMELESS = ['/login', '/register'];
 
-/**
- * Routes a signed-OUT visitor may read. `/guide` is data-free, and staying readable before sign-in is
- * the point — but it must not get the app sidebar: every link in it would bounce to /login. It gets
- * the public top bar instead.
- */
-const GUEST_VIEWABLE = ['/guide'];
-
 const NAV_ITEMS = [
   { href: '/', label: 'Phân tích', icon: LayoutDashboard, exact: true },
   { href: '/resources', label: 'Tài nguyên', icon: Library },
   { href: '/history', label: 'Lịch sử', icon: History },
   { href: '/settings', label: 'Cài đặt', icon: Settings },
-  { href: '/guide', label: 'Hướng dẫn', icon: BookOpenText },
 ];
 
 /** Owns page width + padding — pages render their content only (todo's shell invariant). */
@@ -55,17 +40,9 @@ export function AppShell({
   const guestLanding = pathname === '/' && !authed;
   if (CHROMELESS.includes(pathname) || guestLanding) return <>{children}</>;
 
-  if (!authed && GUEST_VIEWABLE.includes(pathname)) {
-    return (
-      <div className="flex min-h-dvh flex-col">
-        <PublicTopBar containerClassName="max-w-7xl px-4 sm:px-6" />
-        {/* Same width + padding as the signed-in <main>, so the page body is laid out identically. */}
-        <main className="mx-auto w-full max-w-7xl min-w-0 flex-1 px-4 sm:px-6">{children}</main>
-        {/* /guide is the longest page in the app, signed in or not. */}
-        <ScrollToTop />
-      </div>
-    );
-  }
+  // Không còn trang nào cho khách chưa đăng nhập. `/guide` là trang DUY NHẤT từng ở đây, và nó bị gỡ
+  // theo yêu cầu chủ repo (2026-08-14) — nên nhánh khách, `PublicTopBar` và cả `GUEST_VIEWABLE` đi
+  // theo. Giữ lại một nhánh không đường nào tới được là giữ một lối rẽ chết trong bộ định tuyến.
 
   // Single user: no roles, so no operator-only entries to append.
   const groups: AppSidebarGroup[] = [{ items: NAV_ITEMS }];
