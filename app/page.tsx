@@ -3,8 +3,9 @@ import Link from 'next/link';
 import {
   ArrowRight,
   BookOpenText,
+  Brain,
+  CalendarCheck,
   CalendarClock,
-  ChartLine,
   GraduationCap,
   Inbox,
   Target,
@@ -45,27 +46,93 @@ export const metadata: Metadata = {
 
 export const dynamic = 'force-dynamic';
 
+/**
+ * The page's ONE structural device (issue #38).
+ *
+ * Measured 2026-08-13 at 390px: ten blocks, 2495px tall, and a single divider — so the page read as one
+ * flat list three screens long and there was no way to tell which part you were in. The order of those
+ * blocks followed the DATA SOURCES (`getStats` → `getAnalytics` → `getWeakReport` → `computeDossier`),
+ * not the questions a learner arrives with, which is why "how is my memory holding up" was answered by
+ * a KPI at the top and by three charts a screen and a half below it.
+ *
+ * Three groups, each named after its question. The subtitle is load-bearing, not decoration: it is what
+ * makes the group a claim you can disagree with rather than a label.
+ */
+function SectionHeader({
+  icon: Icon,
+  title,
+  hint,
+}: {
+  icon: typeof Inbox;
+  title: string;
+  hint: string;
+}) {
+  return (
+    <div className="flex items-start gap-3 pt-2">
+      <span
+        aria-hidden
+        className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-accent-brand/10 text-accent-brand"
+      >
+        <Icon className="size-4" />
+      </span>
+      <div className="min-w-0">
+        <h2 className="font-heading text-base font-semibold">{title}</h2>
+        <p className="text-xs text-muted-foreground">{hint}</p>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * `bg-card` is the change that makes the page read as cards at all: the page background is the ivory
+ * `--background`, and these tiles used to be transparent — so a "card" was a hairline rectangle of the
+ * same colour as the page. `--card` on `--background` is the treatment the rest of the app already uses
+ * (`SettingsTab` wraps its body in `Card`), so this aligns the dashboard with it rather than inventing.
+ */
 function StatCard({
   icon: Icon,
   label,
   value,
   hint,
+  hero = false,
 }: {
   icon: typeof Inbox;
   label: string;
   value: string;
   hint?: string;
+  /** The one KPI that answers "what do I do right now" — bigger numeral + a brand wash behind it. */
+  hero?: boolean;
 }) {
   return (
-    <div className="rounded-lg border border-border/70 p-4">
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Icon className="size-4" aria-hidden />
-        {label}
+    <div
+      className={cn(
+        'relative overflow-hidden rounded-xl border border-border/70 bg-card p-4',
+        hero && 'border-accent-brand/30',
+      )}
+    >
+      {hero && (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 bg-gradient-to-br from-accent-brand/10 to-transparent"
+        />
+      )}
+      <div className="relative">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Icon className="size-4" aria-hidden />
+          {label}
+        </div>
+        {/* text-xl below sm: in the two-column phone layout a 24px "50 ngữ pháp" wraps to two lines and
+            makes one card taller than its neighbour; 20px keeps every value on one line. */}
+        <div
+          className={cn(
+            'mt-2 font-semibold',
+            hero ? 'text-2xl sm:text-3xl' : 'text-xl sm:text-2xl',
+          )}
+        >
+          {value}
+        </div>
+        {hint && <div className="mt-1 text-xs text-muted-foreground">{hint}</div>}
       </div>
-      {/* text-xl below sm: in the two-column phone layout a 24px "50 ngữ pháp" wraps to two lines and
-          makes one card taller than its neighbour; 20px keeps every value on one line. */}
-      <div className="mt-2 text-xl font-semibold sm:text-2xl">{value}</div>
-      {hint && <div className="mt-1 text-xs text-muted-foreground">{hint}</div>}
     </div>
   );
 }
@@ -74,17 +141,24 @@ function ChartCard({
   title,
   children,
   action,
+  className,
 }: {
   title: string;
   children: React.ReactNode;
   action?: React.ReactNode;
+  className?: string;
 }) {
   return (
-    <div className="space-y-4 rounded-lg border border-border/70 p-4">
+    // `h-full` so a card in a bento row stretches to its tallest sibling instead of leaving a ragged
+    // bottom edge — the whole point of putting two unequal charts on one row.
+    <div
+      className={cn('h-full space-y-4 rounded-xl border border-border/70 bg-card p-4', className)}
+    >
       {/* flex-wrap: a long Vietnamese title + a legend cannot share 358px. Wrapping drops the legend
           onto its own line on a phone instead of squeezing the title into two ragged lines beside it. */}
       <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
-        <h2 className="text-sm font-medium text-muted-foreground">{title}</h2>
+        {/* h3, not h2: the group header above it is the h2 now, so this keeps the outline honest. */}
+        <h3 className="text-sm font-medium text-muted-foreground">{title}</h3>
         {action}
       </div>
       {children}
@@ -372,6 +446,16 @@ export default async function HomePage() {
 
   const progress = (
     <>
+      {/* ── HÔM NAY — the daily loop ─────────────────────────────────────────────────────────────
+          Measured before the regroup: "Đến hạn bây giờ" sat at 72px and "Tiến độ hôm nay" ended at
+          852px, so this group already fitted one screen and its ORDER was already right. What it
+          lacked was a name. Nothing is reordered inside it. */}
+      <SectionHeader
+        icon={CalendarCheck}
+        title="Hôm nay"
+        hint="Việc đang chờ, và kết quả của lượt vừa chấm."
+      />
+
       {/* The score of the turn just finished, FIRST — it is the answer to the question the learner
           arrives with. Absent only before the first graded turn. */}
       {lastGraded[0] && (
@@ -382,11 +466,13 @@ export default async function HomePage() {
           furiganaMode={settings.furiganaMode}
         />
       )}
+
       {/* Two columns from the smallest screen up (was one below sm): four stacked cards ate 310px, so a
           phone opened the dashboard on two KPIs and had to scroll for the other two. Paired up they all
           land above the fold, which is the entire job of this row. gap-3 below sm to buy label width. */}
       <section className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <StatCard
+          hero
           icon={CalendarClock}
           label="Đến hạn bây giờ"
           value={String(stats.dueNow)}
@@ -427,26 +513,25 @@ export default async function HomePage() {
         />
       </section>
 
-      {/* Mốc phân cấp DUY NHẤT của trang, đặt đúng chỗ nội dung đổi vai.
-          Đo ở 390px (2026-08-12): trang cao 2535px = 3 màn, mười khối và không một mốc nào cho tới
-          "Điểm yếu 30 ngày" ở 1993px — nên mọi thứ đọc như một danh sách phẳng dài ba màn.
-          Nhưng đo cũng cho thấy THỨ TỰ đã đúng và không cần sắp lại: "Đến hạn bây giờ" ở 72px và
-          "Tiến độ hôm nay" kết ở 852px, tức vòng lặp hằng ngày vừa đúng một màn. Cái thiếu là chỗ NGẮT
-          giữa "việc hôm nay" và "phân tích kho" — nó bắt đầu chính xác ở đây (nhiệt đồ, 876px, khối đầu
-          tiên dưới fold). Một `<h2>` theo đúng idiom mục "Điểm yếu 30 ngày" bên dưới, không phải một
-          cấu trúc mới. */}
-      <h2 className="flex items-center gap-1.5 pt-2 text-sm font-medium text-muted-foreground">
-        <ChartLine className="size-4" aria-hidden /> Phân tích kho
-      </h2>
+      {/* ── TRÍ NHỚ — is the schedule keeping up with the actual memory ───────────────────────────
+          The verdict card comes FIRST here and is deliberately the narrow column: it is the only block
+          on the page that says whether the numbers are good or bad, and it was previously the LAST of
+          the four memory blocks, a screen below the KPI that raises the same question. */}
+      <SectionHeader
+        icon={Brain}
+        title="Trí nhớ"
+        hint="Lịch ôn có bám kịp trí nhớ thật của bạn không, và kho đang đứng ở đâu."
+      />
 
-      <section>
-        <ChartCard title="Hoạt động 1 năm (lượt ôn mỗi ngày)" action={<HeatmapLegend />}>
-          <Heatmap data={analytics.activity} max={analytics.activityMax} />
+      <section className="grid gap-4 lg:grid-cols-3">
+        <ChartCard title="Trí nhớ thực tế so với mục tiêu">
+          <RetentionGauge
+            actual={analytics.trueRetention}
+            desired={analytics.desiredRetention}
+            windowDays={analytics.retentionWindowDays}
+          />
         </ChartCard>
-      </section>
-
-      <section>
-        <ChartCard title="Dự báo đến hạn 14 ngày tới">
+        <ChartCard title="Dự báo đến hạn 14 ngày tới" className="lg:col-span-2">
           <Bars
             data={forecastData}
             barClass="bg-warn/70"
@@ -465,76 +550,95 @@ export default async function HomePage() {
       </section>
 
       <section>
-        <ChartCard title="Trí nhớ thực tế so với mục tiêu">
-          <RetentionGauge
-            actual={analytics.trueRetention}
-            desired={analytics.desiredRetention}
-            windowDays={analytics.retentionWindowDays}
-          />
+        <ChartCard title="Hoạt động 1 năm (lượt ôn mỗi ngày)" action={<HeatmapLegend />}>
+          <Heatmap data={analytics.activity} max={analytics.activityMax} />
         </ChartCard>
       </section>
 
+      {/* ── ĐIỂM YẾU — what to fix next ──────────────────────────────────────────────────────────
+          The header renders with `hasWeakData` only, which is what the old bare `<h2>` did too. When
+          there is no weakness data but the learner model is non-empty, `LearnerProfile` still renders
+          below on its own — unchanged behaviour, and better than duplicating its emptiness rule here
+          (it is derived inside the component from four sources; a copy would drift). */}
       {hasWeakData && (
-        <section className="space-y-3">
-          <h2 className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
-            <Target className="size-4" aria-hidden /> Điểm yếu 30 ngày
-          </h2>
-          {weak.tagCounts.length > 0 && (
-            <WeakList label="Loại lỗi hay mắc">
-              {weak.tagCounts.map((t) => (
-                <Badge key={t.tag} variant="outline" className="border-warn/40 text-warn">
-                  {ERROR_TAG_LABELS[t.tag]} ×{t.count}
-                </Badge>
-              ))}
-            </WeakList>
-          )}
-          {weak.worstItems.length > 0 && (
-            <WeakList label="Sai nhiều nhất">
-              {weak.worstItems.map((w) => (
-                <WeakItemBadge
-                  key={w.itemId}
-                  itemId={w.itemId}
-                  expression={w.expression}
-                  detail={`sai ×${w.misses}${w.tags.length ? ` · ${w.tags.map((t) => ERROR_TAG_LABELS[t]).join(', ')}` : ''}`}
-                />
-              ))}
-            </WeakList>
-          )}
-          {weak.leeches.length > 0 && (
-            <WeakList label="Quên đi quên lại">
-              {weak.leeches.map((l) => (
-                <WeakItemBadge
-                  key={l.itemId}
-                  itemId={l.itemId}
-                  expression={l.expression}
-                  tone="alert"
-                  detail={`quên ×${l.lapses}${l.suspendSuggested ? ' · nên tạm ngưng' : ''}`}
-                />
-              ))}
-            </WeakList>
-          )}
-          {analytics.watchlist.length > 0 && (
-            <WeakList label="Tốn sức nhớ nhất">
-              {analytics.watchlist.map((w) => (
-                <WeakItemBadge
-                  key={w.itemId}
-                  itemId={w.itemId}
-                  expression={w.expression}
-                  detail={`độ khó ${w.difficulty.toFixed(1)}/10`}
-                />
-              ))}
-            </WeakList>
-          )}
-        </section>
+        <>
+          <SectionHeader
+            icon={Target}
+            title="Điểm yếu"
+            hint="30 ngày qua: lỗi hay mắc, mẫu sai nhiều, và những gì Claude đã ghi lại về bạn."
+          />
+          <section className="grid gap-4 lg:grid-cols-2">
+            <div className="h-full space-y-4 rounded-xl border border-border/70 bg-card p-4">
+              {weak.tagCounts.length > 0 && (
+                <WeakList label="Loại lỗi hay mắc">
+                  {weak.tagCounts.map((t) => (
+                    <Badge key={t.tag} variant="outline" className="border-warn/40 text-warn">
+                      {ERROR_TAG_LABELS[t.tag]} ×{t.count}
+                    </Badge>
+                  ))}
+                </WeakList>
+              )}
+              {weak.worstItems.length > 0 && (
+                <WeakList label="Sai nhiều nhất">
+                  {weak.worstItems.map((w) => (
+                    <WeakItemBadge
+                      key={w.itemId}
+                      itemId={w.itemId}
+                      expression={w.expression}
+                      detail={`sai ×${w.misses}${w.tags.length ? ` · ${w.tags.map((t) => ERROR_TAG_LABELS[t]).join(', ')}` : ''}`}
+                    />
+                  ))}
+                </WeakList>
+              )}
+              {weak.leeches.length > 0 && (
+                <WeakList label="Quên đi quên lại">
+                  {weak.leeches.map((l) => (
+                    <WeakItemBadge
+                      key={l.itemId}
+                      itemId={l.itemId}
+                      expression={l.expression}
+                      tone="alert"
+                      detail={`quên ×${l.lapses}${l.suspendSuggested ? ' · nên tạm ngưng' : ''}`}
+                    />
+                  ))}
+                </WeakList>
+              )}
+              {analytics.watchlist.length > 0 && (
+                <WeakList label="Tốn sức nhớ nhất">
+                  {analytics.watchlist.map((w) => (
+                    <WeakItemBadge
+                      key={w.itemId}
+                      itemId={w.itemId}
+                      expression={w.expression}
+                      detail={`độ khó ${w.difficulty.toFixed(1)}/10`}
+                    />
+                  ))}
+                </WeakList>
+              )}
+            </div>
+
+            <div className="h-full rounded-xl border border-border/70 bg-card p-4">
+              <LearnerProfile
+                dossier={dossier}
+                notes={learnerNotes}
+                voiceSpeaker={stats.settings.voiceSpeaker}
+                speechRate={stats.settings.speechRate}
+                furiganaMode={stats.settings.furiganaMode}
+              />
+            </div>
+          </section>
+        </>
       )}
 
-      <LearnerProfile
-        dossier={dossier}
-        notes={learnerNotes}
-        voiceSpeaker={stats.settings.voiceSpeaker}
-        speechRate={stats.settings.speechRate}
-        furiganaMode={stats.settings.furiganaMode}
-      />
+      {!hasWeakData && (
+        <LearnerProfile
+          dossier={dossier}
+          notes={learnerNotes}
+          voiceSpeaker={stats.settings.voiceSpeaker}
+          speechRate={stats.settings.speechRate}
+          furiganaMode={stats.settings.furiganaMode}
+        />
+      )}
 
       <section className="flex flex-wrap gap-x-6 gap-y-2">
         <Link
