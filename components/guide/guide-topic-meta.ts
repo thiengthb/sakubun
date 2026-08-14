@@ -114,7 +114,7 @@ export const GUIDE_TOPIC_META = [
     group: 'practice',
     title: 'Mẫu mới vào từng cái một (không bị dồn)',
     summary:
-      'Mỗi câu chỉ mang tối đa 1 mẫu bạn chưa gặp (đổi được ở Nhịp học) — mẫu bị hoãn sang câu sau, không mất.',
+      'Mỗi câu chỉ mang tối đa 1 mẫu bạn chưa gặp (đổi được ở Nội dung) — mẫu bị hoãn sang câu sau, không mất.',
     keywords: ['mẫu mới', 'quá tải', 'nhịp học', 'hạn mức', 'mới mỗi câu'],
     addedOn: '2026-07-26',
   },
