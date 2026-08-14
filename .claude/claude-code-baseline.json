@@ -1,8 +1,13 @@
 {
   "$comment": "Bản rà Claude Code gần nhất. Nghi thức `claude-code-drift` so `reviewedVersion` với version đang chạy. Đừng sửa tay — dùng `node tooling/rituals.mjs --reviewed-claude-code \"<thấy gì>\"`.",
-  "reviewedVersion": "2.1.226",
-  "reviewedAt": "2026-08-10T14:15:53.452Z",
+  "reviewedVersion": "2.1.232",
+  "reviewedAt": "2026-08-14T10:51:54.591Z",
   "history": [
+    {
+      "version": "2.1.232",
+      "at": "2026-08-14T10:51:54.591Z",
+      "found": "2.1.227-232: vendor bat dau lam NATIVE dung phan viec cua dcg.mjs. Ba dong dang chu y: (1) 'Bash input redirections (< file) are now permission-checked like their argument spellings' - dcg.mjs cham lenh theo chuoi nen mot lenh doc qua '< file' truoc day di vong duoc; (2) '/commit-push-pr: git/gh commands with dangerous flags no longer auto-approved' - trung y voi dcg chan force push / reset --hard; (3) 'Hardened Linux filesystem sandbox against a protected-path bypass' + hai ban va bypass tren Windows (PowerShell PSDefaultParameterValues, Git Bash Cygwin symlink) - trung vung voi block-secrets.mjs + permissions.deny. KET LUAN: chua bo duoc hook nao. dcg.mjs van ma hoa BA NHOM NGUY HIEM rieng cua repo nay kem ly do va telemetry, thu native khong co. Nhung huong hoi tu da ro, nen lan deprecation review sau phai DO chu khong doan: chay test-hooks voi tung hook tat de xem native da bat duoc ca nao chua. Ngoai le dang ghi: 'Write tool so newer models can overwrite an existing file without reading first' - noi long mot gia dinh an toan, va repo nay khong co guard nao cho no."
+    },
     {
       "version": "2.1.226",
       "at": "2026-08-10T14:15:53.452Z",
