@@ -45,7 +45,7 @@
       "representation": "verification-skill",
       "status": "active",
       "added": "2026-08-12",
-      "occurrences": 4,
+      "occurrences": 6,
       "artifacts": [
         "e2e/resources-tables.spec.ts (phép đo dùng-một-lần đã thành lưới thường trú: cộng scrollWidth-clientWidth, và bắt mọi th có span.truncate bị cắt)",
         "e2e/no-js-first-paint.spec.ts (tải trang với JS tắt = đúng bằng HTML server, không phải xấp xỉ của nó)",
