@@ -56,7 +56,7 @@ Danh mục tra cứu. Khi có gì đó sai mà bạn chưa gọi tên được, 
 | D5 | **Không có merge queue** | conflict ngữ nghĩa vỡ trên main, lặp lại mãi | bật merge queue — việc ROI cao nhất |
 | D6 | **Một file chung cho nhiều người ghi** | conflict mỗi ngày ở chỗ git không giúp được | chẻ theo người / theo issue |
 | D7 | **Serialize mọi thứ vì sợ conflict** | ~4/5 cặp song song không conflict → ném throughput để tránh chi phí xác suất | leo ladder, serialize là bậc cuối |
-| D8 | **Đổi harness rồi không thông báo** | nửa team hành xử theo rule cũ | `/whats-new` + canary |
+| D8 | **Đổi harness rồi không thông báo** | nửa team hành xử theo rule cũ | cập nhật `.claude/whats-new.md` + canary |
 | D9 | **Review comment lặp lại mà không thành rule** | team dạy lại cùng một bài mỗi tháng | checkbox trong PR template |
 | D10 | **Agent tự trị push lên nhánh của người** | xoá/ghi đè việc đang làm | tiền tố `auto/`; DCG chặn force push |
 | D11 | **Worktree không gitignore / không dọn** | commit worktree vào repo; ổ cứng và file-watcher cạn | `.gitignore` + `/wt` mỗi sáng |
