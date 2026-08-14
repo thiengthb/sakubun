@@ -116,6 +116,7 @@ export function EnrichmentCard({
   showFurigana = false,
   contrastLinks = [],
   persist = false,
+  storedExample = null,
 }: {
   raw: string | null | undefined;
   /**
@@ -134,6 +135,17 @@ export function EnrichmentCard({
   /** Remember which sections are collapsed across navigation within the session (detail page only —
    * the peek dialog stays uncontrolled). `null` = untouched ⇒ fall back to "all open". */
   persist?: boolean;
+  /**
+   * `Item.notes` — for VOCAB that field holds the example sentence stored with the word when it was
+   * added (`item-edit-form.tsx` labels it «Ví dụ» for this kind).
+   *
+   * It belongs INSIDE this card's examples list, not beside it. Both callers used to render it as
+   * their own «Ví dụ» section directly above the card, and the card then rendered a second «Ví dụ»
+   * of its own — two headings with the same name, stacked, on the detail page AND in the peek dialog.
+   * Not a rendering bug: two data sources (the Item row vs the enrichment card, which only arrived on
+   * 2026-08-12) that were never reconciled after the second one appeared.
+   */
+  storedExample?: string | null;
 }) {
   // Hook runs unconditionally (before the null-guard return) to satisfy rules-of-hooks. Shared key so
   // collapsing a section stays collapsed as you move between item detail pages — a "sticky" accordion,
@@ -142,18 +154,52 @@ export function EnrichmentCard({
   const isVocabCard = kind === VOCAB_KIND;
   const enrichment = parseEnrichment(raw);
   if (!enrichment) {
+    // No card — but the stored sentence must still surface, or moving it in here would DELETE it from
+    // the screen for exactly the items that have the least content. It keeps its own heading in this
+    // branch, and that is still only ONE «Ví dụ» on the page because the card's is not rendered.
     return (
-      <EmptyState
-        icon={null}
-        className="p-4"
-        action={<GuideLink topic="enrichment" label="Thẻ chi tiết là gì?" />}
-      >
-        Chưa có thẻ chi tiết. Trong Claude Desktop chạy prompt <code>enrich_backlog</code> để Claude
-        soạn {isVocabCard ? 'nghĩa, cụm hay đi kèm, từ đồng nghĩa/trái nghĩa, ví dụ' : 'cấu trúc, ví dụ, bẫy'}
-        … cho {isVocabCard ? 'từ' : 'mẫu'} này.
-      </EmptyState>
+      <div className={cn('w-full', className)}>
+        {storedExample && (
+          <section className="space-y-1 px-1 pb-3 text-sm">
+            <p className="text-xs text-muted-foreground">Ví dụ</p>
+            {/* `ruby={undefined}` viết TƯỜNG MINH, không phải bỏ quên: câu lưu trên `Item` không có
+                cột ruby nào để lấy. Luật khoá `japanese-three-signals` tồn tại để bắt trường hợp
+                QUÊN truyền `ruby`, và cách phân biệt "quên" với "không có" là nói ra. */}
+            <SpokenLine
+              text={storedExample}
+              ruby={undefined}
+              showFurigana={showFurigana}
+              speaker={voiceSpeaker}
+              rate={speechRate}
+              label="Nghe ví dụ"
+            />
+          </section>
+        )}
+        <EmptyState
+          icon={null}
+          className="p-4"
+          action={<GuideLink topic="enrichment" label="Thẻ chi tiết là gì?" />}
+        >
+          Chưa có thẻ chi tiết. Trong Claude Desktop chạy prompt <code>enrich_backlog</code> để Claude
+          soạn{' '}
+          {isVocabCard ? 'nghĩa, cụm hay đi kèm, từ đồng nghĩa/trái nghĩa, ví dụ' : 'cấu trúc, ví dụ, bẫy'}
+          … cho {isVocabCard ? 'từ' : 'mẫu'} này.
+        </EmptyState>
+      </div>
     );
   }
+
+  // ONE list, so there is ONE «Ví dụ» and one render path (issue #47).
+  //
+  // The stored sentence goes LAST — the card's own examples lead because they are richer (they carry
+  // `vi`, and `jaRuby` since 2026-07-20). Deduped on the Japanese text: a word that was added and
+  // later enriched often ends up with the same sentence in both places, and printing it twice inside
+  // one section would be the same defect one level down.
+  const cardExamples = [enrichment.example, ...enrichment.examples];
+  const exampleList =
+    storedExample && !cardExamples.some((ex) => ex.ja === storedExample)
+      ? [...cardExamples, { ja: storedExample, vi: '', jaRuby: undefined }]
+      : cardExamples;
 
   // Every present section opens by default (accordion is still collapsible per-section).
   const open = [
@@ -219,11 +265,14 @@ export function EnrichmentCard({
 
         <Section value="examples" title="Ví dụ">
           <ul className="space-y-2.5">
-            {[enrichment.example, ...enrichment.examples].map((ex, i) => (
+            {exampleList.map((ex, i) => (
               <li key={`${ex.ja}-${i}`} className="space-y-0.5">
                 {/* `jaRuby` is absent on every card enriched before 2026-07-20 — SpokenLine then just
                   renders the plain sentence, so the play button still works and only the furigana
-                  is missing. The library fills in as items are re-enriched. */}
+                  is missing. The library fills in as items are re-enriched. The stored sentence is
+                  permanently in that state (the Item row has no ruby column), which is why it goes
+                  through this SAME render path instead of a second one: one path means one place
+                  where `ruby` can be forgotten, and `lib/ui-pattern-lock.test.ts` guards that place. */}
                 <SpokenLine
                   text={ex.ja}
                   ruby={ex.jaRuby}
@@ -232,7 +281,11 @@ export function EnrichmentCard({
                   rate={speechRate}
                   label="Nghe ví dụ"
                 />
-                <p className="text-muted-foreground">{ex.vi}</p>
+                {ex.vi ? (
+                  <p className="text-muted-foreground">{ex.vi}</p>
+                ) : (
+                  <p className="text-xs text-muted-foreground">câu lưu cùng từ khi thêm vào kho</p>
+                )}
               </li>
             ))}
           </ul>

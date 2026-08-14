@@ -362,29 +362,15 @@ export function ItemAnalytics({
         </TabsContent>
 
         <TabsContent value="detail" className="space-y-4">
-          {/* Âm Hán Việt and the stored example sentence are VOCAB-only and come from the Item row, not
-              from the card — so they sit ABOVE the card rather than instead of it. */}
-          {isVocab && (
-            <div className="space-y-4 text-sm">
-              {stats.hanviet && (
-                <section className="space-y-1">
-                  <SectionTag>Âm Hán Việt</SectionTag>
-                  <p className="font-medium capitalize">{stats.hanviet}</p>
-                </section>
-              )}
-              {stats.notes ? (
-                <section className="space-y-1">
-                  <SectionTag>Ví dụ</SectionTag>
-                  <SpokenLine
-                    text={stats.notes}
-                    showFurigana={showFurigana}
-                    speaker={voiceSpeaker}
-                    rate={speechRate}
-                    label="Nghe ví dụ"
-                  />
-                </section>
-              ) : null}
-            </div>
+          {/* Âm Hán Việt is VOCAB-only and comes from the Item row, not from the card, so it stays
+              above it. The stored example sentence USED TO sit here too, under its own «Ví dụ»
+              heading — directly above a card that renders a second «Ví dụ». It now goes into the
+              card via `storedExample`, so the tab carries exactly one. */}
+          {isVocab && stats.hanviet && (
+            <section className="space-y-1 text-sm">
+              <SectionTag>Âm Hán Việt</SectionTag>
+              <p className="font-medium capitalize">{stats.hanviet}</p>
+            </section>
           )}
 
           <EnrichmentCard
@@ -394,6 +380,7 @@ export function ItemAnalytics({
             speechRate={speechRate}
             showFurigana={showFurigana}
             contrastLinks={stats.contrastLinks}
+            storedExample={isVocab ? stats.notes : null}
             persist
           />
         </TabsContent>
