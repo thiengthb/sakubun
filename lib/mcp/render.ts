@@ -464,6 +464,17 @@ export function renderScaffold(patterns: readonly ScaffoldPattern[]): string | n
 
 export function renderDueBatch(batch: DueBatch): string {
   if (batch.items.length === 0) {
+    // An empty library is NOT an empty queue. Without this the very first /practice of a fresh
+    // account reads as "you are done for today", and Claude congratulates the learner for finishing
+    // a library that does not exist yet.
+    if (batch.libraryEmpty) {
+      return (
+        '_(The grammar library is EMPTY — this is a new account, not a finished day.)_ Do NOT say ' +
+        'the session is over or that nothing is due. Tell the user their library has no patterns ' +
+        'yet and offer to fill it: run the `import_grammar` prompt to paste a list from Mazii or a ' +
+        'textbook, or give you a few patterns to add with add_grammar right now.'
+      );
+    }
     const wait = batch.nextDueAt
       ? `Next item is due ${humanizeUntil(batch.nextDueAt)}.`
       : 'Nothing else is queued today.';

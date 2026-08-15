@@ -68,3 +68,13 @@ export function cleanVocabTerm(input: string): string {
 export function hasKanji(input: string): boolean {
   return /[㐀-鿿豈-﫿]/.test(input);
 }
+
+// Kana, kanji, latin letters or digits — anything that can actually carry meaning.
+const MEANINGFUL = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{L}\p{N}]/u;
+
+// True when a string is nothing but punctuation, brackets and whitespace: "（　）", "〜", "…".
+// A grammar pattern legitimately STARTS with 〜 and a vocab term may be wrapped in 「」, so the
+// question is "is there ANY meaningful character in here", not "does it start with one".
+export function isBlankOfMeaning(input: string): boolean {
+  return !MEANINGFUL.test(input);
+}

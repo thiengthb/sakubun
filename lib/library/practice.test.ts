@@ -440,6 +440,25 @@ describe('addItems — dedup', () => {
     const rows = await prisma.item.count({ where: { kind: 'GRAMMAR' } });
     expect(rows).toBe(1);
   });
+
+  it('refuses an expression that is only punctuation, for GRAMMAR as well as VOCAB', async () => {
+    await resetData();
+    // Found by driving a real MCP session: cleanVocabTerm only runs for VOCAB, so these survived
+    // cleanText with length > 0 and became scheduled grammar items the learner was then asked to
+    // translate.
+    for (const junk of ['（　）', '「」', '…', '〜', '   ']) {
+      const res = await P.addItems([{ expression: junk, meaningVi: 'rác' }]);
+      expect(res.created, `"${junk}" must not enter the library`).toBe(0);
+      expect(res.skipped).toHaveLength(1);
+    }
+    expect(await prisma.item.count({ where: { kind: 'GRAMMAR' } })).toBe(0);
+  });
+
+  it('still accepts a real pattern that merely STARTS with 〜', async () => {
+    await resetData();
+    const res = await P.addItems([{ expression: '〜ばかりに', meaningVi: 'chỉ vì' }]);
+    expect(res.created).toBe(1);
+  });
 });
 
 describe('calibration rides submitReview without touching FSRS', () => {

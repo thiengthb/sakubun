@@ -9,7 +9,13 @@ import {
   type ItemRole,
   type PickedBatch,
 } from '@/lib/srs/select';
-import { cleanText, cleanTextOrNull, cleanVocabTerm, hasKanji } from '@/lib/core/text';
+import {
+  cleanText,
+  cleanTextOrNull,
+  cleanVocabTerm,
+  hasKanji,
+  isBlankOfMeaning,
+} from '@/lib/core/text';
 import {
   parseErrorDetail,
   parseErrorTags,
@@ -138,11 +144,15 @@ export async function addItems(
     const cleaned = cleanText(entry.expression);
     const expression = kind === VOCAB_KIND ? cleanVocabTerm(cleaned) : cleaned;
     const meaningVi = cleanText(entry.meaningVi);
-    if (!expression) {
+    // isBlankOfMeaning catches what emptiness alone misses: "（　）" and "〜" survive cleanText with
+    // length > 0, and for GRAMMAR nothing strips them (cleanVocabTerm is vocab-only). Such a row
+    // used to become a real library item with its own SRS schedule, so the learner got junk served
+    // back to them as an exercise.
+    if (!expression || isBlankOfMeaning(expression)) {
       result.skipped.push({
         expression: cleaned,
         reason: cleaned
-          ? 'chỉ còn lại nhãn/ngoặc sau khi làm sạch — gửi lại đúng từ gốc'
+          ? 'chỉ còn lại nhãn/ngoặc/dấu câu sau khi làm sạch — gửi lại đúng mẫu gốc'
           : 'thiếu expression hoặc meaningVi',
       });
       continue;
@@ -300,6 +310,9 @@ export interface DueBatch extends PickedBatch {
   forExerciseType?: string;
   nextDueAt: Date | null;
   recentContexts: Record<string, string[]>;
+  // No grammar in the library AT ALL. An empty batch means something completely different then:
+  // not "you are done for today" but "there is nothing here yet, import some patterns".
+  libraryEmpty: boolean;
 }
 
 async function weakGrammarItemIds(now: Date, windowDays = 30): Promise<string[]> {
@@ -454,7 +467,7 @@ export async function getDueBatch(
   const settings = await getSettings();
   const today = await todayCounts(settings, now);
 
-  const [dueRows, freshRows, dueNow, upcoming, newBeyondLevels] = await Promise.all([
+  const [dueRows, freshRows, dueNow, upcoming, newBeyondLevels, grammarTotal] = await Promise.all([
     prisma.srsState.findMany({
       where: dueWhere(now),
       include: { item: true },
@@ -484,6 +497,7 @@ export async function getDueBatch(
         item: { suspended: false, kind: GRAMMAR_KIND, level: { notIn: settings.grammarLevels } },
       },
     }),
+    prisma.item.count({ where: { kind: GRAMMAR_KIND } }),
   ]);
 
   let due = dueRows.map((r) => toLite(r as SrsRow, false));
@@ -579,6 +593,7 @@ export async function getDueBatch(
     forExerciseType,
     nextDueAt: upcoming?.due ?? null,
     recentContexts,
+    libraryEmpty: grammarTotal === 0,
   };
 }
 

@@ -37,6 +37,7 @@ const baseBatch: DueBatch = {
   newBeyondLevels: 0,
   nextDueAt: null,
   recentContexts: {},
+  libraryEmpty: false,
 };
 
 const plainItem = {
@@ -265,6 +266,17 @@ describe('renderWeakReport', () => {
 });
 
 describe('renderDueBatch', () => {
+  it('an EMPTY LIBRARY is reported as "nothing imported yet", never as a finished day', () => {
+    const md = renderDueBatch({ ...baseBatch, libraryEmpty: true });
+    expect(md).toContain('EMPTY');
+    expect(md).toContain('import_grammar');
+    expect(
+      md,
+      'the first /practice on a fresh account must not congratulate the learner for clearing a ' +
+        'library that has nothing in it',
+    ).not.toContain('Nothing else is queued today');
+  });
+
   it('empty batch mentions the next due time', () => {
     const md = renderDueBatch({ ...baseBatch, nextDueAt: new Date(Date.now() + 10 * 60 * 1000) });
     expect(md).toContain('phút nữa');
