@@ -2,15 +2,16 @@
 
 import { Layers, List } from 'lucide-react';
 import { ExpandingIconButton } from '@/components/common/expanding-icon-button';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
-import { FilterPopover, FilterRow } from '@/components/common/filter-popover';
+import {
+  chipFor,
+  FilterChips,
+  FilterPopover,
+  FilterRow,
+  SelectFilterRow,
+  type FilterChip,
+  type FilterOption,
+} from '@/components/common/filter-popover';
 import { SearchInput } from '@/components/common/search-input';
 import { EXERCISE_TYPE_LABELS, durationSecOf } from '@/components/features/history/history-cards';
 import { DATE_PRESETS, LENGTH_BUCKETS, withinDatePreset, type DatePreset } from '@/lib/core/format';
@@ -57,19 +58,105 @@ export const DEFAULT_FILTERS: Filters = {
   scoreMax: 100,
 };
 
+type SelectKey = Exclude<keyof Filters, 'scoreMin' | 'scoreMax'>;
+
+// Nine filters that differ only in label and options. As a table they stay one screenful, and the
+// count, the popover rows and the chips below it all read from this one list — so a tenth filter
+// cannot show up in the popover while silently missing from the chips.
+const SELECT_FILTERS: readonly { key: SelectKey; label: string; options: readonly FilterOption[] }[] =
+  [
+    {
+      key: 'direction',
+      label: 'Chiều dịch',
+      options: [
+        { value: 'all', label: 'Mọi chiều' },
+        { value: 'JA_VI', label: 'JP → VN' },
+        { value: 'VI_JA', label: 'VN → JP' },
+      ],
+    },
+    {
+      key: 'result',
+      label: 'Kết quả',
+      options: [
+        { value: 'all', label: 'Mọi kết quả' },
+        { value: 'pass', label: 'Đạt (Good/Easy)' },
+        { value: 'fail', label: 'Có lỗi (Again/Hard)' },
+      ],
+    },
+    {
+      key: 'type',
+      label: 'Dạng bài',
+      options: [
+        { value: 'all', label: 'Mọi dạng' },
+        ...Object.entries(EXERCISE_TYPE_LABELS).map(([value, label]) => ({ value, label })),
+      ],
+    },
+    {
+      key: 'status',
+      label: 'Trạng thái',
+      options: [
+        { value: 'all', label: 'Mọi trạng thái' },
+        ...Object.entries(STATUS_LABELS).map(([value, label]) => ({ value, label })),
+      ],
+    },
+    {
+      key: 'level',
+      label: 'Độ khó (JLPT)',
+      options: [
+        { value: 'all', label: 'Mọi cấp' },
+        ...JLPT_LEVELS.map((l) => ({ value: l, label: l })),
+      ],
+    },
+    {
+      key: 'length',
+      label: 'Độ dài',
+      options: [
+        { value: 'all', label: 'Mọi độ dài' },
+        ...LENGTH_BUCKETS.map((b) => ({ value: b.key, label: b.label })),
+      ],
+    },
+    {
+      key: 'duration',
+      label: 'Thời gian làm',
+      options: [
+        { value: 'all', label: 'Mọi mức' },
+        ...DURATION_BUCKETS.map((b) => ({ value: b.value, label: b.label })),
+      ],
+    },
+    { key: 'datePreset', label: 'Ngày làm', options: DATE_PRESETS },
+    {
+      key: 'starred',
+      label: 'Đánh dấu sao',
+      options: [
+        { value: 'all', label: 'Tất cả' },
+        { value: 'yes', label: 'Đã đánh dấu sao' },
+      ],
+    },
+  ];
+
+function scoreNarrowed(f: Filters): boolean {
+  return f.scoreMin > 0 || f.scoreMax < 100;
+}
+
 function activeFilterCount(f: Filters): number {
-  let n = 0;
-  if (f.direction !== 'all') n++;
-  if (f.result !== 'all') n++;
-  if (f.type !== 'all') n++;
-  if (f.status !== 'all') n++;
-  if (f.level !== 'all') n++;
-  if (f.length !== 'all') n++;
-  if (f.duration !== 'all') n++;
-  if (f.datePreset !== 'all') n++;
-  if (f.starred !== 'all') n++;
-  if (f.scoreMin > 0 || f.scoreMax < 100) n++;
-  return n;
+  return SELECT_FILTERS.filter((s) => f[s.key] !== 'all').length + (scoreNarrowed(f) ? 1 : 0);
+}
+
+function historyChips(f: Filters, onPatch: (patch: Partial<Filters>) => void): FilterChip[] {
+  const chips = SELECT_FILTERS.map((s) =>
+    chipFor(s.key, s.label, f[s.key], s.options, () =>
+      onPatch({ [s.key]: 'all' } as Partial<Filters>),
+    ),
+  ).filter((c) => c !== null);
+  if (scoreNarrowed(f)) {
+    chips.push({
+      key: 'score',
+      label: 'Điểm số',
+      value: `${f.scoreMin}–${f.scoreMax}`,
+      onClear: () => onPatch({ scoreMin: 0, scoreMax: 100 }),
+    });
+  }
+  return chips;
 }
 
 export function isFail(s: SentenceHistoryRow): boolean {
@@ -120,153 +207,31 @@ function HistoryFilterPopover({
 
   return (
     <FilterPopover activeCount={activeCount} align="end" onReset={onResetFilters}>
-      <FilterRow label="Chiều dịch">
-        <Select value={filters.direction} onValueChange={(v) => onPatch({ direction: v })}>
-          <SelectTrigger size="sm" className="w-full">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent position="popper">
-            <SelectItem value="all">Mọi chiều</SelectItem>
-            <SelectItem value="JA_VI">JP → VN</SelectItem>
-            <SelectItem value="VI_JA">VN → JP</SelectItem>
-          </SelectContent>
-        </Select>
-      </FilterRow>
+      {SELECT_FILTERS.map((f) => (
+        <SelectFilterRow
+          key={f.key}
+          label={f.label}
+          value={filters[f.key]}
+          onValueChange={(v) => onPatch({ [f.key]: v } as Partial<Filters>)}
+          options={f.options}
+        />
+      ))}
 
-      <FilterRow label="Kết quả">
-        <Select value={filters.result} onValueChange={(v) => onPatch({ result: v })}>
-          <SelectTrigger size="sm" className="w-full">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent position="popper">
-            <SelectItem value="all">Mọi kết quả</SelectItem>
-            <SelectItem value="pass">Đạt (Good/Easy)</SelectItem>
-            <SelectItem value="fail">Có lỗi (Again/Hard)</SelectItem>
-          </SelectContent>
-        </Select>
+      <FilterRow
+        className="col-span-2"
+        label={`Điểm số: ${filters.scoreMin}–${filters.scoreMax}`}
+      >
+        <div className="flex h-8 items-center px-1">
+          <Slider
+            thumbLabel={['Điểm số tối thiểu', 'Điểm số tối đa']}
+            min={0}
+            max={100}
+            step={5}
+            value={[filters.scoreMin, filters.scoreMax]}
+            onValueChange={([lo, hi]) => onPatch({ scoreMin: lo, scoreMax: hi })}
+          />
+        </div>
       </FilterRow>
-
-      <FilterRow label="Dạng bài">
-        <Select value={filters.type} onValueChange={(v) => onPatch({ type: v })}>
-          <SelectTrigger size="sm" className="w-full">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent position="popper">
-            <SelectItem value="all">Mọi dạng</SelectItem>
-            {Object.entries(EXERCISE_TYPE_LABELS).map(([v, l]) => (
-              <SelectItem key={v} value={v}>
-                {l}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </FilterRow>
-
-      <FilterRow label="Trạng thái">
-        <Select value={filters.status} onValueChange={(v) => onPatch({ status: v })}>
-          <SelectTrigger size="sm" className="w-full">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent position="popper">
-            <SelectItem value="all">Mọi trạng thái</SelectItem>
-            {Object.entries(STATUS_LABELS).map(([v, l]) => (
-              <SelectItem key={v} value={v}>
-                {l}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </FilterRow>
-
-      <FilterRow label="Độ khó (JLPT)">
-        <Select value={filters.level} onValueChange={(v) => onPatch({ level: v })}>
-          <SelectTrigger size="sm" className="w-full">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent position="popper">
-            <SelectItem value="all">Mọi cấp</SelectItem>
-            {JLPT_LEVELS.map((l) => (
-              <SelectItem key={l} value={l}>
-                {l}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </FilterRow>
-
-      <FilterRow label="Độ dài">
-        <Select value={filters.length} onValueChange={(v) => onPatch({ length: v })}>
-          <SelectTrigger size="sm" className="w-full">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent position="popper">
-            <SelectItem value="all">Mọi độ dài</SelectItem>
-            {LENGTH_BUCKETS.map((b) => (
-              <SelectItem key={b.key} value={b.key}>
-                {b.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </FilterRow>
-
-      <FilterRow label="Thời gian làm">
-        <Select value={filters.duration} onValueChange={(v) => onPatch({ duration: v })}>
-          <SelectTrigger size="sm" className="w-full">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent position="popper">
-            <SelectItem value="all">Mọi mức</SelectItem>
-            {DURATION_BUCKETS.map((b) => (
-              <SelectItem key={b.value} value={b.value}>
-                {b.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </FilterRow>
-
-      <FilterRow label="Ngày làm">
-        <Select value={filters.datePreset} onValueChange={(v) => onPatch({ datePreset: v })}>
-          <SelectTrigger size="sm" className="w-full">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent position="popper">
-            {DATE_PRESETS.map((d) => (
-              <SelectItem key={d.value} value={d.value}>
-                {d.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </FilterRow>
-
-      <FilterRow label="Đánh dấu sao">
-        <Select value={filters.starred} onValueChange={(v) => onPatch({ starred: v })}>
-          <SelectTrigger size="sm" className="w-full">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent position="popper">
-            <SelectItem value="all">Tất cả</SelectItem>
-            <SelectItem value="yes">Đã đánh dấu sao</SelectItem>
-          </SelectContent>
-        </Select>
-      </FilterRow>
-
-      <div className="col-span-2">
-        <FilterRow label={`Điểm số: ${filters.scoreMin}–${filters.scoreMax}`}>
-          <div className="flex h-8 items-center px-1">
-            <Slider
-              thumbLabel={['Điểm số tối thiểu', 'Điểm số tối đa']}
-              min={0}
-              max={100}
-              step={5}
-              value={[filters.scoreMin, filters.scoreMax]}
-              onValueChange={([lo, hi]) => onPatch({ scoreMin: lo, scoreMax: hi })}
-            />
-          </div>
-        </FilterRow>
-      </div>
     </FilterPopover>
   );
 }
@@ -289,17 +254,24 @@ export function HistoryFilters({
   onModeChange: (mode: 'list' | 'card') => void;
 }) {
   return (
-    <div className="flex flex-row items-center gap-2 sm:gap-3">
-      <SearchInput
-        value={search}
-        onChange={(e) => onSearchChange(e.target.value)}
-        placeholder="Tìm trong đề / bài dịch…"
-        className="min-w-0 flex-1 sm:max-w-xs"
-      />
-      <div className="flex shrink-0 items-center gap-2 md:ml-auto">
-        <HistoryModeToggle mode={mode} onModeChange={onModeChange} />
-        <HistoryFilterPopover filters={filters} onPatch={onPatch} onResetFilters={onResetFilters} />
+    <div className="space-y-3">
+      <div className="flex flex-row items-center gap-2 sm:gap-3">
+        <SearchInput
+          value={search}
+          onChange={(e) => onSearchChange(e.target.value)}
+          placeholder="Tìm trong đề / bài dịch…"
+          className="min-w-0 flex-1 sm:max-w-xs"
+        />
+        <div className="flex shrink-0 items-center gap-2 md:ml-auto">
+          <HistoryModeToggle mode={mode} onModeChange={onModeChange} />
+          <HistoryFilterPopover
+            filters={filters}
+            onPatch={onPatch}
+            onResetFilters={onResetFilters}
+          />
+        </div>
       </div>
+      <FilterChips chips={historyChips(filters, onPatch)} onReset={onResetFilters} />
     </div>
   );
 }

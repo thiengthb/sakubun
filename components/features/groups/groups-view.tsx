@@ -7,15 +7,15 @@ import { toastResult } from '@/lib/core/action-toast';
 import { Button } from '@/components/ui/button';
 import { PagedFooter } from '@/components/common/paged-footer';
 import { ConfirmDialog } from '@/components/common/confirm-dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { EmptyState } from '@/components/common/empty-state';
-import { FilterPopover, FilterRow } from '@/components/common/filter-popover';
+import {
+  chipFor,
+  FilterChips,
+  FilterPopover,
+  SelectFilterRow,
+  type FilterChip,
+  type FilterOption,
+} from '@/components/common/filter-popover';
 import { GroupCreateAction, GroupEditAction } from '@/components/features/groups/group-actions';
 import { GroupKindBadge } from '@/components/features/groups/group-kind-badge';
 import { GROUP_KIND_LABELS } from '@/lib/library/group-kinds';
@@ -31,6 +31,11 @@ const SORTS = [
   { value: 'most', label: 'Nhiều mục nhất' },
 ] as const;
 type SortKey = (typeof SORTS)[number]['value'];
+
+const KIND_FILTERS: readonly FilterOption[] = [
+  { value: 'all', label: 'Mọi loại' },
+  ...Object.entries(GROUP_KIND_LABELS).map(([value, label]) => ({ value, label })),
+];
 
 const MEMBER_FILTERS = [
   { value: 'all', label: 'Tất cả' },
@@ -53,6 +58,16 @@ export function GroupsView({ groups }: { groups: GroupSummary[] }) {
 
   const needle = q.trim().toLowerCase();
   const filterCount = (kindFilter !== 'all' ? 1 : 0) + (member !== 'all' ? 1 : 0);
+  const resetFilters = () => {
+    setKindFilter('all');
+    setMember('all');
+    setSort('recent');
+  };
+  // Sort is not a chip: reordering is visible in the list itself, narrowing is not.
+  const chips: FilterChip[] = [
+    chipFor('kind', 'Loại', kindFilter, KIND_FILTERS, () => setKindFilter('all')),
+    chipFor('member', 'Số mục', member, MEMBER_FILTERS, () => setMember('all')),
+  ].filter((c) => c !== null);
   const filtered = useMemo(() => {
     const rows = groups.filter(
       (g) =>
@@ -95,66 +110,33 @@ export function GroupsView({ groups }: { groups: GroupSummary[] }) {
             className="min-w-0 flex-1 sm:max-w-xs"
           />
           <div className="flex shrink-0 items-center gap-2 md:ml-auto">
-            <FilterPopover
-              activeCount={filterCount}
-              onReset={() => {
-                setKindFilter('all');
-                setMember('all');
-                setSort('recent');
-              }}
-            >
-              <FilterRow label="Loại">
-                <Select value={kindFilter} onValueChange={setKindFilter}>
-                  <SelectTrigger size="sm" className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent position="popper">
-                    <SelectItem value="all">Mọi loại</SelectItem>
-                    {(Object.keys(GROUP_KIND_LABELS) as (keyof typeof GROUP_KIND_LABELS)[]).map(
-                      (k) => (
-                        <SelectItem key={k} value={k}>
-                          {GROUP_KIND_LABELS[k]}
-                        </SelectItem>
-                      ),
-                    )}
-                  </SelectContent>
-                </Select>
-              </FilterRow>
-              <FilterRow label="Số mục">
-                <Select value={member} onValueChange={setMember}>
-                  <SelectTrigger size="sm" className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent position="popper">
-                    {MEMBER_FILTERS.map((f) => (
-                      <SelectItem key={f.value} value={f.value}>
-                        {f.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </FilterRow>
-              <div className="col-span-2">
-                <FilterRow label="Sắp xếp">
-                  <Select value={sort} onValueChange={(v) => setSort(v as SortKey)}>
-                    <SelectTrigger size="sm" className="w-full">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent position="popper">
-                      {SORTS.map((s) => (
-                        <SelectItem key={s.value} value={s.value}>
-                          {s.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </FilterRow>
-              </div>
+            <FilterPopover activeCount={filterCount} onReset={resetFilters}>
+              <SelectFilterRow
+                label="Loại"
+                value={kindFilter}
+                onValueChange={setKindFilter}
+                options={KIND_FILTERS}
+              />
+              <SelectFilterRow
+                label="Số mục"
+                value={member}
+                onValueChange={setMember}
+                options={MEMBER_FILTERS}
+              />
+              <SelectFilterRow
+                className="col-span-2"
+                label="Sắp xếp"
+                value={sort}
+                onValueChange={(v) => setSort(v as SortKey)}
+                options={SORTS}
+              />
             </FilterPopover>
             <GroupCreateAction />
           </div>
         </div>
       )}
+
+      {groups.length > 0 && <FilterChips chips={chips} onReset={resetFilters} className="-mt-3" />}
 
       {groups.length === 0 ? (
         <EmptyState

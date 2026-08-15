@@ -8,7 +8,12 @@ import { BulkDeleteButton } from '@/components/features/resources/bulk-delete-bu
 import { BulkGroupActions } from '@/components/features/resources/bulk-group-button';
 import { BulkSuspendButton } from '@/components/features/resources/bulk-suspend-button';
 import { DataTable } from '@/components/common/data-table';
-import { FilterPopover, SelectFilterRow, type FilterOption } from '@/components/common/filter-popover';
+import {
+  FilterPopover,
+  SelectFilterRow,
+  type FilterChip,
+  type FilterOption,
+} from '@/components/common/filter-popover';
 import {
   actionsColumn,
   expressionColumn,
@@ -323,6 +328,22 @@ export function ResourceTable({
   // Only the filters this kind offers count; the unused hooks above stay at 'all'.
   const values = config.filters.map((key) => slots[key][0]).join(' ');
   const filterCount = config.filters.filter((key) => slots[key][0] !== 'all').length;
+  const resetFilters = () => {
+    for (const key of config.filters) slots[key][1]('all');
+  };
+  // The popover shows what CAN be filtered; these pills show what IS filtered, once it has closed.
+  const chips: FilterChip[] = config.filters
+    .filter((key) => slots[key][0] !== 'all')
+    .map((key) => {
+      const value = slots[key][0];
+      const options: readonly FilterOption[] = FILTERS[key].options;
+      return {
+        key,
+        label: FILTERS[key].label,
+        value: options.find((o) => o.value === value)?.label ?? value,
+        onClear: () => slots[key][1]('all'),
+      };
+    });
 
   const filtered = useMemo(
     () =>
@@ -414,13 +435,10 @@ export function ResourceTable({
           </>
         );
       }}
+      filterChips={chips}
+      onResetFilters={resetFilters}
       filterSlot={
-        <FilterPopover
-          activeCount={filterCount}
-          onReset={() => {
-            for (const key of config.filters) slots[key][1]('all');
-          }}
-        >
+        <FilterPopover activeCount={filterCount} onReset={resetFilters}>
           {config.filters.map((key) => (
             <SelectFilterRow
               key={key}

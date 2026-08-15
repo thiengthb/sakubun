@@ -376,3 +376,56 @@ test('thẻ chi tiết của TỪ VỰNG hiện trên web: đồng nghĩa, trái
 
   await expect(page.getByText(/thiếu:/)).toHaveCount(0);
 });
+
+test('đổi kiểu hiển thị: nút chỉ có ở màn hình lớn, mobile luôn là thẻ', async ({ page }) => {
+  await seed();
+  await login(page);
+
+  const cards = page.locator('[data-slot="data-table-cards"]');
+  const toggle = page.getByRole('button', { name: 'Xem dạng thẻ' });
+
+  // Màn hình lớn: mặc định là bảng, và có nút chuyển.
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/resources?tab=grammar', { waitUntil: 'networkidle' });
+  await expect(page.getByRole('columnheader', { name: 'Mẫu ngữ pháp' })).toBeVisible();
+  await expect(cards).toBeHidden();
+  await expect(toggle).toBeVisible();
+
+  await toggle.click();
+  await expect(cards).toBeVisible();
+  await expect(page.getByRole('columnheader', { name: 'Mẫu ngữ pháp' })).toBeHidden();
+  // Không còn cột nào để bật/tắt thì menu Cột cũng biến mất.
+  await expect(page.getByRole('button', { name: 'Hiển thị cột' })).toHaveCount(0);
+
+  // Lựa chọn được nhớ lại sau khi tải lại trang.
+  await page.reload({ waitUntil: 'networkidle' });
+  await expect(cards).toBeVisible();
+  await page.getByRole('button', { name: 'Xem dạng bảng' }).click();
+  await expect(cards).toBeHidden();
+
+  // Mobile: luôn là thẻ, và KHÔNG có nút chuyển — kể cả khi lựa chọn đang là "bảng".
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(cards).toBeVisible();
+  await expect(page.getByRole('group', { name: 'Kiểu hiển thị' })).toBeHidden();
+});
+
+test('bộ lọc đang bật hiện thành chip, xoá được từng cái', async ({ page }) => {
+  await seed();
+  await login(page);
+  await page.goto('/resources?tab=grammar', { waitUntil: 'networkidle' });
+
+  const chip = page.getByRole('button', { name: 'Bỏ lọc Cấp JLPT: N2' });
+  await expect(chip).toHaveCount(0);
+
+  await withFilters(page, async () => {
+    await pickFilter(page, 'Mọi cấp', 'N2');
+  });
+
+  // Popover đã đóng, nhưng vẫn nhìn thấy đang lọc theo gì.
+  await expect(chip).toBeVisible();
+  expect(await shownCount(page, 'mẫu')).toBe(2);
+
+  await chip.click();
+  await expect(chip).toHaveCount(0);
+  expect(await shownCount(page, 'mẫu')).toBe(4);
+});

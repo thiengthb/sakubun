@@ -3,7 +3,6 @@
 import { type ReactNode } from 'react';
 import { SlidersHorizontal, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
@@ -71,6 +70,80 @@ export function SelectFilterRow({
   );
 }
 
+export interface FilterChip {
+  key: string;
+  /** What is being filtered — "Cấp JLPT". */
+  label: string;
+  /** What it is filtered to — "N3". */
+  value: string;
+  onClear: () => void;
+}
+
+/**
+ * One chip for a select-style filter, or null when it sits at its off value. Written as a helper so
+ * a screen with nine filters lists them once — as data — instead of nine copies of the same
+ * "is it on? then look up its label" branch.
+ */
+export function chipFor(
+  key: string,
+  label: string,
+  value: string,
+  options: readonly FilterOption[],
+  onClear: () => void,
+  off = 'all',
+): FilterChip | null {
+  if (value === off) return null;
+  return { key, label, value: options.find((o) => o.value === value)?.label ?? value, onClear };
+}
+
+// The popover answers "what CAN I filter by"; it cannot answer "what AM I filtering by" once it
+// closes. Without this strip a narrowed list looks like a short list, and the only way to find out
+// why is to reopen the popover and read every select. Each chip clears just itself.
+export function FilterChips({
+  chips,
+  onReset,
+  className,
+}: {
+  chips: readonly FilterChip[];
+  onReset?: () => void;
+  className?: string;
+}) {
+  if (chips.length === 0) return null;
+  return (
+    <div className={cn('flex flex-wrap items-center gap-1.5', className)}>
+      {chips.map((chip) => (
+        <button
+          key={chip.key}
+          type="button"
+          onClick={chip.onClear}
+          aria-label={`Bỏ lọc ${chip.label}: ${chip.value}`}
+          className="group/chip inline-flex max-w-full items-center gap-1 rounded-full border border-border bg-muted/50 py-0.5 pr-1 pl-2.5 text-xs transition-colors hover:border-foreground/30 hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+        >
+          {/* min-w-0: flex items default to min-width:auto, so without it `truncate` never fires
+              and a long value widens the pill instead of ellipsing. */}
+          <span className="min-w-0 truncate text-muted-foreground">{chip.label}</span>
+          <span className="min-w-0 truncate font-medium">{chip.value}</span>
+          <span
+            aria-hidden
+            className="inline-flex size-4 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors group-hover/chip:bg-background group-hover/chip:text-foreground"
+          >
+            <X className="size-3" />
+          </span>
+        </button>
+      ))}
+      {chips.length > 1 && onReset && (
+        <button
+          type="button"
+          onClick={onReset}
+          className="ml-0.5 rounded-sm px-1 text-xs text-muted-foreground underline-offset-2 transition-colors hover:text-foreground hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+        >
+          Xóa tất cả
+        </button>
+      )}
+    </div>
+  );
+}
+
 function ResetLink({ onReset }: { onReset: () => void }) {
   return (
     <button
@@ -115,12 +188,8 @@ export function FilterPopover({
 
   return (
     <>
-      {activeCount > 0 && onReset && (
-        <Button variant="ghost" onClick={onReset} className="max-md:hidden">
-          <X className="size-4" aria-hidden />
-          Xóa lọc
-        </Button>
-      )}
+      {/* No "Xóa lọc" button here any more: FilterChips renders "Xóa tất cả" next to the chips it
+          clears, which is where you are already looking once a filter is on. */}
       <div className="relative shrink-0">
         {isMobile ? (
           <BottomSheet

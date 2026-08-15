@@ -32,6 +32,8 @@ import {
   Columns3,
   GripVertical,
   Info,
+  LayoutGrid,
+  Rows3,
   SearchX,
   X,
   type LucideIcon,
@@ -50,6 +52,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { FilterChips, type FilterChip } from '@/components/common/filter-popover';
 import { SearchInput } from '@/components/common/search-input';
 import { SortSheet, type SortOption } from '@/components/common/sort-sheet';
 import { useSessionState } from '@/components/common/use-session-state';
@@ -65,6 +68,8 @@ import {
 import { DataPagination } from '@/components/ui/data-pagination';
 import { cn } from '@/lib/core/utils';
 
+export type DataTableView = 'table' | 'cards';
+
 export interface DataTableColumnMeta {
   label?: string;
   defaultHidden?: boolean;
@@ -72,6 +77,11 @@ export interface DataTableColumnMeta {
   headClassName?: string;
   cellClassName?: string;
 }
+
+const VIEW_CHOICES = [
+  { value: 'table', label: 'Xem dạng bảng', icon: Rows3 },
+  { value: 'cards', label: 'Xem dạng thẻ', icon: LayoutGrid },
+] as const satisfies readonly { value: DataTableView; label: string; icon: LucideIcon }[];
 
 const EMPTY_SORTING: SortingState = [];
 const EMPTY_SIZING: ColumnSizingState = {};
@@ -88,6 +98,9 @@ export interface DataTableProps<T> {
   urlPrefix?: string;
   searchPlaceholder?: string;
   filterSlot?: ReactNode;
+  /** Active filters, shown as clearable pills under the toolbar. */
+  filterChips?: readonly FilterChip[];
+  onResetFilters?: () => void;
   actionSlot?: ReactNode;
   emptyMessage?: string;
   emptyIcon?: LucideIcon | null;
@@ -117,6 +130,8 @@ export function DataTable<T>({
   urlPrefix,
   searchPlaceholder,
   filterSlot,
+  filterChips,
+  onResetFilters,
   actionSlot,
   emptyMessage = 'Không có dữ liệu.',
   emptyIcon = SearchX,
@@ -197,6 +212,12 @@ export function DataTable<T>({
     [setAutoFit, setPageSize, setPageIndex],
   );
   const [showRowNumbers, setShowRowNumbers] = useSessionState<boolean>(`${persistKey}.rownum`, true);
+
+  // Mobile is card-only and has no switch: the choice below applies from `md` up, which is why both
+  // branches stay CSS-driven rather than reading a media query — a JS breakpoint would flip the
+  // layout after hydration.
+  const [view, setView] = useSessionState<DataTableView>(`${persistKey}.view`, 'table', `${up}view`);
+  const cards = renderCard != null && view === 'cards';
 
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const clearSelection = useCallback(() => setRowSelection({}), []);
@@ -304,7 +325,8 @@ export function DataTable<T>({
     .filter((o) => o.label.trim() !== '');
   const activeSort = sorting[0];
   const rowNumbers = enableRowNumbers && showRowNumbers;
-  const showColumnMenu = hideableColumns.length > 0 || enableRowNumbers;
+  // Card view has no columns to show or hide, so the menu (and its `c` shortcut) goes away with it.
+  const showColumnMenu = !cards && (hideableColumns.length > 0 || enableRowNumbers);
   const canReorder = (c: Column<T, unknown>) =>
     enableReordering && (c.columnDef.meta as DataTableColumnMeta | undefined)?.noReorder !== true;
   const selectedRows = enableRowSelection
@@ -403,6 +425,36 @@ export function DataTable<T>({
               onChange={(next) => changeSorting(next ? [{ id: next.id, desc: next.desc }] : [])}
             />
           )}
+          {renderCard && (
+            <div
+              role="group"
+              aria-label="Kiểu hiển thị"
+              className="flex shrink-0 items-center gap-0.5 rounded-md border border-input p-0.5 max-md:hidden"
+            >
+              {VIEW_CHOICES.map(({ value, label, icon: Icon }) => {
+                const active = view === value;
+                return (
+                  <Explain key={value} text={label}>
+                    <button
+                      type="button"
+                      onClick={() => setView(value)}
+                      aria-pressed={active}
+                      aria-label={label}
+                      className={cn(
+                        'inline-flex size-7 items-center justify-center rounded-sm transition-colors',
+                        'focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
+                        active
+                          ? 'bg-secondary text-foreground'
+                          : 'text-muted-foreground hover:text-foreground',
+                      )}
+                    >
+                      <Icon className="size-4" aria-hidden />
+                    </button>
+                  </Explain>
+                );
+              })}
+            </div>
+          )}
           {showColumnMenu && (
             <DropdownMenu open={colMenuOpen} onOpenChange={setColMenuOpen}>
               <DropdownMenuTrigger asChild>
@@ -459,12 +511,22 @@ export function DataTable<T>({
         </div>
       </div>
 
+      {filterChips && <FilterChips chips={filterChips} onReset={onResetFilters} />}
+
       {rows.length === 0 ? (
         <EmptyState icon={emptyIcon} title={emptyMessage} className="py-12" />
       ) : (
         <>
           {renderCard && (
-            <ul data-slot="data-table-cards" className="flex flex-col gap-2 md:hidden">
+            <ul
+              data-slot="data-table-cards"
+              className={cn(
+                'grid gap-2',
+                // `md:hidden` is the mobile-only case: cards are the phone layout no matter what the
+                // desktop switch says. In card view the same list becomes the desktop layout too.
+                cards ? 'md:grid-cols-2 md:gap-3 xl:grid-cols-3' : 'md:hidden',
+              )}
+            >
               {rows.map((row, i) => {
                 const selected = enableRowSelection && row.getIsSelected();
                 return (
@@ -505,7 +567,7 @@ export function DataTable<T>({
             </ul>
           )}
 
-          <div className={cn(renderCard && 'max-md:hidden')}>
+          <div className={cn(renderCard && 'max-md:hidden', cards && 'md:hidden')}>
             <Table className="table-fixed" style={{ minWidth: table.getTotalSize() }}>
               <TableHeader>
                 {table.getHeaderGroups().map((hg) => (
