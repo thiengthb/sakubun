@@ -107,6 +107,7 @@ export interface DataTableProps<T> {
   pageSizeOptions?: number[];
   initialPageSize?: number;
   estimatedRowHeight?: number;
+  estimatedCardHeight?: number;
   rowClassName?: (row: T) => string | undefined;
   totalCount?: number;
   countNoun?: string;
@@ -138,6 +139,7 @@ export function DataTable<T>({
   pageSizeOptions = [25, 50, 100],
   initialPageSize = 50,
   estimatedRowHeight = 45,
+  estimatedCardHeight = 116,
   rowClassName,
   totalCount,
   countNoun = 'dòng',
@@ -193,9 +195,21 @@ export function DataTable<T>({
   );
   const [autoFit, setAutoFit] = useSessionState<boolean>(`${persistKey}.autofit`, true);
   const bodyRef = useRef<HTMLTableSectionElement>(null);
+  const cardsRef = useRef<HTMLUListElement>(null);
   const footerRef = useRef<HTMLDivElement>(null);
   const fitRows = useFitRows({ topRef: bodyRef, footerRef, rowHeight: estimatedRowHeight });
-  const effectivePageSize = autoFit && fitRows != null ? fitRows : pageSize;
+  // Card view fills a grid, so the count that fits is rows × columns, not rows. The hook reads the
+  // real column count out of `grid-template-columns` and the real card height off the first row, so
+  // a 3-across grid asks for 3× the page a 1-across phone does — measured, not guessed.
+  const fitCards = useFitRows({
+    topRef: cardsRef,
+    footerRef,
+    rowHeight: estimatedCardHeight,
+    grid: true,
+  });
+  // Exactly one of the two is visible at any width, and the hidden one reports null.
+  const fit = fitCards ?? fitRows;
+  const effectivePageSize = autoFit && fit != null ? fit : pageSize;
   const sizeOptions = useMemo(
     () =>
       pageSizeOptions.includes(effectivePageSize)
@@ -406,6 +420,36 @@ export function DataTable<T>({
   return (
     <div ref={rootRef} className="space-y-4">
       <div className="flex flex-row items-center gap-2 sm:gap-3">
+        {renderCard && (
+          <div
+            role="group"
+            aria-label="Kiểu hiển thị"
+            className="flex shrink-0 items-center gap-0.5 rounded-md border border-input p-0.5 max-md:hidden"
+          >
+            {VIEW_CHOICES.map(({ value, label, icon: Icon }) => {
+              const active = view === value;
+              return (
+                <Explain key={value} text={label}>
+                  <button
+                    type="button"
+                    onClick={() => setView(value)}
+                    aria-pressed={active}
+                    aria-label={label}
+                    className={cn(
+                      'inline-flex size-7 items-center justify-center rounded-sm transition-colors',
+                      'focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
+                      active
+                        ? 'bg-secondary text-foreground'
+                        : 'text-muted-foreground hover:text-foreground',
+                    )}
+                  >
+                    <Icon className="size-4" aria-hidden />
+                  </button>
+                </Explain>
+              );
+            })}
+          </div>
+        )}
         {searchPlaceholder && (
           <SearchInput
             ref={searchRef}
@@ -424,36 +468,6 @@ export function DataTable<T>({
               desc={activeSort?.desc ?? false}
               onChange={(next) => changeSorting(next ? [{ id: next.id, desc: next.desc }] : [])}
             />
-          )}
-          {renderCard && (
-            <div
-              role="group"
-              aria-label="Kiểu hiển thị"
-              className="flex shrink-0 items-center gap-0.5 rounded-md border border-input p-0.5 max-md:hidden"
-            >
-              {VIEW_CHOICES.map(({ value, label, icon: Icon }) => {
-                const active = view === value;
-                return (
-                  <Explain key={value} text={label}>
-                    <button
-                      type="button"
-                      onClick={() => setView(value)}
-                      aria-pressed={active}
-                      aria-label={label}
-                      className={cn(
-                        'inline-flex size-7 items-center justify-center rounded-sm transition-colors',
-                        'focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
-                        active
-                          ? 'bg-secondary text-foreground'
-                          : 'text-muted-foreground hover:text-foreground',
-                      )}
-                    >
-                      <Icon className="size-4" aria-hidden />
-                    </button>
-                  </Explain>
-                );
-              })}
-            </div>
           )}
           {showColumnMenu && (
             <DropdownMenu open={colMenuOpen} onOpenChange={setColMenuOpen}>
@@ -519,6 +533,7 @@ export function DataTable<T>({
         <>
           {renderCard && (
             <ul
+              ref={cardsRef}
               data-slot="data-table-cards"
               className={cn(
                 'grid gap-2',
@@ -772,7 +787,7 @@ export function DataTable<T>({
               pageSizeOptions={sizeOptions}
               onPageSizeChange={choosePageSize}
               autoFit={autoFit}
-              autoFitSize={fitRows ?? effectivePageSize}
+              autoFitSize={fit ?? effectivePageSize}
               onAutoFit={() => {
                 setAutoFit(true);
                 setPageIndex(0);

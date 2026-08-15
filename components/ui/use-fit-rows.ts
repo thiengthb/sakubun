@@ -43,7 +43,15 @@ export function useFitRows({
         if (!top) return;
         const topRect = top.getBoundingClientRect();
         const childCount = top.childElementCount;
-        if (topRect.height <= 0 || childCount === 0) return;
+        // A display:none element measures 0 and has no offsetParent. Report null rather than keep
+        // the last count: callers that hold two of these (a table body and a card grid, only one of
+        // which is ever visible) tell them apart by which one still answers.
+        if (top.offsetParent === null || topRect.height <= 0) {
+          committed.current = null;
+          setCount((prev) => (prev === null ? prev : null));
+          return;
+        }
+        if (childCount === 0) return;
 
         let itemsPerRow = 1;
         if (grid) {

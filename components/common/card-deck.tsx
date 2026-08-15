@@ -1,7 +1,14 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { AnimatePresence, motion, type PanInfo } from 'motion/react';
+import {
+  animate,
+  AnimatePresence,
+  motion,
+  useMotionValue,
+  useTransform,
+  type PanInfo,
+} from 'motion/react';
 import {
   ChevronLeft,
   ChevronRight,
@@ -327,8 +334,23 @@ const SLIDE = {
 const SWIPE_PX = 56;
 const FLICK_WEIGHT = 0.15;
 
+// How far you must pull before the card behind has fully risen. Deliberately larger than SWIPE_PX:
+// the stack finishes settling just after the throw commits, so the commit point is something you
+// feel rather than a number you have to know.
+const PULL_RANGE = 170;
+
+// Two cards peek out behind the live one. They are narrowed on X only and pushed DOWN: a uniformly
+// scaled card is smaller on every side, so it hides completely behind the one in front and the
+// stack is invisible. Narrow + offset is what a real pile looks like, and the offset is the only
+// thing that peeks, which keeps the overhang a fixed number of pixels instead of a share of an
+// unknown card height.
+const GHOST_COUNT = 2;
+const GHOST_STEP = 0.04; // width removed per card down the stack
+const GHOST_GAP = 8; // px each card sits below the one above it
+
+// shadow-md, not just a ring: the live card has to sit visibly ON the pile behind it.
 const faceCls =
-  'absolute inset-0 overflow-y-auto rounded-2xl bg-card p-5 ring-1 ring-foreground/10 [backface-visibility:hidden]';
+  'absolute inset-0 overflow-y-auto rounded-2xl bg-card p-5 shadow-md ring-1 ring-foreground/10 [backface-visibility:hidden]';
 
 export function CardDeck({
   deck,
@@ -356,6 +378,21 @@ export function CardDeck({
   const { next, prev, flip } = deck;
   const draggedRef = useRef(false);
 
+  // How far the live card has been pulled. Everything behind it reads from this one value, so the
+  // stack responds to the finger continuously instead of jumping when the swipe commits.
+  const dragX = useMotionValue(0);
+  const pull = useTransform(dragX, (v) => Math.min(1, Math.abs(v) / PULL_RANGE));
+  const tilt = useTransform(dragX, [-PULL_RANGE, 0, PULL_RANGE], [-8, 0, 8]);
+  const lift = useTransform(pull, [0, 1], [0, -10]);
+  // The card directly behind rises to meet the one being thrown.
+  const nextScaleX = useTransform(pull, [0, 1], [1 - GHOST_STEP, 1]);
+  const nextY = useTransform(pull, [0, 1], [GHOST_GAP, 0]);
+  const nextOpacity = useTransform(pull, [0, 1], [0.55, 1]);
+
+  const settle = useCallback(() => {
+    animate(dragX, 0, { type: 'spring', stiffness: 320, damping: 34 });
+  }, [dragX]);
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const el = document.activeElement as HTMLElement | null;
@@ -382,8 +419,11 @@ export function CardDeck({
       const power = info.offset.x + info.velocity.x * FLICK_WEIGHT;
       if (power <= -SWIPE_PX) next();
       else if (power >= SWIPE_PX) prev();
+      // Either way the pull unwinds: on a throw the card is leaving anyway, and the one behind is
+      // already at full size, so unwinding is invisible. On a failed throw it is the snap back.
+      settle();
     },
-    [next, prev],
+    [next, prev, settle],
   );
 
   const pct = deck.done ? 100 : deck.count ? Math.round((deck.index / deck.count) * 100) : 0;
@@ -400,10 +440,11 @@ export function CardDeck({
         inlineProgress ? 'min-w-24 flex-1' : 'w-full',
       )}
     >
+      {/* scaleX, not width: width re-lays-out the bar every frame, transform does not. */}
       <motion.div
-        className="h-full rounded-full bg-primary"
-        initial={{ width: 0 }}
-        animate={{ width: `${pct}%` }}
+        className="h-full w-full origin-left rounded-full bg-primary"
+        initial={{ scaleX: 0 }}
+        animate={{ scaleX: pct / 100 }}
         transition={{ duration: 0.3, ease: 'easeOut' }}
       />
     </div>
@@ -412,7 +453,11 @@ export function CardDeck({
   return (
     <div
       className={cn(
-        'mx-auto flex min-h-[calc(100svh-6rem)] w-full max-w-4xl flex-col gap-3',
+        // overflow-x-clip, not hidden: a card dragged to the RIGHT extends the document and gives
+        // the phone a horizontal scrollbar (measured: 179px). `clip` cuts it at the deck's edge
+        // without turning this into a scroll container, and leaves the Y axis visible so the pile
+        // behind can still peek out below.
+        'mx-auto flex min-h-[calc(100svh-6rem)] w-full max-w-4xl flex-col gap-3 overflow-x-clip',
         className,
       )}
     >
@@ -439,7 +484,28 @@ export function CardDeck({
       {deck.done ? (
         <div className="flex-1">{done}</div>
       ) : (
-        <div className="relative min-h-[15rem] w-full flex-1 [perspective:1600px]">
+        // The stage is narrower than the page. At the column's full 4xl a single vocabulary word sat
+        // in a 900px slab, which reads as an empty panel rather than a card; the toolbar and the
+        // progress bar still span the full width above it.
+        <div className="relative mx-auto min-h-[15rem] w-full max-w-2xl flex-1 [perspective:1600px]">
+          {/* The rest of the deck. Purely decorative — aria-hidden and non-interactive — but it is
+              what makes the pile look finite: you can see how much is left behind the card. */}
+          {Array.from({ length: Math.min(GHOST_COUNT, deck.count - deck.index - 1) }, (_, i) => (
+            <motion.div
+              key={i}
+              aria-hidden
+              className="pointer-events-none absolute inset-0 origin-top rounded-2xl bg-card ring-1 ring-foreground/10"
+              style={
+                i === 0
+                  ? { scaleX: nextScaleX, y: nextY, opacity: nextOpacity }
+                  : {
+                      scaleX: 1 - GHOST_STEP * (i + 1),
+                      y: GHOST_GAP * (i + 1),
+                      opacity: 0.55 - i * 0.2,
+                    }
+              }
+            />
+          ))}
           <AnimatePresence initial={false} custom={deck.dir}>
             <motion.div
               key={cardKey}
@@ -451,13 +517,19 @@ export function CardDeck({
               transition={{ duration: 0.28, ease: EASE_OUT }}
               drag="x"
               dragConstraints={{ left: 0, right: 0 }}
-              dragElastic={0.22}
+              // 0.22 meant a 100px pull moved the card 22px — you were nudging it, not holding it.
+              // At 0.85 the card tracks the finger, which is the whole point of dragging a deck.
+              dragElastic={0.85}
               dragMomentum={false}
+              // `rotate`/`y` come from dragX, which the variants never touch, so the enter/exit slide
+              // (which animates `x`) and the tilt cannot fight over the same value.
+              style={{ rotate: tilt, y: lift }}
               onPointerDownCapture={() => {
                 draggedRef.current = false;
               }}
               onDrag={(_e, info) => {
                 if (Math.abs(info.offset.x) > 6) draggedRef.current = true;
+                dragX.set(info.offset.x);
               }}
               onDragEnd={onDragEnd}
               className="absolute inset-0 cursor-grab active:cursor-grabbing [transform-style:preserve-3d]"

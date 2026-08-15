@@ -271,3 +271,51 @@ test('both decks fit a phone: nothing off-screen, and the arrows are reachable',
     ).toBeLessThanOrEqual(m.viewportH);
   }
 });
+
+test('kéo thẻ sang PHẢI không làm trang trượt ngang, và có chồng thẻ phía sau', async ({ page }) => {
+  await seedE2eAccount();
+  const db = new Database(path.join(process.cwd(), E2E_DB_FILE));
+  const now = Date.now();
+  for (const t of ['GroupMember', 'Group', 'ReviewLog', 'SrsState', 'Sentence', 'Item'])
+    db.exec(`DELETE FROM "${t}"`);
+  const item = db.prepare(
+    `INSERT INTO Item (id, kind, expression, reading, hanviet, meaningVi, level, notes, source,
+       captureReason, suspended, starred, createdAt, challengeObservations)
+     VALUES (?, 'VOCAB', ?, ?, NULL, ?, 'N2', NULL, 'MCP', NULL, 0, 0, ?, 0)`,
+  );
+  const ids = ['d1', 'd2', 'd3', 'd4'];
+  ids.forEach((id, i) => item.run(id, `語${i}`, `ご${i}`, `nghĩa ${i}`, iso(now - i * 1000)));
+  db.prepare(
+    `INSERT INTO "Group" (id, name, kind, color, note, createdAt, updatedAt)
+     VALUES ('grpD', 'Nhóm kéo', 'vocab', NULL, NULL, ?, ?)`,
+  ).run(iso(now), iso(now));
+  const member = db.prepare(
+    `INSERT INTO GroupMember (groupId, itemId, addedAt) VALUES ('grpD', ?, ?)`,
+  );
+  for (const id of ids) member.run(id, iso(now));
+  db.close();
+
+  await login(page);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/groups/grpD', { waitUntil: 'networkidle' });
+  await page.getByRole('combobox', { name: 'Chọn khung xem' }).click();
+  await page.getByRole('option', { name: 'Flashcard' }).click();
+  await expect(page.getByText('Thẻ 1 / 4')).toBeVisible();
+
+  const card = page.getByRole('button', { name: /^Lật/ });
+  const box = await card.boundingBox();
+  if (!box) throw new Error('the card has no box — the deck did not render');
+  const y = box.y + box.height / 2;
+  const from = box.x + box.width / 2;
+
+  await page.mouse.move(from, y);
+  await page.mouse.down();
+  for (let i = 1; i <= 8; i++) await page.mouse.move(from + (180 * i) / 8, y);
+  await page.waitForTimeout(150);
+  // Giữa lúc kéo: thẻ tràn ra ngoài phải bị cắt, KHÔNG được đẩy rộng trang.
+  const overflow = await page.evaluate(
+    () => document.documentElement.scrollWidth - window.innerWidth,
+  );
+  await page.mouse.up();
+  expect(overflow, 'kéo thẻ sang phải không được sinh thanh cuộn ngang').toBe(0);
+});
