@@ -57,10 +57,47 @@ docker run --rm -v sakubun_sakubun_data:/data -v "$PWD":/out alpine \
 
 ## Cấu trúc
 
-| Thư mục       | Nội dung                                                         |
-| ------------- | ---------------------------------------------------------------- |
-| `app/`        | Route Next.js (App Router), server action, route handler API      |
-| `components/` | `ui/` primitive, `shared/` dùng chung, còn lại theo từng màn hình |
-| `lib/`        | Toàn bộ logic: SRS, chấm điểm, import/export, MCP server          |
-| `mobile/`     | App Expo, dùng lại backend qua tRPC                               |
-| `e2e/`        | Playwright                                                        |
+```
+app/                      Route (Next.js App Router), server action, API route handler
+components/
+  ui/                     Primitive (shadcn) — không biết gì về nghiệp vụ
+  common/                 Dùng chung toàn app: DataTable, CardDeck, SectionHeading…
+  layout/                 Khung màn hình: sidebar, breadcrumb, shell, error boundary
+  features/               Theo màn hình: dashboard, groups, history, resources, settings
+lib/
+  core/                   Không phụ thuộc nghiệp vụ: cn, ngày giờ, làm sạch text, ActionResult
+  auth/                   better-auth, phiên đăng nhập, đăng ký, MCP key, email
+  db/                     Prisma client + trình dựng DB cho test
+  japanese/               Furigana, romaji
+  srs/                    FSRS, chọn bài, retention, calibration, streak
+  library/                Kho học của người dùng + tầng dữ liệu practice
+  session/                Một lượt luyện: loại bài, nhãn lỗi, coach, recap
+  transfer/               Nhập/xuất (Excel, Anki, sao lưu tài khoản)
+  insights/               Tổng hợp chỉ đọc cho dashboard
+  settings/               Schema cài đặt
+  mobile/                 Snapshot tRPC cho app Expo
+  design/                 Các LUẬT frontend, viết dưới dạng test (xem bên dưới)
+  mcp/  trpc/             Hai bề mặt API
+mobile/                   App Expo
+e2e/                      Playwright
+```
+
+Test nằm cạnh code nó kiểm (`lib/srs/srs.test.ts` bên `lib/srs/srs.ts`).
+
+### Luật frontend
+
+`lib/design/` không chứa code chạy — nó chứa các luật, dưới dạng test. Chạy `npm test` là kiểm luôn:
+
+| Luật | File |
+| --- | --- |
+| Kích thước vuông dùng `size-N`, không `h-N w-N`; component trong `ui/`+`common/` phải nhận `className`; class ghép bằng `cn()`; component trình bày không nằm trong file route; `features/` không import chéo nhau; `lib/core` không biết nghiệp vụ | `component-standards.test.ts` |
+| Không dùng cỡ chữ ngoài thang, không `text-xl+` ngoài hero/số liệu | `type-scale.test.ts` |
+| `<TabsList>` cấp trang phải đi qua `PageShell headerAside` | `layout-standard.test.ts` |
+| Skeleton phải khớp số tab / khung của trang thật | `skeleton-parity.test.ts` |
+| Màu chữ trên nền phải đạt ngưỡng tương phản | `contrast.test.ts` |
+| Chuỗi tiếng Nhật phát được phải đi qua `SpokenLine` | `spoken-line.test.ts` |
+| Không emoji trong source | `no-emoji.test.ts` |
+| Chỗ nào cần cắt chữ thì dùng `Truncate` | `truncate.test.ts` |
+
+Muốn phá luật thì phải thêm file vào allowlist ngay trong test đó, **kèm lý do** — nên ngoại lệ luôn
+có người chịu trách nhiệm, thay vì trôi đi âm thầm.
