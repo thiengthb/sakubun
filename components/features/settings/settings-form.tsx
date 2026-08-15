@@ -7,9 +7,7 @@ import { PageShell } from '@/components/layout/page-shell';
 import { ExpandingIconButton } from '@/components/common/expanding-icon-button';
 import { Tabs } from '@/components/ui/tabs';
 import { TabSelect } from '@/components/common/tab-select';
-import { ContentTab } from '@/components/features/settings/settings-content-tab';
-import { PaceTab } from '@/components/features/settings/settings-pace-tab';
-import { SensoryTab } from '@/components/features/settings/settings-sensory-tab';
+import { PracticeTab } from '@/components/features/settings/settings-practice-tab';
 import { DataTab } from '@/components/features/settings/settings-data-tab';
 import { AccountTab } from '@/components/features/settings/settings-account-tab';
 import type { McpKeyRow } from '@/components/features/settings/settings-account-tab';
@@ -33,18 +31,26 @@ interface SettingsFormProps {
 }
 
 const SETTINGS_TABS = [
-  { value: 'content', label: 'Nội dung' },
-  { value: 'pace', label: 'Nhịp học' },
-  { value: 'sensory', label: 'Nghe & nói' },
+  { value: 'practice', label: 'Luyện tập' },
   { value: 'data', label: 'Dữ liệu' },
   { value: 'account', label: 'Tài khoản' },
 ] as const;
 
-const SAVEABLE_TABS = new Set(['content', 'pace', 'sensory', 'data']);
+const SAVEABLE_TABS = new Set(['practice', 'data']);
+
+// Nội dung / Nhịp học / Nghe & nói merged into one tab. sessionStorage still holds the old value
+// for anyone who had Settings open, and Radix renders NOTHING for a value with no TabsContent —
+// a blank page. Fold the retired values onto the tab that absorbed them.
+const RETIRED_TABS: Record<string, string> = {
+  content: 'practice',
+  pace: 'practice',
+  sensory: 'practice',
+};
 
 export function SettingsForm({ initial, account }: SettingsFormProps) {
   const [settings, setSettings] = useState<Settings>(initial);
-  const [tab, setTab] = useSessionState('settings.tab', 'content', 'tab');
+  const [storedTab, setTab] = useSessionState('settings.tab', 'practice', 'tab');
+  const tab = RETIRED_TABS[storedTab] ?? storedTab;
   const [saved, setSaved] = useState<Settings>(initial);
 
   const set = <K extends keyof Settings>(key: K, value: Settings[K]) =>
@@ -91,9 +97,7 @@ export function SettingsForm({ initial, account }: SettingsFormProps) {
           </>
         }
       >
-        <ContentTab settings={settings} set={set} setSettings={setSettings} />
-        <PaceTab settings={settings} set={set} />
-        <SensoryTab settings={settings} set={set} />
+        <PracticeTab settings={settings} set={set} setSettings={setSettings} />
         <DataTab />
         <AccountTab {...account} />
       </PageShell>

@@ -13,13 +13,17 @@ test('login → dashboard → a settings change persists across reload', async (
   await expect(page.getByText('Chưa có gì để học')).toBeVisible();
 
   await page.goto('/settings');
-  await page.getByRole('tab', { name: 'Nhịp học' }).click();
+  // Nội dung + Nhịp học + Nghe & nói are one "Luyện tập" tab now, and it is the default — the daily
+  // cap is reachable without touching the tab rail.
+  await expect(page.getByRole('tab', { name: 'Luyện tập' })).toHaveAttribute(
+    'data-state',
+    'active',
+  );
   await page.getByLabel('Mẫu ngữ pháp mới / ngày').fill('11');
   await page.getByRole('button', { name: /^(Lưu|Đã lưu)$/ }).click();
   await expect(page.getByRole('button', { name: 'Đã lưu' })).toBeVisible();
 
   await page.reload();
-  await page.getByRole('tab', { name: 'Nhịp học' }).click();
   await expect(page.getByLabel('Mẫu ngữ pháp mới / ngày')).toHaveValue('11');
 });
 
