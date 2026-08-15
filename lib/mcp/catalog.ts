@@ -1,10 +1,13 @@
-// Single source of truth for the MCP surface — drives the /guide MCP tab.
+// Single source of truth for the MCP surface. It drove the /guide MCP tab until that page was removed;
+// what keeps it alive is `catalog.test.ts`, which fails when this list and the tools actually registered
+// in server.ts disagree in either direction. That check is why the list is worth maintaining without a
+// screen reading it: it once caught `registerGroupTools` never being called.
 // Adding/removing a tool or prompt in server.ts MUST update this list in the same change.
 
 export interface CatalogEntry {
   name: string;
   kind: 'tool' | 'prompt';
-  summary: string; // vi — shown in the guide table
+  summary: string; // vi — one line describing the tool to a human reader
 }
 
 export const MCP_CATALOG: CatalogEntry[] = [

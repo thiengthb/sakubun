@@ -143,7 +143,7 @@ describe('invariant #9 — Japanese content renders through SpokenLine', () => {
 
     for (const { path, src } of sources()) {
       if (ALLOW.has(path)) continue;
-      if (path.startsWith('components/guide-') || path.startsWith('components/landing/')) continue;
+      if (path.startsWith('components/landing/')) continue;
       if (!rawRenderRe('expression').test(src)) continue;
       if (playableRenderRe('expression').test(src)) continue;
       offenders.push(path);

@@ -110,7 +110,7 @@ const AUTO_CAPTURE_FLAGS = [
  * describe a single sentence across two tabs. They are now one group, in that order.
  *
  * `Furigana` also moved — out of the JLPT checkbox row (where it rode `sm:ml-auto` for want of a better
- * home) into the presentation group. Same tab, so the guide's "tab Nội dung → Furigana" is still true.
+ * home) into the presentation group. Same tab.
  */
 export function ContentTab({
   settings,

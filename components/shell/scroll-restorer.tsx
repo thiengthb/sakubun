@@ -6,8 +6,8 @@ import { usePathname } from 'next/navigation';
 /**
  * Restore the window scroll position per route within the browser-tab session, so returning to a page
  * via the sidebar's bare links lands where you left off — the App Router resets scroll to the top on a
- * client navigation, which loses your place on long pages (guide, a detail page, settings, the
- * dashboard). The viewport-fit list pages (resources/library/history) don't page-scroll by design, so
+ * client navigation, which loses your place on long pages (a detail page, settings, the dashboard).
+ * The viewport-fit list pages (resources/library/history) don't page-scroll by design, so
  * this is a no-op there. Renders nothing; mounted once by `PageShell` so every in-shell route gets it.
  *
  * Restore is deferred until the streamed/Suspense content is tall enough to reach the saved offset

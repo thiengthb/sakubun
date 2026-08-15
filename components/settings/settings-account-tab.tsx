@@ -33,8 +33,32 @@ import { Label } from '@/components/ui/label';
 import { SettingsTab } from '@/components/settings/settings-tab';
 import { McpUsageCard } from '@/components/settings/mcp-usage-card';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
+import { CopyCommandButton } from '@/components/shared/copy-command-button';
 import { APP_TIME_ZONE, formatDateTimeVN, formatDateVN } from '@/lib/format';
 import type { ToolUsageReport } from '@/lib/mcp/usage';
+
+/**
+ * The `claude_desktop_config.json` entry that connects Claude Desktop to THIS deployment, with the
+ * freshly created token already in place.
+ *
+ * The origin is read from the browser rather than hardcoded: the old /guide page hardcoded the
+ * production host, which was silently wrong for anyone running the app locally. This dialog only ever
+ * renders after a client interaction, so `window` is there; the fallback exists for the SSR pass only.
+ */
+function claudeConfig(token: string): string {
+  const origin = typeof window === 'undefined' ? '' : window.location.origin;
+  return `{
+  "mcpServers": {
+    "sakubun": {
+      "command": "npx",
+      "args": [
+        "-y", "mcp-remote", "${origin}/api/mcp",
+        "--header", "Authorization: Bearer ${token}"
+      ]
+    }
+  }
+}`;
+}
 
 export interface McpKeyRow {
   id: string;
@@ -409,8 +433,8 @@ export function AccountTab({
           <DialogHeader>
             <DialogTitle>Token MCP mới</DialogTitle>
             <DialogDescription>
-              Sao chép và lưu ngay — token này SẼ KHÔNG hiện lại. Dán vào header xác thực của Claude
-              Desktop (xem tab MCP ở trang Hướng dẫn).
+              Sao chép và lưu ngay — token này SẼ KHÔNG hiện lại. Dán vào{' '}
+              <code>claude_desktop_config.json</code> của Claude Desktop theo mẫu bên dưới.
             </DialogDescription>
           </DialogHeader>
           {/* Wrap the token (break-all) inside a bounded block — DialogContent is a grid, so a long
@@ -424,6 +448,34 @@ export function AccountTab({
               {copied ? 'Đã sao chép' : 'Sao chép token'}
             </Button>
           </div>
+
+          {/* The connect recipe. It used to live on /guide, which is gone — and this dialog is the one
+              moment the learner actually needs it, because the token is only readable HERE and only
+              once. The token is substituted into the block, so there is nothing left to hand-edit. */}
+          <div className="space-y-2">
+            <p className="text-xs text-muted-foreground">
+              Cấu hình Claude Desktop (Settings → Developer → Edit Config):
+            </p>
+            <div className="relative">
+              <pre className="max-h-56 overflow-auto rounded-lg border border-border/70 bg-muted/40 p-3 text-xs">
+                <code>{claudeConfig(newToken ?? '')}</code>
+              </pre>
+              <CopyCommandButton
+                command={claudeConfig(newToken ?? '')}
+                label="Chép cấu hình"
+                size="icon-sm"
+                showCopiedText={false}
+                toastDescription="none"
+                className="absolute top-2 right-2"
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Trên Windows, đổi <code>&quot;command&quot;</code> thành <code>&quot;cmd&quot;</code> và
+              thêm <code>&quot;/c&quot;, &quot;npx&quot;</code> vào đầu <code>args</code>. Khởi động
+              lại Claude Desktop sau khi lưu.
+            </p>
+          </div>
+
           <DialogFooter>
             <DialogClose asChild>
               <Button>Tôi đã lưu token</Button>
