@@ -69,7 +69,6 @@ const DISPLAY_ALLOW = [
   // Same argument, same card: /history's flashcard mode puts the đề on the face at reading size. Its
   // answer side is ordinary body text and stays on the scale.
   'components/history/history-flashcards.tsx',
-  'components/guide/guide-primitives.tsx', // the mockup building blocks (Window/Chip/Field) those steps use
 ];
 
 const allowed = (path: string) =>
