@@ -17,8 +17,7 @@ function walk(dir: string, out: string[] = []): string[] {
 const rel = (file: string) => relative(process.cwd(), file).split(sep).join('/');
 
 const DISPLAY_ALLOW = [
-  'app/login/', // auth hero
-  'app/register/',
+  'components/shell/auth-card.tsx', // auth hero — the shared /login + /register card title
   'components/shell/auth-nav.tsx', // wordmark on the auth pages
   'app/error.tsx', // error hero
   'app/global-error.tsx',

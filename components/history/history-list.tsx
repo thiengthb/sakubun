@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { SearchX } from 'lucide-react';
-import { DataPagination } from '@/components/ui/data-pagination';
+import { PagedFooter } from '@/components/shared/paged-footer';
 import { EmptyState } from '@/components/shared/empty-state';
 import { usePagedList } from '@/components/shared/use-paged-list';
 import { useSessionState } from '@/components/shared/use-session-state';
@@ -73,7 +73,7 @@ export function HistoryList({
     storeKey: 'history',
     rowHeight: 120,
   });
-  const { items: visible, start } = paged;
+  const { items: visible } = paged;
 
   const prevStatusRef = useRef<Map<string, string> | null>(null);
 
@@ -153,25 +153,12 @@ export function HistoryList({
               />
             ))}
           </ul>
-          <div ref={footerRef}>
-            <DataPagination
-              count={
-                <>
-                  {start + 1}–{Math.min(start + paged.pageSize, paged.total)} / {paged.total} lượt
-                  {paged.total !== sentences.length && ` (lọc từ ${sentences.length})`}
-                </>
-              }
-              page={paged.page}
-              pageCount={paged.pageCount}
-              onPageChange={paged.setPage}
-              pageSize={paged.pageSize}
-              pageSizeOptions={paged.sizeOptions}
-              onPageSizeChange={paged.choosePageSize}
-              autoFit={paged.autoFit}
-              autoFitSize={paged.autoFitSize}
-              onAutoFit={paged.onAutoFit}
-            />
-          </div>
+          <PagedFooter
+            paged={paged}
+            footerRef={footerRef}
+            noun="lượt"
+            totalUnfiltered={sentences.length}
+          />
         </>
       )}
     </div>

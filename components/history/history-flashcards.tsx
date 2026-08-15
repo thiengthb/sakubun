@@ -1,22 +1,20 @@
 'use client';
 
-import { useCallback, useMemo, useState, type ReactNode } from 'react';
-import { Shuffle, Volume2, SearchX } from 'lucide-react';
+import { useMemo, type ReactNode } from 'react';
+import { SearchX } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import {
   CardDeck,
-  DeckSettings,
+  DeckCommonSettings,
+  DeckDone,
   DeckShortcutsInfo,
-  DeckSwitchRow,
-  shuffled,
-  useCardDeck,
+  useAutoSpeak,
+  useDeckOrder,
 } from '@/components/shared/card-deck';
 import { EmptyState } from '@/components/shared/empty-state';
 import { SpokenLine } from '@/components/shared/spoken-line';
 import { StarButton } from '@/components/shared/star-button';
 import { turnLabels } from '@/lib/turn-labels';
-import { useSessionState } from '@/components/shared/use-session-state';
 import {
   RatingChip,
   dirLabel,
@@ -29,6 +27,7 @@ import { stripEmoji } from '@/lib/text';
 import type { SentenceHistoryRow } from '@/lib/practice';
 
 const studiable = (s: SentenceHistoryRow) => s.status !== 'PENDING';
+const sentenceKey = (s: SentenceHistoryRow) => s.id;
 
 function PromptFace({
   sentence,
@@ -192,41 +191,10 @@ export function HistoryFlashcards({
   toolbarStart?: ReactNode;
 }) {
   const pool = useMemo(() => sentences.filter(studiable), [sentences]);
-  const [shuffle, setShuffle] = useState(false);
-  const [order, setOrder] = useState<string[] | null>(null);
-  const [autoSpeak, setAutoSpeak] = useSessionState('flashcards.autoSpeak', false);
-
-  const cards = useMemo(() => {
-    if (!order) return pool;
-    const rank = new Map(order.map((id, i) => [id, i]));
-    return [...pool].sort(
-      (a, b) =>
-        (rank.get(a.id) ?? Number.MAX_SAFE_INTEGER) - (rank.get(b.id) ?? Number.MAX_SAFE_INTEGER),
-    );
-  }, [pool, order]);
-
-  const deck = useCardDeck(cards.length);
+  const [autoSpeak, setAutoSpeak] = useAutoSpeak();
+  const order = useDeckOrder(pool, sentenceKey);
+  const { cards, deck } = order;
   const current = cards[deck.index];
-
-  const toggleShuffle = useCallback(
-    (on: boolean) => {
-      setShuffle(on);
-      setOrder(on ? shuffled(pool.map((s) => s.id)) : null);
-      deck.restart();
-    },
-    [pool, deck],
-  );
-
-  const replay = useCallback(
-    (reshuffle: boolean) => {
-      if (reshuffle) {
-        setShuffle(true);
-        setOrder(shuffled(pool.map((s) => s.id)));
-      }
-      deck.restart();
-    },
-    [pool, deck],
-  );
 
   if (cards.length === 0) {
     return (
@@ -258,22 +226,12 @@ export function HistoryFlashcards({
       toolbar={
         <>
           {toolbarStart}
-          <DeckSettings>
-            <DeckSwitchRow
-              icon={Shuffle}
-              label="Trộn thẻ"
-              checked={shuffle}
-              onCheckedChange={toggleShuffle}
-              disabled={cards.length < 2}
-            />
-            <DeckSwitchRow
-              icon={Volume2}
-              label="Tự đọc tiếng Nhật"
-              hint="Đề tiếng Nhật đọc ngay khi thẻ hiện ra; đề tiếng Việt thì đọc bản tham khảo sau khi lật."
-              checked={autoSpeak}
-              onCheckedChange={setAutoSpeak}
-            />
-          </DeckSettings>
+          <DeckCommonSettings
+            order={order}
+            autoSpeak={autoSpeak}
+            onAutoSpeakChange={setAutoSpeak}
+            autoSpeakHint="Đề tiếng Nhật đọc ngay khi thẻ hiện ra; đề tiếng Việt thì đọc bản tham khảo sau khi lật."
+          />
         </>
       }
       front={
@@ -307,22 +265,12 @@ export function HistoryFlashcards({
         )
       }
       done={
-        <div className="flex flex-col items-center gap-4 rounded-2xl bg-card px-6 py-12 text-center ring-1 ring-foreground/10">
-          <div className="space-y-1">
-            <p className="text-lg font-semibold">Đã lướt hết {cards.length} lượt</p>
-            <p className="text-sm text-muted-foreground">
-              Đổi bộ lọc ở trên để lấy một chồng thẻ khác, hoặc học lại từ đầu.
-            </p>
-          </div>
-          <div className="flex flex-wrap justify-center gap-2">
-            <Button onClick={() => replay(false)}>Học lại từ đầu</Button>
-            {cards.length > 1 && (
-              <Button variant="outline" onClick={() => replay(true)}>
-                Trộn rồi học lại
-              </Button>
-            )}
-          </div>
-        </div>
+        <DeckDone
+          count={cards.length}
+          unit="lượt"
+          hint="Đổi bộ lọc ở trên để lấy một chồng thẻ khác, hoặc học lại từ đầu."
+          onReplay={order.replay}
+        />
       }
     />
   );

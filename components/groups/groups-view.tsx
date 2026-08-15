@@ -5,7 +5,7 @@ import { useMemo, useRef, useState, useTransition } from 'react';
 import { Layers, SearchX, Trash2 } from 'lucide-react';
 import { toastResult } from '@/lib/action-toast';
 import { Button } from '@/components/ui/button';
-import { DataPagination } from '@/components/ui/data-pagination';
+import { PagedFooter } from '@/components/shared/paged-footer';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import {
   Select,
@@ -209,26 +209,12 @@ export function GroupsView({ groups }: { groups: GroupSummary[] }) {
               </li>
             ))}
           </ul>
-          <div ref={footerRef}>
-            <DataPagination
-              count={
-                <>
-                  {paged.start + 1}–{Math.min(paged.start + paged.pageSize, paged.total)} /{' '}
-                  {paged.total} nhóm
-                  {paged.total !== groups.length && ` (lọc từ ${groups.length})`}
-                </>
-              }
-              page={paged.page}
-              pageCount={paged.pageCount}
-              onPageChange={paged.setPage}
-              pageSize={paged.pageSize}
-              pageSizeOptions={paged.sizeOptions}
-              onPageSizeChange={paged.choosePageSize}
-              autoFit={paged.autoFit}
-              autoFitSize={paged.autoFitSize}
-              onAutoFit={paged.onAutoFit}
-            />
-          </div>
+          <PagedFooter
+            paged={paged}
+            footerRef={footerRef}
+            noun="nhóm"
+            totalUnfiltered={groups.length}
+          />
         </>
       )}
 

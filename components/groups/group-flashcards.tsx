@@ -1,20 +1,18 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
-import { Volume2, Shuffle, Sparkles } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { useCallback, useState } from 'react';
+import { Sparkles } from 'lucide-react';
 import {
   CardDeck,
-  DeckSettings,
+  DeckCommonSettings,
+  DeckDone,
   DeckShortcutsInfo,
-  DeckSwitchRow,
-  shuffled,
-  useCardDeck,
+  useAutoSpeak,
+  useDeckOrder,
 } from '@/components/shared/card-deck';
 import { SpokenLine } from '@/components/shared/spoken-line';
 import { ItemDetailDialog } from '@/components/resources/item-detail-dialog';
 import { buildFuriganaMarkup } from '@/lib/furigana';
-import { useSessionState } from '@/components/shared/use-session-state';
 import { speakable } from '@/lib/format';
 import { parseEnrichment } from '@/lib/enrichment';
 import type { GroupMemberItem } from '@/lib/groups';
@@ -26,6 +24,7 @@ interface TtsProps {
 }
 
 const detailKind = (kind: string): 'grammar' | 'vocab' => (kind === 'VOCAB' ? 'vocab' : 'grammar');
+const memberKey = (m: GroupMemberItem) => m.itemId;
 
 type Direction = 'ja-vi' | 'vi-ja';
 
@@ -164,34 +163,10 @@ export function GroupFlashcards({
 }) {
   const tts: TtsProps = { voiceSpeaker, speechRate, showFurigana };
   const [direction, setDirection] = useState<Direction>('ja-vi');
-  const [shuffle, setShuffle] = useState(false);
-  const membersOrder = useMemo(() => members.map((m) => m.itemId), [members]);
-  const [order, setOrder] = useState<string[]>(membersOrder);
-
-  const [autoSpeak, setAutoSpeak] = useSessionState('flashcards.autoSpeak', false);
-
-  const byId = useMemo(() => new Map(members.map((m) => [m.itemId, m])), [members]);
-  const cards = useMemo(
-    () => order.map((id) => byId.get(id)).filter((m) => m != null),
-    [order, byId],
-  );
-  const deck = useCardDeck(cards.length);
+  const [autoSpeak, setAutoSpeak] = useAutoSpeak();
+  const order = useDeckOrder(members, memberKey);
+  const { cards, deck } = order;
   const current = cards[deck.index];
-
-  const toggleShuffle = useCallback(() => {
-    const next = !shuffle;
-    setShuffle(next);
-    setOrder(next ? shuffled(membersOrder) : membersOrder);
-    deck.restart();
-  }, [shuffle, membersOrder, deck]);
-
-  const replay = useCallback(
-    (reshuffle: boolean) => {
-      if (reshuffle) setOrder(shuffled(membersOrder));
-      deck.restart();
-    },
-    [membersOrder, deck],
-  );
 
   const setDir = useCallback(
     (d: Direction) => {
@@ -229,7 +204,16 @@ export function GroupFlashcards({
       deck={deck}
       cardKey={current?.itemId ?? 'done'}
       toolbar={
-        <DeckSettings>
+        <DeckCommonSettings
+          order={order}
+          autoSpeak={autoSpeak}
+          onAutoSpeakChange={setAutoSpeak}
+          autoSpeakHint={
+            direction === 'ja-vi'
+              ? 'Đọc mẫu/từ ngay khi thẻ hiện ra.'
+              : 'Đọc phần tiếng Nhật đầu của đáp án sau khi lật. Ví dụ thì không tự đọc.'
+          }
+        >
           <div className="space-y-1.5">
             <p className="text-xs font-medium text-muted-foreground">
               Chiều thẻ · đang: <span className="text-foreground">{dirLabel}</span>
@@ -259,25 +243,7 @@ export function GroupFlashcards({
               </button>
             </div>
           </div>
-          <DeckSwitchRow
-            icon={Shuffle}
-            label="Trộn thẻ"
-            checked={shuffle}
-            onCheckedChange={toggleShuffle}
-            disabled={members.length < 2}
-          />
-          <DeckSwitchRow
-            icon={Volume2}
-            label="Tự đọc tiếng Nhật"
-            hint={
-              direction === 'ja-vi'
-                ? 'Đọc mẫu/từ ngay khi thẻ hiện ra.'
-                : 'Đọc phần tiếng Nhật đầu của đáp án sau khi lật. Ví dụ thì không tự đọc.'
-            }
-            checked={autoSpeak}
-            onCheckedChange={setAutoSpeak}
-          />
-        </DeckSettings>
+        </DeckCommonSettings>
       }
       front={
         current && (
@@ -321,23 +287,13 @@ export function GroupFlashcards({
         )
       }
       done={
-        <div className="flex flex-col items-center gap-4 rounded-2xl bg-card px-6 py-12 text-center ring-1 ring-foreground/10">
-          <Sparkles className="size-8 text-primary" />
-          <div className="space-y-1">
-            <p className="text-lg font-semibold">Đã lướt hết {cards.length} thẻ</p>
-            <p className="text-sm text-muted-foreground">
-              Vuốt sang phải hoặc bấm mũi tên trái để xem lại thẻ vừa rồi.
-            </p>
-          </div>
-          <div className="flex flex-wrap justify-center gap-2">
-            <Button onClick={() => replay(false)}>Học lại từ đầu</Button>
-            {cards.length > 1 && (
-              <Button variant="outline" onClick={() => replay(true)}>
-                Trộn rồi học lại
-              </Button>
-            )}
-          </div>
-        </div>
+        <DeckDone
+          icon={Sparkles}
+          count={cards.length}
+          unit="thẻ"
+          hint="Vuốt sang phải hoặc bấm mũi tên trái để xem lại thẻ vừa rồi."
+          onReplay={order.replay}
+        />
       }
     />
   );

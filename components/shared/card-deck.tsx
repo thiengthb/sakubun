@@ -1,13 +1,22 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { AnimatePresence, motion, type PanInfo } from 'motion/react';
-import { ChevronLeft, ChevronRight, Info, Settings2, type LucideIcon } from 'lucide-react';
+import {
+  ChevronLeft,
+  ChevronRight,
+  Info,
+  Settings2,
+  Shuffle,
+  Volume2,
+  type LucideIcon,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Switch } from '@/components/ui/switch';
 import { Explain } from '@/components/shared/explain';
 import { ExpandingIconButton } from '@/components/shared/expanding-icon-button';
+import { useSessionState } from '@/components/shared/use-session-state';
 import { cn } from '@/lib/utils';
 
 export interface CardDeckState {
@@ -168,6 +177,139 @@ export function shuffled<T>(arr: readonly T[]): T[] {
     [a[i], a[j]] = [a[j], a[i]];
   }
   return a;
+}
+
+export interface DeckOrder<T> {
+  cards: T[];
+  deck: CardDeckState;
+  shuffle: boolean;
+  toggleShuffle: (on: boolean) => void;
+  replay: (reshuffle: boolean) => void;
+}
+
+// The order + restart machine both decks run: an optional shuffled permutation over a stable list
+// of ids, with "học lại từ đầu" and "trộn rồi học lại" resetting the deck.
+//
+// `keyOf` must be referentially stable (declare it at module scope) — it is a dependency of the
+// memo that builds the visible card list.
+//
+// Items missing from a stale order sort to the END rather than vanishing: the history deck's pool
+// changes whenever a filter changes, and dropping the newly-matching rows mid-shuffle would silently
+// shrink the deck.
+export function useDeckOrder<T>(items: T[], keyOf: (item: T) => string): DeckOrder<T> {
+  const [order, setOrder] = useState<string[] | null>(null);
+  const [shuffle, setShuffle] = useState(false);
+
+  const ids = useMemo(() => items.map(keyOf), [items, keyOf]);
+  const cards = useMemo(() => {
+    if (!order) return items;
+    const rank = new Map(order.map((id, i) => [id, i]));
+    return [...items].sort(
+      (a, b) =>
+        (rank.get(keyOf(a)) ?? Number.MAX_SAFE_INTEGER) -
+        (rank.get(keyOf(b)) ?? Number.MAX_SAFE_INTEGER),
+    );
+  }, [items, order, keyOf]);
+
+  const deck = useCardDeck(cards.length);
+
+  const toggleShuffle = useCallback(
+    (on: boolean) => {
+      setShuffle(on);
+      setOrder(on ? shuffled(ids) : null);
+      deck.restart();
+    },
+    [ids, deck],
+  );
+
+  const replay = useCallback(
+    (reshuffle: boolean) => {
+      if (reshuffle) {
+        setShuffle(true);
+        setOrder(shuffled(ids));
+      }
+      deck.restart();
+    },
+    [ids, deck],
+  );
+
+  return { cards, deck, shuffle, toggleShuffle, replay };
+}
+
+// "Tự đọc tiếng Nhật" is one preference across every deck, so it lives under one session key.
+export function useAutoSpeak(): [boolean, (on: boolean) => void] {
+  return useSessionState('flashcards.autoSpeak', false);
+}
+
+// The two switches every deck offers. `autoSpeakHint` differs per deck because what gets read aloud
+// depends on that deck's card faces.
+export function DeckCommonSettings({
+  order,
+  autoSpeak,
+  onAutoSpeakChange,
+  autoSpeakHint,
+  children,
+}: {
+  order: DeckOrder<unknown>;
+  autoSpeak: boolean;
+  onAutoSpeakChange: (on: boolean) => void;
+  autoSpeakHint: ReactNode;
+  children?: ReactNode;
+}) {
+  return (
+    <DeckSettings>
+      {children}
+      <DeckSwitchRow
+        icon={Shuffle}
+        label="Trộn thẻ"
+        checked={order.shuffle}
+        onCheckedChange={order.toggleShuffle}
+        disabled={order.cards.length < 2}
+      />
+      <DeckSwitchRow
+        icon={Volume2}
+        label="Tự đọc tiếng Nhật"
+        hint={autoSpeakHint}
+        checked={autoSpeak}
+        onCheckedChange={onAutoSpeakChange}
+      />
+    </DeckSettings>
+  );
+}
+
+// The end-of-deck panel, identical across decks apart from the icon, the unit and the hint.
+export function DeckDone({
+  icon: Icon,
+  count,
+  unit,
+  hint,
+  onReplay,
+}: {
+  icon?: LucideIcon;
+  count: number;
+  unit: string;
+  hint: ReactNode;
+  onReplay: (reshuffle: boolean) => void;
+}) {
+  return (
+    <div className="flex flex-col items-center gap-4 rounded-2xl bg-card px-6 py-12 text-center ring-1 ring-foreground/10">
+      {Icon && <Icon className="size-8 text-primary" aria-hidden />}
+      <div className="space-y-1">
+        <p className="text-lg font-semibold">
+          Đã lướt hết {count} {unit}
+        </p>
+        <p className="text-sm text-muted-foreground">{hint}</p>
+      </div>
+      <div className="flex flex-wrap justify-center gap-2">
+        <Button onClick={() => onReplay(false)}>Học lại từ đầu</Button>
+        {count > 1 && (
+          <Button variant="outline" onClick={() => onReplay(true)}>
+            Trộn rồi học lại
+          </Button>
+        )}
+      </div>
+    </div>
+  );
 }
 
 const EASE_OUT = [0.22, 1, 0.36, 1] as const;
