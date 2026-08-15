@@ -3,11 +3,10 @@
 import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { TabSelect } from '@/components/shared/tab-select';
 import { EmptyState } from '@/components/shared/empty-state';
-import { ItemsTable, type ItemRow } from '@/components/resources/items-table';
+import { ResourceTable, type ResourceRow } from '@/components/resources/resource-table';
 import { PageShell } from '@/components/shell/page-shell';
 import { ResourceAddButton } from '@/components/resources/resource-add-button';
 import { useSessionState } from '@/components/shared/use-session-state';
-import { VocabTable, type VocabRow } from '@/components/resources/vocab-table';
 import { GroupsView } from '@/components/groups/groups-view';
 import type { GroupSummary } from '@/lib/groups';
 
@@ -25,8 +24,8 @@ export function ResourcesView({
   speechRate,
   showFurigana = false,
 }: {
-  grammar: ItemRow[];
-  vocab: VocabRow[];
+  grammar: ResourceRow[];
+  vocab: ResourceRow[];
   groups: GroupSummary[];
   voiceSpeaker?: number;
   speechRate?: number;
@@ -60,10 +59,11 @@ export function ResourcesView({
               }
             />
           ) : (
-            <ItemsTable
+            <ResourceTable
+              kind="grammar"
               items={grammar}
               groups={groups}
-              importSlot={<ResourceAddButton kind="grammar" />}
+              actionSlot={<ResourceAddButton kind="grammar" />}
               voiceSpeaker={voiceSpeaker}
               speechRate={speechRate}
               showFurigana={showFurigana}
@@ -86,7 +86,8 @@ export function ResourcesView({
               }
             />
           ) : (
-            <VocabTable
+            <ResourceTable
+              kind="vocab"
               items={vocab}
               groups={groups}
               actionSlot={<ResourceAddButton kind="vocab" />}
