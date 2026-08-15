@@ -1,6 +1,6 @@
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { TRPCError } from '@trpc/server';
-import { createTestDb } from '@/lib/test-db';
+import { createTestDb, resetLearningData } from '@/lib/test-db';
 
 createTestDb('sakubun-trpc-');
 
@@ -28,10 +28,7 @@ const caller = (ctx: { user: { id: string; email: string; name: string } | null 
   createCallerFactory(appRouter)(ctx);
 
 beforeEach(async () => {
-  await prisma.groupMember.deleteMany();
-  await prisma.group.deleteMany();
-  await prisma.srsState.deleteMany();
-  await prisma.item.deleteMany();
+  await resetLearningData(prisma);
 });
 
 describe('authConfig', () => {

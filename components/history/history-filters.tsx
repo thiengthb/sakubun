@@ -57,7 +57,7 @@ export const DEFAULT_FILTERS: Filters = {
   scoreMax: 100,
 };
 
-export function activeFilterCount(f: Filters): number {
+function activeFilterCount(f: Filters): number {
   let n = 0;
   if (f.direction !== 'all') n++;
   if (f.result !== 'all') n++;

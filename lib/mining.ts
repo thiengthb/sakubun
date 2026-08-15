@@ -21,7 +21,7 @@ export interface MinedPair {
 
 export const MIN_OCCURRENCES = 3;
 
-export const MIN_WEIGHT = 1.5;
+const MIN_WEIGHT = 1.5;
 
 export const HALF_LIFE_DAYS = 21;
 

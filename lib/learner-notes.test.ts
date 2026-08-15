@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, it } from 'vitest';
-import { createTestDb } from '@/lib/test-db';
+import { createTestDb, resetLearningData } from '@/lib/test-db';
 
 createTestDb('sakubun-notes-');
 
@@ -15,14 +15,7 @@ const NOW = new Date('2026-07-27T10:00:00Z');
 const DAY = 86_400_000;
 
 async function resetData(): Promise<void> {
-  await prisma.reviewLog.deleteMany({});
-  await prisma.sentence.deleteMany({});
-  await prisma.srsState.deleteMany({});
-  await prisma.item.deleteMany({});
-  await prisma.calibrationProposal.deleteMany({});
-  await prisma.learnerNote.deleteMany({});
-  await prisma.learnerAbility.deleteMany({});
-  await prisma.settings.deleteMany({});
+  await resetLearningData(prisma);
 }
 
 async function aSentence(): Promise<string> {

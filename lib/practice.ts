@@ -1444,11 +1444,6 @@ export async function getQuizBatch(
   };
 }
 
-export interface EnrichmentInput {
-  itemId: string;
-  enrichment: unknown; // validated by enrichmentSchema at the tool boundary
-}
-
 function stampVersion(enrichmentJson: string, kind: string): string {
   const card = parseEnrichment(enrichmentJson);
   if (!card) return enrichmentJson; // unparseable is the caller's problem to see, not ours to rewrite

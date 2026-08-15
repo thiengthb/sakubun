@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, it } from 'vitest';
-import { createTestDb } from '@/lib/test-db';
+import { createTestDb, resetLearningData } from '@/lib/test-db';
 
 createTestDb('sakubun-quizstage-');
 
@@ -14,10 +14,7 @@ const TARGET = '〜わけにはいかない';
 const DISTRACTORS = ['〜しかない', '〜ざるを得ない', '〜ほかない'];
 
 async function seedItem(): Promise<{ itemId: string }> {
-  await prisma.reviewLog.deleteMany({});
-  await prisma.sentence.deleteMany({});
-  await prisma.srsState.deleteMany({});
-  await prisma.item.deleteMany({});
+  await resetLearningData(prisma);
   const item = await prisma.item.create({
     data: {
       kind: 'GRAMMAR',

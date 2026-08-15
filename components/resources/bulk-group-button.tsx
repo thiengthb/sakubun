@@ -14,7 +14,7 @@ import { GROUP_KIND_LABELS } from '@/components/groups/group-kind-badge';
 import { addItemsToGroupAction, removeItemsFromGroupAction } from '@/app/actions';
 import type { GroupSummary } from '@/lib/groups';
 
-export function BulkGroupButton({
+function BulkGroupButton({
   mode,
   groups,
   ids,

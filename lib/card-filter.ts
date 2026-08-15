@@ -9,8 +9,6 @@ export const CARD_FILTERS = [
   { value: 'yes', label: 'Thẻ đủ' },
 ] as const;
 
-export type CardFilterValue = (typeof CARD_FILTERS)[number]['value'];
-
 export function matchesCardFilter(tier: QualityTier, filter: string): boolean {
   switch (filter) {
     case 'all':

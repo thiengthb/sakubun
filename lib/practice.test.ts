@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, it } from 'vitest';
-import { createTestDb } from '@/lib/test-db';
+import { createTestDb, resetLearningData } from '@/lib/test-db';
 import { CURRENT_ENRICHMENT_VERSION } from '@/lib/enrichment';
 import type { RatingValue } from '@/lib/srs';
 
@@ -11,14 +11,7 @@ let P: Practice;
 let prisma: Db['prisma'];
 
 async function resetData(): Promise<void> {
-  await prisma.reviewLog.deleteMany({});
-  await prisma.sentence.deleteMany({});
-  await prisma.srsState.deleteMany({});
-  await prisma.item.deleteMany({});
-  await prisma.calibrationProposal.deleteMany({});
-  await prisma.learnerNote.deleteMany({});
-  await prisma.learnerAbility.deleteMany({});
-  await prisma.settings.deleteMany({});
+  await resetLearningData(prisma);
   P.invalidateStreak();
 }
 

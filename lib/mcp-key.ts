@@ -1,7 +1,7 @@
 import { createHash, randomBytes } from 'node:crypto';
 import { prisma } from '@/lib/db';
 
-export function hashToken(token: string): string {
+function hashToken(token: string): string {
   return createHash('sha256').update(token).digest('hex');
 }
 

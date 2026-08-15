@@ -1,5 +1,5 @@
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { createTestDb } from '@/lib/test-db';
+import { createTestDb, resetLearningData } from '@/lib/test-db';
 
 createTestDb('sakubun-groups-');
 
@@ -17,9 +17,7 @@ beforeAll(async () => {
 });
 
 beforeEach(async () => {
-  await prisma.groupMember.deleteMany({});
-  await prisma.group.deleteMany({});
-  await prisma.item.deleteMany({});
+  await resetLearningData(prisma);
   const g = await prisma.item.create({
     data: { kind: 'GRAMMAR', expression: '〜ばかりに', meaningVi: 'chỉ vì ~', level: 'N2' },
   });

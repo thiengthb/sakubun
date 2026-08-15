@@ -25,9 +25,3 @@ export const JLPT_FILTERS = [
   { value: 'all', label: 'Mọi cấp' },
   ...JLPT_LEVELS.map((l) => ({ value: l, label: l })),
 ] as const;
-
-export const SHARE_FILTERS = [
-  { value: 'all', label: 'Tất cả' },
-  { value: 'public', label: 'Đang chia sẻ' },
-  { value: 'private', label: 'Chưa chia sẻ' },
-] as const;

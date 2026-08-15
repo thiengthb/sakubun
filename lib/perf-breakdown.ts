@@ -10,7 +10,7 @@ export interface PerfBreakdown {
   avgSec: number;
 }
 
-export const answerDurationSec = (s: { createdAt: Date; answeredAt: Date | null }): number =>
+const answerDurationSec = (s: { createdAt: Date; answeredAt: Date | null }): number =>
   s.answeredAt ? (s.answeredAt.getTime() - s.createdAt.getTime()) / 1000 : -1;
 
 export const validAnswerSec = (s: { createdAt: Date; answeredAt: Date | null }): number | null => {

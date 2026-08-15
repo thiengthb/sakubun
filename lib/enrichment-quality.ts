@@ -80,7 +80,7 @@ const VOCAB_DIMENSIONS: readonly Dimension[] = [
   pitfallsDimension,
 ];
 
-export function dimensionsFor(kind: ItemKind): readonly Dimension[] {
+function dimensionsFor(kind: ItemKind): readonly Dimension[] {
   return kind === VOCAB_KIND ? VOCAB_DIMENSIONS : GRAMMAR_DIMENSIONS;
 }
 

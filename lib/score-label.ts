@@ -1,5 +1,3 @@
-export type SentenceDisplayStatus = 'PENDING' | 'GRADED' | 'SKIPPED';
-
 export type ScoreLabel = {
   text: string;
   muted: boolean;

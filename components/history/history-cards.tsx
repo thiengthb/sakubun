@@ -97,7 +97,7 @@ function AnswerText({
   return useRuby ? <FuriganaText ruby={sentence.suggestedRuby!} /> : <>{sentence.suggested}</>;
 }
 
-export function SentenceMeta({
+function SentenceMeta({
   level,
   charCount,
   durationSec,
@@ -139,7 +139,7 @@ export function SentenceMeta({
   );
 }
 
-export function SentenceCardShell({
+function SentenceCardShell({
   header,
   children,
   dialog,

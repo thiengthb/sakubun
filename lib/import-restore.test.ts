@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, it } from 'vitest';
-import { createTestDb } from '@/lib/test-db';
+import { createTestDb, resetLearningData } from '@/lib/test-db';
 
 createTestDb('sakubun-import-restore-');
 
@@ -54,10 +54,7 @@ function backupWithOneItem() {
 
 describe('importAccountData — restore một bản sao lưu', () => {
   it('ghi được item + SrsState vào DB', async () => {
-    await prisma.reviewLog.deleteMany({});
-    await prisma.sentence.deleteMany({});
-    await prisma.srsState.deleteMany({});
-    await prisma.item.deleteMany({});
+    await resetLearningData(prisma);
 
     const res = await I.importAccountData(backupWithOneItem(), { dryRun: false });
 
@@ -75,10 +72,7 @@ describe('importAccountData — restore một bản sao lưu', () => {
   });
 
   it('bản sao lưu CŨ (còn visibility / forkedFromId / sharedAt) vẫn restore được', async () => {
-    await prisma.reviewLog.deleteMany({});
-    await prisma.sentence.deleteMany({});
-    await prisma.srsState.deleteMany({});
-    await prisma.item.deleteMany({});
+    await resetLearningData(prisma);
 
     const legacy = {
       exportedAt: '2026-08-01T00:00:00Z',
