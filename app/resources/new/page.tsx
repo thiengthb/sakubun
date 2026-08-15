@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
-import { ResourceAddPage } from '@/components/resources/resource-add-page';
-import { getSessionUserId } from '@/lib/current-user';
+import { ResourceAddPage } from '@/components/features/resources/resource-add-page';
+import { getSessionUserId } from '@/lib/auth/current-user';
 
 export const metadata: Metadata = { title: 'Thêm vào kho — sakubun' };
 export const dynamic = 'force-dynamic';

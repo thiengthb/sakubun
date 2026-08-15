@@ -1,10 +1,10 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { GroupItemPicker } from '@/components/groups/group-item-picker';
-import { getGroup, listAddableItems } from '@/lib/groups';
-import { getSettings } from '@/lib/practice';
-import { getSessionUserId } from '@/lib/current-user';
-import { furiganaInApp } from '@/lib/settings-schema';
+import { GroupItemPicker } from '@/components/features/groups/group-item-picker';
+import { getGroup, listAddableItems } from '@/lib/library/groups';
+import { getSettings } from '@/lib/library/practice';
+import { getSessionUserId } from '@/lib/auth/current-user';
+import { furiganaInApp } from '@/lib/settings/schema';
 
 export const metadata: Metadata = { title: 'Thêm mục vào nhóm — sakubun' };
 export const dynamic = 'force-dynamic';

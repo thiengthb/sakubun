@@ -2,7 +2,7 @@ import {
   CardGridSkeleton,
   PageSkeleton,
   ToolbarSkeleton,
-} from '@/components/shell/page-skeleton';
+} from '@/components/layout/page-skeleton';
 
 export default function Loading() {
   return (

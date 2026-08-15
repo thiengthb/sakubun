@@ -10,28 +10,28 @@ import {
   Inbox,
   Target,
 } from 'lucide-react';
-import { PageShell } from '@/components/shell/page-shell';
-import { EmptyState } from '@/components/shared/empty-state';
-import { ScrollEndOnMount } from '@/components/shared/scroll-end-on-mount';
+import { PageShell } from '@/components/layout/page-shell';
+import { EmptyState } from '@/components/common/empty-state';
+import { ScrollEndOnMount } from '@/components/common/scroll-end-on-mount';
 import { Badge } from '@/components/ui/badge';
-import { AnalyticsTabs } from '@/components/dashboard/analytics-tabs';
-import { DailyProgress } from '@/components/dashboard/daily-progress';
-import { LiveRefresh } from '@/components/shell/live-refresh';
-import { StatsView } from '@/components/dashboard/stats-view';
-import { StreakCard } from '@/components/dashboard/streak-card';
-import { ContentGapNotice } from '@/components/resources/content-gap-notice';
-import { RetentionGauge } from '@/components/dashboard/retention-gauge';
-import { LearnerProfile } from '@/components/dashboard/learner-profile';
-import { WeakItemBadge } from '@/components/shared/weak-item-badge';
-import { ERROR_TAG_LABELS } from '@/lib/error-tags';
-import { getAnalytics } from '@/lib/analytics';
-import { getStats, getWeakReport } from '@/lib/practice';
-import { computeDossier } from '@/lib/dossier';
-import { listLearnerNotesWithEvidence } from '@/lib/learner-notes';
-import { chartEmptyMessage } from '@/lib/chart-empty';
-import { getStudyStats } from '@/lib/stats';
-import { getSessionUserId } from '@/lib/current-user';
-import { cn } from '@/lib/utils';
+import { AnalyticsTabs } from '@/components/features/dashboard/analytics-tabs';
+import { DailyProgress } from '@/components/features/dashboard/daily-progress';
+import { LiveRefresh } from '@/components/layout/live-refresh';
+import { StatsView } from '@/components/features/dashboard/stats-view';
+import { StreakCard } from '@/components/features/dashboard/streak-card';
+import { ContentGapNotice } from '@/components/features/resources/content-gap-notice';
+import { RetentionGauge } from '@/components/features/dashboard/retention-gauge';
+import { LearnerProfile } from '@/components/features/dashboard/learner-profile';
+import { WeakItemBadge } from '@/components/common/weak-item-badge';
+import { ERROR_TAG_LABELS } from '@/lib/session/error-tags';
+import { getAnalytics } from '@/lib/insights/analytics';
+import { getStats, getWeakReport } from '@/lib/library/practice';
+import { computeDossier } from '@/lib/session/dossier';
+import { listLearnerNotesWithEvidence } from '@/lib/session/learner-notes';
+import { chartEmptyMessage } from '@/lib/insights/chart-empty';
+import { getStudyStats } from '@/lib/insights/stats';
+import { getSessionUserId } from '@/lib/auth/current-user';
+import { cn } from '@/lib/core/utils';
 
 export const metadata: Metadata = {
   title: 'Phân tích — sakubun',

@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/db';
+import { prisma } from '@/lib/db/db';
 import { MCP_CATALOG } from '@/lib/mcp/catalog';
 
 const MAX_ERROR_CHARS = 400;

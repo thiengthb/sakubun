@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Suggestion } from '@/lib/coach';
+import type { Suggestion } from '@/lib/session/coach';
 import {
   renderConsentGuard,
   renderDueBatch,
@@ -12,9 +12,9 @@ import {
 } from '@/lib/mcp/render';
 import { MODE_DISPATCH, TEACH_BACK_PROTOCOL, TEACH_BACK_SESSION } from '@/lib/mcp/prompts';
 import { EXERCISE_TYPE } from '@/lib/mcp/tool-kit';
-import { DEFAULT_SETTINGS } from '@/lib/settings-schema';
-import type { DueBatch, SubmitReviewResult } from '@/lib/practice';
-import type { LibraryHealth, LibraryHealthResult } from '@/lib/library-health';
+import { DEFAULT_SETTINGS } from '@/lib/settings/schema';
+import type { DueBatch, SubmitReviewResult } from '@/lib/library/practice';
+import type { LibraryHealth, LibraryHealthResult } from '@/lib/library/health';
 
 const NOW = new Date('2026-07-06T10:00:00Z');
 

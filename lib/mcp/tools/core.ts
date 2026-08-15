@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import { getSettings, saveSettings } from '@/lib/practice';
-import { settingsPatchSchema } from '@/lib/settings-schema';
+import { getSettings, saveSettings } from '@/lib/library/practice';
+import { settingsPatchSchema } from '@/lib/settings/schema';
 import {
   CONVERSATION_PROTOCOL,
   PRACTICE_PROTOCOL,

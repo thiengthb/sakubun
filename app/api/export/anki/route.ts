@@ -1,6 +1,6 @@
 import { headers } from 'next/headers';
-import { auth } from '@/lib/auth';
-import { exportVocabApkg } from '@/lib/export';
+import { auth } from '@/lib/auth/auth';
+import { exportVocabApkg } from '@/lib/transfer/export';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';

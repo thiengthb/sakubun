@@ -1,12 +1,12 @@
 import { notFound } from 'next/navigation';
-import { LiveRefresh } from '@/components/shell/live-refresh';
-import { ItemAnalytics } from '@/components/resources/item-analytics';
-import { ItemGroups } from '@/components/resources/item-groups';
-import { getItemStats } from '@/lib/item-stats';
-import { getItemGroupPicker } from '@/lib/groups';
-import { getSettings } from '@/lib/practice';
-import { getSessionUserId } from '@/lib/current-user';
-import { furiganaInApp } from '@/lib/settings-schema';
+import { LiveRefresh } from '@/components/layout/live-refresh';
+import { ItemAnalytics } from '@/components/features/resources/item-analytics';
+import { ItemGroups } from '@/components/features/resources/item-groups';
+import { getItemStats } from '@/lib/insights/item-stats';
+import { getItemGroupPicker } from '@/lib/library/groups';
+import { getSettings } from '@/lib/library/practice';
+import { getSessionUserId } from '@/lib/auth/current-user';
+import { furiganaInApp } from '@/lib/settings/schema';
 
 export const dynamic = 'force-dynamic';
 

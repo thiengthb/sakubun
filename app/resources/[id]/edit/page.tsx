@@ -1,10 +1,10 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
-import { PageShell } from '@/components/shell/page-shell';
-import { ItemEditForm } from '@/components/resources/item-edit-form';
-import { getItemStats } from '@/lib/item-stats';
-import { getSessionUserId } from '@/lib/current-user';
+import { PageShell } from '@/components/layout/page-shell';
+import { ItemEditForm } from '@/components/features/resources/item-edit-form';
+import { getItemStats } from '@/lib/insights/item-stats';
+import { getSessionUserId } from '@/lib/auth/current-user';
 
 export const metadata: Metadata = { title: 'Sửa mục — sakubun' };
 export const dynamic = 'force-dynamic';

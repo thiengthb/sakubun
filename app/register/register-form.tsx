@@ -4,14 +4,14 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { MailCheck } from 'lucide-react';
 import { toast } from 'sonner';
-import { signUp } from '@/lib/auth-client';
+import { signUp } from '@/lib/auth/auth-client';
 import {
   AuthCard,
   AuthField,
   AuthGoogleAlternative,
   AuthSubmit,
   AuthSwitchLink,
-} from '@/components/shell/auth-card';
+} from '@/components/layout/auth-card';
 import { Button } from '@/components/ui/button';
 import { CardContent } from '@/components/ui/card';
 

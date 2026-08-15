@@ -1,12 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { createTestDb } from '@/lib/test-db';
+import { createTestDb } from '@/lib/db/test-db';
 import { MCP_CATALOG } from '@/lib/mcp/catalog';
 
 createTestDb('sakubun-mcp-usage-');
 
 type Usage = typeof import('@/lib/mcp/usage');
 type Kit = typeof import('@/lib/mcp/tool-kit');
-type Db = typeof import('@/lib/db');
+type Db = typeof import('@/lib/db/db');
 
 let U: Usage;
 let K: Kit;
@@ -15,7 +15,7 @@ let prisma: Db['prisma'];
 beforeEach(async () => {
   U ??= await import('@/lib/mcp/usage');
   K ??= await import('@/lib/mcp/tool-kit');
-  prisma ??= (await import('@/lib/db')).prisma;
+  prisma ??= (await import('@/lib/db/db')).prisma;
   await prisma.mcpToolCall.deleteMany({});
   K.setToolCallRecorder(null);
 });

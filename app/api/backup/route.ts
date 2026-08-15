@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { headers } from 'next/headers';
 import Database from 'better-sqlite3';
-import { auth } from '@/lib/auth';
+import { auth } from '@/lib/auth/auth';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';

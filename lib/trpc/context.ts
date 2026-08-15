@@ -1,4 +1,4 @@
-import { auth } from '@/lib/auth';
+import { auth } from '@/lib/auth/auth';
 
 export interface TrpcContext {
   user: { id: string; email: string; name: string } | null;

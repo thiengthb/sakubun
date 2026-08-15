@@ -4,7 +4,7 @@ import {
   TabbedSkeleton,
   TabsAside,
   ToolbarSkeleton,
-} from '@/components/shell/page-skeleton';
+} from '@/components/layout/page-skeleton';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const LIST = (

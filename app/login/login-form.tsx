@@ -3,14 +3,14 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { signIn } from '@/lib/auth-client';
+import { signIn } from '@/lib/auth/auth-client';
 import {
   AuthCard,
   AuthField,
   AuthGoogleAlternative,
   AuthSubmit,
   AuthSwitchLink,
-} from '@/components/shell/auth-card';
+} from '@/components/layout/auth-card';
 import { CardContent } from '@/components/ui/card';
 
 export function LoginForm({

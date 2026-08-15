@@ -1,6 +1,6 @@
 import { withMcpAuth } from 'mcp-handler';
 import { mcpHandler } from '@/lib/mcp/server';
-import { verifyMcpToken } from '@/lib/mcp-key';
+import { verifyMcpToken } from '@/lib/auth/mcp-key';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';

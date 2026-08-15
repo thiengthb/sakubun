@@ -3,8 +3,8 @@ import { rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { headers } from 'next/headers';
-import { auth } from '@/lib/auth';
-import { importSystemBackup } from '@/lib/import';
+import { auth } from '@/lib/auth/auth';
+import { importSystemBackup } from '@/lib/transfer/import';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';

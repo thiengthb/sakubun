@@ -1,10 +1,10 @@
-import type { Suggestion, TeachBackHarvest } from '@/lib/coach';
-import { isEmptyDossier, TREND_WINDOW_DAYS, type Dossier } from '@/lib/dossier';
-import type { ScaffoldPattern } from '@/lib/scaffolding';
-import type { QuizOptions } from '@/lib/quiz-options';
-import type { SessionRecap } from '@/lib/session-recap';
-import { ERROR_TAG_LABELS } from '@/lib/error-tags';
-import { humanizeUntil, ratingLabel } from '@/lib/format';
+import type { Suggestion, TeachBackHarvest } from '@/lib/session/coach';
+import { isEmptyDossier, TREND_WINDOW_DAYS, type Dossier } from '@/lib/session/dossier';
+import type { ScaffoldPattern } from '@/lib/srs/scaffolding';
+import type { QuizOptions } from '@/lib/session/quiz-options';
+import type { SessionRecap } from '@/lib/session/recap';
+import { ERROR_TAG_LABELS } from '@/lib/session/error-tags';
+import { humanizeUntil, ratingLabel } from '@/lib/core/format';
 import {
   QUIZ_EXERCISE,
   TEACH_BACK_EXERCISE,
@@ -13,19 +13,19 @@ import {
   type Stats,
   type SubmitReviewResult,
   type WeakReport,
-} from '@/lib/practice';
-import { TIER_LABELS } from '@/lib/enrichment-quality';
-import type { LibraryHealthResult } from '@/lib/library-health';
-import type { LibraryCheck } from '@/lib/lookup';
-import { SENTENCE_SIZE_SPEC, type WithheldItem, type WithheldReason } from '@/lib/select';
+} from '@/lib/library/practice';
+import { TIER_LABELS } from '@/lib/library/enrichment-quality';
+import type { LibraryHealthResult } from '@/lib/library/health';
+import type { LibraryCheck } from '@/lib/library/lookup';
+import { SENTENCE_SIZE_SPEC, type WithheldItem, type WithheldReason } from '@/lib/srs/select';
 import {
   DIFFICULTY_ANCHORS,
   furiganaForClaude,
   hardestLevel,
   resolveVocabCeiling,
-} from '@/lib/settings-schema';
-import { LEECH_LAPSES, SUSPEND_SUGGEST_LAPSES } from '@/lib/srs';
-import { turnLabels } from '@/lib/turn-labels';
+} from '@/lib/settings/schema';
+import { LEECH_LAPSES, SUSPEND_SUGGEST_LAPSES } from '@/lib/srs/srs';
+import { turnLabels } from '@/lib/session/turn-labels';
 
 function vocabTargetLevel(batch: DueBatch): string {
   const focusLevels = batch.focus?.levels;

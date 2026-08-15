@@ -5,7 +5,7 @@ import { ThemeProvider } from 'next-themes';
 import { MotionConfig } from 'motion/react';
 import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
-import { AppShell } from '@/components/shell/app-shell';
+import { AppShell } from '@/components/layout/app-shell';
 import './globals.css';
 
 const interSans = Inter({

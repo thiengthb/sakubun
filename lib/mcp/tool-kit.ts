@@ -1,9 +1,9 @@
 import type { createMcpHandler } from 'mcp-handler';
 import { z, ZodError } from 'zod';
-import { ERROR_TAGS } from '@/lib/error-tags';
-import { EXERCISE_TYPES } from '@/lib/exercise-types';
+import { ERROR_TAGS } from '@/lib/session/error-tags';
+import { EXERCISE_TYPES } from '@/lib/session/exercise-types';
 import { verbatimEnvelope } from '@/lib/mcp/render';
-import { JLPT_LEVELS } from '@/lib/settings-schema';
+import { JLPT_LEVELS } from '@/lib/settings/schema';
 
 export type McpServer = Parameters<Parameters<typeof createMcpHandler>[0]>[0];
 

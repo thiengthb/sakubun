@@ -7,7 +7,7 @@ import {
   ErrorDigest,
   useLoggedError,
   type ErrorBoundaryProps,
-} from '@/components/shell/error-boundary';
+} from '@/components/layout/error-boundary';
 
 export default function RouteError({ error, reset }: ErrorBoundaryProps) {
   useLoggedError(error);

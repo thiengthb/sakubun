@@ -2,8 +2,8 @@
 
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
-import { parseMaziiExcel } from '@/lib/excel-import';
-import type { ParseResult } from '@/lib/import-parse';
+import { parseMaziiExcel } from '@/lib/transfer/excel';
+import type { ParseResult } from '@/lib/transfer/parse';
 import {
   addItems,
   deleteItem,
@@ -16,9 +16,9 @@ import {
   setSentenceStarred,
   updateItem,
   VOCAB_KIND,
-} from '@/lib/practice';
-import { JLPT_LEVELS, settingsPatchSchema, type Settings } from '@/lib/settings-schema';
-import { getSessionUserId } from '@/lib/current-user';
+} from '@/lib/library/practice';
+import { JLPT_LEVELS, settingsPatchSchema, type Settings } from '@/lib/settings/schema';
+import { getSessionUserId } from '@/lib/auth/current-user';
 import {
   GROUP_KINDS,
   addItemsToGroup,
@@ -26,8 +26,8 @@ import {
   deleteGroup,
   removeItemsFromGroup,
   updateGroup,
-} from '@/lib/groups';
-import { type ActionResult, cleanIds, err, ok, parseInput } from '@/lib/action-result';
+} from '@/lib/library/groups';
+import { type ActionResult, cleanIds, err, ok, parseInput } from '@/lib/core/action-result';
 
 function revalidateResources(): void {
   revalidatePath('/resources');

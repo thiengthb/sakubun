@@ -1,13 +1,13 @@
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { TRPCError } from '@trpc/server';
-import { createTestDb, resetLearningData } from '@/lib/test-db';
+import { createTestDb, resetLearningData } from '@/lib/db/test-db';
 
 createTestDb('sakubun-trpc-');
 
 type Router = typeof import('@/lib/trpc/router');
 type Init = typeof import('@/lib/trpc/init');
 type Context = typeof import('@/lib/trpc/context');
-type Db = typeof import('@/lib/db');
+type Db = typeof import('@/lib/db/db');
 
 let appRouter: Router['appRouter'];
 let createCallerFactory: Init['createCallerFactory'];
@@ -21,7 +21,7 @@ beforeAll(async () => {
   ({ appRouter } = await import('@/lib/trpc/router'));
   ({ createCallerFactory } = await import('@/lib/trpc/init'));
   ({ createTrpcContext } = await import('@/lib/trpc/context'));
-  ({ prisma } = await import('@/lib/db'));
+  ({ prisma } = await import('@/lib/db/db'));
 }, 60_000);
 
 const caller = (ctx: { user: { id: string; email: string; name: string } | null }) =>
@@ -141,7 +141,7 @@ describe('snapshot', () => {
   });
 
   it('has a schema that actually rejects a Date — the guarantee, not just the intent', async () => {
-    const { mobileSnapshotSchema } = await import('@/lib/mobile-snapshot');
+    const { mobileSnapshotSchema } = await import('@/lib/mobile/snapshot');
     await prisma.item.create({
       data: { id: 'leak', kind: 'VOCAB', expression: '猫', meaningVi: 'mèo', level: 'N5' },
     });
@@ -176,9 +176,9 @@ describe('stats', () => {
   });
 
   it('applies the study-day cutoff — the reason the client is never given the ingredients', async () => {
-    const { saveSettings } = await import('@/lib/practice');
-    const { invalidateStreak } = await import('@/lib/practice');
-    const { buildMobileStats } = await import('@/lib/mobile-stats');
+    const { saveSettings } = await import('@/lib/library/practice');
+    const { invalidateStreak } = await import('@/lib/library/practice');
+    const { buildMobileStats } = await import('@/lib/mobile/stats');
 
     await saveSettings({ dayCutoffHour: 4 });
     await prisma.item.create({
@@ -207,8 +207,8 @@ describe('stats', () => {
   });
 
   it('never recomputes: it projects the same getStats() the web dashboard calls', async () => {
-    const { getStats } = await import('@/lib/practice');
-    const { buildMobileStats } = await import('@/lib/mobile-stats');
+    const { getStats } = await import('@/lib/library/practice');
+    const { buildMobileStats } = await import('@/lib/mobile/stats');
     const now = new Date(2026, 7, 6, 10, 0, 0);
     const [web, mobile] = await Promise.all([getStats(now), buildMobileStats(now)]);
     expect(mobile.dueNow).toBe(web.dueNow);

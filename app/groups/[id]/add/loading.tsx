@@ -1,4 +1,4 @@
-import { FitList, PageSkeleton } from '@/components/shell/page-skeleton';
+import { FitList, PageSkeleton } from '@/components/layout/page-skeleton';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function Loading() {

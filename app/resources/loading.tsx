@@ -5,7 +5,7 @@ import {
   TableSkeleton,
   TabsAside,
   ToolbarSkeleton,
-} from '@/components/shell/page-skeleton';
+} from '@/components/layout/page-skeleton';
 
 const TABLE = (
   <>

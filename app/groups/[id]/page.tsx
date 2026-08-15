@@ -1,9 +1,9 @@
 import { notFound } from 'next/navigation';
-import { GroupDetailView } from '@/components/groups/group-detail-view';
-import { getGroup, listAddableItems } from '@/lib/groups';
-import { getSettings } from '@/lib/practice';
-import { getSessionUserId } from '@/lib/current-user';
-import { furiganaInApp } from '@/lib/settings-schema';
+import { GroupDetailView } from '@/components/features/groups/group-detail-view';
+import { getGroup, listAddableItems } from '@/lib/library/groups';
+import { getSettings } from '@/lib/library/practice';
+import { getSessionUserId } from '@/lib/auth/current-user';
+import { furiganaInApp } from '@/lib/settings/schema';
 
 export const dynamic = 'force-dynamic';
 

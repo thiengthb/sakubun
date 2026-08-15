@@ -1,7 +1,7 @@
-import { SettingsForm } from '@/components/settings/settings-form';
-import { prisma } from '@/lib/db';
-import { getSettings } from '@/lib/practice';
-import { getSessionUserId } from '@/lib/current-user';
+import { SettingsForm } from '@/components/features/settings/settings-form';
+import { prisma } from '@/lib/db/db';
+import { getSettings } from '@/lib/library/practice';
+import { getSessionUserId } from '@/lib/auth/current-user';
 import { readToolUsage } from '@/lib/mcp/usage';
 
 export const dynamic = 'force-dynamic';

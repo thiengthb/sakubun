@@ -1,4 +1,4 @@
-import { FormCardSkeleton, PageSkeleton, TabsAside } from '@/components/shell/page-skeleton';
+import { FormCardSkeleton, PageSkeleton, TabsAside } from '@/components/layout/page-skeleton';
 
 export default function Loading() {
   return (

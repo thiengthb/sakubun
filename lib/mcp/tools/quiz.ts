@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { getQuizBatch, skipSentence } from '@/lib/practice';
+import { getQuizBatch, skipSentence } from '@/lib/library/practice';
 import { guard, ID, ok, type McpServer } from '@/lib/mcp/tool-kit';
 
 export function registerQuizTools(server: McpServer) {

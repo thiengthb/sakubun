@@ -1,6 +1,6 @@
 import { rmSync } from 'node:fs';
 import path from 'node:path';
-import { applyMigrations } from '../lib/test-db';
+import { applyMigrations } from '../lib/db/test-db';
 import { E2E_DB_FILE } from './fixtures';
 
 export default async function globalSetup() {

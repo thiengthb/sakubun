@@ -1,7 +1,7 @@
 import path from 'node:path';
 import Database from 'better-sqlite3';
 import { expect, test, type Page } from '@playwright/test';
-import { CURRENT_ENRICHMENT_VERSION } from '@/lib/enrichment';
+import { CURRENT_ENRICHMENT_VERSION } from '@/lib/library/enrichment';
 import { E2E_DB_FILE, E2E_EMAIL, E2E_LOGIN, seedE2eAccount } from './fixtures';
 
 const iso = (ms: number) => new Date(ms).toISOString().replace('Z', '+00:00');

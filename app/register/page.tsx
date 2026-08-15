@@ -2,8 +2,8 @@ import Link from 'next/link';
 import { ShieldCheck } from 'lucide-react';
 import { RegisterForm } from './register-form';
 import { Button } from '@/components/ui/button';
-import { isGoogleEnabled } from '@/lib/google-enabled';
-import { isRegistrationOpen } from '@/lib/registration';
+import { isGoogleEnabled } from '@/lib/auth/google-enabled';
+import { isRegistrationOpen } from '@/lib/auth/registration';
 
 export const dynamic = 'force-dynamic';
 

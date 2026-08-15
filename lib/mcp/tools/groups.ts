@@ -6,7 +6,7 @@ import {
   listGroups,
   previewGroupMembers,
   removeItemsFromGroup,
-} from '@/lib/groups';
+} from '@/lib/library/groups';
 import { guard, ID, ITEM_IDS, ok, type McpServer } from '@/lib/mcp/tool-kit';
 
 const GROUP_KIND = z.enum(GROUP_KINDS);

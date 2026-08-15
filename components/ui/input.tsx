@@ -2,9 +2,9 @@
 
 import * as React from 'react';
 import { X } from 'lucide-react';
-import { Explain } from '@/components/shared/explain';
+import { Explain } from '@/components/common/explain';
 
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/core/utils';
 
 const CLEARABLE_TYPES = new Set<string | undefined>([
   undefined,

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, type RefObject } from 'react';
-import { fitItemCount } from '@/lib/fit-rows';
+import { fitItemCount } from '@/lib/core/fit-rows';
 
 export interface UseFitRowsOptions {
   topRef: RefObject<HTMLElement | null>;

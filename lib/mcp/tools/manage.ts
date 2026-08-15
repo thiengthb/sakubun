@@ -1,12 +1,12 @@
 import { z } from 'zod';
-import { computeDossier, isEmptyDossier } from '@/lib/dossier';
+import { computeDossier, isEmptyDossier } from '@/lib/session/dossier';
 import {
   contrastSchema,
   enrichmentSchema,
   exampleSchema,
   provenanceSchema,
   relatedSchema,
-} from '@/lib/enrichment';
+} from '@/lib/library/enrichment';
 import {
   getStats,
   getWeakReport,
@@ -18,9 +18,9 @@ import {
   setItemSuspended,
   setProposalVerdict,
   updateItem,
-} from '@/lib/practice';
-import { getLibraryHealth } from '@/lib/library-health';
-import { getSessionRecap } from '@/lib/session-recap';
+} from '@/lib/library/practice';
+import { getLibraryHealth } from '@/lib/library/health';
+import { getSessionRecap } from '@/lib/session/recap';
 import {
   renderConsentGuard,
   renderDossier,

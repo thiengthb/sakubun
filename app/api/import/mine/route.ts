@@ -1,7 +1,7 @@
 import { headers } from 'next/headers';
-import { auth } from '@/lib/auth';
-import { importAccountData } from '@/lib/import';
-import { parseAccountBackup } from '@/lib/import-schema';
+import { auth } from '@/lib/auth/auth';
+import { importAccountData } from '@/lib/transfer/import';
+import { parseAccountBackup } from '@/lib/transfer/schema';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';

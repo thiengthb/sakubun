@@ -1,7 +1,7 @@
 import { z } from 'zod';
-import { isGoogleEnabled } from '@/lib/google-enabled';
-import { buildMobileSnapshot, mobileSnapshotSchema } from '@/lib/mobile-snapshot';
-import { buildMobileStats, mobileStatsSchema } from '@/lib/mobile-stats';
+import { isGoogleEnabled } from '@/lib/auth/google-enabled';
+import { buildMobileSnapshot, mobileSnapshotSchema } from '@/lib/mobile/snapshot';
+import { buildMobileStats, mobileStatsSchema } from '@/lib/mobile/stats';
 import { protectedProcedure, publicProcedure, router } from '@/lib/trpc/init';
 
 export const appRouter = router({

@@ -1,6 +1,6 @@
 import { headers } from 'next/headers';
-import { auth } from '@/lib/auth';
-import { exportUserData } from '@/lib/export';
+import { auth } from '@/lib/auth/auth';
+import { exportUserData } from '@/lib/transfer/export';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';

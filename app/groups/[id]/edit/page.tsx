@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { GroupFormPage } from '@/components/groups/group-form-page';
-import { getGroup } from '@/lib/groups';
-import { getSessionUserId } from '@/lib/current-user';
+import { GroupFormPage } from '@/components/features/groups/group-form-page';
+import { getGroup } from '@/lib/library/groups';
+import { getSessionUserId } from '@/lib/auth/current-user';
 
 export const metadata: Metadata = { title: 'Sửa nhóm — sakubun' };
 export const dynamic = 'force-dynamic';

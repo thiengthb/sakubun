@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import { MAX_IMPORT_CANDIDATES, previewImport } from '@/lib/import-preview';
-import { addItems, GRAMMAR_KIND, VOCAB_CAPTURE_REASONS, VOCAB_KIND } from '@/lib/practice';
+import { MAX_IMPORT_CANDIDATES, previewImport } from '@/lib/transfer/preview';
+import { addItems, GRAMMAR_KIND, VOCAB_CAPTURE_REASONS, VOCAB_KIND } from '@/lib/library/practice';
 import { guard, LEVEL, ok, type McpServer } from '@/lib/mcp/tool-kit';
 
 const IMPORT_KIND = z

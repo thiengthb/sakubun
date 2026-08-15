@@ -1,4 +1,4 @@
-import { PageSkeleton, TabsAside } from '@/components/shell/page-skeleton';
+import { PageSkeleton, TabsAside } from '@/components/layout/page-skeleton';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function Loading() {

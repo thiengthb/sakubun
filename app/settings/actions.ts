@@ -1,10 +1,10 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { prisma } from '@/lib/db';
-import { getSessionUserId } from '@/lib/current-user';
-import { createMcpKey } from '@/lib/mcp-key';
-import { type ActionResult, err, ok } from '@/lib/action-result';
+import { prisma } from '@/lib/db/db';
+import { getSessionUserId } from '@/lib/auth/current-user';
+import { createMcpKey } from '@/lib/auth/mcp-key';
+import { type ActionResult, err, ok } from '@/lib/core/action-result';
 
 export async function createMcpKeyAction(name: string): Promise<ActionResult<{ token: string }>> {
   const label = name.trim();

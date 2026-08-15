@@ -5,7 +5,7 @@ import {
   ErrorDigest,
   useLoggedError,
   type ErrorBoundaryProps,
-} from '@/components/shell/error-boundary';
+} from '@/components/layout/error-boundary';
 import './globals.css';
 
 export default function GlobalError({ error, reset }: ErrorBoundaryProps) {

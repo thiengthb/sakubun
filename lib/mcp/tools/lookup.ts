@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { checkLibrary } from '@/lib/lookup';
+import { checkLibrary } from '@/lib/library/lookup';
 import { renderConsentGuard, renderLibraryCheck } from '@/lib/mcp/render';
 import {
   guard,

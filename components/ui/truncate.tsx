@@ -1,8 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
-import { Explain } from '@/components/shared/explain';
-import { cn } from '@/lib/utils';
+import { Explain } from '@/components/common/explain';
+import { cn } from '@/lib/core/utils';
 
 export function Truncate({
   children,

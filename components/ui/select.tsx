@@ -3,8 +3,8 @@
 import * as React from 'react';
 import { Select as SelectPrimitive } from 'radix-ui';
 
-import { cn } from '@/lib/utils';
-import { useFieldLabelId } from '@/components/shared/field-label-context';
+import { cn } from '@/lib/core/utils';
+import { useFieldLabelId } from '@/components/common/field-label-context';
 import { ChevronDownIcon, CheckIcon, ChevronUpIcon } from 'lucide-react';
 
 function Select({ ...props }: React.ComponentProps<typeof SelectPrimitive.Root>) {

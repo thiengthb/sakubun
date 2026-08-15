@@ -5,11 +5,11 @@ import {
   MAX_NOTE_EVIDENCE,
   MIN_NOTE_CHARS,
   NOTE_TTL_DAYS,
-} from '@/lib/learner-notes';
-import { errorDetailSchema } from '@/lib/error-tags';
-import { getDueBatch, stageSentence, submitReview } from '@/lib/practice';
-import { classifyExtraPatterns, drilledLevelOf, MAX_EXTRA_PATTERNS } from '@/lib/scaffolding';
-import { QUIZ_DISTRACTOR_COUNT } from '@/lib/quiz-options';
+} from '@/lib/session/learner-notes';
+import { errorDetailSchema } from '@/lib/session/error-tags';
+import { getDueBatch, stageSentence, submitReview } from '@/lib/library/practice';
+import { classifyExtraPatterns, drilledLevelOf, MAX_EXTRA_PATTERNS } from '@/lib/srs/scaffolding';
+import { QUIZ_DISTRACTOR_COUNT } from '@/lib/session/quiz-options';
 import {
   renderCalibrationShadow,
   renderDueBatch,
