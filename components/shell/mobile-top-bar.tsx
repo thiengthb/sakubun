@@ -13,9 +13,10 @@ import { AppLogo } from '@/components/shell/app-logo';
  * to it — two controls' worth of width for one action, on the axis where width is scarcest. The mark is
  * already the biggest tap target in the row and already reads as "the app", so it carries the action.
  *
- * On a page with NO sidebar (a signed-out visitor on a `GUEST_VIEWABLE` route gets the public top bar
- * instead of the provider — see shell/app-shell.tsx) the logo stays a plain mark: a button that opens
- * nothing is worse than no button.
+ * On a page with NO sidebar the logo stays a plain mark: a button that opens nothing is worse than no
+ * button. No route is in that state today — the guest routes that were (a signed-out visitor got a
+ * public top bar instead of the provider) went out with `/guide` — so this is a fallback, not a case;
+ * see `useOptionalSidebar` in components/ui/sidebar.tsx.
  */
 export function MobileTopBar() {
   const sidebar = useOptionalSidebar();

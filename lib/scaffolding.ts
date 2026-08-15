@@ -73,8 +73,9 @@ export async function drilledLevelOf(
   itemIds: readonly string[],
 ): Promise<JlptLevel | null> {
   if (itemIds.length === 0) return null;
-  // Tenant-scoped by userId — lib/db.ts throws on a user-owned query without one, and an id from
-  // another account must never widen what counts as "already being drilled".
+  // No userId filter, and none is possible: Item has no tenant column and the fail-closed guard that
+  // once demanded one is gone with it (see lib/db.ts). The ids arrive from a caller that already
+  // passed the auth boundary, which is what scopes this now.
   const rows = await prisma.item.findMany({
     where: { id: { in: [...itemIds] } },
     select: { level: true },

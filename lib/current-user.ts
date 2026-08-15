@@ -1,4 +1,4 @@
-// Resolve the current tenant () at each request boundary. The DB layer (lib/practice.ts) takes
+// Resolve WHO is making the request, at each request boundary. The DB layer (lib/practice.ts) takes
 // an explicit userId; THIS module is where that id comes from — a better-auth session for the web
 // surface, a per-user MCP token for the machine surface. Centralized so the "who is this?" question
 // has exactly one answer per surface (plan 2026-07-21, steps 2.6 / 2.7).
@@ -18,14 +18,9 @@ export async function getSessionUserId(): Promise<string> {
   return session.user.id;
 }
 
-/**
- * The signed-in user for a Server Component, or `null` when there is no valid session (or the account
- * is banned). Non-redirecting counterpart to `getSessionUserId` — for the surfaces that render
- * something for guests (the public landing at "/", chrome that hides the sidebar) instead of
- * bouncing to /login.
- */
-export async function getOptionalSessionUser() {
-  const session = await auth.api.getSession({ headers: await headers() });
-  if (!session?.user || session.user.banned) return null;
-  return session.user;
-}
+// There WAS a non-redirecting counterpart here, `getOptionalSessionUser()`. It existed for surfaces
+// that rendered something for a guest instead of bouncing to /login, and after /guide was removed
+// (2026-08-14) there were none: its last caller was the root layout, feeding an `authed` prop that
+// only drove a chromeless guest landing at "/" — and "/" gates with `getSessionUserId()`, so that
+// branch could not fire. Kept as a note, not as code: a session lookup per request that nothing
+// reads is a cost, and an exported auth helper with no caller invites one.

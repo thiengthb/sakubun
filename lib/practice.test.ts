@@ -2,8 +2,8 @@
 // It PINS the observable behavior of the functions later phases rewrite for performance — the FSRS write
 // path (stage → submit), the stats/streak aggregates (P3.2 dedups their two unbounded ReviewLog scans),
 // saveEnrichments (P3.4 batches its N+1), and addItems dedup — so a behavior-preserving refactor that
-// changes the output fails loudly here. Same throwaway-DB harness as tenancy.test.ts: DATABASE_URL is set
-// BEFORE lib/db is imported, so the guarded singleton binds to the temp DB, not dev.db.
+// changes the output fails loudly here. Throwaway-DB harness (`createTestDb`, lib/test-db.ts): DATABASE_URL
+// is set BEFORE lib/db is imported, so the Prisma singleton binds to the temp DB, not dev.db.
 
 import { readFileSync } from 'node:fs';
 import path from 'node:path';

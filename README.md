@@ -6,7 +6,7 @@ Người học luyện bằng cách nói chuyện với **Claude Desktop qua MCP
 ngày và cài đặt**, còn Claude soạn câu và chấm. Web không sinh câu và không chấm — repo này không gọi
 API Anthropic ở đâu cả, và MCP là một chiều: Claude gọi app.
 
-Năm trang: **Phân tích · Tài nguyên · Lịch sử · Cài đặt · Hướng dẫn**.
+Bốn trang: **Phân tích · Tài nguyên · Lịch sử · Cài đặt**.
 
 ## Bắt đầu
 

@@ -51,12 +51,16 @@ function useSidebar() {
 /**
  * Same context, but ABSENCE is a legal answer — returns null instead of throwing.
  *
- * Some surfaces render outside any `SidebarProvider` on purpose: a signed-OUT visitor reading a
- * `GUEST_VIEWABLE` route (see `shell/app-shell.tsx`) gets the public top bar, not the app sidebar,
- * because every sidebar link would only bounce them to /login. A shared page chrome component
- * (`shell/mobile-top-bar.tsx`) still renders there, so it must be able to ASK whether a sidebar
- * exists rather than assume one does — the throwing `useSidebar` above turned that question into a
- * crashed page (the whole guest `/guide` rendered the error boundary).
+ * A shared page-chrome component (`shell/mobile-top-bar.tsx`) can be asked to render on a surface with
+ * no provider above it, so it must be able to ASK whether a sidebar exists rather than assume one does.
+ * The throwing `useSidebar` above turned that question into a crashed page: signed-OUT visitors used to
+ * read a `GUEST_VIEWABLE` route under a public top bar instead of the app sidebar, and the whole guest
+ * `/guide` rendered the error boundary.
+ *
+ * As of 2026-08-15 NO route reaches the null branch — the guest routes went with `/guide`, and the two
+ * chromeless pages (/login, /register) do not use `PageShell`. This stays as a null-check rather than a
+ * live case: the fallback is two lines and it degrades to a plain mark, where `useSidebar` would take
+ * the whole page down. Do not read it as evidence that a provider-less surface exists.
  *
  * Use this ONLY for optional chrome (show a toggle if there's something to toggle). Anything that
  * genuinely cannot work without the sidebar should keep using `useSidebar` and fail loudly.

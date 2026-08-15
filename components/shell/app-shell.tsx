@@ -28,21 +28,20 @@ const NAV_ITEMS = [
 export function AppShell({
   children,
   defaultSidebarOpen = true,
-  authed = true,
 }: {
   children: React.ReactNode;
   defaultSidebarOpen?: boolean;
-  /** Server-resolved auth state — drives the guest landing at "/" (chromeless, no sidebar). */
-  authed?: boolean;
 }) {
   const pathname = usePathname();
   const { data: session } = useSession();
-  const guestLanding = pathname === '/' && !authed;
-  if (CHROMELESS.includes(pathname) || guestLanding) return <>{children}</>;
+  if (CHROMELESS.includes(pathname)) return <>{children}</>;
 
   // Không còn trang nào cho khách chưa đăng nhập. `/guide` là trang DUY NHẤT từng ở đây, và nó bị gỡ
   // theo yêu cầu chủ repo (2026-08-14) — nên nhánh khách, `PublicTopBar` và cả `GUEST_VIEWABLE` đi
   // theo. Giữ lại một nhánh không đường nào tới được là giữ một lối rẽ chết trong bộ định tuyến.
+  // Prop `authed` cũng đi theo (2026-08-15): nhánh duy nhất đọc nó là `guestLanding`, mà "/" gọi
+  // `getSessionUserId()` nên khách bị đá sang /login trước khi shell kịp render — giữ prop đó thì
+  // root layout phải resolve session MỖI REQUEST chỉ để nuôi một nhánh không bao giờ chạy.
 
   // Single user: no roles, so no operator-only entries to append.
   const groups: AppSidebarGroup[] = [{ items: NAV_ITEMS }];

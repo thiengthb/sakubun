@@ -12,8 +12,8 @@
 <!-- 2–3 câu. Sản phẩm làm gì, cho ai. Không mô tả cây thư mục — agent tự thấy. -->
 sakubun là app luyện dịch Nhật–Việt theo ngữ pháp, **MỘT người dùng, deploy thật, sau
 /login**. Người học luyện bằng cách nói chuyện với Claude Desktop qua MCP; **app giữ dữ
-liệu, FSRS, hạn mức ngày và cài đặt**, còn Claude soạn câu và chấm. Web gồm 5 trang:
-Phân tích · Tài nguyên · Lịch sử · Cài đặt · Hướng dẫn.
+liệu, FSRS, hạn mức ngày và cài đặt**, còn Claude soạn câu và chấm. Web gồm 4 trang:
+Phân tích · Tài nguyên · Lịch sử · Cài đặt.
 
 Bản **nhiều người dùng + cộng đồng** (nhóm, thư viện chung, feed, thông báo, admin) nằm ở
 nhánh `feat/multiuser-community` — lấy lại từ đó, đừng dựng lại từ đầu.

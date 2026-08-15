@@ -71,13 +71,14 @@ export function PageShell({
     // appears once the page is scrolled past 300px, and every page with a pagination footer sizes its
     // page to FIT THE VIEWPORT (`useFitRows`) — so those pages never scroll, the button never appears,
     // and the 64px was pure dead space below the footer on exactly the pages that reserved it. Pages
-    // that DO scroll (guide, dashboard) end in prose, not in a control the button could cover.
+    // that DO scroll (the dashboard) end in prose, not in a control the button could cover.
     // `useFitRows`' `bottomGap` default mirrors this number — change the two together, or the
     // viewport-fit lists will fit one row too many and bring back the page scrollbar.
     // `w-full min-w-0` is load-bearing, not defensive — it is what keeps a tabbed page inside the phone.
     // Every tabbed page renders this shell INSIDE a `<Tabs>` root, which is `display:flex`, so this div is
     // a FLEX ITEM. With `width:auto` the browser sized it from its CONTENT instead of stretching it to the
-    // container: measured on /guide?tab=reference at 390px, the Tabs root was 358px wide and this div came
+    // container: measured at 390px on /guide?tab=reference (that page is gone; the mechanism is not — every
+    // tabbed page still renders this div as a flex item), the Tabs root was 358px wide and this div came
     // out 608px (computed width, not overflow), so the whole page scrolled sideways 234px and `max-w-3xl`
     // looked like it was being ignored. `max-w-*` and `min-w-0` alone did NOT fix it; `w-full` did, because
     // it pins the cross size to the container instead of the content. Same pairing `app-shell.tsx` already
@@ -116,9 +117,10 @@ export function PageShell({
           // keeps the tabs at its left edge — beside the crumb — while that inner `ml-auto` can still
           // push the action to the far right. Without it the wrapper hugs its content and the action
           // lands glued to the tabs.
-          // `max-md:flex-nowrap` for the same reason as the row itself: /guide puts a tab select AND a
-          // hint button in here, and on a phone they wrapped against each other (a 72px header row)
-          // even while the outer row had space.
+          // `max-md:flex-nowrap` for the same reason as the row itself: /guide used to put a tab select
+          // AND a hint button in here, and on a phone they wrapped against each other (a 72px header row)
+          // even while the outer row had space. That page is gone, but any page passing two controls in
+          // `headerAside` gets the same row — keep the nowrap.
           <div className="ml-auto flex min-w-0 flex-wrap items-center gap-2 max-md:flex-nowrap md:ml-0 md:flex-1">
             {headerAside}
           </div>

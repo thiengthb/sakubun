@@ -6,7 +6,6 @@ import { MotionConfig } from 'motion/react';
 import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { AppShell } from '@/components/shell/app-shell';
-import { getOptionalSessionUser } from '@/lib/current-user';
 import './globals.css';
 
 // Inter supports the Vietnamese subset (Geist on Google Fonts does not).
@@ -41,9 +40,6 @@ export default async function RootLayout({
 }>) {
   // Restore the sidebar's collapsed/expanded state server-side so it doesn't flash on reload.
   const sidebarOpen = (await cookies()).get('sidebar_state')?.value !== 'false';
-  // Server-resolved auth so the shell can render the public landing at "/" chromeless (no sidebar)
-  // for guests without a client-side flash.
-  const authed = (await getOptionalSessionUser()) !== null;
 
   return (
     <html
@@ -62,7 +58,7 @@ export default async function RootLayout({
               so individual components never re-implement that guard. */}
           <MotionConfig reducedMotion="user">
             <TooltipProvider delayDuration={300}>
-              <AppShell defaultSidebarOpen={sidebarOpen} authed={authed}>
+              <AppShell defaultSidebarOpen={sidebarOpen}>
                 {children}
               </AppShell>
             </TooltipProvider>

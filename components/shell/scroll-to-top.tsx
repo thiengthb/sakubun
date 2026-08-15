@@ -8,16 +8,16 @@ import { Button } from '@/components/ui/button';
 
 /**
  * How far down the page the button appears. 300px, not a full viewport: several pages here are only
- * ~1.4 viewports tall on a laptop (the dashboard measures ~1265px at 1280×900, /guide ~978px), so a
- * 400px threshold meant the button never appeared on desktop at all — it can only show if the page can
- * actually scroll that far.
+ * ~1.4 viewports tall on a laptop (the dashboard measured ~1265px at 1280×900; /guide, since removed,
+ * was ~978px), so a 400px threshold meant the button never appeared on desktop at all — it can only
+ * show if the page can actually scroll that far.
  */
 const SHOW_AFTER_PX = 300;
 
 /**
  * "Back to top" — appears at the bottom-right once the page is scrolled past ~400px, and returns to the
- * top when tapped. The app's long pages (the dashboard is ~2000px on a phone, /guide longer) had no way
- * back up except swiping, which on a tall list is a dozen flicks.
+ * top when tapped. The app's long pages (the dashboard is ~2000px on a phone; /guide, since removed, was
+ * longer) had no way back up except swiping, which on a tall list is a dozen flicks.
  *
  * Placement notes, because the bottom edge is crowded:
  *   - bottom-right, clear of the Toaster (bottom-CENTRE, sonner) and of the bulk-action dock

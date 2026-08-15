@@ -213,7 +213,8 @@ export function ItemAnalytics({
       {/* Two tabs: metrics + review log · then the enrichment / word detail (2026-07-18).
           A REAL tab bar here, not the app's `TabSelect` (2026-08-05, by request). TabSelect trades a
           tab bar for a select below `md` because a bar costs width proportional to the NUMBER of tabs —
-          that trade pays on /settings (five tabs) and /guide (four). With TWO tabs it does not: the pair
+          that trade pays on /settings (five tabs), and paid on /guide (four) while it existed.
+          With TWO tabs it does not: the pair
           is ~200px at 360px, i.e. it already fits, so the select bought nothing and cost the thing a tab
           bar is for — both destinations visible at once, one tap away, no menu.
           The line is the tab row's POSITION, not the tab count: this row is page CONTENT and owns its

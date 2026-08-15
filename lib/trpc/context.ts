@@ -7,7 +7,7 @@
 // adapter hands us the `Request` directly, so taking headers from the argument keeps this testable
 // without a Next request scope.
 //
-// The ban check is deliberate and mirrors `getOptionalSessionUser`: a banned account is the operator's
+// The ban check is deliberate and mirrors `getSessionUserId`: a banned account is the operator's
 // kill switch, and it has to close the mobile door at the same moment it closes the web one.
 import { auth } from '@/lib/auth';
 
