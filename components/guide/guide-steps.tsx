@@ -13,8 +13,8 @@ import {
   Sparkles,
   Terminal,
 } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
-import type { TutorialStep, WalkStep } from '@/components/guide/guide-walkthrough';
 import { LOOP_STEPS } from '@/components/shared/loop-steps';
 import {
   Bubble,
@@ -27,9 +27,25 @@ import {
   Window,
 } from '@/components/guide/guide-primitives';
 
-// Content for the four /guide walkthroughs. Each is a WalkStep[] (title · body · visual illustration);
-// the GuideWalkthrough engine (guide-walkthrough.tsx) renders them. Vietnamese copy is intentional —
-// /guide is the one surface exempt from the English-dev-artifact rule (it's end-user facing).
+// Content for the four /guide walkthroughs. Each is a WalkStep[] (title · body · visual illustration).
+//
+// TRANSITIONAL: the engine that rendered these (guide-walkthrough.tsx) and the progress reader it used
+// (lib/guide-progress.ts) are gone as of this step; the two types below used to be imported from the
+// engine and are declared locally only so this file still typechecks until it is itself deleted in the
+// next step of the /guide removal. `progressKey` loses its `StartProgressKey` union for the same reason
+// — nothing reads it any more. Do not build anything new on these.
+
+interface WalkStep {
+  title: string;
+  body: ReactNode;
+  visual: ReactNode;
+}
+
+interface TutorialStep extends WalkStep {
+  need: ReactNode;
+  done: ReactNode;
+  progressKey?: string;
+}
 
 // --- Bắt đầu -------------------------------------------------------------------------------------
 
