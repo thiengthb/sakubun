@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { SectionHeading } from '@/components/common/section-heading';
 import { Card, CardContent } from '@/components/ui/card';
 
 export function SettingsGroup({
@@ -12,10 +13,7 @@ export function SettingsGroup({
 }) {
   return (
     <section className="space-y-3">
-      <div className="space-y-0.5">
-        <h2 className="font-heading text-sm font-semibold">{title}</h2>
-        {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
-      </div>
+      <SectionHeading title={title} hint={hint} />
       <Card>
         <CardContent className="space-y-6">{children}</CardContent>
       </Card>

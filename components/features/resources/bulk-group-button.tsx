@@ -10,7 +10,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { GROUP_KIND_LABELS } from '@/components/features/groups/group-kind-badge';
+import { GROUP_KIND_LABELS } from '@/lib/library/group-kinds';
 import { addItemsToGroupAction, removeItemsFromGroupAction } from '@/app/actions';
 import type { GroupSummary } from '@/lib/library/groups';
 

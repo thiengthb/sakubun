@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/table';
 import { formatDateTimeVN } from '@/lib/core/format';
 import type { ToolUsageReport } from '@/lib/mcp/usage';
+import { cn } from '@/lib/core/utils';
 
 function ms(value: number | null): string {
   if (value === null) return '—';
@@ -27,14 +28,15 @@ export function McpUsageCard({ usage }: { usage: ToolUsageReport }) {
           Mỗi lần Claude gọi một tool của sakubun, lần gọi đó được đếm ở đây. Bảng này nằm trong cơ
           sở dữ liệu nên nó SỐNG QUA việc khởi động lại app — khác với log, thứ biến mất cùng
           container. Dùng nó để biết Claude thật sự dùng gì, và để thấy tool nào đang lỗi (một tool
-          lỗi vẫn trả kết quả &quot;thành công&quot; ở tầng HTTP, nên đây là chỗ duy nhất thấy được).
+          lỗi vẫn trả kết quả &quot;thành công&quot; ở tầng HTTP, nên đây là chỗ duy nhất thấy
+          được).
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {usage.rows.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            Chưa ghi nhận lời gọi nào. Nối Claude Desktop bằng token ở trên rồi luyện một lượt, số sẽ
-            xuất hiện ở đây.
+            Chưa ghi nhận lời gọi nào. Nối Claude Desktop bằng token ở trên rồi luyện một lượt, số
+            sẽ xuất hiện ở đây.
           </p>
         ) : (
           <>
@@ -43,9 +45,7 @@ export function McpUsageCard({ usage }: { usage: ToolUsageReport }) {
               {failing.length > 0 ? (
                 <>
                   {' · '}
-                  <span className="font-medium text-destructive">
-                    {failing.length} tool có lỗi
-                  </span>
+                  <span className="font-medium text-destructive">{failing.length} tool có lỗi</span>
                 </>
               ) : null}
             </p>
@@ -74,7 +74,10 @@ export function McpUsageCard({ usage }: { usage: ToolUsageReport }) {
                       </TableCell>
                       <TableCell className="text-right tabular-nums">{r.calls}</TableCell>
                       <TableCell
-                        className={`text-right tabular-nums ${r.errors > 0 ? 'text-destructive' : 'text-muted-foreground'}`}
+                        className={cn(
+                          'text-right tabular-nums',
+                          r.errors > 0 ? 'text-destructive' : 'text-muted-foreground',
+                        )}
                       >
                         {r.errors}
                       </TableCell>

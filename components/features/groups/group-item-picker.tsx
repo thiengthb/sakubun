@@ -15,7 +15,7 @@ import { addItemsToGroupAction } from '@/app/actions';
 import { cn } from '@/lib/core/utils';
 import { speakable } from '@/lib/core/format';
 import { buildFuriganaMarkup } from '@/lib/japanese/furigana';
-import { GROUP_KIND_LABELS } from '@/components/features/groups/group-kind-badge';
+import { GROUP_KIND_LABELS } from '@/lib/library/group-kinds';
 import type { GroupDetail, GroupMemberItem } from '@/lib/library/groups';
 
 function PickerLine({

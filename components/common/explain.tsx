@@ -2,6 +2,7 @@
 
 import { type ReactNode } from 'react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { cn } from '@/lib/core/utils';
 
 export function Explain({
   children,
@@ -25,7 +26,10 @@ export function Explain({
       <TooltipContent
         side={side}
         align={align}
-        className={`max-w-xs text-left leading-relaxed break-words whitespace-normal ${className ?? ''}`}
+        className={cn(
+          'max-w-xs text-left leading-relaxed break-words whitespace-normal',
+          className,
+        )}
       >
         {text}
       </TooltipContent>

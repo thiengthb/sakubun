@@ -11,7 +11,7 @@ import {
   useDeckOrder,
 } from '@/components/common/card-deck';
 import { SpokenLine } from '@/components/common/spoken-line';
-import { ItemDetailDialog } from '@/components/features/resources/item-detail-dialog';
+import { ItemDetailDialog } from '@/components/common/item-detail-dialog';
 import { buildFuriganaMarkup } from '@/lib/japanese/furigana';
 import { speakable } from '@/lib/core/format';
 import { parseEnrichment } from '@/lib/library/enrichment';

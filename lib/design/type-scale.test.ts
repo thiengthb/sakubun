@@ -22,7 +22,9 @@ const DISPLAY_ALLOW = [
   'app/error.tsx', // error hero
   'app/global-error.tsx',
   'app/not-found.tsx',
-  'app/page.tsx', // dashboard stat metrics (large numbers)
+  // Dashboard data display: stat-tile metrics and the 10px chart axis labels. Moved out of
+  // app/page.tsx when the chart toolkit became a component — the exemption follows the code.
+  'components/features/dashboard/dashboard-charts.tsx',
   'components/features/dashboard/streak-card.tsx', // streak count display
   'components/features/dashboard/streak-celebration.tsx',
   'components/features/dashboard/retention-gauge.tsx', // data-viz number/labels

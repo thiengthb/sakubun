@@ -3,7 +3,7 @@
 import type { ColumnDef } from '@tanstack/react-table';
 import { Truncate } from '@/components/ui/truncate';
 import { DueCell } from '@/components/common/due-cell';
-import { ItemDetailDialog } from '@/components/features/resources/item-detail-dialog';
+import { ItemDetailDialog } from '@/components/common/item-detail-dialog';
 import { RowActions } from '@/components/features/resources/row-actions';
 import { SpokenLine } from '@/components/common/spoken-line';
 import { StarButton } from '@/components/common/star-button';

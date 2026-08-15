@@ -1,11 +1,5 @@
 import { cn } from '@/lib/core/utils';
-import type { GroupKind } from '@/lib/library/group-kinds';
-
-export const GROUP_KIND_LABELS: Record<GroupKind, string> = {
-  vocab: 'Từ vựng',
-  grammar: 'Ngữ pháp',
-  mixed: 'Hỗn hợp',
-};
+import { GROUP_KIND_LABELS, type GroupKind } from '@/lib/library/group-kinds';
 
 const KIND_CLASS: Record<GroupKind, string> = {
   vocab: 'border-info/30 bg-info/10 text-info',

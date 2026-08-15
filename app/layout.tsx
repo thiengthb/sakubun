@@ -7,6 +7,7 @@ import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { AppShell } from '@/components/layout/app-shell';
 import './globals.css';
+import { cn } from '@/lib/core/utils';
 
 const interSans = Inter({
   variable: '--font-sans',
@@ -41,7 +42,7 @@ export default async function RootLayout({
     <html
       lang="vi"
       suppressHydrationWarning
-      className={`${interSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={cn(interSans.variable, geistMono.variable, 'h-full antialiased')}
     >
       <body className="min-h-full flex flex-col">
         <ThemeProvider
@@ -52,9 +53,7 @@ export default async function RootLayout({
         >
           <MotionConfig reducedMotion="user">
             <TooltipProvider delayDuration={300}>
-              <AppShell defaultSidebarOpen={sidebarOpen}>
-                {children}
-              </AppShell>
+              <AppShell defaultSidebarOpen={sidebarOpen}>{children}</AppShell>
             </TooltipProvider>
           </MotionConfig>
           <Toaster position="bottom-center" />

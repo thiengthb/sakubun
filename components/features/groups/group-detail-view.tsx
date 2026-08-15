@@ -13,17 +13,18 @@ import { EmptyState } from '@/components/common/empty-state';
 import { usePagedList } from '@/components/common/use-paged-list';
 import { useSessionState } from '@/components/common/use-session-state';
 import { SearchInput } from '@/components/common/search-input';
-import { GROUP_KIND_LABELS } from '@/components/features/groups/group-kind-badge';
+import { GROUP_KIND_LABELS } from '@/lib/library/group-kinds';
 import { GroupAddItemsAction, GroupEditAction } from '@/components/features/groups/group-actions';
 import { GroupFlashcards } from '@/components/features/groups/group-flashcards';
 import { SpokenLine } from '@/components/common/spoken-line';
-import { ItemDetailDialog } from '@/components/features/resources/item-detail-dialog';
+import { ItemDetailDialog } from '@/components/common/item-detail-dialog';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { TabSelect } from '@/components/common/tab-select';
 import { buildFuriganaMarkup } from '@/lib/japanese/furigana';
 import { speakable } from '@/lib/core/format';
 import { removeItemsFromGroupAction } from '@/app/actions';
 import type { GroupDetail, GroupMemberItem } from '@/lib/library/groups';
+import { cn } from '@/lib/core/utils';
 
 const cardCls = 'rounded-xl bg-card text-card-foreground ring-1 ring-foreground/10';
 
@@ -174,7 +175,7 @@ export function GroupDetailView({
             <EmptyState icon={SearchX} title="Không có mục nào khớp tìm kiếm." className="py-12" />
           ) : (
             <>
-              <div ref={listRef} className={`${cardCls} divide-y divide-border`}>
+              <div ref={listRef} className={cn(cardCls, 'divide-y divide-border')}>
                 {pagedMembers.items.map((m) => (
                   <div key={m.itemId} className="flex h-16 items-center gap-2 px-4">
                     <div className="min-w-0 flex-1 space-y-0.5">

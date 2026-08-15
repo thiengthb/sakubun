@@ -30,8 +30,8 @@ export default function Loading() {
             <Skeleton className="h-full flex-1 rounded-md" />
           </div>
           <div className="hidden gap-2 md:ml-auto md:flex">
-            <Skeleton className="h-8 w-8 rounded-md" />
-            <Skeleton className="h-8 w-8 rounded-md" />
+            <Skeleton className="size-8 rounded-md" />
+            <Skeleton className="size-8 rounded-md" />
           </div>
         </div>
 

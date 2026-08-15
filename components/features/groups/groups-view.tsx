@@ -17,7 +17,8 @@ import {
 import { EmptyState } from '@/components/common/empty-state';
 import { FilterPopover, FilterRow } from '@/components/common/filter-popover';
 import { GroupCreateAction, GroupEditAction } from '@/components/features/groups/group-actions';
-import { GROUP_KIND_LABELS, GroupKindBadge } from '@/components/features/groups/group-kind-badge';
+import { GroupKindBadge } from '@/components/features/groups/group-kind-badge';
+import { GROUP_KIND_LABELS } from '@/lib/library/group-kinds';
 import { SearchInput } from '@/components/common/search-input';
 import { usePagedList } from '@/components/common/use-paged-list';
 import { useSessionState } from '@/components/common/use-session-state';

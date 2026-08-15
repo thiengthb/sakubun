@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Field } from '@/components/common/field';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { GROUP_KIND_LABELS } from '@/components/features/groups/group-kind-badge';
+import { GROUP_KIND_LABELS } from '@/lib/library/group-kinds';
 import { createGroupAction, updateGroupAction } from '@/app/actions';
 import { GROUP_KINDS, type GroupKind } from '@/lib/library/group-kinds';
 import type { GroupSummary } from '@/lib/library/groups';

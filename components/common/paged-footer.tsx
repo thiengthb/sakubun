@@ -3,6 +3,7 @@
 import { type RefObject } from 'react';
 import { DataPagination } from '@/components/ui/data-pagination';
 import type { PagedList } from '@/components/common/use-paged-list';
+import { cn } from '@/lib/core/utils';
 
 // The footer every usePagedList view ends with. It owns the ref too: usePagedList measures the
 // footer to decide how many rows fit, so the wrapper element and the hook must not drift apart.
@@ -11,15 +12,17 @@ export function PagedFooter<T>({
   footerRef,
   noun,
   totalUnfiltered,
+  className,
 }: {
   paged: PagedList<T>;
   footerRef: RefObject<HTMLDivElement | null>;
   noun: string;
   totalUnfiltered: number;
+  className?: string;
 }) {
   const end = Math.min(paged.start + paged.pageSize, paged.total);
   return (
-    <div ref={footerRef}>
+    <div ref={footerRef} className={cn(className)}>
       <DataPagination
         count={
           <>
