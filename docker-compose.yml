@@ -1,0 +1,50 @@
+# Local deploy of sakubun. `docker compose up -d --build` once; the container then starts with
+# Docker (restart: unless-stopped). Study data lives in the named volume below, so removing the
+# container keeps your history.
+
+# PINNED, not derived from the directory name. Compose defaults the project name to the folder it
+# runs in, so renaming or copying the checkout silently changes it — and every `up` after that warns
+# that the existing volume "was created for project <old name>", because the volume carries a
+# com.docker.compose.project label. Pinning the name here keeps the volume bound to the same project
+# whatever the directory is called.
+name: sakubun
+
+services:
+  sakubun:
+    build: .
+    image: sakubun:local
+    container_name: sakubun
+    ports:
+      - '3789:3789'
+    volumes:
+      - sakubun_data:/data
+    # Auth secrets only. Deliberately NO DATABASE_URL here, so the image's own
+    # file:/data/sakubun.db — the path the volume is mounted at — wins.
+    #
+    # Copy .env.docker.example to .env.docker and fill it before the first `up`. The file is
+    # gitignored and never enters the image (.dockerignore blocks `.env.*`).
+    #
+    # If you sign in with Google, the GOOGLE_* pair is NOT optional: an account created through
+    # Google has no password row, so better-auth without those two variables drops the provider and
+    # leaves no way in.
+    env_file:
+      - .env.docker
+    environment:
+      # Local VOICEVOX engine (neural JA TTS) reached over the compose network by /api/tts. If it is
+      # down the client falls back to the browser's Web Speech voice, so this is best-effort.
+      - VOICEVOX_URL=http://voicevox:50021
+    depends_on:
+      - voicevox
+    restart: unless-stopped
+
+  # Neural Japanese TTS engine (VOICEVOX, local + free). NOT published to the host — only sakubun
+  # reaches it over the compose network. CPU build, pinned; third-party image → bump the tag by hand.
+  voicevox:
+    image: voicevox/voicevox_engine:cpu-0.21.0
+    container_name: sakubun-voicevox
+    restart: unless-stopped
+
+volumes:
+  # Compose prefixes a named volume with the project name, so this becomes `sakubun_sakubun_data`
+  # on disk. Renaming it binds a DIFFERENT, EMPTY volume and the app comes up with no history.
+  sakubun_data:

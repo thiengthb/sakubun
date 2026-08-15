@@ -48,6 +48,19 @@ const plainItem = {
   lapses: 0,
 };
 
+// The default TARGET row six of these tests only ever needed as scaffolding, so the assertion in
+// each is not buried under ten lines of unchanging literal.
+type BatchItem = DueBatch['items'][number];
+const targetItem = (over: Partial<BatchItem> = {}): BatchItem => ({
+  ...plainItem,
+  id: 'a',
+  expression: '〜ばかりに',
+  meaningVi: 'chỉ vì',
+  role: 'TARGET',
+  focusHit: false,
+  ...over,
+});
+
 describe('renderGradeResult', () => {
   const result: SubmitReviewResult = {
     sentenceId: 's1',
@@ -438,16 +451,7 @@ describe('renderDueBatch', () => {
     const md = renderDueBatch({
       ...baseBatch,
       focus: { weak: true, matched: 2, unmatchedPatterns: [], suspendedPatterns: [] },
-      items: [
-        {
-          ...plainItem,
-          id: 'a',
-          expression: '〜ばかりに',
-          meaningVi: 'chỉ vì',
-          role: 'TARGET',
-          focusHit: true,
-        },
-      ],
+      items: [targetItem({ focusHit: true })],
     });
     expect(md).toContain('WEAK-SPOT DRILL');
     expect(md).toContain('the server prioritised 2 pattern(s)');
@@ -458,16 +462,7 @@ describe('renderDueBatch', () => {
     const md = renderDueBatch({
       ...baseBatch,
       focus: { weak: true, matched: 0, unmatchedPatterns: [], suspendedPatterns: [] },
-      items: [
-        {
-          ...plainItem,
-          id: 'a',
-          expression: '〜ばかりに',
-          meaningVi: 'chỉ vì',
-          role: 'TARGET',
-          focusHit: false,
-        },
-      ],
+      items: [targetItem()],
     });
     expect(md).toContain('WEAK-SPOT DRILL');
     expect(md).toContain('not enough data yet');
@@ -486,16 +481,7 @@ describe('renderDueBatch', () => {
     const md = renderDueBatch({
       ...baseBatch,
       settings: { ...DEFAULT_SETTINGS, promptModality: 'speech-only' },
-      items: [
-        {
-          ...plainItem,
-          id: 'a',
-          expression: '〜ばかりに',
-          meaningVi: 'chỉ vì',
-          role: 'TARGET',
-          focusHit: false,
-        },
-      ],
+      items: [targetItem()],
     });
     expect(md).toContain('speech-only');
     expect(md).toContain('SPEAK the exercise sentence aloud');
@@ -505,16 +491,7 @@ describe('renderDueBatch', () => {
   it('default text modality adds no audio reminder to the sheet', () => {
     const md = renderDueBatch({
       ...baseBatch,
-      items: [
-        {
-          ...plainItem,
-          id: 'a',
-          expression: '〜ばかりに',
-          meaningVi: 'chỉ vì',
-          role: 'TARGET',
-          focusHit: false,
-        },
-      ],
+      items: [targetItem()],
     });
     expect(md).not.toContain('RA ĐỀ');
   });
@@ -524,16 +501,7 @@ describe('renderDueBatch', () => {
       ...baseBatch,
       direction: 'JA_VI',
       settings: { ...DEFAULT_SETTINGS, furiganaMode: 'claude' },
-      items: [
-        {
-          ...plainItem,
-          id: 'a',
-          expression: '〜ばかりに',
-          meaningVi: 'chỉ vì',
-          role: 'TARGET',
-          focusHit: false,
-        },
-      ],
+      items: [targetItem()],
     });
     expect(md).toContain('FURIGANA (Claude renders it)');
     expect(md).toContain('（かな）');
@@ -545,16 +513,7 @@ describe('renderDueBatch', () => {
       ...baseBatch,
       direction: 'JA_VI',
       settings: { ...DEFAULT_SETTINGS, furiganaMode: 'app' },
-      items: [
-        {
-          ...plainItem,
-          id: 'a',
-          expression: '〜ばかりに',
-          meaningVi: 'chỉ vì',
-          role: 'TARGET',
-          focusHit: false,
-        },
-      ],
+      items: [targetItem()],
     });
     expect(md).toContain('Claude does NOT insert it');
     expect(md).toContain('sourceRuby');
@@ -564,16 +523,7 @@ describe('renderDueBatch', () => {
     const md = renderDueBatch({
       ...baseBatch,
       direction: 'VI_JA',
-      items: [
-        {
-          ...plainItem,
-          id: 'a',
-          expression: '〜ばかりに',
-          meaningVi: 'chỉ vì',
-          role: 'TARGET',
-          focusHit: false,
-        },
-      ],
+      items: [targetItem()],
     });
     expect(md).not.toContain('FURIGANA');
     expect(md).toContain('suggestedRuby');

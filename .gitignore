@@ -7,6 +7,7 @@ lib/generated/
 .env
 .env.*
 !.env.example
+!.env.docker.example
 *.db
 *.db-journal
 test-results/

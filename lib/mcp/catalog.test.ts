@@ -2,22 +2,26 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { MCP_CATALOG } from '@/lib/mcp/catalog';
+import { MCP_PROMPTS } from '@/lib/mcp/prompts';
 
 const TOOLS_DIR = 'lib/mcp/tools';
-const SOURCES = [
-  'lib/mcp/server.ts',
-  ...readdirSync(TOOLS_DIR)
-    .filter((f) => f.endsWith('.ts') && !f.endsWith('.test.ts'))
-    .map((f) => join(TOOLS_DIR, f)),
-];
+const SOURCES = readdirSync(TOOLS_DIR)
+  .filter((f) => f.endsWith('.ts') && !f.endsWith('.test.ts'))
+  .map((f) => join(TOOLS_DIR, f));
 
+// Tools are still found by scanning source: each register*Tools() calls server.tool('name', …)
+// inline, so the names exist only as literals. Prompts are a declared table, so they are read
+// directly — comparing data to data instead of trusting a regex to keep matching the call shape.
+// prompts.ts is pure data with no side effects, unlike server.ts (which builds the handler on
+// import and would drag the database in).
 function registered(): Record<'tool' | 'prompt', Set<string>> {
-  const found = { tool: new Set<string>(), prompt: new Set<string>() };
+  const found = {
+    tool: new Set<string>(),
+    prompt: new Set(MCP_PROMPTS.map((p) => p.name)),
+  };
   for (const file of SOURCES) {
     const src = readFileSync(file, 'utf8');
-    for (const m of src.matchAll(/server\.(tool|prompt)\(\s*'([a-z_]+)'/g)) {
-      found[m[1] as 'tool' | 'prompt'].add(m[2]);
-    }
+    for (const m of src.matchAll(/server\.tool\(\s*'([a-z_]+)'/g)) found.tool.add(m[1]);
   }
   return found;
 }

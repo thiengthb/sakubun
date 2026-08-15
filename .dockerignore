@@ -1,0 +1,29 @@
+node_modules
+# NOT covered by the line above: a .dockerignore pattern without a slash matches only at the CONTEXT
+# ROOT, so `node_modules` never matches `mobile/node_modules` (that would need `**/node_modules`).
+# The Expo app is not part of the server image at all — its ~500MB of React Native dependencies would
+# ride into the build context and then into the image via `COPY . .`, for nothing.
+mobile
+.next
+.git
+.env
+.env.*
+!.env.example
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+lib/generated
+test-results
+playwright-report
+*.tsbuildinfo
+
+# e2e and its config go together: playwright.config.ts imports ./e2e/fixtures, and tsconfig
+# type-checks every .ts at build time — excluding one without the other breaks the build.
+e2e
+playwright.config.ts
+
+Dockerfile
+.dockerignore
+docker-compose*.yml
+README.md
