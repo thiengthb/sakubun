@@ -1,20 +1,16 @@
 'use client';
 
-import { useEffect } from 'react';
 import Link from 'next/link';
 import { House, RotateCcw, TriangleAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  ErrorDigest,
+  useLoggedError,
+  type ErrorBoundaryProps,
+} from '@/components/shell/error-boundary';
 
-export default function RouteError({
-  error,
-  reset,
-}: {
-  error: Error & { digest?: string };
-  reset: () => void;
-}) {
-  useEffect(() => {
-    console.error(error);
-  }, [error]);
+export default function RouteError({ error, reset }: ErrorBoundaryProps) {
+  useLoggedError(error);
 
   return (
     <div className="flex min-h-[60vh] flex-col items-center justify-center gap-5 py-8 text-center">
@@ -26,11 +22,7 @@ export default function RouteError({
           vẫn lỗi, kiểm tra container sakubun còn chạy không.
         </p>
       </div>
-      {error.digest && (
-        <p className="text-xs text-muted-foreground">
-          Mã lỗi: <code className="font-mono">{error.digest}</code>
-        </p>
-      )}
+      <ErrorDigest digest={error.digest} />
       <div className="flex flex-wrap items-center justify-center gap-2">
         <Button onClick={reset}>
           <RotateCcw />

@@ -1,5 +1,5 @@
 import { toast } from 'sonner';
-import type { ActionResult } from '@/app/actions';
+import type { ActionResult } from '@/lib/action-result';
 
 export function toastResult<T>(
   result: ActionResult<T>,

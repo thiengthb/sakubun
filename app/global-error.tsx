@@ -1,19 +1,15 @@
 'use client';
 
-import { useEffect } from 'react';
 import { RotateCcw, TriangleAlert } from 'lucide-react';
+import {
+  ErrorDigest,
+  useLoggedError,
+  type ErrorBoundaryProps,
+} from '@/components/shell/error-boundary';
 import './globals.css';
 
-export default function GlobalError({
-  error,
-  reset,
-}: {
-  error: Error & { digest?: string };
-  reset: () => void;
-}) {
-  useEffect(() => {
-    console.error(error);
-  }, [error]);
+export default function GlobalError({ error, reset }: ErrorBoundaryProps) {
+  useLoggedError(error);
 
   return (
     <html lang="vi" className="h-full antialiased">
@@ -28,11 +24,9 @@ export default function GlobalError({
               <code className="font-mono">docker logs sakubun</code>.
             </p>
           </div>
-          {error.digest && (
-            <p className="text-xs text-muted-foreground">
-              Mã lỗi: <code className="font-mono">{error.digest}</code>
-            </p>
-          )}
+          <ErrorDigest digest={error.digest} />
+          {/* A bare button, not <Button>: this boundary renders when the root layout failed, so it
+              must not depend on the component library it is reporting the failure of. */}
           <button
             type="button"
             onClick={reset}

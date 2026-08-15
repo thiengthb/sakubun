@@ -29,8 +29,6 @@ import {
 } from '@/lib/groups';
 import { type ActionResult, cleanIds, err, ok, parseInput } from '@/lib/action-result';
 
-export type { ActionResult } from '@/lib/action-result';
-
 function revalidateResources(): void {
   revalidatePath('/resources');
   revalidatePath('/');

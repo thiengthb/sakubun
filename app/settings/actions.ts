@@ -6,8 +6,6 @@ import { getSessionUserId } from '@/lib/current-user';
 import { createMcpKey } from '@/lib/mcp-key';
 import { type ActionResult, err, ok } from '@/lib/action-result';
 
-export type { ActionResult } from '@/lib/action-result';
-
 export async function createMcpKeyAction(name: string): Promise<ActionResult<{ token: string }>> {
   const label = name.trim();
   if (!label) return err('Đặt tên cho token (ví dụ "laptop")');

@@ -2,7 +2,7 @@
 
 import { useTransition } from 'react';
 import { toastResult } from '@/lib/action-toast';
-import type { ActionResult } from '@/app/actions';
+import type { ActionResult } from '@/lib/action-result';
 
 export function useServerAction<Args extends unknown[], T>(
   action: (...args: Args) => Promise<ActionResult<T>>,
