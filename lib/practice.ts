@@ -430,6 +430,21 @@ function shuffle<T>(items: T[]): T[] {
   return out;
 }
 
+// "Due" means all four things at once: the date has passed, the card is not still NEW (state 0),
+// its item is not suspended, and it is grammar. Four call sites spelled that out separately, so a
+// change to what counts as due had to be found in four places.
+const dueWhere = (now: Date) => ({
+  due: { lte: now },
+  state: { not: 0 },
+  item: { suspended: false, kind: GRAMMAR_KIND },
+});
+
+const upcomingWhere = (now: Date) => ({
+  due: { gt: now },
+  state: { not: 0 },
+  item: { suspended: false, kind: GRAMMAR_KIND },
+});
+
 export async function getDueBatch(
   now: Date = new Date(),
   maxItems?: number,
@@ -441,11 +456,7 @@ export async function getDueBatch(
 
   const [dueRows, freshRows, dueNow, upcoming, newBeyondLevels] = await Promise.all([
     prisma.srsState.findMany({
-      where: {
-        due: { lte: now },
-        state: { not: 0 },
-        item: { suspended: false, kind: GRAMMAR_KIND },
-      },
+      where: dueWhere(now),
       include: { item: true },
       orderBy: { due: 'asc' },
       take: 50,
@@ -460,18 +471,10 @@ export async function getDueBatch(
       take: 50,
     }),
     prisma.srsState.count({
-      where: {
-        due: { lte: now },
-        state: { not: 0 },
-        item: { suspended: false, kind: GRAMMAR_KIND },
-      },
+      where: dueWhere(now),
     }),
     prisma.srsState.findFirst({
-      where: {
-        due: { gt: now },
-        state: { not: 0 },
-        item: { suspended: false, kind: GRAMMAR_KIND },
-      },
+      where: upcomingWhere(now),
       orderBy: { due: 'asc' },
       select: { due: true },
     }),
@@ -1001,18 +1004,10 @@ export async function submitReview(
   const [today, dueNow, nextDueAt, calibration, learnerNote] = await Promise.all([
     todayCounts(settings, now),
     prisma.srsState.count({
-      where: {
-        due: { lte: now },
-        state: { not: 0 },
-        item: { suspended: false, kind: GRAMMAR_KIND },
-      },
+      where: dueWhere(now),
     }),
     prisma.srsState.findFirst({
-      where: {
-        due: { gt: now },
-        state: { not: 0 },
-        item: { suspended: false, kind: GRAMMAR_KIND },
-      },
+      where: upcomingWhere(now),
       orderBy: { due: 'asc' },
       select: { due: true },
     }),
@@ -1150,11 +1145,7 @@ export async function getStats(now: Date = new Date()) {
         where: { state: 0, item: { suspended: false, kind: GRAMMAR_KIND } },
       }),
       prisma.srsState.count({
-        where: {
-          due: { lte: now },
-          state: { not: 0 },
-          item: { suspended: false, kind: GRAMMAR_KIND },
-        },
+        where: dueWhere(now),
       }),
       prisma.reviewLog.count({ where: { reviewedAt: { gte: weekAgo } } }),
       prisma.srsState.findMany({
