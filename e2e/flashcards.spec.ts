@@ -318,4 +318,9 @@ test('kéo thẻ sang PHẢI không làm trang trượt ngang, và có chồng t
   );
   await page.mouse.up();
   expect(overflow, 'kéo thẻ sang phải không được sinh thanh cuộn ngang').toBe(0);
+
+  // Thẻ đã ném đi phải BIẾN MẤT khỏi DOM. Nếu hiệu ứng thoát không chạy xong, AnimatePresence
+  // không gỡ node — thẻ chết chồng lên nhau vô hạn mà nhìn bề ngoài không thấy.
+  const cards = page.getByRole('button', { name: /^Lật/ });
+  await expect.poll(() => cards.count(), { timeout: 5_000 }).toBe(1);
 });

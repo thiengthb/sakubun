@@ -221,8 +221,6 @@ export function HistoryFlashcards({
       deck={deck}
       cardKey={current?.id ?? 'done'}
       unit="Lượt"
-      className="min-h-[calc(100svh-10rem)]"
-      inlineProgress
       toolbar={
         <>
           {toolbarStart}

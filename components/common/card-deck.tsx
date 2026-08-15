@@ -319,17 +319,29 @@ export function DeckDone({
   );
 }
 
-const EASE_OUT = [0.22, 1, 0.36, 1] as const;
-
+// The incoming card arrives slightly small and rises to size, the outgoing one shrinks as it
+// leaves. Pure translation reads as a filmstrip; the scale is what makes it read as one card
+// replacing another on a pile.
 const SLIDE = {
-  enter: (dir: number) => ({ x: dir > 0 ? '55%' : '-55%', opacity: 0 }),
-  center: { x: 0, opacity: 1, pointerEvents: 'auto' as const },
+  enter: (dir: number) => ({ x: dir > 0 ? '42%' : '-42%', opacity: 0, scale: 0.94 }),
+  center: { x: 0, opacity: 1, scale: 1, pointerEvents: 'auto' as const },
+  // The exit carries its OWN transition, and a bounded one. A spring settles asymptotically, which
+  // left the thrown card on top of the arriving one long enough for both to be on screen at once —
+  // visible as a double image, and as "resolved to 2 elements" in the e2e suite. A card being
+  // thrown away should leave briskly; only the card arriving needs to settle.
   exit: (dir: number) => ({
-    x: dir > 0 ? '-55%' : '55%',
+    x: dir > 0 ? '-42%' : '42%',
     opacity: 0,
+    scale: 0.94,
     pointerEvents: 'none' as const,
+    transition: { duration: 0.2, ease: [0.4, 0, 1, 1] as const },
   }),
 };
+
+// Springs, not durations: a thrown card should settle, and a spring keeps its velocity continuous
+// with the drag it came from instead of restarting on a fixed curve.
+const SLIDE_SPRING = { type: 'spring' as const, stiffness: 420, damping: 44, mass: 0.9 };
+const FLIP_SPRING = { type: 'spring' as const, stiffness: 260, damping: 25 };
 
 const SWIPE_PX = 56;
 const FLICK_WEIGHT = 0.15;
@@ -348,6 +360,12 @@ const GHOST_COUNT = 2;
 const GHOST_STEP = 0.04; // width removed per card down the stack
 const GHOST_GAP = 8; // px each card sits below the one above it
 
+// `m-auto` rather than `justify-center`: a centred flex column CLIPS the top of content taller than
+// the card, and the answer side of a history card can be long. Auto margins centre short content and
+// let tall content scroll from its start. `max-w-2xl` keeps the line length readable — on a 896px
+// landscape card the answer block otherwise ran the full width or hugged one edge.
+const faceInner = 'm-auto w-full max-w-2xl';
+
 // shadow-md, not just a ring: the live card has to sit visibly ON the pile behind it.
 const faceCls =
   'absolute inset-0 overflow-y-auto rounded-2xl bg-card p-5 shadow-md ring-1 ring-foreground/10 [backface-visibility:hidden]';
@@ -361,7 +379,6 @@ export function CardDeck({
   toolbar,
   done,
   unit = 'Thẻ',
-  inlineProgress = false,
   className,
 }: {
   deck: CardDeckState;
@@ -370,7 +387,6 @@ export function CardDeck({
   back: ReactNode;
   corner?: ReactNode;
   toolbar?: ReactNode;
-  inlineProgress?: boolean;
   done: ReactNode;
   unit?: string;
   className?: string;
@@ -382,8 +398,11 @@ export function CardDeck({
   // stack responds to the finger continuously instead of jumping when the swipe commits.
   const dragX = useMotionValue(0);
   const pull = useTransform(dragX, (v) => Math.min(1, Math.abs(v) / PULL_RANGE));
-  const tilt = useTransform(dragX, [-PULL_RANGE, 0, PULL_RANGE], [-8, 0, 8]);
-  const lift = useTransform(pull, [0, 1], [0, -10]);
+  // 5°, not 8°: the tilt raises a corner by half the card's width times sin(angle), and the card is
+  // now 896px wide on a desktop — at 8° the corner climbed 62px and covered the header row.
+  const tilt = useTransform(dragX, [-PULL_RANGE, 0, PULL_RANGE], [-5, 0, 5]);
+  // Scale, not a y-lift, for the same reason: it grows the card without pushing an edge upward.
+  const lift = useTransform(pull, [0, 1], [1, 1.02]);
   // The card directly behind rises to meet the one being thrown.
   const nextScaleX = useTransform(pull, [0, 1], [1 - GHOST_STEP, 1]);
   const nextY = useTransform(pull, [0, 1], [GHOST_GAP, 0]);
@@ -435,10 +454,7 @@ export function CardDeck({
       aria-valuemin={0}
       aria-valuemax={100}
       aria-valuenow={pct}
-      className={cn(
-        'h-3 overflow-hidden rounded-full bg-muted',
-        inlineProgress ? 'min-w-24 flex-1' : 'w-full',
-      )}
+      className="h-2 min-w-16 flex-1 overflow-hidden rounded-full bg-muted"
     >
       {/* scaleX, not width: width re-lays-out the bar every frame, transform does not. */}
       <motion.div
@@ -457,12 +473,19 @@ export function CardDeck({
         // the phone a horizontal scrollbar (measured: 179px). `clip` cuts it at the deck's edge
         // without turning this into a scroll container, and leaves the Y axis visible so the pile
         // behind can still peek out below.
-        'mx-auto flex min-h-[calc(100svh-6rem)] w-full max-w-4xl flex-col gap-3 overflow-x-clip',
+        // The card has a fixed aspect now, so it no longer stretches to the viewport — without
+        // justify-center the whole deck hugs the top and leaves a third of the screen blank below.
+        'mx-auto flex min-h-[calc(100svh-7rem)] w-full max-w-4xl flex-col justify-center gap-4 overflow-x-clip',
         className,
       )}
     >
-      <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-        <div className="shrink-0 text-sm text-muted-foreground">
+      {/* One header row: where you are, how far along, and the controls. The counter and the bar
+          said the same thing on two separate lines before — and the two decks disagreed about
+          which layout to use. */}
+      {/* z-10: whatever the card does while dragged, it passes UNDER the header rather than over
+          the progress bar. */}
+      <div className="relative z-10 flex items-center gap-3 sm:gap-4">
+        <div className="shrink-0 text-sm text-muted-foreground tabular-nums">
           {deck.done ? (
             <span>Hết thẻ</span>
           ) : (
@@ -471,23 +494,17 @@ export function CardDeck({
             </span>
           )}
         </div>
-        {inlineProgress && progressBar}
-        {toolbar && (
-          <div className={cn('flex items-center gap-2', !inlineProgress && 'ml-auto')}>
-            {toolbar}
-          </div>
-        )}
+        {progressBar}
+        {toolbar && <div className="flex shrink-0 items-center gap-2">{toolbar}</div>}
       </div>
 
-      {!inlineProgress && progressBar}
-
       {deck.done ? (
-        <div className="flex-1">{done}</div>
+        <div>{done}</div>
       ) : (
-        // The stage is narrower than the page. At the column's full 4xl a single vocabulary word sat
-        // in a 900px slab, which reads as an empty panel rather than a card; the toolbar and the
-        // progress bar still span the full width above it.
-        <div className="relative mx-auto min-h-[15rem] w-full max-w-2xl flex-1 [perspective:1600px]">
+        // The card fills the column's width and takes its height from an aspect ratio: portrait on a
+        // phone, landscape on a wide screen. It used to stretch to the viewport, which made a single
+        // vocabulary word sit in the middle of a 900×680 slab.
+        <div className="relative aspect-[3/4] w-full sm:aspect-[4/3] lg:aspect-[16/9] [perspective:1600px]">
           {/* The rest of the deck. Purely decorative — aria-hidden and non-interactive — but it is
               what makes the pile look finite: you can see how much is left behind the card. */}
           {Array.from({ length: Math.min(GHOST_COUNT, deck.count - deck.index - 1) }, (_, i) => (
@@ -514,16 +531,14 @@ export function CardDeck({
               initial="enter"
               animate="center"
               exit="exit"
-              transition={{ duration: 0.28, ease: EASE_OUT }}
+              transition={SLIDE_SPRING}
               drag="x"
               dragConstraints={{ left: 0, right: 0 }}
               // 0.22 meant a 100px pull moved the card 22px — you were nudging it, not holding it.
               // At 0.85 the card tracks the finger, which is the whole point of dragging a deck.
               dragElastic={0.85}
               dragMomentum={false}
-              // `rotate`/`y` come from dragX, which the variants never touch, so the enter/exit slide
-              // (which animates `x`) and the tilt cannot fight over the same value.
-              style={{ rotate: tilt, y: lift }}
+              dragTransition={{ bounceStiffness: 520, bounceDamping: 42 }}
               onPointerDownCapture={() => {
                 draggedRef.current = false;
               }}
@@ -534,28 +549,44 @@ export function CardDeck({
               onDragEnd={onDragEnd}
               className="absolute inset-0 cursor-grab active:cursor-grabbing [transform-style:preserve-3d]"
             >
+              {/* The pull transforms live on their OWN element, never on the one AnimatePresence
+                  animates. `scale` bound to a derived MotionValue cannot be driven by an exit
+                  variant, so the exit never reached its target, never completed, and the thrown
+                  card was never unmounted — measured: two cards in the DOM forever. */}
               <motion.div
-                role="button"
-                tabIndex={0}
-                aria-label={deck.flipped ? 'Lật lại mặt trước' : 'Lật xem mặt sau'}
-                onClick={(e) => {
-                  if (draggedRef.current) return; // that was a swipe
-                  if ((e.target as HTMLElement).closest('button, a')) return;
-                  flip();
-                }}
-                className="relative h-full w-full rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-primary [transform-style:preserve-3d]"
-                animate={{ rotateY: deck.flipped ? 180 : 0 }}
-                transition={{ duration: 0.4, ease: EASE_OUT }}
+                style={{ rotate: tilt, scale: lift }}
+                className="absolute inset-0 [transform-style:preserve-3d]"
               >
-                <div className={cn(faceCls, 'flex flex-col items-center justify-center gap-2')}>
-                  {front}
-                </div>
-                <div className={cn(faceCls, '[transform:rotateY(180deg)]')}>{back}</div>
-              </motion.div>
+                <motion.div
+                  role="button"
+                  tabIndex={0}
+                  aria-label={deck.flipped ? 'Lật lại mặt trước' : 'Lật xem mặt sau'}
+                  onClick={(e) => {
+                    if (draggedRef.current) return; // that was a swipe
+                    if ((e.target as HTMLElement).closest('button, a')) return;
+                    flip();
+                  }}
+                  className="relative h-full w-full rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-primary [transform-style:preserve-3d]"
+                  animate={{ rotateY: deck.flipped ? 180 : 0 }}
+                  transition={FLIP_SPRING}
+                >
+                  {/* my-auto, not justify-center: a centred flex column CLIPS the top of content
+                    taller than the card, and the answer side of a history card can be long. With
+                    auto margins short content centres and tall content scrolls from its start. */}
+                  <div className={cn(faceCls, 'flex flex-col')}>
+                    <div className={cn(faceInner, 'flex flex-col items-center gap-2')}>{front}</div>
+                  </div>
+                  <div className={cn(faceCls, 'flex flex-col [transform:rotateY(180deg)]')}>
+                    <div className={faceInner}>{back}</div>
+                  </div>
+                </motion.div>
 
-              {corner && (
-                <div className="absolute top-2 right-2 z-10 flex items-center gap-1">{corner}</div>
-              )}
+                {corner && (
+                  <div className="absolute top-2 right-2 z-10 flex items-center gap-1">
+                    {corner}
+                  </div>
+                )}
+              </motion.div>
             </motion.div>
           </AnimatePresence>
         </div>
