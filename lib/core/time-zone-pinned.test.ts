@@ -3,7 +3,7 @@ import { join, relative, sep } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { APP_TIME_ZONE, formatDateVN } from '@/lib/core/format';
 
-const ROOTS = ['app', 'components', 'lib', 'mobile'];
+const ROOTS = ['app', 'components', 'lib'];
 const SKIP_DIRS = new Set(['node_modules', 'generated', '.next', '.expo']);
 const SKIP_FILES = new Set(['lib/time-zone-pinned.test.ts']);
 

@@ -228,9 +228,7 @@ function HistoryDetail({
             <span
               className={cn(
                 'text-sm font-medium',
-                detailScore.muted
-                  ? 'text-muted-foreground'
-                  : scoreClass(sentence.score as number),
+                detailScore.muted ? 'text-muted-foreground' : scoreClass(sentence.score as number),
               )}
             >
               {detailScore.text}
@@ -328,7 +326,6 @@ function HistoryDetail({
             )}
           </div>
         )}
-
       </div>
     </DialogContent>
   );
@@ -356,7 +353,8 @@ function PendingCard({ sentence }: { sentence: SentenceHistoryRow }) {
       <div className="mt-auto flex items-start gap-1.5 pt-1 text-xs text-muted-foreground">
         <Info className="mt-px size-3.5 shrink-0" aria-hidden />
         <span>
-          Trả lời bên Claude Desktop để được chấm. Muốn bỏ qua thì bảo Claude «bỏ qua câu này».
+          Trả lời qua Claude Desktop hoặc ChatGPT để được chấm. Muốn bỏ qua thì bảo trợ lý MCP «bỏ
+          qua câu này».
         </span>
       </div>
     </li>

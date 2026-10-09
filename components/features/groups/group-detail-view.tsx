@@ -83,7 +83,7 @@ export function GroupDetailView({
     const command = `luyện nhóm ${group.name}`;
     try {
       await navigator.clipboard.writeText(command);
-      toast.success('Đã chép — dán vào Claude Desktop', { description: command });
+      toast.success('Đã chép — dán vào Claude Desktop hoặc ChatGPT', { description: command });
     } catch {
       toast.error('Không chép được vào clipboard', { description: command });
     }
@@ -123,8 +123,8 @@ export function GroupDetailView({
               <Explain
                 text={
                   <>
-                    Bấm để chép lệnh <b>“luyện nhóm {group.name}”</b> — dán vào Claude Desktop để
-                    luyện đúng batch của nhóm này. (Kết nối MCP sẽ có ở bản cập nhật sau.)
+                    Bấm để chép lệnh <b>“luyện nhóm {group.name}”</b> — dán vào Claude Desktop hoặc
+                    ChatGPT để luyện đúng batch của nhóm này.
                   </>
                 }
               >

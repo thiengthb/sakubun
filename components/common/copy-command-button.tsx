@@ -36,7 +36,7 @@ export function CopyCommandButton({
     try {
       await navigator.clipboard.writeText(command);
       setCopied(true);
-      toast.success('Đã chép — dán vào Claude Desktop', describe);
+      toast.success('Đã chép — dán vào client MCP', describe);
       setTimeout(() => setCopied(false), 2000);
     } catch {
       toast.error('Không chép được vào clipboard', describe);

@@ -126,9 +126,11 @@ export function EnrichmentCard({
           </section>
         )}
         <EmptyState icon={null} className="p-4">
-          Chưa có thẻ chi tiết. Trong Claude Desktop chạy prompt <code>enrich_backlog</code> để Claude
-          soạn{' '}
-          {isVocabCard ? 'nghĩa, cụm hay đi kèm, từ đồng nghĩa/trái nghĩa, ví dụ' : 'cấu trúc, ví dụ, bẫy'}
+          Chưa có thẻ chi tiết. Trong Claude Desktop hoặc ChatGPT chạy prompt{' '}
+          <code>enrich_backlog</code> để trợ lý MCP soạn{' '}
+          {isVocabCard
+            ? 'nghĩa, cụm hay đi kèm, từ đồng nghĩa/trái nghĩa, ví dụ'
+            : 'cấu trúc, ví dụ, bẫy'}
           … cho {isVocabCard ? 'từ' : 'mẫu'} này.
         </EmptyState>
       </div>
@@ -166,7 +168,7 @@ export function EnrichmentCard({
           <span className="font-medium text-warn">{TIER_LABELS[report.tier]}</span>
           {report.missing.length > 0 && <span>thiếu: {report.missing.join(', ')}</span>}
           <span className="text-muted-foreground/70">
-            — nhờ Claude bổ sung (nó chỉ thêm phần thiếu, không ghi đè phần đang có)
+            — nhờ trợ lý MCP bổ sung (nó chỉ thêm phần thiếu, không ghi đè phần đang có)
           </span>
         </p>
       )}

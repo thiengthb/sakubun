@@ -191,7 +191,7 @@ export default async function HomePage() {
             level="page"
             icon={Target}
             title="Điểm yếu"
-            hint="30 ngày qua: lỗi hay mắc, mẫu sai nhiều, và những gì Claude đã ghi lại về bạn."
+            hint="30 ngày qua: lỗi hay mắc, mẫu sai nhiều, và những gì trợ lý MCP đã ghi lại về bạn."
           />
           <section className="grid gap-4 lg:grid-cols-2">
             <div className="h-full space-y-4 rounded-xl border border-border/70 bg-card p-4">

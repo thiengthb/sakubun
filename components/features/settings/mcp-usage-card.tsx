@@ -25,18 +25,18 @@ export function McpUsageCard({ usage }: { usage: ToolUsageReport }) {
       <CardHeader>
         <CardTitle>Hoạt động MCP</CardTitle>
         <CardDescription>
-          Mỗi lần Claude gọi một tool của sakubun, lần gọi đó được đếm ở đây. Bảng này nằm trong cơ
-          sở dữ liệu nên nó SỐNG QUA việc khởi động lại app — khác với log, thứ biến mất cùng
-          container. Dùng nó để biết Claude thật sự dùng gì, và để thấy tool nào đang lỗi (một tool
-          lỗi vẫn trả kết quả &quot;thành công&quot; ở tầng HTTP, nên đây là chỗ duy nhất thấy
-          được).
+          Mỗi lần Claude Desktop hoặc ChatGPT gọi một tool của sakubun, lần gọi đó được đếm ở đây.
+          Bảng này nằm trong cơ sở dữ liệu nên nó SỐNG QUA việc khởi động lại app — khác với log,
+          thứ biến mất cùng container. Dùng nó để biết client thật sự dùng gì, và để thấy tool nào
+          đang lỗi (một tool lỗi vẫn trả kết quả &quot;thành công&quot; ở tầng HTTP, nên đây là chỗ
+          duy nhất thấy được).
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {usage.rows.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            Chưa ghi nhận lời gọi nào. Nối Claude Desktop bằng token ở trên rồi luyện một lượt, số
-            sẽ xuất hiện ở đây.
+            Chưa ghi nhận lời gọi nào. Nối Claude Desktop hoặc ChatGPT bằng token ở trên rồi luyện
+            một lượt, số sẽ xuất hiện ở đây.
           </p>
         ) : (
           <>

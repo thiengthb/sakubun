@@ -73,8 +73,8 @@ const REGISTER_LABELS: Record<(typeof REGISTERS)[number], string> = {
 
 const FURIGANA_MODE_LABELS: Record<FuriganaMode, string> = {
   app: 'Chỉ trong app',
-  claude: 'Chỉ bên Claude',
-  both: 'Cả app lẫn Claude',
+  claude: 'Chỉ qua MCP',
+  both: 'Cả app lẫn MCP',
   none: 'Không hiện',
 };
 
@@ -137,7 +137,7 @@ export function PracticeTab({
       <SettingsSection
         icon={BookOpenText}
         title="Nội dung học"
-        hint="Claude lấy mẫu và từ ở đâu, và một câu bài tập được dựng ra sao."
+        hint="Trợ lý MCP lấy mẫu và từ ở đâu, và một câu bài tập được dựng ra sao."
       >
         <SettingsGroup
           title="Phạm vi"
@@ -146,7 +146,7 @@ export function PracticeTab({
           <div className="grid gap-4 sm:grid-cols-2">
             <Field
               label="Cấp JLPT cho mẫu ngữ pháp mới"
-              info="Chỉ lọc mẫu ngữ pháp MỚI được đưa vào học. Mẫu đã học đến hạn vẫn ôn bất kể cấp. Từ vựng Claude dùng quanh mẫu là một knob RIÊNG ngay bên cạnh (trước đây hai thứ này dùng chung một ô, buộc chúng phải bằng nhau)."
+              info="Chỉ lọc mẫu ngữ pháp MỚI được đưa vào học. Mẫu đã học đến hạn vẫn ôn bất kể cấp. Từ vựng trợ lý MCP dùng quanh mẫu là một knob RIÊNG ngay bên cạnh (trước đây hai thứ này dùng chung một ô, buộc chúng phải bằng nhau)."
             >
               <div className="flex h-9 flex-wrap items-center gap-x-5 gap-y-2">
                 {JLPT_LEVELS.map((level) => {
@@ -170,7 +170,7 @@ export function PracticeTab({
 
             <Field
               label="Trần từ vựng"
-              info="Cấp khó nhất Claude được dùng cho TỪ VỰNG tự do trong câu (không phải mẫu được chấm điểm). Để «Theo cấp ngữ pháp» thì nó tự đi theo ô bên cạnh — bạn không phải bảo trì. Chọn cụ thể khi muốn ngữ pháp và từ vựng ở hai cấp khác nhau (ví dụ luyện ngữ pháp N3 nhưng muốn tiếp xúc từ vựng N2)."
+              info="Cấp khó nhất trợ lý MCP được dùng cho TỪ VỰNG tự do trong câu (không phải mẫu được chấm điểm). Để «Theo cấp ngữ pháp» thì nó tự đi theo ô bên cạnh — bạn không phải bảo trì. Chọn cụ thể khi muốn ngữ pháp và từ vựng ở hai cấp khác nhau (ví dụ luyện ngữ pháp N3 nhưng muốn tiếp xúc từ vựng N2)."
             >
               <Select
                 value={settings.vocabCeiling ?? AUTO_VOCAB_CEILING}
@@ -200,7 +200,7 @@ export function PracticeTab({
 
           <Field
             label="Chủ đề nội dung"
-            info="Chọn nhanh chủ đề hoặc thêm chủ đề riêng — Claude lồng bối cảnh câu theo các chủ đề này."
+            info="Chọn nhanh chủ đề hoặc thêm chủ đề riêng — trợ lý MCP lồng bối cảnh câu theo các chủ đề này."
           >
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-x-4 gap-y-2.5 sm:grid-cols-3 lg:grid-cols-5">
@@ -393,7 +393,7 @@ export function PracticeTab({
           <div className="grid gap-4 sm:grid-cols-2">
             <Field
               label="Từ vựng / câu"
-              info="Số từ vựng bạn đã tra (thêm bằng add_vocab trong Claude) được dệt vào MỖI câu (chế độ Dịch) để ôn trong ngữ cảnh — ngân sách RIÊNG, không chiếm chỗ mẫu ngữ pháp và không ăn hạn mức ôn/mới. Đặt 0 để tắt."
+              info="Số từ vựng bạn đã tra (thêm bằng add_vocab qua MCP) được dệt vào MỖI câu (chế độ Dịch) để ôn trong ngữ cảnh — ngân sách RIÊNG, không chiếm chỗ mẫu ngữ pháp và không ăn hạn mức ôn/mới. Đặt 0 để tắt."
             >
               <Input
                 type="number"
@@ -501,7 +501,7 @@ export function PracticeTab({
       <SettingsSection
         icon={Volume2}
         title="Trình bày & tự động"
-        hint="Chữ và tiếng đến với bạn thế nào, và những việc Claude được phép tự làm."
+        hint="Chữ và tiếng đến với bạn thế nào, và những việc trợ lý MCP được phép tự làm."
       >
         <SettingsGroup
           title="Hiển thị & giọng đọc"
@@ -510,7 +510,7 @@ export function PracticeTab({
           <div className="grid gap-4 sm:grid-cols-2">
             <Field
               label="Furigana"
-              info="Cách đọc kanji cho câu tiếng Nhật: hiện trong app, để Claude chèn sẵn, cả hai, hay không hiện."
+              info="Cách đọc kanji cho câu tiếng Nhật: hiện trong app, để trợ lý MCP chèn sẵn, cả hai, hay không hiện."
             >
               <Select
                 value={settings.furiganaMode}
@@ -531,7 +531,7 @@ export function PracticeTab({
 
             <Field
               label="Giọng đọc mẫu"
-              info="Giọng cho các nút phát âm trong app (đọc câu tiếng Nhật). Dùng engine VOICEVOX chạy kèm app — chọn giọng nam / nữ, ấm / trầm… theo ý bạn. Nếu chưa bật VOICEVOX, nút phát tự chuyển sang giọng của trình duyệt / hệ điều hành. Đây là giọng do APP phát — khác với voice mode của Claude Desktop."
+              info="Giọng cho các nút phát âm trong app (đọc câu tiếng Nhật). Dùng engine VOICEVOX chạy kèm app — chọn giọng nam / nữ, ấm / trầm… theo ý bạn. Nếu chưa bật VOICEVOX, nút phát tự chuyển sang giọng của trình duyệt / hệ điều hành. Đây là giọng do app phát — khác với voice mode của client MCP."
             >
               <div className="flex items-center gap-2">
                 <Select
@@ -586,8 +586,8 @@ export function PracticeTab({
         </SettingsGroup>
 
         <SettingsGroup
-          title="Cho Claude tự làm giúp"
-          hint="Mặc định TẮT hết: Claude luôn hỏi trước khi thêm gì vào kho. Bật một mục nghĩa là bạn cho phép trước cho RIÊNG loại việc đó — Claude làm luôn rồi báo lại một dòng. Chỉ những việc THÊM VÀO và huỷ được mới có ở đây."
+          title="Cho trợ lý MCP tự làm giúp"
+          hint="Mặc định TẮT hết: trợ lý MCP luôn hỏi trước khi thêm gì vào kho. Bật một mục nghĩa là bạn cho phép trước cho RIÊNG loại việc đó — nó làm luôn rồi báo lại một dòng. Chỉ những việc THÊM VÀO và huỷ được mới có ở đây."
         >
           <div className="flex flex-col gap-3">
             {AUTO_CAPTURE_FLAGS.map(({ key, label, hint }) => (

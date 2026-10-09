@@ -1,7 +1,7 @@
 # sakubun
 
 Luyện dịch Nhật–Việt với SRS (FSRS). Next.js 16 + Prisma 7 + SQLite, phục vụ cả web và một MCP
-server để Claude Desktop chấm bài.
+server để Claude Desktop hoặc ChatGPT chấm bài.
 
 ## Chạy local
 
@@ -17,8 +17,8 @@ npm run dev                 # http://localhost:3789
 
 ```bash
 npm run verify              # gen + typecheck + lint + test + build
-npm test                    # vitest (54 file, 727 test) — chạy trên DB tạm, không đụng dev.db
-npm run e2e                 # playwright (52 test), tự dựng dev server + DB riêng
+npm test                    # vitest — chạy trên DB tạm, không đụng dev.db
+npm run e2e                 # playwright — tự dựng dev server + DB riêng
 ```
 
 `npm test` không cần chuẩn bị gì: mỗi suite gọi `createTestDb()` để dựng một SQLite mới trong
@@ -55,6 +55,47 @@ docker run --rm -v sakubun_sakubun_data:/data -v "$PWD":/out alpine \
   cp /data/sakubun.db /out/sakubun-backup-$(date +%Y%m%d).db
 ```
 
+## Kết nối MCP
+
+Tạo token ở **Cài đặt → Tài khoản → Token MCP**. Nên tạo token riêng cho từng client (ví dụ
+`claude-desktop`, `chatgpt`) để có thể thu hồi từng kết nối mà không ngắt client còn lại.
+
+### Claude Desktop
+
+Mở **Settings → Developer → Edit Config**, rồi thêm cấu hình sau vào `claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "sakubun": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote",
+        "https://sakubun.example.com/api/mcp",
+        "--header",
+        "Authorization: Bearer <MCP_TOKEN>"
+      ]
+    }
+  }
+}
+```
+
+Thay URL và token bằng giá trị của bạn, rồi khởi động lại Claude Desktop.
+
+### ChatGPT
+
+ChatGPT dùng đúng endpoint và token đó: `https://sakubun.example.com/api/mcp`, với HTTP header
+`Authorization: Bearer <MCP_TOKEN>`. Trên ChatGPT web, bật Developer mode, vào **Settings → Apps →
+Create**, nhập endpoint và cơ chế xác thực để gửi header trên, rồi **Scan Tools** và tạo app. Chọn
+app trong chat mới để sử dụng.
+
+Endpoint phải là HTTPS công khai; ChatGPT không thể gọi `localhost`. Nếu Sakubun chỉ đang chạy trên
+máy của bạn, hãy deploy hoặc dùng Secure MCP Tunnel. Xem [hướng dẫn MCP chính thức của
+OpenAI](https://help.openai.com/en/articles/12584461-developer-mode-and-full-mcp-connectors-in-chatgpt).
+Hiện thao tác ghi/sửa qua MCP đang beta cho ChatGPT Business và Enterprise/Edu; tài khoản Pro chỉ
+dùng app MCP với quyền đọc/tìm kiếm.
+
 ## Cấu trúc
 
 ```
@@ -75,10 +116,8 @@ lib/
   transfer/               Nhập/xuất (Excel, Anki, sao lưu tài khoản)
   insights/               Tổng hợp chỉ đọc cho dashboard
   settings/               Schema cài đặt
-  mobile/                 Snapshot tRPC cho app Expo
   design/                 Các LUẬT frontend, viết dưới dạng test (xem bên dưới)
-  mcp/  trpc/             Hai bề mặt API
-mobile/                   App Expo
+  mcp/                    Bề mặt API MCP cho Claude Desktop và ChatGPT
 e2e/                      Playwright
 ```
 

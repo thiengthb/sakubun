@@ -37,12 +37,7 @@ export function ResourcesView({
       <PageShell
         section="resources"
         headerAside={
-          <TabSelect
-            items={RESOURCE_TABS}
-            value={tab}
-            onValueChange={setTab}
-            label="Chọn kho"
-          />
+          <TabSelect items={RESOURCE_TABS} value={tab} onValueChange={setTab} label="Chọn kho" />
         }
       >
         <TabsContent value="grammar">
@@ -51,12 +46,11 @@ export function ResourcesView({
               title="Kho ngữ pháp đang trống"
               description={
                 <>
-                  Nhập bên dưới, hoặc mở Claude Desktop và dùng prompt <code>import_grammar</code>.
+                  Nhập bên dưới, hoặc mở Claude Desktop hoặc ChatGPT và dùng prompt{' '}
+                  <code>import_grammar</code>.
                 </>
               }
-              action={
-                <ResourceAddButton kind="grammar" />
-              }
+              action={<ResourceAddButton kind="grammar" />}
             />
           ) : (
             <ResourceTable
@@ -77,13 +71,11 @@ export function ResourcesView({
               title="Chưa có từ vựng nào"
               description={
                 <>
-                  Thêm thủ công bên dưới, hoặc khi luyện hãy hỏi Claude nghĩa một từ (nói{' '}
-                  <em>“thêm từ này”</em>) để Claude thêm qua <code>add_vocab</code>.
+                  Thêm thủ công bên dưới, hoặc khi luyện hãy hỏi trợ lý MCP nghĩa một từ (nói{' '}
+                  <em>“thêm từ này”</em>) để nó thêm qua <code>add_vocab</code>.
                 </>
               }
-              action={
-                <ResourceAddButton kind="vocab" />
-              }
+              action={<ResourceAddButton kind="vocab" />}
             />
           ) : (
             <ResourceTable

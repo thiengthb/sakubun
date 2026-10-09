@@ -38,7 +38,8 @@ export function ReviewLog({
   if (reviews.length === 0)
     return (
       <EmptyState icon={null} className="p-6">
-        Chưa ôn lần nào. Lịch sử sẽ hiện ở đây sau khi bạn luyện mục này trong Claude Desktop.
+        Chưa ôn lần nào. Lịch sử sẽ hiện ở đây sau khi bạn luyện mục này qua Claude Desktop hoặc
+        ChatGPT.
       </EmptyState>
     );
   return (

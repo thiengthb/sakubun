@@ -37,7 +37,7 @@ import { CopyCommandButton } from '@/components/common/copy-command-button';
 import { APP_TIME_ZONE, formatDateTimeVN, formatDateVN } from '@/lib/core/format';
 import type { ToolUsageReport } from '@/lib/mcp/usage';
 
-function claudeConfig(token: string): string {
+function claudeDesktopConfig(token: string): string {
   const origin = typeof window === 'undefined' ? '' : window.location.origin;
   return `{
   "mcpServers": {
@@ -50,6 +50,11 @@ function claudeConfig(token: string): string {
     }
   }
 }`;
+}
+
+function mcpEndpoint(): string {
+  const origin = typeof window === 'undefined' ? '' : window.location.origin;
+  return `${origin}/api/mcp`;
 }
 
 export interface McpKeyRow {
@@ -332,8 +337,9 @@ export function AccountTab({
           <CardHeader>
             <CardTitle>Token MCP</CardTitle>
             <CardDescription>
-              Claude Desktop dùng token này để kết nối tới sakubun DƯỚI DANH NGHĨA bạn. Token chỉ
-              hiện MỘT lần khi tạo — lưu lại ngay. Thu hồi bất cứ lúc nào (có hiệu lực tức thì).
+              Claude Desktop và ChatGPT dùng token này để kết nối tới sakubun DƯỚI DANH NGHĨA bạn.
+              Tạo một token riêng cho mỗi client để có thể thu hồi độc lập. Token chỉ hiện MỘT lần
+              khi tạo — lưu lại ngay.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -393,12 +399,12 @@ export function AccountTab({
       </SettingsTab>
 
       <Dialog open={newToken !== null} onOpenChange={(o) => !o && setNewToken(null)}>
-        <DialogContent>
+        <DialogContent className="h-fit max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>Token MCP mới</DialogTitle>
             <DialogDescription>
-              Sao chép và lưu ngay — token này SẼ KHÔNG hiện lại. Dán vào{' '}
-              <code>claude_desktop_config.json</code> của Claude Desktop theo mẫu bên dưới.
+              Sao chép và lưu ngay — token này SẼ KHÔNG hiện lại. Dán vào Claude Desktop hoặc dùng
+              khi tạo app MCP trong ChatGPT theo hướng dẫn bên dưới.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2">
@@ -417,10 +423,10 @@ export function AccountTab({
             </p>
             <div className="relative">
               <pre className="max-h-56 overflow-auto rounded-lg border border-border/70 bg-muted/40 p-3 text-xs">
-                <code>{claudeConfig(newToken ?? '')}</code>
+                <code>{claudeDesktopConfig(newToken ?? '')}</code>
               </pre>
               <CopyCommandButton
-                command={claudeConfig(newToken ?? '')}
+                command={claudeDesktopConfig(newToken ?? '')}
                 label="Chép cấu hình"
                 size="icon-sm"
                 showCopiedText={false}
@@ -429,9 +435,34 @@ export function AccountTab({
               />
             </div>
             <p className="text-xs text-muted-foreground">
-              Trên Windows, đổi <code>&quot;command&quot;</code> thành <code>&quot;cmd&quot;</code> và
-              thêm <code>&quot;/c&quot;, &quot;npx&quot;</code> vào đầu <code>args</code>. Khởi động
-              lại Claude Desktop sau khi lưu.
+              Trên Windows, đổi <code>&quot;command&quot;</code> thành <code>&quot;cmd&quot;</code>{' '}
+              và thêm <code>&quot;/c&quot;, &quot;npx&quot;</code> vào đầu <code>args</code>. Khởi
+              động lại Claude Desktop sau khi lưu.
+            </p>
+          </div>
+
+          <div className="space-y-2 border-t pt-4">
+            <p className="text-xs text-muted-foreground">
+              ChatGPT (Settings → Apps → Advanced Settings → Developer mode → Create):
+            </p>
+            <div className="relative">
+              <pre className="max-h-56 overflow-auto rounded-lg border border-border/70 bg-muted/40 p-3 text-xs">
+                <code>{`Endpoint: ${mcpEndpoint()}\nAuthorization: Bearer ${newToken ?? ''}`}</code>
+              </pre>
+              <CopyCommandButton
+                command={`Endpoint: ${mcpEndpoint()}\nAuthorization: Bearer ${newToken ?? ''}`}
+                label="Chép thông tin kết nối"
+                size="icon-sm"
+                showCopiedText={false}
+                toastDescription="none"
+                className="absolute top-2 right-2"
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Dùng endpoint trên và cấu hình để ChatGPT gửi HTTP header{' '}
+              <code>Authorization: Bearer &lt;token&gt;</code>. ChatGPT chỉ kết nối tới HTTPS công
+              khai: với app chạy local, hãy deploy trước hoặc dùng Secure MCP Tunnel. Sau khi tạo,
+              chọn app trong một chat mới để thử. Claude và ChatGPT có thể dùng song song.
             </p>
           </div>
 

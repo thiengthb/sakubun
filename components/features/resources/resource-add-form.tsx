@@ -393,7 +393,7 @@ function PasteTab({
         />
         <p className="text-xs text-muted-foreground">
           Nhận dạng: bảng (tab giữa các cột) hoặc <code>mục (cách đọc) : nghĩa N5</code>. Danh sách
-          lộn xộn? Nhờ Claude Desktop dọn hộ bằng prompt <code>import_grammar</code>.
+          lộn xộn? Nhờ Claude Desktop hoặc ChatGPT dọn hộ bằng prompt <code>import_grammar</code>.
         </p>
       </div>
     </BulkPanel>

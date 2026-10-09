@@ -1,4 +1,3 @@
-import { expo } from '@better-auth/expo';
 import { betterAuth } from 'better-auth';
 import { APIError } from 'better-auth/api';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
@@ -31,8 +30,6 @@ export const auth = betterAuth({
   trustedOrigins: [
     'http://localhost:3789',
     'https://sakubun.thientnse.site',
-    'sakubun://',
-    ...(process.env.NODE_ENV === 'development' ? ['exp://'] : []),
     ...(process.env.BETTER_AUTH_TRUSTED_ORIGINS?.split(',')
       .map((o) => o.trim())
       .filter(Boolean) ?? []),
@@ -101,9 +98,5 @@ export const auth = betterAuth({
       },
     },
   },
-  plugins: [
-    admin(),
-    expo(),
-    nextCookies(),
-  ],
+  plugins: [admin(), nextCookies()],
 });

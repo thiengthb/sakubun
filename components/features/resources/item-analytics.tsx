@@ -104,7 +104,9 @@ export function ItemAnalytics({
         ? 'thẻ chi tiết (nghĩa, cụm hay đi kèm, đồng nghĩa/trái nghĩa, ví dụ)'
         : 'thẻ chi tiết (cách dùng, ví dụ, bẫy, phân biệt)'),
     enrichment && enrichment.pitfalls.length === 0 && 'bẫy hay gặp',
-    enrichment && isVocab && enrichment.synonyms.length + enrichment.antonyms.length === 0 &&
+    enrichment &&
+      isVocab &&
+      enrichment.synonyms.length + enrichment.antonyms.length === 0 &&
       'từ đồng nghĩa / trái nghĩa',
   ].filter(Boolean) as string[];
 
@@ -177,7 +179,7 @@ export function ItemAnalytics({
             {missing.length > 0 && (
               <CopyCommandButton
                 command={`bổ sung ${missing.join(' và ')} cho mẫu ${stats.expression}`}
-                label="Nhờ Claude bổ sung"
+                label="Nhờ trợ lý MCP bổ sung"
                 icon={Sparkles}
                 expandOnHover
               />

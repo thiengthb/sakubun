@@ -22,7 +22,7 @@ export function HistoryView({
           title="Chưa có lượt dịch nào"
           description={
             <>
-              Mở Claude Desktop và chạy prompt <code>practice</code> để bắt đầu.
+              Mở Claude Desktop hoặc ChatGPT và chạy prompt <code>practice</code> để bắt đầu.
             </>
           }
         />

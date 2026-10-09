@@ -84,8 +84,8 @@ export function LearnerProfile({
       <div className="space-y-1">
         <h2 className="text-sm font-medium text-muted-foreground">Hồ sơ học của bạn</h2>
         <p className="text-xs text-muted-foreground">
-          Claude đọc phần này trước khi ra đề. Mọi dòng ở đây đều rút ra từ chính lịch sử của bạn —
-          thấy sai thì cứ nói lại với Claude.
+          Trợ lý MCP đọc phần này trước khi ra đề. Mọi dòng ở đây đều rút ra từ chính lịch sử của
+          bạn — thấy sai thì cứ nói lại với trợ lý.
         </p>
       </div>
 
@@ -139,7 +139,7 @@ export function LearnerProfile({
       )}
 
       {notes.length > 0 && (
-        <Block label="Claude ghi nhận">
+        <Block label="Trợ lý MCP ghi nhận">
           <ul className="space-y-2">
             {notes.map((n) => (
               <li key={n.id} className="min-w-0 space-y-1 border-l-2 border-border/70 pl-3">

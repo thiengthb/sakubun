@@ -22,7 +22,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL('https://sakubun.thientnse.site'),
   title: 'sakubun',
-  description: 'Luyện dịch Nhật–Việt bằng spaced repetition, học qua Claude Desktop (MCP)',
+  description: 'Luyện dịch Nhật–Việt bằng spaced repetition, học qua MCP',
 };
 
 export const viewport: Viewport = {

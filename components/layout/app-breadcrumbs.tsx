@@ -20,14 +20,14 @@ const CRUMBS = {
     href: '/',
     icon: LayoutDashboard,
     description:
-      'Hai tab: Tiến độ (tổng quan, tiến độ theo ngày, điểm yếu) và Thống kê (biểu đồ độ chính xác, thời gian, theo độ khó/độ dài). Luyện tập diễn ra trong Claude Desktop.',
+      'Hai tab: Tiến độ (tổng quan, tiến độ theo ngày, điểm yếu) và Thống kê (biểu đồ độ chính xác, thời gian, theo độ khó/độ dài). Luyện tập diễn ra qua MCP trong Claude Desktop hoặc ChatGPT.',
   },
   resources: {
     label: 'Tài nguyên',
     href: '/resources',
     icon: Library,
     description:
-      'Kho học của bạn — ngữ pháp (được lên lịch ôn) và từ vựng (Claude thêm qua MCP). Sửa/xóa không đổi lịch ôn.',
+      'Kho học của bạn — ngữ pháp (được lên lịch ôn) và từ vựng (client MCP thêm qua MCP). Sửa/xóa không đổi lịch ôn.',
   },
   grammar: {
     label: 'Ngữ pháp',
@@ -45,7 +45,8 @@ const CRUMBS = {
     label: 'Nhóm',
     href: '/resources?tab=groups',
     icon: FolderOpen,
-    description: 'Bộ sưu tập tự đặt tên — gom mẫu ngữ pháp và từ vựng theo chủ đề để luyện tập trung.',
+    description:
+      'Bộ sưu tập tự đặt tên — gom mẫu ngữ pháp và từ vựng theo chủ đề để luyện tập trung.',
   },
   history: {
     label: 'Lịch sử',
@@ -59,7 +60,7 @@ const CRUMBS = {
     href: '/settings',
     icon: Settings,
     description:
-      'Tuỳ chỉnh nội dung, nhịp học, nghe & nói; dữ liệu; tài khoản và token MCP. Claude đọc các cài đặt học này qua MCP mỗi khi soạn câu.',
+      'Tuỳ chỉnh nội dung, nhịp học, nghe & nói; dữ liệu; tài khoản và token MCP. Client MCP đọc các cài đặt học này mỗi khi soạn câu.',
   },
 } satisfies Record<string, Crumb>;
 
@@ -77,7 +78,8 @@ const ACTION_CRUMBS = {
   addItems: {
     label: 'Thêm mục',
     icon: Plus,
-    description: 'Chọn mẫu ngữ pháp / từ vựng để đưa vào nhóm. Chỉ hiện mục đúng loại và chưa ở trong nhóm.',
+    description:
+      'Chọn mẫu ngữ pháp / từ vựng để đưa vào nhóm. Chỉ hiện mục đúng loại và chưa ở trong nhóm.',
   },
 } satisfies Record<string, Crumb>;
 

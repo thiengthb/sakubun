@@ -45,7 +45,7 @@ export function LoginForm({
   }
 
   return (
-    <AuthCard title="Đăng nhập sakubun" description="Luyện dịch Nhật–Việt qua Claude Desktop">
+    <AuthCard title="Đăng nhập sakubun" description="Luyện dịch Nhật–Việt qua MCP">
       <CardContent>
         <form onSubmit={onSubmit} className="space-y-4">
           <AuthField

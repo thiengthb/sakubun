@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 const EMOJI =
   /[\u{1F000}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE0F}\u{20E3}\u{1F1E6}-\u{1F1FF}]/u;
 
-const ROOTS = ['app', 'components', 'lib', 'mobile'];
+const ROOTS = ['app', 'components', 'lib'];
 const SKIP_DIRS = new Set(['node_modules', 'generated', '.next', '.expo']);
 const SKIP_FILES = new Set(['lib/no-emoji.test.ts']);
 

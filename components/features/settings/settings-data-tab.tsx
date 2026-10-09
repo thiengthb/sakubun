@@ -131,7 +131,7 @@ export function DataTab() {
       toast.success(`Đã tải ${name}`, {
         description:
           items === '0'
-            ? 'Chưa có từ vựng nào để xuất — hãy nhờ Claude thêm từ trước.'
+            ? 'Chưa có từ vựng nào để xuất — hãy nhờ trợ lý MCP thêm từ trước.'
             : `${items} từ. Mở tệp bằng Anki để nhập vào bộ thẻ "sakubun".`,
       });
     } catch {
@@ -240,9 +240,10 @@ export function DataTab() {
                   <div className="min-w-0 space-y-1">
                     <CardTitle className="text-sm">Bản sao dữ liệu học (JSON)</CardTitle>
                     <CardDescription className="text-xs">
-                      Từ vựng và ngữ pháp đã thêm, lịch ôn FSRS, lịch sử ôn, câu đã luyện, nhóm và cài
-                      đặt. Nạp lại là <span className="font-medium text-foreground">gộp</span> — thêm
-                      cái thiếu, cập nhật cái đã có, không xóa gì; bạn xem trước rồi mới xác nhận.
+                      Từ vựng và ngữ pháp đã thêm, lịch ôn FSRS, lịch sử ôn, câu đã luyện, nhóm và
+                      cài đặt. Nạp lại là <span className="font-medium text-foreground">gộp</span> —
+                      thêm cái thiếu, cập nhật cái đã có, không xóa gì; bạn xem trước rồi mới xác
+                      nhận.
                     </CardDescription>
                   </div>
                 </div>
@@ -313,9 +314,9 @@ export function DataTab() {
                   <div className="min-w-0 space-y-1">
                     <CardTitle className="text-sm">Sao lưu toàn bộ (.db)</CardTitle>
                     <CardDescription className="text-xs">
-                      Ảnh chụp SQLite nhất quán của toàn bộ cơ sở dữ liệu, đã kiểm tra toàn vẹn trước
-                      khi trao cho bạn. Đây là bản duy nhất khôi phục lại được đúng mọi thứ — tệp nằm
-                      cùng ổ với Docker, nhớ chép tiếp sang ổ khác hoặc cloud.
+                      Ảnh chụp SQLite nhất quán của toàn bộ cơ sở dữ liệu, đã kiểm tra toàn vẹn
+                      trước khi trao cho bạn. Đây là bản duy nhất khôi phục lại được đúng mọi thứ —
+                      tệp nằm cùng ổ với Docker, nhớ chép tiếp sang ổ khác hoặc cloud.
                     </CardDescription>
                   </div>
                 </div>
@@ -335,10 +336,10 @@ export function DataTab() {
                   <div className="min-w-0 space-y-1">
                     <CardTitle className="text-sm">Nạp thêm từ tệp .db</CardTitle>
                     <CardDescription className="text-xs">
-                      Gộp một tệp <code className="text-foreground">.db</code> vào cơ sở dữ liệu đang
-                      chạy: <span className="font-medium text-foreground">chỉ thêm</span> bản ghi còn
-                      thiếu, những gì đã có được giữ nguyên. Tệp mang theo cả tài khoản trong đó —
-                      hãy sao lưu trước và xem kỹ bảng thay đổi rồi mới xác nhận.
+                      Gộp một tệp <code className="text-foreground">.db</code> vào cơ sở dữ liệu
+                      đang chạy: <span className="font-medium text-foreground">chỉ thêm</span> bản
+                      ghi còn thiếu, những gì đã có được giữ nguyên. Tệp mang theo cả tài khoản
+                      trong đó — hãy sao lưu trước và xem kỹ bảng thay đổi rồi mới xác nhận.
                     </CardDescription>
                   </div>
                 </div>

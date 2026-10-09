@@ -5,7 +5,11 @@ test.beforeAll(async () => {
   await seedE2eAccount();
 });
 
-test('hộp thoại token MCP mang theo cấu hình nối Claude Desktop', async ({ page, baseURL }) => {
+test('hộp thoại token MCP mang theo cấu hình nối Claude Desktop và ChatGPT', async ({
+  page,
+  baseURL,
+}) => {
+  await page.setViewportSize({ width: 390, height: 568 });
   await page.goto('/login');
   await page.getByLabel('Email').fill(E2E_EMAIL);
   await page.getByLabel('Mật khẩu').fill(E2E_LOGIN);
@@ -21,12 +25,21 @@ test('hộp thoại token MCP mang theo cấu hình nối Claude Desktop', async
 
   await expect(dialog).not.toContainText('Hướng dẫn');
 
-  const block = dialog.locator('pre');
-  await expect(block).toContainText('mcp-remote');
-  await expect(block).toContainText(`${baseURL}/api/mcp`);
-  await expect(block).toContainText('Authorization: Bearer ');
+  const [claudeBlock, chatgptBlock] = await dialog.locator('pre').all();
+  await expect(claudeBlock).toContainText('mcp-remote');
+  await expect(claudeBlock).toContainText(`${baseURL}/api/mcp`);
+  await expect(claudeBlock).toContainText('Authorization: Bearer ');
+  await expect(chatgptBlock).toContainText(`Endpoint: ${baseURL}/api/mcp`);
+  await expect(chatgptBlock).toContainText('Authorization: Bearer ');
 
   const token = (await dialog.locator('code.select-all').innerText()).trim();
   expect(token.length).toBeGreaterThan(20);
-  await expect(block).toContainText(token);
+  await expect(claudeBlock).toContainText(token);
+  await expect(chatgptBlock).toContainText(token);
+
+  await expect(dialog).toHaveCSS('overflow-y', 'auto');
+  const box = await dialog.boundingBox();
+  expect(box).not.toBeNull();
+  expect(box!.y).toBeGreaterThanOrEqual(16);
+  expect(box!.y + box!.height).toBeLessThanOrEqual(552);
 });
