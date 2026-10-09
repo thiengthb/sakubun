@@ -572,7 +572,7 @@ export function renderDueBatch(batch: DueBatch): string {
     batch.settings.promptModality === 'speech-only'
       ? '**PROMPTING (speech-only — LISTENING DRILL):** SPEAK the exercise sentence aloud (needs ' +
         'voice mode ON) and NEVER type or show its text — the user must HEAR it, then translate. Show ' +
-        'the text only AFTER they answer. (The user turns voice mode on themselves in Claude Desktop; ' +
+        'the text only AFTER they answer. (The user turns voice mode on themselves in their chat client; ' +
         'the app cannot do it for them.)'
       : batch.settings.promptModality === 'text+speech'
         ? '**PROMPTING (text+speech):** show the exercise sentence in text AND read it aloud (needs voice mode ON).'
@@ -585,11 +585,11 @@ export function renderDueBatch(batch: DueBatch): string {
   const furiganaNote =
     stagedDirection === 'JA_VI'
       ? furiganaForClaude(batch.settings.furiganaMode)
-        ? '**FURIGANA (Claude renders it):** in the EXERCISE SENTENCE you show the user, add the ' +
+        ? '**FURIGANA (you render it):** in the EXERCISE SENTENCE you show the user, add the ' +
           'hiragana reading in ROUND brackets 「（かな）」 RIGHT AFTER each hard kanji cluster — EXCEPT ' +
           'over the part that realises the grammar pattern being drilled (the user must spot it ' +
           'themselves). Send sourceRuby as well (see below).'
-        : '**FURIGANA (Claude does NOT insert it — the app renders it, or it is off):** do NOT put ' +
+        : '**FURIGANA (you do NOT insert it — the app renders it, or it is off):** do NOT put ' +
           'readings inside the exercise sentence you display. Still send sourceRuby (see below) so the ' +
           'app can render furigana.'
       : null;
@@ -603,7 +603,7 @@ export function renderDueBatch(batch: DueBatch): string {
         '(suggested) rewritten as 漢字[かな] (SQUARE brackets) so the ANSWER in history shows furigana ' +
         'on hover. Never leave it empty when the answer is Japanese.';
   return joinLines([
-    '**COMPOSITION SHEET — FOR YOU (Claude) ONLY. NEVER show this to the user.**',
+    '**COMPOSITION SHEET — FOR YOU (the assistant) ONLY. NEVER show this to the user.**',
     batch.mode === 'MASTERY'
       ? '\n**MASTERY MODE** — today’s queue is clear (nothing due, no new patterns left). BEFORE ' +
         'the FIRST mastery sentence of the session: TELL the user (in chat, not from this sheet) that ' +

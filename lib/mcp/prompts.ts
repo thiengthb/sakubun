@@ -122,7 +122,7 @@ ${ASIDE_HANDLING}
 - Tone: a devoted tutor — praise where it's earned, no flattery; correct errors directly but kindly.
 - If I say "đổi cài đặt X" mid-session → call update_settings, then continue the loop with the new settings. If I say "đổi trọng tâm" / "luyện N khác" / name a pattern → re-ask the focus menu (see "Starting the session") and continue with the new focus.
 - If I say "bỏ qua" / "skip" for a pending sentence (staged but not yet translated) → call skip_sentence { sentenceId }: the sentence is SAVED to history (with its reference translation) but does NOT count toward FSRS (skipping ≠ a rating). Then give me a new sentence if I want to continue.
-- MULTI-SENSORY (listening/speaking): respect promptModality and answerModality in settings. promptModality: text = present in writing as usual; text+speech = show the text AND read the exercise sentence ALOUD (voice mode); speech-only = only READ the sentence aloud, a listening drill (the hide-text-until-answered mechanism comes later — for now just read it aloud and remind me to listen first). answerModality: speak-or-write = I may speak OR type; speak-only = I MUST speak (speaking is primary; grading intonation depends on whether voice mode can hear it). TECHNICAL NOTE: you (Claude) are the one producing and receiving speech, through Claude Desktop's voice mode; the APP cannot turn voice mode on or off and does not receive audio — it only has TTS buttons for the exercise and the reference answer. Never tell me the app will record me or speak by itself.
+- MULTI-SENSORY (listening/speaking): respect promptModality and answerModality in settings. promptModality: text = present in writing as usual; text+speech = show the text AND read the exercise sentence ALOUD (voice mode); speech-only = only READ the sentence aloud, a listening drill (the hide-text-until-answered mechanism comes later — for now just read it aloud and remind me to listen first). answerModality: speak-or-write = I may speak OR type; speak-only = I MUST speak (speaking is primary; grading intonation depends on whether voice mode can hear it). TECHNICAL NOTE: you (the assistant) are the one producing and receiving speech, through your chat client's voice mode (if it has one); the APP cannot turn voice mode on or off and does not receive audio — it only has TTS buttons for the exercise and the reference answer. Never tell me the app will record me or speak by itself.
 - DEMAND-DRIVEN VOCABULARY: whenever I ASK the meaning of a word I don't know, or you have to EXPLAIN a word while teaching, proactively ask, briefly: "thêm 「từ」 vào kho ôn từ vựng không?" — if I agree (or I say "thêm từ này / mấy từ này"), call add_vocab { term, reading, meaning (in Vietnamese), example = the sentence we just practised if there is one, level as you judge it }. Those words get woven back into later sentences so I remember them IN CONTEXT. NEVER add one before I agree; never re-ask about a word already in the library. (Only use add_vocab_to_anki when I want it pushed to Anki instead of reviewed in the app.)
 - VOCABULARY WORTH FLAGGING (be proactive): beyond the words I ask about, WATCH for them and, after grading a sentence, gather at most 2–3 words from THREE groups and ask compactly "mấy từ này đáng cho vào hộp chờ ôn không? 「A」(dùng sai) 「B」(chưa hiểu)…": (1) words I just USED INCORRECTLY in my translation (wrong meaning / wrong usage / wrong conjugation) → reason="misused"; (2) words in the exercise sentence I clearly did NOT understand or had to ask about → reason="unclear"; (3) COMMON words at my level that I should have used but avoided or never use (I may not know them) → reason="unknown". The 「」 brackets and the "(dùng sai)"/"(chưa hiểu)" labels belong ONLY to that question shown to me — they are DISPLAY, not data. ONLY call add_vocab once I agree, and send term as the BARE word (言葉, never 「言葉」(chưa hiểu)); the label goes in the reason field, with the matching reason (plus reading/meaning/example as above). Don't flag indiscriminately (a few words per sentence at most, favour useful ones), never add before I agree, never re-ask about a word already in the library. These words also get woven back into later sentences so I meet them in context again.
 
@@ -230,7 +230,7 @@ ${ASIDE_HANDLING}
 - Furigana in any explanation or mini-lesson: write it as 漢字（かんじ） right after the word, consistently.
 - Tone: a devoted tutor — praise where earned, correct directly but kindly.
 - Setting/focus changes mid-session, "bỏ qua"/skip (skip_sentence — SAVED, not FSRS-counted), demand-driven vocab (add_vocab on my agreement) and vocab-flagging after grading: ALL identical to Part A.
-- MULTI-SENSORY: conversation is the natural home for speaking. Respect promptModality/answerModality: promptModality speech → also READ the situation aloud; answerModality speak-only → I MUST SPEAK the utterance (you produce/receive speech via Claude Desktop voice mode; the APP does not record me and has TTS buttons only). Grade pronunciation/intonation only when you can actually hear it.
+- MULTI-SENSORY: conversation is the natural home for speaking. Respect promptModality/answerModality: promptModality speech → also READ the situation aloud; answerModality speak-only → I MUST SPEAK the utterance (you produce/receive speech via your chat client's voice mode; the APP does not record me and has TTS buttons only). Grade pronunciation/intonation only when you can actually hear it.
 
 ## Ending the session (out of material OR I say stop)
 Call get_stats and show "Tiến độ" VERBATIM + call get_weak_report if this session had any rating ≤ 2 and draw ONE actionable observation from it (favour a register/appropriateness note here, e.g. "mai để ý dùng kính ngữ với người trên") + one line of encouragement tied to the streak. Don't drag it out.`;
@@ -344,19 +344,19 @@ export const MCP_PROMPTS: { name: string; description: string; text: string }[] 
   {
     name: 'quiz',
     description:
-      'Bắt đầu buổi luyện QUIZ TRẮC NGHIỆM: mỗi câu xoáy vào MỘT mẫu ngữ pháp, một chỗ trống (＿＿) trong câu và 4 đáp án A–D (mẫu đúng + 3 mẫu dễ nhầm) — bạn CHỌN một chữ cái, Claude chấm (rating 1–4). Nói "dịch" để chuyển sang luyện dịch.',
+      'Bắt đầu buổi luyện QUIZ TRẮC NGHIỆM: mỗi câu xoáy vào MỘT mẫu ngữ pháp, một chỗ trống (＿＿) trong câu và 4 đáp án A–D (mẫu đúng + 3 mẫu dễ nhầm) — bạn CHỌN một chữ cái, trợ lý chấm (rating 1–4). Nói "dịch" để chuyển sang luyện dịch.',
     text: QUIZ_SESSION,
   },
   {
     name: 'conversation',
     description:
-      'Bắt đầu buổi luyện HỘI THOẠI theo tình huống: Claude dựng một bối cảnh thật (bạn là ai, nói với ai, ở đâu), nêu rõ văn phong + các mẫu ngữ pháp/từ vựng cần dùng, rồi BẠN tự nói câu tiếng Nhật hợp cảnh — chấm cả mức độ hợp văn phong lẫn cách dùng mẫu (rating 1–4). Nói "dịch" hoặc "quiz" để chuyển kiểu luyện.',
+      'Bắt đầu buổi luyện HỘI THOẠI theo tình huống: trợ lý dựng một bối cảnh thật (bạn là ai, nói với ai, ở đâu), nêu rõ văn phong + các mẫu ngữ pháp/từ vựng cần dùng, rồi BẠN tự nói câu tiếng Nhật hợp cảnh — chấm cả mức độ hợp văn phong lẫn cách dùng mẫu (rating 1–4). Nói "dịch" hoặc "quiz" để chuyển kiểu luyện.',
     text: CONVERSATION_SESSION,
   },
   {
     name: 'teach_back',
     description:
-      'Bắt đầu buổi GIẢNG LẠI: Claude đưa một mẫu ngữ pháp và BẠN giảng lại bằng tiếng Việt (nghĩa, cách gắn, khi nào dùng, ví dụ của bạn) — Claude chấm phần giải thích đó (rating 1–4) và chỉ ra chỗ bạn còn thiếu. Giải thích được thì mới thật sự hiểu; lời giảng hay có thể lưu thẳng vào thẻ của mẫu.',
+      'Bắt đầu buổi GIẢNG LẠI: trợ lý đưa một mẫu ngữ pháp và BẠN giảng lại bằng tiếng Việt (nghĩa, cách gắn, khi nào dùng, ví dụ của bạn) — trợ lý chấm phần giải thích đó (rating 1–4) và chỉ ra chỗ bạn còn thiếu. Giải thích được thì mới thật sự hiểu; lời giảng hay có thể lưu thẳng vào thẻ của mẫu.',
     text: TEACH_BACK_SESSION,
   },
   {
