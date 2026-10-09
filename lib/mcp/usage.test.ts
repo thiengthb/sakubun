@@ -24,7 +24,7 @@ let prisma: Db['prisma'];
 
 // `tool-kit` cũng phải nạp ĐỘNG, không phải import tĩnh: nó với tới `@/lib/db` qua render.ts →
 // dossier.ts, và mọi import tĩnh đều chạy TRƯỚC `createTestDb()` — Prisma singleton sẽ bind vào
-// `prisma/dev.db` rồi mọi phép chốt dưới đây đo sai cơ sở dữ liệu (AGENTS.md §Gotchas).
+// `prisma/dev.db` rồi mọi phép chốt dưới đây đo sai cơ sở dữ liệu (CLAUDE.md §Gotchas).
 beforeEach(async () => {
   U ??= await import('@/lib/mcp/usage');
   K ??= await import('@/lib/mcp/tool-kit');

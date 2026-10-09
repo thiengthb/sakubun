@@ -26,7 +26,7 @@ import { tmpdir } from 'node:os';
 import { join, basename, dirname, resolve } from 'node:path';
 import { createInterface } from 'node:readline/promises';
 import Database from 'better-sqlite3';
-import { REPO_ROOT, repoPath, run } from './lib/harness.mjs';
+import { REPO_ROOT, repoPath, run } from './lib/paths.mjs';
 
 // Defaults match docker-compose.yml. The volume name is PINNED there (not derived from the project
 // name) and this must not drift from it - see the warning in that file.

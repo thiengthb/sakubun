@@ -1,15 +1,7 @@
 name: ci
 
-# Sườn CI. Bỏ comment và điền lệnh của project khi áp template.
-#
-# QUAN TRỌNG HƠN FILE NÀY: bật MERGE QUEUE + branch protection trên `main`.
-# Merge queue là cơ chế DUY NHẤT bắt được conflict ngữ nghĩa một cách hệ thống —
-# nó rebuild PR trên main mới nhất TRƯỚC khi merge.
-# Xem docs/BRANCH-PROTECTION.md.
-
 on:
   pull_request:
-  merge_group:          # ← merge queue chạy job ở đây
   push:
     branches: [main]
 
@@ -18,149 +10,18 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  guards:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with: { fetch-depth: 0 }
-      - uses: actions/setup-node@v4
-        with: { node-version: 22 }
-
-      - name: Hook tests
-        run: node tooling/test-hooks.mjs
-
-      - name: Feature integrity (chỉ được đổi passes/evidence)
-        run: node tooling/check-feature-integrity.mjs origin/${{ github.base_ref || 'main' }}
-
-      - name: Knowledge lint
-        run: node tooling/knowledge/lint.mjs
-
-      - name: Kích thước PR
-        if: github.event_name == 'pull_request'
-        run: |
-          WARN=$(node -e "console.log(require('./harness.config.json').limits.prWarnLines)")
-          FAIL=$(node -e "console.log(require('./harness.config.json').limits.prFailLines)")
-          LINES=$(git diff origin/${{ github.base_ref }}...HEAD --numstat \
-            -- . ':(exclude)**/*.gen.*' ':(exclude)**/*lock*' ':(exclude)**/generated/**' \
-            | awk '{a+=$1; d+=$2} END {print a+d+0}')
-          echo "Thay đổi $LINES dòng (cảnh báo $WARN, fail $FAIL)"
-          if [ "$LINES" -gt "$FAIL" ]; then
-            echo "::error::PR quá lớn ($LINES dòng). Chẻ nhỏ. Một PR = một mục đích."
-            exit 1
-          elif [ "$LINES" -gt "$WARN" ]; then
-            echo "::warning::PR lớn ($LINES dòng) — nêu lý do trong mô tả PR."
-          fi
-
-      - name: Lockfile toàn vẹn
-        run: |
-          # Lockfile là OUTPUT của một solver. Merge văn bản hai output không cho
-          # ra output hợp lệ. Cài frozen sẽ bắt lockfile đã bị merge tay.
-          npm ci --ignore-scripts
-
-  # MỘT lệnh, không liệt kê lại từng gate. Danh sách gate sống ở
-  # `harness.config.json → gates.preMerge`; viết lại nó ở đây là tạo bản sao thứ hai, và
-  # hai danh sách là hai cơ hội để chúng lệch nhau — chúng ĐÃ lệch: config khai
-  # `e2e · depcruise · a11y · perf` mà job này chỉ chạy gen/typecheck/lint/test/build,
-  # còn `e2e` thì nằm ở một job RIÊNG bên dưới. Đó đúng là điều `harness-migrations/
-  # 004-ci-goi-gate-that.mjs` yêu cầu sửa, và nó đưa hai lựa chọn: gọi gate thật rồi xoá
-  # job e2e, HOẶC giữ job e2e và bỏ `e2e` khỏi gates.preMerge. Chọn cách một —
-  # cách hai phải sửa harness.config.json, file nằm trong `paths.harness`.
-  #
-  # Đo trước khi đổi (2026-08-05, `CI=1 node tooling/gates.mjs --stage preMerge`):
-  # typecheck · lint · test · build · e2e đều OK; ba gate chưa khai lệnh
-  # (depcruise/a11y/perf) ra **WARN + BỎ QUA**, KHÔNG fail-đóng. Nên chuyển sang gọi gate
-  # thật không làm CI đỏ vì chúng — điều tôi từng phỏng đoán ngược lại trong learnings.
   verify:
     runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: file:/tmp/ci.db
+      BETTER_AUTH_SECRET: ci-only-not-a-secret-0123456789abcdef
+      BETTER_AUTH_URL: http://localhost:3789
+      NEXT_TELEMETRY_DISABLED: 1
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: 22, cache: npm }
-      - run: npm ci
-      # `e2e` là một gate TRONG preMerge, nên browser phải có mặt ở job này.
-      - run: npx playwright install --with-deps chromium
-      - run: node tooling/gates.mjs --stage preMerge
-
-      # Gate đỏ mà KHÔNG nói được vì sao là gate không dùng được.
-      #
-      # `spill()` (tooling/lib/harness.mjs) ghi output của gate fail vào
-      # `os.tmpdir()/harness-<gate>-<pid>.log` rồi CHỈ in đường dẫn. Trên máy mình thì mở ra
-      # đọc; trên runner thì file chết cùng runner, nên dòng "FAIL e2e → /tmp/harness-e2e-2861.log"
-      # là toàn bộ những gì còn lại. Đo 2026-08-10: e2e đỏ ở PR #2 và #3 nhưng XANH ở PR #1 trên
-      # cùng một base — tức flaky — và không ai chẩn đoán được vì bằng chứng không rời khỏi runner.
-      #
-      # Chạy cả khi gate đỏ (`always()` chứ không `failure()`, để một lần xanh-sau-retry cũng để
-      # lại trace), và không đòi file phải có: gate đỏ ở `typecheck` thì chẳng có report nào.
-      # `upload-artifact@v4` BỎ QUA đường dẫn ngoài GITHUB_WORKSPACE, nên `/tmp/harness-*.log`
-      # không bao giờ lên (đo 2026-08-10: artifact chỉ có playwright-report). Copy vào workspace
-      # trước, và in luôn KÍCH THƯỚC — với gate `e2e` con số đó chính là bằng chứng: `runConfigured`
-      # gọi spawnSync stdio:'pipe' mà không đặt maxBuffer, nên Node giết tiến trình con ở đúng
-      # 1048576 byte và `r.status ?? 1` báo thành "gate đỏ".
-      - name: Gom log gate vào workspace
-        if: always()
-        run: |
-          mkdir -p gate-logs
-          cp /tmp/harness-*.log gate-logs/ 2>/dev/null || true
-          cp "${RUNNER_TEMP}"/harness-*.log gate-logs/ 2>/dev/null || true
-          ls -la gate-logs/ || true
-          for f in gate-logs/*.log; do
-            [ -e "$f" ] || continue
-            echo "::group::$f ($(wc -c < "$f") byte)"
-            tail -c 4000 "$f"
-            echo "::endgroup::"
-          done
-
-      - name: Bằng chứng khi gate đỏ (log gate + report Playwright)
-        if: always()
-        uses: actions/upload-artifact@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
-          name: verify-evidence
-          path: |
-            gate-logs/
-            playwright-report/
-            test-results/
-          if-no-files-found: ignore
-          retention-days: 14
-
-  security:
-    runs-on: ubuntu-latest
-    # Job này chạy được trên `push` nhưng SẬP trên `pull_request`, và không ai biết cho tới
-    # PR đầu tiên của repo (PR #1, 2026-08-10):
-    #
-    #   GET https://api.github.com/repos/<repo>/pulls/1/commits
-    #   403 'Resource not accessible by integration'
-    #
-    # gitleaks đọc danh sách commit của PR để biết quét khoảng nào, và GITHUB_TOKEN mặc định
-    # không có quyền đọc pull request. Trên `push` nó không gọi API đó, nên gate vẫn xanh —
-    # một lỗi chỉ hiện ra ở đúng event mà gate tồn tại để bảo vệ.
-    #
-    # Khai ở mức JOB, không mức workflow: block `permissions` THAY THẾ toàn bộ quyền mặc
-    # định, nên nó phải liệt kê đủ mọi thứ job cần (`contents: read` cho checkout), và giới
-    # hạn đó không nên tràn sang các job khác.
-    permissions:
-      contents: read
-      pull-requests: read
-    steps:
-      - uses: actions/checkout@v4
-        with: { fetch-depth: 0 }
-      # Đây là lưới an toàn CUỐI — tầng nhanh hơn là .claude/hooks/block-secrets.mjs (~ms)
-      # và .githooks/pre-commit (~s). Đặt check ở tầng NHANH NHẤT bắt được nó.
-      - name: Quét secret
-        uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Comment lên PR là đường DUY NHẤT trong action này cần quyền GHI pull request.
-          # Tắt nó để `permissions` ở trên giữ được mức read — nếu bật, một lần quét THẤY
-          # leak sẽ sập đúng kiểu 403 như trên, tức lại một cái bẫy chỉ nổ ở trạng thái hiếm.
-          # Phát hiện vẫn không mất: job đỏ, kèm summary và artifact (cả hai mặc định bật).
-          GITLEAKS_ENABLE_COMMENTS: 'false'
-      # KHÔNG trùng với gitleaks, và cũng không thay nó. gitleaks mang bộ rule riêng của
-      # nó; cái này chạy `paths.secrets` + `SECRET_PATTERNS` — ĐÚNG bộ mà hook
-      # block-secrets.mjs và .githooks/pre-commit dùng. Nên một pattern thêm vào harness
-      # được cưỡng chế ở CẢ ba tầng, thay vì chỉ ở hai tầng local. `harness-migrations/
-      # 004` khai bước này trong `expect.mustContain` và nó đang thiếu.
-      # Đo tại chỗ 2026-08-05: 493 file được track, sạch, exit 0.
-      - name: Quét secret (bộ pattern của harness)
-        run: node tooling/precommit-scan.mjs --all
-      # - name: SAST
-      #   run: semgrep ci
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run verify

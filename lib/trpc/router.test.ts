@@ -1,6 +1,6 @@
 // The mobile transport's two load-bearing behaviours, against a REAL throwaway SQLite DB.
 //
-// 1. THE GUARD. The learning tables have no `userId` column — the boundary is the LOGIN (AGENTS.md) —
+// 1. THE GUARD. The learning tables have no `userId` column — the boundary is the LOGIN (CLAUDE.md) —
 //    so `protectedProcedure` IS the boundary for this surface. A test that only checked the happy path
 //    would pass just as well on a router that had no guard at all, which is the failure worth catching.
 //

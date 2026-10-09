@@ -11,7 +11,7 @@ import { APP_TIME_ZONE, formatDateVN } from './format';
  * trình. Server lệch múi giờ với trình duyệt cho ra ngày khác nhau quanh nửa đêm: một hydration mismatch
  * chỉ xảy ra vài giờ mỗi ngày, tức loại lỗi khó nhất để tin là mình đã sửa.
  *
- * Vì sao là test chứ không phải một dòng trong AGENTS.md: luật này ĐÃ được viết ra ngay trong docstring
+ * Vì sao là test chứ không phải một dòng trong CLAUDE.md: luật này ĐÃ được viết ra ngay trong docstring
  * của `APP_TIME_ZONE`, và vẫn có hai chỗ tự format ngày mà không ghim (`learner-profile.tsx`,
  * `settings-account-tab.tsx`) — chúng vào repo sau khi luật đã tồn tại. Lời nhắc không chặn được ai đang
  * gấp; phép kiểm thì chặn.

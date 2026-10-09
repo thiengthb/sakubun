@@ -13,7 +13,7 @@ import { describe, expect, it } from 'vitest';
  * rots invisibly — nothing looks broken, the text is just harder to read for the people who need it most.
  *
  * The check is pure arithmetic over the tokens: OKLCH -> linear sRGB -> WCAG relative luminance. No
- * browser, no screenshot, no LLM judging a picture (AGENTS.md: computational control before inferential
+ * browser, no screenshot, no LLM judging a picture (CLAUDE.md: computational control before inferential
  * control).
  *
  * Two tiers, per WCAG 2.2:

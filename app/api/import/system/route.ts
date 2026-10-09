@@ -14,7 +14,7 @@ import { importSystemBackup } from '@/lib/import';
 //
 // Gate: SIGNED IN. It was `role === 'admin'` back when the app had members to gate each other from;
 // with one account that role is only a way for the tab's button to 403 on an account whose role was
-// never stamped. The boundary in this app is login (AGENTS.md).
+// never stamped. The boundary in this app is login (CLAUDE.md).
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';

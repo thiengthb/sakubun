@@ -17,9 +17,9 @@ npm run verify                 # gen → typecheck → lint → test → build
 npx playwright test            # e2e thật, browser thật
 ```
 
-Làm việc trong repo này thì **đọc `AGENTS.md` trước** — đó là hợp đồng cho cả người và agent
-(lệnh, gotcha, quy tắc verify, quy tắc git). File này chỉ là cửa vào; nó cố ý không nhắc lại
-những gì `AGENTS.md` đã nói.
+Làm việc trong repo này thì **đọc `CLAUDE.md` trước** — lệnh và các gotcha quan trọng
+(ngắn, một trang). File này chỉ là cửa vào; nó cố ý không nhắc lại
+những gì `CLAUDE.md` đã nói.
 
 ## Bản đồ
 
@@ -32,35 +32,7 @@ những gì `AGENTS.md` đã nói.
 | `prisma/` | Schema + migration. Prisma 7 + driver adapter; đọc `AGENTS.md §Gotchas` trước khi sửa. |
 | `e2e/` | Playwright. Bề mặt nào không có ở đây thì coi như **chưa được kiểm**. |
 | `docs/` | Quyết định, runbook, nhật ký tiến độ. Bắt đầu ở `docs/ARCHITECTURE.md`. |
-| `tooling/` · `.claude/` | **Lớp harness** — xem mục dưới. |
-
-## Lớp harness
-
-Repo này **tiêu thụ** một harness dùng chung, không phải nơi phát hành nó. Bằng chứng máy đọc được:
-`.claude/harness-manifest.json` tồn tại, nên `repoRole()` trả `consumer`; nguồn ghi trong manifest, và
-version hiện tại nằm ở `harness.version`.
-
-Manifest quản **96 file**, và chúng nằm gọn trong `.claude/` · `tooling/` · `harness-migrations/` ·
-`evals/` cộng ba file gốc. **`docs/` không có file nào do harness quản** — mọi thứ trong `docs/` là của
-riêng project này.
-
-Hệ quả thực tế, và là lý do mục này tồn tại:
-
-- Sửa tay một file harness thì lần `upgrade.mjs` sau sẽ báo xung đột hoặc ghi đè. Muốn đổi thì đi qua
-  `/harness-propose` (và hook sẽ chặn — đó là cố ý).
-- Ngược lại, sửa hay bỏ một file trong `docs/` là **quyết định địa phương**, không bị nâng cấp lật lại.
-
-```bash
-node tooling/harness-size.mjs        # harness đang phình hay co
-node tooling/entropy-scan.mjs        # tài liệu/hook đã hết hạn, đường dẫn trỏ vào hư không
-node tooling/dup-scan.mjs            # trùng lặp code, so với mốc đã ghim
-node tooling/dead-exports.mjs        # export không ai dùng
-node tooling/gates.mjs --stage stop  # cổng chặn cuối phiên
-```
-
-Áp harness lên **project khác** thì chạy từ **repo template** (đường dẫn trong manifest), không phải từ
-đây: `node tooling/apply-to.mjs /đường/dẫn/project --apply`. Nâng lớp harness của repo này lên bản mới:
-`node tooling/upgrade.mjs <đường-dẫn-template>` (xem trước mặc định, `--apply` mới ghi).
+| `tooling/` | Công cụ sản phẩm: `learning-lab` (chạy thử một buổi học), `db-restore`. |
 
 ## Deploy
 
