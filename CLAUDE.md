@@ -1,0 +1,33 @@
+# sakubun
+
+App luyện tiếng Nhật cho **một người dùng**, chạy thật sau `/login`. App giữ dữ liệu, lịch ôn **FSRS**, hạn mức ngày và cài đặt;
+**AI (Hermes / Claude) là thầy qua MCP**: soạn câu, chấm, hội thoại. Web không tự sinh câu, không tự chấm.
+Cấu trúc thư mục, luật frontend, deploy: xem `README.md`.
+Kế hoạch hợp nhất (wordquiz + kaiwa vào đây): `nuc-infra/docs/research/2026-10-10-app-merge-plan.md`.
+
+## Lệnh
+
+| Việc | Lệnh |
+|---|---|
+| Chạy dev | `npm run dev` → http://localhost:3789 |
+| **Kiểm tra toàn bộ (bắt buộc trước khi coi là xong)** | `npm run verify` (gen → typecheck → lint → test → build) |
+| Một file test | `npx vitest run lib/<miền>/<tên>.test.ts` |
+| E2E (browser thật) | `npm run e2e` |
+| Migration mới | `npm run db:migrate -- --name <slug>` |
+
+## Gotchas
+
+- **`submitReview()` trong `lib/library/practice.ts` là lối DUY NHẤT tính lịch FSRS.** Không route/component/MCP tool nào ghi `SrsState` trực tiếp
+  (ngoại lệ: nhập lại bản sao lưu nguyên văn). `ReviewLog` chỉ append; xoá Item thì `itemId` thành null.
+- **Prisma 7 dùng driver adapter** (`@prisma/adapter-better-sqlite3`), client sinh ở `lib/generated/prisma` (không commit), CLI đọc `prisma.config.ts`.
+- **Test có DB dùng `createTestDb()` (`lib/db/test-db.ts`)**, không dùng `prisma db push`; dọn giữa các test bằng `resetLearningData()`.
+- **Một người dùng, ranh giới là đăng nhập**: dữ liệu học không có `userId`; đăng ký đóng sau tài khoản đầu tiên (`lib/auth/auth.ts`);
+  route MCP (`app/api/[transport]/route.ts`) bắt buộc token.
+- **Ngôn ngữ**: code/comment/commit tiếng Anh; chuỗi người học đọc trên UI tiếng Việt; không emoji.
+- **Luật frontend là test** trong `lib/design/`. Phá luật thì thêm vào allowlist trong test đó, kèm lý do.
+- Không tự viết crypto, auth/session, date-time math: dùng thư viện đã có.
+- Không bao giờ sửa test cho xanh bằng cách làm yếu phép kiểm; sửa code.
+
+## Git
+
+Nhánh từ `main`, Conventional Commits, PR nhỏ một mục đích; CI chạy `npm run verify`.
