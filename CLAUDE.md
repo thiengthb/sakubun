@@ -21,7 +21,7 @@ Kế hoạch hợp nhất (wordquiz + kaiwa vào đây): `nuc-infra/docs/researc
   (ngoại lệ: nhập lại bản sao lưu nguyên văn). `ReviewLog` chỉ append; xoá Item thì `itemId` thành null.
 - **Prisma 7 dùng driver adapter** (`@prisma/adapter-better-sqlite3`), client sinh ở `lib/generated/prisma` (không commit), CLI đọc `prisma.config.ts`.
 - **Test có DB dùng `createTestDb()` (`lib/db/test-db.ts`)**, không dùng `prisma db push`; dọn giữa các test bằng `resetLearningData()`.
-- **Một người dùng, ranh giới là đăng nhập**: dữ liệu học không có `userId`; đăng ký đóng sau tài khoản đầu tiên (`lib/auth/auth.ts`);
+- **Một người dùng, ranh giới là đăng nhập**: dữ liệu học không có `userId`; chỉ đăng nhập bằng Google với đúng `ALLOWED_EMAIL`, đăng ký đóng sau tài khoản đầu tiên (`lib/auth/auth.ts`, `lib/auth/login-policy.ts`); email/mật khẩu chỉ là cửa cho test, tắt cứng ở production;
   route MCP (`app/api/[transport]/route.ts`) bắt buộc token.
 - **Ngôn ngữ**: code/comment/commit tiếng Anh; chuỗi người học đọc trên UI tiếng Việt; không emoji.
 - **Luật frontend là test** trong `lib/design/`. Phá luật thì thêm vào allowlist trong test đó, kèm lý do.

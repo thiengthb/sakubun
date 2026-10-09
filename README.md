@@ -42,9 +42,10 @@ Vài điểm cần biết:
 - **Migration chạy lúc container khởi động** (`prisma migrate deploy`), trước khi server lên.
 - **`BETTER_AUTH_URL` phải là URL trình duyệt thật sự dùng.** Sai giá trị này thì cookie phiên không
   được chấp nhận và bạn không đăng nhập được.
-- **Nếu đăng nhập bằng Google thì cặp `GOOGLE_*` là bắt buộc**, không phải tuỳ chọn: tài khoản tạo
-  qua Google không có dòng mật khẩu, thiếu hai biến đó là better-auth bỏ provider và không còn
-  đường vào.
+- **Chỉ đăng nhập bằng Google, và chỉ một tài khoản.** Cần đủ `GOOGLE_CLIENT_ID`,
+  `GOOGLE_CLIENT_SECRET` và `ALLOWED_EMAIL`; thiếu biến nào là không ai vào được. Lần đăng nhập
+  đầu tiên bằng đúng Gmail đó tạo tài khoản (admin); email khác bị từ chối cả lúc tạo tài khoản lẫn
+  lúc cấp phiên. Redirect URI của OAuth client: `<BETTER_AUTH_URL>/api/auth/callback/google`.
 - **VOICEVOX** (TTS tiếng Nhật) chạy như service thứ hai, không mở ra host — chỉ app gọi qua mạng
   nội bộ của compose. Nếu nó chết thì client tự rơi về giọng Web Speech của trình duyệt.
 
@@ -107,7 +108,7 @@ components/
   features/               Theo màn hình: dashboard, groups, history, resources, settings
 lib/
   core/                   Không phụ thuộc nghiệp vụ: cn, ngày giờ, làm sạch text, ActionResult
-  auth/                   better-auth, phiên đăng nhập, đăng ký, MCP key, email
+  auth/                   better-auth (chỉ Google), chính sách đăng nhập, MCP key
   db/                     Prisma client + trình dựng DB cho test
   japanese/               Furigana, romaji
   srs/                    FSRS, chọn bài, retention, calibration, streak

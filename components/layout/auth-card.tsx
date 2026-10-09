@@ -1,16 +1,14 @@
 'use client';
 
 import { type ReactNode } from 'react';
-import Link from 'next/link';
 import { Loader2 } from 'lucide-react';
 import { AuthNav } from '@/components/layout/auth-nav';
-import { GoogleSignInButton } from '@/components/layout/google-signin-button';
 import { Button } from '@/components/ui/button';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
-// The full-page shell both /login and /register render: nav bar, centred card, titled header.
+// The full-page shell /login renders: nav bar, centred card, titled header.
 export function AuthCard({
   title,
   description,
@@ -70,40 +68,5 @@ export function AuthSubmit({ pending, children }: { pending: boolean; children: 
       {pending && <Loader2 className="animate-spin" />}
       {children}
     </Button>
-  );
-}
-
-// Google sign-in below an "hoặc" rule. Renders nothing when the provider is off, so callers do not
-// each repeat the `googleEnabled &&` guard around a four-element divider.
-export function AuthGoogleAlternative({ enabled }: { enabled: boolean }) {
-  if (!enabled) return null;
-  return (
-    <>
-      <div className="my-4 flex items-center gap-3 text-xs text-muted-foreground">
-        <span className="h-px flex-1 bg-border" />
-        hoặc
-        <span className="h-px flex-1 bg-border" />
-      </div>
-      <GoogleSignInButton />
-    </>
-  );
-}
-
-export function AuthSwitchLink({
-  prompt,
-  href,
-  label,
-}: {
-  prompt: string;
-  href: string;
-  label: string;
-}) {
-  return (
-    <p className="mt-4 text-center text-sm text-muted-foreground">
-      {prompt}{' '}
-      <Link href={href} className="font-medium text-foreground underline underline-offset-4">
-        {label}
-      </Link>
-    </p>
   );
 }

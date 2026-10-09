@@ -4,4 +4,4 @@ import { adminClient } from 'better-auth/client/plugins';
 export const authClient = createAuthClient({
   plugins: [adminClient()],
 });
-export const { signIn, signUp, signOut, useSession } = authClient;
+export const { signIn, signOut, useSession } = authClient;
