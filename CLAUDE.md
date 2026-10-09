@@ -3,6 +3,7 @@
 App luyện tiếng Nhật cho **một người dùng**, chạy thật sau `/login`. App giữ dữ liệu, lịch ôn **FSRS**, hạn mức ngày và cài đặt;
 **AI (Hermes / Claude) là thầy qua MCP**: soạn câu, chấm, hội thoại. Web không tự sinh câu, không tự chấm.
 Cấu trúc thư mục, luật frontend, deploy: xem `README.md`.
+Luật làm việc chung (mọi thay đổi đi qua PR, script NUC chỉ chạy sau khi merge…): xem `CLAUDE.md` của repo `thiengthb/nuc-infra`.
 Kế hoạch hợp nhất (wordquiz + kaiwa vào đây): `nuc-infra/docs/research/2026-10-10-app-merge-plan.md`.
 
 ## Lệnh

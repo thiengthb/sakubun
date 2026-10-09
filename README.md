@@ -61,6 +61,10 @@ docker run --rm -v sakubun_sakubun_data:/data -v "$PWD":/out alpine \
 Tạo token ở **Cài đặt → Tài khoản → Token MCP**. Nên tạo token riêng cho từng client (ví dụ
 `claude-desktop`, `chatgpt`) để có thể thu hồi từng kết nối mà không ngắt client còn lại.
 
+**Bộ tool gọn cho model tự host** (Hermes chạy Gemma): dùng `/api/mcp?profile=tutor`. Profile này chỉ có
+vòng học (lấy mẫu cần ôn, soạn câu, chấm, quiz, tra kho; danh sách ở `lib/mcp/profiles.ts`), nên phần
+mô tả tool nhẹ hơn khoảng một nửa. Không có tham số thì vẫn đủ mọi tool như cũ.
+
 ### Claude Desktop
 
 Mở **Settings → Developer → Edit Config**, rồi thêm cấu hình sau vào `claude_desktop_config.json`:

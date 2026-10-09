@@ -515,7 +515,7 @@ describe('renderDueBatch', () => {
       settings: { ...DEFAULT_SETTINGS, furiganaMode: 'claude' },
       items: [targetItem()],
     });
-    expect(md).toContain('FURIGANA (Claude renders it)');
+    expect(md).toContain('FURIGANA (you render it)');
     expect(md).toContain('（かな）');
     expect(md).toContain('sourceRuby');
   });
@@ -527,7 +527,7 @@ describe('renderDueBatch', () => {
       settings: { ...DEFAULT_SETTINGS, furiganaMode: 'app' },
       items: [targetItem()],
     });
-    expect(md).toContain('Claude does NOT insert it');
+    expect(md).toContain('you do NOT insert it');
     expect(md).toContain('sourceRuby');
   });
 
@@ -717,7 +717,7 @@ describe('renderDueBatch', () => {
     expect(md).toContain('VOCABULARY: **target N5 exactly**');
     expect(md).toContain('~32 characters (Japanese');
     expect(md).toContain('weave in **1** grammar pattern(s)');
-    expect(md).toContain('FURIGANA (Claude does NOT insert it'); // default mode 'app' → Claude doesn't inline
+    expect(md).toContain('FURIGANA (you do NOT insert it'); // default mode 'app' → Claude doesn't inline
     expect(md).toContain('〜けど');
     expect(md).toContain('usage: Mệnh đề thường + けど');
     expect(md).toContain('pitfall: nhầm với のに');

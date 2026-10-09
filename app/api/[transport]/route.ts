@@ -1,13 +1,21 @@
 import { withMcpAuth } from 'mcp-handler';
-import { mcpHandler } from '@/lib/mcp/server';
+import { mcpHandlers } from '@/lib/mcp/server';
+import { parseProfile } from '@/lib/mcp/profiles';
 import { verifyMcpToken } from '@/lib/auth/mcp-key';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 export const maxDuration = 60;
 
+// ?profile=tutor serves the trimmed tool set for a self-hosted model; no parameter = every tool.
+async function byProfile(req: Request): Promise<Response> {
+  const profile = parseProfile(new URL(req.url).searchParams.get('profile'));
+  if (!profile) return Response.json({ error: 'unknown profile' }, { status: 400 });
+  return mcpHandlers[profile](req);
+}
+
 const authedHandler = withMcpAuth(
-  mcpHandler,
+  byProfile,
   async (_req, bearerToken) => {
     const userId = bearerToken ? await verifyMcpToken(bearerToken) : null;
     if (!userId) return undefined;
