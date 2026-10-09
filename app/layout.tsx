@@ -6,10 +6,8 @@ import { MotionConfig } from 'motion/react';
 import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { AppShell } from '@/components/shell/app-shell';
-import { getOptionalSessionUser } from '@/lib/current-user';
 import './globals.css';
 
-// Inter supports the Vietnamese subset (Geist on Google Fonts does not).
 const interSans = Inter({
   variable: '--font-sans',
   subsets: ['latin', 'vietnamese'],
@@ -21,8 +19,6 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  // Absolute base for social-card URLs (the OG image at app/opengraph-image.tsx). Without it Next warns
-  // and falls back to localhost, which makes a shared link's preview image unreachable.
   metadataBase: new URL('https://sakubun.thientnse.site'),
   title: 'sakubun',
   description: 'Luyện dịch Nhật–Việt bằng spaced repetition, học qua Claude Desktop (MCP)',
@@ -39,11 +35,7 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // Restore the sidebar's collapsed/expanded state server-side so it doesn't flash on reload.
   const sidebarOpen = (await cookies()).get('sidebar_state')?.value !== 'false';
-  // Server-resolved auth so the shell can render the public landing at "/" chromeless (no sidebar)
-  // for guests without a client-side flash.
-  const authed = (await getOptionalSessionUser()) !== null;
 
   return (
     <html
@@ -58,11 +50,9 @@ export default async function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          {/* Platform animation standard: Motion honours the OS "reduce motion" setting globally,
-              so individual components never re-implement that guard. */}
           <MotionConfig reducedMotion="user">
             <TooltipProvider delayDuration={300}>
-              <AppShell defaultSidebarOpen={sidebarOpen} authed={authed}>
+              <AppShell defaultSidebarOpen={sidebarOpen}>
                 {children}
               </AppShell>
             </TooltipProvider>

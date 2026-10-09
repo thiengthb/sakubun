@@ -1,8 +1,5 @@
 import { useColorScheme } from 'react-native';
 
-// One place for colour, so a screen never invents its own. Deliberately tiny: the design system lives
-// on the web (Tailwind tokens) and porting it wholesale before there are screens to justify it would be
-// building a wardrobe for clothes nobody owns yet.
 const light = {
   bg: '#ffffff',
   card: '#f5f5f5',

@@ -33,7 +33,6 @@ import {
   setItemSuspendedAction,
 } from '@/app/actions';
 
-/** The editable content of a row — FSRS state is deliberately absent (never editable from the UI). */
 export interface EditableItem {
   itemId: string;
   expression: string;
@@ -44,22 +43,9 @@ export interface EditableItem {
   suspended: boolean;
 }
 
-/**
- * Per-row actions for the resources tables: a single ⋮ menu → Chi tiết · Sửa · Tạm ngưng / Cho học lại ·
- * Xóa (confirm dialog). Delete keeps the review history (server preserves ReviewLog); the confirm copy
- * says so. `kind` switches labels. A "Chia sẻ / Thu hồi" option lived here while the app had a public
- * library; it went with the community surface.
- *
- * Sửa NAVIGATES to `/resources/<id>/edit` (2026-08-04) — it used to open a dialog over the table. Both
- * remaining destinations of this menu are now pages, which means the only overlay left here is the
- * delete confirm, where a modal is the right shape: one question, two buttons, no typing.
- */
 export function RowActions({
   item,
   kind,
-  /** Drop the "Chi tiết" entry. Set below `md`, where the whole CARD is already a link to the detail
-   *  page — a menu item that repeats the card's own tap target is one more thing to read, not a
-   *  second way in. */
   hideDetail = false,
 }: {
   item: EditableItem;
@@ -104,9 +90,6 @@ export function RowActions({
               <DropdownMenuSeparator />
             </>
           )}
-          {/* Sửa: MODAL on a wide screen, ROUTE on a phone (user ask 2026-08-04) — same split, and same
-              reasoning, as the add button. Two items hidden at each other's breakpoint rather than a JS
-              viewport check, so there is no wrong-control flash on first paint. */}
           <DropdownMenuItem asChild className="md:hidden">
             <Link href={`/resources/${item.itemId}/edit`}>
               <Pencil className="size-4" /> Sửa
@@ -150,7 +133,6 @@ export function RowActions({
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {/* Desktop edit modal. Mounted here (not in the menu) so it outlives the menu closing. */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
           <DialogHeader>

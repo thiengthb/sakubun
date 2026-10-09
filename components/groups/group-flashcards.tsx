@@ -19,7 +19,6 @@ import { speakable } from '@/lib/format';
 import { parseEnrichment } from '@/lib/enrichment';
 import type { GroupMemberItem } from '@/lib/groups';
 
-/** TTS + furigana settings threaded from the page so every Japanese line plays and reads in sync. */
 interface TtsProps {
   voiceSpeaker?: number;
   speechRate?: number;
@@ -28,24 +27,8 @@ interface TtsProps {
 
 const detailKind = (kind: string): 'grammar' | 'vocab' => (kind === 'VOCAB' ? 'vocab' : 'grammar');
 
-/**
- * Flashcard study for a group's items — pure client-side, NEVER touches FSRS (a group is an
- * organisation layer only; the SRS write path stays `submit_review`). Members already arrive on the
- * page, so this renders existing data with no extra query.
- *
- * The pile itself is `<CardDeck>`: swipe / arrows / ← → to move, tap or Space to flip. This file owns
- * only what a card SAYS and the three settings above it (chiều thẻ · trộn · tự đọc).
- *
- * There is no "đã thuộc / đang học" sorting here (removed 2026-08-06, by request). It was a second,
- * localStorage-only notion of mastery sitting next to the real one — FSRS, which every review from
- * Claude already feeds — and it made the deck a grading screen when what the learner wanted was to
- * flip through their own list.
- */
-
-/** Which language is on the front face. */
 type Direction = 'ja-vi' | 'vi-ja';
 
-/** The Japanese term, big, with reference audio + furigana (SpokenLine). The prompt side for ja→vi. */
 function TermFace({
   item,
   tts,
@@ -65,8 +48,6 @@ function TermFace({
         speaker={tts.voiceSpeaker}
         rate={tts.speechRate}
         label="Nghe"
-        // The card owns the viewport, so the term scales with it instead of sitting at one size in the
-        // middle of a lot of nothing.
         className="text-4xl leading-tight font-semibold sm:text-5xl"
         playToken={playToken}
       />
@@ -74,7 +55,6 @@ function TermFace({
   );
 }
 
-/** The meaning-only prompt side for vi→ja (nghĩa first, term hidden until flip). */
 function MeaningPromptFace({ item }: { item: GroupMemberItem }) {
   return (
     <div className="flex flex-col items-center gap-2 px-2 text-center">
@@ -88,7 +68,6 @@ function MeaningPromptFace({ item }: { item: GroupMemberItem }) {
   );
 }
 
-/** The answer side: term + nghĩa + cách dùng + ví dụ (audio + furigana). The face itself scrolls. */
 function DetailFace({
   item,
   tts,
@@ -96,7 +75,6 @@ function DetailFace({
 }: {
   item: GroupMemberItem;
   tts: TtsProps;
-  /** Auto-read latch for the TERM only (the first Japanese of the answer) — never for the examples. */
   playToken?: string | null;
 }) {
   const enrichment = detailKind(item.kind) === 'grammar' ? parseEnrichment(item.enrichment) : null;
@@ -157,7 +135,6 @@ function DetailFace({
         </div>
       )}
 
-      {/* Vocab has no enrichment card — its stored example lives in notes (plain text, plays, no ruby). */}
       {!enrichment && item.notes && (
         <div className="space-y-1">
           <p className="text-xs tracking-wide text-muted-foreground uppercase">Ví dụ</p>
@@ -187,14 +164,10 @@ export function GroupFlashcards({
 }) {
   const tts: TtsProps = { voiceSpeaker, speechRate, showFurigana };
   const [direction, setDirection] = useState<Direction>('ja-vi');
-  // Shuffle is a persistent toggle (not a one-shot): ON keeps the deck in random order, OFF restores
-  // the members' own order. Toggling reorders and restarts.
   const [shuffle, setShuffle] = useState(false);
   const membersOrder = useMemo(() => members.map((m) => m.itemId), [members]);
   const [order, setOrder] = useState<string[]>(membersOrder);
 
-  // Auto-read the Japanese aloud. Session-scoped (survives leaving the tab and coming back, unlike
-  // `direction`/`shuffle`) because it is a preference about your ears, not about this deck.
   const [autoSpeak, setAutoSpeak] = useSessionState('flashcards.autoSpeak', false);
 
   const byId = useMemo(() => new Map(members.map((m) => [m.itemId, m])), [members]);
@@ -205,7 +178,6 @@ export function GroupFlashcards({
   const deck = useCardDeck(cards.length);
   const current = cards[deck.index];
 
-  /** Flip the shuffle toggle, reorder the deck to match, and start over from the first card. */
   const toggleShuffle = useCallback(() => {
     const next = !shuffle;
     setShuffle(next);
@@ -243,13 +215,6 @@ export function GroupFlashcards({
 
   const dirLabel = direction === 'ja-vi' ? 'Nhật → Việt' : 'Việt → Nhật';
 
-  // WHICH Japanese gets read, per direction:
-  //   ja→vi — the PROMPT is the Japanese term, so read it as the card appears.
-  //   vi→ja — the prompt is Vietnamese and reading it would give the answer away; read the first
-  //           Japanese of the ANSWER instead, i.e. the term, once the card is flipped.
-  // Examples are never auto-read in either direction: they are a paragraph, and a card that starts
-  // reciting three sentences the moment you flip it is noise you have to interrupt.
-  // The token carries the card id + face, so flipping back and forth does NOT replay (see SpeakButton).
   const frontToken =
     autoSpeak && current && direction === 'ja-vi' && !deck.flipped
       ? `${current.itemId}:term`
@@ -304,8 +269,6 @@ export function GroupFlashcards({
           <DeckSwitchRow
             icon={Volume2}
             label="Tự đọc tiếng Nhật"
-            // State the RULE here, because it differs by direction and a bare toggle would leave the
-            // user guessing why nothing spoke on a Việt → Nhật prompt.
             hint={
               direction === 'ja-vi'
                 ? 'Đọc mẫu/từ ngay khi thẻ hiện ra.'

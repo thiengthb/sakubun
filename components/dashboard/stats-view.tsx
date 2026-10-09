@@ -25,7 +25,6 @@ import { cn } from '@/lib/utils';
 import type { DailyStat, StudyStats } from '@/lib/stats';
 import type { PerfBreakdown } from '@/lib/analytics';
 
-// Theme-aware chart colours (resolve to real values + follow dark/light via the @theme tokens).
 const C = {
   accuracy: 'var(--color-ok)',
   time: 'var(--color-accent-brand)',
@@ -62,7 +61,6 @@ interface Bucket {
   newItems: number;
 }
 
-/** Bucket the daily series by the chosen grouping (chronological, except weekday which folds all weeks). */
 function bucketize(daily: DailyStat[], groupBy: GroupBy): Bucket[] {
   const map = new Map<string, Bucket>();
   const add = (key: string, label: string, order: number, d: DailyStat) => {
@@ -101,7 +99,6 @@ function bucketize(daily: DailyStat[], groupBy: GroupBy): Bucket[] {
       const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
       add(key, `${date.getMonth() + 1}/${String(date.getFullYear()).slice(2)}`, i, d);
     } else {
-      // week: bucket by the Monday of each day's week
       const wd = (date.getDay() + 6) % 7;
       const monday = new Date(date.getTime() - wd * 86_400_000);
       const key = monday.toISOString().slice(0, 10);
@@ -131,15 +128,7 @@ function ChartCard({
   title: string;
   hint?: string;
   children: React.ReactNode;
-  /** Chỗ để một thẻ tự khai nó chiếm cả hàng trong lưới 2 cột. */
   className?: string;
-  /**
-   * Câu thay cho biểu đồ khi không có gì để vẽ. Chuỗi rỗng / false / null = có dữ liệu, vẽ bình thường.
-   *
-   * Vì sao thẻ tự quyết chứ không để Recharts tự lo: một `ComposedChart` với chuỗi toàn số 0 vẫn vẽ đủ
-   * lưới, hai trục và 240px trắng — trông y như biểu đồ HỎNG chứ không phải "chưa có dữ liệu". Đo ở
-   * 390px 2026-08-11: sáu thẻ như vậy chồng nhau thành 2683px trang chủ mà không nói được gì.
-   */
   empty?: string | false | null;
 }) {
   return (
@@ -157,16 +146,7 @@ function ChartCard({
   );
 }
 
-/**
- * The "Thống kê" tab charts (on the Phân tích page). The server hands over a 365-day daily series; this
- * client windows it (30/90/365)
- * and groups it (day/week/month/weekday) for the accuracy + time + progress charts, and renders the
- * score/time-by-difficulty + by-length breakdowns. Time-series charts overlay per-bucket counts (bars)
- * with the metric line and a dashed window-average reference line.
- */
 export function StatsView({ stats }: { stats: StudyStats }) {
-  // Persist the window + grouping across reload / navigation (URL-mirrored), like the other views —
-  // so returning to the Thống kê tab keeps the "365 ngày · theo tuần" view the learner last chose.
   const [range, setRange] = useSessionState<'30' | '90' | '365'>('stats.range', '90', 'srange');
   const [groupBy, setGroupBy] = useSessionState<GroupBy>('stats.group', 'day', 'sgroup');
 
@@ -191,9 +171,6 @@ export function StatsView({ stats }: { stats: StudyStats }) {
     newItems: b.newItems,
   }));
 
-  // Thẻ nào không có gì để vẽ thì NÓI RA (xem `lib/chart-empty.ts` cho lý do và cho phần test). Cửa sổ
-  // đang xem lấy từ chuỗi đã bucket; "cả năm" lấy từ `stats.daily` — server luôn gửi đủ 365 ngày, nên
-  // phân biệt được hai ca mà không cần gọi thêm.
   const rangeLabel = RANGES.find((r) => r.value === range)?.label ?? `${range} ngày`;
   const emptyFor = (kind: 'reviews' | 'sentences' | 'progress', noun: string): string | null => {
     const hasInWindow =
@@ -213,7 +190,6 @@ export function StatsView({ stats }: { stats: StudyStats }) {
 
   return (
     <div className="space-y-6">
-      {/* Controls + headline numbers */}
       <div className="flex flex-wrap items-center gap-3">
         <Select value={range} onValueChange={(v) => setRange(v as typeof range)}>
           <SelectTrigger size="sm" className="w-32">
@@ -373,9 +349,6 @@ export function StatsView({ stats }: { stats: StudyStats }) {
           </ResponsiveContainer>
         </ChartCard>
 
-        {/* Thẻ thứ BA trong lưới 2 cột, nên nếu không nói gì nó nằm một mình ở cột trái và bỏ trống nửa
-            hàng bên phải (thấy rõ khi chụp 1440px, 2026-08-11). Cho nó chiếm cả hàng — nó là chuỗi thời
-            gian, càng rộng càng đọc được. */}
         <ChartCard
           title="Tiến độ theo ngày"
           hint="Số câu đã luyện + số mẫu/từ mới giới thiệu mỗi mốc"
@@ -404,9 +377,6 @@ export function StatsView({ stats }: { stats: StudyStats }) {
         </ChartCard>
       </div>
 
-      {/* `items-start`: hàng lưới mặc định kéo mọi thẻ cao bằng thẻ cao nhất, nên một thẻ chỉ có câu
-          "Chưa đủ dữ liệu." bị căng thành ~300px cạnh một thẻ có biểu đồ — đọc thành thẻ hỏng chứ không
-          phải thẻ rỗng. Cho mỗi thẻ tự cao theo nội dung. */}
       <div className="grid items-start gap-4 lg:grid-cols-2">
         <PerfChart title="Điểm & thời gian theo ĐỘ KHÓ (cấp mẫu)" rows={stats.scoreByLevel} />
         <PerfChart title="Điểm & thời gian theo ĐỘ DÀI câu" rows={stats.scoreByLength} />
@@ -415,7 +385,6 @@ export function StatsView({ stats }: { stats: StudyStats }) {
   );
 }
 
-/** Score (bars, /100) + time-to-answer (line, s) across difficulty/length groups — over the 1-year window. */
 function PerfChart({ title, rows }: { title: string; rows: PerfBreakdown[] }) {
   const data = rows.map((r) => ({
     label: r.label,
@@ -427,8 +396,6 @@ function PerfChart({ title, rows }: { title: string; rows: PerfBreakdown[] }) {
     <ChartCard
       title={title}
       hint="Cột = điểm TB /100 · đường = giây/câu · (1 năm gần nhất)"
-      // Thẻ này luôn nhìn cả năm (không theo ô chọn kỳ), nên `hasInWindow` = `hasInYear`: không có kỳ
-      // nào dài hơn để gợi ý, và câu phải nói dữ liệu đến từ đâu.
       empty={chartEmptyMessage({
         hasInWindow: data.length > 0,
         hasInYear: data.length > 0,
@@ -449,8 +416,6 @@ function PerfChart({ title, rows }: { title: string; rows: PerfBreakdown[] }) {
             axisLine={false}
           />
           <Tooltip contentStyle={tooltipStyle} />
-          {/* `maxBarSize`: recharts chia đều bề rộng cho số nhóm, nên hai nhóm trên màn 1440px thành
-                hai TẤM rộng ~170px. Chặn lại để cột vẫn là cột dù chỉ có hai nhóm. */}
           <Bar
             yAxisId="l"
             dataKey="score"

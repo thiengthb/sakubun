@@ -52,7 +52,6 @@ describe('dynamicK', () => {
     const k200 = dynamicK(200);
     expect(k0).toBeGreaterThan(k15);
     expect(k15).toBeGreaterThan(k200);
-    // Never reaches zero: the learner is allowed to keep changing.
     expect(k200).toBeGreaterThan(0);
   });
 
@@ -80,7 +79,6 @@ describe('updateElo', () => {
     const after = updateElo(before, 4, 'TRANSLATION');
     expect(after.ability).toBeGreaterThan(before.ability);
     expect(after.challenge).toBeLessThan(before.challenge);
-    // Symmetry is what lets item difficulty be DISCOVERED rather than declared.
     expect(after.ability - before.ability).toBeCloseTo(before.challenge - after.challenge, 6);
   });
 
@@ -91,7 +89,6 @@ describe('updateElo', () => {
   });
 
   it('converges toward the truth over a run of consistent outcomes', () => {
-    // A learner who reliably succeeds on a 1200 item must end up rated above it.
     let s = state({ ability: 1000, challenge: 1200 });
     for (let i = 0; i < 40; i += 1) {
       const next = updateElo(s, 4, 'TRANSLATION');
@@ -110,7 +107,6 @@ describe('updateElo', () => {
     const settled = state({ ability: 1200, challenge: 1200, abilityObservations: 300 });
     const win = updateElo(settled, 4, 'TRANSLATION');
     const loss = updateElo(settled, 1, 'TRANSLATION');
-    // A single turn may not swing a settled estimate by more than a fraction of a level (100 points).
     expect(Math.abs(win.ability - settled.ability)).toBeLessThan(20);
     expect(Math.abs(loss.ability - settled.ability)).toBeLessThan(20);
   });
@@ -119,8 +115,6 @@ describe('updateElo', () => {
     const before = state({ ability: 1200, challenge: 1200 });
     const free = updateElo(before, 4, 'TRANSLATION');
     const scaffolded = updateElo(before, 4, 'CLOZE_PRODUCTION');
-    // Both are wins, but the assisted one raises ability LESS — otherwise the controller would push
-    // the learner up a ladder they never actually climbed.
     expect(scaffolded.ability - before.ability).toBeLessThan(free.ability - before.ability);
     expect(SUPPORT_OFFSET.CLOZE_PRODUCTION).toBeLessThan(SUPPORT_OFFSET.GUIDED_PRODUCTION);
     expect(SUPPORT_OFFSET.GUIDED_PRODUCTION).toBeLessThan(SUPPORT_OFFSET.TRANSLATION);
@@ -140,7 +134,6 @@ describe('priors', () => {
     expect(initialAbility({ grammarLevels: ['N5'] })).toBeLessThan(
       initialAbility({ grammarLevels: ['N3'] }),
     );
-    // The hardest studied level wins, matching hardestLevel().
     expect(initialAbility({ grammarLevels: ['N5', 'N2'] })).toBe(
       initialAbility({ grammarLevels: ['N2'] }),
     );
@@ -255,7 +248,6 @@ describe('proposeAdjustment', () => {
 
   it('ENGAGEMENT VETO: never makes it harder while the learner is drifting away', () => {
     expect(proposeAdjustment({ ...base, estimate: est(0.98), engagementFalling: true })).toBe(null);
-    // ...but making it EASIER is still allowed — that is the whole point of the veto.
     expect(proposeAdjustment({ ...base, estimate: est(0.3), engagementFalling: true })).not.toBe(
       null,
     );

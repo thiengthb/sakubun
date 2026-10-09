@@ -3,25 +3,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { MCP_CATALOG } from '@/lib/mcp/catalog';
 
-/**
- * Gates `MCP_CATALOG` against what the server ACTUALLY registers.
- *
- * The catalog's own header says "Adding/removing a tool or prompt in server.ts MUST update this list in
- * the same change" — which is a rule with nothing enforcing it, and it drifted: when the multi-user
- * surface was cut on 2026-08-03, `fork_shared_items` stopped being registered but stayed in the catalog.
- * The catalog is not a doc comment, it is the DATA behind the /guide "Tra cứu" tool table and the number
- * printed next to it, so a stale row is a screen telling the learner to use a tool Claude does not have.
- * The opposite drift is just as bad and happened too: the five group tools sat in the catalog while
- * `registerGroupTools` was never called, so the guide advertised a capability the server could not do.
- *
- * Source-level on purpose (same technique as no-emoji / type-scale / layout-standard): building a real
- * McpServer to introspect it would drag the whole tool graph — DB client included — into a unit test, to
- * learn something a regex over the registration calls answers exactly. `server.tool(` / `server.prompt(`
- * IS the registration; there is no other way to add one.
- */
-
 const TOOLS_DIR = 'lib/mcp/tools';
-// server.ts registers the PROMPTS inline; the tools live one per domain file.
 const SOURCES = [
   'lib/mcp/server.ts',
   ...readdirSync(TOOLS_DIR)
@@ -29,12 +11,10 @@ const SOURCES = [
     .map((f) => join(TOOLS_DIR, f)),
 ];
 
-/** Every `server.tool('x'` / `server.prompt('x'` in the sources, as `kind` -> names. */
 function registered(): Record<'tool' | 'prompt', Set<string>> {
   const found = { tool: new Set<string>(), prompt: new Set<string>() };
   for (const file of SOURCES) {
     const src = readFileSync(file, 'utf8');
-    // The name is the first argument and usually sits on its own line after the open paren.
     for (const m of src.matchAll(/server\.(tool|prompt)\(\s*'([a-z_]+)'/g)) {
       found[m[1] as 'tool' | 'prompt'].add(m[2]);
     }
@@ -51,8 +31,6 @@ describe('MCP_CATALOG matches the server registrations', () => {
     expect(reg.prompt.size).toBeGreaterThan(3);
   });
 
-  // Also catches a WRONG `kind`: an entry marked 'tool' that is really a prompt is not in reg.tool, so
-  // it shows up here — and the message says which side it was actually found on.
   it('every catalog entry is really registered, under the kind it claims', () => {
     const ghosts = MCP_CATALOG.filter((e) => !reg[e.kind].has(e.name)).map((e) => {
       const other = e.kind === 'tool' ? 'prompt' : 'tool';
@@ -60,8 +38,8 @@ describe('MCP_CATALOG matches the server registrations', () => {
     });
     expect(
       ghosts,
-      'These are advertised in the /guide tool table but the server never registers them — Claude will ' +
-        `not have them. Remove the row, or register it:\n  ${ghosts.join('\n  ')}`,
+      'These are in MCP_CATALOG but the server never registers them — Claude will not have them. ' +
+        `Remove the row, or register it:\n  ${ghosts.join('\n  ')}`,
     ).toEqual([]);
   });
 
@@ -72,8 +50,8 @@ describe('MCP_CATALOG matches the server registrations', () => {
     }
     expect(
       missing,
-      'These are registered on the MCP server but missing from MCP_CATALOG, so /guide does not list ' +
-        `them and the learner has no way to know they exist:\n  ${missing.join('\n  ')}`,
+      'These are registered on the MCP server but missing from MCP_CATALOG, so the only written record ' +
+        `of the surface is incomplete:\n  ${missing.join('\n  ')}`,
     ).toEqual([]);
   });
 

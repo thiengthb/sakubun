@@ -23,11 +23,8 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // Public procedure: it has to answer BEFORE there is a session, and the answer has to come from the
-  // server at runtime — a phone build cannot know whether Google is configured (lib/trpc/router.ts).
   const config = useQuery(trpc.authConfig.queryOptions());
 
-  /** Shared tail for both sign-in paths. See the note about better-auth #10545 below. */
   async function enter() {
     await queryClient.invalidateQueries();
     router.replace('/');
@@ -42,20 +39,12 @@ export default function LoginScreen() {
       setError(authError.message ?? 'Đăng nhập không thành công.');
       return;
     }
-    // NAVIGATE BY HAND, do not wait on `useSession` (better-auth #10545: on React Native the session
-    // store can fail to notify after sign-in, and the app then sits on this screen until it is killed).
-    // The cookie is already in SecureStore at this point, so the next request is authenticated —
-    // invalidate so the home screen refetches rather than reading a cached 401.
     await enter();
   }
 
   async function signInWithGoogle() {
     setBusy(true);
     setError(null);
-    // On native this opens a system web browser and comes back through the `sakubun://` deep link; the
-    // expo plugin lifts the session cookie off that redirect. The server keeps its OWN
-    // /api/auth/callback/google as the redirect_uri, so this reuses the existing Google OAuth client —
-    // no separate native client to register.
     const { error: authError } = await authClient.signIn.social({
       provider: 'google',
       callbackURL: '/',
@@ -65,9 +54,6 @@ export default function LoginScreen() {
       setError(authError.message ?? 'Đăng nhập Google không thành công.');
       return;
     }
-    // Self-correcting on purpose: if the browser was dismissed before Google finished, there is no
-    // session, and the home screen's `me` query 401s and sends us straight back here. That is a better
-    // failure than trying to guess from here whether a flow in another app completed.
     await enter();
   }
 

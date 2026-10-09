@@ -31,17 +31,6 @@ import { Field } from '@/components/shared/field';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
-/**
- * The ONE add/import surface for both resource stores (grammar + vocab), so a capability added to one
- * store lands on the other (rule: all-surfaces). A modal with three tabs — the same three for each
- * store, parameterized only by `kind`:
- *   1. Theo trường   — type one entry, field by field (addOneItemAction)
- *   2. Dán danh sách — paste a list, preview, import in bulk (parseImportText → importItemsAction)
- *   3. Nhập Excel    — upload a Mazii .xlsx, preview, import in bulk (parseExcelAction → importItemsAction)
- * Replaces the earlier split (import-dialog + import-form for grammar; vocab-add-dialog for vocab),
- * which gave grammar only bulk import and vocab only single add.
- */
-
 export type ResourceKind = 'grammar' | 'vocab';
 
 const COPY: Record<
@@ -92,15 +81,6 @@ export const INPUT_TABS = [
   { value: 'excel', label: 'Nhập Excel' },
 ] as const;
 
-/**
- * The three input panels, WITHOUT the tab switcher — it lives wherever the host puts it. Must sit
- * inside a `<Tabs>` provider whose values are `INPUT_TABS`.
- *
- * The switcher is hoisted out because its position differs by host: in the dialog it sits at the top of
- * the dialog body (there is no other header to hang it on), while on `/resources/new` it belongs on the
- * PageShell header row beside the breadcrumb — the platform standard for tabs, and on a phone pinned to
- * the right edge where the thumb is. See `ResourceAddPage`.
- */
 export function ResourceAddPanels({ kind, onDone }: { kind: ResourceKind; onDone: () => void }) {
   const copy = COPY[kind];
   return (
@@ -118,13 +98,6 @@ export function ResourceAddPanels({ kind, onDone }: { kind: ResourceKind; onDone
   );
 }
 
-/**
- * "Thêm ngữ pháp / từ vựng" for the DIALOG host (the desktop path — see ResourceAddButton): tabs on top
- * of the panels, because a dialog body has no header row to hoist them onto. The route version is
- * `ResourceAddPage`.
- *
- * `onDone` closes the dialog; without it (legacy callers) it falls back to going back to /resources.
- */
 export function ResourceAddForm({ kind, onDone }: { kind: ResourceKind; onDone?: () => void }) {
   const router = useRouter();
   const [tab, setTab] = useState<string>('single');
@@ -144,8 +117,6 @@ export function ResourceAddForm({ kind, onDone }: { kind: ResourceKind; onDone?:
 }
 
 type TabCopy = (typeof COPY)[ResourceKind];
-
-// ---- Tab 1: one entry, field by field ----------------------------------------------------------
 
 function SingleTab({
   kind,
@@ -242,8 +213,6 @@ function SingleTab({
           />
         </Field>
       </div>
-      {/* flex-col-reverse: on a phone the row stacks and the PRIMARY action ends up on top, under the
-          thumb; from sm it is a normal right-aligned button row. Same pattern as ItemEditForm. */}
       <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
         <Button type="button" variant="outline" disabled={isPending} onClick={onDone}>
           Huỷ
@@ -256,11 +225,8 @@ function SingleTab({
   );
 }
 
-// ---- Tabs 2 & 3: bulk import (shared preview + submit) ------------------------------------------
-
 const EMPTY_PARSE: ParseResult = { entries: [], errors: [] };
 
-/** Shared body for the two bulk tabs: an input slot on top, then the parsed preview + import button. */
 function BulkPanel({
   kind,
   copy,
@@ -277,7 +243,6 @@ function BulkPanel({
   const [defaultLevel, setDefaultLevel] = useState<JlptLevel>('N5');
   const [isPending, startTransition] = useTransition();
 
-  // Fall back to the chosen default level for any row the source did not specify one.
   const entries: ParsedEntry[] = parse.entries.map((e) => ({
     ...e,
     level: e.level ?? defaultLevel,
@@ -311,8 +276,6 @@ function BulkPanel({
                 {parse.errors.length} dòng lỗi
               </Badge>
             )}
-            {/* Below sm this takes the whole wrapped line, label left / select right, instead of being
-                shoved against the right edge by `ml-auto` with nothing beside it. */}
             <div className="flex w-full items-center justify-between gap-2 sm:ml-auto sm:w-auto sm:justify-start">
               <Label htmlFor="bulk-default-level" className="text-xs text-muted-foreground">
                 Cấp độ mặc định
@@ -334,10 +297,6 @@ function BulkPanel({
 
           {entries.length > 0 && (
             <div className="max-h-80 overflow-auto rounded-md border">
-              {/* PHONE: one card per row. The preview's whole job is "check this is what you meant
-                  before it is written to the store", and a four-column table at 360px truncates every
-                  cell to a few characters — which makes it unreadable exactly where the check matters.
-                  Same rows, stacked, with the level as a badge on the expression line. */}
               <ul className="divide-y sm:hidden">
                 {entries.map((e, i) => (
                   <li key={`${e.expression}-${i}`} className="space-y-1 p-3">

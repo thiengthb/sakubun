@@ -7,11 +7,6 @@ import { signOut } from '@/lib/auth-client';
 import { Button } from '@/components/ui/button';
 import { UserAvatar } from '@/components/shell/user-avatar';
 
-/**
- * Sidebar footer identity card: avatar + name + email, with a normal "Đăng xuất" button below.
- * Expanded shows the full card; collapsed to the icon rail it shrinks to just the avatar (log out by
- * expanding). The avatar (shared `UserAvatar`) uses the account image when present, else initials.
- */
 export function SidebarUser({
   user,
 }: {
@@ -34,7 +29,6 @@ export function SidebarUser({
         <div className="truncate text-sm font-medium leading-tight">{user.name}</div>
         <div className="truncate text-xs text-muted-foreground">{user.email}</div>
       </div>
-      {/* Logout on the SAME row as the avatar + name (per request): a compact icon button at the end. */}
       <Button
         type="button"
         variant="ghost"

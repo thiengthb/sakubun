@@ -4,11 +4,6 @@ import { PageShell } from '@/components/shell/page-shell';
 import type { FuriganaMode } from '@/lib/settings-schema';
 import type { SentenceHistoryRow } from '@/lib/practice';
 
-/**
- * /history — your own translation attempts. Was a two-tab shell ("Của tôi" / "Cộng đồng"); the
- * community feed is gone with the rest of the multi-user surface, so a single tab would be chrome
- * around nothing. Server component now: nothing here needs client state.
- */
 export function HistoryView({
   sentences,
   voiceSpeaker,

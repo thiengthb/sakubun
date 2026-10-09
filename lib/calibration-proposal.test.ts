@@ -1,12 +1,3 @@
-// DB harness for the shadow-proposal history (plan 2026-07-26-adaptive-calibration, gate 1.4).
-//
-// The gate says a week of shadow proposals must be reviewed with the learner before Phase 3 may
-// auto-apply anything — that is what makes the plan falsifiable. Until 2026-07-28 a proposal was
-// computed per turn, rendered into the tool result, and then gone: `LearnerAbility` overwrites in
-// place, so "review a week" meant scrolling a week of chat. These tests pin the three properties that
-// make the gate answerable: the proposal SURVIVES the turn, it survives with the numbers it actually
-// stood on, and the human's verdict is recorded rather than remembered.
-
 import { beforeAll, describe, expect, it } from 'vitest';
 import { createTestDb } from '@/lib/test-db';
 
@@ -20,11 +11,6 @@ let prisma: Db['prisma'];
 
 const NOW = new Date('2026-07-28T09:00:00Z');
 
-/**
- * Per-case isolation. Each test used to take a `freshUser()` and lean on the tenancy filter to keep its
- * rows apart; with one learner and no tenant column, isolation has to come from an empty DB instead.
- * Children before parents (SQLite FK).
- */
 async function resetData(): Promise<void> {
   await prisma.reviewLog.deleteMany({});
   await prisma.sentence.deleteMany({});
@@ -68,8 +54,6 @@ describe('the proposal survives the turn', () => {
   });
 
   it('keeps the from/to values readable for BOTH shapes of setting', async () => {
-    // `difficulty` is a number and `sentenceSize` a word. One stringified pair reads the same for
-    // both; two nullable typed pairs would have to be kept in sync forever.
     await resetData();
     await P.recordCalibrationProposal(shadow, null, NOW);
     await P.recordCalibrationProposal(
@@ -82,8 +66,6 @@ describe('the proposal survives the turn', () => {
   });
 
   it('stores the learner-facing sentence VERBATIM', async () => {
-    // The review judges what the learner actually heard. A reconstruction would be reviewing the
-    // reviewer's memory of the wording, which is the thing this table exists to replace.
     await resetData();
     await P.recordCalibrationProposal(shadow, null, NOW);
     const [row] = await P.listCalibrationProposals();
@@ -91,8 +73,6 @@ describe('the proposal survives the turn', () => {
   });
 
   it('is APPEND-ONLY — a second proposal never overwrites the first', async () => {
-    // This is the whole difference from `LearnerAbility`, which overwrites in place and is exactly
-    // why nothing was reviewable before.
     await resetData();
     for (let i = 0; i < 3; i++) {
       await P.recordCalibrationProposal(
@@ -103,7 +83,6 @@ describe('the proposal survives the turn', () => {
     }
     const rows = await P.listCalibrationProposals();
     expect(rows).toHaveLength(3);
-    // Newest first, so a week's review starts at the most recent.
     expect(rows.map((r) => r.measured)).toEqual([0.7, 0.6, 0.5]);
   });
 });

@@ -1,6 +1,3 @@
-// Server-only: parse a Mazii .xlsx export (columns: word / phonetic / mean / comment) into
-// ParsedEntry[]. Column order is resolved from the header row when present, else positional.
-
 import ExcelJS from 'exceljs';
 import { maziiEntry, type ParseResult } from '@/lib/import-parse';
 

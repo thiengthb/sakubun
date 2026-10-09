@@ -1,10 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { japaneseOf, loosePrefix, scoreGeneration } from '@/lib/generation-score';
 
-// The scorer for eval/generation-quality-eval.md. The plan's own acceptance test for step 1.1 is
-// "the rubric applied twice to the same output gives the same score", so determinism gets an
-// assertion rather than a promise — see the last test in this file.
-
 const base = {
   direction: 'VI_JA' as const,
   sourceText: 'Vì bác sĩ dặn nên tôi buộc phải nghỉ làm hôm nay.',
@@ -25,9 +21,6 @@ describe('japaneseOf — the direction contract', () => {
   });
 
   it('is empty rather than wrong when a VI_JA row has no reference yet', () => {
-    // A staged-but-ungraded row can legitimately carry a null `suggested`. Falling back to
-    // sourceText would score a VIETNAMESE string as if it were the generated Japanese, and every
-    // metric downstream would be quietly measuring the wrong language.
     expect(japaneseOf({ direction: 'VI_JA', sourceText: 'câu nguồn', suggested: null })).toBe('');
   });
 });
@@ -46,8 +39,6 @@ describe('pattern usage — a BAND, because the exact match under-counts', () =>
   });
 
   it('scores a genuinely ignored pattern as zero on BOTH counts', () => {
-    // This is the failure the metric exists to catch: the sheet asked for a pattern and the
-    // generated sentence does not contain it in any form.
     const s = scoreGeneration({ ...base, requestedPatterns: ['〜つつある'] });
     expect(s.usedExact).toBe(0);
     expect(s.usedLoose).toBe(0);
@@ -64,8 +55,6 @@ describe('pattern usage — a BAND, because the exact match under-counts', () =>
   });
 
   it('still trims a THREE-character pattern — the floor must not disable the mechanism', () => {
-    // Regression for the 2026-07-28 bug: with the floor at 3, 〜に限る came back untrimmed, so the
-    // loose match degraded into the exact one and 「に限ります」 scored as "pattern not used".
     expect(loosePrefix('〜に限る')).toBe('に限');
     const s = scoreGeneration({
       ...base,
@@ -85,8 +74,6 @@ describe('character budget — measured on the SOURCE, per direction', () => {
   });
 
   it('uses the Japanese target under JA_VI', () => {
-    // Same row scored with the direction flipped: the target must change, or every VI_JA sentence
-    // would read as ~55% over budget against a Japanese character count.
     const s = scoreGeneration({
       ...base,
       direction: 'JA_VI',

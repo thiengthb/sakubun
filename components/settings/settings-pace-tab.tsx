@@ -7,18 +7,6 @@ import { SettingsTab } from '@/components/settings/settings-tab';
 import { SettingsGroup } from '@/components/settings/settings-group';
 import type { Settings } from '@/lib/settings-schema';
 
-/**
- * Tab "Nhịp học" — now one thing: how much per DAY, and how hard the schedule pushes.
- *
- * `Từ vựng / câu` and `Mẫu mới tối đa / câu` left for "Nội dung" (issue #38) — two per-SENTENCE budgets
- * in a tab of per-DAY caps. Their presence is what made the boundary meaningless: `Mẫu mới / ngày` and
- * `Mẫu mới tối đa / câu` were adjacent cells of one grid measuring different things, a labelling problem
- * no tooltip fixes.
- *
- * The split of what remains is not cosmetic: the four caps are LIMITS set from the time you have, while
- * retention is a TARGET set from how well you want to remember — FSRS derives the interval from it, so
- * it is the only control here that changes the algorithm rather than clamping its output.
- */
 export function PaceTab({
   settings,
   set,

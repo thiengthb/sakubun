@@ -6,13 +6,6 @@ import { toastResult } from '@/lib/action-toast';
 import { setItemStarredAction, setSentenceStarredAction } from '@/app/actions';
 import { cn } from '@/lib/utils';
 
-/**
- * A favourite-star toggle, reused across the resources tables, the item detail page, and the history
- * cards. `kind` picks the server action (item vs sentence). Optimistic via `useOptimistic` so the fill
- * flips instantly; the server revalidates the list and the real prop settles the state. Uses the
- * `warn` (amber) token for the filled star — theme-safe, reads as gold in both light/dark. Stops click
- * propagation so tapping the star inside a clickable history card doesn't also open the card.
- */
 export function StarButton({
   id,
   starred,

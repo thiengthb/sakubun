@@ -1,11 +1,3 @@
-// DB harness for the derived session recap (plan step 5.5 — shipped WITHOUT the storage §9 specified;
-// the reasoning is in lib/session-recap.ts's header).
-//
-// The properties that matter: it reconstructs the last STUDY day (not a raw 24h window, or a learner
-// whose day starts at 04:00 gets a different session boundary from their own streak), it names what
-// went wrong in that session rather than all-time leeches, and it says nothing at all for a learner
-// with no history.
-
 import { beforeAll, describe, expect, it } from 'vitest';
 import { createTestDb } from '@/lib/test-db';
 
@@ -17,17 +9,11 @@ type Db = typeof import('@/lib/db');
 let R: Recap;
 let prisma: Db['prisma'];
 
-/** Local noon, so a 4am cutoff never lands the fixture on the previous study day by accident. */
 const NOW = new Date(2026, 6, 27, 12, 0, 0);
 const HOUR = 3600000;
 const DAY = 24 * HOUR;
 const CUTOFF = 4;
 
-/**
- * Per-case isolation. Each test used to take a `freshUser()` and lean on the tenancy filter to keep its
- * rows apart; with one learner and no tenant column, isolation has to come from an empty DB instead.
- * Children before parents (SQLite FK).
- */
 async function resetData(): Promise<void> {
   await prisma.reviewLog.deleteMany({});
   await prisma.sentence.deleteMany({});
@@ -46,7 +32,6 @@ async function addItem(expression: string): Promise<string> {
   return row.id;
 }
 
-/** A real Sentence row — reviewLog.sentenceId is a foreign key, so a made-up id is rejected. */
 async function aSentence(at: Date): Promise<string> {
   const row = await prisma.sentence.create({
     data: {
@@ -94,12 +79,10 @@ describe('it reconstructs the last STUDY day', () => {
     await resetData();
     const a = await addItem('〜ざるを得ない');
     const b = await addItem('〜つつある');
-    // Yesterday's session: 2 reviews on ONE sentence, one miss.
     const yesterday = new Date(NOW.getTime() - DAY);
     const s1 = await aSentence(yesterday);
     await review({ itemId: a, rating: 1, at: yesterday, sentenceId: s1 });
     await review({ itemId: b, rating: 3, at: yesterday, sentenceId: s1 });
-    // The session BEFORE that must not leak in.
     const older = new Date(NOW.getTime() - 3 * DAY);
     await review({
       itemId: b,
@@ -119,8 +102,6 @@ describe('it reconstructs the last STUDY day', () => {
   it('uses the learner day-cutoff, not midnight — a 01:00 review belongs to the PREVIOUS study day', async () => {
     await resetData();
     const a = await addItem('〜ばかりに');
-    // 01:00 today and 23:00 yesterday are ONE study day when the cutoff is 04:00. Splitting them at
-    // midnight would report two sessions and disagree with the streak, which uses the same key.
     const lateNight = new Date(2026, 6, 27, 1, 0, 0);
     const evening = new Date(2026, 6, 26, 23, 0, 0);
     await review({
@@ -140,7 +121,6 @@ describe('it reconstructs the last STUDY day', () => {
     expect(recap!.reviews).toBe(2);
     expect(recap!.sentences).toBe(2);
     expect(recap!.shaky[0].misses).toBe(2);
-    // NOW is 27 July noon → study day 27 July; the session's key is 26 July → one day ago.
     expect(recap!.daysAgo).toBe(1);
   });
 
@@ -167,7 +147,6 @@ describe('it names what went wrong THEN, not the all-time weak list', () => {
     const at = new Date(NOW.getTime() - DAY);
     for (let n = 0; n < R.MAX_SHAKY + 2; n++) {
       const id = await addItem(`pattern-${n}`);
-      // pattern-0 missed most, pattern-N least — so the cap must keep the worst ones.
       for (let m = 0; m <= R.MAX_SHAKY + 2 - n; m++)
         await review({ itemId: id, rating: 1, at });
     }
@@ -182,7 +161,6 @@ describe('it names what went wrong THEN, not the all-time weak list', () => {
   it('counts a miss on a DELETED item in the totals but cannot name it', async () => {
     await resetData();
     const at = new Date(NOW.getTime() - DAY);
-    // Invariant #2: deleting an item SET-NULLs its logs, it never deletes them.
     await review({ itemId: null, rating: 1, at });
     const recap = await R.getSessionRecap(CUTOFF, NOW);
     expect(recap!.reviews).toBe(1);
@@ -221,10 +199,7 @@ describe('the rendered line is a STATEMENT, never a second thing to say yes to',
     const block = Render.renderStats(stats, undefined, recap);
     expect(block).toContain('Buổi trước');
     expect(block).toContain('〜ざるを得ない');
-    // §6, one control surface per message: MODE_DISPATCH prints a NUMBERED focus menu straight after
-    // this block, so a numbered item here would make "1" ambiguous.
     expect(block).not.toMatch(/^\d+\. /m);
-    // And the whole recap is ONE line — the digest that plan §9 capped at three.
     expect(block.split('\n').filter((l) => l.includes('Buổi trước'))).toHaveLength(1);
   });
 

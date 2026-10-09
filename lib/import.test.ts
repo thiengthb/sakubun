@@ -9,11 +9,6 @@ import {
   toDiff,
 } from '@/lib/import-schema';
 
-// These cover the PURE import logic — file validation and the create/update/skip planning that both the
-// dry-run preview and the actual write share. The DB writes (lib/import.ts) need a database and are out
-// of scope for the DB-free vitest suite; the planners below are the part where a bug would silently
-// duplicate or drop a user's data, so they are the part worth pinning.
-
 describe('parseAccountBackup', () => {
   it('accepts a minimal export and defaults every collection to empty', () => {
     const res = parseAccountBackup({ exportedAt: '2026-07-23T10:00:00Z', userId: 'u1' });
@@ -54,10 +49,6 @@ describe('parseAccountBackup', () => {
     expect(parseAccountBackup(42).ok).toBe(false);
   });
 
-  // The JSON export stopped carrying study groups when multi-user was stripped, and the importer
-  // answered "app không còn tính năng nhóm" — but the feature came back (2026-08-05), so a backup
-  // round-trip silently lost every group. This pins the two halves of the file format that fixed it:
-  // whatever lib/export.ts emits under these two keys must survive parsing.
   it('keeps study groups and their memberships', () => {
     const res = parseAccountBackup({
       groups: [{ id: 'g1', name: 'Đi làm', kind: 'mixed', note: null, color: null }],

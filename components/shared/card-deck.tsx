@@ -10,33 +10,11 @@ import { Explain } from '@/components/shared/explain';
 import { ExpandingIconButton } from '@/components/shared/expanding-icon-button';
 import { cn } from '@/lib/utils';
 
-/**
- * The app's card deck — one card at a time, tap to flip, SWIPE (or the arrows, or ← →) to move through
- * the pile. Quizlet's flashcard screen is the reference, and the important part of that reference is
- * what it does NOT have: no grading buttons under the card, no instruction line. Moving is the only
- * verb, so the gesture can be the whole interface and the card gets the screen.
- *
- * Shared by the group deck (components/groups/group-flashcards.tsx) and the history deck
- * (components/history/history-flashcards.tsx) so both feel like the same object. It owns the pile —
- * position, flip, gesture, keyboard, the two faces — and NOTHING about what a card says; the caller
- * renders `front`/`back` and keeps its own settings in `toolbar`.
- *
- * State lives in `useCardDeck()` in the CALLER, not in here. That is deliberate: the caller needs to
- * read the position (which card auto-reads, and on which face) and to reset it (shuffle, replay), and
- * a deck that owned its own index would have to be remounted for that — which would tear down the
- * caller's settings popover mid-interaction.
- *
- * Never touches FSRS. A deck is a way to LOOK at cards; scheduling stays with submitReview().
- */
-
 export interface CardDeckState {
-  /** Which card is on top. Always a real card while there is one — see `done` for the end of the pile. */
   index: number;
   count: number;
   flipped: boolean;
-  /** Which way the last move went; the enter/exit slide reads it so a card comes in from the side you came from. */
   dir: 1 | -1;
-  /** Swiped PAST the last card. Reached by moving, never by the pile changing size underneath you. */
   done: boolean;
   atStart: boolean;
   next: () => void;
@@ -54,16 +32,8 @@ export function useCardDeck(count: number): CardDeckState {
   const [flipped, setFlipped] = useState(false);
 
   const last = Math.max(0, count - 1);
-  // Clamped on READ, not by an effect chasing `count`: the pile changes size under the reader all the
-  // time (a filter narrows on /history, an item leaves a group), and a stale index would read past the
-  // end for one render.
   const index = Math.min(pos.index, last);
 
-  // `done` is its OWN flag rather than `index === count`, and that distinction is the whole fix for a
-  // bug measured on 2026-08-06: searching /history down to one row while sitting on card 2 made the
-  // index-as-end encoding read "past the end", so narrowing a filter dropped the learner onto the
-  // finished screen instead of onto the one card they had just searched for. Running out of cards and
-  // being handed fewer cards are different events; only the first one ends the deck.
   const move = useCallback(
     (delta: 1 | -1) => {
       setPos((p) => {
@@ -77,7 +47,6 @@ export function useCardDeck(count: number): CardDeckState {
         if (p.done) return { index: cur, dir: -1, done: false };
         return cur === 0 ? p : { index: cur - 1, dir: -1, done: false };
       });
-      // A new card always starts face down — otherwise swiping while flipped shows the next answer first.
       setFlipped(false);
     },
     [last],
@@ -105,7 +74,6 @@ export function useCardDeck(count: number): CardDeckState {
   };
 }
 
-/** The deck's controls, stated once. Mirrors the global keydown handler in `<CardDeck>` below. */
 const SHORTCUTS: { keys: string; action: string }[] = [
   { keys: 'Vuốt ngang', action: 'Chuyển thẻ' },
   { keys: 'Space / Enter', action: 'Lật thẻ' },
@@ -113,12 +81,6 @@ const SHORTCUTS: { keys: string; action: string }[] = [
   { keys: '←', action: 'Thẻ trước' },
 ];
 
-/**
- * An info icon whose hover tooltip lists every shortcut. Meant for the deck's `corner` slot, so the
- * guide is one hover away instead of a permanent instruction line under the card — which is the line
- * that got removed on 2026-08-06 for being furniture the learner reads once and then scrolls past
- * forever.
- */
 export function DeckShortcutsInfo() {
   return (
     <Explain
@@ -148,13 +110,6 @@ export function DeckShortcutsInfo() {
   );
 }
 
-/**
- * Panel cài đặt của deck: nút bánh xe ở hàng trên, mở ra một popover 256px.
- *
- * Gom 2026-08-07: hai deck (nhóm + lịch sử) viết ra cùng một popover với cùng một trigger, và
- * `dup-scan` đếm 7 cửa sổ trùng giữa chúng — trùng lặp do CHÍNH TÔI tạo ra khi viết deck lịch sử
- * cùng ngày hôm trước. Nội dung bên trong vẫn của từng deck (chiều thẻ chỉ nhóm mới có).
- */
 export function DeckSettings({ children }: { children: ReactNode }) {
   return (
     <Popover>
@@ -168,13 +123,6 @@ export function DeckSettings({ children }: { children: ReactNode }) {
   );
 }
 
-/**
- * Một hàng công tắc trong `<DeckSettings>`.
- *
- * `hint` đổi cả cách canh hàng, và đó là toàn bộ khác biệt giữa hai hàng đang có: hàng không có chú
- * thích canh giữa theo trục dọc, hàng CÓ chú thích canh theo đỉnh để công tắc thẳng với dòng đầu chứ
- * không trôi xuống giữa đoạn hai dòng.
- */
 export function DeckSwitchRow({
   icon: Icon,
   label,
@@ -185,7 +133,6 @@ export function DeckSwitchRow({
 }: {
   icon: LucideIcon;
   label: string;
-  /** Câu giải thích dưới nhãn. Có nó thì hàng canh theo đỉnh. */
   hint?: ReactNode;
   checked: boolean;
   onCheckedChange: (checked: boolean) => void;
@@ -214,7 +161,6 @@ export function DeckSwitchRow({
   );
 }
 
-/** Fisher–Yates on a copy. Shared by both decks' shuffle toggle. */
 export function shuffled<T>(arr: readonly T[]): T[] {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
@@ -226,9 +172,6 @@ export function shuffled<T>(arr: readonly T[]): T[] {
 
 const EASE_OUT = [0.22, 1, 0.36, 1] as const;
 
-// The card slides out the way you pushed it and the next one comes in from the far side — the motion
-// that makes a pile read as a pile. `pointerEvents: none` on the way out so the leaving card cannot
-// swallow a tap meant for its replacement during the ~280ms both are mounted.
 const SLIDE = {
   enter: (dir: number) => ({ x: dir > 0 ? '55%' : '-55%', opacity: 0 }),
   center: { x: 0, opacity: 1, pointerEvents: 'auto' as const },
@@ -239,11 +182,6 @@ const SLIDE = {
   }),
 };
 
-/**
- * How far a drag must travel to count as a swipe. Velocity is folded in so a quick flick moves the
- * deck without crossing the distance — the same trade every carousel makes, and the reason a slow,
- * deliberate half-drag springs back instead: at that speed you were reading, not swiping.
- */
 const SWIPE_PX = 56;
 const FLICK_WEIGHT = 0.15;
 
@@ -263,42 +201,24 @@ export function CardDeck({
   className,
 }: {
   deck: CardDeckState;
-  /** Stable id of the card on top — the key the enter/exit animation is driven by. */
   cardKey: string;
   front: ReactNode;
   back: ReactNode;
-  /** Overlay pinned to the card's top-right. Sits ABOVE the flip, so it never rotates with the face. */
   corner?: ReactNode;
-  /** The caller's own controls for the top bar (a settings popover, a mode switch). */
   toolbar?: ReactNode;
-  /**
-   * Đặt thanh tiến độ NGAY trên hàng đếm thẻ thay vì một hàng riêng bên dưới.
-   *
-   * Opt-in, không phải mặc định: /history bật nó vì ở chế độ flashcard hàng tìm kiếm đã bỏ đi, nên
-   * thanh tiến độ lên chiếm đúng hàng đó và trang bớt được một tầng — deck của nhóm
-   * (`components/groups/group-flashcards.tsx`) không có hàng nào để thu, nên giữ nguyên bố cục cũ.
-   */
   inlineProgress?: boolean;
-  /** What replaces the card once you swipe past the last one. */
   done: ReactNode;
-  /** Counter noun — "Thẻ 3 / 12" for a group, "Lượt 3 / 12" for history. */
   unit?: string;
   className?: string;
 }) {
   const { next, prev, flip } = deck;
-  // A drag that moved is not a tap. Motion fires `click` after a drag ends, so without this every swipe
-  // would also flip the card it just left.
   const draggedRef = useRef(false);
 
-  // Space/Enter flips · ← → move · Backspace goes back. Global rather than on the card, so the deck
-  // responds without the learner having to focus it first — the whole screen IS the deck.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const el = document.activeElement as HTMLElement | null;
       const tag = (el?.tagName ?? '').toLowerCase();
       if (tag === 'input' || tag === 'textarea' || el?.isContentEditable) return;
-      // A modal (the enrich / detail dialog) is open — let it own the keyboard rather than moving the
-      // deck behind it.
       if (document.querySelector('[role="dialog"]')) return;
       if (e.key === 'ArrowRight') {
         e.preventDefault();
@@ -307,7 +227,6 @@ export function CardDeck({
         e.preventDefault();
         prev();
       } else if ((e.key === ' ' || e.key === 'Enter') && tag !== 'button') {
-        // Not while a button has focus: Space/Enter is that button's own activation key.
         e.preventDefault();
         flip();
       }
@@ -325,15 +244,9 @@ export function CardDeck({
     [next, prev],
   );
 
-  // Cards LEFT BEHIND, so the bar is empty on the first card and full only past the last one.
   const pct = deck.done ? 100 : deck.count ? Math.round((deck.index / deck.count) * 100) : 0;
 
-  // Cùng một thanh, hai chỗ đặt: `flex-1` khi nằm chung hàng với bộ đếm và các nút, `w-full` khi có
-  // hàng riêng. `min-w-24` giữ cho nó còn đọc được là một thanh khi hàng chật trên điện thoại.
   const progressBar = (
-    // `role="progressbar"` chứ không phải một div trơn: thanh này là thông tin (đã đi được bao xa trong
-    // chồng thẻ), nên nó phải đọc được bằng trình đọc màn hình chứ không chỉ nhìn được. Nó cũng là chỗ
-    // bám để phép kiểm bố cục chốt được rằng thanh nằm ĐÚNG hàng nào.
     <div
       role="progressbar"
       aria-label="Tiến độ chồng thẻ"
@@ -345,10 +258,6 @@ export function CardDeck({
         inlineProgress ? 'min-w-24 flex-1' : 'w-full',
       )}
     >
-      {/* `initial` là bắt buộc, không phải trang trí: không có nó, motion lấy width ĐANG CÓ của DOM làm
-          điểm đầu, và một div không khai width trong khối này là `auto` = 100% — nên mỗi lần mở deck
-          thanh nháy ĐẦY rồi mới chảy về đúng chỗ. Chụp được lúc dựng lại bố cục 2026-08-11: ở thẻ 1/3
-          ảnh bắt được thanh đang ~75%, đọc thành "gần xong" trong khi người học chưa lướt thẻ nào. */}
       <motion.div
         className="h-full rounded-full bg-primary"
         initial={{ width: 0 }}
@@ -359,14 +268,6 @@ export function CardDeck({
   );
 
   return (
-    // Fills the screen vertically — the card is the thing being read, so it gets everything left over
-    // after the counter row, the progress bar and the nav row. `svh`, not `vh`, so a phone's collapsing
-    // address bar never clips the arrows.
-    //
-    // Capped horizontally and centred. Full-bleed, a card on a 1440px screen is a 1160px sheet with one
-    // word floating in the middle of it — the eye has to travel to find the thing it is testing itself
-    // on. A reading-width column keeps the term where the eyes already are. (A phone is far below the
-    // cap, so this changes nothing there.)
     <div
       className={cn(
         'mx-auto flex min-h-[calc(100svh-6rem)] w-full max-w-4xl flex-col gap-3',
@@ -384,7 +285,6 @@ export function CardDeck({
           )}
         </div>
         {inlineProgress && progressBar}
-        {/* `ml-auto` chỉ cần khi thanh tiến độ KHÔNG ở đây — lúc đó không có gì đẩy các nút sang phải. */}
         {toolbar && (
           <div className={cn('flex items-center gap-2', !inlineProgress && 'ml-auto')}>
             {toolbar}
@@ -399,10 +299,6 @@ export function CardDeck({
       ) : (
         <div className="relative min-h-[15rem] w-full flex-1 [perspective:1600px]">
           <AnimatePresence initial={false} custom={deck.dir}>
-            {/* Two nested motion divs on purpose: the OUTER one carries the swipe + the deck slide (x),
-                the INNER one carries the flip (rotateY). One element cannot animate both, because the
-                slide and the flip are driven by different state and have different durations. The outer
-                keeps `preserve-3d` so it does not flatten the flip happening inside it. */}
             <motion.div
               key={cardKey}
               custom={deck.dir}
@@ -424,8 +320,6 @@ export function CardDeck({
               onDragEnd={onDragEnd}
               className="absolute inset-0 cursor-grab active:cursor-grabbing [transform-style:preserve-3d]"
             >
-              {/* A div with role=button, NOT a <button>: the faces contain real <button>s (play, enrich)
-                  and a button cannot nest a button. Keyboard flip is the global handler above. */}
               <motion.div
                 role="button"
                 tabIndex={0}
@@ -453,8 +347,6 @@ export function CardDeck({
         </div>
       )}
 
-      {/* The only two controls under the card. 44px circles — a thumb target, and the same shape at
-          every width because a phone is where the swipe lives and a mouse is where the arrows do. */}
       <div className="flex items-center justify-center gap-6">
         <Button
           variant="outline"

@@ -10,12 +10,6 @@ const TONE_CLASS: Record<Tone, string> = {
   warn: 'border-warn/40 text-warn hover:bg-warn/10',
 };
 
-/**
- * One weak pattern on the dashboard, linking to its detail page. Shared by every weakness list
- * (leeches, most-missed, high-difficulty watchlist) so the three read as one idea and gain the same
- * behaviour at once — they used to be inert badges, so a learner could see WHAT was weak and had no
- * way to act on it.
- */
 export function WeakItemBadge({
   itemId,
   expression,

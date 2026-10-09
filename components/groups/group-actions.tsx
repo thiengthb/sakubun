@@ -17,26 +17,6 @@ import { GroupForm } from '@/components/groups/group-form';
 import { GroupItemPickerBody } from '@/components/groups/group-item-picker';
 import type { GroupDetail, GroupMemberItem, GroupSummary } from '@/lib/groups';
 
-/**
- * The three group actions — create · edit · add items — each as MODAL from `md` up and as a ROUTE below
- * it (user ask 2026-08-05, matching what `ResourceAddButton` already does for grammar/vocab).
- *
- * Why the split is by breakpoint and not a preference: a dialog keeps the list you were working in
- * visible behind it and closes with one Esc, which is the right shape on a desktop that has room for
- * both. On a phone there is no "behind" — the dialog covers the screen anyway, and then it is a
- * scrolling box inside a scrolling page whose header eats the top of the viewport while the keyboard
- * eats the bottom. There the route wins: a real back button, a real URL, and work that survives a
- * mistap.
- *
- * Implemented as two triggers hidden at each other's breakpoint (`md:hidden` / `max-md:hidden`) rather
- * than measuring the viewport in JS — cheaper, and no flash of the wrong control on first paint (the
- * same technique as `TabSelect`). The routes stay real, linkable pages either way.
- *
- * Both hosts render the SAME body component (`GroupForm`, `GroupItemPickerBody`), so the validation, the
- * kind guard and the submit path cannot drift between the phone and the desktop.
- */
-
-/** Refresh the server components after a write, so the new/edited group shows without a reload. */
 function useAfterWrite(onClose: () => void) {
   const router = useRouter();
   return () => {
@@ -45,7 +25,6 @@ function useAfterWrite(onClose: () => void) {
   };
 }
 
-/** "Tạo nhóm" — toolbar (icon that expands on hover) or the empty-state button. */
 export function GroupCreateAction({ variant = 'toolbar' }: { variant?: 'toolbar' | 'empty' }) {
   const [open, setOpen] = useState(false);
   const done = useAfterWrite(() => setOpen(false));
@@ -102,7 +81,6 @@ export function GroupCreateAction({ variant = 'toolbar' }: { variant?: 'toolbar'
   );
 }
 
-/** "Sửa nhóm" — a ghost icon button on a group card, or a toolbar action on the group's own page. */
 export function GroupEditAction({
   group,
   variant = 'icon',
@@ -175,7 +153,6 @@ export function GroupEditAction({
   );
 }
 
-/** "Thêm mục" — the kind-guarded item picker. Disabled (no navigation, no dialog) when nothing can join. */
 export function GroupAddItemsAction({
   group,
   addable,
@@ -196,8 +173,6 @@ export function GroupAddItemsAction({
   const href = `/groups/${group.id}/add`;
   const empty = addable.length === 0;
 
-  // Nothing left to add: one inert control at both breakpoints. A disabled <a> is not a thing, so the
-  // mobile path becomes a real disabled button rather than a link that goes to an empty picker.
   if (empty)
     return variant === 'toolbar' ? (
       <ExpandingIconButton icon={Plus} label="Thêm mục" variant="default" disabled />
@@ -244,8 +219,6 @@ export function GroupAddItemsAction({
         </>
       )}
       <Dialog open={open} onOpenChange={setOpen}>
-        {/* flex-col + a capped height: the picker body takes `layout="dialog"`, whose list is the part
-            that scrolls, so the header and the action row stay put. */}
         <DialogContent className="flex max-h-[85vh] flex-col sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>Thêm mục vào “{group.name}”</DialogTitle>

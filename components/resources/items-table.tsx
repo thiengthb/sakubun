@@ -27,11 +27,6 @@ import { GRAMMAR_KIND } from '@/lib/item-kinds';
 import { buildFuriganaMarkup } from '@/lib/furigana';
 import { toRomaji } from '@/lib/romaji';
 
-// The enrichment-card filter (`CARD_FILTERS`) moved to lib/card-filter.ts when the vocab table gained
-// the same filter — one definition, two tables. It was surfaced as a filter in the first place because a
-// 30% content hole (150 of 153 N5 patterns with no card) stayed invisible for weeks: the data was
-// queryable and nothing in the UI asked.
-
 export interface ItemRow {
   itemId: string;
   expression: string;
@@ -43,8 +38,6 @@ export interface ItemRow {
   starred: boolean;
   enrichment: string | null;
   createdAt: string | Date;
-  /** Ids of the study groups this item belongs to. Present only when the loader asked for it
-   *  (`listItems({ withGroupIds: true })`) — the resources page does; other callers do not. */
   groupIds?: string[];
   srs: {
     state: number;
@@ -56,13 +49,6 @@ export interface ItemRow {
   } | null;
 }
 
-/**
- * Grammar store table — now a thin config over the reusable <DataTable> (TanStack): it defines the
- * COLUMNS (with custom cells: audio + detail-dialog, truncated meaning, SRS state, due, FSRS analysis
- * fields hidden by default) and the domain FILTERS (level / state, + the due-format display toggle),
- * pre-filtering the rows; DataTable owns multi-sort, resizable columns, show/hide columns, global
- * search, pagination, and the URL/session persistence of all of that.
- */
 export function ItemsTable({
   items,
   groups = [],
@@ -72,17 +58,12 @@ export function ItemsTable({
   showFurigana = false,
 }: {
   items: ItemRow[];
-  /** Every study group, for the bulk add/remove menus. Narrowed per selection by BulkGroupActions. */
   groups?: GroupSummary[];
   importSlot?: ReactNode;
   voiceSpeaker?: number;
   speechRate?: number;
-  /** Render furigana ruby (hover) on the pattern — from the user's furiganaMode (app/both). */
   showFurigana?: boolean;
 }) {
-  // Domain filters live in the app (rendered in the FilterPopover) and pre-filter the rows; they keep
-  // their own sessionStorage+URL persistence (?lvl/?st/?due). Sort/search/page/columns/widths are
-  // owned + persisted by <DataTable>.
   const [level, setLevel] = useSessionState<string>('items.level', 'all', 'lvl');
   const [state, setState] = useSessionState<string>('items.state', 'all', 'st');
   const [card, setCard] = useSessionState<string>('items.card', 'all', 'card');
@@ -93,8 +74,6 @@ export function ItemsTable({
     () =>
       items.filter((it) => {
         if (level !== 'all' && it.level !== level) return false;
-        // This table IS the grammar store (`listItems({ kind: GRAMMAR_KIND })` feeds it), so the bar is
-        // the grammar one. The vocab store has its own table, scored against the vocab bar.
         if (!matchesCardFilter(scoreEnrichment(it.enrichment, GRAMMAR_KIND).tier, card)) return false;
         if (star === 'yes' && !it.starred) return false;
         if (!withinDatePreset(it.createdAt, date)) return false;
@@ -108,20 +87,9 @@ export function ItemsTable({
   const columns = useMemo<ColumnDef<ItemRow>[]>(() => {
     const prefs = { voiceSpeaker, speechRate, showFurigana };
     return [
-      // 236 thay vì 260 (2026-08-11): chỗ 24px này là chỗ bù cho "Cấp" và "Ngày thêm" rộng ra, để tổng
-      // bề rộng cột vẫn nằm trong khung ở 1440px và bảng không sinh thanh cuộn ngang chỉ để cuộn ~14px.
-      // Cột này còn dư nhiều nhất: chữ tiêu đề chỉ cần 144px, phần còn lại là chỗ cho mẫu dài.
       expressionColumn<ItemRow>('Mẫu ngữ pháp', 'Nghe mẫu', 236, 150, prefs, toRomaji),
       meaningColumn<ItemRow>(220),
       {
-        // "Cấp", không phải "Level" (đổi 2026-08-11). Hai lý do, và cái thứ hai mới là lý do thật:
-        //   1. Nó là tiêu đề DUY NHẤT còn tiếng Anh giữa Nghĩa · Trạng thái · Đến hạn · Ngày thêm · Đã
-        //      ôn · Quên · Độ bền — mà CLAUDE.md nói mọi chuỗi người học đọc trên UI là tiếng Việt.
-        //   2. Ở 80px, ô tiêu đề còn phải chứa tay kéo cột + nút sắp xếp, nên "Level" bị cắt thành
-        //      "Le…" (chụp được ở 1440px).
-        // Bề rộng 76px là ĐO, không phải đoán: ô tiêu đề mất đúng 48px cho tay kéo + nút sắp xếp +
-        // đệm, và chữ "Cấp" cần 27px → 75px là sàn. (Lần đầu tôi đặt 64px để lấy lại bề rộng cho cả
-        // bảng và nó cắt thành "C." — hẹp hơn sàn thì chữ nào cũng chết.)
         accessorKey: 'level',
         header: 'Cấp',
         size: 76,
@@ -129,7 +97,6 @@ export function ItemsTable({
         meta: { label: 'Cấp' },
       },
       ...srsMetaColumns<ItemRow>(130),
-      // Ngữ pháp đưa `level` + `enrichment` vào dialog chi tiết (thẻ chi tiết là của riêng nó).
       actionsColumn<ItemRow>(
         'grammar',
         (item) => ({
@@ -169,8 +136,6 @@ export function ItemsTable({
       emptyMessage="Không có mẫu nào khớp bộ lọc."
       rowClassName={(r) => (r.suspended ? 'opacity-50' : undefined)}
       actionSlot={importSlot}
-      // Below md the table becomes a stacked card list (same rows, same pagination) — see DataTable.
-      // Tapping a card opens the item; the ⋮ menu drops its "Chi tiết" entry to match (hideDetail).
       cardHref={(item) => `/resources/${item.itemId}`}
       cardHrefLabel={(item) => `Xem chi tiết  ${item.expression}`}
       renderCard={(item) => (
@@ -199,7 +164,6 @@ export function ItemsTable({
                   suspended: item.suspended,
                 }}
                 kind="grammar"
-                // The card itself links to the detail page.
                 hideDetail
               />
             </>
@@ -212,7 +176,6 @@ export function ItemsTable({
         const ids = rows.map((r) => r.itemId);
         return (
           <>
-            {/* If every selected row is already suspended, offer "Cho học lại"; otherwise "Tạm ngưng". */}
             <BulkSuspendButton
               ids={ids}
               noun="mẫu ngữ pháp"
@@ -247,7 +210,6 @@ export function ItemsTable({
             onValueChange={setState}
             options={STATE_FILTERS}
           />
-          {/* Bảng từ vựng có đúng bộ lọc này (cùng `CARD_FILTERS`), chỉ khác thước đo theo kind. */}
           <SelectFilterRow
             label="Thẻ chi tiết"
             value={card}

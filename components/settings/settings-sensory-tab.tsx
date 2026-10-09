@@ -13,7 +13,6 @@ import { SettingsTab } from '@/components/settings/settings-tab';
 import { SpeakButton } from '@/components/shared/speak-button';
 import { VOICE_SPEAKERS, type Settings } from '@/lib/settings-schema';
 
-/** Tab "Nghe & nói": the app's own reference-audio TTS — which voice and the default playback speed. */
 export function SensoryTab({
   settings,
   set,
@@ -34,8 +33,6 @@ export function SensoryTab({
               onValueChange={(v) => set('voiceSpeaker', Number(v))}
             >
               <SelectTrigger className="w-full">
-                {/* Fallback theo id: `voiceSpeaker` nhận mọi số nguyên (engine có nhiều style hơn danh
-                    sách tuyển), nên một id ngoài danh sách vẫn phải đọc ra được thay vì để ô trống. */}
                 <SelectValue placeholder="Chọn giọng">
                   {VOICE_SPEAKERS.find((v) => v.id === settings.voiceSpeaker)?.label ??
                     `Giọng #${settings.voiceSpeaker}`}

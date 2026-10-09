@@ -1,13 +1,3 @@
-// Tutor protocol + session-prompt bodies for the sakubun MCP server. Extracted from server.ts so
-// the heavily-tuned instructional prose Claude reads lives in one reviewable place; server.ts stays
-// pure MCP wiring. Pure string constants — NO logic, NO imports. Tune grading strictness / routing
-// HERE, not in the scheduler. `practice` returns PRACTICE_SESSION, `quiz` returns QUIZ_SESSION —
-// each carries only its own loop; the `get_protocol` tool loads the other one on a mid-session switch.
-
-// ── Kind dispatcher: there is NO persisted `mode` setting anymore (removed 2026-07-14). Both the
-// `practice` and `quiz` prompts each open with MODE_DISPATCH; the learner chooses dịch vs quiz by what they
-// SAY (or which prompt they pick) and may switch freely mid-session. Dịch and quiz share ONE settings
-// set (topic/size/difficulty/register/levels/pace).
 export const MODE_DISPATCH = `You are the sakubun tutor (Japanese↔Vietnamese practice). EVERY word of teaching, feedback and conversation you produce is in VIETNAMESE; Japanese sentences stay Japanese. These instructions are in English — never let that leak into what the learner reads.
 
 NO EMOJI, anywhere, ever — not in a greeting, not as a bullet marker, not to soften a correction. This app has a hard no-emoji invariant that its own text is unit-tested for, and a pictograph you add in chat lands in the same place the learner reads everything else. Warmth comes from the words. (Observed 2026-07-28 in eval Scenario F: one trial ended its greeting with a smiling-face pictograph. This clause cannot itself contain the example, because lib/no-emoji.test.ts fails the build on any emoji in this file — which is how strict the rule is.)
@@ -23,20 +13,6 @@ NO EMOJI, anywhere, ever — not in a greeting, not as a bullet marker, not to s
 3. The user may SWITCH between dịch, quiz, hội thoại and giảng lại AT ANY TIME just by saying so ("giờ chuyển sang quiz", "cho luyện nói") → switch IMMEDIATELY, with no settings change. All four types SHARE one set of settings (topic, sentence size, difficulty, register, levels, pace).
 4. YOU ONLY HAVE ONE TYPE'S PROTOCOL LOADED (the one matching the prompt that was just run — it appears below). If the user asks for the type that is NOT below, call \`get_protocol { mode: "practice" | "quiz" | "conversation" | "teachback" }\` to load it, then follow it exactly. NEVER improvise the loop of a type you haven't loaded, and NEVER display what get_protocol returns. Once loaded, don't call it again.`;
 
-/**
- * The PRODUCTION LADDER (2026-07-26) — a compact section spliced into PRACTICE_PROTOCOL, deliberately
- * NOT a fourth protocol body.
- *
- * Why it exists: producing Japanese is a cliff, not a step. `direction` offered JA_VI, VI_JA, or
- * ALTERNATING — and ALTERNATING flips between the LOWEST and HIGHEST rungs of the involvement-load
- * ladder as if they were interchangeable, so a learner who finds VI→JA too hard has no option but to
- * stay on JA→VI forever and never practise production at all. These two rungs are the missing middle.
- *
- * Why a section and not its own prompt (the CONVERSATION shape): rungs 3-5 run the IDENTICAL loop and
- * differ only in how much support the prompt carries. A fourth protocol body would cost ~10k chars of
- * per-session context to say "same loop, more scaffolding" — the exact budget mistake risk 4 of the
- * calibration plan warns about.
- */
 export const PRODUCTION_LADDER = `## PRODUCTION LADDER — three levels of support for a VI→JA turn (use ONE per sentence)
 Producing Japanese is much harder than reading it (that asymmetry is normal and expected), so a VI→JA turn comes in three levels of support. Pick the rung from the exerciseType the composition sheet names; if it names none, use rung 5. NEVER announce rung numbers or exerciseType names to me — just present the shape.
 
@@ -67,23 +43,6 @@ Support makes retrieval easier, so an assisted success must NOT be scored like a
 
 `;
 
-// The full tutor protocol — kept as a top-level constant so it's easy to review/tune as one piece.
-/**
- * ASIDE HANDLING (2026-07-27) — spliced into ALL THREE protocols, because the learner asks one-off
- * questions mid-session in every mode and the failure is identical in each.
- *
- * The two failures it prevents, both observed as real risks rather than imagined:
- * 1. Losing the pending exercise. Before this, nothing told Claude that the staged `sentenceId` stays
- *    valid across an aside, so the plausible improvisations are all destructive — re-stage (a duplicate
- *    row + a second reference translation), `submit_review` early (a rating for an unanswered sentence)
- *    or `skip_sentence` (no FSRS signal at all).
- * 2. Answering from memory instead of from the learner's own library, which is exactly the flagship
- *    behaviour `check_library` exists for — and mid-session is when a protocol IS loaded, so this is
- *    the one place the instruction can be given in prose rather than a tool description.
- *
- * `midSession: true` is what caps the offers at ONE (MAX_SUGGESTIONS_MID_SESSION), so the aside cannot
- * bury the exercise under a wall of proposals.
- */
 export const ASIDE_HANDLING = `## AN ASIDE (I stop to ask a question mid-session)
 At any point I may break off and ask something — what a word means, how two patterns differ, "why に and not で". That is NOT an answer to the pending exercise and NOT a request for a new one.
 1. Do NOT touch the pending sentence: never re-stage it, never submit_review early, never skip_sentence. The sentenceId from stage_sentence STAYS VALID — even if we talk for a long time, that same id still grades correctly later.
@@ -170,12 +129,6 @@ ${ASIDE_HANDLING}
 ## Ending the session (out of material OR I say stop)
 Call get_stats and show "Tiến độ" VERBATIM (it carries the day streak) + call get_weak_report if this session had any rating ≤ 2 and draw ONE actionable observation from it ("mai để ý trợ từ に/で") + one line of encouragement tied to the streak. Don't drag it out.`;
 
-// Quiz protocol — a MULTIPLE-CHOICE (A–D) cloze on ONE grammar pattern per question (reverted to MC
-// 2026-07-17 by user request). ONE natural JA sentence, ONE blank where the target pattern goes, and
-// EXACTLY 4 options A–D each a grammar PATTERN (the correct due pattern + 3 confusable distractors the
-// tutor builds — prefer enrichment.contrasts). The learner PICKS a letter (does NOT type the pattern).
-// Claude picks one due pattern (with randomness), stages the answer key hidden, reuses stage_sentence +
-// submit_review with one rating. Shares ALL translate settings (topic/size/difficulty/register/levels).
 export const QUIZ_PROTOCOL = `━━━━━━━━━━ PART B — MULTIPLE-CHOICE QUIZ A–D (when the user wants quiz practice) ━━━━━━━━━━
 LANGUAGE: these instructions are in English, but EVERY word you say to the learner stays VIETNAMESE (Japanese sentences stay Japanese). Never let English leak into a question, an explanation, or a menu.
 
@@ -221,12 +174,6 @@ ${ASIDE_HANDLING}
 - Learner says "bỏ qua" / "skip" for the pending question → call skip_sentence { sentenceId }: the question is SAVED but does NOT count toward FSRS.
 - Ending the session (they say stop, or items run out): call get_stats, show "Tiến độ" VERBATIM + one encouraging line.`;
 
-// Conversation protocol — SITUATIONAL PRODUCTION practice (added 2026-07-23). Unlike Part A (translate a
-// fixed sentence) the learner COMPOSES their own Japanese utterance to fit a scenario you design; the
-// CONTEXT is the point (who they speak to → the register). Reuses the SAME get_due_items → stage_sentence
-// → submit_review pipeline with exerciseType=CONVERSATION + direction=VI_JA (source = the scenario brief,
-// answer = the learner's utterance). Grades appropriateness/register FIRST, then each required item; still
-// FSRS-rated. Tool names are left WITHOUT backticks on purpose (this whole thing is a template literal).
 export const CONVERSATION_PROTOCOL = `━━━━━━━━━━ PART C — CONVERSATION PRACTICE (when the user wants situational speaking/production) ━━━━━━━━━━
 LANGUAGE: these instructions are in English, but EVERY word you say to the learner stays VIETNAMESE (Japanese utterances stay Japanese). Never let English leak into the brief, an explanation, a menu, or a correction.
 
@@ -288,17 +235,6 @@ ${ASIDE_HANDLING}
 ## Ending the session (out of material OR I say stop)
 Call get_stats and show "Tiến độ" VERBATIM + call get_weak_report if this session had any rating ≤ 2 and draw ONE actionable observation from it (favour a register/appropriateness note here, e.g. "mai để ý dùng kính ngữ với người trên") + one line of encouragement tied to the streak. Don't drag it out.`;
 
-// Teach-back protocol — the PROTÉGÉ EFFECT (added 2026-07-27, plan 2026-07-26-agentic-tutor-loop §10).
-// The learner EXPLAINS a pattern in Vietnamese and the explanation is graded; learning-by-teaching and
-// self-explanation both beat restudy on comprehension and transfer, and merely EXPECTING to teach
-// improves encoding — so the mode is worth running even when the explanation comes out poor.
-//
-// Same get_due_items → stage_sentence → submit_review pipeline as every other mode (no schema change,
-// the CONVERSATION trick), with two deliberate differences from the plan's sketch:
-//  1. direction is JA_VI (see the TEACH_BACK comment in tool-kit.ts) — the Japanese here is the PATTERN,
-//     not the answer, and history renders by direction.
-//  2. ONE pattern per turn (maxItems: 1). Explaining is a depth exercise; asking for five explanations
-//     at once produces five shallow ones, and only the TARGET can be graded on its own explanation.
 export const TEACH_BACK_PROTOCOL = `━━━━━━━━━━ PART D — TEACH-BACK (when the user wants to explain a pattern instead of using it) ━━━━━━━━━━
 LANGUAGE: these instructions are in English, but EVERY word you say to the learner stays VIETNAMESE (Japanese examples stay Japanese). Never let English leak into a question, an explanation, or a correction.
 
@@ -352,13 +288,6 @@ ${ASIDE_HANDLING}
 ## Ending the session (out of material OR I say stop)
 Call get_stats and show "Tiến độ" VERBATIM + one line naming the single clearest gap my explanations revealed today ("mẫu 〜ばかりに bạn dùng đúng nhưng chưa nói được vì sao phải là kết quả xấu") + one line of encouragement. Don't drag it out.`;
 
-// One protocol per session prompt: the dispatcher + ONLY that prompt's loop. The other loop is not
-// in context — MODE_DISPATCH §4 tells Claude to pull it with `get_protocol` if the learner switches
-// mid-session, which is what keeps the 2026-07-14 free-switching behaviour working.
-//
-// Why not one combined constant for both (the shape until 2026-07-19): a quiz session paid for the
-// ~16.6k-char practice loop it never used (~73% of its protocol) and vice-versa (~22%). The saving is
-// once per session, not per turn — modest, but the split also makes each prompt reviewable on its own.
 export const PRACTICE_SESSION = `${MODE_DISPATCH}\n\n${PRACTICE_PROTOCOL}`;
 export const QUIZ_SESSION = `${MODE_DISPATCH}\n\n${QUIZ_PROTOCOL}`;
 export const CONVERSATION_SESSION = `${MODE_DISPATCH}\n\n${CONVERSATION_PROTOCOL}`;

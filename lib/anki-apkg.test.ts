@@ -13,7 +13,6 @@ const WORD: VocabItem = {
 };
 const CAT: VocabItem = { word: '猫', meaning: 'con mèo', key: 'item-2' };
 
-/** Unpack a generated .apkg and open its collection so tests assert the REAL file, not our inputs. */
 function openApkg(items: VocabItem[]) {
   const files = unzipSync(buildApkg(items));
   const db = new Database(Buffer.from(files['collection.anki2']));
@@ -67,7 +66,6 @@ describe('buildApkg', () => {
     };
     expect(model.flds.map((f) => f.name)).toEqual(['Front', 'Back']);
     expect(model.tmpls).toHaveLength(1);
-    // Without a `req` entry Anki imports the notes but generates zero cards — nothing to review.
     expect(model.req).toEqual([[0, 'any', [0]]]);
 
     const deckNames = Object.values(JSON.parse(col.decks)).map((d) => (d as { name: string }).name);
@@ -94,7 +92,6 @@ describe('buildApkg', () => {
       .prepare('SELECT nid, did, ord, type, queue, due FROM cards ORDER BY due')
       .all();
     expect(cards).toHaveLength(2);
-    // type/queue 0 = a NEW card: sakubun keeps its own FSRS state and exports no scheduling.
     expect(cards[0]).toMatchObject({ ord: 0, type: 0, queue: 0, due: 1 });
     db.close();
   });

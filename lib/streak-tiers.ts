@@ -1,29 +1,15 @@
-// Visual tiers for the study-day streak flame + milestone celebration (Cụm C). The flame gets HOTTER
-// as the streak grows — its heat encodes the streak length (a data viz, not a decorative icon), which
-// is why the streak uses a gradient SVG flame rather than the flat lucide icon. Pure data; the flame
-// component (components/streak-flame.tsx) and the celebration (components/streak-celebration.tsx) read
-// from here so the ramp stays in one place.
-
 export interface StreakTier {
-  /** Minimum streak (inclusive) that reaches this tier. */
   min: number;
-  /** Short Vietnamese label ("Nhen" → "Trắng nóng"). */
   name: string;
-  /** Flame gradient stops top→base + optional hot core. */
   top: string;
   mid: string;
   base: string;
   core: string;
   coreOp: number;
-  /** Glow radius (drop-shadow) for the inline flame. */
   glow: string;
-  /** Flicker animation duration — faster = more agitated. */
   flick: string;
-  /** Opacity of the card-wide heat wash (0–1). */
   heat: number;
-  /** Hero flame size (px) in the celebration. */
   hero: number;
-  /** Two accent colours used for glow + embers. */
   f1: string;
   f2: string;
 }
@@ -121,31 +107,14 @@ export const STREAK_TIERS: StreakTier[] = [
   },
 ];
 
-/**
- * The "cold" gradient — a streak of 0. Not a tier (it encodes the ABSENCE of heat), so it sits
- * beside the ramp rather than in it.
- *
- * Consolidated here 2026-07-29: these three greys, and FLAME_WHITE below, were the only flame
- * colours still written inline in the components, which is exactly what this module's header says
- * must not happen ("the ramp stays in one place"). Values are unchanged — this moves them, it does
- * not restyle anything.
- *
- * These are deliberately theme-INDEPENDENT: the flame's colour encodes the streak length, so it is
- * data, not chrome, and it must read the same in light and dark.
- */
 export const COLD_FLAME = { top: '#9ca3af', mid: '#6b7280', base: '#4b5563' } as const;
 
-/** The hot white at the centre of an ember and on the celebration count — the top of the ramp. */
 export const FLAME_WHITE = '#fff7ed';
 
-/** The dark scrim under the celebration flame. Theme-independent for the same reason. */
 export const CELEBRATION_VIGNETTE = 'rgba(0,0,0,.42)';
 
-/** The tier a streak count falls into (defaults to the first tier; callers treat count < 1 as "cold"). */
 export function tierForStreak(count: number): StreakTier {
   let tier = STREAK_TIERS[0];
   for (const t of STREAK_TIERS) if (count >= t.min) tier = t;
   return tier;
 }
-// STREAK_MILESTONES / milestoneFor removed 2026-07-24: the celebration no longer shows a milestone
-// banner ("mốc") or caption — just the flame + day count (per request). The flame's tier heat stays.

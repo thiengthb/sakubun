@@ -57,7 +57,6 @@ export const DEFAULT_FILTERS: Filters = {
   scoreMax: 100,
 };
 
-/** How many filters are narrowed from their default — shown as a badge on the "Bộ lọc" button. */
 export function activeFilterCount(f: Filters): number {
   let n = 0;
   if (f.direction !== 'all') n++;
@@ -73,13 +72,10 @@ export function activeFilterCount(f: Filters): number {
   return n;
 }
 
-/** A sentence "passed" when every graded pattern was Good/Easy; "failed" if any was Again/Hard. */
 export function isFail(s: SentenceHistoryRow): boolean {
   return s.ratings.some((r) => r.rating <= 2);
 }
 
-// History filters on when the sentence was ANSWERED (falling back to when it was staged); the window
-// math itself is the shared `withinDatePreset` (lib/format), so the two date-filter surfaces agree.
 export function inDatePreset(s: SentenceHistoryRow, preset: string): boolean {
   return withinDatePreset(s.answeredAt ?? s.createdAt, preset as DatePreset);
 }
@@ -94,23 +90,14 @@ export function inDurationBucket(s: SentenceHistoryRow, bucket: string): boolean
   return true;
 }
 
-/**
- * Nút lật giữa danh sách và flashcard.
- *
- * Tách khỏi hàng tìm kiếm 2026-08-11: ở chế độ flashcard hàng tìm kiếm không còn (gõ tìm một chuỗi
- * trong khi đang lướt thẻ là việc không ai làm), nên nút này xuống hàng công cụ của deck và đứng cạnh
- * nút cài đặt deck. Cùng một nút ở hai chỗ đặt — nên nó là một component, không phải hai bản sao.
- */
 export function HistoryModeToggle({
   mode,
   onModeChange,
 }: {
-  /** Read the history as a list, or flip through it one card at a time. */
   mode: 'list' | 'card';
   onModeChange: (mode: 'list' | 'card') => void;
 }) {
   return (
-    // Nhãn nói việc lần bấm TỚI làm, không nói chế độ đang ở.
     <ExpandingIconButton
       icon={mode === 'list' ? Layers : List}
       label={mode === 'list' ? 'Flashcard' : 'Danh sách'}
@@ -120,13 +107,6 @@ export function HistoryModeToggle({
   );
 }
 
-/**
- * Popover bộ lọc đầy đủ. CHỈ có ở chế độ danh sách.
- *
- * Nó từng có mặt ở cả chế độ flashcard (thanh công cụ của deck), bỏ 2026-08-11 theo yêu cầu của chủ
- * repo. Điều đó KHÔNG làm chồng thẻ mất bộ lọc: deck luôn được chia từ `filtered`, nên bộ lọc đặt ở
- * danh sách vẫn còn hiệu lực khi lật sang thẻ — chỉ là muốn ĐỔI thì lật về danh sách.
- */
 function HistoryFilterPopover({
   filters,
   onPatch,
@@ -291,12 +271,6 @@ function HistoryFilterPopover({
   );
 }
 
-/**
- * Hàng tìm kiếm của /history: ô tìm + nút lật chế độ + bộ lọc.
- *
- * CHỈ có ở chế độ danh sách. Ở chế độ flashcard, `HistoryList` không render hàng này nữa — thanh tiến
- * độ của deck lên chiếm đúng hàng đó, và hai nút chuyển xuống thanh công cụ của deck.
- */
 export function HistoryFilters({
   search,
   onSearchChange,
@@ -315,17 +289,11 @@ export function HistoryFilters({
   onModeChange: (mode: 'list' | 'card') => void;
 }) {
   return (
-    // One row at EVERY width (it used to stack below sm). The toolbar rule for this app is that the
-    // actions share the search box's row — a phone has vertical space to spare only in theory, and the
-    // buttons are icon-only below md, so the row costs ~76px and gives back a whole stacked row.
     <div className="flex flex-row items-center gap-2 sm:gap-3">
       <SearchInput
         value={search}
         onChange={(e) => onSearchChange(e.target.value)}
         placeholder="Tìm trong đề / bài dịch…"
-        // Capped at max-w-xs from sm up, exactly like the DataTable toolbar: a full-width search box
-        // leaves the two controls stuck to its right edge, mid-row. Capped, they sit at the FAR right
-        // (`md:ml-auto` below) and this toolbar matches the resources one.
         className="min-w-0 flex-1 sm:max-w-xs"
       />
       <div className="flex shrink-0 items-center gap-2 md:ml-auto">

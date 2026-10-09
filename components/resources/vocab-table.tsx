@@ -31,7 +31,6 @@ import { buildFuriganaMarkup } from '@/lib/furigana';
 import { toRomaji } from '@/lib/romaji';
 import { cn } from '@/lib/utils';
 
-// Why Claude flagged a word into the inbox. Colored on the same alert→warn→info scale used elsewhere.
 const REASON_META: Record<string, { label: string; className: string }> = {
   misused: { label: 'Dùng sai', className: 'border-alert/60 text-alert' },
   unclear: { label: 'Chưa hiểu', className: 'border-warn/60 text-warn' },
@@ -53,18 +52,11 @@ export interface VocabRow {
   meaningVi: string;
   notes: string | null;
   level: string;
-  /**
-   * The enrichment card, RAW (2026-08-12). It was absent from this row type entirely, which is why the
-   * vocab store had no card-quality filter and its detail dialog could not show a card even after the
-   * dialog learned how: the data never reached the component. `listItems` already returns it.
-   */
   enrichment: string | null;
   captureReason: string | null;
   suspended: boolean;
   starred: boolean;
   createdAt: string | Date;
-  /** Ids of the study groups this item belongs to. Present only when the loader asked for it
-   *  (`listItems({ withGroupIds: true })`) — the resources page does; other callers do not. */
   groupIds?: string[];
   srs: {
     state: number;
@@ -76,12 +68,6 @@ export interface VocabRow {
   } | null;
 }
 
-/**
- * Vocab store table — a thin config over the reusable <DataTable> (mirrors ItemsTable): defines the
- * vocab columns (word + audio + detail-dialog + reason badge, reading, meaning, example, SRS state,
- * due, FSRS analysis fields hidden by default) and the domain filters (state / capture-reason + the
- * due-format toggle). DataTable owns multi-sort, resize, show/hide, search, paging + URL persistence.
- */
 export function VocabTable({
   items,
   groups = [],
@@ -91,13 +77,10 @@ export function VocabTable({
   showFurigana = false,
 }: {
   items: VocabRow[];
-  /** Every study group, for the bulk add/remove menus. Narrowed per selection by BulkGroupActions. */
   groups?: GroupSummary[];
-  /** Toolbar action (the "Thêm từ" button) — mirrors the grammar table's import slot. */
   actionSlot?: ReactNode;
   voiceSpeaker?: number;
   speechRate?: number;
-  /** Render furigana ruby (hover) on the word — from the user's furiganaMode (app/both). */
   showFurigana?: boolean;
 }) {
   const [state, setState] = useSessionState<string>('vocab.state', 'all', 'vst');
@@ -105,8 +88,6 @@ export function VocabTable({
   const [star, setStar] = useSessionState<string>('vocab.star', 'all', 'vstar');
   const [level, setLevel] = useSessionState<string>('vocab.level', 'all', 'vlvl');
   const [date, setDate] = useSessionState<DatePreset>('vocab.date', 'all', 'vdt');
-  // Own session/URL key (`vcard`), not the grammar table's `card`: the two tables are on the same page
-  // and share the query string, so one key would make filtering one store filter the other.
   const [card, setCard] = useSessionState<string>('vocab.card', 'all', 'vcard');
 
   const filtered = useMemo(
@@ -121,8 +102,6 @@ export function VocabTable({
         if (star === 'yes' && !it.starred) return false;
         if (level !== 'all' && it.level !== level) return false;
         if (!withinDatePreset(it.createdAt, date)) return false;
-        // Scored against the VOCAB bar (collocations + đồng nghĩa/trái nghĩa + ví dụ có dịch), which is
-        // a different set of dimensions from the grammar table's — same filter, right yardstick.
         if (!matchesCardFilter(scoreEnrichment(it.enrichment, VOCAB_KIND).tier, card)) return false;
         return true;
       }),
@@ -140,10 +119,6 @@ export function VocabTable({
         size: 110,
         minSize: 90,
         meta: { label: 'Lý do bắt được' },
-        // Its own column on purpose. The badge used to sit INSIDE the "Từ" cell, glued to the word,
-        // which read as though the label were part of the word's name (reported 2026-07-20). The
-        // reason is metadata about the capture, not part of the term — so it gets a column, stays
-        // filterable, and can be hidden like any other.
         cell: ({ row }) => {
           const reason = row.original.captureReason;
           const meta = reason ? REASON_META[reason] : null;
@@ -176,8 +151,6 @@ export function VocabTable({
         size: 180,
         minSize: 110,
         meta: { label: 'Ví dụ', cellClassName: 'text-muted-foreground' },
-        // Playable in the table too — `truncate` keeps it to one line so the play button does not
-        // change the row height, matching how the word itself renders in the first column.
         cell: ({ row }) =>
           row.original.notes ? (
             <SpokenLine
@@ -194,7 +167,6 @@ export function VocabTable({
           ),
       },
       ...srsMetaColumns<VocabRow>(120),
-      // Từ vựng đưa `hanviet` vào dialog chi tiết, và KHÔNG đưa `level` (form sửa của từ vựng ẩn ô cấp).
       actionsColumn<VocabRow>(
         'vocab',
         (item) => ({
@@ -234,9 +206,6 @@ export function VocabTable({
       totalCount={items.length}
       emptyMessage="Không có từ nào khớp bộ lọc."
       actionSlot={actionSlot}
-      // Below md the table becomes a stacked card list (same rows, same pagination) — see DataTable.
-      // Two vocab-only slots: âm Hán Việt under the word, and the capture-reason badge in the meta row.
-      // Tapping a card opens the item; the ⋮ menu drops its "Chi tiết" entry to match (hideDetail).
       cardHref={(item) => `/resources/${item.itemId}`}
       cardHrefLabel={(item) => `Xem chi tiết từ ${item.expression}`}
       renderCard={(item) => {
@@ -255,12 +224,6 @@ export function VocabTable({
             speechRate={speechRate}
             extra={
               item.hanviet ? (
-                // Âm Hán Việt sits BESIDE the word, bracketed and upper-cased — «把握 [BÁ ÁC]» — the
-                // convention a Vietnamese learner reads it in. A <span> (not the old block <p>) is what
-                // puts it on the word's line: SpokenLine renders inline-flex, so an inline sibling flows
-                // next to it and only wraps when the line genuinely runs out of room. No `truncate`
-                // here on purpose — it is one or two short syllables, and clipping a 4-character
-                // reading to an ellipsis loses the whole point of showing it.
                 <span className="ml-1.5 text-xs text-muted-foreground uppercase">
                   [{item.hanviet}]
                 </span>
@@ -290,7 +253,6 @@ export function VocabTable({
                     suspended: item.suspended,
                   }}
                   kind="vocab"
-                // The card itself links to the detail page.
                 hideDetail
                 />
               </>
@@ -305,7 +267,6 @@ export function VocabTable({
         const ids = rows.map((r) => r.itemId);
         return (
           <>
-            {/* If every selected row is already suspended, offer "Cho học lại"; otherwise "Tạm ngưng". */}
             <BulkSuspendButton
               ids={ids}
               noun="từ vựng"
@@ -341,7 +302,6 @@ export function VocabTable({
             onValueChange={setCard}
             options={CARD_FILTERS}
           />
-          {/* Riêng của bảng từ vựng — ngữ pháp không có "lý do bắt được". */}
           <SelectFilterRow
             label="Lý do"
             value={reason}

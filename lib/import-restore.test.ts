@@ -1,14 +1,3 @@
-// ĐƯỜNG PHỤC HỒI DỮ LIỆU — `importAccountData`, và cho tới hôm nay nó KHÔNG có một dòng test nào.
-//
-// `lib/import.test.ts` nói thẳng lý do: *"The DB writes (lib/import.ts) need a database and are out of
-// scope for the DB-free vitest suite"*. Nhưng `lib/test-db.ts` (2026-08-06) đã dựng được DB tạm bằng
-// cách áp migration đã commit, không cần subprocess — nên lý do đó hết hiệu lực, và phần duy nhất có
-// thể lấy lại dữ liệu học của người dùng vẫn đang không được gác.
-//
-// `CLAUDE.md` gọi `lib/import.ts` là NGOẠI LỆ duy nhất được ghi `SrsState` trực tiếp: nó restore
-// nguyên văn state đã lưu, không tính lại. Một ngoại lệ như vậy phải có lưới đúng hơn mức trung bình,
-// không phải thấp hơn.
-
 import { beforeAll, describe, expect, it } from 'vitest';
 import { createTestDb } from '@/lib/test-db';
 
@@ -28,7 +17,6 @@ beforeAll(async () => {
   ({ prisma } = await import('@/lib/db'));
 });
 
-/** Bản sao lưu tối thiểu nhưng THẬT: đi qua đúng `parseAccountBackup` mà route API dùng. */
 function backupWithOneItem() {
   const raw = {
     exportedAt: '2026-08-10T00:00:00Z',
@@ -71,10 +59,6 @@ describe('importAccountData — restore một bản sao lưu', () => {
     await prisma.srsState.deleteMany({});
     await prisma.item.deleteMany({});
 
-    // Nếu lời gọi này ném thì đây chính là bug, không phải test hỏng: `itemData()` trong lib/import.ts
-    // vẫn gắn `visibility` + `forkedFromId` vào data đưa cho Prisma, và hai cột đó đã bị migration
-    // 20260803190730 (bỏ multiuser) XOÁ khỏi bảng Item. `sentenceData()` cũng vậy với `sharedAt`.
-    // Typecheck không bắt được vì TypeScript không excess-check thuộc tính đến từ spread.
     const res = await I.importAccountData(backupWithOneItem(), { dryRun: false });
 
     expect(res.dryRun).toBe(false);
@@ -82,7 +66,6 @@ describe('importAccountData — restore một bản sao lưu', () => {
     expect(item, 'item trong bản sao lưu phải nằm lại trong DB').not.toBeNull();
     expect(item!.expression).toBe('RESTORE〜つつある');
 
-    // State được restore NGUYÊN VĂN, không tính lại — đó là cả lý do import được phép ghi SrsState.
     const srs = await prisma.srsState.findFirst({ where: { itemId: 'itm-restore-1' } });
     expect(srs, 'SrsState phải được restore cùng item').not.toBeNull();
     expect(srs!.reps).toBe(3);
@@ -92,9 +75,6 @@ describe('importAccountData — restore một bản sao lưu', () => {
   });
 
   it('bản sao lưu CŨ (còn visibility / forkedFromId / sharedAt) vẫn restore được', async () => {
-    // Đây là lời tuyên bố tương thích ngược mà comment trong import-schema.ts đưa ra, nên nó phải được
-    // ĐO. Một file xuất ra trước 2026-08-03 mang ba trường của thời multiuser; `z.object` lược key lạ,
-    // nên chúng bị bỏ qua thay vì làm file bị từ chối.
     await prisma.reviewLog.deleteMany({});
     await prisma.sentence.deleteMany({});
     await prisma.srsState.deleteMany({});

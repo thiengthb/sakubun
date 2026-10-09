@@ -1,9 +1,3 @@
-// Time-series analytics for the "Thống kê" tab on the dashboard (components/analytics-tabs.tsx —
-// it is a tab, not its own route). Fetches ONE 365-day window of
-// review logs + graded sentences and rolls them into a per-study-day series; the client then windows
-// (30/90/365) + groups (day/week/month/weekday) it for the charts, so changing a selector never hits
-// the server. Read-only, like lib/analytics.ts (which powers the dashboard summary).
-
 import { prisma } from '@/lib/db';
 import { getSettings } from '@/lib/practice';
 import {
@@ -56,7 +50,6 @@ export async function getStudyStats(now: Date = new Date()): Promise<StudyStats>
     }),
   ]);
 
-  // Pre-seed every day in the window so gaps render as zero (not missing points).
   const map = new Map<string, DailyStat>();
   for (let i = 0; i < RANGE_DAYS; i += 1) {
     const day = studyDayKey(new Date(now.getTime() - (RANGE_DAYS - 1 - i) * DAY_MS), dayCutoffHour);
@@ -97,7 +90,6 @@ export async function getStudyStats(now: Date = new Date()): Promise<StudyStats>
   const totSecSum = daily.reduce((a, d) => a + d.secSum, 0);
   const totSecCount = daily.reduce((a, d) => a + d.secCount, 0);
 
-  // --- Score + time by difficulty (target level) and by source length, over the window ---
   const { scoreByLevel, scoreByLength } = breakdownByLevelAndLength(sentences);
 
   return {

@@ -7,12 +7,6 @@ import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import { useServerAction } from '@/components/shared/use-server-action';
 import { deleteItemsAction } from '@/app/actions';
 
-/**
- * Bulk-delete action for the resources DataTable's selection dock: a destructive icon button + a confirm
- * dialog that deletes the selected item ids in one call. Like the per-row delete, the ReviewLog is
- * preserved server-side (SET-NULL, not cascade), and the confirm copy says so. `onDone` clears the
- * table's selection after a successful delete.
- */
 export function BulkDeleteButton({
   ids,
   noun,

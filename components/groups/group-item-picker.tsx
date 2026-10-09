@@ -18,7 +18,6 @@ import { buildFuriganaMarkup } from '@/lib/furigana';
 import { GROUP_KIND_LABELS } from '@/components/groups/group-kind-badge';
 import type { GroupDetail, GroupMemberItem } from '@/lib/groups';
 
-/** One row of the picker: playable term + kind tag (mixed groups only) + meaning. */
 function PickerLine({
   item,
   mixed,
@@ -57,19 +56,6 @@ function PickerLine({
   );
 }
 
-/**
- * `/groups/<id>/add` — pick items to put into a group. Was a Dialog inside the group detail view until
- * 2026-08-05; see `GroupFormPage` for why these became routes.
- *
- * This one gained the most from the move. As a modal it was a `max-h-[85vh]` box with its own inner
- * scroller nested inside the page's scroller, and the "Thêm N mục" footer lived at the bottom of that
- * box — on a phone the list you were choosing from had perhaps 300px of height. As a page the list gets
- * the whole viewport and the action bar is `sticky` to the bottom, so the count and the button stay
- * reachable no matter how far down the list you are.
- *
- * The kind guard is server-side (`listAddableItems` only returns items the group's kind accepts, minus
- * the ones already in it), so this component never has to decide what may join.
- */
 export function GroupItemPickerBody({
   group,
   addable,
@@ -85,14 +71,6 @@ export function GroupItemPickerBody({
   voiceSpeaker?: number;
   speechRate?: number;
   showFurigana?: boolean;
-  /**
-   * `page` — the route host (/groups/<id>/add): the list runs as long as it likes and the action bar is
-   * `sticky` to the bottom of the viewport.
-   * `dialog` — the desktop modal host: the list gets its own bounded scroller (a dialog cannot grow past
-   * the viewport) and the action bar is a plain row at the end of it.
-   * The two hosts share this ONE body so the kind guard, the selection model and the submit path cannot
-   * drift between the phone and the desktop.
-   */
   layout?: 'page' | 'dialog';
   onDone: () => void;
   onCancel: () => void;
@@ -130,14 +108,10 @@ export function GroupItemPickerBody({
     <div
       className={cn(
         'flex min-h-0 flex-col gap-4',
-        // Page host: fill what is left of the viewport so the list is the tallest thing on screen (the
-        // reason this became a route on a phone at all). Dialog host: the DialogContent caps the height.
         layout === 'page' && 'sm:min-h-[calc(100svh-13rem)]',
         layout === 'dialog' && 'min-h-0 flex-1',
       )}
     >
-      {/* The page needs this line (its breadcrumb says only "Thêm mục"); the dialog does not — its
-          header already names the group and the filter, and printing both read as a stutter. */}
       {layout === 'page' && (
         <p className="text-muted-foreground">
           Thêm vào <span className="font-medium text-foreground">{group.name}</span>. Chỉ hiện{' '}
@@ -163,7 +137,6 @@ export function GroupItemPickerBody({
         />
       ) : (
         <Card className={cn('gap-3', layout === 'dialog' && 'min-h-0 flex-1 overflow-hidden')}>
-          {/* One row, same as every list toolbar in the app. */}
           <CardContent className="flex flex-row items-center gap-2 sm:gap-3">
             <SearchInput
               value={query}
@@ -183,7 +156,6 @@ export function GroupItemPickerBody({
               <ul className="divide-y divide-border">
                 {filtered.map((i) => (
                   <li key={i.itemId}>
-                    {/* The whole row is the label, so the tap target is the row and not the 16px box. */}
                     <label className="flex cursor-pointer items-center gap-3 px-4 py-3">
                       <Checkbox
                         className="shrink-0"
@@ -205,10 +177,6 @@ export function GroupItemPickerBody({
             </div>
           )}
 
-          {/* Action row INSIDE the card, like every other form in the app (2026-08-05 — it used to be a
-              blurred bar bleeding to the page edges, which was the one action row here that did not look
-              like the app's). The list above it is the part that scrolls, so this row stays visible
-              without needing `position: sticky` — which a Card's `overflow-hidden` would break anyway. */}
           <CardContent className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground tabular-nums">Đã chọn {sel.size}</span>
             <div className="ml-auto flex gap-2">
@@ -227,7 +195,6 @@ export function GroupItemPickerBody({
   );
 }
 
-/** `/groups/<id>/add` — the ROUTE host (the phone path; desktop opens the dialog host instead). */
 export function GroupItemPicker(props: {
   group: GroupDetail;
   addable: GroupMemberItem[];

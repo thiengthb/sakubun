@@ -1,27 +1,6 @@
-// Import (sync-from-backup) — validation + PURE diff planning. The counterpart to lib/export.ts.
-//
-// This module has NO database dependency on purpose: the file-parsing (Zod) and the create/update/skip
-// planning are pure functions so they unit-test without a DB (the app's vitest suite is DB-free). The
-// actual writes live in lib/import.ts. Two backup shapes are supported, mirroring the two export paths:
-//   - a per-user JSON dump (`/api/export/mine` -> exportUserData) -> account sync, this file's Zod schema
-//   - a whole-DB SQLite snapshot (`/api/backup`) -> system sync, handled table-wise in lib/import.ts
-//
-// Merge semantics (user decision 2026-07-23): UPSERT by stable id — add rows that are missing, update
-// rows that already exist — never delete. `ReviewLog` is the one exception: insert-only, never updated
-// (invariant #2, the log is append-only). This makes a re-import idempotent and loss-free.
-
 import { z } from 'zod';
 
-/** How a table reconciles an incoming row against an existing one. */
 export type ImportMode = 'upsert' | 'insert-only';
-
-// --- File schema (account JSON) -------------------------------------------------------------------
-//
-// Mirrors exportUserData's output. Dates serialize to ISO strings through JSON, so every DateTime is
-// `z.coerce.date()` (ISO string -> Date). Rows are `.passthrough()`-free (unknown keys are stripped)
-// so a future export field never blocks an older client. `userId` in the file is IGNORED on import —
-// the importer always writes the CURRENT session user (see lib/import.ts), so a file can never be used
-// to write into someone else's account. It is accepted here only so validation does not reject it.
 
 const itemSchema = z.object({
   id: z.string().min(1),
@@ -40,10 +19,6 @@ const itemSchema = z.object({
   enrichment: z.string().nullish(),
   enrichedAt: z.coerce.date().nullish(),
   createdAt: z.coerce.date().optional(),
-  // `visibility` + `forkedFromId` đã bị bỏ khỏi đây cùng với hai cột tương ứng trên Item (migration
-  // 20260803190730). Bản sao lưu CŨ vẫn đọc được: `z.object` mặc định LƯỢC key lạ, nên hai trường đó
-  // bị bỏ qua thay vì làm file bị từ chối. Giữ chúng lại chỉ để zod điền `visibility: 'private'` rồi
-  // đưa xuống Prisma — và đó đúng là cách restore hỏng.
 });
 
 const srsStateSchema = z.object({
@@ -91,7 +66,6 @@ const sentenceSchema = z.object({
   starred: z.boolean().default(false),
   createdAt: z.coerce.date().optional(),
   answeredAt: z.coerce.date().nullish(),
-  // `visibility` + `sharedAt`: cùng lý do như trên — cột đã bị xoá khỏi Sentence, key cũ được lược.
 });
 
 const settingsSchema = z.object({
@@ -115,8 +89,6 @@ const groupMemberSchema = z.object({
   addedAt: z.coerce.date().optional(),
 });
 
-/** The whole per-user export file. Everything except an empty object is tolerated; missing arrays
- *  default to empty so a partial/older export still imports what it has. */
 export const accountBackupSchema = z.object({
   exportedAt: z.coerce.date().optional(),
   userId: z.string().nullish(),
@@ -137,10 +109,6 @@ export type BackupSentence = z.infer<typeof sentenceSchema>;
 export type BackupGroup = z.infer<typeof groupSchema>;
 export type BackupGroupMember = z.infer<typeof groupMemberSchema>;
 
-/**
- * Parse + validate an untrusted account-backup file. Returns a typed result rather than throwing so a
- * bad upload becomes a clean 400 with a message, never a 500. `raw` is whatever `JSON.parse` produced.
- */
 export function parseAccountBackup(
   raw: unknown,
 ): { ok: true; data: AccountBackup } | { ok: false; error: string } {
@@ -156,16 +124,12 @@ export function parseAccountBackup(
   return { ok: true, data: parsed.data };
 }
 
-// --- Pure diff planning ---------------------------------------------------------------------------
-
-/** Which incoming ids will be created, updated, or skipped. Shared by dry-run (count) and apply. */
 export interface IdPlan {
   create: string[];
   update: string[];
   skip: string[];
 }
 
-/** Per-table headline the preview renders. `skip` = rows deliberately not written (dup / conflict). */
 export interface TableDiff {
   table: string;
   create: number;
@@ -177,12 +141,6 @@ export function toDiff(table: string, plan: IdPlan): TableDiff {
   return { table, create: plan.create.length, update: plan.update.length, skip: plan.skip.length };
 }
 
-/**
- * Reconcile incoming rows against what already exists, keyed by a stable id.
- *   upsert      -> existing id updates, new id creates.
- *   insert-only -> existing id is skipped (never rewritten — e.g. ReviewLog, invariant #2).
- * A duplicate id inside the file itself is only acted on once; the rest are skipped.
- */
 export function planById(
   incomingIds: readonly string[],
   existingIds: ReadonlySet<string>,
@@ -206,17 +164,10 @@ export function planById(
   return plan;
 }
 
-/** The natural key that Item enforces per user: (kind, expression). NUL-joined so it can't collide. */
 export function itemKey(kind: string, expression: string): string {
   return `${kind}\u0000${expression}`;
 }
 
-/**
- * Item has BOTH a stable id and a per-user unique (kind, expression). Reconcile by id first; but a NEW
- * id whose (kind, expression) already belongs to a DIFFERENT existing item is a genuine conflict —
- * writing it would violate @@unique([userId, kind, expression]) — so it is skipped and surfaced in the
- * preview ("N mục trùng nội dung, đã bỏ qua") rather than exploding the whole import.
- */
 export function planItems(
   incoming: readonly { id: string; kind: string; expression: string }[],
   existingIds: ReadonlySet<string>,
@@ -244,31 +195,13 @@ export function planItems(
   return plan;
 }
 
-// --- System sync: cross-machine user identity (pure) ----------------------------------------------
-//
-// The whole-DB system sync used to merge the `user` table with ON CONFLICT(id). But better-auth mints a
-// RANDOM id per signup, so the same person/email gets a different id on each machine — the merge then
-// tries to INSERT a "new" user and trips @@unique([email]) (found 2026-07-24). Identity
-// across machines is EMAIL, not id. These pure helpers compute the reconciliation; lib/import.ts applies
-// it in SQL. Kept DB-free so the id-translation logic — where a bug would silently misfile a user's data
-// — is unit-tested without a database.
-
 export interface UserReconcile {
-  /** backup user id -> live user id, for backup users whose email ALREADY exists locally (id differs). */
   idMap: Map<string, string>;
-  /** backup user ids whose email is NOT present locally -> insert the user row as-is (keep its id). */
   insertUserIds: Set<string>;
 }
 
-/** Case/space-insensitive email key (better-auth lowercases, but a snapshot may predate that). */
 const emailKey = (email: string): string => email.trim().toLowerCase();
 
-/**
- * Match backup users to live users by EMAIL. A matched email yields an id-map entry (backup id -> the
- * local id that already owns that email) so every row the backup user owns can be re-homed onto the
- * local account; a brand-new email is flagged for insertion with its own id. A backup user whose id is
- * already identical locally needs neither (it is the same row) — no map entry, not re-inserted.
- */
 export function reconcileUsersByEmail(
   backupUsers: readonly { id: string; email: string }[],
   liveUsers: readonly { id: string; email: string }[],
@@ -286,22 +219,10 @@ export function reconcileUsersByEmail(
 
 const qid = (id: string): string => `"${id.replace(/"/g, '""')}"`;
 
-/**
- * Build the merge INSERT for one table of the system sync. Every user-referencing column (`userId`,
- * `authorId`, ...) is translated through the connection-level TEMP table `uidmap(old_id, new_id)` so a
- * row re-homes onto the locally-matched user; other columns copy verbatim. `INSERT OR IGNORE` makes the
- * whole merge loss-free and collision-proof: a row that already exists — by primary key OR any secondary
- * unique (e.g. Item's (kind, expression) after re-homing) — is skipped, never overwritten and
- * never a crash. (`INSERT OR IGNORE`, not a targetless `ON CONFLICT DO NOTHING`, because the latter is a
- * syntax error on the SQLite build behind the driver adapter.) This is add-only MERGE semantics: existing
- * rows are kept as-is (the trade for never throwing on a unique clash and never destroying local edits).
- */
 export function buildTableMergeSql(opts: {
   table: string;
   cols: readonly string[];
-  /** Subset of `cols` that reference user.id and must be translated via uidmap. */
   userCols: readonly string[];
-  /** Extra filter on the backup rows (alias `b`), e.g. only-new-email users. */
   backupWhere?: string;
 }): string {
   const userSet = new Set(opts.userCols);

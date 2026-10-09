@@ -19,28 +19,12 @@ const LABEL: Record<ResourceKind, string> = {
   vocab: 'Thêm từ vựng',
 };
 
-/**
- * The toolbar button that opens the add form — MODAL on a wide screen, ROUTE on a narrow one
- * (user ask 2026-08-04).
- *
- * Why both, and why the split is by breakpoint rather than a preference: a dialog keeps the list you
- * were working in visible behind it and gets you back in one Esc, which is the right shape on a desktop
- * where there is room for both. On a phone there is no "behind" — the dialog covers the whole screen
- * anyway, and then it is a scrolling box inside a scrolling page whose own header eats the top of a
- * 640px viewport while the keyboard covers the bottom (see ResourceAddForm). There the route wins: real
- * back button, real URL, and the work survives an accidental navigation.
- *
- * Implemented as two triggers hidden at each other's breakpoint (`md:hidden` / `max-md:hidden`) instead
- * of measuring the viewport in JS — cheaper, and no flash of the wrong control on first paint (same
- * technique as TabSelect). `/resources/new` stays a real, linkable page either way.
- */
 export function ResourceAddButton({ kind }: { kind: ResourceKind }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
 
   return (
     <>
-      {/* Phone: navigate. */}
       <ExpandingIconButton
         asChild
         icon={Plus}
@@ -51,7 +35,6 @@ export function ResourceAddButton({ kind }: { kind: ResourceKind }) {
         <Link href={`/resources/new?kind=${kind}`} />
       </ExpandingIconButton>
 
-      {/* Desktop: modal over the list. */}
       <ExpandingIconButton
         icon={Plus}
         label={LABEL[kind]}
@@ -69,8 +52,6 @@ export function ResourceAddButton({ kind }: { kind: ResourceKind }) {
           </DialogHeader>
           <ResourceAddForm
             kind={kind}
-            // In the dialog the form must NOT navigate to /resources (it is already there) — close and
-            // refresh so the new rows appear in the list behind.
             onDone={() => {
               setOpen(false);
               router.refresh();

@@ -6,18 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Explain } from '@/components/shared/explain';
 import { cn } from '@/lib/utils';
 
-/**
- * The ONE control for a bulk (selection) action: an ICON-ONLY button whose name appears in a hover /
- * focus tooltip. Every action in the DataTable's selection dock uses it, so the dock stays a narrow
- * icon column pinned to the right edge (user ask 2026-07-25) while each action is still named — for the
- * eye on hover, and for assistive tech through the always-present `aria-label`.
- *
- * While `pending`, the icon swaps for a spinner and the tooltip shows `pendingLabel` (the icon-only
- * replacement for the old "Đang xóa…" text labels).
- *
- * Works as a Radix `asChild` trigger (`BulkGroupButton` mounts it inside a `DropdownMenuTrigger`): the
- * merged trigger props + ref are forwarded down to the Button, and the Tooltip composes with them.
- */
 export function BulkActionButton({
   icon: Icon,
   label,
@@ -32,9 +20,7 @@ export function BulkActionButton({
   ...props
 }: React.ComponentProps<typeof Button> & {
   icon: LucideIcon;
-  /** The action's name — tooltip text AND accessible name. */
   label: string;
-  /** Tooltip text while the action runs (defaults to `label`). */
   pendingLabel?: string;
   pending?: boolean;
   side?: 'top' | 'right' | 'bottom' | 'left';

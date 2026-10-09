@@ -25,7 +25,6 @@ import { STATE_LABELS } from '@/lib/srs-constants';
 export interface DetailItem {
   expression: string;
   reading: string | null;
-  /** âm Hán Việt (Sino-Vietnamese) — vocab only, Claude-filled. */
   hanviet?: string | null;
   meaningVi: string;
   notes: string | null;
@@ -35,12 +34,6 @@ export interface DetailItem {
   srs: { state: number; due: string | Date; reps?: number; lapses?: number } | null;
 }
 
-/**
- * Full detail of a grammar pattern / vocab word — opened by clicking the term in the resources table.
- * FSRS status + (grammar) the enrichment card (shared `<EnrichmentCard>`, collapsible) + (vocab) âm
- * Hán Việt + example. Read-only; editing lives in the ⋮ row menu. The kana reading is only shown when
- * the term actually contains kanji (a kana-only pattern's "reading" repeats itself).
- */
 export function ItemDetailDialog({
   item,
   kind,
@@ -54,19 +47,12 @@ export function ItemDetailDialog({
 }: {
   item: DetailItem;
   kind: 'grammar' | 'vocab';
-  /** TTS settings, threaded from the table so every Japanese line inside can be played. */
   voiceSpeaker?: number;
   speechRate?: number;
   showFurigana?: boolean;
-  /** When set, the modal shows a "Mở trang chi tiết" link to the item's own page (e.g.
-   * `/resources/<id>`). Omit for items with no detail page for the viewer (others' /library items). */
   detailHref?: string;
-  /** Show the kana reading as furigana <ruby> ABOVE the expression (text trigger only). */
   readingOnTop?: boolean;
-  /** 'text' = the term itself opens the dialog. 'icon' = a small info/enrichment icon opens it, so the
-   * term can be a separate <SpokenLine> (audio + karaoke + furigana) — used in the resources tables. */
   triggerVariant?: 'text' | 'icon';
-  /** Show the FSRS status box. Off for /library items the viewer doesn't own (they have no schedule). */
   showSrs?: boolean;
 }) {
   const enrichment = kind === 'grammar' ? parseEnrichment(item.enrichment) : null;
@@ -111,8 +97,6 @@ export function ItemDetailDialog({
       <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle className="flex flex-wrap items-center gap-2">
-            {/* Playable here too: the modal is the quick-look surface, so hearing the term should not
-                require opening the full page. Ruby comes from the stored reading when it has kanji. */}
             <SpokenLine
               text={item.expression}
               speakText={speakable(item.expression)}
@@ -133,7 +117,6 @@ export function ItemDetailDialog({
         </DialogHeader>
 
         <div className="space-y-5 text-sm">
-          {/* âm Hán Việt (vocab) */}
           {kind === 'vocab' && item.hanviet && (
             <section className="space-y-1">
               <SectionTag>Âm Hán Việt</SectionTag>
@@ -141,7 +124,6 @@ export function ItemDetailDialog({
             </section>
           )}
 
-          {/* FSRS status — reading-only, never editable */}
           {showSrs && (
             <div className="flex flex-wrap gap-x-5 gap-y-1 rounded-lg border border-border/70 p-3 text-xs text-muted-foreground">
               <span>
@@ -168,11 +150,6 @@ export function ItemDetailDialog({
             </div>
           )}
 
-          {/* The stored example sentence (`notes`) is a VOCAB-only field of the Item row, and it used
-              to render HERE under its own «Ví dụ» heading — immediately above a card that renders a
-              second «Ví dụ» of its own. Two headings, same name, same dialog. It now goes into the
-              card through `storedExample`, which is also where it can be deduped against the card's
-              own examples. Same fix as the detail page; both surfaces had the defect. */}
           <EnrichmentCard
             raw={item.enrichment}
             kind={kind === 'vocab' ? VOCAB_KIND : GRAMMAR_KIND}

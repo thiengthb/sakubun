@@ -1,10 +1,3 @@
-// DB harness for the paste-anything dry run (plan step 6.1).
-//
-// The headline property is the one the plan called out by name: tilde / wave-dash / quote / NFKC
-// variants of a pattern the learner ALREADY owns must classify as `duplicate`, never as `new`. This
-// path adds in BULK, so a normalisation miss here does not produce one stray row — it produces a
-// library with two of everything the source material happened to quote.
-
 import { beforeAll, describe, expect, it } from 'vitest';
 import { createTestDb } from '@/lib/test-db';
 
@@ -16,11 +9,6 @@ type Db = typeof import('@/lib/db');
 let P: Preview;
 let prisma: Db['prisma'];
 
-/**
- * Per-case isolation. Each test used to take a `freshUser()` and lean on the tenancy filter to keep its
- * rows apart; with one learner and no tenant column, isolation has to come from an empty DB instead.
- * Children before parents (SQLite FK).
- */
 async function resetData(): Promise<void> {
   await prisma.reviewLog.deleteMany({});
   await prisma.sentence.deleteMany({});
@@ -72,7 +60,6 @@ describe('the normaliser is what stands between a paste and a duplicated library
     const preview = await P.previewImport([candidate(pasted)]);
     expect(preview.counts).toEqual({ new: 0, duplicate: 1, ambiguous: 0 });
     expect(preview.duplicate[0].itemId).toBe(itemId);
-    // The learner sees BOTH spellings: what they pasted and what is actually stored.
     expect(preview.duplicate[0].stored).toBe('〜わけにはいかない');
     expect(preview.duplicate[0].expression).toBe(pasted);
   });
@@ -80,7 +67,6 @@ describe('the normaliser is what stands between a paste and a duplicated library
   it('folds HALF-WIDTH katakana onto the stored word (this is what NFKC is actually for)', async () => {
     await resetData();
     const itemId = await addItem('コーヒー', { kind: 'VOCAB' });
-    // ｺｰﾋｰ is what old systems and some OCR output produce; NFKC maps it to コーヒー.
     const preview = await P.previewImport([candidate('ｺｰﾋｰ', 'VOCAB')]);
     expect(preview.counts).toEqual({ new: 0, duplicate: 1, ambiguous: 0 });
     expect(preview.duplicate[0].itemId).toBe(itemId);
@@ -89,10 +75,6 @@ describe('the normaliser is what stands between a paste and a duplicated library
   it('does NOT fold katakana onto hiragana — a documented limit, not an oversight', async () => {
     await resetData();
     await addItem('わけにはいかない');
-    // NFKC normalises WIDTH and compatibility forms; it does not change kana script, and folding it
-    // ourselves would be wrong for VOCAB (みる / ミル can be different words). A katakana-written
-    // pattern therefore reads as NEW. Pinned so a later session does not "fix" the shared normaliser —
-    // which the coach, the lookup and the card merge all depend on — for this rare case.
     const preview = await P.previewImport([candidate('ワケにはいかない')]);
     expect(preview.counts).toEqual({ new: 1, duplicate: 0, ambiguous: 0 });
   });

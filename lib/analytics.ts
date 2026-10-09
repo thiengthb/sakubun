@@ -1,7 +1,3 @@
-// Read-only analytics aggregations for the dashboard (`/`). Kept separate from lib/practice.ts (which
-// owns the practice-loop writes) — this is pure reporting. Reuses getStats/getWeakReport in the page;
-// this module adds the heavier time-series + distribution rollups those don't cover.
-
 import { prisma } from '@/lib/db';
 import { needsWork, scoreEnrichment } from '@/lib/enrichment-quality';
 import { getSettings } from '@/lib/practice';
@@ -23,9 +19,6 @@ import { GRAMMAR_KIND, VOCAB_KIND } from '@/lib/item-kinds';
 const DAY_MS = 86_400_000;
 const HEATMAP_DAYS = 364; // 52 weeks (GitHub-style density)
 const ACCURACY_WEEKS = 8;
-// `MAX_ANSWER_SEC` (câu trả lời quá ngưỡng coi như bị bỏ dở — tab để mở — nên không tính vào thời gian
-// trung bình) giờ ở `lib/perf-breakdown.ts` cùng phép tính dùng nó. Trước đây file này và `lib/stats.ts`
-// mỗi bên khai một hằng 3600 riêng.
 
 export interface LevelDist {
   level: string;
@@ -49,22 +42,12 @@ export interface Analytics {
   forecast14: { day: string; count: number }[]; // grammar due next 14 days
   avgAnswerSec: number; // mean time-to-answer over the accuracy window (0 if no data)
   answerTimeByWeek: { week: string; avgSec: number }[]; // oldest → newest, avg seconds/answer
-  // How score + time-to-answer break down by sentence DIFFICULTY (target pattern's JLPT level) and
-  // by sentence LENGTH bucket — "hard/long sentences → lower score, more time?". Only non-empty
-  // groups are returned; avgScore is null when no sentence in the group carried a /100 score.
   scoreByLevel: PerfBreakdown[];
   scoreByLength: PerfBreakdown[];
-  // Measured retention over the same window, against the target FSRS schedules to. The app has
-  // always had the target and never checked the outcome — see lib/retention.ts.
   trueRetention: TrueRetention;
   desiredRetention: number; // 0..1, from settings
   retentionWindowDays: number;
   watchlist: DifficultItem[]; // costly-to-hold patterns, worst difficulty first
-  // Enrichment-card coverage, measured by QUALITY (lib/enrichment-quality.ts), not by presence — the
-  // same definition `get_library_health` uses, so the two surfaces cannot disagree about the same
-  // library. `enrichedGrammar` = cards that actually MEET the bar; `studiedWithoutCard` = patterns the
-  // learner is ACTUALLY studying whose card does not, which degrades the new-item mini-lesson, the quiz
-  // distractors (the protocol reaches for enrichment.contrasts first) and the detail page at once.
   enrichedGrammar: number;
   grammarTotal: number;
   studiedWithoutCard: number;
@@ -79,8 +62,6 @@ export interface DifficultItem {
   reps: number;
 }
 
-// `PerfBreakdown` chuyển sang `lib/perf-breakdown.ts` cùng phép tính sinh ra nó, và được RE-EXPORT ở
-// đây để `components/dashboard/stats-view.tsx` (consumer duy nhất ngoài lib) không phải đổi import.
 export type { PerfBreakdown };
 
 export async function getAnalytics(now: Date = new Date()): Promise<Analytics> {
@@ -121,8 +102,6 @@ export async function getAnalytics(now: Date = new Date()): Promise<Analytics> {
       },
       select: { due: true },
     }),
-    // Graded answers in the accuracy window — for time-to-answer (answeredAt − createdAt) AND the
-    // difficulty/length performance breakdowns (score + timing by target-pattern level + source length).
     prisma.sentence.findMany({
       where: { status: 'GRADED', answeredAt: { gte: answerWindowStart } },
       select: {
@@ -133,10 +112,6 @@ export async function getAnalytics(now: Date = new Date()): Promise<Analytics> {
         reviews: { select: { role: true, item: { select: { level: true } } } },
       },
     }),
-    // Card coverage is scored, not counted (2026-07-27). `enrichment: { not: null }` called a
-    // one-line card done forever — the same blindness the MCP surface already fixed — so the dashboard
-    // and `get_library_health` would report different numbers for the same library. Two fetches of one
-    // column, scored in JS; the tier cannot be expressed in SQL.
     prisma.item.findMany({
       where: { kind: GRAMMAR_KIND },
       select: { enrichment: true },
@@ -145,9 +120,6 @@ export async function getAnalytics(now: Date = new Date()): Promise<Analytics> {
       where: { kind: GRAMMAR_KIND, srs: { is: { reps: { gt: 0 } } } },
       select: { enrichment: true },
     }),
-    // Expensive-to-hold patterns: high FSRS difficulty, regardless of whether they have lapsed.
-    // Complements the leech list in getWeakReport (which keys on `lapses`) — an item can cost a
-    // lot to retain without ever having been forgotten outright, and lapses alone never shows it.
     prisma.srsState.findMany({
       where: {
         difficulty: { gte: WATCHLIST_DIFFICULTY },
@@ -166,7 +138,6 @@ export async function getAnalytics(now: Date = new Date()): Promise<Analytics> {
     }),
   ]);
 
-  // --- Activity heatmap (reviews per study-day, last HEATMAP_DAYS = 364 days) ---
   const dayTally = new Map<string, number>();
   let reviewsLast30 = 0;
   let newLast30 = 0;
@@ -187,7 +158,6 @@ export async function getAnalytics(now: Date = new Date()): Promise<Analytics> {
   });
   const activityMax = Math.max(1, ...activity.map((a) => a.count));
 
-  // --- Accuracy by week (rating ≥ 3 = correct), last 8 weeks ---
   const accuracyByWeek = Array.from({ length: ACCURACY_WEEKS }, (_, i) => {
     const start = new Date(now.getTime() - (ACCURACY_WEEKS - i) * 7 * DAY_MS);
     const end = new Date(now.getTime() - (ACCURACY_WEEKS - 1 - i) * 7 * DAY_MS);
@@ -202,7 +172,6 @@ export async function getAnalytics(now: Date = new Date()): Promise<Analytics> {
     return { week: `${start.getUTCMonth() + 1}/${start.getUTCDate()}`, total, correct };
   });
 
-  // --- Grammar distribution by JLPT level × FSRS state ---
   const byLevel = new Map<string, LevelDist>();
   for (const l of JLPT_LEVELS) {
     byLevel.set(l, {
@@ -227,7 +196,6 @@ export async function getAnalytics(now: Date = new Date()): Promise<Analytics> {
   }
   const levelDist = JLPT_LEVELS.map((l) => byLevel.get(l)!).filter((d) => d.total > 0);
 
-  // --- Grammar due forecast, next 14 days ---
   const fTally = new Map<string, number>();
   for (const s of dueSoon) {
     const key = s.due.toISOString().slice(0, 10);
@@ -238,7 +206,6 @@ export async function getAnalytics(now: Date = new Date()): Promise<Analytics> {
     return { day: key, count: fTally.get(key) ?? 0 };
   });
 
-  // --- Time-to-answer (answeredAt − createdAt, seconds), graded sentences, last 8 weeks ---
   const durationSec = (s: { createdAt: Date; answeredAt: Date | null }): number =>
     s.answeredAt ? (s.answeredAt.getTime() - s.createdAt.getTime()) / 1000 : -1;
   const allDurations = answered.map(durationSec).filter((sec) => sec >= 0 && sec <= MAX_ANSWER_SEC);
@@ -259,7 +226,6 @@ export async function getAnalytics(now: Date = new Date()): Promise<Analytics> {
     return { week: `${start.getUTCMonth() + 1}/${start.getUTCDate()}`, avgSec };
   });
 
-  // --- Performance by difficulty (target pattern's level) and by source length ---
   const { scoreByLevel, scoreByLength } = breakdownByLevelAndLength(answered);
 
   return {
@@ -276,13 +242,9 @@ export async function getAnalytics(now: Date = new Date()): Promise<Analytics> {
     answerTimeByWeek,
     scoreByLevel,
     scoreByLength,
-    // Only reviews of cards already in the Review state count — learning/relearning steps are not
-    // memory tests, and folding them in inflates the number (lib/retention.ts).
     trueRetention: computeTrueRetention(logs.filter((l) => l.state === REVIEW_STATE)),
     desiredRetention: settings.desiredRetention,
     retentionWindowDays: HEATMAP_DAYS,
-    // Both lists are queried `where: { kind: GRAMMAR_KIND }` — hence the literal rather than a per-row
-    // kind. The field names say so too: this pair is about the GRAMMAR library.
     enrichedGrammar: allCards.filter((c) => !needsWork(scoreEnrichment(c.enrichment, GRAMMAR_KIND).tier))
       .length,
     grammarTotal: allCards.length,

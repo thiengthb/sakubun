@@ -13,21 +13,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { isUnauthorized, trpc } from '~/lib/api';
 import { useTheme, type Theme } from '~/lib/theme';
 
-/**
- * Tiến độ — the home screen.
- *
- * EVERY NUMBER HERE ARRIVES ALREADY COMPUTED. Nothing on this screen is derived from timestamps: the
- * study day, the streak, "how much of today's goal is done" all depend on `settings.dayCutoffHour`
- * evaluated in the server's timezone, and a phone that worked them out itself would quietly disagree
- * with the web (ADR 0001, decision 4). The only arithmetic below is over the snapshot's own counts.
- */
 export default function HomeScreen() {
   const theme = useTheme();
   const me = useQuery(trpc.me.queryOptions());
   const stats = useQuery(trpc.stats.queryOptions());
   const snapshot = useQuery(trpc.snapshot.queryOptions());
 
-  // Only a real 401 sends the learner to /login. A network failure must not — see isUnauthorized.
   if (isUnauthorized(me.error) || isUnauthorized(stats.error) || isUnauthorized(snapshot.error)) {
     return <Redirect href="/login" />;
   }
@@ -53,7 +44,6 @@ export default function HomeScreen() {
     );
   }
 
-  // Three independent queries: no one of them narrows another's `data`, so one explicit gate.
   const account = me.data;
   const s = stats.data;
   const lib = snapshot.data;
@@ -112,8 +102,6 @@ export default function HomeScreen() {
                     styles.bar,
                     {
                       backgroundColor: day.count > 0 ? theme.accent : theme.border,
-                      // Bars are plain Views on purpose: seven rectangles do not justify a charting
-                      // dependency. That call gets revisited when a screen needs a real chart.
                       height: Math.max(4, (day.count / peakDay) * 80),
                     },
                   ]}
@@ -154,11 +142,6 @@ export default function HomeScreen() {
         </Section>
 
         <Text style={[styles.footnote, { color: theme.muted }]}>
-          {/* Ghim +07 như mọi mốc thời gian khác của app (`APP_TIME_ZONE` trong lib/format.ts). Chuỗi
-              được viết lại ở đây thay vì import: `mobile` chỉ mới dùng `@/lib/...` cho import TYPE — thứ
-              bị xoá lúc build — nên chưa có bằng chứng Metro giải được alias đó lúc CHẠY, và một hằng số
-              19 ký tự không đáng đánh cược bundle. Hạn mức ngày của server cũng tính theo +07, nên hiện
-              giờ máy sẽ làm "hôm nay" trên điện thoại lệch với "hôm nay" của hạn mức. */}
           Số liệu lúc{' '}
           {new Date(s.takenAt).toLocaleTimeString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}
         </Text>

@@ -34,7 +34,6 @@ describe('rateOnce', () => {
   });
 
   it('Again on a mature Review card counts a lapse', () => {
-    // Bring the card to Review state first (Easy graduates immediately).
     const graduated = rateOnce(newSrsFields(NOW), 4, { ...RETENTION, now: NOW }).next;
     expect(graduated.state).toBe(2); // Review
     const later = new Date(graduated.due.getTime() + 24 * 3600 * 1000);

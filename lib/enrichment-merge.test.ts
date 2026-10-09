@@ -3,15 +3,9 @@ import { CURRENT_ENRICHMENT_VERSION, ENRICHMENT_CAPS, type Enrichment } from '@/
 import { mergeEnrichment, patchFromDonor, type EnrichmentPatch } from '@/lib/enrichment-merge';
 import { GRAMMAR_KIND, VOCAB_KIND } from '@/lib/item-kinds';
 
-/**
- * Every fixture in this file is the grammar pattern 〜ばかりに, so the kind is fixed here rather than
- * repeated at ~14 call sites. The VOCAB side of the merge (synonyms/antonyms, the vocab completeness
- * bar deciding whether `v` may be stamped) has its own describe block at the bottom.
- */
 const mergeGrammar = (base: Enrichment, patch: EnrichmentPatch) =>
   mergeEnrichment(base, patch, GRAMMAR_KIND);
 
-/** A COMPLETE v1 card — the state that made the destructive overwrite expensive in the first place. */
 function card(over: Partial<Enrichment> = {}): Enrichment {
   return {
     structure: ['動詞辞書形 + 〜ばかりに'],
@@ -40,7 +34,6 @@ describe('mergeEnrichment — existing content is never lost (the whole reason i
 
     expect(out.contrasts).toHaveLength(2);
     expect(out.contrasts[0]).toEqual(base.contrasts[0]);
-    // The four fields the lab watched `enrich_items` destroy on exactly this operation.
     expect(out.structure).toEqual(base.structure);
     expect(out.collocations).toEqual(base.collocations);
     expect(out.pitfalls).toEqual(base.pitfalls);
@@ -125,7 +118,6 @@ describe('mergeEnrichment — scalars replace, and the old canonical example is 
 
 describe('mergeEnrichment — `v` means "complete under the current format", not "recently touched"', () => {
   it('stamps the current version once the patch completes the card', () => {
-    // Missing contrasts => `thin`. The patch supplies the last dimension.
     const thin = card({ contrasts: [], v: 1 });
     const report = mergeGrammar(thin, {
       add: { contrasts: [{ with: '〜せいで', note: 'Sắc thái hối tiếc mạnh hơn.' }] },
@@ -161,7 +153,6 @@ describe('patchFromDonor — take what I lack, never overwrite what is mine', ()
     expect(report.card.structure).toEqual(theirs.structure);
     expect(report.card.pitfalls).toEqual(theirs.pitfalls);
     expect(report.card.contrasts).toEqual(theirs.contrasts);
-    // Their canonical example arrives as just another worked example.
     expect(report.card.examples).toContainEqual(theirs.example);
     expect(report.card.register).toBe('trang trọng');
   });
@@ -176,7 +167,6 @@ describe('patchFromDonor — take what I lack, never overwrite what is mine', ()
 });
 
 describe('vocabulary relations merge like every other list (2026-08-12)', () => {
-  /** A word card, thin on purpose: no synonyms yet. */
   function word(over: Partial<Enrichment> = {}): Enrichment {
     return {
       structure: [],
@@ -207,8 +197,6 @@ describe('vocabulary relations merge like every other list (2026-08-12)', () => 
   });
 
   it('the SAME word with a reworded gloss is a duplicate — the stored gloss wins', () => {
-    // Identity is the term, exactly like a contrast's `with`: the learner has already read the note that
-    // is on the card, and a second entry for one word would read as two different words.
     const base = word({ synonyms: [{ term: '果たす', vi: 'thực hiện xong' }] });
     const report = mergeVocab(base, {
       add: { synonyms: [{ term: '果たす', vi: 'hoàn thành (cách nói khác)' }] },
@@ -234,8 +222,6 @@ describe('vocabulary relations merge like every other list (2026-08-12)', () => 
   });
 
   it('a patch that completes a word card stamps the CURRENT version', () => {
-    // The bar being kind-aware is what makes this work: the same patch on the same card must NOT stamp
-    // when scored as grammar, because a word card has no `structure` and grammar requires one.
     const base = word();
     const patch: EnrichmentPatch = {
       add: { antonyms: [{ term: '破る', reading: 'やぶる', vi: 'phá, không giữ (lời hứa)' }] },
@@ -258,14 +244,10 @@ describe('vocabulary relations merge like every other list (2026-08-12)', () => 
 
 describe('đường di trú của một thẻ ĐÃ ĐỦ nhưng format cũ', () => {
   it('patch RỖNG vẫn đóng dấu lại, nên không phải viết lại nội dung đang đúng', () => {
-    // Đây là đường di trú cho cả kho sau khi bar lên v3: một thẻ v1/v2 đã đạt bar không thiếu gì cả,
-    // nó chỉ thiếu con dấu. Nếu patch rỗng bị từ chối thì cách duy nhất còn lại là enrich_items —
-    // tức GHI ĐÈ toàn bộ thẻ để sửa một con số, đúng thao tác mà mergeEnrichment tồn tại để tránh.
     const report = mergeGrammar(card({ v: 1 }), {});
     expect(report.vStamped).toBe(true);
     expect(report.touched).toBe(true);
     expect(report.card.v).toBe(CURRENT_ENRICHMENT_VERSION);
-    // Và không một mục nào bị thêm/bớt/đổi.
     expect(report.added).toEqual({});
     expect(report.replaced).toEqual([]);
     expect(report.card.contrasts).toEqual(card().contrasts);

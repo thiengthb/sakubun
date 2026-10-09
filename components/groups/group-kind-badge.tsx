@@ -1,15 +1,12 @@
 import { cn } from '@/lib/utils';
 import type { GroupKind } from '@/lib/group-kinds';
 
-// Vietnamese labels for the three group kinds (UI copy = vi, invariant #4). Shared by the groups page,
-// the group detail, and the resources-table integration so the wording never drifts.
 export const GROUP_KIND_LABELS: Record<GroupKind, string> = {
   vocab: 'Từ vựng',
   grammar: 'Ngữ pháp',
   mixed: 'Hỗn hợp',
 };
 
-// Semantic-token colors (no hardcoded hex): vocab = info (blue), grammar = ok (emerald), mixed = muted.
 const KIND_CLASS: Record<GroupKind, string> = {
   vocab: 'border-info/30 bg-info/10 text-info',
   grammar: 'border-ok/30 bg-ok/10 text-ok',

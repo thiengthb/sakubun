@@ -2,17 +2,6 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-/**
- * Enforces the platform UI layout standard (`nuc-platform/12-ui-layout-standard.md`) as a GATE, not a
- * doc. Written because the same two regressions kept coming back after being written down: a tabbed page
- * rendering its `<TabsList>` as content (tabs land BELOW the breadcrumb instead of beside it), and a new
- * page skipping `PageShell` entirely. A failing test is the mechanism; CLAUDE.md is only the reminder
- * (same rationale as `no-emoji.test.ts`).
- *
- * If a check here legitimately should not apply to a file, add it to that check's allow-list WITH a
- * reason — don't weaken the check.
- */
-
 const SKIP_DIRS = new Set(['node_modules', 'generated', '.next']);
 
 function walk(dir: string, out: string[] = []): string[] {
@@ -28,15 +17,10 @@ function walk(dir: string, out: string[] = []): string[] {
 const rel = (file: string) => relative(process.cwd(), file).split(sep).join('/');
 
 describe('UI layout standard (nuc-platform/12-ui-layout-standard.md)', () => {
-  // Rule 4-ish: page-level tabs sit BESIDE the breadcrumb — a TabsList is passed to PageShell.headerAside,
-  // never rendered as page content (which drops the tabs below the breadcrumb).
   it('every page-level <TabsList> is passed via PageShell headerAside', () => {
     const ALLOW = new Set([
       'components/shell/page-shell.tsx', // documents the slot in a comment; renders no TabsList
       'components/resources/item-analytics.tsx', // detail page: Chỉ số / Thẻ are content sub-tabs UNDER the item header
-      // The shared switcher itself (TabsList from md up, Select below). It is not a page — it is the
-      // thing pages PASS to headerAside, so the rule applies to its callers, and they are still
-      // checked: a page that rendered <TabSelect> as content instead would fail rule 4 elsewhere.
       'components/shared/tab-select.tsx',
     ]);
     const offenders: string[] = [];
@@ -56,11 +40,6 @@ describe('UI layout standard (nuc-platform/12-ui-layout-standard.md)', () => {
     ).toEqual([]);
   });
 
-  // The app's compact tab switcher must open its list BELOW the trigger. `SelectContent` defaults to
-  // Radix's `item-aligned` positioning (a native-select emulation that lays the list OVER the trigger so
-  // the active option covers it), which on this control hid the tab bar, the breadcrumb and the toolbar
-  // the moment you tapped it — reported 2026-08-05. One prop stands between the two behaviours, it looks
-  // like noise to a reader, and nothing else in the file explains it, so it is asserted here.
   it('the mobile tab select opens below its trigger (position="popper")', () => {
     const src = readFileSync('components/shared/active-tab-select.tsx', 'utf8');
     expect(
@@ -70,14 +49,10 @@ describe('UI layout standard (nuc-platform/12-ui-layout-standard.md)', () => {
     ).toBe(true);
   });
 
-  // Rule 2: every route page renders inside a PageShell — either directly, or via a view component it
-  // imports. Chromeless auth pages and the redirect stub are the only exemptions.
   it('every app/**/page.tsx reaches a PageShell', () => {
     const EXEMPT = new Set([
       'app/login/page.tsx', // chromeless (AuthNav, no breadcrumb)
       'app/register/page.tsx', // chromeless
-      // Dev-only harness (404 in production): it renders the routes' own `loading.tsx`, each of which
-      // owns a PageSkeleton — PageShell's twin, and the thing e2e/skeleton.spec.ts measures against it.
       'app/dev-skeleton/[route]/page.tsx',
     ]);
     const offenders: string[] = [];
@@ -85,10 +60,8 @@ describe('UI layout standard (nuc-platform/12-ui-layout-standard.md)', () => {
       const path = rel(file);
       if (!path.endsWith('/page.tsx') || EXEMPT.has(path)) continue;
       const src = readFileSync(file, 'utf8');
-      // Redirect stubs (e.g. /groups, /items, /vocab → /resources) render no UI.
       if (/\bredirect\(/.test(src)) continue;
       if (src.includes('PageShell')) continue;
-      // Otherwise a view it imports from @/components must own the PageShell.
       const views = [...src.matchAll(/from '@\/components\/([^']+)'/g)].map((m) => m[1]);
       const reachesShell = views.some((v) => {
         const vp = join('components', `${v}.tsx`);

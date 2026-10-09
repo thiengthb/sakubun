@@ -9,8 +9,6 @@ export const dynamic = 'force-dynamic';
 
 export default async function GroupDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  // Auth gate: redirects to /login when there is no valid session. The loaders below take no userId —
-  // data is scoped by the login, not by a tenant column (CLAUDE.md §Gotchas).
   await getSessionUserId();
   const group = await getGroup(id);
   if (!group) notFound();

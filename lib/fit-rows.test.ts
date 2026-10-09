@@ -1,13 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { fitItemCount } from '@/lib/fit-rows';
 
-// The viewport-fit math is where a bug shows up as the exact symptom this feature fixes: too many rows
-// -> the page scrolls and the pagination bar drops off screen. These pin the reserve (footer +
-// bottomGap) is honoured, the grid multiplies by columns, and the min/max clamps hold.
-
 describe('fitItemCount', () => {
   it('reserves the footer + bottomGap so rows never overrun the viewport', () => {
-    // 1000 tall, rows start at 200, 60px footer, 40px bottomGap -> 700px for rows / 50px = 14 rows.
     expect(
       fitItemCount({
         viewportHeight: 1000,
@@ -34,7 +29,6 @@ describe('fitItemCount', () => {
   });
 
   it('multiplies rows by the grid column count', () => {
-    // 700px / 100px pitch = 7 rows; 3 columns -> 21 items.
     expect(
       fitItemCount({
         viewportHeight: 1000,

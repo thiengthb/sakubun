@@ -1,19 +1,3 @@
-// Study-groups DB layer (lib/groups.ts), against a REAL throwaway SQLite DB.
-//
-// REWRITTEN 2026-08-05 when groups came back single-user. The original test was built around two users
-// (USER_A / USER_B) and half its cases asserted TENANT ISOLATION — "B cannot see A's group", "B cannot
-// delete A's group". Those columns are gone (CLAUDE.md §Gotchas: the boundary is the LOGIN, not a
-// userId), so mechanically stripping the userId argument would have left a file whose comments claimed
-// to test a guard that no longer exists, and whose duplicated fixtures existed only to feed it. What is
-// worth testing is the behaviour that IS still load-bearing, and every case below is one of those:
-//
-//   the kind guard (a vocab word must not land in a grammar group) · idempotent adds · the many-to-many
-//   cascade (deleting a group must not delete the ITEMS) · the DRY-RUN preview Claude shows before it
-//   writes anything · what the two pickers offer.
-//
-// The original also built its schema with `npx prisma db push`, which Prisma 7 refuses to run for an
-// agent — so this uses createTestDb() (applies the committed migrations), per CLAUDE.md.
-
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { createTestDb } from '@/lib/test-db';
 
@@ -32,8 +16,6 @@ beforeAll(async () => {
   ({ prisma } = await import('@/lib/db'));
 });
 
-// Items are re-seeded per case: Item is unique on [kind, expression], so a leftover row from the
-// previous case would collide (CLAUDE.md §Gotchas — isolate with resetData, not with a new user).
 beforeEach(async () => {
   await prisma.groupMember.deleteMany({});
   await prisma.group.deleteMany({});
@@ -71,7 +53,6 @@ describe('kind guard', () => {
   it('nhóm grammar KHÔNG nhận từ vựng', async () => {
     const g = await G.createGroup({ name: 'chỉ ngữ pháp', kind: 'grammar' });
     await expect(G.addItemsToGroup(g.id, [vocabId])).rejects.toThrow(/does not accept/i);
-    // và không ghi một phần nào cả
     expect((await G.getGroup(g.id))?.members).toHaveLength(0);
   });
 
@@ -132,7 +113,6 @@ describe('delete', () => {
     expect(await G.deleteGroup(g.id)).toBe(true);
     expect(await G.getGroup(g.id)).toBeNull();
     expect(await prisma.groupMember.count()).toBe(0);
-    // Cái quan trọng: nhóm chỉ là lớp tổ chức, xoá nó không được làm mất dữ liệu học.
     expect(await prisma.item.count()).toBe(2);
     expect(await prisma.item.findUnique({ where: { id: grammarId } })).not.toBeNull();
   });
@@ -173,7 +153,6 @@ describe('update', () => {
     await G.addItemsToGroup(g.id, [grammarId, vocabId]);
     await G.updateGroup(g.id, { kind: 'grammar' });
     expect((await G.getGroup(g.id))?.memberCount).toBe(2);
-    // nhưng lần thêm SAU thì bị chặn theo kind mới
     const another = await prisma.item.create({
       data: { kind: 'VOCAB', expression: '曖昧', meaningVi: 'mơ hồ', level: 'N2' },
     });
@@ -187,7 +166,6 @@ describe('previewGroupMembers (dry run — ghi 0 dòng)', () => {
     expect(preview.fit.map((i) => i.itemId)).toEqual([grammarId]);
     expect(preview.mismatched.map((i) => i.itemId)).toEqual([vocabId]);
     expect(preview.notFound).toEqual(['khong-co-that']);
-    // DRY RUN: không tạo nhóm, không tạo membership
     expect(await prisma.group.count()).toBe(0);
     expect(await prisma.groupMember.count()).toBe(0);
   });
@@ -201,10 +179,6 @@ describe('previewGroupMembers (dry run — ghi 0 dòng)', () => {
   });
 });
 
-// listItems() is the resources page's loader; the tables' bulk "Gỡ khỏi nhóm" menu narrows itself with
-// the per-row groupIds it returns. Opt-in because list_grammar / list_vocab hand the same rows to
-// Claude verbatim, so an always-on array is a per-row token tax on the hottest MCP path — that is the
-// half worth a test, since forgetting the flag fails SILENTLY (an empty menu, not an error).
 describe('listItems({ withGroupIds })', () => {
   it('attaches the ids of every group the item is in', async () => {
     const { listItems } = await import('@/lib/practice');
@@ -242,10 +216,8 @@ describe('listItems({ withGroupIds })', () => {
 describe('pickers', () => {
   it('listAddableItems loại thành viên đã có và tôn trọng kind', async () => {
     const g = await G.createGroup({ name: 'chỉ ngữ pháp', kind: 'grammar' });
-    // trước khi thêm: chỉ mẫu ngữ pháp là ứng viên (từ vựng bị loại theo kind)
     expect((await G.listAddableItems(g.id))?.map((i) => i.itemId)).toEqual([grammarId]);
     await G.addItemsToGroup(g.id, [grammarId]);
-    // sau khi thêm: không còn ứng viên nào
     expect(await G.listAddableItems(g.id)).toEqual([]);
   });
 
@@ -261,7 +233,6 @@ describe('pickers', () => {
 
     const picker = await G.getItemGroupPicker(grammarId);
     expect(picker?.member.map((g) => g.id)).toEqual([inGroup.id]);
-    // nhóm 'vocab' KHÔNG được đề xuất cho một item grammar
     expect(picker?.addable.map((g) => g.id)).toEqual([addable.id]);
   });
 

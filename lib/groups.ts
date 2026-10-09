@@ -1,22 +1,13 @@
-// Study groups — named collections of Items (vocab/grammar) that scope focused practice. The ONLY
-// DB layer for group CRUD + membership; the UI Server Actions and the MCP tools both call these, so
-// behavior stays identical across surfaces (same contract as lib/practice.ts). Groups are purely an
-// organization + practice-scoping layer — they NEVER touch FSRS.
-
 import { prisma } from '@/lib/db';
 import { GRAMMAR_KIND, VOCAB_KIND } from '@/lib/item-kinds';
 import { cleanText, cleanTextOrNull } from '@/lib/text';
 import type { GroupKind } from '@/lib/group-kinds';
 
-// Re-export the client-safe kind enum/type so server callers can import everything from lib/groups.
 export { GROUP_KINDS, isGroupKind, type GroupKind } from '@/lib/group-kinds';
 
-// Item.kind is stored uppercase ('GRAMMAR' | 'VOCAB'); Group.kind is a lowercase soft constraint on
-// which item kinds may join. `mixed` accepts both. SQLite/Prisma can't enforce this — we do, here.
 const GRAMMAR_ITEM_KIND = GRAMMAR_KIND;
 const VOCAB_ITEM_KIND = VOCAB_KIND;
 
-/** Does an Item of `itemKind` belong in a group of `groupKind`? `mixed` takes anything. */
 function itemKindFitsGroup(itemKind: string, groupKind: GroupKind): boolean {
   if (groupKind === 'mixed') return true;
   if (groupKind === 'vocab') return itemKind === VOCAB_ITEM_KIND;
@@ -40,9 +31,6 @@ export interface GroupMemberItem {
   reading: string | null;
   meaningVi: string | null;
   kind: string;
-  // Optional richer fields — populated only by getGroup (feeds the flashcard back face + the enrich
-  // dialog); the add picker (listAddableItems) leaves them undefined since it only renders
-  // expression/reading/meaning.
   hanviet?: string | null;
   notes?: string | null;
   level?: string;
@@ -69,9 +57,6 @@ export interface UpdateGroupPatch {
   note?: string | null;
 }
 
-// ---------------- read ----------------
-
-/** All of a user's groups, newest first, each with its member count. */
 export async function listGroups(): Promise<GroupSummary[]> {
   const rows = await prisma.group.findMany({
     include: { _count: { select: { members: true } } },
@@ -89,7 +74,6 @@ export async function listGroups(): Promise<GroupSummary[]> {
   }));
 }
 
-/** One group with its member items, or null if there is no such group. */
 export async function getGroup(groupId: string): Promise<GroupDetail | null> {
   const g = await prisma.group.findFirst({
     where: { id: groupId },
@@ -143,11 +127,6 @@ export async function getGroup(groupId: string): Promise<GroupDetail | null> {
   };
 }
 
-/**
- * Items the user could still add to this group: their own items whose kind fits the group's kind and
- * that aren't already members (`groups: { none }`). Returns null if there is no such group. Feeds
- * the "add items" picker on the group detail page.
- */
 export async function listAddableItems(groupId: string): Promise<GroupMemberItem[] | null> {
   const group = await prisma.group.findFirst({
     where: { id: groupId },
@@ -177,10 +156,6 @@ export async function listAddableItems(groupId: string): Promise<GroupMemberItem
   }));
 }
 
-/**
- * For the item-detail page: the groups this item is IN (removable chips) + the groups it could still
- * be ADDED to (compatible kind, not already a member). Returns null if there is no such item.
- */
 export async function getItemGroupPicker(itemId: string): Promise<{ member: GroupSummary[]; addable: GroupSummary[] } | null> {
   const item = await prisma.item.findFirst({
     where: { id: itemId },
@@ -203,13 +178,6 @@ export async function getItemGroupPicker(itemId: string): Promise<{ member: Grou
   };
 }
 
-/**
- * DRY-RUN a proposed grouping (writes nothing) so Claude can show the learner an accurate preview
- * before they approve: which of `itemIds` would join a `kind` group, which are rejected by the
- * kind-guard, and which aren't the user's. Mirrors the split used by add_vocab/enrich_items —
- * Claude does the intelligent selection (it sees the chat + library), the server verifies. Only on
- * the learner's yes does Claude call createGroup + addItemsToGroup. Duplicate ids are collapsed.
- */
 export async function previewGroupMembers(
   kind: GroupKind,
   itemIds: string[],
@@ -239,9 +207,6 @@ export async function previewGroupMembers(
   return { fit, mismatched, notFound };
 }
 
-// ---------------- write ----------------
-
-/** Create a group. `name` is required; kind defaults to 'mixed'. */
 export async function createGroup(input: CreateGroupInput): Promise<GroupSummary> {
   const name = cleanText(input.name);
   if (!name) throw new Error('Group name is required.');
@@ -266,11 +231,6 @@ export async function createGroup(input: CreateGroupInput): Promise<GroupSummary
   };
 }
 
-/**
- * Update a group's name/kind/color/note. Returns false if there is no such group.
- * NOTE: narrowing kind (e.g. mixed → vocab) does NOT evict now-mismatched members — the caller decides;
- * a future member would still be kind-guarded on add.
- */
 export async function updateGroup(
   groupId: string,
   patch: UpdateGroupPatch,
@@ -290,17 +250,11 @@ export async function updateGroup(
   return res.count > 0;
 }
 
-/** Delete a group (cascade drops its GroupMember rows). Returns false if there is no such group. */
 export async function deleteGroup(groupId: string): Promise<boolean> {
   const res = await prisma.group.deleteMany({ where: { id: groupId } });
   return res.count > 0;
 }
 
-/**
- * Add items to a group (idempotent — re-adding an existing member is a no-op). Enforces the kind-guard:
- * every item must fit the group's kind. Throws if the group or any item does not exist, or if any
- * item's kind does not fit. Returns how many NEW memberships were created.
- */
 export async function addItemsToGroup(
   groupId: string,
   itemIds: string[],
@@ -315,7 +269,6 @@ export async function addItemsToGroup(
   if (!group) throw new Error('Group not found.');
   const groupKind = group.kind as GroupKind;
 
-  // Missing ids mean the item does not exist.
   const items = await prisma.item.findMany({
     where: { id: { in: ids } },
     select: { id: true, kind: true },
@@ -331,8 +284,6 @@ export async function addItemsToGroup(
     );
   }
 
-  // Idempotency by hand: SQLite's createMany has no `skipDuplicates`, so drop items already in the
-  // group first, then insert only the new ones (this also yields an accurate `added` count).
   const existing = await prisma.groupMember.findMany({
     where: { groupId, itemId: { in: items.map((i) => i.id) } },
     select: { itemId: true },
@@ -347,7 +298,6 @@ export async function addItemsToGroup(
   return { added: res.count };
 }
 
-/** Remove items from a group. Returns how many memberships were removed. */
 export async function removeItemsFromGroup(
   groupId: string,
   itemIds: string[],

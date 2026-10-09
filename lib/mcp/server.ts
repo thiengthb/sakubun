@@ -15,19 +15,8 @@ import { registerQuizTools } from '@/lib/mcp/tools/quiz';
 import { setToolCallRecorder } from '@/lib/mcp/tool-kit';
 import { recordToolCall } from '@/lib/mcp/usage';
 
-// Every tool goes through `guard()`, and from here on `guard()` counts what it already logged: which
-// tool was called, how long it took, and what went wrong. The log line still happens; it just no
-// longer has to be the only copy (lib/mcp/usage.ts explains why).
 setToolCallRecorder(recordToolCall);
 
-/**
- * sakubun MCP server — the app is the deterministic data + FSRS layer; Claude (the MCP client) is
- * BOTH the sentence generator and the grader. Multi-user + authed (2026-07-21): each call carries a
- * per-user bearer token verified in the route, and getUserId(extra) scopes every tool to that user.
- *
- * This file is only WIRING: the tool definitions live in `tools/*.ts` (grouped as they were sectioned
- * here), the shared helpers in `tool-kit.ts`, and the tutor protocol prose in `prompts.ts`.
- */
 export const mcpHandler = createMcpHandler(
   (server) => {
     registerCoreTools(server);
@@ -36,12 +25,8 @@ export const mcpHandler = createMcpHandler(
     registerManageTools(server);
     registerLookupTools(server);
     registerQuizTools(server);
-    // Study groups (restored 2026-08-05). The catalog already advertised these five tools the whole
-    // time they were gone — lib/mcp/catalog.ts lines 146+ — so Claude could read the names and get
-    // "unknown tool" on every call.
     registerGroupTools(server);
 
-    // ---------------- Prompt: the full tutor protocol ----------------
     server.prompt(
       'practice',
       'Bắt đầu buổi luyện DỊCH (mặc định): đọc get_settings + get_stats, hỏi trọng tâm → soạn câu → chấm + rating 1–4. Muốn QUIZ trắc nghiệm A–D thì nói "quiz" (hoặc chạy prompt quiz) — chuyển được bất cứ lúc nào, cùng một bộ cài đặt.',
@@ -58,9 +43,6 @@ export const mcpHandler = createMcpHandler(
       }),
     );
 
-    // ---------------- Prompt: multiple-choice quiz ----------------
-    // Both prompts return the SAME protocol; the learner picks dịch vs quiz by intent (and may switch
-    // mid-session). This entry point just biases the default toward quiz for discoverability.
     server.prompt(
       'quiz',
       'Bắt đầu buổi luyện QUIZ TRẮC NGHIỆM: mỗi câu xoáy vào MỘT mẫu ngữ pháp, một chỗ trống (＿＿) trong câu và 4 đáp án A–D (mẫu đúng + 3 mẫu dễ nhầm) — bạn CHỌN một chữ cái, Claude chấm (rating 1–4). Nói "dịch" để chuyển sang luyện dịch.',
@@ -69,10 +51,6 @@ export const mcpHandler = createMcpHandler(
       }),
     );
 
-    // ---------------- Prompt: situational conversation (production) ----------------
-    // The third practice type (2026-07-23). Unlike practice/story_practice (which are TRANSLATION), the
-    // learner composes their OWN Japanese utterance to fit a scenario Claude designs — the context sets
-    // the relationship, which sets the register. Same FSRS path as the others (stage → submit).
     server.prompt(
       'conversation',
       'Bắt đầu buổi luyện HỘI THOẠI theo tình huống: Claude dựng một bối cảnh thật (bạn là ai, nói với ai, ở đâu), nêu rõ văn phong + các mẫu ngữ pháp/từ vựng cần dùng, rồi BẠN tự nói câu tiếng Nhật hợp cảnh — chấm cả mức độ hợp văn phong lẫn cách dùng mẫu (rating 1–4). Nói "dịch" hoặc "quiz" để chuyển kiểu luyện.',
@@ -81,11 +59,6 @@ export const mcpHandler = createMcpHandler(
       }),
     );
 
-    // ---------------- Prompt: teach-back (the protégé effect) ----------------
-    // The fourth practice type (2026-07-27). The learner EXPLAINS a pattern in Vietnamese instead of
-    // using it, and the explanation is graded on the same FSRS path. Its own prompt (not a section of
-    // Part A) because the loop genuinely differs: no sentence is composed, the marking scheme is the
-    // enrichment card, and a good explanation feeds BACK into that card.
     server.prompt(
       'teach_back',
       'Bắt đầu buổi GIẢNG LẠI: Claude đưa một mẫu ngữ pháp và BẠN giảng lại bằng tiếng Việt (nghĩa, cách gắn, khi nào dùng, ví dụ của bạn) — Claude chấm phần giải thích đó (rating 1–4) và chỉ ra chỗ bạn còn thiếu. Giải thích được thì mới thật sự hiểu; lời giảng hay có thể lưu thẳng vào thẻ của mẫu.',
@@ -94,7 +67,6 @@ export const mcpHandler = createMcpHandler(
       }),
     );
 
-    // ---------------- Prompt: import grammar patterns ----------------
     server.prompt(
       'import_grammar',
       'Nhập danh sách MẪU NGỮ PHÁP (dán từ Mazii/sổ tay/nguồn bất kỳ) vào kho học. (Từ vựng học bằng Anki, không nhập vào đây.)',
@@ -118,7 +90,6 @@ export const mcpHandler = createMcpHandler(
       }),
     );
 
-    // ---------------- Prompt: story/dialogue mode ----------------
     server.prompt(
       'story_practice',
       'Luyện theo HỘI THOẠI/TRUYỆN NGẮN: dệt 6–8 item đến hạn vào một đoạn liền mạch, dịch từng câu.',
@@ -142,7 +113,6 @@ export const mcpHandler = createMcpHandler(
       }),
     );
 
-    // ---------------- Prompt: enrich the backlog ----------------
     server.prompt(
       'enrich_backlog',
       'Soạn thẻ enrichment cho MẪU NGỮ PHÁP và TỪ VỰNG còn thiếu — ngữ pháp: cách gắn, cụm, ví dụ, bẫy, phân biệt; từ vựng: cụm/khung câu, TỪ ĐỒNG NGHĨA + TRÁI NGHĨA, ví dụ có dịch. Câu luyện và lời giảng sẽ hay hơn hẳn.',
@@ -154,10 +124,6 @@ export const mcpHandler = createMcpHandler(
               type: 'text',
               text:
                 `Enrich the user library with enrichment cards, following this procedure. Everything you say to them is in VIETNAMESE, and the card CONTENT is Vietnamese too (Japanese examples stay Japanese).\n` +
-                // `quality: 'needs-work'`, NOT `enriched: false`. The old target list asked "is the column
-                // null?", so a card that parses but carries nothing the tutor reads — or one stuck on an
-                // older format — was counted as done forever and the sweep could never reach it. That is
-                // the exact hole `quality` was added to close (lib/enrichment-quality.ts).
                 `1. Ask which they want first, or do BOTH in order — the two libraries are separate and both have backlogs:\n` +
                 `   - GRAMMAR: list_grammar { quality: "needs-work", limit: 20 }\n` +
                 `   - VOCABULARY: list_vocab { quality: "needs-work", limit: 20 }\n` +

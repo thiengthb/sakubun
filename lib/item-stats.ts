@@ -1,7 +1,3 @@
-// Read-only per-item analytics ("card info", Anki-style) for /resources/[id]. Reads the FSRS state +
-// the append-only ReviewLog for ONE item and derives the display metrics (recall probability, correct
-// rate, forgetting curve). Pure reporting — never writes; the practice loop stays in lib/practice.ts.
-
 import { prisma } from '@/lib/db';
 import { parseEnrichment } from '@/lib/enrichment';
 import { parseErrorTags, type ErrorTag } from '@/lib/error-tags';
@@ -26,7 +22,6 @@ export interface ItemReviewRow {
   sentenceRuby: string | null; // `漢字[かな]` markup for sentenceText, so the log can show furigana
 }
 
-/** A near-synonym from `enrichment.contrasts` that IS in the library, so it can be linked to. */
 export interface ContrastLink {
   expression: string;
   itemId: string;
@@ -63,14 +58,9 @@ export interface ItemStats {
   reviewCount: number;
   correctCount: number; // reviews with rating ≥ 3
   firstReviewedAt: Date | null;
-  /** Contrast targets that exist in the library — rendered as links, turning the store into a graph. */
   contrastLinks: ContrastLink[];
 }
 
-/**
- * Full analytics for one item, or null if the id doesn't exist. Fetches the whole review log (single
- * user → at most tens of rows per item) so the page can show every review + build the curve.
- */
 export async function getItemStats(
   itemId: string,
   now: Date = new Date(),
@@ -81,9 +71,6 @@ export async function getItemStats(
       srs: true,
       reviews: {
         orderBy: { reviewedAt: 'desc' },
-        // `sourceRuby` rides along with the text: without it the review log renders SpokenLine with
-        // showFurigana but no ruby data, so furigana silently never appears (invariant #9 needs all
-        // three signals, not just audio). Same gap the community feed had.
         include: { sentence: { select: { sourceText: true, sourceRuby: true } } },
       },
     },
@@ -121,8 +108,6 @@ export async function getItemStats(
     sentenceRuby: r.sentence?.sourceRuby ?? null,
   }));
 
-  // One query for every contrast target; a contrast naming a pattern the user does not own simply
-  // stays plain text rather than becoming a dead link.
   const contrastLinks = await resolveContrastLinks(item.enrichment, item.id, item.kind);
 
   return {
@@ -166,18 +151,6 @@ export async function getItemStats(
   };
 }
 
-/**
- * Look up which of an enrichment card's cross-references are themselves items in the library, so the
- * detail page can link to their pages. Returns [] when the card has none or cannot be parsed — a
- * missing link degrades to plain text, never to an error.
- *
- * Covers `contrasts[].with` AND (2026-08-12) `synonyms[].term` / `antonyms[].term`. For vocabulary those
- * two are where the cross-references actually are, and a word card whose 同義語 are silently unlinkable
- * is a word card that cannot be walked — the graph exists in the data and stopped at the query.
- *
- * The kind filter follows the ITEM being viewed: a grammar pattern's contrasts are patterns, a word's
- * synonyms are words. Searching both kinds would let a word link to a same-spelled grammar entry.
- */
 async function resolveContrastLinks(
   enrichment: string | null,
   selfId: string,

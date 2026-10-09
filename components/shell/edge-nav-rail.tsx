@@ -13,20 +13,6 @@ function isActive(pathname: string, item: AppSidebarItem): boolean {
   return pathname === item.href || pathname.startsWith(`${item.href}/`);
 }
 
-/**
- * Hover-out navigation rail for the SMALL-screen layout (`md:hidden` — the exact width where the
- * sidebar turns into an off-canvas Sheet and its trigger moves inline into the breadcrumb row, see
- * `MobileTopBar`). There, jumping to another page costs two taps (open the sheet, pick the page); this
- * gives it back in one: a slim grip clings to the LEFT EDGE of the viewport, and pointing at it slides
- * out the same nav as icons — one tap per page (user ask 2026-07-25).
- *
- * It is an ADDITION, never a replacement: the sheet still holds the brand, the theme toggle and the
- * identity card, and it stays the reachable-by-keyboard path. On md+ this renders nothing (the real
- * sidebar is on screen). The grip itself is a real button, so the rail also opens by tap and by
- * keyboard (Enter/Space); it closes on pointer-leave, on blur out of the rail, and after navigating.
- *
- * Same nav config as `AppSidebar` (`groups`), so a new page appears in both from one place.
- */
 export function EdgeNavRail({ groups }: { groups: AppSidebarGroup[] }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
@@ -35,8 +21,6 @@ export function EdgeNavRail({ groups }: { groups: AppSidebarGroup[] }) {
 
   return (
     <div
-      // The whole cluster is the hover zone: closed it is just the grip, open it also covers the
-      // panel — so moving the pointer from grip to icons never crosses a gap that would close it.
       onPointerEnter={(e: ReactPointerEvent) => {
         if (e.pointerType !== 'touch') setOpen(true); // touch uses the tap toggle below
       }}
@@ -65,8 +49,6 @@ export function EdgeNavRail({ groups }: { groups: AppSidebarGroup[] }) {
                   href={item.href}
                   aria-current={active ? 'page' : undefined}
                   aria-label={item.label}
-                  // Routing is client-side, so the rail would otherwise stay open over the new page —
-                  // and on touch there is no pointer-leave to close it.
                   onClick={() => setOpen(false)}
                   {...(item.external ? { target: '_blank', rel: 'noreferrer' } : null)}
                   className={cn(
@@ -78,7 +60,6 @@ export function EdgeNavRail({ groups }: { groups: AppSidebarGroup[] }) {
                 </Link>
               );
               return (
-                /* The name opens to the RIGHT — the rail is flush against the left edge. */
                 <Explain key={item.href} text={item.label} side="right">
                   {link}
                 </Explain>
@@ -88,8 +69,6 @@ export function EdgeNavRail({ groups }: { groups: AppSidebarGroup[] }) {
         )}
       </AnimatePresence>
 
-      {/* The grip: a permanently visible hairline so the affordance is discoverable (a purely invisible
-          hover zone is not), with a wider invisible hit area around it for finger/pointer accuracy. */}
       <button
         type="button"
         aria-label={open ? 'Đóng thanh điều hướng' : 'Mở thanh điều hướng'}

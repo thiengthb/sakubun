@@ -1,12 +1,3 @@
-// DB harness for the STUDENT MODEL (plan 2026-07-26-agentic-tutor-loop step 5.1).
-//
-// The property under test is not "the numbers are right" — it is that the module REFUSES to speak
-// under its support floors. A tutor confidently wrong about a person is worse than one with no model
-// (plan risk 6), so every aggregate here is checked twice: once just below its threshold (silent) and
-// once at it (emitted). The empty-history case is the headline assertion.
-//
-// Same throwaway-DB harness as practice.test.ts: DATABASE_URL is set BEFORE lib/db is imported.
-
 import { beforeAll, describe, expect, it } from 'vitest';
 import { createTestDb } from '@/lib/test-db';
 
@@ -24,11 +15,6 @@ const NOW = new Date('2026-07-27T10:00:00Z');
 const DAY = 86_400_000;
 const ago = (days: number): Date => new Date(NOW.getTime() - days * DAY);
 
-/**
- * Per-case isolation. Each test used to take a `freshUser()` and lean on the tenancy filter to keep its
- * rows apart; with one learner and no tenant column, isolation has to come from an empty DB instead.
- * Children before parents (SQLite FK).
- */
 async function resetData(): Promise<void> {
   await prisma.reviewLog.deleteMany({});
   await prisma.sentence.deleteMany({});
@@ -161,7 +147,6 @@ describe('strong patterns — never missed, mostly Easy', () => {
 });
 
 describe('exposures to graduation — measured, not assumed', () => {
-  /** One item: `before` learning reviews (state 0 then 1), then it appears in review state. */
   async function graduate(expression: string, before: number, base: number) {
     const itemId = await addItem(expression);
     for (let i = 0; i < before; i++) {
@@ -193,8 +178,6 @@ describe('exposures to graduation — measured, not assumed', () => {
     for (let n = 0; n < D.MIN_GRADUATED_ITEMS; n++) {
       await graduate(`pattern-${n}`, 3, 40);
     }
-    // An old-timer: every in-window row is already in review state, so it would otherwise read as
-    // "graduated in 0 exposures" and drag the median down.
     const veteran = await addItem('〜にすぎない');
     for (let i = 0; i < 6; i++) await review({ itemId: veteran, rating: 3, daysAgo: 10 + i });
     const { exposures } = await D.computeDossier(NOW);
@@ -225,7 +208,6 @@ describe('register rate — per conversation TURN, not per review', () => {
     const b = await addItem('〜させていただく');
     for (let i = 0; i < D.MIN_CONVERSATION_TURNS; i++) {
       const sid = await sentence({ exerciseType: 'CONVERSATION', daysAgo: i + 1 });
-      // Half the turns slip on register; BOTH items are graded on every turn.
       const tags = i % 2 === 0 ? ['register'] : undefined;
       await review({
         itemId: a,
@@ -290,7 +272,6 @@ describe('best topics — relative to the learner, never absolute', () => {
     for (let i = 0; i < D.MIN_TOPIC_SENTENCES + 2; i++) {
       await sentence({ context: 'công việc', score: 95, daysAgo: i + 1 });
     }
-    // A single qualifying topic is trivially the best one — that is a tautology, not a measurement.
     expect((await D.computeDossier(NOW)).topics).toEqual([]);
   });
 
@@ -305,7 +286,6 @@ describe('best topics — relative to the learner, never absolute', () => {
 });
 
 describe('error-tag trend — a SHARE of misses, so practising less is not "improving"', () => {
-  /** `n` misses tagged `tag`, plus `filler` misses tagged something else, in the given window. */
   async function misses(itemId: string, daysAgo: number, tag: string, n: number) {
     for (let i = 0; i < n; i++)
       await review({ itemId, rating: 1, daysAgo, errorTags: [tag] });
@@ -322,7 +302,6 @@ describe('error-tag trend — a SHARE of misses, so practising less is not "impr
   it('reports improving when the tag SHARE of misses fell', async () => {
     await resetData();
     const itemId = await addItem('〜ばかりに');
-    // Prior window: 8 misses, all particle. Recent: 8 misses, 1 particle.
     await misses(itemId, 40, 'particle', 8);
     await misses(itemId, 5, 'particle', 1);
     await misses(itemId, 5, 'word-choice', 7);
@@ -333,7 +312,6 @@ describe('error-tag trend — a SHARE of misses, so practising less is not "impr
   it('does NOT report improvement when the learner simply practised less', async () => {
     await resetData();
     const itemId = await addItem('〜ばかりに');
-    // Same SHARE (100% particle) in both windows, a third of the volume — that is less practice.
     await misses(itemId, 40, 'particle', 18);
     await misses(itemId, 5, 'particle', 6);
     const trend = (await D.computeDossier(NOW)).tagTrend;
@@ -369,7 +347,6 @@ describe('the digest rides EVERY sentence, so its size is a gate not a hope', ()
     await resetData();
     const target = await addItem('〜ざるを得ない');
 
-    // Confusions (2 distinct pairs, so the cap has something to cut).
     for (const [used, required] of [
       ['〜しかない', '〜ざるを得ない'],
       ['ほかに', '〜どころか'],
@@ -387,14 +364,12 @@ describe('the digest rides EVERY sentence, so its size is a gate not a hope', ()
         });
       }
     }
-    // Strong patterns.
     for (let n = 0; n < D.MAX_STRONG + 2; n++) {
       const id = await addItem(`strong-${n}`);
       for (let i = 0; i < D.MIN_STRONG_REVIEWS; i++) {
         await review({ itemId: id, rating: 4, daysAgo: i + 1 });
       }
     }
-    // Graduations.
     for (let n = 0; n < D.MIN_GRADUATED_ITEMS; n++) {
       const id = await addItem(`grad-${n}`);
       for (let i = 0; i < 3; i++) {
@@ -402,7 +377,6 @@ describe('the digest rides EVERY sentence, so its size is a gate not a hope', ()
       }
       await review({ itemId: id, rating: 3, state: 2, daysAgo: 36 });
     }
-    // Conversation register + topics.
     for (let i = 0; i < D.MIN_CONVERSATION_TURNS; i++) {
       const sid = await sentence({
         exerciseType: 'CONVERSATION',
@@ -421,7 +395,6 @@ describe('the digest rides EVERY sentence, so its size is a gate not a hope', ()
     for (let i = 0; i < D.MIN_TOPIC_SENTENCES; i++) {
       await sentence({ context: 'du lịch', score: 50, daysAgo: i + 1 });
     }
-    // Trend.
     const trendItem = await addItem('trend');
     for (let i = 0; i < 8; i++)
       await review({ itemId: trendItem, rating: 1, daysAgo: 40, errorTags: ['particle'] });
@@ -436,16 +409,13 @@ describe('the digest rides EVERY sentence, so its size is a gate not a hope', ()
     const block = R.renderDossier(dossier);
     expect(block).not.toBeNull();
     const rendered = block!.split('\n');
-    // Populated on every axis, so this is the WORST case — not a lucky small one.
     expect(rendered.length).toBe(R.MAX_DOSSIER_LINES);
-    // Claude-facing English, and it must say out loud that it is not for the learner.
     expect(block).toContain('LEARNER MODEL');
     expect(block).toMatch(/never/i);
   });
 });
 
 describe('the digest is a SESSION-OPEN block, never a per-sentence one', () => {
-  /** A learner with exactly one mined confusion on a known item. */
   async function withConfusion(): Promise<{ itemId: string }> {
     await resetData();
     const itemId = await addItem('〜ざるを得ない');
@@ -463,10 +433,6 @@ describe('the digest is a SESSION-OPEN block, never a per-sentence one', () => {
     return { itemId };
   }
 
-  // Eval Scenario G (2026-07-28) measured the digest ON the composition sheet and found it changed no
-  // composed sentence across two confusion pairs, so it was cut from `get_due_items` and is now
-  // rendered once per session on `get_stats`. These pin that placement: the wording must not ask for a
-  // sentence to be composed around anything, because the caller no longer has a batch to compose from.
   it('aims a confusion at the SESSION, never at one exercise', async () => {
     await withConfusion();
     const block = R.renderDossier(await D.computeDossier(NOW));

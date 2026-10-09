@@ -1,8 +1,5 @@
 'use client';
 
-// Copied from ui-kit registry `thiengthb/data-table` (shadcn add data-table). Generic TanStack-backed
-// CRUD table — the app supplies columns + filters. Keep in sync with the registry if edited.
-
 import {
   useCallback,
   useEffect,
@@ -68,13 +65,6 @@ import {
 import { DataPagination } from '@/components/ui/data-pagination';
 import { cn } from '@/lib/utils';
 
-/**
- * Per-column extras read by the DataTable. Attach via a column's `meta`.
- *   label        — name shown in the "Cột" (show/hide) menu (falls back to a string header)
- *   defaultHidden— column starts hidden until toggled on (e.g. secondary analysis fields)
- *   noReorder    — column can't be dragged and pins to its edge (e.g. a trailing actions column)
- *   headClassName/cellClassName — extra classes for that column's header / cells
- */
 export interface DataTableColumnMeta {
   label?: string;
   defaultHidden?: boolean;
@@ -83,23 +73,6 @@ export interface DataTableColumnMeta {
   cellClassName?: string;
 }
 
-// ---------------------------------------------------------------------------
-// Persistence (sessionStorage + mirror URL tuỳ chọn) đi qua `useSessionState` — KHÔNG còn bản sao riêng
-// trong file này.
-//
-// Đến 2026-08-07 file này tự chứa một bản `readPersisted`/`writeUrl`/`usePersisted` riêng, với lý do
-// "để DataTable là một file drop-in duy nhất". Cái giá đã đo được: hai bản mã hoá chuỗi ra URL KHÁC
-// nhau — bản này luôn `JSON.stringify` nên ô tìm ghi `?q=%22abc%22`, còn `use-session-state` ghi
-// `?q=abc`. `/resources` và `/history` dùng CÙNG tên tham số `q`, nên cùng một link có hai nghĩa tuỳ
-// trang. Không có gì bắt được nó cho tới khi ai đó gửi link đi; giờ có
-// e2e/resources-tables.spec.ts ("ô tìm mirror ra URL cùng một kiểu").
-//
-// Đổi lại: key sessionStorage nay có tiền tố `sakubun:` như mọi state khác, nên bố cục bảng đang lưu
-// trong tab hiện tại reset MỘT lần. sessionStorage là per-tab và không bền, nên đó là cái giá đúng để
-// trả cho việc chỉ còn một cơ chế.
-// ---------------------------------------------------------------------------
-
-// Stable default references (useSyncExternalStore needs a stable server snapshot).
 const EMPTY_SORTING: SortingState = [];
 const EMPTY_SIZING: ColumnSizingState = {};
 
@@ -110,101 +83,32 @@ function colId(c: ColumnDef<unknown, unknown>): string {
 export interface DataTableProps<T> {
   columns: ColumnDef<T, unknown>[];
   data: T[];
-  /** Stable row id (e.g. `(row) => row.id`) — keeps selection/state correct across re-sorts. */
   getRowId?: (row: T) => string;
-  /**
-   * sessionStorage namespace (e.g. "items"). REQUIRED so two tables never collide. Also used as the
-   * URL-param prefix unless `urlPrefix` is given.
-   */
   persistKey: string;
-  /** URL-param prefix (default = persistKey + "."). Use distinct prefixes for two tables on one page. */
   urlPrefix?: string;
-  /** Show a global search box with this placeholder (searches every column's value). Omit = no search. */
   searchPlaceholder?: string;
-  /** App-specific filter controls (e.g. a FilterPopover) — rendered at the toolbar's left. */
   filterSlot?: ReactNode;
-  /** App-specific actions (e.g. an import/create button) — rendered at the toolbar's right. */
   actionSlot?: ReactNode;
   emptyMessage?: string;
-  /** Icon for the empty body. Defaults to `SearchX` (the table's empty is virtually always a filtered
-   *  result — a truly-empty store is handled a level up by the page). `null` = no icon. */
   emptyIcon?: LucideIcon | null;
   pageSizeOptions?: number[];
   initialPageSize?: number;
-  /** Estimated px per row — feeds the "fit the viewport" auto page size. */
   estimatedRowHeight?: number;
-  /** Per-row class (e.g. dim suspended rows). */
   rowClassName?: (row: T) => string | undefined;
-  /** Total rows BEFORE any app-level pre-filtering — shows "(lọc từ N)" when it differs. */
   totalCount?: number;
-  /** Noun for the count line ("mẫu", "từ", "dòng"). */
   countNoun?: string;
-  /** Multi-column sort (shift-click adds a column). Default true. */
   enableMultiSort?: boolean;
-  /** Draggable column widths. Default true. */
   enableResizing?: boolean;
-  /** Drag-to-reorder columns (a grip handle appears on each header). Default true. */
   enableReordering?: boolean;
-  /** Add a leading checkbox column for multi-row selection (needs a stable `getRowId`). Selection is
-   * ephemeral (never persisted) and keyed by row id so it survives sort/filter/paginate. Default false. */
   enableRowSelection?: boolean;
-  /** Add a leading ordinal ("STT") column numbering rows by their position in the current view. Default false. */
   enableRowNumbers?: boolean;
-  /** Header text for the ordinal column. Default "STT". */
   rowNumberHeader?: string;
-  /** Rendered in the floating right-edge selection DOCK while ≥1 row is selected — the app supplies the
-   * actions, each as an icon-only `BulkActionButton` (its name shows in a hover tooltip). Receives the
-   * selected originals + a `clearSelection` callback. */
   bulkActions?: (selectedRows: T[], clearSelection: () => void) => ReactNode;
-  /**
-   * MOBILE CARD RENDERER. When supplied, everything below `md` renders as a stacked list of cards
-   * instead of the table; `md`+ keeps the table. A data table is the wrong shape on a 360px screen —
-   * it becomes a horizontally-scrolling grid where the row you are reading slides out from under the
-   * column that identifies it.
-   *
-   * The cards consume the SAME `rows` the table does — already searched, filtered, sorted and PAGED —
-   * so search, filters, pagination and bulk selection keep working with one implementation. The caller
-   * only decides what one item looks like; `index` is the 1-based position within the whole filtered
-   * set (not the page), matching the table's row numbers.
-   *
-   * Omit it and the table renders at every width (the fallback for views not yet carded).
-   */
   renderCard?: (row: T, index: number) => ReactNode;
-  /**
-   * Make each CARD (the below-`md` list) a link to this href — the whole card becomes the tap target
-   * for "open this item", instead of the destination hiding inside a ⋮ menu.
-   *
-   * Implemented as an absolutely-positioned overlay link filling the card, with every `button` inside
-   * the card raised above it (`[&_button]:relative [&_button]:z-10`). That combination is what makes a
-   * clickable card work at all: a real `<a>` wrapping the content would nest the card's own buttons
-   * (speak, star, ⋮) inside an anchor — invalid HTML, and their clicks would fight the navigation —
-   * while an onClick handler on the row would give up middle-click, ctrl-click, "copy link" and the
-   * status-bar preview. Table rows are untouched; they still have their own action column.
-   */
   cardHref?: (row: T) => string;
-  /** Accessible name for that overlay link (default "Xem chi tiết"). */
   cardHrefLabel?: (row: T) => string;
 }
 
-/**
- * A batteries-included, headless-backed (TanStack Table) data table for CRUD screens. One config-driven
- * component covering: multi-column sort (shift-click to add, with priority badges), draggable column
- * widths, drag-to-reorder columns, show/hide columns, global search, an app filter slot, an optional
- * leading ordinal ("STT") column + multi-row selection with an app-supplied bulk-action bar, and
- * pagination — with the whole view (sort / visible columns / order / widths / page / size / search)
- * persisted to
- * sessionStorage AND mirrored to the URL (shareable + survives reload). The app owns the COLUMNS
- * (accessor + `cell` renderers → any custom cell: edit/delete actions, badges, links) and the domain
- * FILTERS (via `filterSlot`, pre-filtering `data`).
- *
- * Layout: real columns keep EXACT pixel widths (so resize is precise + persists); a trailing auto-width
- * spacer absorbs the slack so the table fills its container without stretching the columns, and it
- * scrolls horizontally once the columns exceed the width. Cell content truncates to one line.
- *
- * NOTE — needs the shadcn primitives it imports (table, button, dropdown-menu, input) + `data-pagination`,
- * and `@tanstack/react-table`. A leading string `header` is used as the column's show/hide label unless
- * `meta.label` is set.
- */
 export function DataTable<T>({
   columns,
   data,
@@ -236,7 +140,6 @@ export function DataTable<T>({
   'use no memo'; // TanStack's useReactTable returns fresh functions each render — opt out of React Compiler memoization (official guidance); the table does its own memoization internally.
   const up = urlPrefix ?? `${persistKey}.`;
 
-  // Columns flagged `meta.defaultHidden` start hidden (stable object → safe as the persistence default).
   const defaultVisibility = useMemo<VisibilityState>(() => {
     const v: VisibilityState = {};
     for (const c of columns) {
@@ -260,8 +163,6 @@ export function DataTable<T>({
     defaultVisibility,
     `${up}cols`,
   );
-  // Column order + widths are personal LAYOUT prefs → sessionStorage only (survives F5 in-tab), NOT
-  // mirrored to the URL (verbose + not really "navigation"). Sort/filter/search/page/size DO (shareable).
   const [order, setOrder] = useSessionState<ColumnOrderState>(`${persistKey}.order`, defaultOrder);
   const [sizing, setSizing] = useSessionState<ColumnSizingState>(`${persistKey}.w`, EMPTY_SIZING);
   const [globalFilter, setGlobalFilter] = useSessionState<string>(
@@ -275,17 +176,11 @@ export function DataTable<T>({
     initialPageSize,
     `${up}size`,
   );
-  // Auto page size: fill the viewport (no page scroll) until the user picks a fixed size, then respect
-  // their choice. `autoFit` persists so the "fill the screen" default survives reloads.
   const [autoFit, setAutoFit] = useSessionState<boolean>(`${persistKey}.autofit`, true);
-  // Measure the ROWS region (tbody top + a real row's height) and RESERVE the actual footer height, so
-  // the last row + the pagination bar always sit within the viewport — no page scroll, no off-screen
-  // controls. `estimatedRowHeight` is only the pre-measurement fallback.
   const bodyRef = useRef<HTMLTableSectionElement>(null);
   const footerRef = useRef<HTMLDivElement>(null);
   const fitRows = useFitRows({ topRef: bodyRef, footerRef, rowHeight: estimatedRowHeight });
   const effectivePageSize = autoFit && fitRows != null ? fitRows : pageSize;
-  // Make sure the size selector can show the auto-fit value (it isn't one of the fixed options).
   const sizeOptions = useMemo(
     () =>
       pageSizeOptions.includes(effectivePageSize)
@@ -301,25 +196,15 @@ export function DataTable<T>({
     },
     [setAutoFit, setPageSize, setPageIndex],
   );
-  // STT (ordinal) column visibility — toggled from the "Cột" menu like any real column, but the ordinal
-  // isn't a TanStack column (it's rendered outside the column model), so its show/hide lives here.
-  // sessionStorage-only (a personal layout pref, not shareable state), same as column order/widths.
   const [showRowNumbers, setShowRowNumbers] = useSessionState<boolean>(`${persistKey}.rownum`, true);
 
-  // Row selection is EPHEMERAL (not persisted) — a shared link shouldn't carry a stale selection.
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const clearSelection = useCallback(() => setRowSelection({}), []);
 
-  // Keyboard shortcuts (see SHORTCUT_HINT below): the root node tells us whether THIS table is the
-  // visible one (a tabbed page keeps the inactive table mounted but display:none), the search ref is
-  // what "/" focuses, and the column menu is controlled so "c" can open it.
   const rootRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const [colMenuOpen, setColMenuOpen] = useState(false);
 
-  // A new sort re-orders the WHOLE result set, so whatever page you were on no longer points at the
-  // rows you were looking at — go back to the first page. Used by BOTH sorting surfaces (the desktop
-  // column headers via `onSortingChange`, and the phone's SortSheet), so they cannot drift.
   const changeSorting = useCallback(
     (updater: SetStateAction<SortingState>) => {
       setSorting(updater);
@@ -380,8 +265,6 @@ export function DataTable<T>({
     autoResetPageIndex: false, // we manage page resets explicitly (filter/search) to avoid surprises
   });
 
-  // Native drag-to-reorder. `insert BEFORE the drop target` keeps a non-reorderable trailing column
-  // (e.g. actions) pinned last: it has no grip so it's never dragged, and dropping onto it lands before it.
   const dragCol = useRef<string | null>(null);
   const reorder = useCallback(
     (targetId: string) => {
@@ -406,17 +289,10 @@ export function DataTable<T>({
   const pageCount = table.getPageCount();
   const safePageIndex = Math.min(pageIndex, Math.max(0, pageCount - 1));
   const start = safePageIndex * effectivePageSize;
-  // Self-heal a stale page: an app-level filter (owned outside this component) can shrink the result
-  // to fewer pages while the stored pageIndex stays high — TanStack then returns an EMPTY page, which
-  // reads as "no results" even though rows match. Clamp the stored index back into range. (autoReset is
-  // off on purpose, so we correct explicitly here instead of resetting to 0 on every data change.)
   useEffect(() => {
     if (pageIndex > 0 && pageIndex > pageCount - 1) setPageIndex(Math.max(0, pageCount - 1));
   }, [pageIndex, pageCount, setPageIndex]);
   const hideableColumns = table.getAllColumns().filter((c) => c.getCanHide());
-  // What the PHONE sort sheet offers (below md there is no column header to click — see SortSheet).
-  // Every sortable column is listed, including ones the "Cột" menu has hidden: that menu is a
-  // table-layout choice and the card list it replaces does not use columns at all.
   const sortOptions: SortOption[] = table
     .getAllColumns()
     .filter((c) => c.getCanSort())
@@ -425,22 +301,17 @@ export function DataTable<T>({
       const header = c.columnDef.header;
       return { id: c.id, label: meta?.label ?? (typeof header === 'string' ? header : c.id) };
     })
-    // A column with no name to show (e.g. the actions column) is not offerable as a sort.
     .filter((o) => o.label.trim() !== '');
   const activeSort = sorting[0];
-  // The ordinal column renders only when enabled AND not hidden via the "Cột" menu.
   const rowNumbers = enableRowNumbers && showRowNumbers;
   const showColumnMenu = hideableColumns.length > 0 || enableRowNumbers;
   const canReorder = (c: Column<T, unknown>) =>
     enableReordering && (c.columnDef.meta as DataTableColumnMeta | undefined)?.noReorder !== true;
-  // Selected originals across ALL pages (selection is keyed by row id, so it spans pagination).
   const selectedRows = enableRowSelection
     ? table.getSelectedRowModel().rows.map((r) => r.original)
     : [];
   const selectedCount = selectedRows.length;
 
-  // The shortcut list — rendered in the header's ⓘ hint AND implemented by the handler below, so the
-  // two can never drift: one array, both consumers. Only the keys this table actually offers appear.
   const shortcuts = useMemo(() => {
     const list: { keys: string; desc: string }[] = [];
     if (searchPlaceholder) list.push({ keys: '/', desc: 'Vào ô tìm kiếm' });
@@ -454,16 +325,12 @@ export function DataTable<T>({
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.ctrlKey || e.metaKey || e.altKey) return; // leave browser/OS combos alone
-      // offsetParent === null ⇒ this table sits in a hidden (display:none) tab, so the keystroke
-      // belongs to the visible table, not this one. Same guard the floating dock relies on.
       const root = rootRef.current;
       if (!root || root.offsetParent === null) return;
       const el = e.target as HTMLElement | null;
       const typing =
         !!el && (el.isContentEditable || /^(input|textarea|select)$/i.test(el.tagName));
 
-      // Esc is the one key that also fires from INSIDE this table's search box (that is where you
-      // reach for it): first it empties the search, then it drops the selection.
       if (e.key === 'Escape') {
         if (typing && el !== searchRef.current) return;
         if (globalFilter) table.setGlobalFilter('');
@@ -471,7 +338,6 @@ export function DataTable<T>({
         return;
       }
       if (typing) return; // a letter typed into any field is text, never a command
-      // An open dialog / menu / select owns the keyboard — never page the table behind it.
       if (document.querySelector('[role="dialog"],[role="menu"],[role="listbox"]')) return;
 
       switch (e.key) {
@@ -517,9 +383,6 @@ export function DataTable<T>({
 
   return (
     <div ref={rootRef} className="space-y-4">
-      {/* ONE ROW at every width (2026-08-04). It used to stack the actions under the search box below
-          sm, which cost a whole row of vertical space on the screen that has the least of it — and the
-          actions are icon-only there (see ExpandingIconButton), so they fit beside a shrinking input. */}
       <div className="flex flex-row items-center gap-2 sm:gap-3">
         {searchPlaceholder && (
           <SearchInput
@@ -527,18 +390,11 @@ export function DataTable<T>({
             value={globalFilter}
             onChange={(e) => table.setGlobalFilter(e.target.value)}
             placeholder={searchPlaceholder}
-            // className styles the WRAPPER here (see SearchInput). min-w-0 + flex-1 so the input
-            // yields width to the buttons instead of pushing them off the row.
             className="min-w-0 flex-1 sm:max-w-xs"
           />
         )}
 
-        {/* Column + filter controls sit at the far RIGHT (2026-07-21), with the app's action button
-            (e.g. import) OUTERMOST. `ml-auto` pushes the whole group right of the search box. */}
         <div className="flex shrink-0 items-center gap-2 md:ml-auto">
-          {/* Sort is MOBILE-ONLY and hides itself (see SortSheet) — it is the phone's stand-in for the
-              column headers, which is exactly what md+ has instead. It sits left of Bộ lọc so the two
-              panel-openers are adjacent, in the order you use them: order the list, then narrow it. */}
           {sortOptions.length > 0 && (
             <SortSheet
               options={sortOptions}
@@ -547,14 +403,9 @@ export function DataTable<T>({
               onChange={(next) => changeSorting(next ? [{ id: next.id, desc: next.desc }] : [])}
             />
           )}
-          {/* The column chooser is DESKTOP-ONLY: below md the table is replaced by cards (see
-              `renderCard`), whose fields are fixed by the card layout, so there are no columns to
-              show or hide. */}
           {showColumnMenu && (
             <DropdownMenu open={colMenuOpen} onOpenChange={setColMenuOpen}>
               <DropdownMenuTrigger asChild>
-                {/* Icon-only at rest; the label slides in on hover / focus / while open (matches the
-                    app's other toolbar actions). Button already carries the `group/button` class. */}
                 <Button
                   variant="outline"
                   className="gap-0 max-md:hidden"
@@ -609,22 +460,10 @@ export function DataTable<T>({
       </div>
 
       {rows.length === 0 ? (
-        // The table keeps its toolbar above (search/filter) so the user can clear what filtered the
-        // rows away; the empty body itself uses the shared EmptyState (SearchX = "no match"), so a
-        // filtered-empty table reads the same as every other empty in the app. A truly-empty store is
-        // handled ONE level up (the page renders EmptyState instead of the table) — the resources
-        // "Ngữ pháp" tab is the reference.
         <EmptyState icon={emptyIcon} title={emptyMessage} className="py-12" />
       ) : (
         <>
-          {/* w-full + min-width(totalSize): real columns keep their EXACT px widths; a trailing auto
-              spacer eats the slack so the table fills without stretching columns (and scrolls once the
-              columns exceed the width). The Table primitive supplies its own overflow-x-auto container. */}
-          {/* Cards below md (only when the caller supplied a renderer — otherwise the table renders at
-              every width). Same `rows` as the table: searched, filtered, sorted, paged. */}
           {renderCard && (
-            // data-slot: the card list is what a phone actually reads, so the mobile e2e gate needs to
-            // address it (and its ORDER) without depending on a Tailwind class string.
             <ul data-slot="data-table-cards" className="flex flex-col gap-2 md:hidden">
               {rows.map((row, i) => {
                 const selected = enableRowSelection && row.getIsSelected();
@@ -634,8 +473,6 @@ export function DataTable<T>({
                     className={cn(
                       'rounded-lg border border-border/70 p-3 transition-colors',
                       selected && 'border-primary bg-primary/5',
-                      // Clickable card: `relative` positions the overlay link, and every button in the
-                      // card is lifted above it so speak / star / ⋮ still get their own clicks.
                       cardHref && 'relative hover:bg-muted/40 [&_button]:relative [&_button]:z-10',
                     )}
                   >
@@ -644,8 +481,6 @@ export function DataTable<T>({
                         href={cardHref(row.original)}
                         className="absolute inset-0 rounded-lg focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                       >
-                        {/* The link's own accessible name. sr-only, because the visible name is the
-                            card's content — which is NOT inside the anchor (it cannot be; see cardHref). */}
                         <span className="sr-only">
                           {cardHrefLabel?.(row.original) ?? 'Xem chi tiết'}
                         </span>
@@ -653,8 +488,6 @@ export function DataTable<T>({
                     )}
                     <div className="flex items-start gap-2.5">
                       {enableRowSelection && (
-                        // mt-1 lines the box up with the first text line rather than the card's top edge.
-                        // relative+z-10: the checkbox is not a <button>, so it needs lifting by hand.
                         <Checkbox
                           className="relative z-10 mt-1 shrink-0"
                           checked={selected}
@@ -662,8 +495,6 @@ export function DataTable<T>({
                           aria-label="Chọn mục này"
                         />
                       )}
-                      {/* min-w-0: without it a long unbroken JA string makes the card wider than the
-                          viewport and the whole page scrolls sideways. */}
                       <div className="min-w-0 flex-1">
                         {renderCard(row.original, start + i + 1)}
                       </div>
@@ -674,9 +505,6 @@ export function DataTable<T>({
             </ul>
           )}
 
-          {/* Wrapping div, not a class on <Table>: the Table primitive renders its own
-              `overflow-x-auto` container, so hiding the <table> alone would leave that container in
-              flow. */}
           <div className={cn(renderCard && 'max-md:hidden')}>
             <Table className="table-fixed" style={{ minWidth: table.getTotalSize() }}>
               <TableHeader>
@@ -708,7 +536,6 @@ export function DataTable<T>({
                       const sorted = header.column.getIsSorted();
                       const SortIcon =
                         sorted === 'asc' ? ArrowUp : sorted === 'desc' ? ArrowDown : ChevronsUpDown;
-                      // With ≥2 sorts, show each column's 1-based priority so the order is legible.
                       const showRank = sorting.length > 1 && sorted;
                       const reorderable = canReorder(header.column);
                       return (
@@ -794,10 +621,6 @@ export function DataTable<T>({
                         </TableHead>
                       );
                     })}
-                    {/* Auto-width spacer so the real columns keep exact widths + the table still fills.
-                      It also carries the ⓘ SHORTCUT HINT: top-right of the header, on the same row as
-                      (and immediately right of) the actions column — the one spot that belongs to no
-                      column, so the hint costs no header text and never shifts a column's width. */}
                     <TableHead className="w-auto min-w-8 p-0">
                       <span className="flex justify-end pr-1">
                         <Explain
@@ -832,11 +655,6 @@ export function DataTable<T>({
               </TableHeader>
               <TableBody ref={bodyRef}>
                 {rows.map((row, i) => (
-                  // Uniform data-row height (h-12 = 48px) so EVERY table reads at the same rhythm
-                  // regardless of which controls a column carries — the resources table's `size-8` action
-                  // button sets the 48px standard; without this, a table whose tallest control is smaller
-                  // (e.g. /library's size-6 buttons) rendered shorter rows (invariant #9: same height). It
-                  // is a MIN in table layout, so a cell that ever needs more still grows.
                   <TableRow key={row.id} className={cn('h-12', rowClassName?.(row.original))}>
                     {enableRowSelection && (
                       <TableCell style={{ width: 44 }} className="px-2">
@@ -863,7 +681,6 @@ export function DataTable<T>({
                           className={meta?.cellClassName}
                           style={{ width: cell.column.getSize() }}
                         >
-                          {/* one-line truncation so a narrowed / long cell never breaks the row height */}
                           <div className="truncate">
                             {flexRender(cell.column.columnDef.cell, cell.getContext())}
                           </div>
@@ -877,8 +694,6 @@ export function DataTable<T>({
             </Table>
           </div>
 
-          {/* The ref stays on this wrapper (useFitRows measures the footer's real height); DataPagination
-              owns the row layout itself, count included — see its layout note. */}
           <div ref={footerRef}>
             <DataPagination
               count={
@@ -893,11 +708,8 @@ export function DataTable<T>({
               onPageChange={(p) => setPageIndex(p - 1)}
               pageSize={effectivePageSize}
               pageSizeOptions={sizeOptions}
-              // Always shown (even on a short table) so "Tự động (N)" is a visible cue that the page
-              // size fits the viewport — and the way back to auto after picking a fixed size.
               onPageSizeChange={choosePageSize}
               autoFit={autoFit}
-              // The measured viewport fit — so "Tự động (N)" shows the fit, not the fixed size picked.
               autoFitSize={fitRows ?? effectivePageSize}
               onAutoFit={() => {
                 setAutoFit(true);
@@ -908,17 +720,6 @@ export function DataTable<T>({
         </>
       )}
 
-      {/* Bulk-action DOCK — a vertical strip FLOATING over the right edge of the viewport (2026-07-25;
-          it used to be a horizontal bar at the bottom-centre). Why floating at all: an in-flow bar
-          pushed the tbody down, which changed `useFitRows`' measured top edge and shrank the auto page
-          size whenever a row was selected (then grew it back on clear) — a visible reflow. As an
-          overlay it never touches the table's layout, so the row count stays put. Why vertical on the
-          right: it clears the pagination footer and reads as one column of ICONS — the count as a
-          themed chip on top, then "bỏ chọn" (×), then the app's actions, each named by its own hover
-          tooltip (`BulkActionButton`). Fixed + display:none-safe: on a tabbed page an inactive table's
-          dock is hidden with its tab, so only the active table's dock shows.
-          Vertical centring rides in the animation (`y: '-50%'`), NOT a `-translate-y-1/2` class: Motion
-          writes the whole `transform`, so a translate class on the same element would be overwritten. */}
       {enableRowSelection && bulkActions && (
         <AnimatePresence>
           {selectedCount > 0 && (
@@ -929,8 +730,6 @@ export function DataTable<T>({
               transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
               className="fixed top-1/2 right-3 z-50 flex max-h-[calc(100vh-4rem)] flex-col items-center gap-1.5 overflow-y-auto rounded-2xl border border-border bg-background/95 p-1.5 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-background/80"
             >
-              {/* Count = the NUMBER only, in a button-sized container carrying the app's theme
-                    colour; the full sentence lives in its tooltip. */}
               <Explain side="left" text={`Đã chọn ${selectedCount} ${countNoun}`}>
                 <span className="inline-flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-sm font-semibold text-primary-foreground tabular-nums">
                   {selectedCount}

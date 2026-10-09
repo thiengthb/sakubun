@@ -1,11 +1,3 @@
-// DB harness for DECLARED SCAFFOLDING (plan 2026-07-26-natural-generation, Phase 3.1/3.3).
-//
-// The two failures this feature exists to make visible are both SILENT today: a pattern the learner
-// has never met teaching itself inside an exercise about something else, and scaffolding harder than
-// the level being drilled — a rule the protocol has always stated and nothing has ever checked. A
-// silent failure needs a test that fails loudly, so the classification is asserted against real rows
-// rather than trusted to a description.
-
 import { beforeAll, describe, expect, it } from 'vitest';
 import { createTestDb } from '@/lib/test-db';
 
@@ -17,11 +9,6 @@ type Db = typeof import('@/lib/db');
 let S: Scaffolding;
 let prisma: Db['prisma'];
 
-/**
- * Per-case isolation. Each test used to take a `freshUser()` and lean on the tenancy filter to keep its
- * rows apart; with one learner and no tenant column, isolation has to come from an empty DB instead.
- * Children before parents (SQLite FK).
- */
 async function resetData(): Promise<void> {
   await prisma.reviewLog.deleteMany({});
   await prisma.sentence.deleteMany({});
@@ -59,14 +46,10 @@ describe('classification against the learner OWN library', () => {
   });
 
   it('matches through the SHARED normaliser, so a quoted pattern is not reported as new', async () => {
-    // The exact bug this guards: the library stores 〜ておく, a model quotes it back as 「〜ておく」,
-    // a raw match misses, the turn reports it as brand new and offers to ADD a duplicate. Found by
-    // driving the real tool on 2026-07-27 in the sibling feature.
     await resetData();
     await addGrammar('〜ておく');
     const [p] = await S.classifyExtraPatterns(['「〜ておく」'], 'N3');
     expect(p.status).toBe('known');
-    // The expression is echoed EXACTLY as declared, so the offer Claude relays matches what it said.
     expect(p.expression).toBe('「〜ておく」');
   });
 
@@ -79,8 +62,6 @@ describe('classification against the learner OWN library', () => {
   });
 
   it('does not mistake a near-miss LIKE hit for a match', async () => {
-    // `listItems` searches with LIKE, so a substring can return rows that are not the pattern. The
-    // decision is made on the normalised key; "the search returned something" is not evidence.
     await resetData();
     await addGrammar('〜ておくべきだ');
     const [p] = await S.classifyExtraPatterns(['〜ておく'], 'N3');

@@ -1,13 +1,6 @@
 import { cn } from '@/lib/utils';
 import { retentionVerdict, type RetentionVerdictKind, type TrueRetention } from '@/lib/retention';
 
-/**
- * Measured retention against the target FSRS schedules to. Rendered as ChartCard content, matching
- * the dashboard's other pure-CSS, server-rendered charts (no chart dependency).
- *
- * The verdict sentence is the point of the card: a bare "73%" is a number, "you are forgetting more
- * than the schedule assumes" is something the learner can act on.
- */
 export function RetentionGauge({
   actual,
   desired,
@@ -29,14 +22,6 @@ export function RetentionGauge({
   };
   const tone = toneByKind[verdict.kind];
 
-  // Chưa đủ bằng chứng thì KHÔNG vẽ phép so sánh. Trước 2026-08-12 thẻ này vẫn in con số 53% ở cỡ 3xl
-  // và vẫn tô thanh tới 53% với vạch mục tiêu ở 90%, rồi mới nói bên dưới là chưa kết luận được. Hình
-  // ảnh đó là một phát biểu — "bạn thua xa mục tiêu" — và người đọc nhận cỡ chữ với màu trước khi đọc
-  // câu, nên phần chữ đúng bị phần hình sai đè. Cùng lớp lỗi với ô điểm trống (`lib/score-label.ts`):
-  // hiển thị một con số như thể nó có nghĩa trong khi app BIẾT là chưa.
-  //
-  // Ở trạng thái này, thứ duy nhất hành động được là "còn bao nhiêu lượt nữa" — nên nó thành nội dung
-  // chính, và con số thô tụt xuống hàng phụ để người học vẫn thấy nó đang lớn dần.
   if (verdict.kind === 'insufficient') {
     return (
       <div className="space-y-2">
@@ -64,7 +49,6 @@ export function RetentionGauge({
         </span>
       </div>
 
-      {/* Track with the target marked, so the gap is visible rather than arithmetic. */}
       <div className="relative h-2.5 w-full rounded-full bg-muted" aria-hidden>
         <div
           className={cn(

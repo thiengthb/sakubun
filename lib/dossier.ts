@@ -1,24 +1,3 @@
-// The STUDENT MODEL — the one Intelligent-Tutoring-System component sakubun was missing.
-//
-// An ITS has four parts: a domain model, a STUDENT model, a tutor model and an interface. sakubun had
-// three of them (items + enrichment cards, `lib/mcp/prompts.ts`, the web app) and reduced the fourth to
-// raw FSRS numbers — "this card is due in 4 days" is scheduling, not a picture of a person. So every
-// session re-derived the same conclusions about the same learner from zero, while the evidence sat in
-// an append-only log nobody aggregated (plan 2026-07-26-agentic-tutor-loop §7).
-//
-// TWO PROPERTIES MAKE THIS DIFFERENT FROM THE STUDY PLAN THAT WAS BUILT AND DELETED (2026-07-12/14):
-//  1. DERIVED, never maintained. Everything here is recomputed from `ReviewLog` + `Sentence` on every
-//     read. It cannot go stale, cannot drift from reality, and the learner feeds it nothing.
-//  2. PUSHED, never pulled. There is deliberately NO `get_dossier` tool. The digest rides on
-//     `get_due_items` / `get_stats`, calls Claude already makes — see `lib/mcp/tools/practice.ts`.
-//     A tool Claude has to REMEMBER to call is exactly what rotted last time.
-//
-// MINIMUM SUPPORT IS THE WHOLE DESIGN (plan risk 6). A tutor that says "you always confuse X and Y"
-// after two data points is worse than a tutor with no model at all, because the learner cannot tell
-// the difference between a measurement and a guess. Every aggregate below therefore carries its own
-// support floor and returns `null` under it, and a learner with no history yields an EMPTY dossier
-// rather than a confident-looking one.
-
 import { prisma } from '@/lib/db';
 import { parseErrorTags, type ErrorTag } from '@/lib/error-tags';
 import { listLearnerNotes, type AssertedNote } from '@/lib/learner-notes';
@@ -28,64 +7,46 @@ import { REVIEW_STATE } from '@/lib/retention';
 
 const DAY_MS = 86_400_000;
 
-/** How far back the aggregates look. Matches the mining window so the two cannot disagree. */
 export const DOSSIER_WINDOW_DAYS = 90;
 
-/** Trend compares the last 30 days against the 30 before them. */
 export const TREND_WINDOW_DAYS = 30;
 
-/** Upper bound on rows pulled per query — bounded work on a call that runs once per SENTENCE. */
 const SCAN_CAP = 1500;
 
-/** Reviews an item needs before "consistently easy" is a measurement rather than a coincidence. */
 export const MIN_STRONG_REVIEWS = 4;
 export const MAX_STRONG = 4;
 
-/** Items whose FIRST review was observed AND that graduated — below this the median is noise. */
 export const MIN_GRADUATED_ITEMS = 5;
 
-/** Conversation turns before a register error RATE means anything. */
 export const MIN_CONVERSATION_TURNS = 10;
 
-/** Sentences per topic, and how far above the learner's own average a topic must sit to be "best". */
 export const MIN_TOPIC_SENTENCES = 3;
 export const TOPIC_MARGIN_PTS = 5;
 export const MAX_TOPICS = 2;
 
-/**
- * "Best topic" is a COMPARISON, so there has to be something to compare against. With one qualifying
- * topic the claim is a tautology — the learner's only topic is trivially their best one.
- */
 export const MIN_TOPICS_COMPARED = 2;
 
-/** Misses required in EACH trend window before a direction is claimed. */
 export const MIN_TREND_MISSES = 6;
 export const MAX_TREND = 2;
 
-/** Share-of-misses ratios that count as a real move rather than sampling noise. */
 const TREND_IMPROVED = 0.6;
 const TREND_WORSENED = 1.6;
 
-/** Confusion pairs shown — the rest stay available to the coach, they just do not ride every turn. */
 export const MAX_CONFUSIONS_SHOWN = 2;
 
 export interface StrongPattern {
   itemId: string;
   expression: string;
   reviews: number;
-  /** How many of those were rated Easy. */
   easy: number;
 }
 
 export interface ExposureProfile {
-  /** This learner's median number of reviews before a pattern reaches FSRS review state. */
   median: number;
-  /** Patterns the median was measured over. */
   sample: number;
 }
 
 export interface RegisterProfile {
-  /** Share of CONVERSATION turns carrying a `register` error tag, 0-1. */
   rate: number;
   turns: number;
 }
@@ -107,15 +68,8 @@ export interface TagTrend {
 
 export interface Dossier {
   windowDays: number;
-  /**
-   * The ASSERTED annex — Claude's own prose observations, capped/evidence-bound/expiring
-   * (`lib/learner-notes.ts`). Deliberately NOT rendered onto the per-sentence composition sheet: plan
-   * risk 5 reserves the prose tier for session open, where it is paid once instead of every turn.
-   */
   notes: AssertedNote[];
-  /** Recurring confusion pairs — the SAME `lib/mining.ts` aggregate the coach proposes from. */
   confusions: MinedPair[];
-  /** Patterns this learner has genuinely mastered: never missed, mostly rated Easy. */
   strong: StrongPattern[];
   exposures: ExposureProfile | null;
   register: RegisterProfile | null;
@@ -123,7 +77,6 @@ export interface Dossier {
   tagTrend: TagTrend[];
 }
 
-/** One review row as the aggregates need it. */
 interface Log {
   itemId: string | null;
   expression: string | null;
@@ -135,10 +88,6 @@ interface Log {
   tags: ErrorTag[];
 }
 
-/**
- * True when nothing cleared its support floor. The caller renders NOTHING in that case — an empty
- * dossier must look empty, not like a learner with no weaknesses.
- */
 export function isEmptyDossier(d: Dossier): boolean {
   return (
     d.notes.length === 0 &&
@@ -151,13 +100,6 @@ export function isEmptyDossier(d: Dossier): boolean {
   );
 }
 
-/**
- * Median exposures before a pattern reaches FSRS review state, for THIS learner.
- *
- * Only counts items whose very first review is inside the window (`state === 0` on the earliest row).
- * Without that guard an item studied months ago would show its first in-window row already in review
- * state and be recorded as "graduated in 0 exposures" — a truncated window reading as a fast learner.
- */
 function exposuresToGraduation(byItem: Map<string, Log[]>): ExposureProfile | null {
   const counts: number[] = [];
   for (const logs of byItem.values()) {
@@ -173,12 +115,6 @@ function exposuresToGraduation(byItem: Map<string, Log[]>): ExposureProfile | nu
   return { median: Math.round(median * 10) / 10, sample: counts.length };
 }
 
-/**
- * Error-tag movement, measured as a SHARE of that window's misses rather than a raw count.
- *
- * A raw count would report "particle errors improving" for a fortnight when the learner simply
- * practised less — the aggregate would be measuring attendance and calling it progress.
- */
 function tagTrends(logs: readonly Log[], now: Date): TagTrend[] {
   const recentFrom = now.getTime() - TREND_WINDOW_DAYS * DAY_MS;
   const priorFrom = now.getTime() - 2 * TREND_WINDOW_DAYS * DAY_MS;
@@ -211,10 +147,6 @@ function tagTrends(logs: readonly Log[], now: Date): TagTrend[] {
   return out.sort((a, b) => b.recent + b.prior - (a.recent + a.prior)).slice(0, MAX_TREND);
 }
 
-/**
- * Topics where this learner writes their BEST sentences — relative to their own average, never on an
- * absolute score. Everyone's "best topic" is meaningless if every topic scores the same.
- */
 function bestTopics(
   rows: readonly { context: string | null; score: number | null }[],
 ): TopicStrength[] {
@@ -246,10 +178,6 @@ function bestTopics(
     .slice(0, MAX_TOPICS);
 }
 
-/**
- * Compute the derived half of the student model. READ-ONLY, and it proposes nothing — this is
- * evidence, delivered so composition can AIM at a real difficulty instead of a generic tag.
- */
 export async function computeDossier(now: Date = new Date()): Promise<Dossier> {
   const since = new Date(now.getTime() - DOSSIER_WINDOW_DAYS * DAY_MS);
 
@@ -268,8 +196,6 @@ export async function computeDossier(now: Date = new Date()): Promise<Dossier> {
         item: { select: { expression: true } },
         sentence: { select: { exerciseType: true } },
       },
-      // Newest-first so a learner past the cap keeps their CURRENT history, then flipped to
-      // chronological below — the exposure walk depends on the order being oldest-first.
       orderBy: { reviewedAt: 'desc' },
       take: SCAN_CAP,
     }),
@@ -296,8 +222,6 @@ export async function computeDossier(now: Date = new Date()): Promise<Dossier> {
 
   const byItem = new Map<string, Log[]>();
   for (const log of logs) {
-    // A log whose item was deleted still counts for trend and register (invariant #2 keeps the row),
-    // but it cannot be attributed to a pattern.
     if (!log.itemId) continue;
     const list = byItem.get(log.itemId);
     if (list) list.push(log);
@@ -312,8 +236,6 @@ export async function computeDossier(now: Date = new Date()): Promise<Dossier> {
       easy: list.filter((l) => l.rating === 4).length,
       missed: list.some((l) => l.rating <= 2),
     }))
-    // "Consistently rated 4" taken literally: never missed in the window, and Easy at least half the
-    // time. A pattern rated Good every time is fine — it is not a STRENGTH worth spending a slot on.
     .filter(
       (s) =>
         s.expression && s.reviews >= MIN_STRONG_REVIEWS && !s.missed && s.easy * 2 >= s.reviews,
@@ -326,8 +248,6 @@ export async function computeDossier(now: Date = new Date()): Promise<Dossier> {
   const registerTurns = new Set<string>();
   for (const log of logs) {
     if (log.exerciseType !== 'CONVERSATION' || !log.sentenceId) continue;
-    // Counted per SENTENCE, not per review: one conversation turn can grade three items and would
-    // otherwise weigh three times as much as a turn that graded one.
     conversationTurns.add(log.sentenceId);
     if (log.tags.includes('register')) registerTurns.add(log.sentenceId);
   }

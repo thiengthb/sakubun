@@ -8,7 +8,6 @@ import {
   quizAnswerMismatch,
 } from '@/lib/quiz-options';
 
-// A cycling rand, so a test can pin the shuffle instead of hoping.
 const seq = (...values: number[]) => {
   let i = 0;
   return () => values[i++ % values.length];
@@ -33,9 +32,6 @@ describe('the server owns the answer position', () => {
   });
 
   it('does NOT park the answer at one letter — every slot is reachable', () => {
-    // The learner's report was "the answer keeps coming out C". With the placement moved off the
-    // prompt and into the shuffle, hitting all four slots is a property of the code, provable here
-    // rather than argued about from a handful of remembered questions.
     const seen = new Set<string>();
     for (let i = 0; i < 400; i++) {
       seen.add(buildQuizOptions('target', ['d1', 'd2', 'd3']).correctLetter);
@@ -46,7 +42,6 @@ describe('the server owns the answer position', () => {
   it('spreads roughly evenly over many draws', () => {
     const counts: Record<string, number> = { A: 0, B: 0, C: 0, D: 0 };
     for (let i = 0; i < 4000; i++) counts[buildQuizOptions('t', ['a', 'b', 'c']).correctLetter]++;
-    // Loose band: this asserts "not parked", not a statistics lecture. A stuck slot lands at 0 or 4000.
     for (const letter of QUIZ_LETTERS) {
       expect(counts[letter]).toBeGreaterThan(600);
       expect(counts[letter]).toBeLessThan(1400);
@@ -60,8 +55,6 @@ describe('a question with two right answers is rejected before the learner sees 
   });
 
   it('rejects a distractor that is the answer wearing different decoration', () => {
-    // 「〜わけにはいかない」 vs 「わけにはいかない」 — the tilde and the quotes are decoration, so this is
-    // the same option twice, and the learner is asked to choose between two identical answers.
     expect(() => buildQuizOptions('〜わけにはいかない', ['わけにはいかない', 'x', 'y'])).toThrow(
       /KHÁC nhau/,
     );
@@ -98,8 +91,6 @@ describe('candidate distractors come from the library, not from memory', () => {
   });
 
   it('treats a decoration-only difference as the SAME candidate', () => {
-    // Otherwise the target reappears as its own distractor with the tilde stripped — the exact shape
-    // buildQuizOptions later rejects, but discovered a whole question too late.
     const out = mergeDistractorCandidates('〜わけにはいかない', [
       ['わけにはいかない', '「〜しかない」', '〜しかない'],
     ]);
@@ -116,13 +107,6 @@ describe('candidate distractors come from the library, not from memory', () => {
   });
 });
 
-// Reading the layout back, and catching a grade written against the WRONG letter.
-//
-// The 2026-07-28 change took placement away from Claude, which fixed WHERE the answer sits and left the
-// other half open: nothing checked that whoever graded the turn read that placement correctly. Caught in
-// the lab 2026-08-12 — the server put the target at D and the turn was recorded as "Chọn A: <pattern at
-// D>". A mis-mapped letter can tell a learner they were wrong when they were right, and writes an FSRS
-// row from it.
 describe('parseQuizOptionLine', () => {
   const line = '**A.** 〜ないでください · **B.** 〜ながら · **C.** 〜たほうがいいです · **D.** 〜てもいいです';
 
@@ -167,9 +151,6 @@ describe('quizAnswerMismatch', () => {
     expect(quizAnswerMismatch(src, 'Chọn D: 「てもいいです」')).toBeNull();
   });
 
-  // The conservative half, and it is the half that keeps the guard usable: `userAnswer` is free text a
-  // model writes, so anything it cannot resolve to a DIFFERENT option must pass. A guard that fires on
-  // unfamiliar phrasing rejects honest turns, which costs more than the bug it prevents.
   it('says nothing when there is no letter, no pattern, or no recognisable option', () => {
     expect(quizAnswerMismatch(src, '〜てもいいです')).toBeNull(); // no letter
     expect(quizAnswerMismatch(src, 'Chọn A')).toBeNull(); // no pattern quoted

@@ -28,24 +28,8 @@ import { scoreLabel } from '@/lib/score-label';
 import { stripEmoji } from '@/lib/text';
 import type { SentenceHistoryRow } from '@/lib/practice';
 
-/**
- * /history in flashcard form — the same deck as a group's flashcards, dealt from the learner's OWN
- * past attempts instead of from a list of patterns.
- *
- * The card is the drill the sentence originally was: front is the đề, back is the reference answer
- * plus what you actually wrote and what Claude said about it. So this is not a second history view —
- * it is the practice loop replayed, one swipe at a time, over exactly the rows the filters have already
- * narrowed to (fail-only, starred, N2, last week). Từ 2026-08-11, ô tìm và bộ lọc KHÔNG còn ở chế độ
- * này — chúng thuộc chế độ danh sách, và lựa chọn ở đó vẫn quyết định chồng thẻ này gồm những gì.
- *
- * PENDING rows are excluded: they have no answer yet, so their card would have a blank back. Nothing
- * here writes — no FSRS, no re-grade. Only the star toggles, and it was already a pure UI flag.
- */
-
-/** Cards are the rows that HAVE an answer side. */
 const studiable = (s: SentenceHistoryRow) => s.status !== 'PENDING';
 
-/** The đề, big. Japanese gets the karaoke play line + furigana; a Vietnamese đề is plain text. */
 function PromptFace({
   sentence,
   showFurigana,
@@ -90,7 +74,6 @@ function PromptFace({
   );
 }
 
-/** The answer side: tham khảo · bạn dịch · nhận xét · các mẫu đã chấm. The face itself scrolls. */
 function AnswerFace({
   sentence,
   showFurigana,
@@ -102,23 +85,16 @@ function AnswerFace({
   showFurigana: boolean;
   speaker?: number;
   rate?: number;
-  /** Auto-read latch for the REFERENCE answer (vi→ja only — see the rule in the parent). */
   playToken?: string | null;
 }) {
   const grammar = sentence.ratings.filter((r) => r.role !== 'VOCAB');
   const vocab = sentence.ratings.filter((r) => r.role === 'VOCAB');
   const score = scoreLabel(sentence.status, sentence.score);
-  // A JP → VN attempt's answer side is Vietnamese, so only the VN → JP direction has Japanese to play
-  // or annotate here. (The JP text of a JP → VN row is the đề, and that plays on the front face.)
   const jaAnswer = sentence.direction === 'VI_JA';
 
   return (
     <div className="flex w-full flex-col gap-3 text-left text-sm">
-      {/* pr-16 keeps the timestamp clear of the star + info controls pinned to the card's top-right
-          corner — they float above the face, so the face has to leave room for them. */}
       <div className="flex flex-wrap items-center gap-2 pr-16 text-xs text-muted-foreground">
-        {/* Cùng một nguồn nhãn với thẻ ở /history và trang chủ (`lib/score-label.ts`): mặt sau này là
-            chỗ THỨ BA từng để trống khi lượt không có điểm. */}
         {score && (
           <span className={score.muted ? 'font-medium' : scoreClass(sentence.score as number)}>
             {score.text}
@@ -129,8 +105,6 @@ function AnswerFace({
 
       {sentence.suggested && (
         <div className="space-y-0.5">
-          {/* Same shared table as the history cards and the chat block: on a quiz this line is the
-              ANSWER KEY, in conversation it is a model utterance — neither is a "reference translation". */}
           <p className="text-xs tracking-wide text-muted-foreground uppercase">
             {turnLabels(sentence.exerciseType, {
               prompt: 'Đề',
@@ -211,30 +185,20 @@ export function HistoryFlashcards({
   showFurigana = false,
   toolbarStart,
 }: {
-  /** Already filtered by the toolbar above — the deck studies exactly what the list would show. */
   sentences: SentenceHistoryRow[];
   voiceSpeaker?: number;
   speechRate?: number;
   showFurigana?: boolean;
-  /**
-   * Nút lật về danh sách, do `HistoryList` truyền xuống để nó đứng NGAY TRƯỚC nút cài đặt deck. Trước
-   * 2026-08-11 hai nút này ở hai hàng khác nhau vì hàng tìm kiếm chen vào giữa.
-   */
   toolbarStart?: ReactNode;
 }) {
   const pool = useMemo(() => sentences.filter(studiable), [sentences]);
   const [shuffle, setShuffle] = useState(false);
-  // Shuffle keeps an explicit id order rather than re-randomising on every render: the filters above can
-  // narrow WHILE the deck is open, and a fresh shuffle per render would jump the learner to a different
-  // card each time the list re-polled (LiveRefresh runs on this page).
   const [order, setOrder] = useState<string[] | null>(null);
   const [autoSpeak, setAutoSpeak] = useSessionState('flashcards.autoSpeak', false);
 
   const cards = useMemo(() => {
     if (!order) return pool;
     const rank = new Map(order.map((id, i) => [id, i]));
-    // Rows that appeared after the shuffle (a widened filter, a freshly graded sentence) sort to the
-    // end rather than being dropped — the deck must never silently hide a row the list would show.
     return [...pool].sort(
       (a, b) =>
         (rank.get(a.id) ?? Number.MAX_SAFE_INTEGER) - (rank.get(b.id) ?? Number.MAX_SAFE_INTEGER),
@@ -275,10 +239,6 @@ export function HistoryFlashcards({
     );
   }
 
-  // Same rule as the group deck, read off the sentence instead of a direction toggle:
-  //   JP → VN — the đề IS the Japanese, so it reads as the card appears.
-  //   VN → JP — the đề is Vietnamese; reading it would give nothing away but there is no Japanese to
-  //             read yet, so the reference answer reads once the card is flipped.
   const promptToken =
     autoSpeak && current && current.direction === 'JA_VI' && !deck.flipped
       ? `${current.id}:source`
@@ -293,12 +253,7 @@ export function HistoryFlashcards({
       deck={deck}
       cardKey={current?.id ?? 'done'}
       unit="Lượt"
-      // Shorter than the deck's own default: /history sits under a breadcrumb row that a group's
-      // flashcard tab does not have. At the default the nav arrows sat ~15px below the fold at 1280x720
-      // (measured 2026-08-06) and the page grew a scrollbar to reach them. (Cho tới 2026-08-11 phần
-      // chiếm chỗ là cả hàng tìm kiếm + bộ lọc; giờ hàng đó không còn nên chỗ này còn dư ra một chút.)
       className="min-h-[calc(100svh-10rem)]"
-      // Hàng tìm kiếm không còn ở chế độ này, nên thanh tiến độ lên chiếm đúng hàng đó.
       inlineProgress
       toolbar={
         <>

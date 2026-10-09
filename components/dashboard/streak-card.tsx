@@ -5,18 +5,10 @@ import { StreakCelebration } from '@/components/dashboard/streak-celebration';
 import { StreakFlame } from '@/components/dashboard/streak-flame';
 import { tierForStreak } from '@/lib/streak-tiers';
 
-/**
- * The dashboard "Chuỗi ngày học" stat card — same shape as the other StatCards but with the live streak
- * flame (heat scales with the streak), a faint heat wash behind it at higher tiers, and the once-per-
- * increase fire celebration mounted alongside. `current === 0` shows a cold, still flame.
- */
 export function StreakCard({ current, hint }: { current: number; hint?: string }) {
   const t = tierForStreak(current);
-  // Bumping this replays the fire celebration — lets the user (re)watch the effect on demand.
   const [preview, setPreview] = useState(0);
   return (
-    // rounded-xl + bg-card to match the KPI tiles it shares a row with (issue #38): the page background
-    // is ivory, so a transparent tile is a hairline rectangle rather than a card.
     <div className="relative overflow-hidden rounded-xl border border-border/70 bg-card p-4">
       {current > 0 && (
         <div
@@ -44,7 +36,6 @@ export function StreakCard({ current, hint }: { current: number; hint?: string }
         <div className="mt-2 text-2xl font-semibold tabular-nums">{current} ngày</div>
         {hint && <div className="mt-1 text-xs text-muted-foreground">{hint}</div>}
       </div>
-      {/* Preview-only here (click the flame to replay); the app-wide StreakBeacon owns the auto-fire. */}
       <StreakCelebration current={current} previewNonce={preview} auto={false} />
     </div>
   );

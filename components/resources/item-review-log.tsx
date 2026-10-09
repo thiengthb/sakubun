@@ -24,16 +24,6 @@ function RoleBadge({ role }: { role: string }) {
   return <Badge variant="secondary">Chính</Badge>;
 }
 
-/**
- * The full review history for one item: a TABLE from `md` up, a stacked CARD LIST below it — the same
- * split the resource tables make (`DataTable`'s `renderCard`), for the same reason. Six columns cannot
- * be read on a 390px phone: the row slid sideways under its own timestamp column, so the result and the
- * sentence — the two facts you open this section for — were off-screen.
- *
- * The card keeps every field the table has (nothing is dropped, unlike the resource cards, because a
- * review row has six short fields rather than ten): the timestamp and the rating on the first line, the
- * role / error tags / stability as a meta row, and the practised sentence last.
- */
 export function ReviewLog({
   reviews,
   voiceSpeaker,
@@ -41,7 +31,6 @@ export function ReviewLog({
   showFurigana = false,
 }: {
   reviews: ItemReviewRow[];
-  /** TTS settings — the logged sentence is a full Japanese sentence, worth being able to replay. */
   voiceSpeaker?: number;
   speechRate?: number;
   showFurigana?: boolean;
@@ -54,7 +43,6 @@ export function ReviewLog({
     );
   return (
     <>
-      {/* Cards below md. Same `border-border/70` box as every other card list in the app. */}
       <ul className="flex flex-col gap-2 md:hidden">
         {reviews.map((r) => (
           <li key={r.id} className="space-y-1.5 rounded-lg border border-border/70 p-3">
@@ -82,8 +70,6 @@ export function ReviewLog({
                 speaker={voiceSpeaker}
                 rate={speechRate}
                 label="Nghe câu"
-                // No `truncate` here (the table cell has it): the card has a whole line to give, and a
-                // sentence clipped at 30 characters is not a sentence you can read back.
                 align="start"
                 className="text-sm font-normal text-muted-foreground"
               />
@@ -110,7 +96,6 @@ export function ReviewLog({
                 <TableCell className="whitespace-nowrap text-muted-foreground tabular-nums">
                   {formatDueExact(new Date(r.reviewedAt))}
                 </TableCell>
-                {/* stripEmoji: ratingLabel is emoji-decorated for the MCP display-contract; the app UI wants plain text */}
                 <TableCell className="whitespace-nowrap">
                   {stripEmoji(ratingLabel(r.rating))}
                 </TableCell>

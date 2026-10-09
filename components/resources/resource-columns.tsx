@@ -11,24 +11,6 @@ import { buildFuriganaMarkup } from '@/lib/furigana';
 import { formatDateVN, speakable } from '@/lib/format';
 import { STATE_LABELS } from '@/lib/srs-constants';
 
-/**
- * Cột dùng chung của HAI bảng tài nguyên (ngữ pháp + từ vựng).
- *
- * Vì sao tồn tại: `items-table.tsx` và `vocab-table.tsx` là hai config trên cùng một `<DataTable>`, và
- * `dup-scan` đo được 145 cửa sổ 12-dòng trùng nhau giữa chúng — trong đó một khối 92 dòng và một khối
- * 86 dòng. Gần như toàn bộ khối đó là 7 cột FSRS/meta, ô nghĩa, ô biểu thức và ô hành động: cùng một
- * khái niệm, hiển thị cùng một cách, và **đổi cùng nhau** (câu hỏi vàng của /dedupe-scan). Sửa "Đến
- * hạn" ở một bảng mà quên bảng kia là lớp lỗi file này xoá bỏ.
- *
- * Cái KHÔNG vào đây, cố ý: bộ lọc chất lượng thẻ của ngữ pháp, badge "lý do bắt được" + cột Hán Việt
- * của từ vựng, và cột "Ví dụ" (chỉ từ vựng có). Chúng là hai domain khác nhau tình cờ ở cạnh nhau —
- * ép chung sẽ tạo abstraction sai, và abstraction sai tệ hơn duplication.
- *
- * Lưới an toàn: `e2e/resources-tables.spec.ts` lái cả hai tab qua đúng những cột này (sắp xếp "Ngày
- * thêm", bật cột ẩn "Đã ôn", lọc dùng chung) và được viết TRƯỚC lần gom này.
- */
-
-/** Phần hình dạng mà mọi dòng tài nguyên đều có. `ItemRow` và `VocabRow` đều thoả. */
 export interface ResourceRowBase {
   itemId: string;
   expression: string;
@@ -49,18 +31,12 @@ export interface ResourceRowBase {
   } | null;
 }
 
-/** TTS + furigana truyền xuống từ trang, giống nhau ở cả hai bảng. */
 export interface ResourceCellPrefs {
   voiceSpeaker?: number;
   speechRate?: number;
   showFurigana?: boolean;
 }
 
-/**
- * Ô biểu thức: tiếng Nhật + phát âm + furigana. `accessorFn` gộp cả cách đọc VÀ romaji của cả hai, nên
- * tìm bằng kana hoặc bằng romaji ("nagara", "takai") đều ra — và nó là accessor nên nó lái CẢ sắp xếp
- * lẫn tìm kiếm toàn cục.
- */
 export function expressionColumn<T extends ResourceRowBase>(
   header: string,
   speakLabel: string,
@@ -84,7 +60,6 @@ export function expressionColumn<T extends ResourceRowBase>(
         <SpokenLine
           text={item.expression}
           speakText={speakable(item.expression)}
-          // Furigana gióng lên kanji (xử lý okurigana: 食べる → 食[た]べる); null khi chỉ có kana.
           ruby={buildFuriganaMarkup(item.expression, item.reading)}
           showFurigana={prefs.showFurigana}
           speaker={prefs.voiceSpeaker}
@@ -97,7 +72,6 @@ export function expressionColumn<T extends ResourceRowBase>(
   };
 }
 
-/** Ô nghĩa (tiếng Việt), cắt một dòng. */
 export function meaningColumn<T extends ResourceRowBase>(size: number): ColumnDef<T> {
   return {
     accessorKey: 'meaningVi',
@@ -111,14 +85,6 @@ export function meaningColumn<T extends ResourceRowBase>(size: number): ColumnDe
 
 const NUM_CELL = 'text-muted-foreground tabular-nums';
 
-/**
- * Bảy cột FSRS/meta, theo đúng thứ tự cả hai bảng đang dùng: trạng thái · đến hạn · ngày thêm, rồi bốn
- * cột phân tích ẩn mặc định (đã ôn · quên · độ bền · khó FSRS).
- *
- * `dueSize` là tham số duy nhất, vì hai bảng đang đặt 130 và 120 — giữ nguyên con số của từng bảng thay
- * vì thống nhất chúng: đổi bề rộng cột là một quyết định về giao diện, không phải hệ quả của refactor,
- * và trộn hai việc vào một commit làm cả hai khó review.
- */
 export function srsMetaColumns<T extends ResourceRowBase>(dueSize: number): ColumnDef<T>[] {
   return [
     {
@@ -152,9 +118,6 @@ export function srsMetaColumns<T extends ResourceRowBase>(dueSize: number): Colu
       id: 'created',
       accessorFn: (r) => new Date(r.createdAt).getTime(),
       header: 'Ngày thêm',
-      // 124, không phải 120: đo được 2026-08-11 rằng ô tiêu đề mất 48px cho tay kéo + nút sắp xếp +
-      // đệm, và "Ngày thêm" cần 73px chữ → sàn là 121px. Ở 120px nó bị cắt thành "Ngày th…" — thiếu
-      // đúng một pixel, kiểu lỗi chỉ nhìn ảnh chụp mới thấy mà đọc code thì không.
       size: 124,
       minSize: 90,
       enableGlobalFilter: false,
@@ -202,13 +165,6 @@ export function srsMetaColumns<T extends ResourceRowBase>(dueSize: number): Colu
   ];
 }
 
-/**
- * Ô hành động: sao · xem kĩ (dialog chi tiết) · menu ⋮ — cùng bộ, cùng thứ tự ở cả hai bảng.
- *
- * `detailItem` là tham số vì hai bảng đưa payload khác nhau vào dialog: ngữ pháp gửi `level` +
- * `enrichment` (thẻ chi tiết của nó), từ vựng gửi `hanviet`. Đó là dữ liệu khác nhau thật, không phải
- * chi tiết cần thống nhất.
- */
 export function actionsColumn<T extends ResourceRowBase>(
   kind: 'grammar' | 'vocab',
   detailItem: (row: T) => React.ComponentProps<typeof ItemDetailDialog>['item'],
@@ -217,8 +173,6 @@ export function actionsColumn<T extends ResourceRowBase>(
   return {
     id: 'actions',
     header: '',
-    // Vừa đúng 3 nút icon size-8 (~104px nội dung) để `justify-end` xếp chúng sát nhau, không còn
-    // khoảng trống — từng là 200/176 khi ở đây còn một nút chia sẻ có nhãn (2026-07-25).
     size: 120,
     minSize: 108,
     enableSorting: false,
@@ -245,11 +199,6 @@ export function actionsColumn<T extends ResourceRowBase>(
               reading: item.reading,
               meaningVi: item.meaningVi,
               notes: item.notes,
-              // `level` CHỈ cho ngữ pháp — giữ nguyên đúng khác biệt của hai bảng trước lần gom này, và
-              // nó là khác biệt CÓ LÝ: `ItemEditForm` chỉ gửi `level` khi `kind === 'grammar'` và ẩn ô
-              // chọn cấp cho từ vựng ("vocab is not level-gated"). Đã kiểm trước khi gom, vì thoạt nhìn
-              // nó giống một chỗ bỏ sót đáng "sửa luôn" — sửa thì sẽ là đổi hành vi lén trong một
-              // commit refactor, mà ở đây còn là đổi sai.
               ...(kind === 'grammar' ? { level: item.level } : {}),
               suspended: item.suspended,
             }}

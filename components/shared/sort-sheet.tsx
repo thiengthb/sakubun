@@ -15,33 +15,13 @@ import { BottomSheet, SHEET_CONTROL_CLASS } from '@/components/shared/bottom-she
 import { ExpandingIconButton } from '@/components/shared/expanding-icon-button';
 import { cn } from '@/lib/utils';
 
-/** One thing the list can be ordered by. `id` is the table column id; `label` is what the user reads. */
 export interface SortOption {
   id: string;
   label: string;
 }
 
-/** Sentinel for "no sort" — Radix Select cannot hold an empty string as a value. */
 const NONE = '__none__';
 
-/**
- * "Sắp xếp" for the phone — the sort control that a desktop gets from its column headers.
- *
- * WHY IT EXISTS (2026-08-05, user report): sorting a `DataTable` means clicking the header of the column
- * you want ordered. Below `md` there ARE no headers — the table is replaced by a stacked card list
- * (`DataTable`'s `renderCard`), which is the right shape for a 390px screen but takes every sort with it.
- * The result was a phone that could search and filter a list of hundreds but only ever see it in one
- * fixed order, with no way to ask for "đến hạn sớm nhất" or "mới thêm".
- *
- * It writes the SAME `sorting` state the headers write, so a sort chosen on a phone is the sort the
- * desktop shows (and it rides along in the URL / sessionStorage like the rest of the view). One
- * difference by design: this is SINGLE-column. Multi-column sort on a desktop is shift-click, a gesture
- * that does not exist on touch, and stacking sort keys is not a thing anyone does on a phone list.
- *
- * Shape: a select for the FIELD (mirroring "Sắp xếp" in the groups filter, the app's existing sort
- * control) plus two buttons for the DIRECTION — direction is a binary choice, so it is worth the extra
- * row rather than doubling the select's options into "A → Z / Z → A" for every field.
- */
 export function SortSheet({
   options,
   columnId,
@@ -49,10 +29,8 @@ export function SortSheet({
   onChange,
 }: {
   options: SortOption[];
-  /** Currently sorted column id, or null when the list is in its natural order. */
   columnId: string | null;
   desc: boolean;
-  /** `null` clears the sort. */
   onChange: (next: { id: string; desc: boolean } | null) => void;
 }) {
   const active = columnId !== null;
@@ -60,9 +38,6 @@ export function SortSheet({
   const label = active ? `Sắp xếp: ${current?.label ?? ''}` : 'Sắp xếp';
 
   return (
-    // Same relative wrapper + corner dot as the filter trigger (see FilterPopover): "this list is not in
-    // its default order" has to be visible without opening the sheet, and the two toolbar controls must
-    // signal their active state the same way.
     <div className="relative shrink-0 md:hidden">
       <BottomSheet
         trigger={<ExpandingIconButton icon={ArrowUpDown} label={label} />}
@@ -108,8 +83,6 @@ export function SortSheet({
 
         <div className="space-y-1.5">
           <Label className="text-xs text-muted-foreground">Chiều</Label>
-          {/* Disabled while there is no field: a direction with nothing to order is a control that does
-              nothing when tapped, which is worse than one that says it is unavailable. */}
           <div className="grid grid-cols-2 gap-2">
             {(
               [

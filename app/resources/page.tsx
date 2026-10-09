@@ -9,11 +9,9 @@ import { furiganaInApp } from '@/lib/settings-schema';
 
 export const dynamic = 'force-dynamic';
 
-// Per-user app — fetch the whole store and paginate/filter client-side (see the tables).
 const MAX_ITEMS = 10_000;
 
 export default async function ResourcesPage() {
-  // Auth gate: redirects to /login when there is no valid session.
   await getSessionUserId();
   const [grammar, vocab, groups, settings] = await Promise.all([
     listItems({ limit: MAX_ITEMS, withGroupIds: true }) as Promise<ItemRow[]>,

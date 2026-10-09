@@ -12,12 +12,6 @@ import { createGroupAction, updateGroupAction } from '@/app/actions';
 import { GROUP_KINDS, type GroupKind } from '@/lib/group-kinds';
 import type { GroupSummary } from '@/lib/groups';
 
-/**
- * Create/edit form for a study group, shared by the two ROUTES that host it (`/groups/new` and
- * `/groups/<id>/edit` — both were dialogs until 2026-08-05). Kind is a segmented control — it drives
- * which items may join (see the kind-guard in lib/groups.ts). Narrowing kind does NOT evict existing
- * members; it only gates future adds (the operator-approved behavior, plan 2026-07-21).
- */
 export function GroupForm({
   group,
   onDone,
@@ -84,10 +78,6 @@ export function GroupForm({
         />
       </Field>
 
-      {/* Plain action row, not a DialogFooter (2026-08-05): both hosts are now ROUTES
-          (/groups/new · /groups/<id>/edit), so there is no Dialog context for DialogClose to close, and
-          "Huỷ" means "go back" — the host decides where back is. Same row shape as the resource add/edit
-          forms: `flex-col-reverse` below sm so the primary action is the one under the thumb. */}
       <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
         <Button variant="outline" onClick={onCancel} disabled={isPending}>
           Huỷ

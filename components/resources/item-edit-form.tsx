@@ -20,17 +20,6 @@ import type { EditableItem } from '@/components/resources/row-actions';
 import { updateItemAction } from '@/app/actions';
 import { JLPT_LEVELS } from '@/lib/settings-schema';
 
-/**
- * Content edit form for a grammar pattern or vocab word. Grammar shows the JLPT level select; vocab
- * hides it (vocab is not level-gated). NEVER sends an FSRS field. Submitting calls updateItemAction.
- *
- * A PAGE (`/resources/<id>/edit`), not a modal, since 2026-08-04 — same reasoning as the add form
- * (see ResourceAddForm): a five-field form with a textarea inside a dialog is a scrolling box inside a
- * scrolling page, with its own header eating the top of a short viewport and the OS keyboard covering
- * the rest. A route also gives the edit a back button and a URL, so half-finished changes survive an
- * accidental navigation. Saving (or cancelling) returns to the item's detail page, which is where the
- * edit was launched from.
- */
 export function ItemEditForm({
   item,
   kind,
@@ -38,8 +27,6 @@ export function ItemEditForm({
 }: {
   item: EditableItem;
   kind: 'grammar' | 'vocab';
-  /** Supplied when hosted in a DIALOG (the desktop path — see RowActions): close it instead of
-   *  navigating. Omitted on the `/resources/<id>/edit` route, where saving returns to the detail page. */
   onDone?: () => void;
 }) {
   const router = useRouter();
@@ -77,7 +64,6 @@ export function ItemEditForm({
   };
 
   return (
-    // Field-based layout mirroring the Settings page (label + w-full control, 2-col grid for pairs).
     <div className="space-y-6">
       <Field
         label={exprLabel}
@@ -130,9 +116,6 @@ export function ItemEditForm({
         <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={4} />
       </Field>
 
-      {/* flex-col-reverse so Lưu is the rightmost control on a wide screen and the FIRST one on a phone
-          (where the row stacks) — the primary action stays under the thumb either way. Hủy is a LINK on
-          the route (there is somewhere to go back to) and a button in the dialog (there isn't). */}
       <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
         {onDone ? (
           <Button variant="outline" onClick={onDone} disabled={isPending}>

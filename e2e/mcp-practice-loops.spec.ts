@@ -1,18 +1,3 @@
-// BỐN KIỂU LUYỆN, MỘT PIPELINE — chạy qua bề mặt MCP thật và chốt ở DB.
-//
-// Vì sao (2026-08-11): dịch · quiz · hội thoại · giảng lại đều TUYÊN BỐ dùng chung đường
-// `stage_sentence → submit_review`, và tuyên bố đó nằm trong comment chứ không nằm trong phép đo. Cùng
-// lớp lỗ đã để con bug `submit_review` sống một tuần: `lib/practice.test.ts` kiểm pipeline ở tầng hàm,
-// nhưng không có gì kiểm rằng một LƯỢT THẬT đi từ Claude Desktop, qua JSON-RPC, qua Zod của SDK, qua
-// `guard()`, rồi hạ cánh đúng vào lịch FSRS.
-//
-// Phần đắt nhất ở đây là cột calibration. `axesFor` (lib/calibration.ts) đã có unit test cho HÀM
-// THUẦN; cái chưa ai kiểm là DÂY NỐI — `submit_review` có thật sự đi qua nó và ghi vào đúng cột
-// `LearnerAbility` hay không. Nên mỗi ca chốt cả hai chiều: trục ĐƯỢC đếm, và các trục KHÔNG được đếm.
-// Chiều thứ hai là chiều bắt được lỗi thật, ví dụ đúng câu comment trong `axesFor` nói về giảng lại:
-// "no Japanese is produced, so counting it as productive evidence would credit an ability the turn
-// never exercised".
-
 import { expect, test, type APIRequestContext } from '@playwright/test';
 import {
   callToolOk,
@@ -21,7 +6,6 @@ import {
   seedMcpAccount,
 } from './mcp-client';
 
-/** Ba cột quan sát của `LearnerAbility`, theo tên trục trong `axesFor`. */
 const OBSERVATION_COLUMN = {
   receptive: 'receptiveObservations',
   productive: 'productiveObservations',
@@ -37,9 +21,7 @@ interface Loop {
   sourceText: string;
   suggested: string;
   userAnswer: string;
-  /** Trục mà `axesFor(direction, exerciseType)` nói là bằng chứng của lượt này. */
   axes: Axis[];
-  /** QUIZ bị REFUSED nếu thiếu khối này — server tự xếp A–D, không để Claude chọn chỗ đáp án. */
   quiz?: { correct: string; distractors: string[] };
 }
 
@@ -94,7 +76,6 @@ const LOOPS: Loop[] = [
   },
 ];
 
-/** Thêm mẫu vào kho rồi trả itemId thật — mọi ca đều bắt đầu từ một kho sạch. */
 async function seedOneItem(api: APIRequestContext): Promise<string> {
   await callToolOk(api, 'add_grammar', {
     grammar: [
@@ -120,7 +101,6 @@ for (const loop of LOOPS) {
     await initializeMcp(request);
     const itemId = await seedOneItem(request);
 
-    // ── stage → submit, đúng cặp lời gọi Claude thực hiện mỗi lượt ──────────
     const staged = await callToolOk(request, 'stage_sentence', {
       direction: loop.direction,
       exerciseType: loop.exerciseType,
@@ -140,9 +120,6 @@ for (const loop of LOOPS) {
     });
     expect((graded.items as { itemId: string }[])?.[0]?.itemId).toBe(itemId);
 
-    // ── Chốt ở DB, không ở phong bì trả về ─────────────────────────────────
-    // Một transaction bị rollback vẫn trả về một phong bì trông ổn — đó ĐÚNG là cách con bug
-    // 2026-08-08 trông vô hại. Chỉ các hàng mới nói được sự thật.
     const db = openE2eDb();
     try {
       const sentence = db
@@ -172,7 +149,6 @@ for (const loop of LOOPS) {
       expect(srs!.reps, 'một lượt đã chấm = một rep').toBe(1);
       expect(srs!.state, 'phải rời trạng thái "new" (0)').toBeGreaterThan(0);
 
-      // ── Dây nối calibration: đúng trục, và KHÔNG trục nào khác ───────────
       const ability = db
         .prepare(
           'SELECT receptiveObservations, productiveObservations, registerObservations FROM "LearnerAbility"',

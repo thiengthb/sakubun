@@ -1,6 +1,3 @@
-// FSRS wrapper — the ONLY scheduler in the app. Pure functions over plain field objects so the
-// engine is unit-testable without a database; Prisma rows map 1:1 onto SrsFields.
-
 import {
   createEmptyCard,
   fsrs,
@@ -10,17 +7,13 @@ import {
   type Grade,
 } from 'ts-fsrs';
 
-/** Anki-style review signal: 1 Again · 2 Hard · 3 Good · 4 Easy. */
 export type RatingValue = 1 | 2 | 3 | 4;
 
 const DAY_MS = 86_400_000;
 
-/** An item this forgotten needs isolation drills (Anki flags leeches; we start earlier). */
 export const LEECH_LAPSES = 4;
-/** At Anki's default leech threshold, suggest suspending instead of grinding. */
 export const SUSPEND_SUGGEST_LAPSES = 8;
 
-/** Mirrors the SrsState Prisma model (and ts-fsrs Card). */
 export interface SrsFields {
   due: Date;
   stability: number;
@@ -35,11 +28,9 @@ export interface SrsFields {
 
 export interface RateResult {
   next: SrsFields;
-  /** Values for the append-only ReviewLog row (due/stability/difficulty AFTER the review). */
   log: { rating: RatingValue; state: number; due: Date; stability: number; difficulty: number };
 }
 
-// One FSRS instance per retention value (settings.desiredRetention rarely changes).
 const schedulers = new Map<number, FSRS>();
 
 function schedulerFor(retention: number): FSRS {
@@ -79,16 +70,10 @@ function fromCard(card: Card): SrsFields {
   };
 }
 
-/** Fresh FSRS state for a newly added item (due immediately). */
 export function newSrsFields(now: Date = new Date()): SrsFields {
   return fromCard(createEmptyCard(now));
 }
 
-/**
- * Current recall probability (0–1) per the FSRS forgetting curve, given time elapsed since the last
- * review. New / never-reviewed cards return null (there is no curve yet). Higher = more likely still
- * remembered right now. Read-only — used by the per-item analytics page, never by the scheduler.
- */
 export function retrievability(
   fields: SrsFields,
   options: { retention: number; now?: Date },
@@ -98,12 +83,6 @@ export function retrievability(
   return schedulerFor(options.retention).get_retrievability(toCard(fields), now, false);
 }
 
-/**
- * Sample the forgetting curve from the last review up to a little past the due date — a series of
- * {day, r} points for the detail-page chart (day = days since lastReview, r = recall probability
- * 0–1). Empty for new / never-reviewed cards. `end` extends 20% beyond due so the curve shows the
- * dip the scheduler is chasing, not just the flat pre-due stretch.
- */
 export function forgettingCurve(
   fields: SrsFields,
   options: { retention: number; samples?: number },
@@ -126,7 +105,6 @@ export function forgettingCurve(
   return points;
 }
 
-/** Apply one review signal and return the next state + the log row values. */
 export function rateOnce(
   fields: SrsFields,
   rating: RatingValue,

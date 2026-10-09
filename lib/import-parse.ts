@@ -1,9 +1,3 @@
-// Permissive parser for pasted grammar-pattern lists (formats vary wildly by hand-copy source).
-// Every entry is a grammar pattern — sakubun no longer has a vocabulary dimension (2026-07-07).
-// Two shapes are recognized per line:
-//   1. Table row (Excel download / spreadsheet copy): pattern ⇥ phonetic ⇥ mean ⇥ comment
-//   2. Free-form: "pattern (reading) : meaning [N5]" with flexible separators.
-
 export interface ParsedEntry {
   expression: string;
   reading?: string;
@@ -18,12 +12,9 @@ export interface ParseResult {
 }
 
 const LEVEL_RE = /\b(N[1-5])\b/i;
-// Meaning separators, tried in order (tab first — spreadsheet paste).
 const SEPARATORS = ['\t', '：', ' : ', ': ', '⇒', '→', ' — ', ' - ', '；'];
 const READING_RE = /[（(]([ぁ-ゖー・\s]+)[）)]/;
 
-// Mazii dictionary rows dump every sense ("con người; nhân loại; người; …" — 20+ for common
-// words). Keep the first few senses for the SRS card; the tail is synonym noise.
 const MAX_SENSES = 4;
 
 export function condenseMeaning(mean: string): string {
@@ -38,7 +29,6 @@ export function condenseMeaning(mean: string): string {
 
 const MAZII_HEADER_RE = /^(word|từ|tu)\b/i;
 
-/** Build an entry from Mazii's 4 columns (word / phonetic / mean / comment). */
 export function maziiEntry(
   word: string,
   phonetic: string,
@@ -72,7 +62,6 @@ export function parseImportText(text: string): ParseResult {
   const result: ParseResult = { entries: [], errors: [] };
 
   text.split(/\r?\n/).forEach((raw, index) => {
-    // Mazii table row (Excel/spreadsheet copy): word ⇥ phonetic ⇥ mean ⇥ comment.
     const cells = raw.split('\t').map((c) => c.trim());
     if (cells.length >= 3) {
       if (MAZII_HEADER_RE.test(cells[0])) return; // header row

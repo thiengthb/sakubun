@@ -8,13 +8,8 @@ import { Button } from '@/components/ui/button';
 
 const emptySubscribe = () => () => {};
 
-/**
- * Light/dark theme control. Expanded sidebar: a labelled toggle row with a Switch (not an action
- * button). Collapsed icon rail: a single icon button that flips the theme (a Switch has no room there).
- */
 export function ThemeToggle() {
   const { resolvedTheme, setTheme } = useTheme();
-  // Avoid a hydration mismatch — the server render always treats the theme as not-yet-resolved.
   const mounted = useSyncExternalStore(
     emptySubscribe,
     () => true,
@@ -25,7 +20,6 @@ export function ThemeToggle() {
 
   return (
     <>
-      {/* Expanded: [icon + label ............ Switch] */}
       <div className="flex items-center justify-between gap-2 rounded-md px-2 py-1 group-data-[collapsible=icon]:hidden">
         <span className="flex items-center gap-2 text-sm">
           {isDark ? (
@@ -37,7 +31,6 @@ export function ThemeToggle() {
         </span>
         <Switch checked={isDark} onCheckedChange={toggle} aria-label="Bật/tắt giao diện tối" />
       </div>
-      {/* Collapsed rail: an icon button that toggles. */}
       <Button
         type="button"
         variant="ghost"

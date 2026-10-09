@@ -12,14 +12,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
-/** `googleEnabled` is server-resolved at request time (see login-form.tsx / lib/google-enabled.ts). */
 export function RegisterForm({ googleEnabled }: { googleEnabled: boolean }) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [pending, setPending] = useState(false);
-  // Email verification is required (lib/auth.ts): sign-up creates NO session — it sends a link. Show a
-  // "check your inbox" screen instead of routing into the app, which the user can't enter until verified.
   const [sent, setSent] = useState(false);
 
   async function onSubmit(e: React.FormEvent) {
@@ -29,7 +26,6 @@ export function RegisterForm({ googleEnabled }: { googleEnabled: boolean }) {
       return;
     }
     setPending(true);
-    // callbackURL = where the verification link lands after it verifies + auto-signs-in.
     const { error } = await signUp.email({ name, email, password, callbackURL: '/' });
     setPending(false);
     if (error) {
@@ -45,7 +41,6 @@ export function RegisterForm({ googleEnabled }: { googleEnabled: boolean }) {
       <main className="flex flex-1 items-center justify-center px-4 py-10">
         <Card className="w-full max-w-sm">
           <CardHeader className="items-center text-center">
-            {/* No brand mark here — the logo already sits in the top nav (AuthNav). */}
             <CardTitle className="text-xl">Tạo tài khoản</CardTitle>
             <CardDescription>Tham gia nhóm học sakubun</CardDescription>
           </CardHeader>

@@ -1,17 +1,3 @@
-// The mobile transport's two load-bearing behaviours, against a REAL throwaway SQLite DB.
-//
-// 1. THE GUARD. The learning tables have no `userId` column — the boundary is the LOGIN (CLAUDE.md) —
-//    so `protectedProcedure` IS the boundary for this surface. A test that only checked the happy path
-//    would pass just as well on a router that had no guard at all, which is the failure worth catching.
-//
-// 2. THE OUTPUT SCHEMA. `lib/trpc/init.ts` deliberately ships no superjson, and the whole reason that is
-//    safe is that every procedure declares its wire shape. A `Date` object reaching the client would
-//    type as `Date` and arrive as a string; here it throws instead. These tests are what make that claim
-//    true rather than a comment.
-//
-// Driven through `createCallerFactory` with a hand-built context: the guard and the schema are what is
-// under test, not HTTP. The real header -> session path is covered by `createTrpcContext` below, and the
-// real 401 over the wire belongs to e2e.
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { TRPCError } from '@trpc/server';
 import { createTestDb } from '@/lib/test-db';
@@ -31,12 +17,6 @@ let prisma: Db['prisma'];
 const SIGNED_IN = { user: { id: 'u1', email: 'a@b.c', name: 'Người học' } };
 const SIGNED_OUT = { user: null };
 
-// 60s, not the 10s default. This hook imports the ROUTER, which pulls in the whole server domain
-// layer (lib/practice.ts is 2000+ lines) plus better-auth through lib/trpc/context — on top of
-// createTestDb applying every committed migration to a fresh file. Measured 2026-08-06: ~0.7s when
-// this file runs alone, and over 10s inside `npm test`, where 51 files' worth of vitest workers are
-// competing for CPU. It failed there as "Hook timed out", which reads like a hang rather than a
-// cold start. The imports are deliberate — this suite exists to drive the REAL router.
 beforeAll(async () => {
   ({ appRouter } = await import('@/lib/trpc/router'));
   ({ createCallerFactory } = await import('@/lib/trpc/init'));
@@ -56,8 +36,6 @@ beforeEach(async () => {
 
 describe('authConfig', () => {
   it('answers WITHOUT a session — the login screen has no session yet', async () => {
-    // If this ever became a protectedProcedure the app would show a login screen with no buttons on it,
-    // and the only way in would be gone. Asserted from the signed-OUT context on purpose.
     const config = await caller(SIGNED_OUT).authConfig();
     expect(typeof config.googleEnabled).toBe('boolean');
   });
@@ -78,7 +56,6 @@ describe('the guard', () => {
   });
 
   it('resolves a header-less Request to no user, rather than throwing', async () => {
-    // A native client with an empty cookie jar (first launch, or after sign-out) hits exactly this.
     await expect(createTrpcContext(new Request('http://localhost/api/trpc/me'))).resolves.toEqual({
       user: null,
     });
@@ -87,8 +64,6 @@ describe('the guard', () => {
 
 describe('snapshot', () => {
   it('is JSON-safe end to end: no Date object survives the output schema', async () => {
-    // If any Date reached the wire, `.output(mobileSnapshotSchema)` would reject it here. That is the
-    // whole safety argument for shipping without a transformer.
     const now = new Date('2026-08-06T02:00:00.000Z');
     await prisma.item.create({
       data: {
@@ -130,8 +105,6 @@ describe('snapshot', () => {
   });
 
   it('survives a malformed tags column instead of failing the whole library', async () => {
-    // Tags are a JSON string because SQLite has no lists. One bad row must cost that row's tags, not
-    // the snapshot — a client that cannot sync at all is worse than a card with no tags.
     await prisma.item.create({
       data: {
         id: 'it3',
@@ -171,8 +144,6 @@ describe('snapshot', () => {
   });
 
   it('has a schema that actually rejects a Date — the guarantee, not just the intent', async () => {
-    // The test above passes because nothing leaked. This one proves the net has holes small enough to
-    // catch it: without this, "the output schema protects us" is an untested claim about a mechanism.
     const { mobileSnapshotSchema } = await import('@/lib/mobile-snapshot');
     await prisma.item.create({
       data: { id: 'leak', kind: 'VOCAB', expression: '猫', meaningVi: 'mèo', level: 'N5' },
@@ -180,7 +151,6 @@ describe('snapshot', () => {
     const good = await caller(SIGNED_IN).snapshot();
     expect(mobileSnapshotSchema.safeParse(good).success).toBe(true);
 
-    // The SAME payload with one field left as Prisma returned it. Nothing else differs.
     const leaked = {
       ...good,
       items: [{ ...good.items[0], createdAt: new Date('2026-08-06T02:00:00.000Z') }],
@@ -191,8 +161,6 @@ describe('snapshot', () => {
   });
 
   it('carries settings the client must not recompute', async () => {
-    // The day cutoff and the daily goal are SERVER truth (ADR 0001, decision 4) — the app displays
-    // them, it never derives a study day itself.
     const snap = await caller(SIGNED_IN).snapshot();
     expect(snap.settings).toMatchObject({ dayCutoffHour: expect.any(Number) });
   });
@@ -211,12 +179,6 @@ describe('stats', () => {
   });
 
   it('applies the study-day cutoff — the reason the client is never given the ingredients', async () => {
-    // THE case this whole design exists for. With a 4am cutoff, a review at 02:00 belongs to
-    // YESTERDAY. A phone computing "today" from timestamps would count it and disagree with the web,
-    // and the learner would see two different numbers for the same day with no way to tell which lied.
-    //
-    // Both dates are built in LOCAL time on purpose: `studyDayStart` uses `setHours`, so a UTC literal
-    // would make this test's meaning depend on the machine's timezone.
     const { saveSettings } = await import('@/lib/practice');
     const { invalidateStreak } = await import('@/lib/practice');
     const { buildMobileStats } = await import('@/lib/mobile-stats');
@@ -252,7 +214,6 @@ describe('stats', () => {
     const { buildMobileStats } = await import('@/lib/mobile-stats');
     const now = new Date(2026, 7, 6, 10, 0, 0);
     const [web, mobile] = await Promise.all([getStats(now), buildMobileStats(now)]);
-    // A drifting second implementation is how the two surfaces start disagreeing. Same source, always.
     expect(mobile.dueNow).toBe(web.dueNow);
     expect(mobile.totalItems).toBe(web.totalItems);
     expect(mobile.today).toEqual(web.today);

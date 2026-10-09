@@ -3,7 +3,6 @@ import { buildFuriganaMarkup, hasFurigana, parseFurigana } from '@/lib/furigana'
 
 describe('buildFuriganaMarkup', () => {
   it('aligns the reading onto a single kanji with okurigana (the reported case)', () => {
-    // The old whole-term `食べる[たべる]` could not be parsed as furigana; this must annotate 食 only.
     expect(buildFuriganaMarkup('食べる', 'たべる')).toBe('食[た]べる');
     expect(buildFuriganaMarkup('忙しい', 'いそがしい')).toBe('忙[いそが]しい');
     expect(buildFuriganaMarkup('大きい', 'おおきい')).toBe('大[おお]きい');
@@ -24,7 +23,6 @@ describe('buildFuriganaMarkup', () => {
   });
 
   it('strips a 〜 the reading itself carries (Claude echoes the surface placeholder)', () => {
-    // 〜って感じ / 〜ってかんじ used to fail alignment because the reading kept the leading 〜.
     expect(buildFuriganaMarkup('〜って感じ', '〜ってかんじ')).toBe('〜って感[かん]じ');
     expect(buildFuriganaMarkup('〜とか言って', '〜とかいって')).toBe('〜とか言[い]って');
   });
@@ -35,7 +33,6 @@ describe('buildFuriganaMarkup', () => {
   });
 
   it('returns null (no wrong ruby) when a mixed surface cannot be aligned', () => {
-    // reading does not match the okurigana — refuse rather than show a wrong annotation.
     expect(buildFuriganaMarkup('食べる', 'のむ')).toBeNull();
   });
 
@@ -69,7 +66,6 @@ describe('parseFurigana', () => {
   });
 
   it('swallows empty brackets on both kana and kanji (the [] leak)', () => {
-    // Claude sometimes appends `word[]` to words that need no reading; those must vanish, not show.
     expect(parseFurigana('この[]ネックレス[]は[]高[]くない[]。')).toEqual([
       { text: 'この' },
       { text: 'ネックレス' },

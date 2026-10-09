@@ -1,9 +1,3 @@
-// Kana → Hepburn romaji, used ONLY to make search forgiving: a learner types "takai" / "nagara" and we
-// match 高い / 〜ながら by romanizing the item's kana reading + expression into a hidden search string.
-// Not a full transliterator (no morphology, no rendaku guessing) — it converts kana it recognizes and
-// passes anything else through unchanged, which is all the global filter needs.
-
-// Two-kana digraphs first (youon), then single kana. Katakana is normalized to hiragana up front.
 const DIGRAPHS: Record<string, string> = {
   きゃ: 'kya',
   きゅ: 'kyu',
@@ -128,17 +122,12 @@ const MONO: Record<string, string> = {
   ょ: 'yo',
 };
 
-/** Normalize katakana (U+30A1–30F6) to hiragana so one table covers both. */
 function kataToHira(input: string): string {
   return input.replace(/[ァ-ヶ]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0x60));
 }
 
 const VOWELS = new Set(['a', 'i', 'u', 'e', 'o']);
 
-/**
- * Romanize a (mostly-kana) string to lowercase Hepburn. Small っ geminates the next consonant, ー / っ
- * edge cases degrade gracefully, and any non-kana char passes through unchanged.
- */
 export function toRomaji(input: string): string {
   if (!input) return '';
   const s = kataToHira(input);
@@ -152,7 +141,6 @@ export function toRomaji(input: string): string {
       geminate = true;
       continue;
     } else if (s[i] === 'ー') {
-      // Long-vowel mark → repeat the previous vowel letter (drop if there's nothing to repeat).
       const last = out.at(-1);
       if (last && VOWELS.has(last)) out += last;
       continue;
@@ -165,7 +153,6 @@ export function toRomaji(input: string): string {
       continue;
     }
     if (geminate) {
-      // Hepburn: っ before ch → "tch"; otherwise double the leading consonant.
       out += roma.startsWith('ch') ? 't' : roma[0];
       geminate = false;
     }

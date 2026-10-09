@@ -1,18 +1,3 @@
-// Build an Anki deck package (.apkg) from the learner's vocabulary, server-side, for download.
-//
-// WHY a file and not a live push: the previous bridge (lib/anki.ts, removed 2026-07-23) POSTed to
-// AnkiConnect at host.docker.internal:8765 — i.e. the Anki running on the machine that hosts the
-// CONTAINER. That can only ever reach one Anki, so on a multi-user deploy every member's vocab would
-// land in the operator's collection (or fail). A downloaded .apkg is imported by each member into
-// THEIR OWN Anki: no AnkiConnect, no 0.0.0.0 rebind, no "keep Anki open".
-//
-// FORMAT (legacy, frozen — every modern Anki still imports it): a ZIP containing
-//   collection.anki2  a SQLite DB with 5 tables (col, notes, cards, revlog, graves)
-//   media             a JSON map of media files; "{}" because these cards carry no audio/images
-// The `col` row stores note types + decks as JSON blobs rather than tables. Built with better-sqlite3
-// (already a dependency via the Prisma adapter) so we do not pull a second SQLite engine, and zipped
-// with fflate (MIT, zero-dependency).
-
 import { createHash } from 'node:crypto';
 import Database from 'better-sqlite3';
 import { zipSync, strToU8 } from 'fflate';
@@ -20,36 +5,23 @@ import { zipSync, strToU8 } from 'fflate';
 export const DECK_NAME = 'sakubun';
 const MODEL_NAME = 'sakubun Basic';
 
-// Anki identifies decks/note types by integer id. These are FIXED (not Date.now()) so that every
-// export produces the same deck + note type: re-importing an updated file then merges into the same
-// deck instead of creating "sakubun-2", "sakubun-3", ...
 const MODEL_ID = 1752000000000;
 const DECK_ID = 1752000000001;
-// Collection creation time (seconds). Fixed for the same reason — it only anchors the scheduler's day.
 const CRT_SECONDS = 1752000000;
 
 export interface VocabItem {
-  /** The word as it appears (kanji/kana) — becomes the card Front. */
   word: string;
   reading?: string;
-  /** Am Han Viet — the Sino-Vietnamese reading, a strong mnemonic for VN learners. */
   sinoVietnamese?: string;
   meaning: string;
-  /** Example sentence (e.g. the sentence the word appeared in) for context. */
   example?: string;
-  /**
-   * Stable per-item key (the sakubun Item id). Anki dedupes on a note's `guid`, so deriving the guid
-   * from this makes a re-export UPDATE the existing note instead of adding a duplicate.
-   */
   key?: string;
 }
 
-/** Anki fields are HTML — escape user/model content so a stray &, < or > can't break the card. */
 function esc(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-/** Back-of-card HTML: cach doc / am Han Viet / nghia / vi du — each line only when present. */
 export function buildBack(item: VocabItem): string {
   const lines: string[] = [];
   if (item.reading) lines.push(`【${esc(item.reading)}】`);
@@ -100,7 +72,6 @@ const CARD_CSS = `.card {
   background-color: white;
 }`;
 
-/** Two fields, one template — the shape of Anki's stock "Basic" note type. */
 function modelsJson(): string {
   return JSON.stringify({
     [MODEL_ID]: {
@@ -132,7 +103,6 @@ function modelsJson(): string {
       latexPre: '\\documentclass[12pt]{article}\n\\begin{document}\n',
       latexPost: '\\end{document}',
       latexsvg: false,
-      // "template 0 produces a card whenever field 0 is non-empty" — without this Anki generates no cards.
       req: [[0, 'any', [0]]],
       tags: [],
       vers: [],
@@ -157,7 +127,6 @@ function decksJson(): string {
     mod: CRT_SECONDS,
   };
   return JSON.stringify({
-    // Anki expects the Default deck (id 1) to exist in every collection.
     1: { ...common, id: 1, name: 'Default' },
     [DECK_ID]: { ...common, id: DECK_ID, name: DECK_NAME },
   });
@@ -218,22 +187,15 @@ function dconfJson(): string {
   });
 }
 
-/** Anki's duplicate check reads this: the first 8 hex digits of sha1(first field), as an integer. */
 function fieldChecksum(text: string): number {
   return parseInt(createHash('sha1').update(text).digest('hex').slice(0, 8), 16);
 }
 
-/** A stable, Anki-legal note guid derived from the item key (falls back to the word itself). */
 function noteGuid(item: VocabItem, index: number): string {
   const seed = item.key ?? `${item.word}:${index}`;
   return createHash('sha1').update(seed).digest('base64url').slice(0, 10);
 }
 
-/**
- * Build a complete .apkg for the given vocabulary. Returns the raw ZIP bytes, ready to stream as a
- * download. Cards are created as NEW (no scheduling carried over) — sakubun owns its own FSRS state
- * and deliberately does not export it; Anki schedules its copy independently.
- */
 export function buildApkg(items: VocabItem[]): Uint8Array {
   const db = new Database(':memory:');
   try {
@@ -257,11 +219,9 @@ export function buildApkg(items: VocabItem[]): Uint8Array {
     );
 
     items.forEach((item, i) => {
-      // Ids must be unique integers; Anki conventionally uses epoch-ms, so offset by the index.
       const noteId = nowMs + i * 2;
       const cardId = nowMs + i * 2 + 1;
       const front = esc(item.word);
-      // Fields are joined by the 0x1f unit separator inside a single `flds` column.
       const flds = `${front}\x1f${buildBack(item)}`;
       insertNote.run(
         noteId,
@@ -272,7 +232,6 @@ export function buildApkg(items: VocabItem[]): Uint8Array {
         front,
         fieldChecksum(front),
       );
-      // `due` is the new-card queue position, so cards come out in the order given.
       insertCard.run(cardId, noteId, DECK_ID, nowSec, i + 1);
     });
 

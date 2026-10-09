@@ -3,25 +3,6 @@ import { E2E_BASE_URL, E2E_EMAIL, E2E_LOGIN, seedE2eAccount } from './fixtures';
 
 test.beforeAll(seedE2eAccount);
 
-/**
- * Cái người học thấy TRƯỚC khi JavaScript chạy.
- *
- * Tắt JS trong Playwright cho ta đúng bằng HTML server trả về — không phải một xấp xỉ của nó — nên phép
- * kiểm này tất định và không có model nào trong vòng lặp. Nó tồn tại vì một lớp lỗi đo được trên
- * production 2026-08-12: `/settings` hiện 6 ô chọn RỖNG cho tới khi React hydrate. Radix tra nhãn từ
- * `SelectItem` đang chọn, mà khi select đóng thì danh sách item chỉ mount ở client (xem docstring của
- * `SelectValue` trong `components/ui/select.tsx`), nên `<SelectValue />` trơn không in ra gì ở SSR.
- *
- * Phép kiểm tự khoanh đúng phạm vi: select trong popover/dialog KHÔNG có trong HTML đầu tiên, nên nó
- * không đòi hỏi gì ở những chỗ mà lúc người học mở ra React đã hydrate từ lâu. Không cần allowlist, và
- * không có allowlist nào để mục.
- *
- * Vì sao lại đáng gác dù nháy rất nhanh ở máy nhanh: ô trống không phải trạng thái hiển thị hợp lệ. Người
- * học đọc sáu ô trống ở trang Cài đặt thành "mọi thiết lập của mình đã mất" — cùng lớp lỗi với ô điểm
- * trống ở `lib/score-label.ts`.
- */
-
-/** Đăng nhập một lần (form login CẦN JS), rồi mang cookie sang một context KHÔNG có JS. */
 async function noJsPage(browser: Browser) {
   const authed = await browser.newContext({ baseURL: E2E_BASE_URL });
   const page = await authed.newPage();
@@ -49,16 +30,12 @@ test('không có JS, mọi ô chọn trong HTML đầu tiên đã có chữ', as
 
   for (const path of ['/', '/resources', '/history', '/settings']) {
     await page.goto(path);
-    // `textContent` (không phải toBeVisible): ta đang kiểm NỘI DUNG của HTML server, và một ô có thể bị
-    // CSS ẩn hợp lệ — `TabSelect` render cả hai nửa rồi ẩn một nửa theo bề rộng.
     const texts = await page.locator('[data-slot="select-value"]').allTextContents();
     total += texts.length;
     texts.forEach((t, i) => {
       if (!t.trim()) empty.push(`${path} → ô chọn thứ ${i + 1}`);
     });
 
-    // Riêng Cài đặt: đây là trang có ca lỗi thật, nên khẳng định luôn số ô. Nếu một ngày các select ở đây
-    // biến mất thì phép kiểm phải ĐỎ, không phải xanh vì không còn gì để kiểm.
     if (path === '/settings') expect(texts.length, 'số ô chọn ở Cài đặt').toBeGreaterThanOrEqual(5);
   }
 
@@ -68,13 +45,6 @@ test('không có JS, mọi ô chọn trong HTML đầu tiên đã có chữ', as
   await noJs.close();
 });
 
-/**
- * Nửa còn lại của cặp, và nó cần thiết vì phép kiểm trên KHÔNG BAO GIỜ chạy JS.
- *
- * Truyền nhãn làm children mở ra đúng một lớp lỗi ngược: nhãn có thể đứng im ở lần render đầu trong khi
- * giá trị thật đã đổi — người học chọn "Việt → Nhật" mà ô vẫn đọc là "Nhật → Việt". Test SSR mù hoàn
- * toàn với ca đó (nó tắt JS), nên nếu không có test này thì bản sửa được gác một nửa.
- */
 test('chọn giá trị khác thì nhãn trên trigger đổi theo', async ({ page }) => {
   await page.goto('/login');
   await page.getByLabel('Email').fill(E2E_EMAIL);
@@ -83,14 +53,6 @@ test('chọn giá trị khác thì nhãn trên trigger đổi theo', async ({ pa
   await page.waitForURL((u) => !u.pathname.startsWith('/login'), { timeout: 30_000 });
 
   await page.goto('/settings');
-  // Nhận diện ô bằng TÊN KHẢ TRUY CẬP, rồi ĐỌC xem nó đang ở nhãn nào — không viết cứng một giá trị.
-  // Ba thứ đo được ở đây, mỗi thứ từng làm test này đỏ một lần:
-  //   1. `getByLabel('Hướng dịch')` KHÔNG khớp — `Field` không phát ra `htmlFor` (2026-08-11). Nhưng
-  //      `SelectTrigger` tự gắn `aria-labelledby` từ Field, nên `getByRole` + `name` thì khớp.
-  //   2. Viết cứng "Nhật → Việt" là sai: đó là giá trị của tài khoản THẬT; tài khoản e2e ở mặc định
-  //      `ALTERNATING`.
-  //   3. `LABELS.join('|')` trong `new RegExp` cũng sai: dấu ngoặc trong "(đổi chiều từng câu)" thành
-  //      NHÓM regex, nên nhánh đó không khớp gì. So sánh chuỗi thẳng, đừng dựng regex từ dữ liệu.
   const LABELS = ['Nhật → Việt', 'Việt → Nhật', 'Song ngữ (đổi chiều từng câu)'];
   const direction = page.getByRole('combobox', { name: 'Hướng dịch' });
   await expect(direction).toBeVisible();
@@ -102,8 +64,6 @@ test('chọn giá trị khác thì nhãn trên trigger đổi theo', async ({ pa
   await page.getByRole('option', { name: target, exact: true }).click();
   await expect(direction).toHaveText(target!);
 
-  // KHÔNG bấm Lưu: form này không tự lưu, nên tải lại là trả về đúng giá trị đã ghi — vừa dọn sạch cho
-  // spec sau, vừa là một khẳng định thật (nhãn đến từ server, không phải từ state còn sót).
   await page.reload();
   await expect(page.getByRole('combobox', { name: 'Hướng dịch' })).toHaveText(before);
 });

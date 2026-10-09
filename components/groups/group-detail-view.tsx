@@ -32,7 +32,6 @@ const GROUP_TABS = [
   { value: 'flashcard', label: 'Flashcard' },
 ] as const;
 
-/** Map the stored uppercase Item.kind to the lowercase kind the detail dialog / labels use. */
 const detailKind = (kind: string): 'grammar' | 'vocab' => (kind === 'VOCAB' ? 'vocab' : 'grammar');
 
 export function GroupDetailView({
@@ -48,13 +47,8 @@ export function GroupDetailView({
   speechRate?: number;
   showFurigana?: boolean;
 }) {
-  // Active tab persists across nav + reload with a SHARED key (sticky tab — open any group, land on the
-  // tab you last used). editOpen/addOpen/query/sel stay ephemeral: they belong to a transient dialog or
-  // a selection a returning user shouldn't inherit.
   const [tab, setTab] = useSessionState('group.tab', 'list');
   const [isPending, startTransition] = useTransition();
-  // Member-list search persists PER GROUP (keyed by id) so returning restores it without a stale term
-  // from group A filtering group B to empty.
   const [memberQuery, setMemberQuery] = useSessionState(`group.${group.id}.memberQ`, '');
   const mixed = group.kind === 'mixed';
 
@@ -66,8 +60,6 @@ export function GroupDetailView({
     );
   }, [group.members, memberQuery]);
 
-  // Paginate the (filtered) member list so a big group fills the viewport without a page scroll (same
-  // measured auto-fit the resources tables use). It is a flat divide-y list (1 per row), not a grid.
   const listRef = useRef<HTMLDivElement>(null);
   const listFooterRef = useRef<HTMLDivElement>(null);
   const pagedMembers = usePagedList(visibleMembers, {
@@ -112,18 +104,10 @@ export function GroupDetailView({
           />
         }
         headerAside={
-          // TabSelect, not a bare TabsList (2026-08-05). Measured at 390px: the two triggers rendered
-          // x=311..489, i.e. 99px PAST the viewport, and the page scrolled sideways — this was the one
-          // page-level tab bar in the app still hand-rolled, and the header row is exactly where a bar
-          // costs width proportional to the number of tabs. (Unlike the item detail page, whose two tabs
-          // are CONTENT tabs with a full row of their own — see item-analytics.tsx.)
           <TabSelect items={GROUP_TABS} value={tab} onValueChange={setTab} label="Chọn khung xem" />
         }
       >
         <TabsContent value="list" className="space-y-6">
-          {/* Toolbar — the grammar/vocab toolbar verbatim (components/shared/data-table.tsx): ONE ROW at
-              every width, the search box shrinking so the icon-only actions stay BESIDE it. It used to be
-              `flex-wrap` with an uncapped input, so at 390px the three actions dropped onto a second row. */}
           <div className="flex flex-row items-center gap-2 sm:gap-3">
             <SearchInput
               value={memberQuery}
@@ -135,9 +119,6 @@ export function GroupDetailView({
               className="min-w-0 flex-1 sm:max-w-xs"
             />
             <div className="flex shrink-0 items-center gap-2 md:ml-auto">
-              {/* Idea (lightbulb): hover shows what it does; click copies the "luyện nhóm <tên>"
-                  command to paste into Claude Desktop (the app can't drive Claude — MCP runs the other
-                  way). Replaces the old inline hint paragraph. */}
               <Explain
                 text={
                   <>
@@ -155,7 +136,6 @@ export function GroupDetailView({
                   <Lightbulb className="size-4" />
                 </Button>
               </Explain>
-              {/* Modal from md up, route below it (2026-08-05) — see components/groups/group-actions.tsx. */}
               <GroupEditAction group={group} variant="toolbar" />
               <GroupAddItemsAction
                 group={group}
@@ -196,7 +176,6 @@ export function GroupDetailView({
             <>
               <div ref={listRef} className={`${cardCls} divide-y divide-border`}>
                 {pagedMembers.items.map((m) => (
-                  // Fixed height (h-16) so every row is identical — the list doesn't jump when paging.
                   <div key={m.itemId} className="flex h-16 items-center gap-2 px-4">
                     <div className="min-w-0 flex-1 space-y-0.5">
                       <div className="flex flex-wrap items-center gap-2">
@@ -250,10 +229,6 @@ export function GroupDetailView({
                   </div>
                 ))}
               </div>
-              {/* The count goes THROUGH DataPagination (its `count` prop), not beside it: the component
-                  owns the whole footer row now, so a sibling span gets squeezed — which is exactly what
-                  happened here, wrapping "1–1 / 1 mục" onto two lines. Same shape as data-table and
-                  history-list. */}
               <div ref={listFooterRef}>
                 <DataPagination
                   count={

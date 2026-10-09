@@ -1,19 +1,11 @@
 'use client';
 
-// rulebook-allow-file: hardcoded-color — the Google "G" is a brand mark whose colors are fixed by
-// Google's branding guidelines; see the NAMED EXCEPTION note on GoogleG below.
-
 import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { authClient } from '@/lib/auth-client';
 import { Button } from '@/components/ui/button';
 
-/**
- * The official multicolor Google "G". NAMED EXCEPTION to the lucide-only icon rule: this is a brand
- * mark required on a "Sign in with Google" button (Google's branding guidelines), not a decorative UI
- * icon — the same spirit as the rule's existing "SVG that renders data" exemption. Kept to this one use.
- */
 function GoogleG({ className }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" aria-hidden focusable="false">
@@ -37,14 +29,12 @@ function GoogleG({ className }: { className?: string }) {
   );
 }
 
-/** "Continue with Google". The caller decides whether to render it (server-resolved isGoogleEnabled). */
 export function GoogleSignInButton({ label = 'Tiếp tục với Google' }: { label?: string }) {
   const [pending, setPending] = useState(false);
 
   async function onClick() {
     setPending(true);
     const { error } = await authClient.signIn.social({ provider: 'google', callbackURL: '/' });
-    // On success the browser is redirected to Google, so we only reach here on an error.
     if (error) {
       setPending(false);
       toast.error(error.message ?? 'Không đăng nhập được bằng Google');

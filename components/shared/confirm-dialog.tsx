@@ -12,14 +12,6 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 
-/**
- * A destructive-confirm modal: title + description + (optional body) + a Cancel/Confirm footer whose
- * confirm button spins while `pending`. Extracted from the 3 hand-rolled confirm dialogs (bulk-delete,
- * admin ban, account revoke-token) that repeated the same Dialog/Header/Footer scaffold. The TRIGGER and
- * open state stay with the caller — each drives `open` differently (a boolean, or a selected-target
- * memo) — so this component owns only the modal body + the two buttons. Form fields inside the confirm
- * (e.g. a ban reason) go in `children`, rendered between the description and the footer.
- */
 export function ConfirmDialog({
   open,
   onOpenChange,

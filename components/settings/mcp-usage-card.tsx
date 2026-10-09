@@ -10,15 +10,6 @@ import {
 import { formatDateTimeVN } from '@/lib/format';
 import type { ToolUsageReport } from '@/lib/mcp/usage';
 
-// Read-only readout of `mcp_tool_call`. It sits under "Token MCP" because it answers the question the
-// token raises next: the token proves Claude CAN connect, this shows what it did once connected.
-//
-// Two audiences, one table. For the operator: is Claude actually using the app, and is anything
-// failing (a failing MCP tool answers HTTP 200, so the learner just sees Claude apologise). For the
-// repo: which of the advertised tools are never reached — the measurement issue #20 needs before
-// anyone argues about trimming the surface.
-
-/** ms → a short human string; sub-second is the normal case and deserves the shortest form. */
 function ms(value: number | null): string {
   if (value === null) return '—';
   return value < 1000 ? `${value} ms` : `${(value / 1000).toFixed(1)} s`;
@@ -75,8 +66,6 @@ export function McpUsageCard({ usage }: { usage: ToolUsageReport }) {
                     <TableRow key={r.name}>
                       <TableCell className="font-mono text-xs">
                         {r.name}
-                        {/* A row left over from a renamed tool still carries real counts; hiding it
-                            would lose them, and folding it in silently would inflate the total. */}
                         {r.inCatalog ? null : (
                           <span className="ml-2 font-sans text-xs text-muted-foreground">
                             (không còn trong bản đồ tool)
@@ -101,8 +90,6 @@ export function McpUsageCard({ usage }: { usage: ToolUsageReport }) {
               </Table>
             </div>
 
-            {/* The last failure of each broken tool, in its own words. Without this the table says
-                "3 lỗi" and the only way to learn WHAT went wrong is the container log again. */}
             {failing.length > 0 && (
               <ul className="space-y-2 border-t pt-4">
                 {failing.map((r) => (

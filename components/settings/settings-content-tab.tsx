@@ -35,8 +35,6 @@ import {
 import { SENTENCE_SIZE_SPEC } from '@/lib/select';
 import { cn } from '@/lib/utils';
 
-// Sentinel for the "follow grammarLevels" option: a shadcn Select item cannot carry a null value, and
-// JLPT_LEVELS must stay a closed set, so the auto case gets its own token mapped back to null on save.
 const AUTO_VOCAB_CEILING = 'auto';
 
 const SIZE_LABELS: Record<(typeof SENTENCE_SIZES)[number], string> = {
@@ -77,17 +75,6 @@ const FURIGANA_MODE_LABELS: Record<FuriganaMode, string> = {
   none: 'Không hiện',
 };
 
-/**
- * The three pre-authorisable classes. Each is ADDITIVE and undoable, which is the whole reason it is
- * allowed to be automatic — there is deliberately no flag for anything that overwrites a card or
- * touches the review schedule.
- */
-// `autoCapture.fork` is NOT here on purpose (2026-08-05). It pre-authorised "lấy về mẫu người khác đã
-// chia sẻ", and the shared library was cut with the multi-user surface on 2026-08-03 — `lib/lookup.ts`
-// now returns `shared: []` unconditionally, so the switch could never fire. A live control for a
-// capability that no longer exists is worse than a missing one: the learner turns it on and concludes
-// the app is broken when nothing happens. The FIELD stays in `settings-schema.ts` (a JSON backup taken
-// before the cut still carries it, and `lib/import.ts` must keep parsing those) — only the UI is gone.
 const AUTO_CAPTURE_FLAGS = [
   {
     key: 'vocab' as const,
@@ -101,17 +88,6 @@ const AUTO_CAPTURE_FLAGS = [
   },
 ];
 
-/**
- * Tab "Nội dung" — three groups, split by the question each answers (issue #38).
- *
- * WHAT MOVED IN, and why the tab boundary was the bug rather than the fields: `Từ vựng / câu` and
- * `Mẫu mới tối đa / câu` used to live in "Nhịp học". Both are per-SENTENCE budgets — what one exercise
- * may contain — while everything left there is a per-DAY cap. That split put four knobs which jointly
- * describe a single sentence across two tabs. They are now one group, in that order.
- *
- * `Furigana` also moved — out of the JLPT checkbox row (where it rode `sm:ml-auto` for want of a better
- * home) into the presentation group. Same tab, so the guide's "tab Nội dung → Furigana" is still true.
- */
 export function ContentTab({
   settings,
   set,
@@ -149,7 +125,6 @@ export function ContentTab({
     setCustomTopic('');
   };
 
-  // Custom = user-typed topics that aren't one of the preset chips (shown as removable badges).
   const customTopics = settings.topics.filter(
     (t) => !TOPIC_PRESETS.includes(t as (typeof TOPIC_PRESETS)[number]),
   );
@@ -160,15 +135,11 @@ export function ContentTab({
         title="Chọn gì để học"
         hint="Phạm vi Claude được lấy mẫu và từ ra, cùng bối cảnh nó đặt câu vào."
       >
-        {/* The two ceilings side by side. They are a PAIR — the vocab one defaults to "follow the
-            grammar one", and that relationship is unreadable when they sit on separate rows with the
-            second one floating in half a card of white space. */}
         <div className="grid gap-4 sm:grid-cols-2">
           <Field
             label="Cấp JLPT cho mẫu ngữ pháp mới"
             info="Chỉ lọc mẫu ngữ pháp MỚI được đưa vào học. Mẫu đã học đến hạn vẫn ôn bất kể cấp. Từ vựng Claude dùng quanh mẫu là một knob RIÊNG ngay bên cạnh (trước đây hai thứ này dùng chung một ô, buộc chúng phải bằng nhau)."
           >
-            {/* h-9 to match the Select next to it, so the two labels and the two controls line up. */}
             <div className="flex h-9 flex-wrap items-center gap-x-5 gap-y-2">
               {JLPT_LEVELS.map((level) => {
                 const active = settings.grammarLevels.includes(level);
@@ -224,8 +195,6 @@ export function ContentTab({
           info="Chọn nhanh chủ đề hoặc thêm chủ đề riêng — Claude lồng bối cảnh câu theo các chủ đề này."
         >
           <div className="space-y-3">
-            {/* Topics as a 5-column checkbox grid (Discord-style rows), per the 2026-07-19 request;
-                each label truncates so a long topic never breaks the grid alignment. */}
             <div className="grid grid-cols-2 gap-x-4 gap-y-2.5 sm:grid-cols-3 lg:grid-cols-5">
               {TOPIC_PRESETS.map((topic) => {
                 const active = settings.topics.includes(topic);
@@ -370,14 +339,6 @@ export function ContentTab({
           </Field>
         </div>
 
-        {/* FULL WIDTH, and the same shape as «Cỡ câu» right below it (2026-08-05, by request). These are
-            the group's two scales, and they were drawn at two different lengths — this one at half width
-            inside the 2-column grid, that one across the whole card — so the same "slide from 1 to 5"
-            gesture had two different travels. They are also the pair whose info text points at each other
-            ("không phải độ dài — đó là «Cỡ câu»"), and a cross-reference only reads as one if the two
-            things look like siblings.
-            The rung's meaning is READ FROM DIFFICULTY_ANCHORS — the same text Claude receives on the
-            composition sheet — so what you set and what gets generated cannot mean two things. */}
         <Field
           label={`Độ phức tạp của câu: ${settings.difficulty}/5`}
           info="Độ phức tạp CẤU TRÚC — KHÔNG phải độ khó từ vựng (đó là «Trần từ vựng» ở nhóm trên), không phải độ dài (đó là «Cỡ câu» ngay dưới), không phải mức độ mới (đó là «Mẫu mới tối đa / câu» ở cuối nhóm này). Mỗi mức được định nghĩa bằng thứ đếm được: số mệnh đề, độ sâu lồng nhau, sắc thái trợ từ."
@@ -407,8 +368,6 @@ export function ContentTab({
           <div className="space-y-2 px-1 pt-2">
             <Slider
               thumbLabel="Cỡ câu"
-              // The thumb sits at an INDEX (0..6); the value the learner reads is a word. Without this,
-              // assistive tech announces "1" where the screen says «Ngắn».
               valueText={(i) => SIZE_LABELS[SENTENCE_SIZES[i]] ?? String(i)}
               min={0}
               max={SENTENCE_SIZES.length - 1}
@@ -418,13 +377,6 @@ export function ContentTab({
               value={[SENTENCE_SIZES.indexOf(settings.sentenceSize)]}
               onValueChange={([i]) => set('sentenceSize', SENTENCE_SIZES[i])}
             />
-            {/* Nhãn phải nằm dưới ĐÚNG nấc của nó. Trước 2026-08-11 mỗi nhãn là `flex-1 text-center`, tức
-                7 cột đều nhau → tâm nhãn ở (i+0.5)/7 của track, còn nấc trượt ở i/6. Đo ở 1440px: track
-                300→1396 nên nấc nằm ở 300·483·665·848·1031·1213·1396, còn tâm nhãn ở 377·…·1319 — chỉ nhãn
-                GIỮA trùng nấc giữa, hai đầu lệch 77px, nên "Rất ngắn" không nằm dưới nấc Rất ngắn.
-                Cách sửa: hai nhãn đầu/cuối lấy NỬA cột và canh ra biên, các nhãn giữa lấy cột đầy và canh
-                giữa. Tổng thành 6 đơn vị = số khoảng của 7 nấc, nên tâm nhãn giữa thứ i rơi đúng i/6, và
-                hai nhãn biên áp vào hai đầu track thay vì tràn ra khỏi thẻ. */}
             <div className="flex gap-1 text-xs leading-tight text-muted-foreground">
               {SENTENCE_SIZES.map((size, i) => {
                 const edge = i === 0 || i === SENTENCE_SIZES.length - 1;
@@ -449,7 +401,6 @@ export function ContentTab({
           </div>
         </Field>
 
-        {/* The two per-SENTENCE budgets, moved here from "Nhịp học" — see the component docstring. */}
         <div className="grid gap-4 sm:grid-cols-2">
           <Field
             label="Từ vựng / câu"

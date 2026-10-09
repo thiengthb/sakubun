@@ -3,12 +3,6 @@ import { auth } from '@/lib/auth';
 import { importAccountData } from '@/lib/import';
 import { parseAccountBackup } from '@/lib/import-schema';
 
-// Per-user data SYNC — the counterpart to GET /api/export/mine. A signed-in member uploads the JSON they
-// previously downloaded (or one from another instance) and it is MERGED into their account: rows missing
-// locally are added, existing rows are updated, nothing is deleted (ReviewLog is insert-only, invariant
-// #2). `importAccountData` forces userId to the session user, so a file can only ever write into the
-// uploader's OWN account. `?dryRun=1` returns the per-table counts WITHOUT writing (the preview step).
-
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 

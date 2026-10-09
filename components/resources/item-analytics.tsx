@@ -34,8 +34,6 @@ import { cn } from '@/lib/utils';
 import { STATE_LABELS } from '@/lib/srs-constants';
 import type { ItemStats } from '@/lib/item-stats';
 
-// State → badge tint, on the same alert→info scale the rest of the app uses (label always carries the
-// meaning; color is only reinforcement). Suspended is handled separately (muted).
 const STATE_BADGE: Record<number, string> = {
   0: 'border-info/60 text-info',
   1: 'border-warn/60 text-warn',
@@ -61,13 +59,9 @@ function StatCard({
   hint?: string;
 }) {
   return (
-    // Denser below sm (2026-08-05): eight of these stack 2-across on a phone, so p-4 + text-2xl spent
-    // ~370px of screen before the curve and the log — the two things you scroll here for. The label
-    // truncates rather than wrapping, which is what kept the cards uneven in a 2-column grid.
     <Card className="gap-0.5 p-3 sm:gap-1 sm:p-4">
       <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
         <Icon className="size-3.5 shrink-0" aria-hidden />
-        {/* min-w-0 is what makes `truncate` bite on a flex item (min-width defaults to auto). */}
         <span className="min-w-0 truncate">{label}</span>
         {hint && <InfoTooltip label={`Về ${label}`}>{hint}</InfoTooltip>}
       </div>
@@ -77,11 +71,6 @@ function StatCard({
   );
 }
 
-/**
- * Per-item "card info" (Anki-style) analytics — the whole learning picture for ONE grammar pattern or
- * vocab word: FSRS metrics grid, the forgetting curve, the full review log, and (grammar) the
- * enrichment card. Read-only; editing/suspend/delete stay in the ⋮ row menu on /resources.
- */
 export function ItemAnalytics({
   stats,
   groupsSlot,
@@ -90,15 +79,11 @@ export function ItemAnalytics({
   showFurigana = false,
 }: {
   stats: ItemStats;
-  /** Study-group membership control (chips + add/remove), rendered under the header. */
   groupsSlot?: ReactNode;
-  /** TTS settings, so every Japanese line on the page can be played + read in sync. */
   voiceSpeaker?: number;
   speechRate?: number;
   showFurigana?: boolean;
 }) {
-  // Remember the active tab across navigation + reload (shared key across items — a "sticky tab" so
-  // opening any item lands on the tab you last used, not always back on "Chỉ số").
   const [tab, setTab] = useSessionState('item.tab', 'stats');
   const { srs } = stats;
   const stateLabel = stats.suspended ? 'Tạm ngưng' : (STATE_LABELS[srs?.state ?? 0] ?? 'Mới');
@@ -111,16 +96,6 @@ export function ItemAnalytics({
   const dueDay = lastReview && dueDate ? (dueDate.getTime() - lastReview.getTime()) / dayMs : 0;
   const correctRate = stats.reviewCount ? stats.correctCount / stats.reviewCount : null;
 
-  // Name the gaps in the enrichment card so the page can offer the exact instruction that fills them
-  // — the answer to "where does the content come from", stated where the gap is noticed. Scoped to the
-  // detail-card CONTENT only: furigana rides the unified enrich now (jaRuby comes bundled), so there is
-  // no separate "add furigana" patch instruction anymore (2026-07-25).
-  //
-  // NOT grammar-only any more (2026-08-12). A vocabulary word has an enrichment card too — it just was
-  // never shown: this page rendered `kind === 'grammar' ? <EnrichmentCard/> : <hanviet + notes>`, so
-  // every synonym, collocation and worked example Claude wrote for a WORD was stored and never read by
-  // anyone. That is the whole reason vocabulary enrichment felt weak: not that the cards were thin, but
-  // that the web had no door to them.
   const enrichment = parseEnrichment(stats.enrichment);
   const isVocab = stats.kind === 'vocab';
   const missing = [
@@ -134,8 +109,6 @@ export function ItemAnalytics({
   ].filter(Boolean) as string[];
 
   return (
-    // Detail page: PageShell owns the frame; its tabs (Chỉ số / Thẻ) are content sub-tabs under the
-    // item header, NOT page-level nav, so they stay below (not in headerAside) — a documented exception.
     <PageShell
       breadcrumb={
         <AppBreadcrumbs
@@ -148,27 +121,9 @@ export function ItemAnalytics({
         />
       }
     >
-      {/*
-        HEADER — the item's identity, in the three bands `ResourceCard` already uses for the same item on
-        /resources (identity + actions, meaning, meta). This page is that card opened up, so it reads the
-        same way top to bottom.
-
-        The tags used to ride the BREADCRUMB row via `headerAside` (2026-07-25) and came back down here on
-        2026-08-05, by request: on a phone that row is app icon + sidebar button + divider + the trail, and
-        the trail's last crumb is the item's own name. Two badges and a star after all of that left every
-        piece fighting for the same ~170px, so a long name squeezed the tags to the edge — and the tags are
-        the one thing on the row that is not navigation. They belong next to the term they describe, where
-        the width is the page's.
-
-        Band 3 also ABSORBS the old "Âm Hán Việt:" line rather than adding a row: on a vocab page the meta
-        row replaces that line (net zero height), on a grammar page it costs one row that the breadcrumb
-        row gets back.
-      */}
       <header className="space-y-2">
         <div className="flex items-start justify-between gap-3">
           <div className="flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-1">
-            {/* The term itself is playable here too — this page is where the user studies it. The ruby
-                is built from the stored reading (whole-term), same as the resource tables. */}
             <h1 className="text-2xl leading-tight font-semibold">
               <SpokenLine
                 text={stats.expression}
@@ -178,19 +133,13 @@ export function ItemAnalytics({
                 speaker={voiceSpeaker}
                 rate={speechRate}
                 label={stats.kind === 'grammar' ? 'Nghe mẫu' : 'Nghe từ'}
-                // A long pattern wraps in an h1 this size, and the default bottom alignment would park
-                // the speaker icon beside the LAST line (same fix as ResourceCard band 1).
                 align="start"
               />
             </h1>
             <p className="text-base text-muted-foreground">{stats.meaningVi}</p>
           </div>
-          {/* The only ACTION in the header, pinned top-right — where it sits on the card you tapped to
-              get here, and where a thumb reaches. */}
           <StarButton id={stats.itemId} starred={stats.starred} kind="item" />
         </div>
-        {/* Meta row: what LEVEL · what STATE (· âm Hán Việt). Reads left→right as identity facts, wraps
-            freely because it owns the page's full width. */}
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 text-sm text-muted-foreground">
           <Badge variant="outline">{stats.level}</Badge>
           <Badge variant="outline" className={cn(!stats.suspended && STATE_BADGE[srs?.state ?? 0])}>
@@ -210,18 +159,6 @@ export function ItemAnalytics({
 
       {groupsSlot && <div>{groupsSlot}</div>}
 
-      {/* Two tabs: metrics + review log · then the enrichment / word detail (2026-07-18).
-          A REAL tab bar here, not the app's `TabSelect` (2026-08-05, by request). TabSelect trades a
-          tab bar for a select below `md` because a bar costs width proportional to the NUMBER of tabs —
-          that trade pays on /settings (five tabs) and /guide (four). With TWO tabs it does not: the pair
-          is ~200px at 360px, i.e. it already fits, so the select bought nothing and cost the thing a tab
-          bar is for — both destinations visible at once, one tap away, no menu.
-          The line is the tab row's POSITION, not the tab count: this row is page CONTENT and owns its
-          full width, while the dashboard's two tabs (`analytics-tabs.tsx`) sit on the HEADER row, where
-          360px leaves ~166px after the mobile top bar and the breadcrumb and e2e/mobile-layout.spec.ts
-          requires that row to stay one line. There, a capped-width pill is exactly what is needed.
-          `max-md:w-full` makes the pair split the phone's row evenly (a segmented control), which is also
-          what turns the two labels into two big thumb targets. */}
       <Tabs value={tab} onValueChange={setTab} className="space-y-6">
         <div className="flex flex-wrap items-center gap-2">
           <TabsList className="max-md:w-full">
@@ -230,12 +167,6 @@ export function ItemAnalytics({
               {stats.kind === 'grammar' ? 'Thẻ chi tiết' : 'Chi tiết từ'}
             </TabsTrigger>
           </TabsList>
-          {/* The Claude-instruction buttons, `md` AND UP ONLY (2026-08-05, by request).
-              They are not a mobile control in the first place: each one COPIES a sentence for you to
-              paste into Claude Desktop, and Claude Desktop is not on the phone you are holding — so on a
-              phone they took two of the four slots on the tab row to offer an action that finishes
-              somewhere else. The app cannot drive Claude itself (MCP runs the other way, invariant #1),
-              which is exactly why the control is a copy button and not a "do it" button. */}
           <div className="hidden flex-wrap gap-2 md:ml-auto md:flex">
             <CopyCommandButton
               command={`luyện tập trung mẫu ${stats.expression}`}
@@ -255,7 +186,6 @@ export function ItemAnalytics({
         </div>
 
         <TabsContent value="stats" className="space-y-6">
-          {/* FSRS metrics grid — 4 cards: 2x2 on mobile, one even row from sm up (no orphan col). */}
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <StatCard
               icon={Brain}
@@ -324,7 +254,6 @@ export function ItemAnalytics({
             />
           </div>
 
-          {/* Forgetting curve */}
           {stats.forgettingCurve.length > 0 && dueDate && lastReview && (
             <section className="space-y-3">
               <h2 className="flex items-center gap-2 text-lg font-semibold">
@@ -343,7 +272,6 @@ export function ItemAnalytics({
             </section>
           )}
 
-          {/* Review log */}
           <section className="space-y-3">
             <h2 className="flex items-center gap-2 text-lg font-semibold">
               <History className="size-5 text-muted-foreground" aria-hidden />
@@ -362,10 +290,6 @@ export function ItemAnalytics({
         </TabsContent>
 
         <TabsContent value="detail" className="space-y-4">
-          {/* Âm Hán Việt is VOCAB-only and comes from the Item row, not from the card, so it stays
-              above it. The stored example sentence USED TO sit here too, under its own «Ví dụ»
-              heading — directly above a card that renders a second «Ví dụ». It now goes into the
-              card via `storedExample`, so the tab carries exactly one. */}
           {isVocab && stats.hanviet && (
             <section className="space-y-1 text-sm">
               <SectionTag>Âm Hán Việt</SectionTag>

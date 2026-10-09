@@ -1,9 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { parseEnrichment, toTutorCard } from '@/lib/enrichment';
 
-// A card exactly as it was written BEFORE jaRuby existed (2026-07-20). The whole optional-field
-// decision rests on this staying parseable — if it ever fails, every enriched item in the library
-// silently loses its usage card.
 const LEGACY_CARD = JSON.stringify({
   structure: ['動詞辞書形 + ばかりに'],
   usage: 'chỉ vì … mà (dẫn tới kết quả xấu)',
@@ -74,16 +71,13 @@ describe('toTutorCard', () => {
   });
 
   it('omits examples entirely for a review item', () => {
-    // Most of a batch is review items, so this is where the saving actually comes from.
     expect(toTutorCard(raw, false)!.examples).toBeUndefined();
   });
 
   it('includes capped, ruby-free examples when introducing a new pattern', () => {
     const card = toTutorCard(raw, true)!;
     expect(card.examples).toHaveLength(2);
-    // The canonical `example` leads, then the extras.
     expect(card.examples![0]).toEqual({ ja: '一言言ったばかりに。', vi: 'Chỉ vì lỡ nói một câu.' });
-    // jaRuby is the app's furigana markup; Claude writes its own sourceRuby and never reads this.
     expect(card.examples!.every((e) => !('jaRuby' in e))).toBe(true);
   });
 
@@ -108,7 +102,6 @@ describe('toTutorCard', () => {
       antonyms: [{ term: '破る', reading: 'やぶる', vi: 'phá lời hứa' }],
     });
 
-    // A review turn pays nothing: the relations belong to the mini-lesson, like the examples.
     expect(toTutorCard(word, false)!.synonyms).toBeUndefined();
     expect(toTutorCard(word, false)!.antonyms).toBeUndefined();
 
@@ -118,14 +111,10 @@ describe('toTutorCard', () => {
       { term: '遵守する', vi: 'tuân thủ' },
     ]);
     expect(intro.antonyms).toEqual([{ term: '破る', vi: 'phá lời hứa' }]);
-    // `reading` is the app renderer's business (the same cut as jaRuby) and `note` is a longer
-    // explanation the tutor writes itself — neither is re-sent on every turn.
     expect(intro.synonyms!.every((r) => !('reading' in r) && !('note' in r))).toBe(true);
   });
 
   it('a card with no relations does not grow empty keys', () => {
-    // `undefined` rather than `[]`: an empty array still costs bytes in every tool result, and the
-    // protocol asks "does the card mention synonyms", not "is the list empty".
     const intro = toTutorCard(raw, true)!;
     expect(intro.synonyms).toBeUndefined();
     expect(intro.antonyms).toBeUndefined();

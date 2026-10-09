@@ -1,14 +1,3 @@
-// Hai bảng của /resources — ngữ pháp và từ vựng — trong browser thật, session thật.
-//
-// VIẾT TRƯỚC MỘT REFACTOR, cố ý. `items-table.tsx` và `vocab-table.tsx` gần như là một file: đo ngày
-// 2026-08-06 cho 145 cửa sổ 12-dòng trùng nhau giữa chúng, gồm một khối 92 dòng. Phần sắp được gom ra
-// dùng chung là ĐÚNG những gì spec này lái: 7 cột FSRS/meta, cột hành động, và 4 hàng bộ lọc giống
-// nhau. Trước spec này, tab TỪ VỰNG không có một dòng test browser nào — nên "gom lại mà không hỏng"
-// là một câu không kiểm được.
-//
-// Mọi assert dưới đây là về HÀNH VI người dùng thấy, không phải về cấu trúc code, nên nó vẫn đúng sau
-// khi hai file được gom thành một config chung — đó là điều kiện để nó là lưới an toàn chứ không phải
-// bản chụp của code hiện tại.
 import path from 'node:path';
 import Database from 'better-sqlite3';
 import { expect, test, type Page } from '@playwright/test';
@@ -17,17 +6,6 @@ import { E2E_DB_FILE, E2E_EMAIL, E2E_LOGIN, seedE2eAccount } from './fixtures';
 
 const iso = (ms: number) => new Date(ms).toISOString().replace('Z', '+00:00');
 
-/**
- * Một thẻ enrichment ĐỦ, để bộ lọc "Thẻ chi tiết" của tab ngữ pháp có cả hai phía.
- *
- * Tên field là `v`, KHÔNG phải `version`, và giá trị được IMPORT từ `CURRENT_ENRICHMENT_VERSION`
- * (lib/enrichment.ts) chứ không gõ tay — fixture này đã sai vì gõ tay HAI lần: bản đầu viết
- * `version: 3` (Zod bỏ field lạ, điền `v: 1` mặc định), bản sau ghim `v: 2` rồi bar lên v3 ngày
- * 2026-08-12. Cả hai lần thẻ tụt xuống tier `outdated`, bộ lọc "Thẻ đủ" trả 0 dòng, và test đỏ vì
- * FIXTURE sai chứ không vì app sai.
- * Cả năm chiều (structure · usage · collocations · example(s) · pitfalls/contrasts) phải có mặt, nếu
- * thiếu một chiều thì tier là `thin`.
- */
 const FULL_CARD = JSON.stringify({
   v: CURRENT_ENRICHMENT_VERSION,
   usage: 'Diễn tả nguyên nhân dẫn tới kết quả xấu, người nói thường hối tiếc.',
@@ -40,12 +18,6 @@ const FULL_CARD = JSON.stringify({
   register: 'văn viết / kể lại',
 });
 
-/**
- * Một thẻ ĐỦ cho TỪ VỰNG — thước đo khác hẳn thẻ ngữ pháp (lib/enrichment-quality.ts): không đòi
- * `structure`, nhưng đòi ≥2 collocations, ≥2 ví dụ ĐỀU có `vi`, và ít nhất một từ đồng nghĩa hoặc
- * trái nghĩa. Đây là thứ mà tới 2026-08-12 web KHÔNG hề vẽ ra: cả hai bề mặt chi tiết đều gác
- * `kind === 'grammar'`, nên mọi thẻ từ vựng nằm trong DB và không xuất hiện ở đâu.
- */
 const VOCAB_CARD = JSON.stringify({
   v: CURRENT_ENRICHMENT_VERSION,
   usage: 'Việc chuẩn bị trước cho một việc cụ thể; trung tính, dùng cả nói và viết.',
@@ -69,8 +41,6 @@ async function seed() {
        captureReason, suspended, starred, enrichment, createdAt, challengeObservations)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'MCP', ?, ?, ?, ?, ?, 0)`,
   );
-  // Ngữ pháp: 4 mục, 2 cấp, một mục CÓ thẻ đủ và ba mục chưa có thẻ.
-  //            id     kind      expression        reading hanviet meaning        level notes reason susp star card       createdAt
   item.run(
     'g1',
     'GRAMMAR',
@@ -131,7 +101,6 @@ async function seed() {
     null,
     iso(now - 4000),
   );
-  // Từ vựng: 4 mục, 2 cấp, ba lý do khác nhau + một mục không có lý do, một mục CÓ âm Hán Việt.
   item.run(
     'v1',
     'VOCAB',
@@ -193,16 +162,12 @@ async function seed() {
     iso(now - 4000),
   );
 
-  // Một nhóm mỗi loại. BẮT BUỘC phải có: `BulkGroupActions` không vẽ gì khi KHÔNG có nhóm nào nhận
-  // được selection — hành vi đúng của app, nhưng nó làm bản đầu của test này đỏ ở chỗ "Thêm vào nhóm".
   const group = db.prepare(
     `INSERT INTO "Group" (id, name, kind, color, note, createdAt, updatedAt) VALUES (?, ?, ?, NULL, NULL, ?, ?)`,
   );
   group.run('gr-gram', 'Nhóm ngữ pháp', 'grammar', iso(now), iso(now));
   group.run('gr-vocab', 'Nhóm từ vựng', 'vocab', iso(now), iso(now));
 
-  // Một lượt dịch, CHỈ để /history có ô tìm: không có câu nào thì trang đó vẽ empty state và ô tìm
-  // không tồn tại — test so sánh mã hoá `?q` giữa hai trang đỏ vì thiếu dữ liệu, không vì lệch mã hoá.
   db.prepare(
     `INSERT INTO Sentence (id, direction, context, exerciseType, sourceText, sourceRuby, userAnswer,
        suggested, suggestedRuby, feedback, score, stagedItems, extraPatterns, status, starred,
@@ -221,28 +186,11 @@ async function login(page: Page) {
   await page.waitForURL((u) => !u.pathname.startsWith('/login'), { timeout: 30_000 });
 }
 
-/**
- * Chọn một giá trị trong một hàng bộ lọc của FilterPopover.
- *
- * KHÔNG dùng `getByLabel`: `FilterRow` vẽ một `<Label>` KHÔNG liên kết `htmlFor` với trigger của Radix
- * Select, nên `getByLabel('Cấp JLPT')` không bao giờ resolve (đã đo — nó timeout 60s). Trigger được
- * nhận diện bằng GIÁ TRỊ ĐANG HIỆN của nó, thứ duy nhất phơi ra cho a11y.
- */
 async function pickFilter(page: Page, currentValue: string, next: string) {
   await page.getByRole('combobox').filter({ hasText: currentValue }).first().click();
   await page.getByRole('option', { name: next, exact: true }).click();
 }
 
-/**
- * Mở panel "Bộ lọc" và giữ nó mở cho MỌI lần chọn, rồi đóng một lần ở cuối.
- *
- * Hai điều đã đo được, và cả hai đều là lý do hàm này tồn tại:
- *   1. `Escape` KHÔNG đóng panel này (`aria-expanded` vẫn `true` sau 21 lần thử lại). Đóng bằng chính
- *      trigger — nó là toggle.
- *   2. Vì (1), đóng-rồi-mở-lại giữa các lần chọn làm cú bấm thứ hai TOGGLE panel về đóng, và
- *      `pickFilter` kế tiếp treo 60s chờ một combobox không hiển thị. Nên: mở MỘT lần, chọn hết, đóng
- *      MỘT lần. Panel mở không che dòng đếm, nên không cần đóng để đọc số.
- */
 async function withFilters(page: Page, body: () => Promise<void>) {
   const trigger = page.getByRole('button', { name: /^Bộ lọc/ });
   await trigger.click();
@@ -252,7 +200,6 @@ async function withFilters(page: Page, body: () => Promise<void>) {
   await expect(trigger).toHaveAttribute('aria-expanded', 'false');
 }
 
-/** Số bản ghi bảng đang hiện, đọc từ dòng đếm của DataTable ("1–4 / 4 mẫu"). */
 async function shownCount(page: Page, noun: string): Promise<number> {
   const text =
     (await page
@@ -262,7 +209,6 @@ async function shownCount(page: Page, noun: string): Promise<number> {
   return Number(text.match(new RegExp(`/\\s*(\\d+)\\s*${noun}`))?.[1] ?? -1);
 }
 
-// Cấu hình cho phần DÙNG CHUNG. Mỗi tab chỉ khác nhau ở nhãn — đó chính là luận điểm của refactor.
 const TABS = [
   { tab: 'grammar', noun: 'mẫu', firstHeader: 'Mẫu ngữ pháp', bulkNoun: 'mẫu ngữ pháp' },
   { tab: 'vocab', noun: 'từ', firstHeader: 'Từ', bulkNoun: 'từ vựng' },
@@ -279,10 +225,6 @@ test('phần dùng chung của hai bảng: sắp xếp, cột ẩn mặc định
     await expect(page.getByRole('columnheader', { name: t.firstHeader })).toBeVisible();
     expect(await shownCount(page, t.noun), `${t.tab}: 4 dòng đã seed`).toBe(4);
 
-    // --- cột dùng chung "Ngày thêm" sắp xếp được, và aria-sort nói ra trạng thái ---
-    // KHÔNG assert chiều nào trước: đo được là cú bấm đầu cho `descending` (DataTable đảo chiều mặc
-    // định cho cột ngày/số — mới nhất trước là cái người ta muốn xem). Điều đáng chốt là nó ĐỔI
-    // trạng thái và ĐẢO được, không phải thứ tự cụ thể của hai lần bấm.
     const created = page.getByRole('columnheader', { name: 'Ngày thêm' });
     await expect(created).not.toHaveAttribute('aria-sort', /ascending|descending/);
     await page.getByRole('button', { name: 'Ngày thêm' }).click();
@@ -294,20 +236,16 @@ test('phần dùng chung của hai bảng: sắp xếp, cột ẩn mặc định
       first === 'ascending' ? 'descending' : 'ascending',
     );
 
-    // --- một cột FSRS ẩn mặc định bật được lên (đây là 1 trong 7 cột sắp gom ra dùng chung) ---
     await expect(page.getByRole('columnheader', { name: 'Đã ôn' })).toHaveCount(0);
     await page.getByRole('button', { name: 'Hiển thị cột' }).click();
     await page.getByRole('menuitemcheckbox', { name: 'Đã ôn (lần)' }).click();
     await page.keyboard.press('Escape');
     await expect(page.getByRole('columnheader', { name: 'Đã ôn' })).toBeVisible();
 
-    // --- hàng bộ lọc dùng chung: Cấp JLPT. Hai mục N2 trong cả hai tab. ---
     await withFilters(page, async () => {
       await pickFilter(page, 'Mọi cấp', 'N2');
       expect(await shownCount(page, t.noun), `${t.tab}: lọc N2 còn 2`).toBe(2);
-      // Dòng đếm phải nói ra rằng nó đã bị lọc, không âm thầm đổi tổng.
       await expect(page.getByText('(lọc từ 4)')).toBeVisible();
-      // Trả về "Mọi cấp" bằng chính hàng select — đường người dùng thật cũng đi.
       await pickFilter(page, 'N2', 'Mọi cấp');
       expect(await shownCount(page, t.noun), `${t.tab}: bỏ lọc về lại 4`).toBe(4);
     });
@@ -320,10 +258,7 @@ test('phần RIÊNG của mỗi bảng: thẻ chi tiết (ngữ pháp) · lý do
   await seed();
   await login(page);
 
-  // --- ngữ pháp: bộ lọc theo chất lượng thẻ enrichment. Đã seed 1 thẻ đủ / 3 chưa có. ---
   await page.goto('/resources?tab=grammar', { waitUntil: 'networkidle' });
-  // Phạm vi `tbody` cho mọi phép tìm text của mục: cùng một chuỗi còn nằm trong nhãn sr-only của link
-  // card và trong layout thẻ dưới md, nên `getByText` không phạm vi vi phạm strict mode (3 element).
   const body = page.locator('tbody');
   await withFilters(page, async () => {
     await pickFilter(page, 'Mọi mục', 'Thẻ đủ');
@@ -334,14 +269,9 @@ test('phần RIÊNG của mỗi bảng: thẻ chi tiết (ngữ pháp) · lý do
     expect(await shownCount(page, 'mẫu'), 'ba mục còn lại chưa có thẻ').toBe(3);
   });
 
-  // --- từ vựng: bộ lọc riêng của nó, và bộ lọc của tab kia KHÔNG được có ở đây ---
   await page.goto('/resources?tab=vocab', { waitUntil: 'networkidle' });
   await withFilters(page, async () => {
-    // Nhận diện hàng bộ lọc riêng bằng GIÁ TRỊ MẶC ĐỊNH của nó, không bằng nhãn: "Lý do" cũng là tên
-    // một cột trong bảng, nên nhãn khớp 2 element và assert không chốt được gì. "Mọi lý do" chỉ có một chỗ.
     await expect(page.getByRole('combobox').filter({ hasText: 'Mọi lý do' })).toBeVisible();
-    // "Thẻ chi tiết" giờ có ở CẢ HAI bảng (2026-08-12). Trước đó test này chốt `toHaveCount(0)` — nó ghim
-    // niềm tin "từ vựng không có thẻ chi tiết", đúng cái niềm tin làm cho mọi thẻ từ vựng vô hình.
     await expect(page.getByRole('combobox').filter({ hasText: 'Mọi mục' })).toBeVisible();
     await pickFilter(page, 'Mọi mục', 'Thẻ đủ');
     expect(await shownCount(page, 'từ'), 'chỉ 準備 có thẻ đủ theo thước đo TỪ VỰNG').toBe(1);
@@ -351,28 +281,20 @@ test('phần RIÊNG của mỗi bảng: thẻ chi tiết (ngữ pháp) · lý do
     await pickFilter(page, 'Mọi lý do', 'Dùng sai');
     expect(await shownCount(page, 'từ'), 'chỉ 把握 là "Dùng sai"').toBe(1);
     await expect(body.getByText('把握').first()).toBeVisible();
-    // Badge lý do hiện ngay trong bảng (nó có cột riêng từ 2026-07-20, không dán vào ô "Từ").
     await expect(body.getByText('Dùng sai').first()).toBeVisible();
 
     await pickFilter(page, 'Dùng sai', 'Mọi lý do');
   });
 
-  // --- cột Hán Việt: CHỈ tab từ vựng có, và nó ẩn mặc định ---
   await expect(page.getByRole('columnheader', { name: 'Hán Việt' })).toHaveCount(0);
   await page.getByRole('button', { name: 'Hiển thị cột' }).click();
   await page.getByRole('menuitemcheckbox', { name: 'Âm Hán Việt' }).click();
   await page.keyboard.press('Escape');
   await expect(page.getByRole('columnheader', { name: 'Hán Việt' })).toBeVisible();
-  // Trong `tbody`: cùng chuỗi cũng nằm trong thẻ mobile dưới dạng «[bả ác]» bên cạnh từ.
   await expect(body.getByText('bả ác', { exact: true })).toBeVisible();
 });
 
 test('ô tìm mirror ra URL cùng một kiểu ở /resources và /history', async ({ page }) => {
-  // Hai trang dùng CÙNG tên tham số `?q` nhưng đi qua hai bản cơ chế persistence khác nhau:
-  // `components/shared/use-session-state.ts` và một bản sao riêng bên trong `data-table.tsx`. Bản sao
-  // đó luôn `JSON.stringify`, nên một chuỗi ra URL thành `q=%22abc%22` (CÓ dấu ngoặc kép), còn bản dùng
-  // chung ghi `q=abc`. Cùng một tên tham số, hai cách mã hoá — đúng loại lệch mà hai bản sao của một cơ
-  // chế sinh ra, và không có gì bắt được nó cho tới khi ai đó gửi link cho người khác.
   await seed();
   await login(page);
 
@@ -384,7 +306,6 @@ test('ô tìm mirror ra URL cùng một kiểu ở /resources và /history', asy
   await page.getByPlaceholder('Tìm trong đề / bài dịch…').fill('vừa');
   await expect.poll(() => new URL(page.url()).searchParams.get('q')).toBe('vừa');
 
-  // Và link đó phải mở lại được: nạp thẳng URL có `?q=` thì ô tìm phải chứa đúng giá trị đó.
   await page.goto('/resources?tab=grammar&q=vừa', { waitUntil: 'networkidle' });
   await expect(page.getByPlaceholder('Tìm mẫu / cách đọc / nghĩa…')).toHaveValue('vừa');
 });
@@ -396,10 +317,6 @@ test('chọn dòng: thanh hành động khối gọi đúng danh từ của từ
   for (const t of TABS) {
     await page.goto(`/resources?tab=${t.tab}`, { waitUntil: 'networkidle' });
     await page.getByRole('checkbox', { name: 'Chọn tất cả dòng trên trang' }).check();
-    // Danh từ là thứ DUY NHẤT khác nhau giữa hai thanh hành động khối — nên nó là chỗ một refactor
-    // gom code sẽ làm sai đầu tiên (một danh từ cứng dùng cho cả hai bảng vẫn "chạy").
-    // Chốt trên nhãn ĐẦY ĐỦ của nút xoá, không phải một regex chứa danh từ: `/từ vựng/` cũng khớp nút
-    // "Thêm từ vựng" ở toolbar, và một assert khớp hai element khác nhau không chốt được gì.
     await expect(page.getByRole('button', { name: `Xóa 4 ${t.bulkNoun}` })).toBeVisible();
     await expect(page.getByRole('button', { name: /Tạm ngưng|Cho học lại/ })).toBeVisible();
     await expect(page.getByRole('button', { name: /Thêm vào nhóm/ })).toBeVisible();
@@ -410,14 +327,6 @@ test('chọn dòng: thanh hành động khối gọi đúng danh từ của từ
 test('bảng ngữ pháp không sinh thanh cuộn ngang ở 1440px, và không tiêu đề nào bị cắt', async ({
   page,
 }) => {
-  // Vì sao ca này tồn tại (2026-08-11): rà giao diện bằng ảnh chụp phát hiện bảng rộng 1146px trong
-  // khung 1132px — tràn đúng 14px, tức một thanh cuộn ngang chỉ để cuộn 14px, kèm cột cuối bị cắt. Cùng
-  // lúc, "Level" (80px) bị cắt thành "Le…" và "Ngày thêm" (120px) thành "Ngày th…", vì ô tiêu đề còn
-  // phải chứa tay kéo cột + nút sắp xếp — ĐO được là 48px phí mỗi ô. Cả ba đều là loại lỗi đọc code
-  // không thấy: mọi con số trong `size:` trông hợp lý, chỉ trình duyệt mới biết chúng không vừa.
-  //
-  // Ca này chốt CẢ HAI, ở đúng bề rộng đã đo. Nó cố ý không chốt từng con số `size:` — chốt hệ quả
-  // (không tràn, không cắt) để còn đổi bề rộng cột được mà không phải sửa test.
   await seed();
   await page.setViewportSize({ width: 1440, height: 900 });
   await login(page);
@@ -427,12 +336,10 @@ test('bảng ngữ pháp không sinh thanh cuộn ngang ở 1440px, và không t
   const fit = await page.evaluate(() => {
     const table = document.querySelector('table');
     if (!table) return { error: 'không thấy bảng' };
-    // Phần tử cuộn ngang, tìm bằng cách đi LÊN từ bảng thay vì đoán class.
     let overflowPx = 0;
     for (let el: HTMLElement | null = table.parentElement; el; el = el.parentElement) {
       overflowPx = Math.max(overflowPx, el.scrollWidth - el.clientWidth);
     }
-    // Node thật sự cắt chữ tiêu đề là `span.truncate` trong nút sắp xếp.
     const cut = [...document.querySelectorAll('th')]
       .map((th) => {
         const span = th.querySelector('span.truncate');
@@ -451,30 +358,21 @@ test('bảng ngữ pháp không sinh thanh cuộn ngang ở 1440px, và không t
 test('thẻ chi tiết của TỪ VỰNG hiện trên web: đồng nghĩa, trái nghĩa, ví dụ kèm dịch', async ({
   page,
 }) => {
-  // Lỗi mà test này gác: tới 2026-08-12 cả hai bề mặt chi tiết đều gác `kind === 'grammar'`, nên thẻ
-  // enrichment của một TỪ nằm trong DB và không xuất hiện ở bất kỳ đâu — người học không có cách nào
-  // đọc được từ đồng nghĩa hay ví dụ mà Claude đã soạn. Không unit test nào bắt được: hàm chấm thẻ
-  // đúng, lược đồ đúng, chỉ có đường từ dữ liệu ra mắt người là bị cắt.
   await seed();
   await login(page);
   await page.goto('/resources/v4', { waitUntil: 'networkidle' });
 
   await page.getByRole('tab', { name: 'Chi tiết từ' }).click();
 
-  // Hai mục mới, và nội dung của chúng — cả từ tiếng Nhật lẫn nghĩa tiếng Việt.
   await expect(page.getByRole('button', { name: /Từ đồng nghĩa/ })).toBeVisible();
   await expect(page.getByText('sự sắm sẵn')).toBeVisible();
   await expect(page.getByRole('button', { name: /Từ trái nghĩa/ })).toBeVisible();
   await expect(page.getByText('lúc diễn thật')).toBeVisible();
 
-  // Ví dụ phải đi kèm bản dịch tiếng Việt — đúng chiều mà thước đo từ vựng đòi.
   await expect(page.getByText('Đã chuẩn bị xong.')).toBeVisible();
   await expect(page.getByText('Tôi đang chuẩn bị cho cuộc họp.')).toBeVisible();
 
-  // Mọi chuỗi tiếng Nhật người học đọc phải nghe được — luật của repo, và ở đây nó có nghĩa cụ thể:
-  // nghe được TỪ ĐỒNG NGHĨA, không chỉ nghe được từ chính.
   await expect(page.locator('button[aria-label*="Nghe từ 用意"]')).toBeVisible();
 
-  // Và thẻ ĐỦ thì không được kèm dòng "còn thiếu" nào.
   await expect(page.getByText(/thiếu:/)).toHaveCount(0);
 });

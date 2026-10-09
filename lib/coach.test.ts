@@ -1,8 +1,3 @@
-// harness-allow-test-shrink — 2026-08-10: hai ca bị XOÁ vì hành vi chúng chốt đã không còn tồn tại,
-// không phải vì chúng bất tiện. `FORK_SHARED` và `ENRICH_FROM_SHARED` gợi ý lấy thẻ từ "thư viện chung"
-// và gọi `fork_shared_items`; mảng `shared` chỉ có một nguồn trong app (`lib/lookup.ts`) và nguồn đó
-// truyền `[]` từ khi lớp multiuser bị cắt, còn `fork_shared_items` thì không còn được đăng ký. Phần
-// assertion CÒN GIÁ TRỊ của các ca đó được giữ lại, viết lại trên cờ còn tồn tại — xem comment tại chỗ.
 import { describe, expect, it } from 'vitest';
 import {
   CLUSTER_MIN_MISSES,
@@ -23,14 +18,12 @@ import {
 import { scoreEnrichment } from '@/lib/enrichment-quality';
 import { GRAMMAR_KIND } from '@/lib/item-kinds';
 
-/** Every `ItemFacts` fixture here is the grammar pattern 〜ばかりに — bind the bar once. */
 const scoreGrammarCard = (raw: string | null | undefined) => scoreEnrichment(raw, GRAMMAR_KIND);
 import { CURRENT_ENRICHMENT_VERSION } from '@/lib/enrichment';
 import { LEECH_LAPSES } from '@/lib/srs';
 
 const NOW = new Date('2026-07-27T10:00:00Z');
 
-/** A card that meets every dimension at the current version → tier `ok`. */
 const OK_CARD = JSON.stringify({
   v: CURRENT_ENRICHMENT_VERSION,
   structure: ['動詞辞書形 + ばかりに'],
@@ -70,7 +63,6 @@ function input(patch: Partial<CoachInput> = {}): CoachInput {
 
 const codes = (i: CoachInput): SuggestionCode[] => coach(i).suggestions.map((s) => s.code);
 
-/** Parses, but missing three dimensions → tier `thin` (the state `patch_enrichment` repairs). */
 const THIN_CARD = JSON.stringify({
   v: CURRENT_ENRICHMENT_VERSION,
   structure: [],
@@ -87,11 +79,6 @@ describe('coach — the scenarios the flagship depends on', () => {
     expect(codes(input({ mine: [] }))).toContain('ADD_MISSING');
   });
 
-  // WHICH TOOL, and with WHICH ARGS. This branch used to answer `add_grammar` + `{ items: [...] }` for
-  // every query. Found in the lab 2026-08-12 by asking about 「台所」 (a noun): a word filed as grammar
-  // takes grammar slots and spends `dailyNewGrammar`, which the settings schema promises vocabulary can
-  // never do; `{ items: [...] }` is the argument key of neither tool; and `renderConsentGuard` builds
-  // its hold-back list from `tool`, so naming the wrong one left the real write unguarded.
   describe('ADD_MISSING names the right tool', () => {
     const missing = (kind?: 'GRAMMAR' | 'VOCAB') =>
       coach({ ...input({ mine: [] }), kind }).suggestions.find((s) => s.code === 'ADD_MISSING')!;
@@ -110,10 +97,6 @@ describe('coach — the scenarios the flagship depends on', () => {
       expect(s.args).toHaveProperty('grammar');
     });
 
-    // The usual case: the learner asked about a THING, so `kind` is absent. Defaulting to vocabulary is
-    // deliberate and asymmetric — mis-filing a word as grammar breaks the budget guarantee, mis-filing a
-    // pattern as vocabulary only puts it in the wrong pool. Both tools stay named so neither escapes the
-    // consent guard.
     it('an unqualified lookup defaults to vocabulary and still names grammar', () => {
       const s = missing();
       expect(s.tool).toBe('add_vocab');
@@ -165,8 +148,6 @@ describe('coach — the scenarios the flagship depends on', () => {
   });
 
   it('a NEVER-STUDIED item is never offered as "due for review"', () => {
-    // Found in the lab: an out-of-range never-studied pattern fell past PRACTICE_NEW, and a fresh SRS
-    // row is already due, so it was offered as 「đang đến hạn ôn」 — review something never seen.
     const result = coach(
       input({
         mine: [item({ level: 'N1', srs: { state: 0, due: NOW, lapses: 0 } })],
@@ -213,7 +194,6 @@ describe('coach — the four card states each get their OWN repair', () => {
     const s = result.suggestions.find((x) => x.code === 'ENRICH_THIN');
     expect(s).toBeTruthy();
     expect(s!.tool).toBe('patch_enrichment'); // NOT enrich_items — that would wipe the rest
-    // The line is SPECIFIC, which is the whole point of scoring dimensions.
     expect(s!.line).toContain('bẫy hay gặp');
   });
 
@@ -228,10 +208,6 @@ describe('coach — the four card states each get their OWN repair', () => {
     expect(s!.line).toContain('v1');
   });
 
-  // Hai ca "một bản công khai TỐT HƠN thẻ của tôi" đã bị bỏ cùng `ENRICH_FROM_SHARED` (2026-08-10):
-  // không còn thư viện chung nên không có bản công khai nào để so. Phần CÒN GIÁ TRỊ của ca thứ hai
-  // được giữ lại ngay dưới đây — một item không có thẻ đọc được thì phải nhận đề nghị GHI ĐỦ, vì
-  // `patch_enrichment` chỉ biết MERGE.
   it('một item KHÔNG có thẻ đọc được thì nhận đề nghị ghi đủ, không phải một merge', () => {
     for (const raw of [null, '{"collocations":["x"]}']) {
       const result = coach(input({ mine: [item({ quality: scoreGrammarCard(raw) })] }));
@@ -289,8 +265,6 @@ describe('coach — a mined confusion is evidence the SERVER holds, so it IS a c
   });
 
   it('with no card to patch it is NOT dropped — it rides the write-a-card offer instead', () => {
-    // Found by running it: the most useful moment to know "you keep mixing this up with X" is while
-    // WRITING the card, and that is exactly the case the patch-only guard used to silence.
     for (const [raw, code] of [
       [null, 'ENRICH_MISSING'],
       ['{"collocations":["x"]}', 'ENRICH_BROKEN'],
@@ -377,25 +351,6 @@ describe('coach — ranking and caps', () => {
   });
 });
 
-/**
- * The argument keys each proposal target actually accepts, mirroring the Zod schemas in
- * `lib/mcp/tools/*`. Kept here rather than introspected because registering the real server needs an
- * McpServer instance — and the drift this catches is worth the duplication: `ENRICH_THIN` used to
- * pre-fill `missing`, which `patch_enrichment` does not accept, so a yes would have silently sent a
- * patch with nothing in it.
- */
-// RE-DERIVED 2026-08-12 by dumping `tools/list` from a running server, because this table had drifted
-// in FIVE places and one of them was hiding a live bug:
-//   - add_grammar took `items` here; the real key is `grammar`, and the ADD_MISSING offer was pre-filling
-//     `items` — so the guard meant to catch exactly this drift was VALIDATING it. A contract copied from
-//     the code under test is not a contract.
-//   - add_vocab was absent entirely (nothing pointed at it until 2026-08-12).
-//   - get_due_items listed `limit`, `includeVocab`, `exerciseType`, `direction` — none of which exist.
-//   - update_settings listed `dailyReviewCap` (the real name is `maxReviewsPerDay`) and omitted
-//     `desiredRetention`, which TUNE_RETENTION does send.
-//   - update_vocab listed `hanviet`; the parameter is `sinoVietnamese`.
-// A too-permissive row is worse than a missing one: it passes silently. Re-dump rather than edit by hand:
-//     node tooling/learning-lab.mjs   # then tools/list — see docs/LEARNING-LAB.md
 const TOOL_ARGS: Record<string, readonly string[]> = {
   add_grammar: ['grammar'],
   add_vocab: ['vocab'],
@@ -433,11 +388,6 @@ const TOOL_ARGS: Record<string, readonly string[]> = {
   update_vocab: ['itemId', 'expression', 'reading', 'sinoVietnamese', 'meaningVi', 'notes', 'level'],
 };
 
-/**
- * Health snapshots for `coachLibrary`, ONE PER OFFER. A single snapshot that trips everything cannot be
- * used here: `rankAndCap` keeps only MAX_SUGGESTIONS, so the lower-priority codes get dropped and never
- * reach the contract check — which is how a "covers everything" fixture quietly covers three of five.
- */
 const HEALTH_BASE: LibraryHealthFacts = {
   needsWorkAtStudiedLevels: 0,
   outdatedCards: 0,
@@ -470,9 +420,6 @@ describe('coach — every suggestion is a call that would actually work', () => 
       input({ mine: [], kind: 'GRAMMAR' }), // the other ADD_MISSING branch — a different tool + key
     ];
     const seen = new Set<string>();
-    // `coachLibrary` shares the Suggestion shape and the same "a yes calls this tool" promise, but its
-    // five codes were never contract-checked — the cases list only ever held lookups. Nothing was
-    // holding them; they happen to be correct, which is not the same as being guarded.
     const produced = [...cases.map((c) => coach(c)), ...SWEEP_CASES.map(coachLibrary)];
     for (const c of produced) {
       for (const s of c.suggestions) {
@@ -480,10 +427,6 @@ describe('coach — every suggestion is a call that would actually work', () => 
         expect(allowed, `no arg contract known for tool ${s.tool}`).toBeDefined();
         for (const [key, value] of Object.entries(s.args)) {
           expect(allowed, `${s.code} → ${s.tool} { ${key} }`).toContain(key);
-          // VALUES too, not just keys. RAISE_NEW_CAP pre-filled `{ dailyNewGrammar: null }` and the
-          // real tool answers "expected number" — the top-priority blocker-class offer in the coach
-          // invited a yes that could not be carried out, and a key-only contract passed it happily.
-          // A placeholder is exactly the thing a pre-filled argument must never be.
           expect(value, `${s.code} → ${s.tool} { ${key}: ${String(value)} } is a placeholder`).not
             .toBeNull();
           expect(value, `${s.code} → ${s.tool} { ${key} } is undefined`).toBeDefined();
@@ -491,12 +434,6 @@ describe('coach — every suggestion is a call that would actually work', () => 
         seen.add(s.code);
       }
     }
-    // The matrix is only meaningful if the cases actually exercised most of it.
-    // Ngưỡng 7 → 6 (2026-08-10): `FORK_SHARED` và `ENRICH_FROM_SHARED` đã bị bỏ khỏi bề mặt cùng lớp
-    // multiuser, nên 6 là con số THẬT ở đây. Hạ ngưỡng chứ không xoá phép kiểm — nó vẫn đỏ nếu độ phủ
-    // sụp xuống, và một ngưỡng cao hơn thực tế thì chỉ đỏ mãi mà không nói được điều gì.
-    // 6 → 11 (2026-08-12): the five `coachLibrary` codes now run through the same contract. Raising the
-    // floor is the point — it is what stops a future case list from quietly covering less.
     expect(seen.size).toBeGreaterThanOrEqual(11);
   });
 });
@@ -541,7 +478,6 @@ describe('coachLibrary — the whole-kho sweeps', () => {
     ).toEqual([]);
     const at = coachLibrary({ ...healthy, needsWorkAtStudiedLevels: SWEEP_MIN_NEEDS_WORK });
     expect(at.suggestions[0].code).toBe('SWEEP_ENRICH');
-    // The sweep needs the target LIST before it can write anything.
     expect(at.suggestions[0].tool).toBe('list_grammar');
     expect(at.suggestions[0].args).toMatchObject({ quality: 'missing' });
   });
@@ -553,7 +489,6 @@ describe('coachLibrary — the whole-kho sweeps', () => {
       desiredRetention: 0.9,
     }).suggestions[0];
     expect(below.code).toBe('TUNE_RETENTION');
-    // Forgetting more than planned → shorter intervals → a HIGHER target.
     expect(below.args.desiredRetention).toBeGreaterThan(0.9);
 
     const above = coachLibrary({
@@ -563,7 +498,6 @@ describe('coachLibrary — the whole-kho sweeps', () => {
     }).suggestions[0];
     expect(above.args.desiredRetention).toBeLessThan(0.9);
 
-    // Not enough data is NOT a verdict.
     expect(
       coachLibrary({ ...healthy, retention: { kind: 'insufficient', gapPts: null } }).suggestions,
     ).toEqual([]);
@@ -599,7 +533,6 @@ describe('coachLibrary — the whole-kho sweeps', () => {
       weakCluster: { tag: 'particle', label: 'Trợ từ', misses: 30, itemIds: ['a', 'b', 'c'] },
     });
     expect(messy.suggestions.length).toBeLessThanOrEqual(MAX_SUGGESTIONS);
-    // One per class, so it can never be two sweeps in a row.
     expect(new Set(messy.suggestions.map((s) => s.class)).size).toBe(messy.suggestions.length);
     expect(messy.remaining).toBeGreaterThan(0);
   });
@@ -607,13 +540,8 @@ describe('coachLibrary — the whole-kho sweeps', () => {
 
 describe('autoCapture — pre-authorisation marks the offer, it never writes', () => {
   const off = { vocab: false, enrichPatch: false };
-  /** Thẻ mỏng → đề nghị `ENRICH_THIN`, tool `patch_enrichment` — offer duy nhất còn có cờ auto. */
   const thinOne = () => input({ mine: [item({ quality: scoreGrammarCard(THIN_CARD) })] });
 
-  // Hai ca dưới đây trước 2026-08-10 lái bằng `FORK_SHARED` + cờ `autoCapture.fork`. Cả hai đã bị bỏ
-  // (không còn thư viện chung, và `fork_shared_items` không còn được đăng ký), nên chúng được viết lại
-  // trên cờ CÒN TỒN TẠI. NGUYÊN TẮC được kiểm không đổi: mặc định là hỏi trước, và chỉ đúng class
-  // người học bật mới được đánh dấu.
   it('defaults ask first — nothing is marked auto', () => {
     const r = coach(thinOne());
     expect(r.suggestions[0].code).toBe('ENRICH_THIN');
@@ -629,7 +557,6 @@ describe('autoCapture — pre-authorisation marks the offer, it never writes', (
     );
     expect(r.suggestions[0].auto).toBe(true);
 
-    // Một cờ KHÁC không được tràn sang offer này.
     const other = coach(
       input({
         mine: [item({ quality: scoreGrammarCard(THIN_CARD) })],
@@ -649,7 +576,6 @@ describe('autoCapture — pre-authorisation marks the offer, it never writes', (
     ).suggestions.find((s) => s.tool === 'patch_enrichment');
     expect(thin?.auto).toBe(true);
 
-    // enrich_items REWRITES a whole card, so no flag may ever pre-authorise it.
     const broken = coach(
       input({
         mine: [item({ quality: scoreGrammarCard('{"collocations":["x"]}') })],
@@ -664,11 +590,6 @@ describe('autoCapture — pre-authorisation marks the offer, it never writes', (
   });
 });
 
-/**
- * TEACH-BACK HARVEST (plan step 7.3). The bar is deliberately high and the failure mode it guards is
- * asymmetric: a card that never gets written costs one missed improvement, while a card written from a
- * half-remembered explanation is WRONG REFERENCE MATERIAL the tutor then teaches from for months.
- */
 describe('coachTeachBack — the learner own words become card content, or nothing does', () => {
   const GOOD =
     'Mẫu này gắn sau động từ thể từ điển, diễn tả chỉ vì một chuyện nhỏ mà dẫn tới hậu quả xấu ' +
@@ -690,8 +611,6 @@ describe('coachTeachBack — the learner own words become card content, or nothi
   });
 
   it('never touches a pattern that ALREADY has a card', () => {
-    // enrichmentSchema requires `usage`, so a readable card always has one — harvesting here could
-    // only mean REPLACING a usage line nobody reviewed. That is destructive, so it is not offered.
     expect(coachTeachBack(facts({ hasCard: true }))).toBeNull();
   });
 

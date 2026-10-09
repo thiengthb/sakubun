@@ -1,15 +1,3 @@
-// Outbound email for the deployed sakubun. Its only caller is better-auth, sending the sign-up
-// verification link (lib/auth.ts) — the study-reminder setting that used to be listed here as a future
-// second caller was removed 2026-08-05 (see `settings-schema.ts`). SMTP is the
-// transport (a Gmail app-password, or any provider) and EVERY value comes from env — nothing is
-// hardcoded, because in a multi-user app each message goes to a different user's own address.
-//
-// When SMTP_* is not configured (local dev, or a deploy that forgot the secret) we do NOT throw: we
-// log the message — verification link included — to the server console. So local sign-up still works
-// by copying the link out of the log, and a misconfigured production fails loud-but-recoverable in the
-// container logs instead of 500-ing every sign-up. Verification only actually protects an account once
-// real SMTP credentials are present.
-
 import nodemailer, { type Transporter } from 'nodemailer';
 
 interface Mail {
@@ -19,7 +7,6 @@ interface Mail {
   html?: string;
 }
 
-// `undefined` = not yet resolved; `null` = resolved-and-unconfigured (don't rebuild every send).
 let cached: Transporter | null | undefined;
 
 function transport(): Transporter | null {
@@ -39,7 +26,6 @@ function transport(): Transporter | null {
   return cached;
 }
 
-/** The From header — an explicit address if set, else the authenticated SMTP user (Gmail sends as it). */
 function from(): string {
   return process.env.SMTP_FROM || process.env.SMTP_USER || 'sakubun@localhost';
 }

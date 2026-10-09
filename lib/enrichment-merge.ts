@@ -1,19 +1,3 @@
-// NON-DESTRUCTIVE enrichment merge. PURE (no DB) so the one property that matters — existing content
-// is never lost — is a unit test rather than a hope.
-//
-// WHY this exists at all. `enrich_items` writes the WHOLE card, and a runtime lab proved (2026-07-26)
-// what that costs: adding ONE contrast to a full card wiped 1 structure entry, 1 collocation, 1 pitfall
-// and the pre-existing contrast, and the tool answered `{"updated":1,"missing":[]}` — a success. Any
-// feature that appends to a card (the ratchet, "take the missing parts from a shared copy", a teach-back
-// explanation becoming the usage line) therefore needed a merge path BEFORE it could ship at all — it
-// was a hard dependency of the ratchet, not a nicety alongside it.
-//
-// Two shapes, deliberately unequal:
-//   `add` — the five LIST fields. Append + dedup + respect the schema cap. Existing entries always win.
-//   `set` — the three SCALAR fields. Replace, because a one-line usage note has no "append" meaning.
-// There is no way to remove or rewrite a list entry here: that is a whole-card decision and belongs to
-// `enrich_items`, which is honest about overwriting.
-
 import {
   CURRENT_ENRICHMENT_VERSION,
   ENRICHMENT_CAPS,
@@ -28,7 +12,6 @@ import { normalizeExpression } from '@/lib/normalize';
 type Example = Enrichment['example'];
 type Contrast = Enrichment['contrasts'][number];
 
-/** The list fields — appendable. */
 export interface EnrichmentAdd {
   structure?: string[];
   collocations?: string[];
@@ -39,13 +22,10 @@ export interface EnrichmentAdd {
   antonyms?: Related[];
 }
 
-/** The scalar fields — replaceable. */
 export interface EnrichmentSet {
   usage?: string;
   register?: string;
-  /** Replacing the canonical example DEMOTES the old one into `examples` rather than dropping it. */
   example?: Example;
-  /** Who is now standing behind the card. A patch changes authorship, so it may restate it. */
   provenance?: Enrichment['provenance'];
 }
 
@@ -54,35 +34,23 @@ export interface EnrichmentPatch {
   set?: EnrichmentSet;
 }
 
-/** Why an incoming entry did not land. Reported, never silent — a silent drop is the bug being fixed. */
 export type SkipReason = 'duplicate' | 'cap' | 'empty';
 
 export interface MergeSkip {
   field: keyof EnrichmentAdd;
-  /** The entry's identifying text (the string itself, a contrast's `with`, an example's `ja`). */
   value: string;
   reason: SkipReason;
 }
 
 export interface MergeReport {
   card: Enrichment;
-  /** How many entries actually landed, per field. Absent field = nothing offered for it. */
   added: Partial<Record<keyof EnrichmentAdd, number>>;
-  /** Scalar fields whose value actually changed (an identical `set` is not a change). */
   replaced: (keyof EnrichmentSet)[];
   skipped: MergeSkip[];
-  /** True when the merge brought the card up to the current format and re-stamped `v`. */
   vStamped: boolean;
-  /** False when the patch was a complete no-op — the caller can then skip the write entirely. */
   touched: boolean;
 }
 
-/**
- * Append `incoming` onto `existing`, skipping duplicates and anything past the cap.
- *
- * Existing entries are copied first and never re-examined, which is what makes "content is never lost"
- * structural rather than careful: the cap can only ever drop something NEW.
- */
 function appendUnique<T>(
   field: keyof EnrichmentAdd,
   existing: readonly T[],
@@ -118,13 +86,6 @@ function appendUnique<T>(
   return { list, added };
 }
 
-/**
- * Merge a patch into an existing card.
- *
- * Throws if the result would not satisfy `enrichmentSchema`. That is a fail-loud safety net, not an
- * expected path: writing a card the app can no longer parse would turn a `thin` item into a `broken`
- * one, which is strictly worse than refusing the patch.
- */
 export function mergeEnrichment(
   base: Enrichment,
   patch: EnrichmentPatch,
@@ -160,8 +121,6 @@ export function mergeEnrichment(
     ENRICHMENT_CAPS.pitfalls,
     skipped,
   );
-  // A contrast is identified by WHAT it contrasts with: re-sending 〜ばかりに vs 〜せいで with a
-  // differently-worded note is the same contrast, and the stored note is the one a human already saw.
   const contrasts = appendUnique(
     'contrasts',
     base.contrasts,
@@ -171,8 +130,6 @@ export function mergeEnrichment(
     skipped,
   );
 
-  // Replacing the canonical example: the old one is DEMOTED into the extras (subject to dedup + cap),
-  // so `set.example` cannot silently destroy the example the card already had.
   const demoted =
     patch.set?.example &&
     normalizeExpression(patch.set.example.ja) !== normalizeExpression(base.example.ja)
@@ -187,8 +144,6 @@ export function mergeEnrichment(
     skipped,
   );
 
-  // A relation is identified by the WORD, like a contrast by `with`: re-sending 同義語 with a reworded
-  // gloss is the same entry, and the stored gloss is the one the learner has already read.
   const synonyms = appendUnique(
     'synonyms',
     base.synonyms,
@@ -261,9 +216,6 @@ export function mergeEnrichment(
   };
   if (register === undefined) delete merged.register;
 
-  // `v` means "complete under the CURRENT format", so it is stamped only when the merged card actually
-  // meets the bar. Stamping on every touch would let a one-collocation patch claim the new format for a
-  // card still missing three dimensions — and `v` is what `ENRICH_OUTDATED` reasons about.
   const vStamped = base.v < CURRENT_ENRICHMENT_VERSION && meetsCurrentBar(merged, kind);
   if (vStamped) merged.v = CURRENT_ENRICHMENT_VERSION;
 
@@ -280,14 +232,6 @@ export function mergeEnrichment(
   return { card: parsed.data, added, replaced, skipped, vStamped, touched };
 }
 
-/**
- * Build the patch that takes the parts MY card lacks from a better public copy.
- *
- * Asymmetric on purpose: their list entries are appended (more examples/pitfalls/contrasts is strictly
- * more reference material) but `usage` and the canonical `example` are NEVER taken — those are mine,
- * and "your card is thinner" is not a licence to overwrite the learner's own content. `register` is
- * only filled when mine has none.
- */
 export function patchFromDonor(base: Enrichment, donor: Enrichment): EnrichmentPatch {
   return {
     add: {
@@ -297,7 +241,6 @@ export function patchFromDonor(base: Enrichment, donor: Enrichment): EnrichmentP
       contrasts: donor.contrasts,
       synonyms: donor.synonyms,
       antonyms: donor.antonyms,
-      // Their canonical example is just another worked example from my side.
       examples: [donor.example, ...donor.examples],
     },
     ...(base.register || !donor.register ? {} : { set: { register: donor.register } }),

@@ -2,12 +2,6 @@ function pct(r: number): string {
   return `${Math.round(r * 100)}%`;
 }
 
-/**
- * Forgetting-curve mini chart. Plots recall probability (r, 0–1) against days since the last review;
- * r is squashed into the [0.5, 1] band so the gentle decay is actually visible. Renders DATA (allowed
- * SVG per the icon rule), scales to the container width via preserveAspectRatio="none" + non-scaling
- * strokes so lines stay crisp. Marks "now" (a dot) and the due day (dashed line).
- */
 export function ForgettingCurve({
   points,
   nowDay,
@@ -23,7 +17,6 @@ export function ForgettingCurve({
 }) {
   const maxDay = points[points.length - 1]?.day || 1;
   const x = (day: number) => (day / maxDay) * 100;
-  // Squash r∈[0.5,1] → y∈[100(bottom),0(top)]; clamp below 0.5 to the floor.
   const y = (r: number) => (1 - Math.max(0, (Math.min(1, r) - 0.5) / 0.5)) * 100;
 
   const line = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${x(p.day)},${y(p.r)}`).join(' ');
@@ -54,7 +47,6 @@ export function ForgettingCurve({
             strokeWidth="2"
             vectorEffect="non-scaling-stroke"
           />
-          {/* Due marker — where the app schedules the next review (r ≈ desired retention). */}
           <line
             x1={dueX}
             y1="0"
@@ -75,8 +67,6 @@ export function ForgettingCurve({
             />
           )}
         </svg>
-        {/* Flush with the chart's right edge — it used to be nudged 4px OUT (`translate-x-1`), which on a
-            390px phone put the last glyph of "hạn ~90%" under the card's edge. */}
         <span className="absolute top-0 right-0 text-[0.625rem] text-muted-foreground">
           hạn ~{pct(retention)}
         </span>

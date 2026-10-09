@@ -12,7 +12,6 @@ import {
 } from 'lucide-react';
 import { PageShell } from '@/components/shell/page-shell';
 import { EmptyState } from '@/components/shared/empty-state';
-import { GuideLink } from '@/components/shared/guide-link';
 import { ScrollEndOnMount } from '@/components/shared/scroll-end-on-mount';
 import { Badge } from '@/components/ui/badge';
 import { AnalyticsTabs } from '@/components/dashboard/analytics-tabs';
@@ -34,10 +33,6 @@ import { getStudyStats } from '@/lib/stats';
 import { getSessionUserId } from '@/lib/current-user';
 import { cn } from '@/lib/utils';
 
-/**
- * Metadata for "/" — the analytics dashboard. No marketing/OG card: this is a private single-user
- * app behind /login, so there is no public link for a stranger to be handed.
- */
 export const metadata: Metadata = {
   title: 'Phân tích — sakubun',
   description: 'Tiến độ ôn tập, điểm yếu và hồ sơ học của bạn.',
@@ -45,18 +40,6 @@ export const metadata: Metadata = {
 
 export const dynamic = 'force-dynamic';
 
-/**
- * The page's ONE structural device (issue #38).
- *
- * Measured 2026-08-13 at 390px: ten blocks, 2495px tall, and a single divider — so the page read as one
- * flat list three screens long and there was no way to tell which part you were in. The order of those
- * blocks followed the DATA SOURCES (`getStats` → `getAnalytics` → `getWeakReport` → `computeDossier`),
- * not the questions a learner arrives with, which is why "how is my memory holding up" was answered by
- * a KPI at the top and by three charts a screen and a half below it.
- *
- * Three groups, each named after its question. The subtitle is load-bearing, not decoration: it is what
- * makes the group a claim you can disagree with rather than a label.
- */
 function SectionHeader({
   icon: Icon,
   title,
@@ -82,12 +65,6 @@ function SectionHeader({
   );
 }
 
-/**
- * `bg-card` is the change that makes the page read as cards at all: the page background is the ivory
- * `--background`, and these tiles used to be transparent — so a "card" was a hairline rectangle of the
- * same colour as the page. `--card` on `--background` is the treatment the rest of the app already uses
- * (`SettingsTab` wraps its body in `Card`), so this aligns the dashboard with it rather than inventing.
- */
 function StatCard({
   icon: Icon,
   label,
@@ -99,7 +76,6 @@ function StatCard({
   label: string;
   value: string;
   hint?: string;
-  /** The one KPI that answers "what do I do right now" — bigger numeral + a brand wash behind it. */
   hero?: boolean;
 }) {
   return (
@@ -120,8 +96,6 @@ function StatCard({
           <Icon className="size-4" aria-hidden />
           {label}
         </div>
-        {/* text-xl below sm: in the two-column phone layout a 24px "50 ngữ pháp" wraps to two lines and
-            makes one card taller than its neighbour; 20px keeps every value on one line. */}
         <div
           className={cn(
             'mt-2 font-semibold',
@@ -148,15 +122,10 @@ function ChartCard({
   className?: string;
 }) {
   return (
-    // `h-full` so a card in a bento row stretches to its tallest sibling instead of leaving a ragged
-    // bottom edge — the whole point of putting two unequal charts on one row.
     <div
       className={cn('h-full space-y-4 rounded-xl border border-border/70 bg-card p-4', className)}
     >
-      {/* flex-wrap: a long Vietnamese title + a legend cannot share 358px. Wrapping drops the legend
-          onto its own line on a phone instead of squeezing the title into two ragged lines beside it. */}
       <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
-        {/* h3, not h2: the group header above it is the h2 now, so this keeps the outline honest. */}
         <h3 className="text-sm font-medium text-muted-foreground">{title}</h3>
         {action}
       </div>
@@ -165,14 +134,6 @@ function ChartCard({
   );
 }
 
-/**
- * Pure-CSS vertical bar chart — no chart dependency, server-rendered.
- *
- * The axis labels are the whole sizing problem here: a label like "08/14" has no break opportunity, so
- * it sets a min-content width on its column that `flex-1` cannot shrink past, and 14 of them force the
- * page wider than a phone. Two guards: callers pass a `short` label used below `md`, and each column is
- * `min-w-0` + `truncate` so ANY future label degrades to an ellipsis instead of breaking the layout.
- */
 function Bars({
   data,
   barClass = 'bg-accent-brand/70',
@@ -215,10 +176,6 @@ function Bars({
   );
 }
 
-/**
- * One labelled row of weakness badges. The section used to stack unlabelled badge rows, which was
- * readable at two lists and ambiguous at four — the label says which question each row answers.
- */
 function WeakList({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="space-y-1.5">
@@ -228,7 +185,6 @@ function WeakList({ label, children }: { label: string; children: React.ReactNod
   );
 }
 
-/** The "ít … nhiều" scale — rendered inline in the card's title row (as ChartCard `action`). */
 function HeatmapLegend() {
   return (
     <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
@@ -242,23 +198,17 @@ function HeatmapLegend() {
   );
 }
 
-/** GitHub-style contribution heatmap: 7 rows (day of week) × 52 columns (weeks), color = review count. */
 function Heatmap({ data, max }: { data: { day: string; count: number }[]; max: number }) {
   const empty = chartEmptyMessage({
-    // Nhiệt đồ luôn là 1 năm, nên không có kỳ nào dài hơn để gợi ý — hai cờ bằng nhau.
     hasInWindow: data.some((d) => d.count > 0),
     hasInYear: data.some((d) => d.count > 0),
     rangeLabel: '1 năm',
     noun: 'hoạt động nào',
   });
   if (empty) {
-    // Cùng một giọng với các thẻ ở tab Thống kê: nói luôn dữ liệu đến từ đâu, vì không nút nào trên web
-    // sinh ra nó. Trước đây câu ở đây chỉ là "Chưa có hoạt động nào." — đúng mà không giúp được gì.
     return <p className="py-8 text-center text-sm text-muted-foreground">{empty}</p>;
   }
   return (
-    // Starts at the right end (= today). The full year is ~830px wide, so on a phone the box shows about
-    // the last five months and older weeks are one swipe away — the title still honestly says "1 năm".
     <ScrollEndOnMount>
       <div className="grid grid-flow-col grid-rows-7 gap-1">
         {data.map((d) => {
@@ -333,7 +283,6 @@ function MasteryBar({ mastery }: { mastery: Record<string, number> }) {
   );
 }
 
-/** Per-JLPT-level stacked bar of FSRS states — where the learner stands at each level. */
 function LevelBars({
   data,
 }: {
@@ -380,17 +329,12 @@ function LevelBars({
 }
 
 export default async function HomePage() {
-  // Private app, single user: "/" IS the analytics dashboard. No public landing — a guest is
-  // bounced to /login by getSessionUserId() rather than shown marketing copy.
-  // Auth gate: redirects to /login when there is no valid session.
   await getSessionUserId();
   const [stats, weak, analytics, studyStats, dossier, learnerNotes] = await Promise.all([
     getStats(),
     getWeakReport(),
     getAnalytics(),
     getStudyStats(),
-    // The SAME student model the tutor reads (lib/dossier.ts) — one definition, two surfaces, so the
-    // dashboard can never disagree with what Claude was told about this learner.
     computeDossier(),
     listLearnerNotesWithEvidence(),
   ]);
@@ -403,10 +347,6 @@ export default async function HomePage() {
   const masteredPct =
     totalItems > 0 ? Math.round((analytics.masteredGrammar / totalItems) * 100) : 0;
 
-  // `short` is the day of month alone. 14 columns of "08/14" need ~29px each of unbreakable text, which
-  // is 484px of min-content — 126px more than a 390px phone has, and THAT is what pushed the whole
-  // dashboard sideways (every card then sat in a 526px-wide page). The card title already says which
-  // 14 days these are, so the month is redundant on the axis. See Bars.
   const forecastData = analytics.forecast14.map((f) => ({
     label: f.day.slice(5).replace('-', '/'),
     short: f.day.slice(8),
@@ -422,16 +362,12 @@ export default async function HomePage() {
           title="Chưa có gì để học"
           description="Bắt đầu bằng cách nhập mẫu ngữ pháp vào kho."
           action={
-            <div className="flex flex-col items-center gap-2">
-              <Link
-                href="/resources"
-                className="inline-flex items-center gap-1 text-sm text-accent-brand hover:underline"
-              >
-                Mở kho tài nguyên <ArrowRight className="size-4" aria-hidden />
-              </Link>
-              {/* A brand-new account lands here: the 7-step tutorial is the honest next click. */}
-              <GuideLink tab="start" label="Hướng dẫn bắt đầu (7 bước)" />
-            </div>
+            <Link
+              href="/resources"
+              className="inline-flex items-center gap-1 text-sm text-accent-brand hover:underline"
+            >
+              Mở kho tài nguyên <ArrowRight className="size-4" aria-hidden />
+            </Link>
           }
         />
       </PageShell>
@@ -440,19 +376,12 @@ export default async function HomePage() {
 
   const progress = (
     <>
-      {/* ── HÔM NAY — the daily loop ─────────────────────────────────────────────────────────────
-          Measured before the regroup: "Đến hạn bây giờ" sat at 72px and "Tiến độ hôm nay" ended at
-          852px, so this group already fitted one screen and its ORDER was already right. What it
-          lacked was a name. Nothing is reordered inside it. */}
       <SectionHeader
         icon={CalendarCheck}
         title="Hôm nay"
         hint="Việc đang chờ, và kết quả của lượt vừa chấm."
       />
 
-      {/* Two columns from the smallest screen up (was one below sm): four stacked cards ate 310px, so a
-          phone opened the dashboard on two KPIs and had to scroll for the other two. Paired up they all
-          land above the fold, which is the entire job of this row. gap-3 below sm to buy label width. */}
       <section className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <StatCard
           hero
@@ -496,10 +425,6 @@ export default async function HomePage() {
         />
       </section>
 
-      {/* ── TRÍ NHỚ — is the schedule keeping up with the actual memory ───────────────────────────
-          The verdict card comes FIRST here and is deliberately the narrow column: it is the only block
-          on the page that says whether the numbers are good or bad, and it was previously the LAST of
-          the four memory blocks, a screen below the KPI that raises the same question. */}
       <SectionHeader
         icon={Brain}
         title="Trí nhớ"
@@ -538,11 +463,6 @@ export default async function HomePage() {
         </ChartCard>
       </section>
 
-      {/* ── ĐIỂM YẾU — what to fix next ──────────────────────────────────────────────────────────
-          The header renders with `hasWeakData` only, which is what the old bare `<h2>` did too. When
-          there is no weakness data but the learner model is non-empty, `LearnerProfile` still renders
-          below on its own — unchanged behaviour, and better than duplicating its emptiness rule here
-          (it is derived inside the component from four sources; a copy would drift). */}
       {hasWeakData && (
         <>
           <SectionHeader

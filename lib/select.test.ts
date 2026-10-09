@@ -59,12 +59,9 @@ describe('pickBatch', () => {
     const batch = pickBatch({
       due: [],
       fresh: [item({ isNew: true }), item({ isNew: true }), item({ isNew: true })],
-      // maxNewPerSentence raised to 2 so this case isolates the DAILY quota (the per-sentence
-      // novelty cap has its own describe block below).
       settings: settings({ sentenceSize: 'medium', dailyNewGrammar: 2, maxNewPerSentence: 2 }),
       today: noProgress,
     });
-    // quota 2 stops the fill below the length budget of 3.
     expect(batch.items).toHaveLength(2);
     expect(batch.items.every((i) => i.isNew)).toBe(true);
     expect(batch.limits.newGrammarLimitReached).toBe(true);
@@ -139,7 +136,6 @@ describe('pickBatch — mastery mode', () => {
     expect(batch.items).toHaveLength(3); // capped at the sentence pattern budget
     expect(batch.items[0]).toMatchObject({ id: pool[0].id, role: 'TARGET' });
     expect(batch.items.slice(1).every((i) => i.role === 'SECONDARY')).toBe(true);
-    // Pool order (weakest-retention first, decided upstream) is preserved.
     expect(batch.items.map((i) => i.id)).toEqual(pool.slice(0, 3).map((i) => i.id));
   });
 
@@ -169,9 +165,6 @@ describe('pickBatch — mastery mode', () => {
   });
 
   it('daily new-grammar cap spent (fresh still in store) enters MASTERY, not an empty day', () => {
-    // The reported bug: new-in-level patterns still exist but the day's new-grammar cap is spent and
-    // no reviews are due → the acquisition queue is empty FOR TODAY, so mastery must take over
-    // instead of "come back in 10h".
     const batch = pickBatch({
       due: [],
       fresh: [item({ isNew: true }), item({ isNew: true })], // patterns remain in the store...
@@ -274,7 +267,6 @@ describe('pickBatch — focused practice', () => {
       focus: { ids: new Set([ahead.id]), ahead: [ahead] },
     });
     expect(batch.items[0]).toMatchObject({ id: ahead.id, role: 'TARGET', focusHit: true });
-    // The second slot is topped up from the general FSRS pool, flagged as filler.
     expect(batch.items[1]).toMatchObject({ id: g1.id, focusHit: false });
   });
 
@@ -304,16 +296,12 @@ describe('pickBatch — focused practice', () => {
       today: noProgress,
       focus: { ids: new Set([n3a.id, n3b.id]), ahead: [], fillFromFocusOnly: true },
     });
-    // Only the two focus-level patterns are scheduled; the rest is scaffolded by the tutor (unrated).
     expect(batch.items).toHaveLength(2);
     expect(batch.items.every((i) => i.focusHit === true)).toBe(true);
     expect(batch.items.map((i) => i.id)).toEqual([n3a.id, n3b.id]);
   });
 
   it('an explicitly focused NEW pattern is served even with the daily quota spent', () => {
-    // The 2026-07-26 defect: asking for a pattern once the daily new-grammar cap was spent returned
-    // a sheet with ZERO focus entries, so the tutor improvised and nothing was rated. The learner
-    // asking for it IS the introduction decision.
     const f1 = item({ isNew: true });
     const batch = pickBatch({
       due: [],
@@ -341,8 +329,6 @@ describe('pickBatch — focused practice', () => {
   });
 
   it('two focused NEW patterns are served one per sentence, the rest reported as held back', () => {
-    // Focus bypasses the DAY budget but not the per-SENTENCE novelty cap: the request is honoured
-    // one new structure at a time instead of cramming both into one sentence.
     const f1 = item({ isNew: true });
     const f2 = item({ isNew: true });
     const batch = pickBatch({
@@ -362,9 +348,6 @@ describe('pickBatch — focused practice', () => {
 
 describe('pickBatch — per-sentence novelty cap (maxNewPerSentence)', () => {
   it('an empty review queue no longer packs the whole sentence with never-seen patterns', () => {
-    // Lab-verified defect (2026-07-26): with the DEFAULTS (dailyNewGrammar 3, sentenceSize medium =
-    // 3 slots) and nothing due, the picker returned THREE brand-new patterns in ONE sentence — each
-    // owing its own mini-lesson. dailyNewGrammar is a DAY budget; it was never a per-exercise guard.
     const fresh = [item({ isNew: true }), item({ isNew: true }), item({ isNew: true })];
     const batch = pickBatch({
       due: [],
@@ -378,7 +361,6 @@ describe('pickBatch — per-sentence novelty cap (maxNewPerSentence)', () => {
   });
 
   it('the two caps are independent: the per-sentence cap does not consume the day budget', () => {
-    // 3 sentences at maxNewPerSentence=1 must be able to introduce 3 new patterns across the day.
     const settingsUsed = settings({
       sentenceSize: 'medium',
       dailyNewGrammar: 3,

@@ -1,10 +1,5 @@
 import { cn } from '@/lib/utils';
 
-/**
- * The sakubun brand mark (作文 badge). Shared by the sidebar brand and the mobile top bar so the app
- * icon is identical everywhere and lives in one place. Decorative (aria-hidden) — the app name sits
- * beside it in the sidebar; on the mobile bar it stands in for the (hidden) sidebar brand.
- */
 export function AppLogo({ className }: { className?: string }) {
   return (
     <span

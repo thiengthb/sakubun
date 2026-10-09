@@ -2,8 +2,6 @@ import { describe, expect, it } from 'vitest';
 import { EXERCISE_TYPE } from '@/lib/mcp/tool-kit';
 import { TURN_LABELS_BY_TYPE, turnLabels, type TurnLabels } from '@/lib/turn-labels';
 
-// The two surfaces' own translation wording. Deliberately different — the chat block names the
-// direction because nothing else on screen does; the history card has a direction badge above it.
 const CHAT: TurnLabels = {
   prompt: 'Đề (Nhật → Việt)',
   answer: 'Bạn dịch',
@@ -12,7 +10,6 @@ const CHAT: TurnLabels = {
 };
 const WEB: TurnLabels = { prompt: 'Đề', answer: 'Bạn dịch', reference: 'Tham khảo', retry: '' };
 
-/** Types where the learner really does translate a given source → each surface's own defaults apply. */
 const TRANSLATIONS = new Set([
   'TRANSLATION',
   'CLOZE',
@@ -33,23 +30,16 @@ describe('turnLabels', () => {
     expect(turnLabels('SOMETHING_NEW', WEB)).toEqual(WEB);
   });
 
-  // THE POINT OF THE SHARED FILE. Four instances of one defect, three of them fixed one flag at a time
-  // in the chat renderer while the web kept its own hardcoded copy — so the fourth was invisible from
-  // where the first three were fixed. Both surfaces must agree, and this is what makes "agree" checkable
-  // instead of a thing someone remembers.
   it('every NON-translation type is renamed on BOTH surfaces, never on just one', () => {
     for (const type of EXERCISE_TYPE.options) {
       if (TRANSLATIONS.has(type)) continue;
       const chat = turnLabels(type, CHAT);
       const web = turnLabels(type, WEB);
       expect(TURN_LABELS_BY_TYPE[type], `${type} needs an entry`).toBeDefined();
-      // The learner did not translate, so neither surface may say they did.
       expect(chat.answer, `${type} chat answer`).not.toBe('Bạn dịch');
       expect(web.answer, `${type} web answer`).not.toBe('Bạn dịch');
-      // And neither may head the prompt as a translation đề.
       expect(chat.prompt, `${type} chat prompt`).not.toContain('Đề');
       expect(web.prompt, `${type} web prompt`).not.toBe('Đề');
-      // Both surfaces read ONE table, so they cannot drift apart.
       expect(chat).toEqual(web);
     }
   });

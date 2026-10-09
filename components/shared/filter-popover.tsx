@@ -18,7 +18,6 @@ import { ExpandingIconButton } from '@/components/shared/expanding-icon-button';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 
-/** A labelled control inside a filter popover (shared by /history + /resources tables). */
 export function FilterRow({
   label,
   className,
@@ -36,25 +35,11 @@ export function FilterRow({
   );
 }
 
-/** One option in a `<SelectFilterRow>`. Matches the shape of `STATE_FILTERS` / `STAR_FILTERS` etc. */
 export interface FilterOption {
   value: string;
   label: string;
 }
 
-/**
- * A `FilterRow` whose control is a `Select` — which is what EVERY filter row in this app actually is.
- *
- * Extracted 2026-08-06: the row + trigger + `SelectValue` + `SelectContent position="popper"` +
- * `.map(SelectItem)` block was written out 15 times across `items-table.tsx`, `vocab-table.tsx` and
- * `history-filters.tsx` — 13 lines each, byte-identical apart from the option list. `dup-scan` scored
- * it as three separate clone pairs, and it is the textbook "config block lặp" case from /dedupe-scan:
- * the answer there is one component, not one more copy.
- *
- * No sizing/`className` prop on purpose: `FilterPopover` already applies `SHEET_CONTROL_CLASS` to the
- * whole sheet on a phone (a descendant selector), so the 40px touch target arrives without every call
- * site remembering to ask for it.
- */
 export function SelectFilterRow({
   label,
   value,
@@ -86,7 +71,6 @@ export function SelectFilterRow({
   );
 }
 
-/** The "Đặt lại" link in the panel header — one shape for both the popover and the sheet. */
 function ResetLink({ onReset }: { onReset: () => void }) {
   return (
     <button
@@ -99,35 +83,6 @@ function ResetLink({ onReset }: { onReset: () => void }) {
   );
 }
 
-/**
- * Shared "Bộ lọc" panel: an expanding filter-icon button (with an active-filter count badge) that opens
- * the caller's filter controls, plus a reset affordance. The caller owns the filter state and renders
- * `FilterRow`s as children. One pattern for every data view (history + resource tables + groups).
- *
- * TWO FORMS, ONE API (2026-08-05) — a POPOVER from `md` up, a BOTTOM SHEET below it:
- *
- *   - Desktop: a 320px popover anchored under the trigger, two columns of controls. It sits next to the
- *     toolbar it belongs to and leaves the list visible beside it.
- *   - Phone: `BottomSheet`. The popover was anchored to a trigger in the TOP toolbar, so on a phone it
- *     opened up there — 80vw of floating panel over the list, its controls as far from the thumb as the
- *     screen allows, reading as a modal dropped mid-page (user report). The sheet rises from the bottom
- *     edge, takes the full width, and every select is a 40px touch target (`SHEET_CONTROL_CLASS`).
- *
- * The form is chosen in JS (`useIsMobile`), not with `max-md:hidden` on two copies: both Radix panels
- * portal to `document.body`, and mounting the children twice would give every filter control a hidden
- * twin — two `<Select>`s with one `value`, and a duplicate DOM node for every e2e locator.
- *
- * MOBILE: the standalone "Xóa lọc" button is DESKTOP-ONLY, and the active count becomes a
- * notification-style dot pinned to the trigger's top-right corner instead of a chip inside it.
- *
- * Clearing did not need two entry points on a 360px row — the panel already has "Đặt lại", and you
- * cannot want to clear a filter without first opening the thing that shows you what is filtered. The
- * button cost ~80px next to the search box to save one tap.
- *
- * The count moves OUT of the button because a chip inside it widened the control every time a filter
- * turned on, shifting the toolbar sideways mid-interaction. Overlaid, the button's width is constant
- * and the badge reads the way every other unread-count in the app does.
- */
 export function FilterPopover({
   activeCount,
   onReset,
@@ -161,14 +116,11 @@ export function FilterPopover({
   return (
     <>
       {activeCount > 0 && onReset && (
-        // `default` size (h-8) so it lines up with the search box + the other toolbar buttons.
         <Button variant="ghost" onClick={onReset} className="max-md:hidden">
           <X className="size-4" aria-hidden />
           Xóa lọc
         </Button>
       )}
-      {/* relative wrapper, not the button itself: the badge is absolutely positioned against it, and
-          putting `relative` on the trigger would fight Radix's own styles on some variants. */}
       <div className="relative shrink-0">
         {isMobile ? (
           <BottomSheet
@@ -181,11 +133,8 @@ export function FilterPopover({
             }
             headerAction={activeCount > 0 && onReset ? <ResetLink onReset={onReset} /> : undefined}
             closeLabel="Xem kết quả"
-            // One column: two selects side by side on a 390px screen wrap every label onto two lines.
             className={SHEET_CONTROL_CLASS}
           >
-            {/* The caller's `FilterRow`s verbatim, stacked instead of gridded. A caller's
-                `col-span-2` wrapper (the history score slider) is simply inert outside a grid. */}
             <div className="space-y-4">{children}</div>
           </BottomSheet>
         ) : (
@@ -201,10 +150,6 @@ export function FilterPopover({
           </Popover>
         )}
 
-        {/* Mobile-only count, overlaid on the trigger's top-right corner like an unread badge. Uses the
-            theme's primary so "something is filtering this list" is the same colour as every other
-            active/accent state. aria-hidden: the count is already in the trigger's aria-label, and a
-            bare number announced after it would read as noise. */}
         {activeCount > 0 && (
           <span
             aria-hidden

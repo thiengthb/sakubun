@@ -1,25 +1,17 @@
-// Vietnamese human-friendly time formatting for tutor output ("3 ngày nữa", "10 phút nữa").
-
 const MINUTE = 60 * 1000;
 const HOUR = 60 * MINUTE;
 const DAY = 24 * HOUR;
 
-// The app is single-user and Vietnam-based, so every displayed timestamp is pinned to this zone —
-// a `vi-VN` locale sets the LANGUAGE, not the timezone, so without this a browser/OS set to another
-// zone would show shifted times (and SSR↔client would disagree). Server + client both format in +07.
 export const APP_TIME_ZONE = 'Asia/Ho_Chi_Minh';
 
-/** Date + time in Vietnam time, e.g. "10:35:55 18/7/2026". */
 export function formatDateTimeVN(value: Date | string | number): string {
   return new Date(value).toLocaleString('vi-VN', { timeZone: APP_TIME_ZONE });
 }
 
-/** Date only in Vietnam time, e.g. "18/7/2026". */
 export function formatDateVN(value: Date | string | number): string {
   return new Date(value).toLocaleDateString('vi-VN', { timeZone: APP_TIME_ZONE });
 }
 
-/** "x phút/giờ/ngày/tháng nữa" relative to now; past dues read as "đến hạn rồi". */
 export function humanizeUntil(due: Date, now: Date = new Date()): string {
   const diff = due.getTime() - now.getTime();
   if (diff <= 0) return 'đến hạn rồi';
@@ -31,7 +23,6 @@ export function humanizeUntil(due: Date, now: Date = new Date()): string {
   return `${(diff / (365 * DAY)).toFixed(1)} năm nữa`;
 }
 
-/** "x giây/phút/giờ/ngày/tháng/năm trước" relative to now (sub-minute reads in whole seconds, min 1). */
 export function humanizeAgo(past: Date, now: Date = new Date()): string {
   const diff = now.getTime() - past.getTime();
   if (diff < MINUTE) return `${Math.max(1, Math.round(diff / 1000))} giây trước`;
@@ -42,7 +33,6 @@ export function humanizeAgo(past: Date, now: Date = new Date()): string {
   return `${(diff / (365 * DAY)).toFixed(1)} năm trước`;
 }
 
-/** Exact due time "HH:MM DD/MM/YY" in Vietnam time — for when the precise moment (esp. within a day) matters. */
 export function formatDueExact(due: Date): string {
   const parts = new Intl.DateTimeFormat('vi-VN', {
     timeZone: APP_TIME_ZONE,
@@ -57,7 +47,6 @@ export function formatDueExact(due: Date): string {
   return `${g('hour')}:${g('minute')} ${g('day')}/${g('month')}/${g('year')}`;
 }
 
-/** A whole-second duration in Vietnamese: "42 giây" · "1 phút 20 giây" · "2 phút" · "1 giờ 5 phút". */
 export function humanizeDuration(seconds: number): string {
   const s = Math.max(0, Math.round(seconds));
   if (s < 60) return `${s} giây`;
@@ -69,9 +58,6 @@ export function humanizeDuration(seconds: number): string {
   return mm ? `${h} giờ ${mm} phút` : `${h} giờ`;
 }
 
-// "Ngày thêm" presets — a shared taxonomy for the resources tables' date filter (grammar + vocab), so
-// the option list + the cutoff logic live in one place. `withinDatePreset` compares a row's timestamp
-// against the preset. (The history tab keeps its own preset helper because it filters on answeredAt.)
 export type DatePreset = 'all' | 'today' | '7d' | '30d';
 
 export const DATE_PRESETS: { value: DatePreset; label: string }[] = [
@@ -81,7 +67,6 @@ export const DATE_PRESETS: { value: DatePreset; label: string }[] = [
   { value: '30d', label: '30 ngày qua' },
 ];
 
-/** True if `value`'s timestamp falls inside the preset window ("all" always passes). */
 export function withinDatePreset(value: Date | string | number, preset: DatePreset): boolean {
   if (preset === 'all') return true;
   const t = new Date(value).getTime();
@@ -98,9 +83,6 @@ export function withinDatePreset(value: Date | string | number, preset: DatePres
   return true;
 }
 
-// Sentence-length buckets by SOURCE character count — one shared taxonomy so the history card's
-// "độ dài" label and the analytics "theo độ dài" breakdown always agree. Thresholds are inclusive
-// upper bounds; the last bucket catches everything above.
 export const LENGTH_BUCKETS = [
   { key: 'short', label: 'Ngắn', max: 20 },
   { key: 'medium', label: 'Vừa', max: 45 },
@@ -110,7 +92,6 @@ export const LENGTH_BUCKETS = [
 
 export type LengthBucketKey = (typeof LENGTH_BUCKETS)[number]['key'];
 
-/** Classify a source-sentence length (char count) into a shared bucket (key + label + sort order). */
 export function lengthBucket(charCount: number): {
   key: LengthBucketKey;
   label: string;
@@ -133,7 +114,6 @@ export function ratingLabel(rating: number): string {
   return RATING_DISPLAY[rating] ?? String(rating);
 }
 
-/** Clean a term for TTS — drop the 〜/～ grammar-slot placeholder so the voice reads the form only. */
 export function speakable(expression: string): string {
   return expression.replace(/[〜～]/g, '').trim();
 }

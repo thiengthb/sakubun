@@ -1,28 +1,9 @@
-// The whole library in one payload, shaped for a native client to cache on disk.
-//
-// WHY THIS IS NOT `exportUserData()` (lib/export.ts). That function's own doc says it plainly: "Field
-// names + row shapes ARE the file format" — `accountBackupSchema` parses exactly it. Serving it to the
-// app would weld the mobile wire format to the BACKUP format, so a field added for a phone screen
-// becomes a backup-compat question, and a backup change becomes an app release. They are two contracts
-// with two different reasons to change. This one also carries LESS: it drops `reviewLogs` entirely
-// (analytics are computed server-side and shipped as numbers, not as thousands of rows the client would
-// have to reduce itself).
-//
-// FULL SNAPSHOT, NO DELTA. `Item` has `createdAt` but NO `updatedAt` (prisma/schema.prisma), so there
-// is no timestamp to ask "what changed since?" against. At the real size — ~100 items, a few hundred KB
-// of JSON — a full pull is cheaper than the schema change plus the tombstone problem that a delta
-// protocol drags in. Revisit when offline-read lands (ADR 0001, phase 5) and only if measurement says
-// so; that revisit needs a migration, not a rewrite of this file.
-//
-// Dates are ISO strings, not Date objects — see the transformer note in lib/trpc/init.ts.
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { enrichmentSchema, parseEnrichment } from '@/lib/enrichment';
 import { getSettings } from '@/lib/practice';
 import { settingsSchema } from '@/lib/settings-schema';
 
-/** `Item.tags` is a JSON string (SQLite has no native lists). A malformed or absent value is `[]` —
- *  a broken tag list must not cost the learner their whole library. */
 function parseTags(raw: string | null): string[] {
   if (!raw) return [];
   try {
@@ -64,7 +45,6 @@ export const snapshotItemSchema = z.object({
   createdAt: z.string(),
   challenge: z.number().nullable(),
   challengeObservations: z.number(),
-  /** Null until the item's first review — a NEW item has no SrsState row yet. */
   srs: snapshotSrsSchema.nullable(),
 });
 
@@ -76,13 +56,10 @@ export const snapshotGroupSchema = z.object({
   note: z.string().nullable(),
   createdAt: z.string(),
   updatedAt: z.string(),
-  /** Item ids in this group. Flattened here so the client never has to join two arrays. */
   itemIds: z.array(z.string()),
 });
 
 export const mobileSnapshotSchema = z.object({
-  /** When the server built this. The client shows it as "số liệu lúc HH:mm" rather than pretending
-   *  cached numbers are live — it must never recompute them itself (ADR 0001, decision 4). */
   takenAt: z.string(),
   counts: z.object({ items: z.number(), groups: z.number() }),
   settings: settingsSchema,

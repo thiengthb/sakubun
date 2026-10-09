@@ -1,10 +1,3 @@
-// DB harness for the ASSERTED half of the student model (plan step 5.2 / 5.4).
-//
-// The three properties whose ABSENCE killed the study plan are the three things asserted here:
-// falsifiable (evidence must be the learner's own, verified), bounded (a sixth note evicts), and
-// self-cleaning (expired notes are invisible). Plus the passenger rule from 5.4 — a bad note must
-// never cost the learner the FSRS write they earned.
-
 import { beforeAll, describe, expect, it } from 'vitest';
 import { createTestDb } from '@/lib/test-db';
 
@@ -21,11 +14,6 @@ let prisma: Db['prisma'];
 const NOW = new Date('2026-07-27T10:00:00Z');
 const DAY = 86_400_000;
 
-/**
- * Per-case isolation. Each test used to take a `freshUser()` and lean on the tenancy filter to keep its
- * rows apart; with one learner and no tenant column, isolation has to come from an empty DB instead.
- * Children before parents (SQLite FK).
- */
 async function resetData(): Promise<void> {
   await prisma.reviewLog.deleteMany({});
   await prisma.sentence.deleteMany({});
@@ -49,7 +37,6 @@ async function aSentence(): Promise<string> {
   return row.id;
 }
 
-/** A note long enough to clear MIN_NOTE_CHARS, distinct per call. */
 const text = (n: number): string =>
   `Self-corrects out loud before committing, observation number ${n}.`;
 
@@ -69,9 +56,6 @@ describe('falsifiable — a note without CHECKABLE evidence is not written', () 
 
   it('rejects a note whose evidence resolves to NOTHING (a hallucinated citation)', async () => {
     await resetData();
-    // Was "another learner's sentence id"; with one learner the same invariant is stated with ids that
-    // simply do not exist — the point is that a note with no resolvable evidence is refused outright,
-    // which is separate from the next case (some resolve ⇒ keep those and write).
     const res = await N.recordLearnerNote(
       { text: text(2), evidence: ['made-up-id', 'another-made-up-id'] },
       NOW,
@@ -117,7 +101,6 @@ describe('bounded — the annex cannot grow', () => {
     await N.recordLearnerNote({ text: text(4), evidence: [first] }, NOW);
 
     const later = new Date(NOW.getTime() + 10 * DAY);
-    // Same claim, reworded only in case and spacing — the shape a later session actually produces.
     const res = await N.recordLearnerNote(
       { text: `  ${text(4).toUpperCase()}  `, evidence: [second] },
       later,
@@ -132,7 +115,6 @@ describe('bounded — the annex cannot grow', () => {
   it('evicts the note with the LEAST remaining life when a new one arrives at the cap', async () => {
     await resetData();
     const s = await aSentence();
-    // Written on consecutive days, so the oldest also expires soonest.
     for (let i = 0; i < N.MAX_ASSERTED_NOTES; i++) {
       await N.recordLearnerNote(
         { text: text(100 + i), evidence: [s] },
@@ -206,7 +188,6 @@ describe('5.4 — the note is a PASSENGER on submit_review, never a toll on it',
     expect(result.learnerNote?.recorded).toBe('added');
     const [stored] = await N.listLearnerNotes();
     expect(stored.text).toBe(text(7));
-    // The turn being graded is itself the evidence, which is why the id is available at write time.
     expect(stored.evidence).toContain(result.sentenceId);
   });
 
@@ -214,7 +195,6 @@ describe('5.4 — the note is a PASSENGER on submit_review, never a toll on it',
     await resetData();
     const result = await gradedTurn({ text: 'no', evidence: [] });
     expect(result.learnerNote).toEqual({ recorded: 'rejected', reason: 'too-short' });
-    // The thing the learner actually earned survived the bad passenger.
     expect(result.items).toHaveLength(1);
     expect(result.items[0].nextDue).toBeInstanceOf(Date);
     expect(await prisma.reviewLog.count({ where: {} })).toBe(1);
@@ -241,9 +221,6 @@ describe('the annex reaches the tutor through the dossier, not through a new too
     const s = await aSentence();
     await N.recordLearnerNote({ text: text(9), evidence: [s] }, NOW);
     const block = R.renderDossier(await D.computeDossier(NOW));
-    // A note is prose Claude wrote about a person: it counts toward "the dossier is not empty" but is
-    // never printed back as a derived-looking bullet. Claude reads it from `dossier.notes` in the
-    // get_stats JSON, where it still carries its date and its evidence ids.
     expect(block).toBeNull();
   });
 });

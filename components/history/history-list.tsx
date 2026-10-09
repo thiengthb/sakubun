@@ -34,15 +34,9 @@ export function HistoryList({
   furiganaMode?: FuriganaMode;
 }) {
   const showFurigana = furiganaInApp(furiganaMode);
-  // URL-synced + reload-persistent state (best practice, matching the resource tables): the search box
-  // and the whole filter set mirror to the address bar (?q / ?hf) via history.replaceState — no server
-  // refetch — so a filtered view is shareable + survives F5. Page/size are ephemeral (sessionStorage only).
   const [search, setSearch] = useSessionState('history.search', '', 'q');
   const [filters, setFilters] = useSessionState<Filters>('history.filters', DEFAULT_FILTERS, 'hf');
-  // List vs flashcard. URL-synced like the other shareable view state, so a reload (or a link) keeps
-  // you in the deck instead of dropping you back into the table.
   const [mode, setMode] = useSessionState<'list' | 'card'>('history.mode', 'list', 'view');
-  // The list + the pagination bar are measured so the page size fills the viewport without a scroll.
   const listRef = useRef<HTMLUListElement>(null);
   const footerRef = useRef<HTMLDivElement>(null);
 
@@ -73,9 +67,6 @@ export function HistoryList({
     });
   }, [sentences, search, filters]);
 
-  // Cards estimated ~120px tall; the hook measures the real height once rendered. The grid is one
-  // column below lg and two from lg up — the hook reads the live column count off the DOM, so dropping
-  // the 1-cột/2-cột toggle (2026-08-11) changed nothing here.
   const paged = usePagedList(filtered, {
     topRef: listRef,
     footerRef,
@@ -84,25 +75,13 @@ export function HistoryList({
   });
   const { items: visible, start } = paged;
 
-  // Auto-open the detail modal of a card that JUST got graded while the user is on this tab (Claude
-  // grades out of band → LiveRefresh polls → a PENDING row flips to GRADED, or a new GRADED row
-  // appears). We track the previous per-id status; the first render seeds the baseline WITHOUT opening
-  // anything (so switching to the tab never pops an old card open). This tab unmounts when inactive, so
-  // "while on this tab" is implicit. Only one id is armed at a time; a card opens once on the arm.
   const prevStatusRef = useRef<Map<string, string> | null>(null);
 
-  // DEEP LINK — arriving from a notification ("Claude đã chấm xong một câu") lands here as
-  // /history?open=<sentenceId>, and that card's modal must be open on ARRIVAL, not after an effect
-  // runs. So the param seeds the state directly (lazy initialiser, read once at mount) instead of
-  // being copied into state by an effect — which is both a render later and the pattern
-  // react-hooks/set-state-in-effect exists to catch.
   const router = useRouter();
   const searchParams = useSearchParams();
   const openParam = searchParams.get('open');
   const [autoOpenId, setAutoOpenId] = useState<string | null>(() => openParam);
 
-  // Strip the param once it has been consumed, so a refresh or a back-navigation does not re-open a
-  // modal the learner already closed. This effect only navigates — it sets no state.
   useEffect(() => {
     if (!openParam) return;
     const next = new URLSearchParams(searchParams.toString());
@@ -131,13 +110,10 @@ export function HistoryList({
     resetPage();
   };
 
-  // Chế độ thẻ CÓ thẻ để lướt. Khi bộ lọc không còn khớp gì, deck không tồn tại — nên hàng tìm kiếm
-  // phải quay lại, nếu không người học bị kẹt trước một khoảng trống mà không có ô tìm để mở lại.
   const deckMode = mode === 'card' && filtered.length > 0;
 
   return (
     <div className="space-y-4">
-      {/* Ở chế độ thẻ, hàng này biến mất và thanh tiến độ của deck lên chiếm đúng chỗ nó. */}
       {!deckMode && (
         <HistoryFilters
           search={search}
@@ -156,23 +132,15 @@ export function HistoryList({
       {filtered.length === 0 ? (
         <EmptyState icon={SearchX} title="Không có lượt dịch nào khớp bộ lọc." className="py-12" />
       ) : mode === 'card' ? (
-        // The deck studies `filtered`, not `visible`: paging is a reading affordance for the list, and
-        // a deck that stopped at the end of page 1 would be a different (and silently smaller) pile.
         <HistoryFlashcards
           sentences={filtered}
           voiceSpeaker={voiceSpeaker}
           speechRate={speechRate}
           showFurigana={showFurigana}
-          // Đúng hai nút, cạnh nhau: [Danh sách] [Cài đặt]. Bộ lọc KHÔNG có ở đây (bỏ 2026-08-11):
-          // chồng thẻ vẫn được chia từ `filtered`, nên bộ lọc đặt ở danh sách vẫn còn hiệu lực — muốn
-          // đổi thì lật về danh sách, nơi ô tìm và bộ lọc ở cùng một hàng.
           toolbarStart={<HistoryModeToggle mode={mode} onModeChange={setMode} />}
         />
       ) : (
         <>
-          {/* Only the large breakpoint splits — below it the cards need the full width regardless. Đây
-              từng là một tuỳ chọn (nút 1 cột / 2 cột), bỏ 2026-08-11: nó chỉ có tác dụng từ lg trở lên
-              nên trên điện thoại là nút không làm gì, và hai cột vốn là mặc định người dùng vẫn để. */}
           <ul ref={listRef} className="grid grid-cols-1 gap-3 lg:grid-cols-2">
             {visible.map((s) => (
               <HistoryCard
@@ -185,8 +153,6 @@ export function HistoryList({
               />
             ))}
           </ul>
-          {/* Ref on the wrapper (useFitRows measures footer height); the row layout — count, size
-              picker and nav, re-ordered per breakpoint — belongs to DataPagination. */}
           <div ref={footerRef}>
             <DataPagination
               count={

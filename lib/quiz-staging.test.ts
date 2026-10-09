@@ -1,16 +1,3 @@
-// DB harness for what a QUIZ turn actually RECORDS.
-//
-// Why this test exists, precisely. On 2026-07-28 the server was given ownership of the quiz answer's
-// position, and the protocol was told to send the options as data. A live measurement the same day
-// found 35 of 35 quiz rows in the production database holding only the bare sentence: the four options
-// existed nowhere but the chat. So the question the learner answered was unrecorded, the answer's
-// position was unauditable, and the learner's report that it kept landing on C could be neither
-// confirmed nor refuted. The mechanism was optional, and optional meant unused.
-//
-// These tests pin the two properties that make that impossible to repeat: the options reach the ROW,
-// and the correct letter is RECOVERABLE from the row afterwards (which is what `npm run quiz:letters`
-// relies on).
-
 import { beforeAll, describe, expect, it } from 'vitest';
 import { createTestDb } from '@/lib/test-db';
 
@@ -26,11 +13,6 @@ const NOW = new Date('2026-07-28T09:00:00Z');
 const TARGET = '〜わけにはいかない';
 const DISTRACTORS = ['〜しかない', '〜ざるを得ない', '〜ほかない'];
 
-/**
- * Seed THE target item for one case. Each test used to get its own user, so `[userId, kind, expression]`
- * let them all own the same pattern; the unique is `[kind, expression]` now, so isolation has to come
- * from clearing the tables first instead.
- */
 async function seedItem(): Promise<{ itemId: string }> {
   await prisma.reviewLog.deleteMany({});
   await prisma.sentence.deleteMany({});
@@ -80,8 +62,6 @@ describe('the recorded question contains the options the server assigned', () =>
   });
 
   it('makes the correct letter RECOVERABLE from the row alone', async () => {
-    // This is exactly what scripts/quiz-letter-audit.js does. If this assertion can pass, the
-    // "is the answer always C" question is answerable by query instead of by memory.
     const { itemId } = await seedItem();
     const { sentenceId, quiz } = await stageQuiz(itemId);
     const row = await prisma.sentence.findFirstOrThrow({ where: { id: sentenceId } });
@@ -94,8 +74,6 @@ describe('the recorded question contains the options the server assigned', () =>
   });
 
   it('keeps sourceRuby aligned, since ruby REPLACES the text wherever furigana is on', async () => {
-    // Appending to only one of the two would hide the options from exactly the learners who have
-    // furigana enabled — a silent, per-user regression.
     const { itemId } = await seedItem();
     const { sentenceId, quiz } = await P.stageSentence(
       {
@@ -134,8 +112,6 @@ describe('the recorded question contains the options the server assigned', () =>
 
 describe('a malformed question never reaches the database', () => {
   it('throws on a duplicate option and stages NOTHING', async () => {
-    // The layout is built before the row is created on purpose: a rejected question must not leave a
-    // pending row behind for autoSkipStalePending to sweep up as an abandoned exercise.
     const { itemId } = await seedItem();
     const before = await prisma.sentence.count({});
     await expect(

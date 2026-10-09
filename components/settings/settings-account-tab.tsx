@@ -16,7 +16,6 @@ import {
 import { toast } from 'sonner';
 import { authClient } from '@/lib/auth-client';
 import { createMcpKeyAction, revokeMcpKeyAction } from '@/app/settings/actions';
-import { GuideLink } from '@/components/shared/guide-link';
 import { UserAvatar } from '@/components/shell/user-avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -34,8 +33,24 @@ import { Label } from '@/components/ui/label';
 import { SettingsTab } from '@/components/settings/settings-tab';
 import { McpUsageCard } from '@/components/settings/mcp-usage-card';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
+import { CopyCommandButton } from '@/components/shared/copy-command-button';
 import { APP_TIME_ZONE, formatDateTimeVN, formatDateVN } from '@/lib/format';
 import type { ToolUsageReport } from '@/lib/mcp/usage';
+
+function claudeConfig(token: string): string {
+  const origin = typeof window === 'undefined' ? '' : window.location.origin;
+  return `{
+  "mcpServers": {
+    "sakubun": {
+      "command": "npx",
+      "args": [
+        "-y", "mcp-remote", "${origin}/api/mcp",
+        "--header", "Authorization: Bearer ${token}"
+      ]
+    }
+  }
+}`;
+}
 
 export interface McpKeyRow {
   id: string;
@@ -53,7 +68,6 @@ function fmtDate(iso: string): string {
   });
 }
 
-/** One icon + label/value tile in the account timeline; `value` is already-formatted text. */
 function MetaTile({
   icon: Icon,
   label,
@@ -64,10 +78,6 @@ function MetaTile({
   value: string;
 }) {
   return (
-    // A <dl> may wrap its dt/dd pairs in ONE <div>, and the dt/dd must be that div's DIRECT children
-    // (HTML content model). The old markup nested them a second level deep inside a min-w-0 column,
-    // which made the pairs invalid and orphaned them from the list — axe's definition-list + dlitem.
-    // A two-row grid gives the same icon-beside-text layout without the extra wrapper.
     <div className="grid grid-cols-[auto_1fr] items-start gap-x-3 rounded-lg border bg-muted/30 p-3">
       <Icon className="row-span-2 mt-0.5 size-4 shrink-0 text-muted-foreground" />
       <dt className="min-w-0 text-xs text-muted-foreground">{label}</dt>
@@ -76,14 +86,8 @@ function MetaTile({
   );
 }
 
-// better-auth's default minimum password length (emailAndPassword.minPasswordLength).
 const MIN_PASSWORD = 8;
 
-/**
- * The "Tài khoản" + "Token MCP" tabs of /settings. Was its own page (/account) while the app was
- * multi-user; folded in here so a single operator has one place for everything. Renders TabsContent
- * only — SettingsForm owns the <Tabs> and <PageShell>.
- */
 export function AccountTab({
   name,
   email,
@@ -112,7 +116,6 @@ export function AccountTab({
   const [revokeTarget, setRevokeTarget] = useState<McpKeyRow | null>(null);
   const [revoking, setRevoking] = useState(false);
 
-  // Profile: display name (updateUser) + password (changePassword) — both via better-auth's client.
   const [savedName, setSavedName] = useState(name);
   const [displayName, setDisplayName] = useState(name);
   const [editingName, setEditingName] = useState(false);
@@ -120,8 +123,6 @@ export function AccountTab({
   const trimmedName = displayName.trim();
   const nameDirty = trimmedName.length > 0 && trimmedName !== savedName;
 
-  // Password change keeps the current-password check (the account-takeover guard better-auth enforces);
-  // only the redundant "confirm" field was dropped (2026-07-24 request).
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [changingPassword, setChangingPassword] = useState(false);
@@ -166,7 +167,6 @@ export function AccountTab({
     const { error } = await authClient.changePassword({
       currentPassword,
       newPassword,
-      // Keep other sessions signed in — the operator often uses several devices at once.
       revokeOtherSessions: false,
     });
     setChangingPassword(false);
@@ -215,15 +215,9 @@ export function AccountTab({
 
   return (
     <>
-      {/* ONE tab for the whole account (2026-08-04): identity + password + the MCP tokens that belong to
-          that identity. They were two tabs, which made six in a row — and "Token MCP" is not a peer of
-          "Nội dung" or "Nhịp học": it is not a preference at all, it is a credential OF this account,
-          created and revoked here and nowhere else. Two cards in one tab say that; two tabs said they
-          were unrelated pages. */}
       <SettingsTab value="account" surface="bare">
         <Card>
           <CardContent className="space-y-6">
-            {/* Identity: avatar + name (with an inline edit button) + email. */}
             <div className="flex items-center gap-4">
               <UserAvatar name={savedName} image={image} className="size-14 text-lg" />
               <div className="min-w-0 flex-1">
@@ -237,7 +231,6 @@ export function AccountTab({
                       maxLength={60}
                       autoFocus
                       className="h-8"
-                      // sizing goes on the WRAPPER so the clear × stays at the visible right edge
                       wrapperClassName="min-w-0 flex-1"
                     />
                     <Button
@@ -280,7 +273,6 @@ export function AccountTab({
               </div>
             </div>
 
-            {/* Read-only account timeline — two tiles, one row on >=sm. */}
             <dl className="grid gap-3 sm:grid-cols-2">
               <MetaTile
                 icon={CalendarDays}
@@ -294,8 +286,6 @@ export function AccountTab({
               />
             </dl>
 
-            {/* Password: current + new (the "confirm" field was dropped). Google-only accounts have no
-                  password to change, so they see a notice instead. */}
             {hasPassword ? (
               <form onSubmit={onChangePassword} className="space-y-3 border-t pt-6">
                 <p className="font-medium">Đổi mật khẩu</p>
@@ -339,7 +329,6 @@ export function AccountTab({
         </Card>
 
         <Card>
-          {/* A header, because this card no longer has a tab label naming it. */}
           <CardHeader>
             <CardTitle>Token MCP</CardTitle>
             <CardDescription>
@@ -348,10 +337,6 @@ export function AccountTab({
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            {/* The token is useless until it is pasted into claude_desktop_config.json — link the
-                  recipe that shows where, right where the token is created. */}
-            <GuideLink recipe="mcp" label="Cách dán token vào Claude Desktop" />
-
             <form onSubmit={onCreate} className="flex items-end gap-3">
               <div className="min-w-0 flex-1 space-y-2">
                 <Label htmlFor="token-name">Tên token</Label>
@@ -404,22 +389,18 @@ export function AccountTab({
           </CardContent>
         </Card>
 
-        {/* What Claude did with that token. Read-only, so it lives outside every form on this tab. */}
         <McpUsageCard usage={mcpUsage} />
       </SettingsTab>
 
-      {/* Token shown once, right after creation. Kept outside TabsContent so it survives a tab switch. */}
       <Dialog open={newToken !== null} onOpenChange={(o) => !o && setNewToken(null)}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Token MCP mới</DialogTitle>
             <DialogDescription>
-              Sao chép và lưu ngay — token này SẼ KHÔNG hiện lại. Dán vào header xác thực của Claude
-              Desktop (xem tab MCP ở trang Hướng dẫn).
+              Sao chép và lưu ngay — token này SẼ KHÔNG hiện lại. Dán vào{' '}
+              <code>claude_desktop_config.json</code> của Claude Desktop theo mẫu bên dưới.
             </DialogDescription>
           </DialogHeader>
-          {/* Wrap the token (break-all) inside a bounded block — DialogContent is a grid, so a long
-                unbroken string in a flex row would push the dialog past its max-width and break the UI. */}
           <div className="space-y-2">
             <code className="block max-h-32 overflow-y-auto rounded-md bg-muted px-3 py-2 font-mono text-xs break-all select-all">
               {newToken}
@@ -429,6 +410,31 @@ export function AccountTab({
               {copied ? 'Đã sao chép' : 'Sao chép token'}
             </Button>
           </div>
+
+          <div className="space-y-2">
+            <p className="text-xs text-muted-foreground">
+              Cấu hình Claude Desktop (Settings → Developer → Edit Config):
+            </p>
+            <div className="relative">
+              <pre className="max-h-56 overflow-auto rounded-lg border border-border/70 bg-muted/40 p-3 text-xs">
+                <code>{claudeConfig(newToken ?? '')}</code>
+              </pre>
+              <CopyCommandButton
+                command={claudeConfig(newToken ?? '')}
+                label="Chép cấu hình"
+                size="icon-sm"
+                showCopiedText={false}
+                toastDescription="none"
+                className="absolute top-2 right-2"
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Trên Windows, đổi <code>&quot;command&quot;</code> thành <code>&quot;cmd&quot;</code> và
+              thêm <code>&quot;/c&quot;, &quot;npx&quot;</code> vào đầu <code>args</code>. Khởi động
+              lại Claude Desktop sau khi lưu.
+            </p>
+          </div>
+
           <DialogFooter>
             <DialogClose asChild>
               <Button>Tôi đã lưu token</Button>
@@ -437,7 +443,6 @@ export function AccountTab({
         </DialogContent>
       </Dialog>
 
-      {/* Revoke confirmation. */}
       <ConfirmDialog
         open={revokeTarget !== null}
         onOpenChange={(o) => !o && setRevokeTarget(null)}

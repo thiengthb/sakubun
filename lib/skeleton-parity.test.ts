@@ -2,23 +2,6 @@ import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-/**
- * Keeps every route's `loading.tsx` in step with the page it stands in for — the STRUCTURAL half of the
- * skeleton contract. The geometric half is `e2e/skeleton.spec.ts` (it measures both in a browser at 1440
- * and 390); this file catches the two drifts that need no browser and no data:
- *
- *   1. A route with a PageShell but NO loading.tsx. Next silently falls back to the nearest ancestor's,
- *      which is the ROOT one — so six routes (guide, both forms, three group routes) spent weeks flashing
- *      a DASHBOARD skeleton, full-bleed, before rendering a narrow form. Nothing failed; the fallback is
- *      a feature.
- *   2. A stale TAB COUNT. /settings gained its fifth tab on 2026-08-04 and its skeleton still drew four;
- *      /history lost both of its tabs and its skeleton still drew two. The count is what sets the rail's
- *      width, so it is also the number that overflowed a phone by 134px.
- *
- * Both are read from the SOURCE of each page, so they cannot go stale on their own: the day a page's tab
- * list changes, this test names the loading file that has to change with it.
- */
-
 const SKIP_DIRS = new Set(['node_modules', 'generated', '.next']);
 
 function walk(dir: string, out: string[] = []): string[] {
@@ -34,14 +17,12 @@ function walk(dir: string, out: string[] = []): string[] {
 
 const rel = (file: string) => relative(process.cwd(), file).split(sep).join('/');
 
-/** Every route directory under app/ that renders a page. */
 function routeDirs(): { dir: string; page: string }[] {
   return walk('app')
     .filter((f) => rel(f).endsWith('/page.tsx'))
     .map((f) => ({ dir: rel(f).replace(/\/page\.tsx$/, ''), page: rel(f) }));
 }
 
-/** Follow a page's own source plus the components it imports from @/components, one level deep. */
 function pageWithViews(pagePath: string): string {
   const src = readFileSync(pagePath, 'utf8');
   const views = [...src.matchAll(/from '@\/components\/([^']+)'/g)]
@@ -53,7 +34,6 @@ function pageWithViews(pagePath: string): string {
 
 describe('loading skeletons match their routes', () => {
   it('every route that renders a PageShell has its own loading.tsx', () => {
-    // Routes whose fallback is deliberately inherited, with the reason.
     const EXEMPT: Record<string, string> = {
       app: 'the root loading.tsx IS this route’s (the dashboard) and the fallback for the rest',
       'app/login': 'chromeless auth page — no PageShell, no chrome to placeholder',
@@ -78,8 +58,6 @@ describe('loading skeletons match their routes', () => {
     ).toEqual([]);
   });
 
-  // Each entry: the page source that owns the tab list, and its loading file. The count in the loading
-  // file's `<TabsAside count={N}>` must equal the number of tabs the page actually renders.
   const TABBED: { name: string; source: string; loading: string; tabsVar: RegExp }[] = [
     {
       name: 'dashboard',
@@ -98,12 +76,6 @@ describe('loading skeletons match their routes', () => {
       source: 'components/settings/settings-form.tsx',
       loading: 'app/settings/loading.tsx',
       tabsVar: /const SETTINGS_TABS = \[([\s\S]*?)\] as const/,
-    },
-    {
-      name: 'guide',
-      source: 'components/guide/guide-tabs.tsx',
-      loading: 'app/guide/loading.tsx',
-      tabsVar: /const GUIDE_TAB_ITEMS = \[([\s\S]*?)\] as const/,
     },
     {
       name: 'group detail',
@@ -136,7 +108,6 @@ describe('loading skeletons match their routes', () => {
   }
 
   it('a page with no tabs has no tab rail in its skeleton', () => {
-    // /history lost its tabs with the community feed; its skeleton kept drawing them for two days.
     const pairs: [string, string][] = [
       ['components/history/history-view.tsx', 'app/history/loading.tsx'],
       ['components/resources/item-analytics.tsx', 'app/resources/[id]/loading.tsx'],

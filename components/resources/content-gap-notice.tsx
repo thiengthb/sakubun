@@ -1,18 +1,6 @@
 import Link from 'next/link';
 import { ArrowRight, FileWarning } from 'lucide-react';
 
-/**
- * Enrichment-card coverage, shown only when patterns the learner is ACTIVELY studying have a card that
- * does not meet the bar — "no card" OR "a card too thin to teach from" (2026-07-27: measured by
- * lib/enrichment-quality, the same definition the tutor's get_library_health uses, so the two surfaces
- * can never report different numbers for the same library).
- *
- * This exists because the gap was invisible: 150 of 153 N5 patterns had no card while every N2/N3/N4
- * pattern did, so the level actually being studied was the one with no content — and no screen said
- * so. A card-less pattern quietly degrades three things at once: the new-item mini-lesson has no
- * `usage`/`contrasts` to read from, the quiz has to invent distractors instead of taking them from
- * `contrasts`, and the detail page's card tab is empty.
- */
 export function ContentGapNotice({
   studiedWithoutCard,
   enriched,

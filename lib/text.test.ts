@@ -45,7 +45,6 @@ describe('cleanVocabTerm', () => {
     expect(cleanVocabTerm('お茶')).toBe('お茶');
   });
 
-  // The reported bug (2026-07-20): Claude carried its DISPLAY decoration into the tool call.
   it('strips the capture-reason label Claude appends', () => {
     expect(cleanVocabTerm('言葉(chưa hiểu)')).toBe('言葉');
     expect(cleanVocabTerm('言葉 (dùng sai)')).toBe('言葉');
@@ -69,8 +68,6 @@ describe('cleanVocabTerm', () => {
     expect(cleanVocabTerm('   ')).toBe('');
   });
 
-  // Grammar patterns never go through this — but guard the shape anyway, since a future caller
-  // might wire it up by mistake and silently mangle the library.
   it('would preserve a parenthesised grammar-ish surface if the wrapper is not a full wrap', () => {
     expect(cleanVocabTerm('（お）茶')).toBe('（お）茶');
   });

@@ -15,11 +15,6 @@ import { GROUP_KIND_LABELS } from '@/components/groups/group-kind-badge';
 import { addItemsToGroupAction, removeItemsFromGroupAction } from '@/app/actions';
 import type { GroupSummary } from '@/lib/groups';
 
-/**
- * Item-detail membership control: chips for the groups this item is in (each removable) + an "add"
- * dropdown of the compatible groups it isn't in yet. `member`/`addable` are resolved server-side
- * (kind-guarded), so the client just fires the add/remove actions over this one item.
- */
 export function ItemGroups({
   itemId,
   member,
@@ -76,8 +71,6 @@ export function ItemGroups({
         {addable.length > 0 && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              {/* Collapsed to the + icon at rest; the label "Thêm vào nhóm" slides in on hover/focus/open
-                  — the resources-toolbar action style (ExpandingIconButton), 2026-07-24. */}
               <ExpandingIconButton
                 icon={Plus}
                 label="Thêm vào nhóm"

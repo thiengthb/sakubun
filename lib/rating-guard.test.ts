@@ -17,8 +17,6 @@ describe('Easy has to be earned', () => {
   });
 
   it('downgrades Easy to Good when the learner needed help', () => {
-    // The learner asking what a word means, or taking a hint, is the difference between "I knew this"
-    // and "I worked it out" — which is precisely the Easy/Good line.
     const v = earnedRating(4, { elapsedSec: 5, assists: 1, exerciseType: 'QUIZ' });
     expect(v.rating).toBe(3);
     expect(v.reason).toMatch(/gợi ý/);
@@ -46,8 +44,6 @@ describe('the guard only ever moves DOWN, and only Easy', () => {
 
 describe('missing evidence does not withhold a legitimate Easy', () => {
   it('allows Easy when elapsed time is unknown', () => {
-    // The guard exists to catch the over-given Easy. Treating an absent timestamp as a failure would
-    // make it a random tax on correct answers instead.
     expect(earnedRating(4, { elapsedSec: null, assists: 0, exerciseType: 'QUIZ' })).toEqual({ rating: 4 });
   });
 
@@ -63,9 +59,6 @@ describe('missing evidence does not withhold a legitimate Easy', () => {
 
 describe('the ceiling is per exercise type, because one number is wrong in both directions', () => {
   it('holds a quiz pick to a far tighter clock than a translation', () => {
-    // Measured 2026-07-28: quiz answers ran 14-48s (median 30), translations 5-575s (median 167). A flat
-    // 120s sat ABOVE quiz's p90 — it could never fire on the loop that prompted the guard — and BELOW
-    // translation's p25, where it would have downgraded most correct translations.
     expect(easyCeilingFor('QUIZ')).toBeLessThan(easyCeilingFor('TRANSLATION'));
     const slowForQuiz = { elapsedSec: 40, assists: 0 };
     expect(earnedRating(4, { ...slowForQuiz, exerciseType: 'QUIZ' }).rating).toBe(3);
@@ -73,7 +66,6 @@ describe('the ceiling is per exercise type, because one number is wrong in both 
   });
 
   it('falls back to a LENIENT default for a loop with no measured history', () => {
-    // An unmeasured loop must not be taxed by a number guessed for a different one.
     expect(easyCeilingFor('TEACH_BACK')).toBe(EASY_MAX_SECONDS_DEFAULT);
     expect(easyCeilingFor(undefined)).toBe(EASY_MAX_SECONDS_DEFAULT);
     expect(earnedRating(4, { elapsedSec: 90, assists: 0, exerciseType: 'TEACH_BACK' }).rating).toBe(4);

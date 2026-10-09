@@ -42,16 +42,11 @@ import {
 import { SettingsTab } from '@/components/settings/settings-tab';
 import { cn } from '@/lib/utils';
 
-// The volume is `sakubun_sakubun_data` — compose prefixes a named volume with the project name, so
-// the bare name from docker-compose.yml is NOT what exists on the host. Getting this wrong makes
-// `docker run` silently create an EMPTY volume and restore into nothing, which is why the command is
-// spelled out here rather than paraphrased.
 const RESTORE_COMMANDS = `docker compose down
 docker run --rm -v sakubun_sakubun_data:/data -v "$PWD":/backup alpine \\
   sh -c "cp /backup/sakubun-YYYY-MM-DD.db /data/sakubun.db"
 docker compose up -d`;
 
-/** Per-table diff the server returns from an import (dry-run or applied). */
 interface TableDiff {
   table: string;
   create: number;
@@ -63,10 +58,8 @@ interface ImportResult {
   tables: TableDiff[];
   warnings: string[];
 }
-/** `learning` = the JSON dump of learning data · `full` = the whole-DB SQLite snapshot. */
 type ImportKind = 'learning' | 'full';
 
-/** A small tinted icon chip that heads each data card — gives the tab a scannable visual rhythm. */
 function IconBadge({
   icon: Icon,
   tone = 'default',
@@ -86,7 +79,6 @@ function IconBadge({
   );
 }
 
-/** Section heading for a group of data cards — a title (item label) with its description below. */
 function SectionHeading({ children, hint }: { children: React.ReactNode; hint?: string }) {
   return (
     <div className="space-y-0.5">
@@ -96,7 +88,6 @@ function SectionHeading({ children, hint }: { children: React.ReactNode; hint?: 
   );
 }
 
-/** Trigger a browser download of a fetched attachment; returns the filename + item count for the toast. */
 async function downloadFrom(url: string, fallbackName: string) {
   const res = await fetch(url);
   if (!res.ok) throw new Error(String(res.status));
@@ -113,7 +104,6 @@ async function downloadFrom(url: string, fallbackName: string) {
   return { name, items, size: blob.size };
 }
 
-/** POST a backup file to its import endpoint. `dryRun` asks for counts only; otherwise it applies. */
 async function postImport(kind: ImportKind, file: File, dryRun: boolean): Promise<ImportResult> {
   const path = kind === 'learning' ? '/api/import/mine' : '/api/import/system';
   const res = await fetch(`${path}?dryRun=${dryRun ? '1' : '0'}`, { method: 'POST', body: file });
@@ -122,28 +112,6 @@ async function postImport(kind: ImportKind, file: File, dryRun: boolean): Promis
   return json as ImportResult;
 }
 
-/**
- * Tab "Dữ liệu": get a copy of what you have built out of the app, and put a copy back in.
- *
- * WHAT THIS TAB HAS TO GET RIGHT — the two copies are not interchangeable, and the copy here is the only
- * place that says which one to keep:
- *
- *   - The JSON (`/api/export/mine`, lib/export.ts) is the LEARNING data: items, FSRS schedule, review
- *     history, practised sentences, settings, study groups. Readable, diffable, and it syncs back in as
- *     an UPSERT (add missing, update existing, never delete). It does NOT carry the login, the MCP key,
- *     or the tutor's own working state — so it is not a full backup, and saying otherwise would cost
- *     someone the only copy of something.
- *   - The `.db` (`/api/backup`) is a consistent, integrity-checked SQLite snapshot of EVERYTHING. It is
- *     the only complete copy. Its sync is ADD-ONLY: a row already present locally is kept as-is, never
- *     overwritten (lib/import.ts) — which is why its preview never reports updates.
- *
- * Single user (2026-08-05): this tab used to speak of members ("dữ liệu của mọi thành viên", "chỉ dữ
- * liệu của tài khoản bạn — không đụng tới người khác") and the two whole-DB actions were admin-gated.
- * There is one account, it is the operator, and both routes now gate on being signed in.
- *
- * Every sync runs a DRY-RUN first and shows exactly what would change; nothing is written until the
- * confirmation dialog is accepted.
- */
 export function DataTab() {
   const router = useRouter();
   const [busy, setBusy] = useState<'learning' | 'anki' | 'full' | 'sync' | null>(null);
@@ -208,8 +176,6 @@ export function DataTab() {
     }
   };
 
-  // Step 1 of a sync: read the picked file and ask the server what WOULD change (dry-run), then open
-  // the confirmation dialog. Nothing is written yet.
   const pickForSync = async (kind: ImportKind, file: File | null) => {
     if (!file) return;
     setBusy('sync');
@@ -225,7 +191,6 @@ export function DataTab() {
     }
   };
 
-  // Step 2: the user confirmed. Apply for real, report what landed, then refresh so the new data shows.
   const confirmSync = async () => {
     if (!preview) return;
     setApplying(true);
@@ -258,21 +223,16 @@ export function DataTab() {
       }
     : null;
   const nonEmpty = preview?.result.tables.filter((t) => t.create + t.update + t.skip > 0) ?? [];
-  // The whole-DB merge is INSERT OR IGNORE, so `update` is 0 for every table by construction. Showing an
-  // "Cập nhật" column that can only ever read "—" invites the reading that nothing was updated *this
-  // time*, rather than that this kind of sync never updates.
   const showUpdates = preview?.kind === 'learning';
 
   return (
     <SettingsTab value="data" surface="bare">
       <div className="space-y-6">
-        {/* ---- The learning data, as a portable file ---- */}
         <section className="space-y-3">
           <SectionHeading hint="Những gì bạn đã xây được trong app, ở dạng tệp mang đi được.">
             Dữ liệu học
           </SectionHeading>
           <div className="grid gap-4 sm:grid-cols-2">
-            {/* JSON copy + sync */}
             <Card>
               <CardHeader>
                 <div className="flex items-start gap-3">
@@ -317,7 +277,6 @@ export function DataTab() {
               </CardFooter>
             </Card>
 
-            {/* Anki export */}
             <Card>
               <CardHeader>
                 <div className="flex items-start gap-3">
@@ -342,13 +301,11 @@ export function DataTab() {
           </div>
         </section>
 
-        {/* ---- The whole database file ---- */}
         <section className="space-y-3">
           <SectionHeading hint="Bản sao đầy đủ duy nhất: có cả tài khoản đăng nhập, khóa MCP và ghi chú gia sư. Nạp vào chỉ THÊM, không ghi đè, không xóa.">
             Toàn bộ tệp dữ liệu
           </SectionHeading>
           <div className="grid gap-4 sm:grid-cols-2">
-            {/* Whole-DB backup */}
             <Card>
               <CardHeader>
                 <div className="flex items-start gap-3">
@@ -371,7 +328,6 @@ export function DataTab() {
               </CardFooter>
             </Card>
 
-            {/* Merge from a .db */}
             <Card className="ring-warn/30">
               <CardHeader>
                 <div className="flex items-start gap-3">
@@ -414,7 +370,6 @@ export function DataTab() {
             </Card>
           </div>
 
-          {/* Manual restore — advanced, tucked behind a disclosure to keep the tab calm. */}
           <Card>
             <CardHeader>
               <div className="flex items-start gap-3">
@@ -443,11 +398,6 @@ export function DataTab() {
                   <pre className="overflow-x-auto rounded-md bg-background p-3 text-xs">
                     <code>{RESTORE_COMMANDS}</code>
                   </pre>
-                  {/* Was a pointer to `./scripts/verify-restore.sh` — a file that does not exist in
-                      this repo. "Kiểm tra bản sao lưu của bạn" is advice worth keeping, so it now
-                      names something that actually runs: the .db sync's DRY-RUN opens the file, runs
-                      PRAGMA integrity_check on it (throwing if it is torn) and counts every table,
-                      before writing a single row. That is a real verification, from inside the app. */}
                   <p className="text-xs text-muted-foreground">
                     <HardDriveDownload className="mr-1 inline size-3.5" aria-hidden />
                     Muốn chắc một bản sao lưu còn dùng được: bấm{' '}
@@ -463,7 +413,6 @@ export function DataTab() {
         </section>
       </div>
 
-      {/* Dry-run preview: shown after a file is picked, before anything is written. */}
       <Dialog
         open={preview !== null}
         onOpenChange={(open) => !open && !applying && setPreview(null)}

@@ -53,13 +53,11 @@ describe('minePairs — a slip is not a pattern', () => {
 
 describe('minePairs — old difficulties stop being current', () => {
   it('drops a pair whose occurrences have all decayed away', () => {
-    // Three hits, but four half-lives ago → weight ≈ 3 × 0.0625, far under the floor.
     const old = Array.from({ length: MIN_OCCURRENCES }, (_, i) =>
       row(HALF_LIFE_DAYS * 4 + i, [PAIR]),
     );
     expect(minePairs(old, NOW)).toEqual([]);
 
-    // The SAME three hits, recent → emitted.
     const fresh = Array.from({ length: MIN_OCCURRENCES }, (_, i) => row(i, [PAIR]));
     expect(minePairs(fresh, NOW)).toHaveLength(1);
   });
@@ -82,7 +80,6 @@ describe('minePairs — the key is the same one "do I already have this" uses', 
       row(1, [{ used: '「ほかに」', required: 'どころか' }]),
       row(2, [{ used: 'ほかに', required: '～どころか' }]),
     ];
-    // Without one key these are three separate pairs and NONE reaches the threshold.
     expect(minePairs(rows, NOW)).toHaveLength(1);
   });
 
@@ -98,7 +95,6 @@ describe('minePairs — the key is the same one "do I already have this" uses', 
 
 describe('minePairs — never attach a contrast to the wrong card', () => {
   it('links only the item that IS the required side', () => {
-    // The drilled item was 〜ばかりに; the confusion was about a DIFFERENT pattern in the same sentence.
     const rows = Array.from({ length: MIN_OCCURRENCES }, (_, i) =>
       row(i, [PAIR], { itemId: 'it-bakarini', expression: '〜ばかりに' }),
     );

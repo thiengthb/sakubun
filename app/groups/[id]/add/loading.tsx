@@ -1,10 +1,6 @@
 import { FitList, PageSkeleton } from '@/components/shell/page-skeleton';
 import { Skeleton } from '@/components/ui/skeleton';
 
-// /groups/<id>/add — the item picker (the phone path; desktop opens the dialog). `width="narrow"`
-// (max-w-3xl), no header aside, and everything lives in ONE card: the search row, the scrolling list of
-// pickable rows (measured 71px each), then the action row that closes the card.
-// NEW 2026-08-05 — it fell back to the dashboard skeleton at full width.
 export default function Loading() {
   return (
     <PageSkeleton width="narrow" section="groups" action="addItems">

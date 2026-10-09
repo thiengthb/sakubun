@@ -5,8 +5,6 @@ import { AnimatePresence, motion } from 'motion/react';
 import { StreakFlame } from '@/components/dashboard/streak-flame';
 import { CELEBRATION_VIGNETTE, FLAME_WHITE, tierForStreak } from '@/lib/streak-tiers';
 
-// Remembers the streak the user last SAW, so the celebration fires exactly once per increase (Duolingo
-// style) — not on every load. Per-browser (localStorage), which is the right scope for a single-user app.
 const KEY = 'sakubun.streak.lastSeen';
 const HOLD_MS = 2600;
 
@@ -19,8 +17,6 @@ interface Ember {
   size: number;
 }
 
-// Randomized ember field for a celebration of a given streak length. Called ONLY from effects (never
-// render), so Math.random here never runs in the render path (React Compiler purity).
 function buildEmbers(count: number): Ember[] {
   const n = Math.min(46, 12 + Math.round(count / 2));
   return Array.from({ length: n }, () => ({
@@ -33,31 +29,18 @@ function buildEmbers(count: number): Ember[] {
   }));
 }
 
-/**
- * A full-screen fire celebration that fires ONCE when the study streak has grown since the user last saw
- * it: a rising hero flame + floating embers, and the day count — nothing else (2026-07-24: dropped the
- * milestone banner + the caption, per request, to keep it to just the flame and the number). Hotter +
- * busier at higher tiers. Non-blocking (pointer-events: none) and auto-dismisses. Under
- * prefers-reduced-motion the global CSS neutralizes the animations, leaving a static reveal. The ember
- * field is generated in the effect (not during render) so Math.random never runs in the render path.
- */
 export function StreakCelebration({
   current,
   previewNonce = 0,
   auto = true,
 }: {
   current: number;
-  /** Bump this (e.g. on clicking the streak flame) to REPLAY the celebration on demand — a manual
-   * preview that ignores the localStorage baseline. 0 = never previewed. */
   previewNonce?: number;
-  /** Auto-fire on a real streak increase (localStorage baseline). Off for the dashboard card's own
-   * instance, which is preview-only — the app-wide StreakBeacon owns the auto-fire so it never double-fires. */
   auto?: boolean;
 }) {
   const [party, setParty] = useState<{ count: number; embers: Ember[] } | null>(null);
   const firedPreviewRef = useRef(0);
 
-  // Auto: fire ONCE per real increase since the user last saw their streak (Duolingo-style).
   useEffect(() => {
     if (!auto || current <= 0) return;
     let last: number | null = null;
@@ -67,13 +50,10 @@ export function StreakCelebration({
     } catch {
       last = null;
     }
-    // Always record the current streak as "seen" so we never re-fire for the same value.
     try {
       localStorage.setItem(KEY, String(current));
     } catch {
-      // ignore (private mode) — worst case the effect just won't celebrate
     }
-    // Celebrate only on a real increase (skip the very first visit, when there's no baseline yet).
     if (last == null || !Number.isFinite(last) || current <= last) return;
 
     // eslint-disable-next-line react-hooks/set-state-in-effect -- a one-shot celebration triggered by a localStorage baseline + a prop increase; it's a genuine side effect, not render-derivable state.
@@ -82,8 +62,6 @@ export function StreakCelebration({
     return () => clearTimeout(timer);
   }, [current, auto]);
 
-  // Manual preview: replay the celebration whenever previewNonce bumps (a user clicked the flame). The
-  // firedPreviewRef guard means a `current` change alone (data refresh) never re-triggers it.
   useEffect(() => {
     if (previewNonce <= 0 || previewNonce === firedPreviewRef.current) return;
     firedPreviewRef.current = previewNonce;

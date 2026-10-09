@@ -7,14 +7,12 @@ import { cn } from '@/lib/utils';
 
 const WEEKDAYS_VN = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'] as const;
 
-/** Format a "YYYY-MM-DD" study-day key without Date-parsing tz drift; weekday via a local Date (safe). */
 function dayLabel(key: string): string {
   const [y, m, d] = key.split('-').map(Number);
   const wd = WEEKDAYS_VN[new Date(y, m - 1, d).getDay()];
   return `${wd}, ${String(d).padStart(2, '0')}/${String(m).padStart(2, '0')}/${y}`;
 }
 
-/** One goal as a labelled progress bar (mirrors the dashboard's server ProgressRow, client-side). */
 function Row({
   label,
   done,
@@ -65,12 +63,6 @@ function Row({
   );
 }
 
-/**
- * "Tiến độ theo ngày" — the dashboard's daily-goal card, but any day (not just today). Steps through the
- * pre-seeded 365-day series (oldest→newest, so the last entry is today) with prev/next; "Hôm nay" jumps
- * back. Sentences + new-grammar show against their goals; the review row shows the day's accuracy and,
- * for TODAY only, how many reviews are still due. All derived client-side from `daily` — no server hit.
- */
 export function DailyProgress({
   daily,
   sessionGoal,
@@ -98,10 +90,6 @@ export function DailyProgress({
 
   return (
     <div className="space-y-4 rounded-xl border border-border/70 bg-card p-4">
-      {/* Below md the day picker takes its own FULL-WIDTH row (`max-md:w-full` + flex-wrap). On one row
-          it needs ~215px of the 358px available — enough to clip the title to "Tiến độ hôm" — and it
-          also squeezed the two chevrons into a 7px-gap pair, which is under the 44px touch target. On
-          its own row they sit at the two ends with the date centred between them. */}
       <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-2">
         <h2 className="text-sm font-medium text-muted-foreground">
           {isToday ? 'Tiến độ hôm nay' : 'Tiến độ theo ngày'}

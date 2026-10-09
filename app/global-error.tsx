@@ -4,15 +4,6 @@ import { useEffect } from 'react';
 import { RotateCcw, TriangleAlert } from 'lucide-react';
 import './globals.css';
 
-/**
- * Last-resort boundary: catches an error thrown by the ROOT LAYOUT itself, where `app/error.tsx` can't
- * help. It REPLACES the root layout, so it must ship its own `<html>`/`<body>` — and it can't rely on
- * the layout's next/font vars or ThemeProvider, hence plain classes and no shadcn `Button` (a crash
- * here may well be why the component tree failed). `globals.css` is imported directly so the tokens
- * still resolve.
- *
- * Same rule as `error.tsx`: never render the error text — only the digest.
- */
 export default function GlobalError({
   error,
   reset,
