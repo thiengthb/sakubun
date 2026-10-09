@@ -10,7 +10,7 @@
 //
 // Single user (2026-08-05): the queries used to be scoped by `userId` against a fail-closed tenancy
 // guard. Both are gone with multi-user — the learning tables have no owner column, and the boundary is
-// now "signed in at all" (the route checks the session; see AGENTS.md).
+// now "signed in at all" (the route checks the session; see CLAUDE.md).
 
 import { prisma } from '@/lib/db';
 import { buildApkg, type VocabItem } from '@/lib/anki-apkg';

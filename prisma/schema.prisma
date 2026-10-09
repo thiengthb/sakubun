@@ -386,7 +386,7 @@ model McpToolCall {
 // surface on 2026-08-03 (migration drop_multiuser_and_community) because their rows carried the tenant
 // `userId` columns that pass removed. The FEATURE was never the problem — grouping items by theme is
 // useful to one learner too — so this is the same model minus the tenancy: no `userId` on either table,
-// exactly like Item / SrsState / ReviewLog. The boundary is the login (AGENTS.md §Gotchas).
+// exactly like Item / SrsState / ReviewLog. The boundary is the login (CLAUDE.md §Gotchas).
 //
 // Groups NEVER touch FSRS. They are an organisation + practice-scoping layer; scheduling stays in
 // SrsState and is only ever computed by submitReview().

@@ -18,7 +18,7 @@ import { auth } from '@/lib/auth';
 // Gate: SIGNED IN. This was admin-only (plan 2026-07-21, step 2.9) while the app was multi-user and the
 // snapshot spanned every member's data. With one account there is nobody to gate it from, and keeping
 // the role check only created a way for the settings Data tab's download button to 403 on an account
-// whose `role` was never stamped. The boundary in this app is login (AGENTS.md).
+// whose `role` was never stamped. The boundary in this app is login (CLAUDE.md).
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';

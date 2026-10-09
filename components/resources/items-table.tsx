@@ -116,7 +116,7 @@ export function ItemsTable({
       {
         // "Cấp", không phải "Level" (đổi 2026-08-11). Hai lý do, và cái thứ hai mới là lý do thật:
         //   1. Nó là tiêu đề DUY NHẤT còn tiếng Anh giữa Nghĩa · Trạng thái · Đến hạn · Ngày thêm · Đã
-        //      ôn · Quên · Độ bền — mà AGENTS.md nói mọi chuỗi người học đọc trên UI là tiếng Việt.
+        //      ôn · Quên · Độ bền — mà CLAUDE.md nói mọi chuỗi người học đọc trên UI là tiếng Việt.
         //   2. Ở 80px, ô tiêu đề còn phải chứa tay kéo cột + nút sắp xếp, nên "Level" bị cắt thành
         //      "Le…" (chụp được ở 1440px).
         // Bề rộng 76px là ĐO, không phải đoán: ô tiêu đề mất đúng 48px cho tay kéo + nút sắp xếp +

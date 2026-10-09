@@ -12,7 +12,7 @@
 //    level (both spellings typecheck), which is exactly why it needs a test.
 //
 // 2. THE CLIENT HAS NO FSRS ENGINE. `submitReview()` on the server is the only place a schedule is
-//    computed (AGENTS.md). The strongest possible enforcement is that the client CANNOT compute one:
+//    computed (CLAUDE.md). The strongest possible enforcement is that the client CANNOT compute one:
 //    no `ts-fsrs` in its dependencies, no copy of it in its source. Then "the client must not schedule"
 //    stops being a rule someone has to remember.
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';

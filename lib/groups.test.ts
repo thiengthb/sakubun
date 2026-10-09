@@ -2,7 +2,7 @@
 //
 // REWRITTEN 2026-08-05 when groups came back single-user. The original test was built around two users
 // (USER_A / USER_B) and half its cases asserted TENANT ISOLATION — "B cannot see A's group", "B cannot
-// delete A's group". Those columns are gone (AGENTS.md §Gotchas: the boundary is the LOGIN, not a
+// delete A's group". Those columns are gone (CLAUDE.md §Gotchas: the boundary is the LOGIN, not a
 // userId), so mechanically stripping the userId argument would have left a file whose comments claimed
 // to test a guard that no longer exists, and whose duplicated fixtures existed only to feed it. What is
 // worth testing is the behaviour that IS still load-bearing, and every case below is one of those:
@@ -12,7 +12,7 @@
 //   writes anything · what the two pickers offer.
 //
 // The original also built its schema with `npx prisma db push`, which Prisma 7 refuses to run for an
-// agent — so this uses createTestDb() (applies the committed migrations), per AGENTS.md.
+// agent — so this uses createTestDb() (applies the committed migrations), per CLAUDE.md.
 
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { createTestDb } from '@/lib/test-db';
@@ -33,7 +33,7 @@ beforeAll(async () => {
 });
 
 // Items are re-seeded per case: Item is unique on [kind, expression], so a leftover row from the
-// previous case would collide (AGENTS.md §Gotchas — isolate with resetData, not with a new user).
+// previous case would collide (CLAUDE.md §Gotchas — isolate with resetData, not with a new user).
 beforeEach(async () => {
   await prisma.groupMember.deleteMany({});
   await prisma.group.deleteMany({});

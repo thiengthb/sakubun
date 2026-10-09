@@ -23,7 +23,7 @@ export const createCallerFactory = t.createCallerFactory;
 
 /**
  * Everything that touches learning data. The learning tables have no `userId` column — the boundary is
- * the LOGIN (AGENTS.md) — so this guard IS the boundary for this surface, exactly as
+ * the LOGIN (CLAUDE.md) — so this guard IS the boundary for this surface, exactly as
  * `withMcpAuth({required:true})` is for MCP.
  */
 export const protectedProcedure = t.procedure.use(({ ctx, next }) => {

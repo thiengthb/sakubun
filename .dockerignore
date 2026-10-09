@@ -24,21 +24,12 @@ playwright.config.ts
 # Harness layer: not needed at runtime and not part of the app image.
 .claude
 tooling
-evals
-harness-migrations
-knowledge
-features
-reservations
 docs
 .github
-.githooks
 
 README.md
 CLAUDE.md
 AGENTS.md
-HARNESS-CHANGELOG.md
-harness.config.json
-harness.version
 Dockerfile
 .dockerignore
 docker-compose*.yml

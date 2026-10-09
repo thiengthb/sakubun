@@ -294,7 +294,7 @@ export async function getStreakAction(): Promise<ActionResult<{ current: number 
 //
 // `await getSessionUserId()` is still called in every one of these, and it is NOT dead code even though
 // lib/groups.ts no longer takes a userId: it IS the auth gate. Data is scoped by the login now, not by a
-// tenant column (AGENTS.md §Gotchas), so a server action's only job is to prove there is a session
+// tenant column (CLAUDE.md §Gotchas), so a server action's only job is to prove there is a session
 // before it touches the DB — it redirects to /login when there isn't.
 
 const createGroupSchema = z.object({

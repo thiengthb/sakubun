@@ -19,7 +19,7 @@ export function ok(data: unknown) {
 // `getUserId(extra)` lived here until 2026-08-06. It pulled the authenticated userId out of the MCP
 // call context so each tool could thread it into the DB layer — which is exactly what the single-user
 // rewrite removed: the learning tables have no `userId` column and the boundary is the login
-// (AGENTS.md §Gotchas). `lib/mcp/tools/groups.ts` already said so in a comment, and no tool had
+// (CLAUDE.md §Gotchas). `lib/mcp/tools/groups.ts` already said so in a comment, and no tool had
 // imported it since. What still guards this surface is `withMcpAuth({ required: true })` in the route:
 // a request with no valid bearer token never reaches a tool at all.
 

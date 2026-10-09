@@ -5,7 +5,7 @@
 // cách áp migration đã commit, không cần subprocess — nên lý do đó hết hiệu lực, và phần duy nhất có
 // thể lấy lại dữ liệu học của người dùng vẫn đang không được gác.
 //
-// `AGENTS.md` gọi `lib/import.ts` là NGOẠI LỆ duy nhất được ghi `SrsState` trực tiếp: nó restore
+// `CLAUDE.md` gọi `lib/import.ts` là NGOẠI LỆ duy nhất được ghi `SrsState` trực tiếp: nó restore
 // nguyên văn state đã lưu, không tính lại. Một ngoại lệ như vậy phải có lưới đúng hơn mức trung bình,
 // không phải thấp hơn.
 
