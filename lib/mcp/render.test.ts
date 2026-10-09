@@ -1,9 +1,5 @@
-// harness-allow-test-shrink — 2026-08-11: một ca bị XOÁ vì hành vi nó chốt đã không còn tồn tại.
-// `renderScaffold` từng có nhánh `availableInSharedLibrary` dạy Claude gọi `fork_shared_items`; trạng
-// thái đó chưa bao giờ được `classifyExtraPatterns` gán, và tool đó không còn được đăng ký. Nhánh
-// `newToLearner` — nhánh duy nhất còn lại — vẫn có ca gác riêng ngay phía trên chỗ đã xoá.
 import { describe, expect, it } from 'vitest';
-import type { Suggestion } from '@/lib/coach';
+import type { Suggestion } from '@/lib/session/coach';
 import {
   renderConsentGuard,
   renderDueBatch,
@@ -16,9 +12,9 @@ import {
 } from '@/lib/mcp/render';
 import { MODE_DISPATCH, TEACH_BACK_PROTOCOL, TEACH_BACK_SESSION } from '@/lib/mcp/prompts';
 import { EXERCISE_TYPE } from '@/lib/mcp/tool-kit';
-import { DEFAULT_SETTINGS } from '@/lib/settings-schema';
-import type { DueBatch, SubmitReviewResult } from '@/lib/practice';
-import type { LibraryHealth, LibraryHealthResult } from '@/lib/library-health';
+import { DEFAULT_SETTINGS } from '@/lib/settings/schema';
+import type { DueBatch, SubmitReviewResult } from '@/lib/library/practice';
+import type { LibraryHealth, LibraryHealthResult } from '@/lib/library/health';
 
 const NOW = new Date('2026-07-06T10:00:00Z');
 
@@ -41,6 +37,7 @@ const baseBatch: DueBatch = {
   newBeyondLevels: 0,
   nextDueAt: null,
   recentContexts: {},
+  libraryEmpty: false,
 };
 
 const plainItem = {
@@ -51,6 +48,19 @@ const plainItem = {
   enrichment: null,
   lapses: 0,
 };
+
+// The default TARGET row six of these tests only ever needed as scaffolding, so the assertion in
+// each is not buried under ten lines of unchanging literal.
+type BatchItem = DueBatch['items'][number];
+const targetItem = (over: Partial<BatchItem> = {}): BatchItem => ({
+  ...plainItem,
+  id: 'a',
+  expression: '〜ばかりに',
+  meaningVi: 'chỉ vì',
+  role: 'TARGET',
+  focusHit: false,
+  ...over,
+});
 
 describe('renderGradeResult', () => {
   const result: SubmitReviewResult = {
@@ -96,11 +106,6 @@ describe('renderGradeResult', () => {
     expect(md).toContain('5. Kết thúc buổi');
   });
 
-  // Ca này ĐỔI CHIỀU ngày 2026-08-11. Trước đó nó khoá hành vi "thiếu điểm thì BỎ dòng đi", và đúng
-  // hành vi ấy là một nửa của lỗi người học báo đi báo lại: điểm mất khỏi chat, đồng thời mất khỏi thẻ,
-  // nên không có chỗ nào nói ra rằng lượt này không có điểm. `score` giờ bắt buộc ở biên
-  // (`lib/mcp/tools/practice.ts`) nên null không còn tới được đây từ một lượt mới — dòng vẫn phải có
-  // chữ, vì im lặng là thứ người học đọc thành "app không chấm".
   it('luôn có dòng Điểm trong khối chép nguyên văn, kể cả khi không có điểm', () => {
     expect(renderGradeResult(result, NOW)).toContain('**Điểm:** 85/100');
     expect(renderGradeResult({ ...result, score: null }, NOW)).toContain('**Điểm:** chưa có');
@@ -120,11 +125,6 @@ describe('renderGradeResult', () => {
     expect(md).toContain('1. Câu tiếp'); // the numbered menu is still intact
   });
 
-  // "Đã sạch hàng đợi" is a claim about the DAY, and `dueNow` only knows about this second. Measured in
-  // the lab 2026-08-12 on a fresh account: after sentence 2 the line read "câu **2/10** — đã sạch hàng
-  // đợi", while three just-learned patterns sat in learning steps 5-10 minutes out. Half the line said
-  // eight sentences to go, the other half said there was nothing to do, and it is the line the learner
-  // reads after EVERY turn.
   it('an empty-right-now queue with work coming back says WHEN, not "đã sạch"', () => {
     const md = renderGradeResult(
       {
@@ -143,9 +143,6 @@ describe('renderGradeResult', () => {
     expect(md).toContain('đã sạch hàng đợi');
   });
 
-  // A QUIZ turn is not a translation. Same defect as the teach-back one fixed on 2026-07-27, one
-  // exercise type over — it survived because only teach-back had been given a name. Found in the lab
-  // 2026-08-12 driving a real quiz over MCP.
   it('a QUIZ turn is labelled as a choice, with an answer key and no rewrite offer', () => {
     const md = renderGradeResult(
       {
@@ -164,15 +161,10 @@ describe('renderGradeResult', () => {
     expect(md).not.toContain('Đề (Nhật → Việt)');
     expect(md).not.toContain('Bạn dịch');
     expect(md).not.toContain('**Tham khảo:**');
-    // Nothing to retype when the answer was a letter — the menu must not send them looking for a
-    // sentence the turn never asked them to write.
     expect(md).not.toContain('Gõ lại bản dịch');
     expect(md).toContain('1. Câu tiếp'); // the numbered menu is still intact
   });
 
-  // A CONVERSATION turn: the learner composed an utterance from a situation. Third instance of the same
-  // defect (after TEACH_BACK 2026-07-27 and QUIZ), found in the lab 2026-08-12 — the scenario brief was
-  // labelled "Đề (Việt → Nhật)" and their own utterance "Bạn dịch".
   it('a CONVERSATION turn is labelled as a situation and a spoken answer', () => {
     const md = renderGradeResult(
       {
@@ -194,13 +186,7 @@ describe('renderGradeResult', () => {
     expect(md).toContain('Nói lại câu đã sửa'); // a retry here is speaking again, not re-translating
   });
 
-  // THE STRUCTURAL GUARD, and the reason this stopped being a chain of flags. Each of the three fixes
-  // above added one more `isX`, which is exactly why there was a third one to find: a flag has to be
-  // remembered. Walking the enum means a NEW exercise type arrives with its labels chosen on purpose —
-  // either an entry in TURN_LABELS, or a conscious decision that it really is a translation.
   it('every exercise type renders labels that match what the learner actually did', () => {
-    // The types on which the learner genuinely TRANSLATES a given source — the translation defaults are
-    // right for these, including the two scaffolded rungs (still translating, just with support).
     const translations = new Set([
       'TRANSLATION',
       'CLOZE',
@@ -235,13 +221,6 @@ describe('verbatimEnvelope', () => {
     expect(out.endsWith('### Kết quả lượt này\nnội dung')).toBe(true);
   });
 
-  // THE RULE MUST BE TRUE OF THE BLOCK IT WRAPS. It was a fixed string naming the "Tiếp theo?" menu as
-  // the end boundary and "Bản dịch tham khảo" as a line not to drop — but only `renderGradeResult`
-  // produces that menu, and this envelope also wraps "Tiến độ", "Tra cứu" and "Điểm yếu". Measured
-  // 2026-08-12: on three of its four blocks it pointed at a terminator that does not exist and defended
-  // two lines that were never there. This is the instruction the entire display contract rests on (the
-  // missing-score bug lived behind it for a week), and one that is false on most of its uses is one the
-  // reader learns to skim on the use where it matters.
   it('names the menu as the boundary only when the block HAS a menu', () => {
     const withMenu = verbatimEnvelope('### Kết quả lượt này\n**Tiếp theo?** 1. Câu tiếp');
     expect(withMenu).toContain('đến HẾT DÒNG MENU "Tiếp theo?"');
@@ -250,7 +229,6 @@ describe('verbatimEnvelope', () => {
     const withoutMenu = verbatimEnvelope('### Tiến độ\n- **Đến hạn bây giờ:** 0');
     expect(withoutMenu).toContain('đến hết khối');
     expect(withoutMenu).not.toContain('Tiếp theo?');
-    // …and it defends nothing it cannot see.
     expect(withoutMenu).not.toContain('kể cả');
   });
 
@@ -264,7 +242,6 @@ describe('verbatimEnvelope', () => {
       expect(out, `${label} must be defended by name`).toContain(`(kể cả "${label}"`);
       for (const other of others) expect(out).not.toContain(`"${other}"`);
     }
-    // The old string named a label the block never prints — that is the shape of the bug.
     expect(verbatimEnvelope('### Kết quả lượt này\n**Tham khảo:** x')).not.toContain(
       'Bản dịch tham khảo',
     );
@@ -289,6 +266,17 @@ describe('renderWeakReport', () => {
 });
 
 describe('renderDueBatch', () => {
+  it('an EMPTY LIBRARY is reported as "nothing imported yet", never as a finished day', () => {
+    const md = renderDueBatch({ ...baseBatch, libraryEmpty: true });
+    expect(md).toContain('EMPTY');
+    expect(md).toContain('import_grammar');
+    expect(
+      md,
+      'the first /practice on a fresh account must not congratulate the learner for clearing a ' +
+        'library that has nothing in it',
+    ).not.toContain('Nothing else is queued today');
+  });
+
   it('empty batch mentions the next due time', () => {
     const md = renderDueBatch({ ...baseBatch, nextDueAt: new Date(Date.now() + 10 * 60 * 1000) });
     expect(md).toContain('phút nữa');
@@ -330,8 +318,6 @@ describe('renderDueBatch', () => {
   });
 
   it('a focus that served NO requested pattern says so instead of claiming the sentence revolves around it', () => {
-    // The 2026-07-26 defect: the sheet asserted "the sentence MUST revolve around the FOCUS entries"
-    // while listing only fillers, so the tutor composed about an absent pattern — no rating, no FSRS.
     const md = renderDueBatch({
       ...baseBatch,
       focus: { patterns: ['かねる'], matched: 1, unmatchedPatterns: [], suspendedPatterns: [] },
@@ -354,8 +340,6 @@ describe('renderDueBatch', () => {
   });
 
   it('a spent daily quota is stated with its fix instead of being silently dropped', () => {
-    // limits.* were computed since the scheduler was written and read by NO consumer — the learner
-    // was never told why the pattern they asked for did not arrive.
     const md = renderDueBatch({
       ...baseBatch,
       limits: { ...baseBatch.limits, newGrammarLimitReached: true },
@@ -384,18 +368,6 @@ describe('renderDueBatch', () => {
     expect(md).not.toContain('HELD BACK');
   });
 
-  // THE SHEET MAY NEVER ASK FOR MORE PATTERNS THAN IT HANDS OVER.
-  //
-  // Measured in the lab 2026-08-12, driving a real session over MCP on a fresh N5 account: every one
-  // of the first three sentences got a sheet reading "weave in **3** grammar pattern(s)" above a list
-  // of exactly ONE, because `maxNewPerSentence` had held the others back. The protocol simultaneously
-  // tells Claude "the number of grammar patterns woven in = exactly the number of items in the batch"
-  // and "NEVER compose around a pattern that is not listed in the batch" — so this line was handing it
-  // a third, contradicting number for the same decision, on the hottest path in the app.
-  //
-  // Both directions are pinned: the count must FOLLOW the batch, and it must not gain a spurious
-  // explanation when the batch is already full. VOCAB riders are excluded because they are graded but
-  // sit outside the grammar-pattern budget.
   it('the pattern count follows the BATCH, not the sentenceSize setting', () => {
     const one = renderDueBatch({
       ...baseBatch,
@@ -404,7 +376,6 @@ describe('renderDueBatch', () => {
     });
     expect(one).toContain('weave in **1** grammar pattern(s)');
     expect(one).not.toContain('weave in **3**');
-    // …and it says WHY the two numbers differ, plus what to do about the leftover length.
     expect(one).toContain('sentenceSize "medium" asks for 3');
     expect(one).toContain('LOWER-level SCAFFOLDING');
     expect(one).toContain('HELD BACK line below names the cap');
@@ -436,14 +407,6 @@ describe('renderDueBatch', () => {
     expect(md).not.toContain('asks for');
   });
 
-  // THE SHEET MUST NOT ARGUE WITH THE PROTOCOL OF THE MODE IT IS SERVING.
-  //
-  // Measured 2026-08-12 on a real teach-back turn: the sheet shipped `↳ **REQUIRED**: pass
-  // suggestedRuby` — which TEACH_BACK_PROTOCOL forbids (it stages sourceRuby) — and `Direction:
-  // **VI_JA**`, while that protocol ALWAYS stages JA_VI. Not noise: a contradiction, in the strongest
-  // word the sheet has, arriving at the moment of the decision while the protocol arrived at the start
-  // of the session. TEACH_BACK_PROTOCOL was spending a paragraph telling Claude to ignore half of this
-  // block — prose patching a data problem.
   describe('the composition sheet follows the mode it is serving', () => {
     it('a TEACH-BACK batch carries no sentence spec at all', () => {
       const md = renderDueBatch({
@@ -459,26 +422,19 @@ describe('renderDueBatch', () => {
       });
       expect(md).toContain('TEACH-BACK TURN');
       expect(md).toContain('direction: "JA_VI"');
-      // None of the composing spec, and above all not the field the protocol forbids.
       expect(md).not.toContain('suggestedRuby');
       expect(md).not.toContain('Direction: **VI_JA**');
       expect(md).not.toContain('source length');
       expect(md).not.toContain('weave in');
       expect(md).not.toContain('STRUCTURE (difficulty');
       expect(md).not.toContain('Preferred topics');
-      // A VOCAB rider may still ride along; the protocol says ignore it, so the sheet must not spend a
-      // paragraph telling Claude to weave it into a sentence that does not exist.
       expect(md).not.toContain('USE them NATURALLY in the');
-      // What it DOES keep: the item, its enrichment, and the weak spots — reworded for marking.
       expect(md).toContain('〜ばかりに');
       expect(md).toContain('aim your MARKING at these');
       expect(md).not.toContain('design the sentence to TOUCH');
     });
 
     it('a CONVERSATION batch is pinned to the direction its protocol stages', () => {
-      // The half of turns where this bit: `batch.direction` alternates, CONVERSATION_PROTOCOL always
-      // stages VI_JA — so on a JA_VI turn the sheet named a direction the tutor was told never to use,
-      // and asked for the wrong ruby field with it.
       const md = renderDueBatch({
         ...baseBatch,
         forExerciseType: 'CONVERSATION',
@@ -507,16 +463,7 @@ describe('renderDueBatch', () => {
     const md = renderDueBatch({
       ...baseBatch,
       focus: { weak: true, matched: 2, unmatchedPatterns: [], suspendedPatterns: [] },
-      items: [
-        {
-          ...plainItem,
-          id: 'a',
-          expression: '〜ばかりに',
-          meaningVi: 'chỉ vì',
-          role: 'TARGET',
-          focusHit: true,
-        },
-      ],
+      items: [targetItem({ focusHit: true })],
     });
     expect(md).toContain('WEAK-SPOT DRILL');
     expect(md).toContain('the server prioritised 2 pattern(s)');
@@ -527,16 +474,7 @@ describe('renderDueBatch', () => {
     const md = renderDueBatch({
       ...baseBatch,
       focus: { weak: true, matched: 0, unmatchedPatterns: [], suspendedPatterns: [] },
-      items: [
-        {
-          ...plainItem,
-          id: 'a',
-          expression: '〜ばかりに',
-          meaningVi: 'chỉ vì',
-          role: 'TARGET',
-          focusHit: false,
-        },
-      ],
+      items: [targetItem()],
     });
     expect(md).toContain('WEAK-SPOT DRILL');
     expect(md).toContain('not enough data yet');
@@ -555,16 +493,7 @@ describe('renderDueBatch', () => {
     const md = renderDueBatch({
       ...baseBatch,
       settings: { ...DEFAULT_SETTINGS, promptModality: 'speech-only' },
-      items: [
-        {
-          ...plainItem,
-          id: 'a',
-          expression: '〜ばかりに',
-          meaningVi: 'chỉ vì',
-          role: 'TARGET',
-          focusHit: false,
-        },
-      ],
+      items: [targetItem()],
     });
     expect(md).toContain('speech-only');
     expect(md).toContain('SPEAK the exercise sentence aloud');
@@ -574,16 +503,7 @@ describe('renderDueBatch', () => {
   it('default text modality adds no audio reminder to the sheet', () => {
     const md = renderDueBatch({
       ...baseBatch,
-      items: [
-        {
-          ...plainItem,
-          id: 'a',
-          expression: '〜ばかりに',
-          meaningVi: 'chỉ vì',
-          role: 'TARGET',
-          focusHit: false,
-        },
-      ],
+      items: [targetItem()],
     });
     expect(md).not.toContain('RA ĐỀ');
   });
@@ -593,16 +513,7 @@ describe('renderDueBatch', () => {
       ...baseBatch,
       direction: 'JA_VI',
       settings: { ...DEFAULT_SETTINGS, furiganaMode: 'claude' },
-      items: [
-        {
-          ...plainItem,
-          id: 'a',
-          expression: '〜ばかりに',
-          meaningVi: 'chỉ vì',
-          role: 'TARGET',
-          focusHit: false,
-        },
-      ],
+      items: [targetItem()],
     });
     expect(md).toContain('FURIGANA (Claude renders it)');
     expect(md).toContain('（かな）');
@@ -614,16 +525,7 @@ describe('renderDueBatch', () => {
       ...baseBatch,
       direction: 'JA_VI',
       settings: { ...DEFAULT_SETTINGS, furiganaMode: 'app' },
-      items: [
-        {
-          ...plainItem,
-          id: 'a',
-          expression: '〜ばかりに',
-          meaningVi: 'chỉ vì',
-          role: 'TARGET',
-          focusHit: false,
-        },
-      ],
+      items: [targetItem()],
     });
     expect(md).toContain('Claude does NOT insert it');
     expect(md).toContain('sourceRuby');
@@ -633,19 +535,9 @@ describe('renderDueBatch', () => {
     const md = renderDueBatch({
       ...baseBatch,
       direction: 'VI_JA',
-      items: [
-        {
-          ...plainItem,
-          id: 'a',
-          expression: '〜ばかりに',
-          meaningVi: 'chỉ vì',
-          role: 'TARGET',
-          focusHit: false,
-        },
-      ],
+      items: [targetItem()],
     });
     expect(md).not.toContain('FURIGANA');
-    // ...but the JA answer still needs hover-furigana → suggestedRuby is requested for VI_JA.
     expect(md).toContain('suggestedRuby');
   });
 
@@ -670,12 +562,9 @@ describe('renderDueBatch', () => {
     expect(md).toContain('SUSPENDED, not missing');
     expect(md).toContain('it-9');
     expect(md).toContain('set_item_suspended');
-    // The whole point: the tutor must NOT be told to create it again.
     expect(md).toContain('Do NOT call add_grammar');
     expect(md).not.toContain('NOT in the library: 「ばかりに」');
 
-    // The SAME state on the other code path: the batch is NOT empty (other patterns filled it), so the
-    // message comes from the composition sheet instead of the empty-batch line. Both must say it.
     const sheet = renderDueBatch({
       ...baseBatch,
       focus: {
@@ -692,10 +581,6 @@ describe('renderDueBatch', () => {
     expect(sheet).toContain('set_item_suspended');
   });
 
-  // Eval Scenario G (2026-07-28): the learner-model digest rode this sheet once per SENTENCE to aim
-  // the exercise, and measurably aimed nothing — 0 of 6 treatment trials made the named confusion
-  // decide the answer, against 1 of 6 CONTROLS. It now renders once per session on `get_stats`. A
-  // sheet is the most expensive place in this app to put text, so the absence gets a test.
   it('carries NO learner-model digest — that block is session-open only', () => {
     const md = renderDueBatch({
       ...baseBatch,
@@ -716,7 +601,6 @@ describe('renderDueBatch', () => {
   it('whole-level focus: vocab follows the focus level (not settings.grammarLevels) + scaffolding note', () => {
     const md = renderDueBatch({
       ...baseBatch,
-      // Study set still N5, but the session focuses N3 — vocab must aim N3, not N5.
       settings: { ...DEFAULT_SETTINGS, grammarLevels: ['N5'] },
       focus: { levels: ['N3'], matched: 2, unmatchedPatterns: [], suspendedPatterns: [] },
       items: [
@@ -789,15 +673,6 @@ describe('renderDueBatch', () => {
     expect(md).toContain('Do NOT conclude');
   });
 
-  // The other half, and it is the half that was wrong. `newBeyondLevels > 0` says nothing about
-  // whether the learner is out of material at the level they STUDY, so on its own it must not send
-  // Claude to offer "widen your levels" or "import grammar at your level".
-  //
-  // Measured in the lab 2026-08-12 on a fresh N5 account: 12 N5 patterns, 3 learned, the batch emptied
-  // by settings.dailyNewGrammar with NINE untouched N5 patterns left — and the sheet asked the tutor to
-  // push a day-one N5 learner up to N4, or to import more of the very level they already had plenty
-  // of. Neither offer could help; the fix that would (raise the daily cap, or wait out the learning
-  // step) was already on the HELD BACK line right beside it.
   it('does NOT offer to widen levels while new patterns remain AT the studied level', () => {
     const md = renderDueBatch({
       ...baseBatch,
@@ -808,7 +683,6 @@ describe('renderDueBatch', () => {
     });
     expect(md).not.toContain('unlearned NEW patterns');
     expect(md).not.toContain('widen levels');
-    // The actionable reason is still there — that is what should carry the turn.
     expect(md).toContain('HELD BACK');
     expect(md).toContain('settings.dailyNewGrammar');
   });
@@ -828,7 +702,6 @@ describe('renderDueBatch', () => {
           isNew: true,
           role: 'TARGET',
           lapses: 5,
-          // A TutorCard (already trimmed by lib/practice.ts), not the stored card.
           enrichment: {
             structure: [],
             usage: 'Mệnh đề thường + けど',
@@ -841,12 +714,8 @@ describe('renderDueBatch', () => {
       ],
     });
     expect(md).toContain('NEVER show this to the user');
-    // Every prompt-enforced knob must be ON the sheet (vocab target, char length, patterns, furigana).
     expect(md).toContain('VOCABULARY: **target N5 exactly**');
     expect(md).toContain('~32 characters (Japanese');
-    // ONE item in the batch ⇒ the sheet says ONE, even though sentenceSize "medium" asks for 3. This
-    // line used to print the SETTING (3) above a list of one, which is the number Claude then tried to
-    // hit — see the pair of tests below.
     expect(md).toContain('weave in **1** grammar pattern(s)');
     expect(md).toContain('FURIGANA (Claude does NOT insert it'); // default mode 'app' → Claude doesn't inline
     expect(md).toContain('〜けど');
@@ -898,11 +767,8 @@ describe('renderLibraryCheck', () => {
   it('NEVER renders the card content — that is what enforces "reference, not transcript"', async () => {
     const { renderLibraryCheck } = await import('@/lib/mcp/render');
     const md = renderLibraryCheck({ ...baseCheck, mine: [mineEntry] });
-    // The single most important assertion in this file: if the card were rendered, the shortest path
-    // for any model is to paste the block and stop, and the learner gets a transcript.
     expect(md).not.toContain('MOT-CAU-GIAI-THICH-RAT-DAC-TRUNG-KHONG-DUOC-LO-RA');
     expect(md).not.toContain('動詞辞書形');
-    // But the STATUS is there.
     expect(md).toContain('〜ばかりに');
     expect(md).toContain('thẻ đủ');
   });
@@ -1010,11 +876,6 @@ describe('renderStats — the session-open block stays a single control surface'
     expect(md).not.toContain('Gợi ý dọn kho');
   });
 
-  // The session OPENER must carry the day's plan, not just the day's tally. Both numbers matter and
-  // for different reasons: the goal is what "done" means, and the daily new-pattern cap is what decides
-  // whether the goal is reachable at all. On stock defaults they disagree (goal 10, cap 3 — measured in
-  // the lab 2026-08-12 to top out near five sentences on day one), and this line is the only place the
-  // learner can see that BEFORE spending the day discovering it.
   it('carries the daily goal and the new-pattern cap, not just the tally', () => {
     const md = renderStats({
       ...baseStats,
@@ -1028,8 +889,6 @@ describe('renderStats — the session-open block stays a single control surface'
     const md = renderStats(baseStats, health());
     expect(md).toContain('**Ghi nhớ thực tế:** 72% (mục tiêu 90%)');
     expect(md).toContain('**Gợi ý dọn kho:** Dọn 7 thẻ chứ?');
-    // The second offer must NOT appear, and nothing here may be numbered — MODE_DISPATCH asks a
-    // NUMBERED focus menu right after this block, so "1" would become ambiguous.
     expect(md).not.toContain('Ẩn mẫu dưới cấp');
     expect(md).not.toMatch(/^\d+\. /m);
   });
@@ -1053,22 +912,6 @@ describe('renderStats — the session-open block stays a single control surface'
   });
 });
 
-/**
- * TEACH-BACK HARVEST (plan step 7.2/7.3) — the note the server appends after a graded teach-back turn.
- *
- * These are COUPLING tests, not formatting tests. The note only works if the protocol tells Claude to
- * watch for it: `TEACH_BACK_PROTOCOL` step 7 quotes the marker verbatim, so a renamed marker on one
- * side and not the other means Claude waits for a heading that never arrives and the whole harvest
- * loop goes silent — with nothing failing. That is exactly the kind of drift a unit test cannot see
- * and a live session finds three weeks later.
- */
-/**
- * REGRESSION GUARD for a defect the unit tests could not see and driving the lab found immediately
- * (2026-07-27): the result block labelled EVERY turn from `direction` alone, so a teach-back turn
- * showed the learner "Đề (Nhật → Việt)" over the pattern and called their EXPLANATION "Bạn dịch".
- * This block is the one thing Claude must copy verbatim — a wrong label here is the app telling the
- * learner they did something they did not do.
- */
 describe('the result block names what the learner actually DID', () => {
   const teachBackResult: SubmitReviewResult = {
     ratingNotes: [],
@@ -1150,8 +993,6 @@ describe('renderTeachBackHarvest — coupled to the protocol that reads it', () 
   });
 
   it('is a plain instruction, never a numbered option (one control surface per message)', () => {
-    // The verbatim result block right above it ends with the numbered "Tiếp theo?" menu; a numbered
-    // line here would make the learner's "1" ambiguous.
     expect(renderTeachBackHarvest(harvest)).not.toMatch(/^\d+\. /m);
   });
 
@@ -1159,7 +1000,6 @@ describe('renderTeachBackHarvest — coupled to the protocol that reads it', () 
     const note = renderTeachBackHarvest(harvest)!;
     expect(note).toMatch(/WAIT for a yes/);
     expect(note).toMatch(/never rewrite it into your own voice/);
-    // The whole point of the harvest — losing this sentence loses the reason the feature exists.
     expect(TEACH_BACK_PROTOCOL).toMatch(/do NOT rewrite it into your voice/);
   });
 });
@@ -1176,9 +1016,6 @@ describe('the teach-back mode is reachable and self-consistent', () => {
   });
 
   it('stages JA_VI, so history never reads a Vietnamese explanation aloud in Japanese', () => {
-    // History branches on DIRECTION (components/history/history-cards.tsx): under VI_JA the answer is
-    // treated as Japanese content and handed to SpokenLine + Japanese TTS. The plan wrote VI_JA; this
-    // pins the correction.
     expect(TEACH_BACK_PROTOCOL).toContain('direction: "JA_VI"');
     expect(TEACH_BACK_PROTOCOL).not.toContain('direction: "VI_JA"');
   });
@@ -1190,15 +1027,6 @@ describe('the teach-back mode is reachable and self-consistent', () => {
   });
 });
 
-/**
- * CONSENT GUARD — the gate for the one eval failure that could damage the learner's library.
- *
- * Eval Scenario I, 2026-07-27: 1 of 3 trials called `patch_enrichment` in the SAME message as the
- * offer, with no yes, and then told the learner it had. The prohibition already existed in the
- * `check_library` description — as a NEGATION triggered by an ABSENT field (`auto` unset), sitting next
- * to a positive imperative for the exception. This asserts the fix's actual mechanism: both states are
- * PRESENT and POSITIVE, and each names the exact tool.
- */
 describe('renderConsentGuard — a write needs a yes, and absence is not a signal', () => {
   const offer = (over: Partial<Suggestion> = {}): Suggestion => ({
     code: 'MINED_CONTRAST',
@@ -1214,10 +1042,6 @@ describe('renderConsentGuard — a write needs a yes, and absence is not a signa
     expect(renderConsentGuard([])).toBeNull();
   });
 
-  // An offer the server cannot pin to ONE tool must hold BOTH back. Found in the lab 2026-08-12: the
-  // ADD_MISSING offer for a looked-up word named `add_grammar` while the write Claude would actually
-  // reach for was `add_vocab` — so the guard printed, looked reassuring, and covered the wrong tool. A
-  // consent guard with a hole in it reads exactly like one without.
   it('holds back the second candidate tool too, not just the first', () => {
     const note = renderConsentGuard([
       offer({ code: 'ADD_MISSING', class: 'enable', tool: 'add_vocab', alsoTool: 'add_grammar' }),
@@ -1231,7 +1055,6 @@ describe('renderConsentGuard — a write needs a yes, and absence is not a signa
     expect(note).toContain('patch_enrichment');
     expect(note).toMatch(/CONSENT/);
     expect(note).toMatch(/STOP/);
-    // The observed failure was reporting the change as done. Forbid that in words.
     expect(note).toMatch(/as if it happened/);
   });
 
@@ -1239,14 +1062,10 @@ describe('renderConsentGuard — a write needs a yes, and absence is not a signa
     const note = renderConsentGuard([offer({ auto: true })])!;
     expect(note).toContain('PRE-AUTHORISED');
     expect(note).toContain('patch_enrichment');
-    // With every offer pre-authorised there is nothing to hold back, so no prohibition is emitted.
     expect(note).not.toContain('CONSENT:');
   });
 
   it('emits BOTH halves when a result mixes them, so neither is inferred from the other absence', () => {
-    // Cặp tool đứng đây từng là `fork_shared_items` (2026-08-11: tool đó không còn được đăng ký, và mã
-    // `FORK_SHARED` đã rời union). Đổi sang một tool CÓ THẬT — điều đang kiểm là "một result trộn hai
-    // nửa thì cả hai nửa phải được in ra", không phụ thuộc tool nào.
     const note = renderConsentGuard([
       offer(),
       offer({ code: 'ADD_MISSING', tool: 'add_grammar', auto: true }),
@@ -1277,8 +1096,6 @@ describe('renderScaffold — declared scaffolding', () => {
   };
 
   it('stays SILENT when everything declared is already known and in range', () => {
-    // A note that fires on every turn is a note that gets skipped. It competes for attention with
-    // the exercise the learner is waiting for, so a quiet turn must stay quiet.
     expect(renderScaffold([known])).toBeNull();
     expect(renderScaffold([])).toBeNull();
   });
@@ -1293,14 +1110,7 @@ describe('renderScaffold — declared scaffolding', () => {
     expect(md).toContain('WAIT');
   });
 
-  // Ca "routes a shared-library pattern to fork_shared_items with its real id" đã bị xoá 2026-08-11:
-  // `ScaffoldStatus.availableInSharedLibrary` không còn tồn tại, `classifyExtraPatterns` chưa bao giờ
-  // gán nó, và `fork_shared_items` không còn được đăng ký. Ca `newToLearner` ngay trên vẫn gác nhánh
-  // duy nhất còn lại.
-
   it('flags scaffolding above the drilled level even when the pattern is KNOWN', () => {
-    // The level rule is about difficulty, not about ownership: a pattern the learner owns can still
-    // be too hard to use as free material in a sentence drilling something easier.
     const md = renderScaffold([
       { ...known, expression: '〜ざるを得ない', level: 'N2', aboveDrilledLevel: true },
     ]);
@@ -1339,12 +1149,10 @@ describe('renderLibraryHealth — vocabulary cards are their own line (2026-08-1
     expect(md).toContain('**Thẻ từ vựng:** 3/12 thẻ đạt');
     expect(md).toContain('9 chưa đạt');
     expect(md).toContain('từ đồng nghĩa/trái nghĩa');
-    // The grammar line must stay separate and stay labelled: two bars, two numbers, never merged.
     expect(md).toContain('**Thẻ ngữ pháp:**');
   });
 
   it('a library with NO words prints no vocab line at all', () => {
-    // A row of zeros about a library the learner does not have reads as a chore they have not done.
     expect(renderLibraryHealth(health())).not.toContain('Thẻ từ vựng');
   });
 

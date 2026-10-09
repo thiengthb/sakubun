@@ -1,9 +1,8 @@
 import { z } from 'zod';
-import { MAX_IMPORT_CANDIDATES, previewImport } from '@/lib/import-preview';
-import { addItems, GRAMMAR_KIND, VOCAB_CAPTURE_REASONS, VOCAB_KIND } from '@/lib/practice';
+import { MAX_IMPORT_CANDIDATES, previewImport } from '@/lib/transfer/preview';
+import { addItems, GRAMMAR_KIND, VOCAB_CAPTURE_REASONS, VOCAB_KIND } from '@/lib/library/practice';
 import { guard, LEVEL, ok, type McpServer } from '@/lib/mcp/tool-kit';
 
-/** The two kinds an import candidate can be, as the tool surface names them. */
 const IMPORT_KIND = z
   .enum([GRAMMAR_KIND, VOCAB_KIND])
   .describe('GRAMMAR for a pattern that gets scheduled and drilled · VOCAB for a single word.');
@@ -26,7 +25,6 @@ const grammarInputSchema = z.object({
 });
 
 export function registerContentTools(server: McpServer) {
-  // ---------------- content ----------------
   server.tool(
     'preview_import',
     'The learner PASTED real Japanese material — a work email, a chat log, a manga page, a mock-exam ' +
@@ -170,8 +168,4 @@ export function registerContentTools(server: McpServer) {
     ),
   );
 
-  // NOTE: add_vocab_to_anki (AnkiConnect push) was removed 2026-07-23. It ran server-side and could
-  // only reach the Anki on the container's HOST, so on a multi-user deploy it never hit the member's
-  // own Anki. Vocabulary now leaves via a downloadable .apkg — Settings -> Dữ liệu -> "Tải bộ thẻ
-  // Anki" (app/api/export/anki), built by lib/anki-apkg.ts.
 }

@@ -1,14 +1,9 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
-import { Explain } from '@/components/shared/explain';
-import { cn } from '@/lib/utils';
+import { Explain } from '@/components/common/explain';
+import { cn } from '@/lib/core/utils';
 
-/**
- * SMART single-line truncate: only shows the tooltip when the text actually overflows — no
- * pointless tooltip for short text. The tooltip shows the full content right below the cursor
- * (default side "bottom"). Overflow is measured via scrollWidth + ResizeObserver.
- */
 export function Truncate({
   children,
   full,
@@ -16,7 +11,6 @@ export function Truncate({
   side = 'bottom',
 }: {
   children: ReactNode;
-  /** full content shown in the tooltip; defaults to children (use when children is a string) */
   full?: ReactNode;
   className?: string;
   side?: 'top' | 'right' | 'bottom' | 'left';

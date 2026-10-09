@@ -2,8 +2,8 @@
 
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
-import { parseMaziiExcel } from '@/lib/excel-import';
-import type { ParseResult } from '@/lib/import-parse';
+import { parseMaziiExcel } from '@/lib/transfer/excel';
+import type { ParseResult } from '@/lib/transfer/parse';
 import {
   addItems,
   deleteItem,
@@ -16,9 +16,9 @@ import {
   setSentenceStarred,
   updateItem,
   VOCAB_KIND,
-} from '@/lib/practice';
-import { JLPT_LEVELS, settingsPatchSchema, type Settings } from '@/lib/settings-schema';
-import { getSessionUserId } from '@/lib/current-user';
+} from '@/lib/library/practice';
+import { JLPT_LEVELS, settingsPatchSchema, type Settings } from '@/lib/settings/schema';
+import { getSessionUserId } from '@/lib/auth/current-user';
 import {
   GROUP_KINDS,
   addItemsToGroup,
@@ -26,31 +26,19 @@ import {
   deleteGroup,
   removeItemsFromGroup,
   updateGroup,
-} from '@/lib/groups';
-import { type ActionResult, cleanIds, err, ok, parseInput } from '@/lib/action-result';
+} from '@/lib/library/groups';
+import { type ActionResult, cleanIds, err, ok, parseInput } from '@/lib/core/action-result';
 
-// Re-exported so existing importers (`@/app/actions`) and client components keep one import site.
-export type { ActionResult } from '@/lib/action-result';
-
-// The resources tables + the dashboard both read item data, so a write to either revalidates both.
-// Kept local (not in lib/action-result) because it needs next/cache and the path set is app-specific.
 function revalidateResources(): void {
   revalidatePath('/resources');
   revalidatePath('/');
 }
 
 export async function saveSettingsAction(patch: unknown): Promise<ActionResult<Settings>> {
-  // Auth gate: a Server Action is a public HTTP endpoint — bounce if not signed in.
   await getSessionUserId();
   const parsed = parseInput(settingsPatchSchema, patch);
   if (!parsed.ok) return parsed;
   const settings = await saveSettings(parsed.data);
-  // Deliberately NO revalidatePath here. In Next 16 ANY revalidatePath/refresh in an action re-renders
-  // the CURRENT route server-side in the same response (docs: guides/server-actions.md) — even
-  // revalidatePath('/'), not just '/settings'. That mid-save re-render of the open form is what reverted
-  // the just-edited values and left Save stuck enabled. Both this page and the dashboard are
-  // `force-dynamic` (refetched on every navigation), so revalidation buys nothing here; the client
-  // already holds the saved values in state (settings-form adopts the returned `data` as its baseline).
   return ok(settings);
 }
 
@@ -67,18 +55,14 @@ export interface ImportSummary {
   skipped: { expression: string; reason: string }[];
 }
 
-// The two resource stores share one writer (addItems) — the client passes which store it is adding to.
-// `undefined` (or 'grammar') falls through to addItems' GRAMMAR_KIND default; only VOCAB is remapped.
 const resourceKindSchema = z.enum(['grammar', 'vocab']).optional();
 type ResourceKind = z.infer<typeof resourceKindSchema>;
 const resolveKind = (kind: ResourceKind): string | undefined =>
   kind === 'vocab' ? VOCAB_KIND : undefined;
 
-// 10 MB cap — a Mazii export is a few hundred KB; anything bigger is the wrong file.
 const MAX_EXCEL_BYTES = 10 * 1024 * 1024;
 
 export async function parseExcelAction(formData: FormData): Promise<ActionResult<ParseResult>> {
-  // Auth gate: a Server Action is a public HTTP endpoint — bounce if not signed in.
   await getSessionUserId();
   const file = formData.get('file');
   if (!(file instanceof File)) return err('Chưa chọn file');
@@ -97,13 +81,10 @@ export async function parseExcelAction(formData: FormData): Promise<ActionResult
   }
 }
 
-// Bulk import (paste-list / Excel) into either store — the "Dán danh sách" and "Nhập Excel" tabs of the
-// resource-add dialog. `kind` selects grammar (default) vs vocab; source 'MAZII' marks a bulk import.
 export async function importItemsAction(
   entries: unknown,
   kind?: ResourceKind,
 ): Promise<ActionResult<ImportSummary>> {
-  // Auth gate: a Server Action is a public HTTP endpoint — bounce if not signed in.
   await getSessionUserId();
   const kindParsed = parseInput(resourceKindSchema, kind, 'Loại tài nguyên không hợp lệ');
   if (!kindParsed.ok) return kindParsed;
@@ -123,9 +104,6 @@ export async function importItemsAction(
   return ok({ created: r.created, skipped: r.skipped });
 }
 
-// Manually add ONE item from the web UI — the "Theo trường" tab, for grammar OR vocab (the MCP
-// `add_vocab` tool is the other vocab path). Rides the same addItems writer with source=WEB; VOCAB
-// lands on the separate vocab FSRS budget, GRAMMAR on the core loop.
 const addOneItemSchema = z.object({
   expression: z.string().trim().min(1, 'Nội dung không được trống'),
   reading: z.string().trim().optional(),
@@ -138,7 +116,6 @@ export async function addOneItemAction(
   input: unknown,
   kind?: ResourceKind,
 ): Promise<ActionResult<{ created: number }>> {
-  // Auth gate: a Server Action is a public HTTP endpoint — bounce if not signed in.
   await getSessionUserId();
   const kindParsed = parseInput(resourceKindSchema, kind, 'Loại tài nguyên không hợp lệ');
   if (!kindParsed.ok) return kindParsed;
@@ -158,7 +135,6 @@ export async function setItemSuspendedAction(
   itemId: string,
   suspended: boolean,
 ): Promise<ActionResult> {
-  // Auth gate: a Server Action is a public HTTP endpoint — bounce if not signed in.
   await getSessionUserId();
   if (!itemId) return err('Thiếu itemId');
   await setItemSuspended(itemId, suspended);
@@ -166,12 +142,10 @@ export async function setItemSuspendedAction(
   return ok(undefined);
 }
 
-/** Bulk suspend/resume selected items (resources DataTable row-selection → "Tạm ngưng"). */
 export async function setItemsSuspendedAction(
   ids: string[],
   suspended: boolean,
 ): Promise<ActionResult<{ affected: number }>> {
-  // Auth gate: a Server Action is a public HTTP endpoint — bounce if not signed in.
   await getSessionUserId();
   const clean = cleanIds(ids);
   if (clean.length === 0) return err('Chưa chọn mục nào');
@@ -185,12 +159,10 @@ export async function setItemsSuspendedAction(
   return ok({ affected });
 }
 
-/** Toggle a favourite star on an item (grammar/vocab) — resources tables + item detail page. */
 export async function setItemStarredAction(
   itemId: string,
   starred: boolean,
 ): Promise<ActionResult> {
-  // Auth gate: a Server Action is a public HTTP endpoint — bounce if not signed in.
   await getSessionUserId();
   if (!itemId) return err('Thiếu itemId');
   await setItemStarred(itemId, starred);
@@ -199,12 +171,10 @@ export async function setItemStarredAction(
   return ok(undefined);
 }
 
-/** Toggle a favourite star on a practiced sentence (history card). */
 export async function setSentenceStarredAction(
   sentenceId: string,
   starred: boolean,
 ): Promise<ActionResult> {
-  // Auth gate: a Server Action is a public HTTP endpoint — bounce if not signed in.
   await getSessionUserId();
   if (!sentenceId) return err('Thiếu sentenceId');
   await setSentenceStarred(sentenceId, starred);
@@ -212,7 +182,6 @@ export async function setSentenceStarredAction(
   return ok(undefined);
 }
 
-// Content-only edit — NO FSRS field is accepted here (the schedule is off-limits from the UI).
 const updateItemSchema = z.object({
   expression: z.string().trim().min(1, 'Từ / mẫu không được trống'),
   reading: z.string().trim().nullable().optional(),
@@ -222,7 +191,6 @@ const updateItemSchema = z.object({
 });
 
 export async function updateItemAction(itemId: string, input: unknown): Promise<ActionResult> {
-  // Auth gate: a Server Action is a public HTTP endpoint — bounce if not signed in.
   await getSessionUserId();
   if (!itemId) return err('Thiếu itemId');
   const parsed = parseInput(updateItemSchema, input);
@@ -234,7 +202,6 @@ export async function updateItemAction(itemId: string, input: unknown): Promise<
       notes: parsed.data.notes?.trim() || null,
     });
   } catch (e) {
-    // P2002 = the new expression collides with another item of the same kind.
     if (e && typeof e === 'object' && 'code' in e && e.code === 'P2002') {
       return err('Đã có mục khác trùng nội dung này');
     }
@@ -245,7 +212,6 @@ export async function updateItemAction(itemId: string, input: unknown): Promise<
 }
 
 export async function deleteItemAction(itemId: string): Promise<ActionResult> {
-  // Auth gate: a Server Action is a public HTTP endpoint — bounce if not signed in.
   await getSessionUserId();
   if (!itemId) return err('Thiếu itemId');
   try {
@@ -257,10 +223,7 @@ export async function deleteItemAction(itemId: string): Promise<ActionResult> {
   return ok(undefined);
 }
 
-/** Bulk-delete selected items (resources DataTable row selection → "Xóa"). Preserves each item's
- *  ReviewLog (server SET-NULLs the log's itemId), same as the single-row delete. */
 export async function deleteItemsAction(ids: string[]): Promise<ActionResult<{ deleted: number }>> {
-  // Auth gate: a Server Action is a public HTTP endpoint — bounce if not signed in.
   await getSessionUserId();
   const clean = cleanIds(ids);
   if (clean.length === 0) return err('Chưa chọn mục nào');
@@ -274,28 +237,11 @@ export async function deleteItemsAction(ids: string[]): Promise<ActionResult<{ d
   return ok({ deleted });
 }
 
-// `skipSentenceAction` lived here until 2026-08-06 — a server action for the history pending-card
-// "Bỏ qua" button. That button is gone: skipping happens in Claude Desktop now (the tutor owns the
-// loop), which components/history/history-cards.tsx PendingCard states outright. Nothing called the
-// action, so it was a public HTTP endpoint with an auth gate protecting a feature that no longer
-// exists. `skipSentence()` in lib/practice.ts stays — the MCP tool `skip_sentence` uses it.
-
-/** Current study-day streak — polled by the app-wide streak celebration beacon (StreakBeacon). */
 export async function getStreakAction(): Promise<ActionResult<{ current: number }>> {
-  // Auth gate: a Server Action is a public HTTP endpoint — bounce if not signed in.
   await getSessionUserId();
   const { current } = await getStreak();
   return ok({ current });
 }
-
-// ---------------- notifications ----------------
-
-// ---------------- study groups (restored 2026-08-05, see lib/groups.ts) ----------------
-//
-// `await getSessionUserId()` is still called in every one of these, and it is NOT dead code even though
-// lib/groups.ts no longer takes a userId: it IS the auth gate. Data is scoped by the login now, not by a
-// tenant column (CLAUDE.md §Gotchas), so a server action's only job is to prove there is a session
-// before it touches the DB — it redirects to /login when there isn't.
 
 const createGroupSchema = z.object({
   name: z.string().trim().min(1, 'Tên nhóm không được trống'),
@@ -315,7 +261,6 @@ export async function createGroupAction(input: unknown): Promise<ActionResult<{ 
   if (!parsed.ok) return parsed;
   try {
     const g = await createGroup(parsed.data);
-    // The groups list lives under the /resources "Nhóm" tab.
     revalidatePath('/resources');
     return ok({ id: g.id });
   } catch (e) {

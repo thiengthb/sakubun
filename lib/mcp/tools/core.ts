@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import { getSettings, saveSettings } from '@/lib/practice';
-import { settingsPatchSchema } from '@/lib/settings-schema';
+import { getSettings, saveSettings } from '@/lib/library/practice';
+import { settingsPatchSchema } from '@/lib/settings/schema';
 import {
   CONVERSATION_PROTOCOL,
   PRACTICE_PROTOCOL,
@@ -9,7 +9,6 @@ import {
 } from '@/lib/mcp/prompts';
 import { guard, ok, type McpServer } from '@/lib/mcp/tool-kit';
 
-/** The switchable practice loops. Hoisted so the handler's `mode` type is derived, not restated. */
 const PROTOCOL_BY_MODE = {
   practice: { label: 'DỊCH', body: PRACTICE_PROTOCOL },
   quiz: { label: 'QUIZ', body: QUIZ_PROTOCOL },
@@ -18,7 +17,6 @@ const PROTOCOL_BY_MODE = {
 } as const;
 
 export function registerCoreTools(server: McpServer) {
-  // ---------------- health ----------------
   server.tool(
     'ping',
     'Check that the MCP connection is alive. Returns { ok, time }.',
@@ -26,10 +24,6 @@ export function registerCoreTools(server: McpServer) {
     guard('ping', async () => ok({ ok: true, time: new Date().toISOString() })),
   );
 
-  // ---------------- lazy protocol load (see prompts.ts) ----------------
-  // A session prompt now ships only ITS OWN loop, so switching dịch↔quiz mid-session needs the other
-  // one on demand. Without this the 2026-07-14 bug returns: the learner says "quiz" and Claude has no
-  // quiz protocol in context, so it improvises the wrong loop.
   server.tool(
     'get_protocol',
     'Load the PROTOCOL of another practice type when the user wants to SWITCH mid-session — in ' +
@@ -57,7 +51,6 @@ export function registerCoreTools(server: McpServer) {
     }),
   );
 
-  // ---------------- settings ----------------
   server.tool(
     'get_settings',
     'Read the current practice settings: grammarLevels (JLPT levels a NEW pattern may be introduced ' +
@@ -94,21 +87,6 @@ export function registerCoreTools(server: McpServer) {
       'enter the queue); vocabCeiling is a SEPARATE knob for how hard the free vocabulary may be — ' +
       'change it only when the user asks for that specifically. The old name `levels` is still ' +
       'accepted and maps to grammarLevels.',
-    // FLAT arguments (2026-07-26). This was the ONLY tool of 25 that nested its input under `patch`,
-    // and acting as the tutor in the lab the first call was flat and lost the turn. The nested form
-    // stays accepted as an alias so anything mid-flight (or a habit) still works.
-    //
-    // `patch` is declared as UNKNOWN, not as the settings schema again (2026-08-11). Declaring the
-    // schema twice made every field, enum and default appear twice in this tool's inputSchema —
-    // measured: 4.134 byte with the nested copy, 2.138 without, i.e. the deprecated alias was 48% of
-    // this tool and ~3,6% of the entire 55,6 KB `tools/list` that Claude downloads every session
-    // (issue #20).
-    //
-    // The parse below states the nested shape HERE, since the wire no longer does. It is not the only
-    // thing standing between a bad value and the database — `saveSettings` validates too, measured by
-    // deleting this line and watching the e2e case stay green. It is at the boundary on purpose: this
-    // handler is now the only place that says what the nested form must look like, and leaving that to
-    // a downstream function's internals is how a boundary rots quietly.
     {
       ...settingsPatchSchema.shape,
       patch: z
@@ -119,8 +97,6 @@ export function registerCoreTools(server: McpServer) {
     guard('update_settings', async (args, _extra: unknown) => {
       const { patch, ...flat } = args;
       const nested = patch === undefined ? {} : settingsPatchSchema.parse(patch);
-      // Absent optional keys can arrive as an explicit `undefined`, which would blank a real setting
-      // when saveSettings spreads the patch over the stored object — drop them.
       const defined = Object.fromEntries(
         Object.entries({ ...flat, ...nested }).filter(([, v]) => v !== undefined),
       );

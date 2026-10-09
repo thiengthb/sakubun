@@ -1,23 +1,20 @@
-import { LiveRefresh } from '@/components/shell/live-refresh';
-import { ResourcesView } from '@/components/resources/resources-view';
-import type { ItemRow } from '@/components/resources/items-table';
-import type { VocabRow } from '@/components/resources/vocab-table';
-import { getSettings, listItems, VOCAB_KIND } from '@/lib/practice';
-import { listGroups } from '@/lib/groups';
-import { getSessionUserId } from '@/lib/current-user';
-import { furiganaInApp } from '@/lib/settings-schema';
+import { LiveRefresh } from '@/components/layout/live-refresh';
+import { ResourcesView } from '@/components/features/resources/resources-view';
+import type { ResourceRow } from '@/components/features/resources/resource-table';
+import { getSettings, listItems, VOCAB_KIND } from '@/lib/library/practice';
+import { listGroups } from '@/lib/library/groups';
+import { getSessionUserId } from '@/lib/auth/current-user';
+import { furiganaInApp } from '@/lib/settings/schema';
 
 export const dynamic = 'force-dynamic';
 
-// Per-user app — fetch the whole store and paginate/filter client-side (see the tables).
 const MAX_ITEMS = 10_000;
 
 export default async function ResourcesPage() {
-  // Auth gate: redirects to /login when there is no valid session.
   await getSessionUserId();
   const [grammar, vocab, groups, settings] = await Promise.all([
-    listItems({ limit: MAX_ITEMS, withGroupIds: true }) as Promise<ItemRow[]>,
-    listItems({ kind: VOCAB_KIND, limit: MAX_ITEMS, withGroupIds: true }) as Promise<VocabRow[]>,
+    listItems({ limit: MAX_ITEMS, withGroupIds: true }) as Promise<ResourceRow[]>,
+    listItems({ kind: VOCAB_KIND, limit: MAX_ITEMS, withGroupIds: true }) as Promise<ResourceRow[]>,
     listGroups(),
     getSettings(),
   ]);

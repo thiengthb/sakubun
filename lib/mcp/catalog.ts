@@ -1,10 +1,7 @@
-// Single source of truth for the MCP surface — drives the /guide MCP tab.
-// Adding/removing a tool or prompt in server.ts MUST update this list in the same change.
-
 export interface CatalogEntry {
   name: string;
   kind: 'tool' | 'prompt';
-  summary: string; // vi — shown in the guide table
+  summary: string; // vi — one line describing the tool to a human reader
 }
 
 export const MCP_CATALOG: CatalogEntry[] = [

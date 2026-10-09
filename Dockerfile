@@ -1,9 +1,4 @@
 # syntax=docker/dockerfile:1
-# Adapted from the fleet reference (fleet/projects/sakubun/Dockerfile). One deliberate difference:
-# that image installs `dotenv` for the prisma CLI because ITS prisma.config.ts does
-# `import 'dotenv/config'`. This project's prisma.config.ts reads process.env directly, so dotenv is
-# not a dependency here — installing it from `devDependencies.dotenv` would resolve to
-# `dotenv@undefined` and fail the build.
 
 # ---------- Stage 1: install dependencies ----------
 FROM node:24-alpine AS deps
@@ -13,22 +8,21 @@ RUN apk add --no-cache python3 make g++
 COPY package*.json ./
 COPY .npmrc ./
 COPY prisma ./prisma
-# `npm ci` (following a lockfile regenerated on another OS) can leave better-sqlite3 without its native
-# binding → runtime "Could not locate the bindings file". `npm rebuild` re-runs its install script so
-# the binding is always present. The npm cache mount survives across builds.
+# `npm ci` (following a lockfile regenerated on another OS) can leave better-sqlite3 without its
+# native binding → runtime "Could not locate the bindings file". `npm rebuild` re-runs its install
+# script so the binding is always present. The npm cache mount survives across builds.
 #
-# npm_config_nodedir is NOT optional here. better-sqlite3 13 ships no `install` script, so `npm rebuild`
-# ALWAYS compiles from source, and node-gyp's default is to download the musl headers from
-# unofficial-builds.nodejs.org. BuildKit's network has no route to IPv6 while node resolves AAAA first,
-# so that download dies with AggregateError [ETIMEDOUT] in ~500ms and takes the build with it (measured
-# 2026-08-06 inside buildkit: default → ETIMEDOUT, --dns-result-order=ipv4first → HTTP 200). `docker run`
-# does not reproduce it (wget goes IPv4), which is why the image built before node:24-alpine moved to
-# 24.19.0 never hit this.
+# npm_config_nodedir is NOT optional here. better-sqlite3 13 ships no `install` script, so
+# `npm rebuild` ALWAYS compiles from source, and node-gyp's default is to download the musl headers
+# from unofficial-builds.nodejs.org. BuildKit's network has no route to IPv6 while node resolves AAAA
+# first, so that download dies with AggregateError [ETIMEDOUT] in ~500ms and takes the build with it.
+# `docker run` does not reproduce it (wget goes IPv4), which is why an image built before
+# node:24-alpine moved to 24.19.0 never hit this.
 #
 # Pointing node-gyp at the headers the node image already ships (/usr/local/include/node) removes the
-# download entirely — no IPv6 workaround to rot, and the headers are guaranteed to match the node that
-# will run the binding, because they come from this very image. NODE_OPTIONS=--dns-result-order does
-# NOT work as a fix: npm does not pass it down to the node-gyp child.
+# download entirely — no IPv6 workaround to rot, and the headers are guaranteed to match the node
+# that will run the binding, because they come from this very image. NODE_OPTIONS=--dns-result-order
+# does NOT work as a fix: npm does not pass it down to the node-gyp child.
 ENV npm_config_nodedir=/usr/local
 RUN --mount=type=cache,target=/root/.npm \
     npm_config_fetch_retries=5 npm_config_fetch_retry_mintimeout=20000 \
@@ -47,10 +41,11 @@ RUN --mount=type=cache,target=/app/.next/cache npx prisma generate && npm run bu
 # pruned standalone node_modules.
 FROM node:24-alpine AS prisma-cli
 WORKDIR /cli
-# Copy as pkg.json, NOT package.json. Với package.json trong cwd, `npm install prisma@X --omit=dev`
-# (a) cài luôn toàn bộ dependencies của app — 404 package thay vì 1 — và (b) BỎ QUA chính prisma, vì
-# nó nằm trong devDependencies và --omit=dev loại dev deps kể cả khi được nêu tên tường minh.
-# Kết quả: image có node_modules to đùng mà KHÔNG có .bin/prisma → container exit 127 ở migrate deploy.
+# Copy as pkg.json, NOT package.json. With a package.json in cwd, `npm install prisma@X --omit=dev`
+# (a) installs the app's entire dependency tree — hundreds of packages instead of one — and
+# (b) SKIPS prisma itself, because it lives in devDependencies and --omit=dev drops dev deps even
+# when named explicitly. Result: a huge node_modules with NO .bin/prisma → the container exits 127
+# at `migrate deploy`.
 COPY package.json ./pkg.json
 COPY .npmrc ./
 RUN --mount=type=cache,target=/root/.npm \
@@ -71,16 +66,17 @@ ENV TZ=Asia/Ho_Chi_Minh
 COPY --from=build /app/.next/standalone ./
 COPY --from=build /app/.next/static ./.next/static
 COPY --from=build /app/public ./public
-# nft prunes better-sqlite3 down to its JS and drops the native .node binding (loaded via a runtime fs
-# lookup nft cannot trace). Copy the FULLY-BUILT module over the pruned one so the binding is present.
+# nft prunes better-sqlite3 down to its JS and drops the native .node binding (loaded via a runtime
+# fs lookup nft cannot trace). Copy the FULLY-BUILT module over the pruned one so the binding is
+# present.
 COPY --from=build /app/node_modules/better-sqlite3 ./node_modules/better-sqlite3
 
 # Prisma CLI + config + migrations for `migrate deploy` at container start.
 COPY --from=prisma-cli /cli/node_modules ./prisma-cli/node_modules
 COPY --from=build /app/prisma ./prisma
 COPY --from=build /app/prisma.config.ts ./prisma.config.ts
-# prisma.config.ts does `import { defineConfig } from 'prisma/config'`; the pruned standalone tree has
-# no prisma, so symlink it in from the CLI stage rather than duplicating a large package.
+# prisma.config.ts does `import { defineConfig } from 'prisma/config'`; the pruned standalone tree
+# has no prisma, so symlink it in from the CLI stage rather than duplicating a large package.
 RUN ln -s /app/prisma-cli/node_modules/prisma /app/node_modules/prisma
 
 RUN mkdir -p /data && chown node:node /data

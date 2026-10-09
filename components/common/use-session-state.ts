@@ -1,0 +1,108 @@
+'use client';
+
+import { useCallback, useSyncExternalStore, type Dispatch, type SetStateAction } from 'react';
+
+const PREFIX = 'sakubun:';
+
+const cache = new Map<string, { raw: string | null; value: unknown }>();
+
+function serialize<T>(value: T): string {
+  return typeof value === 'string' ? value : JSON.stringify(value);
+}
+
+function deserialize<T>(raw: string, initial: T): T {
+  if (typeof initial === 'string') return raw as unknown as T;
+  try {
+    return JSON.parse(raw) as T;
+  } catch {
+    return initial;
+  }
+}
+
+function read<T>(storeKey: string, initial: T, urlKey?: string): T {
+  if (typeof window === 'undefined') return initial;
+  let raw: string | null;
+  try {
+    raw = window.sessionStorage.getItem(storeKey);
+  } catch {
+    return initial;
+  }
+  const hit = cache.get(storeKey);
+  if (hit && hit.raw === raw) return hit.value as T;
+  let value = initial;
+  if (raw != null) {
+    try {
+      value = JSON.parse(raw) as T;
+    } catch {
+      value = initial;
+    }
+  } else if (urlKey) {
+    const p = new URLSearchParams(window.location.search).get(urlKey);
+    if (p != null) value = deserialize(p, initial);
+  }
+  cache.set(storeKey, { raw, value });
+  return value;
+}
+
+function writeUrl<T>(urlKey: string, value: T, initial: T): void {
+  const url = new URL(window.location.href);
+  const str = serialize(value);
+  if (str === serialize(initial) || str === '') url.searchParams.delete(urlKey);
+  else url.searchParams.set(urlKey, str);
+  window.history.replaceState(null, '', url);
+}
+
+const listeners = new Map<string, Set<() => void>>();
+
+function subscribe(storeKey: string, cb: () => void): () => void {
+  let set = listeners.get(storeKey);
+  if (!set) {
+    set = new Set();
+    listeners.set(storeKey, set);
+  }
+  set.add(cb);
+  const onStorage = (e: StorageEvent) => {
+    if (e.key === storeKey) cb();
+  };
+  window.addEventListener('storage', onStorage);
+  return () => {
+    set?.delete(cb);
+    window.removeEventListener('storage', onStorage);
+  };
+}
+
+function emit(storeKey: string): void {
+  listeners.get(storeKey)?.forEach((cb) => cb());
+}
+
+export function useSessionState<T>(
+  key: string,
+  initial: T,
+  urlKey?: string,
+): [T, Dispatch<SetStateAction<T>>] {
+  const storeKey = PREFIX + key;
+  const subscribeToKey = useCallback((cb: () => void) => subscribe(storeKey, cb), [storeKey]);
+  const value = useSyncExternalStore(
+    subscribeToKey,
+    () => read(storeKey, initial, urlKey),
+    () => initial,
+  );
+
+  const setValue = useCallback<Dispatch<SetStateAction<T>>>(
+    (action) => {
+      const prev = read(storeKey, initial, urlKey);
+      const next = typeof action === 'function' ? (action as (p: T) => T)(prev) : action;
+      const raw = JSON.stringify(next);
+      try {
+        window.sessionStorage.setItem(storeKey, raw);
+      } catch {
+      }
+      cache.set(storeKey, { raw, value: next });
+      if (urlKey) writeUrl(urlKey, next, initial);
+      emit(storeKey);
+    },
+    [storeKey, initial, urlKey],
+  );
+
+  return [value, setValue];
+}

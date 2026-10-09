@@ -1,14 +1,10 @@
-// Server-rendered markdown for MCP tool results — the display contract with Claude Desktop.
-// Claude pastes these blocks verbatim (per PRACTICE_PROTOCOL) instead of improvising tables,
-// so every session looks the same. Pattern proven in yakudoku (web/lib/mcp/render.ts).
-
-import type { Suggestion, TeachBackHarvest } from '@/lib/coach';
-import { isEmptyDossier, TREND_WINDOW_DAYS, type Dossier } from '@/lib/dossier';
-import type { ScaffoldPattern } from '@/lib/scaffolding';
-import type { QuizOptions } from '@/lib/quiz-options';
-import type { SessionRecap } from '@/lib/session-recap';
-import { ERROR_TAG_LABELS } from '@/lib/error-tags';
-import { humanizeUntil, ratingLabel } from '@/lib/format';
+import type { Suggestion, TeachBackHarvest } from '@/lib/session/coach';
+import { isEmptyDossier, TREND_WINDOW_DAYS, type Dossier } from '@/lib/session/dossier';
+import type { ScaffoldPattern } from '@/lib/srs/scaffolding';
+import type { QuizOptions } from '@/lib/session/quiz-options';
+import type { SessionRecap } from '@/lib/session/recap';
+import { ERROR_TAG_LABELS } from '@/lib/session/error-tags';
+import { humanizeUntil, ratingLabel } from '@/lib/core/format';
 import {
   QUIZ_EXERCISE,
   TEACH_BACK_EXERCISE,
@@ -17,26 +13,20 @@ import {
   type Stats,
   type SubmitReviewResult,
   type WeakReport,
-} from '@/lib/practice';
-import { TIER_LABELS } from '@/lib/enrichment-quality';
-import type { LibraryHealthResult } from '@/lib/library-health';
-import type { LibraryCheck } from '@/lib/lookup';
-import { SENTENCE_SIZE_SPEC, type WithheldItem, type WithheldReason } from '@/lib/select';
+} from '@/lib/library/practice';
+import { TIER_LABELS } from '@/lib/library/enrichment-quality';
+import type { LibraryHealthResult } from '@/lib/library/health';
+import type { LibraryCheck } from '@/lib/library/lookup';
+import { SENTENCE_SIZE_SPEC, type WithheldItem, type WithheldReason } from '@/lib/srs/select';
 import {
   DIFFICULTY_ANCHORS,
   furiganaForClaude,
   hardestLevel,
   resolveVocabCeiling,
-} from '@/lib/settings-schema';
-import { LEECH_LAPSES, SUSPEND_SUGGEST_LAPSES } from '@/lib/srs';
-import { turnLabels } from '@/lib/turn-labels';
+} from '@/lib/settings/schema';
+import { LEECH_LAPSES, SUSPEND_SUGGEST_LAPSES } from '@/lib/srs/srs';
+import { turnLabels } from '@/lib/session/turn-labels';
 
-/**
- * Level the sentence's VOCABULARY should aim at. An active whole-level focus wins over the settings —
- * fixes "focus N3 but got N5 vocab": before, vocab was anchored to the study set, which ignored the
- * session focus (and the study set often still includes N5). Outside a focus it is
- * `settings.vocabCeiling`, or the hardest grammar level when that is null (the pre-split behaviour).
- */
 function vocabTargetLevel(batch: DueBatch): string {
   const focusLevels = batch.focus?.levels;
   return focusLevels?.length ? hardestLevel(focusLevels) : resolveVocabCeiling(batch.settings);
@@ -46,12 +36,6 @@ function joinLines(lines: (string | null | undefined)[]): string {
   return lines.filter((l) => l != null).join('\n');
 }
 
-/**
- * What Claude should DO about each cap that withheld a pattern. `limits.*` was computed since the
- * scheduler was written and read by NO consumer (found 2026-07-26), so a learner asking for a
- * pattern that got quota-blocked was told nothing at all. Stated here rather than in the protocol
- * because this sheet is the one text Claude reads right before composing EVERY exercise.
- */
 const WITHHELD_FIX: Record<WithheldReason, string> = {
   'daily-new-cap':
     'today’s NEW-pattern quota is spent (settings.dailyNewGrammar) — say so and offer to raise it ' +
@@ -65,11 +49,6 @@ const WITHHELD_FIX: Record<WithheldReason, string> = {
     'update_settings',
 };
 
-/**
- * One line per cap that actually bit, listing the patterns it held back. Only fires when something
- * was withheld: a spent quota on a turn that wanted nothing more is not news, and this sheet is
- * re-sent on every single turn (per-turn token cost, not per-session).
- */
 function withheldLines(withheld: WithheldItem[]): string[] {
   const reasons = [...new Set(withheld.map((w) => w.reason))];
   return reasons.map((reason) => {
@@ -80,30 +59,9 @@ function withheldLines(withheld: WithheldItem[]): string[] {
   });
 }
 
-/** Reference-line labels a result block can carry — one per exercise type (`lib/turn-labels.ts`). */
 const REFERENCE_LABELS = ['Tham khảo', 'Đáp án', 'Câu mẫu'] as const;
 
-/**
- * Display order prepended to blocks the user MUST see. Written as a direct instruction inside the
- * tool RESULT because that is what the client model reads right before composing its reply —
- * protocol text alone proved insufficient (live 2026-07-09: Claude paraphrased the "Kết quả lượt này" block and
- * dropped the reference translation).
- */
 export function verbatimEnvelope(markdown: string): string {
-  // The rule DESCRIBES THE BLOCK IT IS WRAPPING, instead of describing one particular block.
-  //
-  // It used to be a fixed string naming the menu "Tiếp theo?" as the end boundary and "Bản dịch tham
-  // khảo" as a line not to drop. Measured 2026-08-12: only `renderGradeResult` produces that menu, and
-  // this envelope also wraps "Tiến độ" (get_stats), "Tra cứu" (check_library) and "Điểm yếu"
-  // (get_weak_report) — so on three of its four blocks it named a terminator that does not exist and
-  // told Claude not to drop two lines that were never there. It also said "Bản dịch tham khảo" while
-  // the block prints "Tham khảo", and since TURN_LABELS that label varies by exercise type ("Đáp án"
-  // on a quiz, "Câu mẫu" in conversation).
-  //
-  // Why that is worse than sloppy: naming a line that is absent makes the instruction trivially
-  // satisfiable, and this is the ONE instruction the whole display contract rests on — the
-  // missing-score bug lived for a week behind exactly this envelope. An instruction that is false on
-  // most of its uses teaches the reader to skim it on the use where it matters.
   const menu = markdown.includes('**Tiếp theo?**');
   const reference = REFERENCE_LABELS.find((label) => markdown.includes(`**${label}:**`));
   const mustKeep = [reference && `"${reference}"`, menu && 'menu "Tiếp theo?"'].filter(Boolean);
@@ -119,34 +77,20 @@ export function verbatimEnvelope(markdown: string): string {
   );
 }
 
-/**
- * Result block the user sees after grading — Claude shows this verbatim. The đề / bạn dịch /
- * bản dịch tham khảo comparison and the next-action menu are rendered HERE (not left to the
- * prompt) so they can never be forgotten — same rationale as the display contract itself.
- */
 export function renderGradeResult(result: SubmitReviewResult, now: Date = new Date()): string {
   const rows = result.items.map(
     (i) => `| ${i.expression} | ${ratingLabel(i.rating)} | ${humanizeUntil(i.nextDue, now)} |`,
   );
   const t = result.today;
-  // A teach-back turn is not a translation, and the block is what the learner READS: labelling their
-  // explanation "Bạn dịch" under an "Đề (Nhật → Việt)" heading tells them they did something they did
-  // not do. Direction alone cannot express that — hence the exerciseType echo (found in the lab).
   const isTeachBack = result.exerciseType === TEACH_BACK_EXERCISE;
   const isQuiz = result.exerciseType === QUIZ_EXERCISE;
   const dirLabel = result.direction === 'JA_VI' ? 'Nhật → Việt' : 'Việt → Nhật';
-  // ONE table, shared with the history cards (lib/turn-labels.ts) — see the note there for why it
-  // is not defined at either call site any more.
   const labels = turnLabels(result.exerciseType, {
     prompt: `Đề (${dirLabel})`,
     answer: 'Bạn dịch',
     reference: 'Tham khảo',
     retry: 'Gõ lại bản dịch đã sửa lỗi',
   });
-  // Failed item → the menu leads with a rewrite step (feedback→revise→rewrite beats one-shot
-  // correction). Consolidation only: the rewrite is never re-graded. NOT offered on a quiz: there is
-  // nothing to retype when the answer was a letter, and the offer sent the learner looking for a
-  // sentence to fix that the turn never asked them to write.
   const hasFail = !isQuiz && result.items.some((i) => i.rating <= 2);
   const goalReached = t.sentences >= result.sessionGoal;
   const baseMenu = isTeachBack
@@ -158,27 +102,15 @@ export function renderGradeResult(result: SubmitReviewResult, now: Date = new Da
     `**${labels.prompt}:** ${result.sourceText}`,
     `**${labels.answer}:** ${result.userAnswer}`,
     result.suggested ? `**${labels.reference}:** ${result.suggested}` : null,
-    // The /100 score lives in the server-owned block so it appears in EVERY chat, not just history:
-    // Claude sent it to submit_review, but a score outside this verbatim block was being dropped from
-    // the reply (the 2026-07-25 fix). The line used to be OMITTED when score was null — silence in the
-    // chat AND an empty slot on the card, which is exactly how "the app never graded me" was born
-    // (2026-08-11). `score` is required at the boundary now, so null is unreachable for a new turn; the
-    // line stays present anyway, because a missing score must be a sentence the learner can read.
     typeof result.score === 'number' ? `**Điểm:** ${result.score}/100` : '**Điểm:** chưa có',
     '',
     '| Mục | Đánh giá | Ôn lại |',
     '|---|---|---|',
     ...rows,
-    // A lowered rating is shown, never applied quietly: the tutor said Easy, the table says Good, and
-    // without this line that gap reads as the app being broken instead of as the rule it is.
     ...(result.ratingNotes.length
       ? ['', ...result.ratingNotes.map((n) => `> **Đánh giá đã hạ:** ${n}`)]
       : []),
     '',
-    // Ba trạng thái, không phải hai. `dueNow === 0` từng in thẳng "đã sạch hàng đợi", nên trên một
-    // tài khoản mới dòng này nói "câu 2/10 — đã sạch hàng đợi": nửa đầu bảo còn 8 câu, nửa sau bảo
-    // hết việc. Đo trong lab 2026-08-12: ba mẫu vừa học đang ở learning step, đến hạn sau 5-10 phút,
-    // và `dueNow` không đếm chúng. "Hết việc" chỉ đúng khi KHÔNG CÒN GÌ trong hàng đợi cả.
     `**Hôm nay:** ${t.reviews} lượt ôn · ${t.newGrammar} mẫu mới · câu **${t.sentences}/${result.sessionGoal}**` +
       (result.dueNow > 0
         ? ` — còn **${result.dueNow}** mẫu đến hạn`
@@ -195,18 +127,6 @@ export function renderGradeResult(result: SubmitReviewResult, now: Date = new Da
   ]);
 }
 
-/**
- * SHADOW-MODE calibration note (2026-07-26, calibration plan step 1.3) — Claude-facing English,
- * appended AFTER the verbatim result block, never inside it.
- *
- * Two constraints it has to respect at once:
- *  1. **One control surface per message.** The result block already ends with the numbered "Tiếp theo?"
- *     menu, so this must NOT be a numbered option — a second numbered list makes "1" ambiguous.
- *  2. **Nothing is applied.** Phase 1 only MEASURES. But a proposal nobody can read cannot be judged
- *     either, and step 1.4 is a gate where the learner reviews a week of real proposals — so Claude is
- *     told to mention it at most ONCE per session, at the end, framed as an observation with nothing
- *     changed. That is narration, not action.
- */
 export function renderCalibrationShadow(shadow: CalibrationShadow | null): string | null {
   if (!shadow) return null;
   const pct = Math.round(shadow.measured * 100);
@@ -223,19 +143,6 @@ export function renderCalibrationShadow(shadow: CalibrationShadow | null): strin
   );
 }
 
-/**
- * TEACH-BACK HARVEST (2026-07-27, plan step 7.3) — Claude-facing English, appended AFTER the verbatim
- * result block, exactly like the calibration shadow and for the same two reasons: the block owns the
- * numbered menu (a second numbered list makes "1" ambiguous), and nothing here is applied.
- *
- * What it is protecting against, in order:
- *  1. The card being written in Claude's voice. The entire value of the harvest is that the wording is
- *     the learner's — a "tidy-up" that becomes a rewrite throws away the only thing the model could not
- *     have produced, and the plan's argument for teach-back collapses with it.
- *  2. A silent write. `autoCapture` does not cover this: it is content ABOUT the pattern, authored by
- *     the learner, and the one person who can say whether their own explanation deserves to be the card
- *     is them.
- */
 export function renderTeachBackHarvest(harvest: TeachBackHarvest | null): string | null {
   if (!harvest) return null;
   return (
@@ -250,24 +157,6 @@ export function renderTeachBackHarvest(harvest: TeachBackHarvest | null): string
   );
 }
 
-/** Progress overview — Claude shows this verbatim when opening/closing a session. */
-/**
- * Session-open progress block. `health` is OPTIONAL and only the MCP tool passes it — the web
- * dashboard has its own (cheaper) path and its own retention card.
- *
- * The proactive part obeys the one-control-surface rule the hard way. `MODE_DISPATCH` asks a NUMBERED
- * focus menu right after this block, so a numbered list of offers here would make "1" ambiguous —
- * exactly the collision §6 of the plan warns about. Hence: at most ONE offer, rendered as a plain
- * yes/no sentence with no number, and the rest are silent until the learner asks for a health check.
- */
-/**
- * "Where did I leave off?" as ONE line, derived (`lib/session-recap.ts` — the storage plan §9 asked for
- * was deleted, see that file's header).
- *
- * It is a STATEMENT, never an offer. `MODE_DISPATCH` asks a numbered focus menu immediately after this
- * block, and the block already ends with one unnumbered clean-up offer — a second thing to say yes to
- * here is the §6 collision that makes "1" ambiguous.
- */
 function recapLine(recap: SessionRecap): string | null {
   if (recap.reviews === 0) return null;
   const when =
@@ -303,28 +192,12 @@ export function renderStats(
     '### Tiến độ',
     '',
     `- **Đến hạn bây giờ:** ${stats.dueNow} · **chưa học lần nào:** ${stats.newItems}`,
-    // THE DAY'S PLAN, at the one moment it can still change the day. The result block after every turn
-    // says "câu X/10", but this block — the session OPENER — said only "N lượt · M mẫu mới", so the
-    // learner met the daily goal for the first time at the END of turn one, and the cap that governs
-    // whether the goal is even reachable appeared nowhere at all.
-    //
-    // Measured in the lab 2026-08-12, fresh account on stock defaults (sessionGoal 10,
-    // dailyNewGrammar 3, maxNewPerSentence 1): three new patterns bought three sentences, their
-    // learning-step returns came back BUNDLED three-to-a-sentence, and mastery mode could not take
-    // over (MASTERY_MIN_GRADUATED is 8, the account had 2 graduated). The day tops out around FIVE of
-    // ten and then reports no items — which reads as the app breaking, not as two settings disagreeing.
-    // Stating both numbers here does not resolve that disagreement; it makes it visible on turn zero,
-    // to the one person entitled to resolve it.
     `- **Hôm nay:** ${stats.today.reviews} lượt · câu **${stats.today.sentences}/${stats.settings.sessionGoal}** · mẫu mới ${stats.today.newGrammar}/${stats.settings.dailyNewGrammar} (hạn mức ngày)`,
     `- **Chuỗi ngày học:** ${stats.streak.current} ngày (kỷ lục ${stats.streak.longest})`,
     `- **Kho:** ${total} mẫu ngữ pháp · 7 ngày qua: ${stats.reviewsLast7Days} lượt`,
     `- **Dự báo 7 ngày tới:** ${forecast}`,
     weak ? `- **Hay sai:** ${weak}` : null,
-    // Sits under the all-time "Hay sai" on purpose: that line is chronic leeches, this one is what
-    // went wrong in the LAST session — the difference between "your weak spots" and "pick up here".
     recap ? recapLine(recap) : null,
-    // Measured retention, stated ONLY when there is enough data for a verdict. A percentage from six
-    // reviews is noise dressed as insight, and the session opening is the worst place to put one.
     health && health.health.retention.measured !== null
       ? `- **Ghi nhớ thực tế:** ${Math.round(health.health.retention.measured * 100)}% ` +
         `(mục tiêu ${Math.round(health.health.retention.desired * 100)}%) — ${health.health.retention.verdict}`
@@ -334,20 +207,6 @@ export function renderStats(
   ]);
 }
 
-/**
- * The `check_library` block — what the learner's library holds about what they just asked, plus the
- * ranked proposals. Claude shows this verbatim; its own EXPLANATION goes after it.
- *
- * THE LOAD-BEARING OMISSION: this block contains NO card content. Not the usage line, not the
- * examples, not the contrasts. Only the STATUS (is it in your kho, what tier is the card, is a shared
- * copy available) and the numbered offers. The card itself goes back as JSON for Claude alone, exactly
- * like the composition sheet.
- *
- * That omission is what makes "use the card as reference, never copy-paste it" a PROPERTY of the design
- * rather than a request in a protocol nobody loaded. If the card were rendered here, the shortest path
- * for any model would be to paste the block and stop — and the learner would get a transcript instead
- * of an explanation. Removing the temptation is more reliable than forbidding it.
- */
 export function renderLibraryCheck(check: LibraryCheck): string {
   const q = check.query;
   const lines: (string | null)[] = [`### Tra cứu: ${q}`, ''];
@@ -377,11 +236,8 @@ export function renderLibraryCheck(check: LibraryCheck): string {
     }
   }
 
-
   if (check.suggestions.length > 0) {
     lines.push('', '**Bạn có muốn tôi làm giúp?**');
-    // A pre-authorised offer is marked so the learner can see WHY something happened without being
-    // asked — an action that appears with no trace of consent is how a helpful default becomes creepy.
     check.suggestions.forEach((s, index) =>
       lines.push(`${index + 1}. ${s.line}${s.auto ? ' _(bạn đã cho phép tự làm việc này)_' : ''}`),
     );
@@ -393,27 +249,8 @@ export function renderLibraryCheck(check: LibraryCheck): string {
   return joinLines(lines);
 }
 
-/**
- * CONSENT GUARD (2026-07-27) — Claude-facing English, appended AFTER the verbatim block on every tool
- * that returns proposals. Shared by `check_library`, `get_library_health` and `get_stats` so the rule
- * cannot hold on one surface and leak on another.
- *
- * Why it exists, from a measured failure rather than a worry: eval Scenario I, 1 of 3 trials called
- * `patch_enrichment` in the SAME message as the offer, with no yes, and then told the learner it had
- * done so. The prohibition was already in the `check_library` description — but as a NEGATION whose
- * trigger is an ABSENT JSON field (`auto` unset), while the exception right beside it is a positive
- * imperative ("call the tool straight away and TELL them what you did"). Absence is a weak signal and
- * the positive instruction wins; this project already learned that from smoke checks that passed on
- * missing content.
- *
- * So the guard makes BOTH sides present and positive: it names the exact tools that must wait and the
- * exact tools that may be called now. `null` when there is nothing to say, so a quiet result stays quiet.
- */
 export function renderConsentGuard(suggestions: readonly Suggestion[]): string | null {
   if (suggestions.length === 0) return null;
-  // BOTH fields, not just `tool`: an offer the server cannot pin to one tool (see `alsoTool`) would
-  // otherwise leave the other one unnamed, and a tool the guard does not name is a tool the guard does
-  // not hold back — a consent guard with a hole in it reads exactly like one without.
   const toolsOf = (s: Suggestion) => [s.tool, s.alsoTool].filter((t): t is string => Boolean(t));
   const waiting = [...new Set(suggestions.filter((s) => !s.auto).flatMap(toolsOf))];
   const allowed = [...new Set(suggestions.filter((s) => s.auto).flatMap(toolsOf))];
@@ -435,13 +272,6 @@ export function renderConsentGuard(suggestions: readonly Suggestion[]): string |
   return parts.join('\n');
 }
 
-/**
- * Library health — the learner-facing block for `get_library_health`.
- *
- * Same discipline as `renderLibraryCheck`: numbers the learner can act on plus the numbered offers,
- * never a data dump. The full histogram goes back as JSON for Claude; what is rendered is the two or
- * three facts that explain the offers underneath them.
- */
 export function renderLibraryHealth(result: LibraryHealthResult): string {
   const h = result.health;
   const lines: (string | null)[] = ['### Sức khoẻ kho học', ''];
@@ -457,10 +287,6 @@ export function renderLibraryHealth(result: LibraryHealthResult): string {
       (h.cardVersion.outdated > 0 ? ` · ${h.cardVersion.outdated} thẻ theo format cũ` : ''),
   );
 
-  // Vocabulary cards, counted on their OWN bar and stated as their own line. They were invisible here
-  // until 2026-08-12 (the report only ever scored grammar), so a word backlog could grow with nothing
-  // ever naming it. The line is only printed when there ARE words: a learner with none should not read
-  // a row of zeros about a library they do not have.
   if (h.vocabCards.total > 0) {
     lines.push(
       `**Thẻ từ vựng:** ${h.vocabCards.total - h.vocabCards.needsWork}/${h.vocabCards.total} thẻ đạt` +
@@ -477,8 +303,6 @@ export function renderLibraryHealth(result: LibraryHealthResult): string {
     );
   }
 
-  // Retention is stated with its VERDICT, never as a bare percentage: the number alone reads as a
-  // score, and the whole point is whether the SCHEDULE matches this learner (lib/retention.ts).
   lines.push(
     h.retention.measured === null
       ? `**Ghi nhớ thực tế:** ${h.retention.verdict}`
@@ -503,7 +327,6 @@ export function renderLibraryHealth(result: LibraryHealthResult): string {
   return joinLines(lines);
 }
 
-/** Weakness dashboard — Claude shows this verbatim (get_weak_report). */
 export function renderWeakReport(report: WeakReport): string {
   const tags =
     report.tagCounts.length > 0
@@ -541,48 +364,13 @@ export function renderWeakReport(report: WeakReport): string {
   ]);
 }
 
-/** Mazii imports dump every reading (私 → 14 variants) — show the first few, keep data intact. */
 function condenseReading(reading: string): string {
   const parts = reading.trim().split(/\s+/);
   return parts.length <= 3 ? reading : `${parts.slice(0, 3).join(' ')}…`;
 }
 
-/**
- * Planning sheet for Claude — NEVER shown to the user (it contains the answers).
- * The leading warning line is part of the contract.
- *
- * WRITTEN IN ENGLISH ON PURPOSE (2026-07-19): this is the one render output flagged
- * `verbatim: false`, i.e. Claude-only, so English costs ~21% fewer tokens with no risk of leaking
- * into the learner's view — and unlike the session protocol it is paid on EVERY turn. The
- * user-facing renderers below/above (grade result, stats, weak report) stay Vietnamese. The learner's
- * own DATA (meaningVi, notes, enrichment, topics, error-tag labels) is never translated.
- * PRACTICE_PROTOCOL quotes the markers emitted here — change one, change both.
- */
-/**
- * Hard ceiling on the learner-model digest, header included.
- *
- * This block rides EVERY sentence of every session (plan risk 5), unlike a session-open cost that is
- * paid once. A budget stated in prose would have been negotiated away line by line; asserted in
- * `render.test.ts` it cannot be.
- */
 export const MAX_DOSSIER_LINES = 8;
 
-/**
- * The student model, as ~6 English lines for Claude. Rendered ONCE per session, on `get_stats`.
- *
- * It used to ride the composition sheet too, once per SENTENCE, to aim the exercise. Eval Scenario G
- * (2026-07-28) measured that and found nothing: across 6 treatment trials over two deliberately
- * different confusion pairs — near-synonymous (〜しかない/〜ざるを得ない) and polarity-inverting
- * (〜しかない/〜わけにはいかない) — not one composed sentence made the distinction decide the answer,
- * while 1 of 6 CONTROL trials (digest removed) did. A block that costs tokens on every turn and
- * changes no output is a comment, so it now sits where its remaining job actually is: aiming the
- * focus menu at the session opening, which is what `get_stats`' description already asked for.
- *
- * Returns null on an empty dossier so a learner with no history sees NOTHING rather than a header
- * with nothing under it — an empty model must look empty (plan risk 6). Tag slugs are used raw
- * (`word-choice`), not `ERROR_TAG_LABELS`: those are the learner-facing Vietnamese labels, and this
- * block is Claude-facing English per the `verbatim` boundary rule.
- */
 export function renderDossier(dossier: Dossier | null | undefined): string | null {
   if (!dossier || isEmptyDossier(dossier)) return null;
   const lines: string[] = [];
@@ -625,10 +413,6 @@ export function renderDossier(dossier: Dossier | null | undefined): string | nul
         .join(' · ')}.`,
     );
   }
-  // A dossier can be non-empty and still have nothing to RENDER here: the asserted notes count toward
-  // `isEmptyDossier` but are deliberately withheld from the per-sentence sheet (plan risk 5). Returning
-  // a bare header in that case would be the exact "empty model that does not look empty" failure the
-  // support floors exist to prevent.
   if (lines.length === 0) return null;
   return joinLines([
     '**LEARNER MODEL (derived from their OWN graded history — use it to AIM THIS SESSION, e.g. what ' +
@@ -638,13 +422,6 @@ export function renderDossier(dossier: Dossier | null | undefined): string | nul
   ]);
 }
 
-/**
- * The A-D option line for a quiz question, as a Claude-facing note after `stage_sentence`.
- *
- * The server owns the answer's POSITION (`lib/quiz-options.ts`), so this is the one arrangement the
- * tutor may show — and it is handed over already formatted, because "put the answer at the letter we
- * told you" was an instruction the system could neither verify nor, on the evidence, rely on.
- */
 export function renderQuizOptions(quiz: QuizOptions | undefined): string | null {
   if (!quiz) return null;
   return [
@@ -658,17 +435,6 @@ export function renderQuizOptions(quiz: QuizOptions | undefined): string | null 
   ].join('\n');
 }
 
-/**
- * DECLARED SCAFFOLDING, as a Claude-facing note after `stage_sentence`.
- *
- * Returns null when there is nothing to say — every declared pattern is already in the library and at
- * or below the level being drilled. A quiet turn must stay quiet: this note competes with the exercise
- * the learner is about to read, and the surest way to make a channel ignored is to make it always fire.
- *
- * The two things it CAN say are the two failures that were invisible before (plan section 5): a pattern
- * the learner has never met is about to teach itself inside an exercise about something else, and a
- * pattern harder than everything scheduled breaks a protocol rule that nothing could previously check.
- */
 export function renderScaffold(patterns: readonly ScaffoldPattern[]): string | null {
   const fresh = patterns.filter((p) => p.status !== 'known');
   const tooHard = patterns.filter((p) => p.aboveDrilledLevel);
@@ -676,8 +442,6 @@ export function renderScaffold(patterns: readonly ScaffoldPattern[]): string | n
 
   const lines: string[] = ['DECLARED SCAFFOLDING — what you used beyond the scheduled batch:'];
   for (const p of fresh) {
-    // Một nhánh, không phải hai: nhánh `availableInSharedLibrary` dạy Claude gọi
-    // `fork_shared_items` — tool KHÔNG còn được đăng ký — và trạng thái đó không bao giờ được gán.
     lines.push(
       `- 「${p.expression}」 is NOWHERE in their library. They are meeting it for the first time ` +
         'inside an exercise about something else, so explain it in one line as you go and offer ' +
@@ -691,7 +455,6 @@ export function renderScaffold(patterns: readonly ScaffoldPattern[]): string | n
         'that you reached past their level and why.',
     );
   }
-  // Cap language, not count: these are already capped at MAX_EXTRA_PATTERNS by the tool schema.
   lines.push(
     'These are NOT graded and NOT scheduled — offering is how they become either. Stay inside the ' +
       'usual offer budget: the exercise is what the learner is waiting for.',
@@ -701,10 +464,20 @@ export function renderScaffold(patterns: readonly ScaffoldPattern[]): string | n
 
 export function renderDueBatch(batch: DueBatch): string {
   if (batch.items.length === 0) {
+    // An empty library is NOT an empty queue. Without this the very first /practice of a fresh
+    // account reads as "you are done for today", and Claude congratulates the learner for finishing
+    // a library that does not exist yet.
+    if (batch.libraryEmpty) {
+      return (
+        '_(The grammar library is EMPTY — this is a new account, not a finished day.)_ Do NOT say ' +
+        'the session is over or that nothing is due. Tell the user their library has no patterns ' +
+        'yet and offer to fill it: run the `import_grammar` prompt to paste a list from Mazii or a ' +
+        'textbook, or give you a few patterns to add with add_grammar right now.'
+      );
+    }
     const wait = batch.nextDueAt
       ? `Next item is due ${humanizeUntil(batch.nextDueAt)}.`
       : 'Nothing else is queued today.';
-    // Focused request that matched nothing / got quota-blocked — a fixable reason, not "done".
     const focusNote = batch.focus
       ? batch.focus.weak
         ? batch.focus.matched === 0
@@ -713,7 +486,6 @@ export function renderDueBatch(batch: DueBatch): string {
           : ' WEAK-SPOT DRILL: the weak patterns ARE in the library but are not due today / are ' +
             'blocked by the daily limit (see limits) — tell the user, suggest a random session or coming back later.'
         : // SUSPENDED comes FIRST: with the pattern paused the batch is empty AND `matched` is 0, so
-          // this branch used to send the learner to add_grammar for something they already own.
           batch.focus.suspendedPatterns.length > 0
           ? ` SUSPENDED, not missing: ${batch.focus.suspendedPatterns
               .map((s) => `「${s.expression}」 (itemId ${s.itemId})`)
@@ -725,16 +497,6 @@ export function renderDueBatch(batch: DueBatch): string {
               'add it with add_grammar, or practise randomly (call again without focus)?'
             : ' The focus patterns ARE in the library but today’s limit blocks them (see limits) — tell the user.'
       : '';
-    // New patterns exist but sit outside the study levels → the batch is empty for a fixable
-    // reason, not because the user is truly done. Tell Claude so it doesn't wrongly close the day.
-    // GUARDED on there being nothing new left AT the studied levels. `newBeyondLevels` counts new
-    // patterns at OTHER levels, and on its own it says nothing about whether the learner is out of
-    // material — so this note used to fire while the library still held plenty at the level they
-    // study. Measured in the lab 2026-08-12, on a fresh N5 account: 12 N5 patterns, 3 learned, the
-    // batch emptied by settings.dailyNewGrammar — and this note told the tutor to offer a day-one N5
-    // learner "widen your levels (N4)" or "import grammar at the level you are studying", with NINE
-    // untouched N5 patterns sitting right there. Both offers were wrong, and the correct fix (raise
-    // the daily cap, or wait for the learning step) was already on the HELD BACK line below it.
     const beyond =
       batch.newBeyondLevels > 0 && batch.newAvailable.grammar === 0
         ? ` NOTE: ${batch.newBeyondLevels} unlearned NEW patterns remain, but at levels OUTSIDE ` +
@@ -743,14 +505,10 @@ export function renderDueBatch(batch: DueBatch): string {
           `"nothing left" — tell the user and ask whether to widen levels (update_settings) or import ` +
           `grammar at the levels they are studying.`
         : '';
-    // Name the cap that emptied the batch (and what to do) instead of leaving Claude to guess from
-    // an unread `limits` object — the batch being empty for a FIXABLE reason is the whole point.
     const held = batch.withheld.length > 0 ? ` ${withheldLines(batch.withheld).join(' ')}` : '';
     return `_(No items for the next sentence. ${wait})_${focusNote}${beyond}${held}`;
   }
   const rows = batch.items.map((i) => {
-    // Already trimmed to a TutorCard upstream (lib/practice.ts `toLite`); the sheet reads only
-    // usage / the first 3 collocations / the first pitfall, all of which survive that trim.
     const enrichment = i.enrichment ?? null;
     const extra = enrichment
       ? ` · usage: ${enrichment.usage}` +
@@ -762,7 +520,6 @@ export function renderDueBatch(batch: DueBatch): string {
     const isLeech = (i.lapses ?? 0) >= LEECH_LAPSES;
     const contexts = batch.recentContexts[i.id];
     const missedTags = batch.weakSpots.byItem[i.id];
-    // ERROR_TAG_LABELS stays Vietnamese: the same labels appear in the user-facing weak report.
     const missedNote = missedTags?.length
       ? ` · missed last time: ${missedTags.map((tag) => ERROR_TAG_LABELS[tag] ?? tag).join(', ')}`
       : '';
@@ -787,36 +544,14 @@ export function renderDueBatch(batch: DueBatch): string {
         .filter(Boolean)
         .join(' + ')
     : null;
-  // WHAT THE TUTOR IS ABOUT TO BUILD. The sheet is written for composing a sentence to translate, and
-  // for the modes that build something else it was contradicting their own protocol rather than merely
-  // being irrelevant. Measured 2026-08-12 on a real teach-back turn: the sheet said `REQUIRED: pass
-  // suggestedRuby` (TEACH_BACK_PROTOCOL forbids it and stages sourceRuby instead) and
-  // `Direction: **VI_JA**` (that protocol ALWAYS stages JA_VI) — in the strongest word the sheet has.
-  // Conversation gets it too, on roughly half of turns: `batch.direction` alternates, while
-  // CONVERSATION_PROTOCOL always stages VI_JA.
-  //
-  // Contradiction beats irrelevance for damage, and the timing makes it worse: the sheet lands at the
-  // moment of the decision, the protocol landed at the start of the session. TEACH_BACK_PROTOCOL already
-  // spends a paragraph telling Claude to ignore half of this block — prose patching a data problem.
   const forTeachBack = batch.forExerciseType === TEACH_BACK_EXERCISE;
   const forConversation = batch.forExerciseType === 'CONVERSATION';
-  // The direction the tutor will ACTUALLY stage, which is what the ruby/furigana notes must follow.
   const stagedDirection = forTeachBack ? 'JA_VI' : forConversation ? 'VI_JA' : batch.direction;
   const srcIsJa = batch.direction === 'JA_VI';
   const size = SENTENCE_SIZE_SPEC[batch.settings.sentenceSize];
   const srcChars = srcIsJa ? size.ja : size.vi;
   const srcLang = srcIsJa ? 'Japanese' : 'Vietnamese';
   const vocabLevel = vocabTargetLevel(batch);
-  // GRADED pattern count = what the batch ACTUALLY holds, not what the size setting asks for. The two
-  // diverge on nearly every early sentence, because the new-pattern quotas hold patterns back — and
-  // this line used to print the SETTING while the list right below it carried fewer. Measured in the
-  // lab 2026-08-12 on a fresh account: "weave in **3** grammar pattern(s)" above a list of exactly
-  // ONE, on all three of the first sentences. The protocol reads this line AND "the number of grammar
-  // patterns woven in = exactly the number of items in the batch" AND "NEVER compose around a pattern
-  // that is not listed in the batch", so the sheet was handing Claude two different numbers for one
-  // decision — the conflicting-directive failure `.claude/rules/README.md` names as the thing that
-  // makes a model worse, and here it sat in the hottest path in the app.
-  // VOCAB riders are excluded on purpose: they are graded but sit OUTSIDE the grammar-pattern count.
   const gradedPatterns = batch.items.filter((i) => i.role !== 'VOCAB').length;
   const patternNote =
     gradedPatterns === size.patterns
@@ -824,28 +559,15 @@ export function renderDueBatch(batch: DueBatch): string {
       : `weave in **${gradedPatterns}** grammar pattern(s) — sentenceSize "${batch.settings.sentenceSize}" ` +
         `asks for ${size.patterns}, but only ${gradedPatterns} ${gradedPatterns === 1 ? 'is' : 'are'} ` +
         `scheduled right now` +
-        // Only point at that line when it EXISTS. Naming a line that is not on the sheet sends Claude
-        // looking for a reason it cannot find, and then improvising one to the learner.
         (batch.withheld.length > 0 ? ' (a HELD BACK line below names the cap that did it)' : '') +
         `. Reach the character target with LOWER-level SCAFFOLDING, never with a pattern that is not ` +
         `listed below — an unlisted pattern gets no rating and no review, so that part of the sentence ` +
         `is wasted work`;
-  // Whole-level focus: scheduled slots are pure to the level; naturalness is scaffolded, not filled.
   const levelFocusOnly = !!batch.focus?.levels?.length && !batch.focus?.patterns?.length;
-  // A focus request where NO requested pattern survived into the batch. The sheet used to assert
-  // "the sentence MUST revolve around the FOCUS entries" while listing none of them (verified
-  // 2026-07-26): the tutor then improvised a sentence about an absent pattern, which got NO rating
-  // and NO FSRS write — silent data loss on a routine request. Must be stated, never implied.
-  // A weakness drill with no history yet is NOT this failure (there is simply nothing to prioritise)
-  // — it keeps its own friendly wording further down.
   const focusServedNone =
     !!batch.focus &&
     !(batch.focus.weak && batch.focus.matched === 0) &&
     !batch.items.some((i) => i.focusHit);
-  // Multi-sensory: the promptModality/answerModality settings only reach Claude via the `practice`
-  // prompt, which the user must explicitly invoke. Reinforce them here — the sheet Claude reads right
-  // before composing EVERY exercise — so the speak-the-prompt behavior survives without the prompt and
-  // doesn't drift over a long session. (Mirrors PRACTICE_PROTOCOL's multi-sensory bullet.)
   const promptNote =
     batch.settings.promptModality === 'speech-only'
       ? '**PROMPTING (speech-only — LISTENING DRILL):** SPEAK the exercise sentence aloud (needs ' +
@@ -860,9 +582,6 @@ export function renderDueBatch(batch: DueBatch): string {
       ? '**ANSWERING (speak-only):** ask the user to SAY their answer out loud; grading their ' +
         'pronunciation depends on whether voice mode can actually hear them.'
       : null;
-  // Furigana directives — JA source only. Same prompt-only gap as modality: the actionable rules
-  // (insert 「（かな）」 when furigana is on; ALWAYS send sourceRuby for hover in history) lived only in
-  // PRACTICE_PROTOCOL, so a passive "furiganaHint: BẬT" flag got ignored. Surface the actions here.
   const furiganaNote =
     stagedDirection === 'JA_VI'
       ? furiganaForClaude(batch.settings.furiganaMode)
@@ -874,8 +593,6 @@ export function renderDueBatch(batch: DueBatch): string {
           'readings inside the exercise sentence you display. Still send sourceRuby (see below) so the ' +
           'app can render furigana.'
       : null;
-  // sourceRuby powers the hover-furigana in history and is independent of furiganaHint — request it
-  // for every JA source so coverage stops depending on whether the `practice` prompt was invoked.
   const rubyNote =
     stagedDirection === 'JA_VI'
       ? '↳ **REQUIRED**: pass `sourceRuby` to stage_sentence — the exercise sentence itself rewritten ' +
@@ -887,8 +604,6 @@ export function renderDueBatch(batch: DueBatch): string {
         'on hover. Never leave it empty when the answer is Japanese.';
   return joinLines([
     '**COMPOSITION SHEET — FOR YOU (Claude) ONLY. NEVER show this to the user.**',
-    // MASTERY: the acquisition queue is empty; the patterns below are already mastered. Recombine +
-    // escalate (transfer practice) instead of introducing anything new — a miss re-activates via FSRS.
     batch.mode === 'MASTERY'
       ? '\n**MASTERY MODE** — today’s queue is clear (nothing due, no new patterns left). BEFORE ' +
         'the FIRST mastery sentence of the session: TELL the user (in chat, not from this sheet) that ' +
@@ -904,8 +619,6 @@ export function renderDueBatch(batch: DueBatch): string {
       : null,
     promptNote,
     answerNote,
-    // Both of these describe an exercise SENTENCE the learner reads; a teach-back turn shows a bare
-    // pattern and its own line above already says which ruby field to send.
     forTeachBack ? null : furiganaNote,
     forTeachBack ? null : rubyNote,
     '',
@@ -916,8 +629,6 @@ export function renderDueBatch(batch: DueBatch): string {
         'below, and `sourceRuby` when it holds kanji. What you want from this sheet is the item, its ' +
         'enrichment (your marking scheme) and the WEAK SPOTS line.'
       : `Direction: **${stagedDirection}** · source length: ~${srcChars} characters (${srcLang}, ±30%) · ${patternNote} · register: ${batch.settings.register} · grading: ${batch.settings.translationStyle}`,
-    // difficulty used to be shipped as a bare "2/5" — an integer the grader and the composer could
-    // read differently. Ship the ANCHOR text instead, so the setting means one thing (2026-07-26).
     forTeachBack
       ? null
       : `STRUCTURE (difficulty ${batch.settings.difficulty}/5): ${DIFFICULTY_ANCHORS[batch.settings.difficulty]?.en ?? ''} — this is about SHAPE only; vocabulary hardness is the VOCABULARY line, novelty is capped separately, length is the character target above`,
@@ -945,9 +656,6 @@ export function renderDueBatch(batch: DueBatch): string {
     batch.focus && batch.focus.unmatchedPatterns.length > 0
       ? `NOT in the library: 「${batch.focus.unmatchedPatterns.join('」「')}」 — tell the user (add via add_grammar, or pick another pattern).`
       : null,
-    // A DIFFERENT state with the OPPOSITE fix. Suspended items are invisible to the scheduler, so they
-    // used to be reported as "NOT in the library" — which pushes the tutor to add_grammar and creates a
-    // DUPLICATE of a pattern the learner already owns.
     batch.focus && batch.focus.suspendedPatterns.length > 0
       ? `SUSPENDED, not missing: ${batch.focus.suspendedPatterns
           .map((s) => `「${s.expression}」 (itemId ${s.itemId})`)
@@ -967,13 +675,9 @@ export function renderDueBatch(batch: DueBatch): string {
             : ' — design the sentence to TOUCH these naturally (a fair trap, not a gotcha); when explaining, name them outright.'
         }`
       : null,
-    // Topics steer a composed scene, and a teach-back turn has none.
     !forTeachBack && batch.settings.topics.length > 0
       ? `Preferred topics: ${batch.settings.topics.join(', ')}`
       : null,
-    // A [VOCAB] rider can still arrive on a teach-back batch, and TEACH_BACK_PROTOCOL says to ignore it
-    // ("it is not what you ask about") — so this whole block, which is about weaving words into a
-    // sentence, must not be here to argue with that.
     !forTeachBack && batch.items.some((i) => i.role === 'VOCAB')
       ? 'VOCABULARY (the [VOCAB] entries): words the user looked up — USE them NATURALLY in the ' +
         'sentence (they sit OUTSIDE the grammar-pattern count, do NOT count toward it) and GRADE them ' +

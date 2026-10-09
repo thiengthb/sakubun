@@ -1,34 +1,21 @@
-// Đếm việc dùng tool MCP — lưới cho lib/mcp/usage.ts, chạy trên DB thật (migration đã commit).
-//
-// Vì sao có file này (2026-08-11): bảng `mcp_tool_call` tồn tại để trả lời hai câu mà log stdout không
-// trả lời được sau khi container restart — "Claude thật sự gọi tool nào" (issue #20) và "tool nào đang
-// hỏng trong im lặng" (tool ném lỗi vẫn trả HTTP 200). Một bộ đếm đếm SAI thì tệ hơn không có bộ đếm:
-// nó biến một câu hỏi mở thành một câu trả lời tự tin và lệch. Nên mọi phép cộng ở đây đều được đo.
-//
-// Ca cuối là ca đắt nhất: nó đi qua ĐÚNG đường production dùng — `guard()` + recorder được nối như
-// `lib/mcp/server.ts` nối — vì một bộ đếm đúng mà không được cắm vào đâu thì cũng không đếm gì.
-
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { createTestDb } from '@/lib/test-db';
+import { createTestDb } from '@/lib/db/test-db';
 import { MCP_CATALOG } from '@/lib/mcp/catalog';
 
 createTestDb('sakubun-mcp-usage-');
 
 type Usage = typeof import('@/lib/mcp/usage');
 type Kit = typeof import('@/lib/mcp/tool-kit');
-type Db = typeof import('@/lib/db');
+type Db = typeof import('@/lib/db/db');
 
 let U: Usage;
 let K: Kit;
 let prisma: Db['prisma'];
 
-// `tool-kit` cũng phải nạp ĐỘNG, không phải import tĩnh: nó với tới `@/lib/db` qua render.ts →
-// dossier.ts, và mọi import tĩnh đều chạy TRƯỚC `createTestDb()` — Prisma singleton sẽ bind vào
-// `prisma/dev.db` rồi mọi phép chốt dưới đây đo sai cơ sở dữ liệu (CLAUDE.md §Gotchas).
 beforeEach(async () => {
   U ??= await import('@/lib/mcp/usage');
   K ??= await import('@/lib/mcp/tool-kit');
-  prisma ??= (await import('@/lib/db')).prisma;
+  prisma ??= (await import('@/lib/db/db')).prisma;
   await prisma.mcpToolCall.deleteMany({});
   K.setToolCallRecorder(null);
 });
@@ -49,7 +36,6 @@ describe('recordToolCall', () => {
 
   it('firstCalledAt là mốc ĐẦU, và không bị lời gọi sau dịch đi', async () => {
     await U.recordToolCall('ping', 1);
-    // Đặt mốc đầu về quá khứ để phép chốt không phụ thuộc vào việc hai lời gọi cách nhau bao nhiêu ms.
     const long = new Date('2026-01-01T00:00:00Z');
     await prisma.mcpToolCall.update({ where: { name: 'ping' }, data: { firstCalledAt: long } });
 
@@ -74,9 +60,6 @@ describe('recordToolCall', () => {
   });
 
   it('gọi thành công SAU đó không xoá dấu vết lỗi cũ', async () => {
-    // Cố ý: đây là ca của bug 2026-08-08. `submit_review` hỏng cả buổi rồi được sửa; nếu lần thành công
-    // đầu tiên xoá sạch errors + lastError thì bảng này trở thành "mọi thứ đều ổn" đúng lúc người ta
-    // cần biết vừa có gì đó rất không ổn.
     await U.recordToolCall('submit_review', 40, 'P2025');
     await U.recordToolCall('submit_review', 18);
 
@@ -112,14 +95,10 @@ describe('readToolUsage', () => {
     expect(report.neverCalled, 'đúng phần bù, không phải một danh sách viết tay').toEqual(
       catalogTools.filter((n) => n !== 'check_library' && n !== 'submit_review'),
     );
-    // Câu trả lời cho P4 nằm ở đây: 2 tool được dùng, 29 tool chưa từng — nhưng chỉ sau khi bảng này
-    // sống qua vài buổi luyện THẬT. Phép chốt dưới đây chỉ giữ cho hai vế luôn cộng lại đủ.
     expect(report.rows.length + report.neverCalled.length).toBe(report.toolCount);
   });
 
   it('hàng của một tool đã bị đổi tên/xoá không bị giấu, mà bị ĐÁNH DẤU', async () => {
-    // Sau một lần đổi tên tool, hàng cũ vẫn còn số đếm thật của nó. Bỏ nó đi thì mất lịch sử; trộn nó
-    // vào như tool đang sống thì "31 tool" biến thành 32. Nên: vẫn hiện, và nói rõ là không còn.
     await U.recordToolCall('fork_shared_items', 9);
 
     const report = await U.readToolUsage();

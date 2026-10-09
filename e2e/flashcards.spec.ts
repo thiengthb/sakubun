@@ -1,16 +1,3 @@
-// The card decks, driven by a real pointer in a real browser.
-//
-// Both decks were rebuilt on 2026-08-06 into a Quizlet-style pile: no grading buttons under the card,
-// no instruction line, and SWIPE as the way through. Two of those three are claims a unit test cannot
-// make — a drag is a sequence of real pointer events with velocity, and "the buttons are gone" is only
-// true of the rendered page — so they are pinned here.
-//
-// What each half proves:
-//   1. group deck  — the removed controls are actually absent, and a horizontal DRAG moves the deck
-//      both ways. Arrows and drag are asserted separately: they are different code paths (a click
-//      handler vs. onDragEnd's distance+velocity threshold) and only one of them is the phone.
-//   2. history deck — /history can be read as cards, the deck is dealt from the FILTERED rows, and a
-//      card's back carries the reference answer the đề was drilling.
 import path from 'node:path';
 import Database from 'better-sqlite3';
 import { expect, test, type Page } from '@playwright/test';
@@ -26,11 +13,6 @@ async function login(page: Page) {
   await page.waitForURL((u) => !u.pathname.startsWith('/login'), { timeout: 30_000 });
 }
 
-/**
- * A real horizontal swipe across the card: press, MOVE IN STEPS, release. The steps matter — a single
- * mouse.move jumps the pointer, and a drag recogniser that reads velocity sees one impossible frame
- * rather than a gesture. `dx < 0` swipes left (forward), `dx > 0` swipes right (back).
- */
 async function swipe(page: Page, dx: number) {
   const card = page.getByRole('button', { name: /^Lật/ });
   const box = await card.boundingBox();
@@ -41,7 +23,6 @@ async function swipe(page: Page, dx: number) {
   await page.mouse.down();
   for (let i = 1; i <= 6; i++) await page.mouse.move(from + (dx * i) / 6, y);
   await page.mouse.up();
-  // Let the enter/exit slide (280ms) finish before the next assertion reads the deck.
   await page.waitForTimeout(500);
 }
 
@@ -76,34 +57,26 @@ test('the group deck is a swipe pile: no grading buttons, and a drag moves it bo
   await page.getByRole('tab', { name: 'Flashcard' }).click();
   await expect(page.getByText('Thẻ 1 / 3')).toBeVisible();
 
-  // --- the removals the user asked for, asserted as ABSENCE ---
   await expect(page.getByRole('button', { name: /Đã thuộc/ })).toHaveCount(0);
   await expect(page.getByRole('button', { name: /Đang học/ })).toHaveCount(0);
-  // The instruction line under the card. `getByText` with a substring so a reworded tip still fails.
   await expect(page.getByText(/để lật/)).toHaveCount(0);
 
-  // --- swipe LEFT = forward. The counter is the deck's own report of where it is. ---
   await swipe(page, -260);
   await expect(page.getByText('Thẻ 2 / 3')).toBeVisible();
   await swipe(page, -260);
   await expect(page.getByText('Thẻ 3 / 3')).toBeVisible();
 
-  // --- swipe RIGHT = back. "lướt qua lướt lại" is both directions, so both are pinned. ---
   await swipe(page, 260);
   await expect(page.getByText('Thẻ 2 / 3')).toBeVisible();
 
-  // --- a SHORT drag is not a swipe: it springs back and the deck stays put. Without this, a deck
-  //     that advanced on any pointer movement at all would pass everything above. ---
   await swipe(page, -20);
   await expect(page.getByText('Thẻ 2 / 3')).toBeVisible();
 
-  // --- the arrows are the same two moves for a mouse ---
   await page.getByRole('button', { name: 'Thẻ sau' }).click();
   await expect(page.getByText('Thẻ 3 / 3')).toBeVisible();
   await page.getByRole('button', { name: 'Thẻ trước' }).click();
   await expect(page.getByText('Thẻ 2 / 3')).toBeVisible();
 
-  // --- past the last card is the end of the pile, not a crash ---
   await page.getByRole('button', { name: 'Thẻ sau' }).click();
   await page.getByRole('button', { name: 'Thẻ sau' }).click();
   await expect(page.getByText('Đã lướt hết 3 thẻ')).toBeVisible();
@@ -147,7 +120,6 @@ test('/history can be studied as a deck, dealt from the filtered rows', async ({
     iso(now - 1000),
     iso(now - 500),
   );
-  // A PENDING row has no answer side, so it must never become a card — the deck would show a blank back.
   sentence.run(
     'h3',
     'VI_JA',
@@ -166,27 +138,18 @@ test('/history can be studied as a deck, dealt from the filtered rows', async ({
   await page.goto('/history', { waitUntil: 'networkidle' });
   await page.getByRole('button', { name: 'Flashcard' }).click();
 
-  // Two of the three rows are studiable; the PENDING one is not.
   await expect(page.getByText('Lượt 1 / 2')).toBeVisible();
 
-  // The front is the đề. Flipping shows the reference answer the đề was drilling.
   await expect(page.getByText('Tôi đã nắm được tình hình.')).toBeVisible();
   await page.getByRole('button', { name: /^Lật/ }).click();
   await expect(page.getByText('状況を把握しました。')).toBeVisible();
   await expect(page.getByText('Đúng ý, nên dùng thể lịch sự.')).toBeVisible();
 
-  // Swiping deals the next one — and a new card always lands FACE DOWN, never on the answer. Asserted
-  // through the flip control's own name rather than the answer's visibility: a CSS 3D flip keeps both
-  // faces in the DOM (backface-visibility hides one, it is not unmounted), so "the answer is not on
-  // screen" and "the answer is not in the tree" are different claims and only the first one is true.
   await swipe(page, -260);
   await expect(page.getByText('Lượt 2 / 2')).toBeVisible();
   await expect(page.getByText('曖昧な返事だった。')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Lật xem mặt sau' })).toBeVisible();
 
-  // ── Bố cục của chế độ thẻ, đổi 2026-08-11 theo yêu cầu của chủ repo ───────────────────────────────
-  // Hàng tìm kiếm biến mất (gõ tìm một chuỗi trong khi đang lướt thẻ là việc không ai làm), thanh tiến
-  // độ lên chiếm đúng hàng đó, và nút lật chế độ đứng cạnh nút cài đặt deck.
   await expect(
     page.getByPlaceholder('Tìm trong đề / bài dịch…'),
     'ô tìm không còn ở chế độ thẻ',
@@ -194,8 +157,6 @@ test('/history can be studied as a deck, dealt from the filtered rows', async ({
 
   const bar = page.getByRole('progressbar', { name: 'Tiến độ chồng thẻ' });
   await expect(bar).toBeVisible();
-  // "Cùng một hàng" đo bằng tâm dọc, không bằng thứ tự DOM: một hàng flex bị wrap vẫn đúng thứ tự mà
-  // sai bố cục, và cái người học thấy là bố cục.
   const rowY = async (l: ReturnType<typeof page.locator>) => {
     const b = (await l.boundingBox())!;
     return b.y + b.height / 2;
@@ -212,7 +173,6 @@ test('/history can be studied as a deck, dealt from the filtered rows', async ({
     8,
   );
 
-  // "Đứng cạnh nhau" chốt bằng DOM: không có gì chen giữa hai nút.
   const adjacent = await page.evaluate(() => {
     const buttons = [...document.querySelectorAll('button')];
     const mode = buttons.find((b) => b.textContent?.includes('Danh sách'));
@@ -222,36 +182,26 @@ test('/history can be studied as a deck, dealt from the filtered rows', async ({
   });
   expect(adjacent).toBe('liền nhau');
 
-  // Nút Bộ lọc cũng không có ở chế độ thẻ (bỏ 2026-08-11) — đúng hai nút, không hơn.
   await expect(page.getByRole('button', { name: /^Bộ lọc/ }), 'bộ lọc thuộc danh sách').toHaveCount(
     0,
   );
 
-  // …nút lật đưa về danh sách, nơi ô tìm và bộ lọc quay lại.
   await modeButton.click();
   await expect(page.getByRole('button', { name: 'Thẻ sau' })).toHaveCount(0);
   await expect(page.getByPlaceholder('Tìm trong đề / bài dịch…')).toBeVisible();
 
-  // Và điều KHÔNG được mất khi bỏ hai controls kia: chồng thẻ vẫn được chia từ những hàng đã lọc. Thu
-  // hẹp ở DANH SÁCH, rồi lật sang thẻ — deck phải chỉ còn một thẻ, đúng hàng còn lại. Nếu dây nối này
-  // đứt thì bỏ nút Bộ lọc đã lặng lẽ biến "lọc rồi lướt" thành "lướt tất cả".
   await page.getByPlaceholder('Tìm trong đề / bài dịch…').fill('曖昧');
   await expect(page.getByText('1–1 / 1 lượt (lọc từ 3)')).toBeVisible();
   await page.getByRole('button', { name: 'Flashcard' }).click();
   await expect(page.getByText('Lượt 1 / 1')).toBeVisible();
   await expect(page.getByText('曖昧な返事だった。')).toBeVisible();
 
-  // Nút 1 cột / 2 cột đã bỏ (2026-08-11): danh sách luôn một cột dưới lg, hai cột từ lg lên.
   await expect(page.getByRole('button', { name: /^(1 cột|2 cột)$/ })).toHaveCount(0);
 });
 
 test('both decks fit a phone: nothing off-screen, and the arrows are reachable', async ({
   page,
 }) => {
-  // The deck sizes itself off the viewport (`min-h-[calc(100svh-…)]`), which is exactly the kind of
-  // number that is right on one screen and wrong on another — the nav row sat 15px below the fold on
-  // /history at 1280x720 before the deck got a shorter allowance there. So it is measured, on the
-  // narrow phone this was asked for, on BOTH decks (their chrome above the card differs).
   await seedE2eAccount();
   const db = new Database(path.join(process.cwd(), E2E_DB_FILE));
   const now = Date.now();
@@ -287,7 +237,6 @@ test('both decks fit a phone: nothing off-screen, and the arrows are reachable',
       'nhóm',
       async () => {
         await page.goto('/groups/grpP', { waitUntil: 'networkidle' });
-        // Below md the tab bar is a Radix select, not a native one — click the trigger, pick the option.
         await page.getByRole('combobox', { name: 'Chọn khung xem' }).click();
         await page.getByRole('option', { name: 'Flashcard' }).click();
       },
@@ -309,7 +258,6 @@ test('both decks fit a phone: nothing off-screen, and the arrows are reachable',
       return {
         overflowX: de.scrollWidth - de.clientWidth,
         arrowBottom: Math.round(arrow.bottom),
-        // The page may scroll a little; what matters is that the arrows are reachable WITHOUT it.
         viewportH: de.clientHeight,
       };
     });
@@ -322,4 +270,57 @@ test('both decks fit a phone: nothing off-screen, and the arrows are reachable',
       `${name}: the nav arrows end at ${m.arrowBottom}px, past the ${m.viewportH}px fold`,
     ).toBeLessThanOrEqual(m.viewportH);
   }
+});
+
+test('kéo thẻ sang PHẢI không làm trang trượt ngang, và có chồng thẻ phía sau', async ({ page }) => {
+  await seedE2eAccount();
+  const db = new Database(path.join(process.cwd(), E2E_DB_FILE));
+  const now = Date.now();
+  for (const t of ['GroupMember', 'Group', 'ReviewLog', 'SrsState', 'Sentence', 'Item'])
+    db.exec(`DELETE FROM "${t}"`);
+  const item = db.prepare(
+    `INSERT INTO Item (id, kind, expression, reading, hanviet, meaningVi, level, notes, source,
+       captureReason, suspended, starred, createdAt, challengeObservations)
+     VALUES (?, 'VOCAB', ?, ?, NULL, ?, 'N2', NULL, 'MCP', NULL, 0, 0, ?, 0)`,
+  );
+  const ids = ['d1', 'd2', 'd3', 'd4'];
+  ids.forEach((id, i) => item.run(id, `語${i}`, `ご${i}`, `nghĩa ${i}`, iso(now - i * 1000)));
+  db.prepare(
+    `INSERT INTO "Group" (id, name, kind, color, note, createdAt, updatedAt)
+     VALUES ('grpD', 'Nhóm kéo', 'vocab', NULL, NULL, ?, ?)`,
+  ).run(iso(now), iso(now));
+  const member = db.prepare(
+    `INSERT INTO GroupMember (groupId, itemId, addedAt) VALUES ('grpD', ?, ?)`,
+  );
+  for (const id of ids) member.run(id, iso(now));
+  db.close();
+
+  await login(page);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/groups/grpD', { waitUntil: 'networkidle' });
+  await page.getByRole('combobox', { name: 'Chọn khung xem' }).click();
+  await page.getByRole('option', { name: 'Flashcard' }).click();
+  await expect(page.getByText('Thẻ 1 / 4')).toBeVisible();
+
+  const card = page.getByRole('button', { name: /^Lật/ });
+  const box = await card.boundingBox();
+  if (!box) throw new Error('the card has no box — the deck did not render');
+  const y = box.y + box.height / 2;
+  const from = box.x + box.width / 2;
+
+  await page.mouse.move(from, y);
+  await page.mouse.down();
+  for (let i = 1; i <= 8; i++) await page.mouse.move(from + (180 * i) / 8, y);
+  await page.waitForTimeout(150);
+  // Giữa lúc kéo: thẻ tràn ra ngoài phải bị cắt, KHÔNG được đẩy rộng trang.
+  const overflow = await page.evaluate(
+    () => document.documentElement.scrollWidth - window.innerWidth,
+  );
+  await page.mouse.up();
+  expect(overflow, 'kéo thẻ sang phải không được sinh thanh cuộn ngang').toBe(0);
+
+  // Thẻ đã ném đi phải BIẾN MẤT khỏi DOM. Nếu hiệu ứng thoát không chạy xong, AnimatePresence
+  // không gỡ node — thẻ chết chồng lên nhau vô hạn mà nhìn bề ngoài không thấy.
+  const cards = page.getByRole('button', { name: /^Lật/ });
+  await expect.poll(() => cards.count(), { timeout: 5_000 }).toBe(1);
 });

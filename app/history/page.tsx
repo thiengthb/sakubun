@@ -1,12 +1,11 @@
-import { HistoryView } from '@/components/history/history-view';
-import { LiveRefresh } from '@/components/shell/live-refresh';
-import { getSettings, listSentences } from '@/lib/practice';
-import { getSessionUserId } from '@/lib/current-user';
+import { HistoryView } from '@/components/features/history/history-view';
+import { LiveRefresh } from '@/components/layout/live-refresh';
+import { getSettings, listSentences } from '@/lib/library/practice';
+import { getSessionUserId } from '@/lib/auth/current-user';
 
 export const dynamic = 'force-dynamic';
 
 export default async function HistoryPage() {
-  // Auth gate: redirects to /login when there is no valid session.
   await getSessionUserId();
   const [sentences, settings] = await Promise.all([listSentences(), getSettings()]);
 

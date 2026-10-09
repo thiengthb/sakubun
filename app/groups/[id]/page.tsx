@@ -1,16 +1,14 @@
 import { notFound } from 'next/navigation';
-import { GroupDetailView } from '@/components/groups/group-detail-view';
-import { getGroup, listAddableItems } from '@/lib/groups';
-import { getSettings } from '@/lib/practice';
-import { getSessionUserId } from '@/lib/current-user';
-import { furiganaInApp } from '@/lib/settings-schema';
+import { GroupDetailView } from '@/components/features/groups/group-detail-view';
+import { getGroup, listAddableItems } from '@/lib/library/groups';
+import { getSettings } from '@/lib/library/practice';
+import { getSessionUserId } from '@/lib/auth/current-user';
+import { furiganaInApp } from '@/lib/settings/schema';
 
 export const dynamic = 'force-dynamic';
 
 export default async function GroupDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  // Auth gate: redirects to /login when there is no valid session. The loaders below take no userId —
-  // data is scoped by the login, not by a tenant column (CLAUDE.md §Gotchas).
   await getSessionUserId();
   const group = await getGroup(id);
   if (!group) notFound();

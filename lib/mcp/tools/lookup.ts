@@ -1,15 +1,5 @@
-// The AGENTIC half of the MCP surface: one tool that answers "what does this learner's library hold
-// about X, and what is missing", and one that acts on the answer.
-//
-// WHY THE DESCRIPTIONS ARE WRITTEN LIKE THIS. In a blank chat NO prompt is loaded, so `prompts.ts`
-// does not exist as far as the model is concerned — and this user mostly chats freely rather than
-// picking a prompt. Tool DESCRIPTIONS are the only text that is always in context, which makes them
-// the sole enforcement surface for the flagship behaviour ("check the library before explaining").
-// They are therefore written in the IMPERATIVE and state WHEN the tool applies, per Anthropic's tool
-// guidance. This is model behaviour, not code, so it gets an eval rather than a unit test.
-
 import { z } from 'zod';
-import { checkLibrary } from '@/lib/lookup';
+import { checkLibrary } from '@/lib/library/lookup';
 import { renderConsentGuard, renderLibraryCheck } from '@/lib/mcp/render';
 import {
   guard,
@@ -17,13 +7,11 @@ import {
   type McpServer,
 } from '@/lib/mcp/tool-kit';
 
-/** The two study-item kinds, as the tool surface names them. */
 const LOOKUP_KIND = z.enum(['GRAMMAR', 'VOCAB']);
 
 export function registerLookupTools(server: McpServer) {
   server.tool(
     'check_library',
-    // Imperative + WHEN, because this has to fire without any prompt loaded.
     'ALWAYS call this FIRST — before you explain, compare, or discuss ANY Japanese grammar pattern or ' +
       'word, including a one-off question in a chat with no practice session running. ONE pattern or ' +
       'word per call: `query` is a short expression, NEVER a pasted document and never a list. If the ' +
@@ -88,8 +76,6 @@ export function registerLookupTools(server: McpServer) {
     },
     guard('check_library', async (args, _extra: unknown) => {
       const check = await checkLibrary(args);
-      // The consent guard rides AFTER the block: eval Scenario I showed the prohibition alone is
-      // not enough when its trigger is an ABSENT `auto` field (see renderConsentGuard).
       return okWithNotes(renderLibraryCheck(check), check, [renderConsentGuard(check.suggestions)]);
     }),
   );

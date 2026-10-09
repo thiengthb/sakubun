@@ -10,8 +10,6 @@ export default defineConfig({
   },
   test: {
     environment: 'node',
-    // Unit/integration tests only. `e2e/**` is Playwright (`npm run e2e`) and
-    // `tooling/fixtures/**` is a harness fixture — neither belongs to vitest.
     include: ['lib/**/*.test.ts'],
     globals: false,
   },

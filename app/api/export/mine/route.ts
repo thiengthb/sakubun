@@ -1,11 +1,6 @@
 import { headers } from 'next/headers';
-import { auth } from '@/lib/auth';
-import { exportUserData } from '@/lib/export';
-
-// The LEARNING-DATA export: a JSON copy of what the learner built — items, FSRS states, review history,
-// sentences, settings and study groups. Distinct from app/api/backup, which is the whole-DB SQLite
-// snapshot and the only COMPLETE copy (it also carries the auth tables and the tutor's own working
-// state). lib/export.ts documents exactly what is in and out; the settings Data tab tells the learner.
+import { auth } from '@/lib/auth/auth';
+import { exportUserData } from '@/lib/transfer/export';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';

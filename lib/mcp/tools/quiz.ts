@@ -1,9 +1,8 @@
 import { z } from 'zod';
-import { getQuizBatch, skipSentence } from '@/lib/practice';
+import { getQuizBatch, skipSentence } from '@/lib/library/practice';
 import { guard, ID, ok, type McpServer } from '@/lib/mcp/tool-kit';
 
 export function registerQuizTools(server: McpServer) {
-  // ---------------- quiz ----------------
   server.tool(
     'get_quiz_items',
     'Fetch ONE due GRAMMAR pattern to be the CORRECT answer of ONE multiple-choice quiz question A–D ' +

@@ -6,18 +6,11 @@ import {
   listGroups,
   previewGroupMembers,
   removeItemsFromGroup,
-} from '@/lib/groups';
-// `getUserId` is gone from this import on purpose: the data layer no longer takes a userId (the boundary
-// is the login — withMcpAuth({required:true}) on the route), so nothing here needs to resolve one.
+} from '@/lib/library/groups';
 import { guard, ID, ITEM_IDS, ok, type McpServer } from '@/lib/mcp/tool-kit';
 
 const GROUP_KIND = z.enum(GROUP_KINDS);
 
-// Study-group tools. Groups are a pure organization + practice-scoping layer (they NEVER touch FSRS).
-// Claude PROPOSES a grouping in chat → the learner approves → Claude calls create_group +
-// add_items_to_group. suggest_group is the DRY-RUN that verifies a proposal before that write, so an
-// approve can't leave an empty/half-built group. Scoping practice to a group rides get_due_items
-// { groupId } (in tools/practice.ts), not a tool here.
 export function registerGroupTools(server: McpServer) {
   server.tool(
     'list_groups',

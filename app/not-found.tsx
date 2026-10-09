@@ -4,10 +4,6 @@ import { Button } from '@/components/ui/button';
 
 export const metadata = { title: 'Không tìm thấy trang — sakubun' };
 
-/**
- * 404. Renders inside the root layout, so the sidebar stays usable — the two buttons are just the
- * shortest paths back for the two things people land here from (a stale bookmark, a deleted item id).
- */
 export default function NotFound() {
   return (
     <div className="flex min-h-[60vh] flex-col items-center justify-center gap-5 py-8 text-center">

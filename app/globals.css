@@ -46,66 +46,35 @@
   --radius-2xl: calc(var(--radius) * 1.8);
 }
 
-/* CLAUDE DESKTOP PALETTE, 2026-08-05. Colour tokens only — --radius, fonts, spacing and every component
-   class are untouched, same discipline as the 2026-08-04 pass.
-
-   The surfaces are Anthropic's published brand neutrals, converted hex -> OKLCH exactly:
-
-     #FAF9F5  0.982   the page          (Claude's conversation surface)
-     #F0EEE6  0.949   sidebar / muted   (Anthropic ivory — chrome sits one step DOWN)
-     #FFFFFF  1.000   card              (surfaces lift UP off the page)
-     #141413  0.191   ink               (Claude's near-black, warm at hue ~107)
-     #E3E1DA  0.909   hairline
-     #D97757  0.672   CLAY — the Claude brand orange
-
-     dark:  #262624 page · #1F1E1D sidebar · #30302E card · #3A3A38 panel · #FAF9F5 ink
-
-   What changed vs the previous cream: the neutrals are LIGHTER and far less saturated. The old page was
-   0.958 at chroma 0.016 (a yellow cream, #F7F0E5); Claude's is 0.982 at chroma 0.005 — warm, but warm
-   the way paper is warm, not warm the way a tint is. Hue moved 80 -> 95/107, which is Claude's own axis.
-
-   THE ONE DELIBERATE DEVIATION, and it is a real one: Claude ships white text on the clay button. That
-   pair measures 3.12:1 — below the 4.5:1 AA floor for text, and lib/contrast.test.ts is not negotiable
-   (AGENTS.md §Verification). Rather than darken the clay (which is what the previous theme did, and why
-   the orange never looked like Claude's), --primary is now the EXACT #D97757 and --primary-foreground is
-   Claude's own ink #141413: 5.89:1. The button is the right orange; the label is dark instead of white.
-   White-on-clay would still be legal for ICONS (3.12 clears the 3:1 non-text floor) if one is ever needed.
-
-   --accent-brand cannot take the same trick — it is LINK TEXT, so it has to clear 4.5:1 against the page
-   AND the white card. It stays on the clay hue (39) at the chroma of #C96442, dropped to the highest L
-   that clears 4.55:1 on both (solved numerically): oklch(0.527 0.1375 39). Same for the four semantic
-   tokens and --muted-foreground — hue and chroma chosen first, L solved last. */
 :root {
-  --background: oklch(0.982 0.005 95); /* #FAF9F5 */
-  --foreground: oklch(0.191 0.002 107); /* #141413 */
-  --card: oklch(1 0 90); /* #FFFFFF */
+  --background: oklch(0.982 0.005 95);
+  --foreground: oklch(0.191 0.002 107);
+  --card: oklch(1 0 90);
   --card-foreground: oklch(0.191 0.002 107);
   --popover: oklch(1 0 90);
   --popover-foreground: oklch(0.191 0.002 107);
-  /* The exact Claude clay. See the deviation note above for why the label is ink, not white. */
-  --primary: oklch(0.672 0.131 39); /* #D97757 */
+
+  --primary: oklch(0.672 0.131 39);
   --primary-foreground: oklch(0.191 0.002 107);
-  --secondary: oklch(0.9485 0.011 95); /* #F0EEE6 */
+  --secondary: oklch(0.9485 0.011 95);
   --secondary-foreground: oklch(0.28 0.005 100);
   --muted: oklch(0.9485 0.011 95);
-  /* ~#686762, Claude's secondary text one notch darker. GIỮ TRÊN MỘT DÒNG: `lib/contrast.test.ts` đọc
-     token theo TỪNG DÒNG, nên một lần `prettier --write` gấp dòng này thành ba đã làm 4 ca đỏ với
-     `TypeError: … reading 'startsWith'` (2026-08-11). Chú thích tách ra để dòng khai báo còn ngắn. */
+
   --muted-foreground: oklch(0.512 0.008 97);
-  --accent: oklch(0.925 0.013 94); /* hover/selected — ivory, one step below the sidebar */
+  --accent: oklch(0.925 0.013 94);
   --accent-foreground: oklch(0.28 0.005 100);
   --destructive: oklch(0.537 0.2 27);
-  --border: oklch(0.909 0.01 94); /* #E3E1DA */
+  --border: oklch(0.909 0.01 94);
   --input: oklch(0.895 0.011 94);
   --ring: var(--accent-brand);
-  /* Clay again, but this one is TEXT (links, focus ring, brand icons) so L is solved for 4.5:1. */
+
   --accent-brand: oklch(0.527 0.1375 39);
-  --ok: oklch(0.496 0.13 155); /* correct / on-track — emerald */
-  --warn: oklch(0.514 0.14 85); /* partial / behind — amber (nudged off the brand orange) */
-  --alert: oklch(0.538 0.2 20); /* wrong / lapse — rose */
-  --info: oklch(0.51 0.13 245); /* easy / mastered — blue (same L/C family as the 3 above) */
+  --ok: oklch(0.496 0.13 155);
+  --warn: oklch(0.514 0.14 85);
+  --alert: oklch(0.538 0.2 20);
+  --info: oklch(0.51 0.13 245);
   --radius: 0.625rem;
-  --sidebar: oklch(0.9485 0.011 95); /* #F0EEE6 */
+  --sidebar: oklch(0.9485 0.011 95);
   --sidebar-foreground: oklch(0.24 0.003 100);
   --sidebar-primary: oklch(0.672 0.131 39);
   --sidebar-primary-foreground: oklch(0.191 0.002 107);
@@ -115,23 +84,20 @@
   --sidebar-ring: var(--accent-brand);
 }
 
-/* Dark = Claude Desktop's dark surfaces, same structure: chrome sinks BELOW the page, cards rise above.
-   The clay is IDENTICAL in both themes (#D97757) — Claude does not lighten its brand colour for dark
-   mode, and it does not need to: the ink label rides along, so the button reads the same either way. */
 .dark {
-  --background: oklch(0.268 0.004 107); /* #262624 */
-  --foreground: oklch(0.982 0.005 95); /* #FAF9F5 */
-  --card: oklch(0.309 0.004 107); /* #30302E */
+  --background: oklch(0.268 0.004 107);
+  --foreground: oklch(0.982 0.005 95);
+  --card: oklch(0.309 0.004 107);
   --card-foreground: oklch(0.982 0.005 95);
-  --popover: oklch(0.348 0.003 107); /* #3A3A38 */
+  --popover: oklch(0.348 0.003 107);
   --popover-foreground: oklch(0.982 0.005 95);
   --primary: oklch(0.672 0.131 39);
   --primary-foreground: oklch(0.191 0.002 107);
-  --secondary: oklch(0.325 0.004 107); /* #333331 */
+  --secondary: oklch(0.325 0.004 107);
   --secondary-foreground: oklch(0.982 0.005 95);
   --muted: oklch(0.325 0.004 107);
-  --muted-foreground: oklch(0.718 0.008 97); /* ~#A5A49E */
-  --accent: oklch(0.347 0.004 107); /* #3A3A38 — hover sits one step ABOVE the fills */
+  --muted-foreground: oklch(0.718 0.008 97);
+  --accent: oklch(0.347 0.004 107);
   --accent-foreground: oklch(0.982 0.005 95);
   --destructive: oklch(0.774 0.19 22);
   --border: oklch(0.36 0.004 107);
@@ -142,7 +108,7 @@
   --warn: oklch(0.72 0.13 88);
   --alert: oklch(0.761 0.18 20);
   --info: oklch(0.715 0.13 245);
-  --sidebar: oklch(0.236 0.002 68); /* #1F1E1D */
+  --sidebar: oklch(0.236 0.002 68);
   --sidebar-foreground: oklch(0.95 0.005 95);
   --sidebar-primary: oklch(0.672 0.131 39);
   --sidebar-primary-foreground: oklch(0.191 0.002 107);
@@ -163,7 +129,6 @@
     @apply font-sans;
   }
 
-  /* Theme-aware thin scrollbar (standard + webkit fallback). */
   * {
     scrollbar-width: thin;
     scrollbar-color: var(--border) transparent;
@@ -185,7 +150,6 @@
     }
   }
 
-  /* A11y: respect prefers-reduced-motion. */
   @media (prefers-reduced-motion: reduce) {
     *,
     *::before,
@@ -197,9 +161,6 @@
     }
   }
 
-  /* Furigana (components/furigana-text.tsx): readings sit hidden — space reserved so there's no
-     jump — and appear on hover of the sentence. A reading HINT, not a spoiler. Touch devices have
-     no hover, so show it there always. */
   .furigana rt {
     font-size: 0.6em;
     visibility: hidden;
@@ -215,9 +176,6 @@
   }
 }
 
-/* ---- Study-streak flame + milestone celebration (components/streak-*.tsx) ----
-   Animations only touch transform/opacity/filter. The global prefers-reduced-motion rule above
-   near-instant-completes these, so reduced-motion users get a static reveal (no flicker/rise). */
 @keyframes streak-flicker {
   0%,
   100% {
@@ -280,8 +238,7 @@
     opacity: 1;
   }
 }
-/* The inner flame tongue breathes on its own rhythm (a touch faster than the outer flicker), so the
-   layered flame looks alive rather than uniformly scaled. Opacity-only → cheap + reduced-motion-safe. */
+
 @keyframes streak-inner {
   0%,
   100% {
@@ -297,7 +254,7 @@
 .streak-flame {
   transform-origin: 50% 85%;
   animation: streak-flicker var(--flick, 2.2s) ease-in-out infinite;
-  /* Double drop-shadow = a tight core glow + a soft wide halo, so the heat reads at any size. */
+
   filter: drop-shadow(0 0 calc(var(--glow, 2px) * 0.6) var(--flame2, #f97316))
     drop-shadow(0 0 var(--glow, 2px) var(--flame2, #f97316));
 }
@@ -326,20 +283,6 @@
   animation: streak-ember var(--dur, 1.6s) ease-out forwards;
 }
 
-/* ---- Chuyển trang (app/template.tsx) ----
-   Mỗi lần đổi route, nội dung trang hiện lên bằng một cú fade ngắn thay vì thay thế cứng. Vỏ ứng dụng
-   (sidebar, breadcrumb) không nhấp nháy theo, vì `template.tsx` chỉ bọc phần trang.
-
-   CHỈ `opacity`, KHÔNG `transform` — và đây là một quyết định, không phải sự thiếu sót. Một transform
-   trên phần tử bọc cả trang sẽ tạo containing block cho mọi `position: fixed` bên trong nó, và trong
-   repo này có hai chỗ như vậy nằm trong vùng trang: lớp phủ ăn mừng chuỗi ngày
-   (`components/dashboard/streak-celebration.tsx`, `fixed inset-0`) và dải nút nổi của bảng dữ liệu
-   (`components/shared/data-table.tsx`, `fixed top-1/2 right-3`). Chúng sẽ lệch trong lúc hiệu ứng chạy,
-   và nếu trang đang cuộn thì lệch rất xa chứ không phải vài pixel. Đổi 4px "nhấc lên" lấy hai chỗ neo
-   sai là một cuộc đổi tồi.
-
-   Viết bằng CSS keyframe (không phải motion/react) để luật `prefers-reduced-motion` toàn cục ở trên tự
-   vô hiệu hoá nó — animation trong JS sẽ không được luật đó chạm tới. */
 @keyframes page-fade-in {
   from {
     opacity: 0;
@@ -350,94 +293,4 @@
 }
 .page-enter {
   animation: page-fade-in 180ms ease-out both;
-}
-
-/* ---- Guide walkthrough (components/guide-walkthrough.tsx) ----
-   Interactive step-through with animated illustrations. Every animation touches only
-   transform/opacity/filter, and the global prefers-reduced-motion rule above near-instant-completes
-   them, so reduced-motion users get a static step (no slide/pulse/typing). */
-@keyframes guide-stage-in {
-  from {
-    opacity: 0;
-    transform: translateY(10px) scale(0.985);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-@keyframes guide-pop-in {
-  from {
-    opacity: 0;
-    transform: translateY(6px) scale(0.9);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-@keyframes guide-pulse {
-  0% {
-    transform: scale(0.6);
-    opacity: 0.8;
-  }
-  70% {
-    opacity: 0;
-  }
-  100% {
-    transform: scale(2.4);
-    opacity: 0;
-  }
-}
-@keyframes guide-bar-grow {
-  from {
-    transform: scaleX(0);
-  }
-  to {
-    transform: scaleX(1);
-  }
-}
-@keyframes guide-caret {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0;
-  }
-}
-@keyframes guide-float {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-4px);
-  }
-}
-
-/* The stage replays its enter animation on every step change (React re-keys it by index). */
-.guide-stagein {
-  animation: guide-stage-in 0.4s cubic-bezier(0.2, 0.8, 0.25, 1) both;
-}
-/* Children stagger in; each sets --i inline for its delay. */
-.guide-pop {
-  animation: guide-pop-in 0.45s cubic-bezier(0.2, 1.3, 0.4, 1) both;
-  animation-delay: calc(var(--i, 0) * 90ms + 120ms);
-}
-/* A pulsing ring marking a click target. */
-.guide-clickring {
-  animation: guide-pulse 1.8s ease-out infinite;
-}
-/* A bar that grows from the left on entry (set --i for delay). */
-.guide-bar {
-  transform-origin: left;
-  animation: guide-bar-grow 0.7s cubic-bezier(0.3, 0.9, 0.3, 1) both;
-  animation-delay: calc(var(--i, 0) * 120ms + 200ms);
-}
-.guide-caret {
-  animation: guide-caret 1s step-end infinite;
-}
-.guide-float {
-  animation: guide-float 3s ease-in-out infinite;
 }

@@ -1,11 +1,6 @@
 import { headers } from 'next/headers';
-import { auth } from '@/lib/auth';
-import { exportVocabApkg } from '@/lib/export';
-
-// Anki deck export (2026-07-23). Streams the signed-in member's vocabulary as an .apkg they import
-// into their OWN Anki — the multi-user-safe replacement for the removed AnkiConnect push, which could
-// only ever reach the Anki running on the container's host machine. exportVocabApkg scopes its query
-// by the session userId, so a member can only ever export their own words.
+import { auth } from '@/lib/auth/auth';
+import { exportVocabApkg } from '@/lib/transfer/export';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';

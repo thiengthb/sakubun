@@ -5,11 +5,11 @@ import {
   MAX_NOTE_EVIDENCE,
   MIN_NOTE_CHARS,
   NOTE_TTL_DAYS,
-} from '@/lib/learner-notes';
-import { errorDetailSchema } from '@/lib/error-tags';
-import { getDueBatch, stageSentence, submitReview } from '@/lib/practice';
-import { classifyExtraPatterns, drilledLevelOf, MAX_EXTRA_PATTERNS } from '@/lib/scaffolding';
-import { QUIZ_DISTRACTOR_COUNT } from '@/lib/quiz-options';
+} from '@/lib/session/learner-notes';
+import { errorDetailSchema } from '@/lib/session/error-tags';
+import { getDueBatch, stageSentence, submitReview } from '@/lib/library/practice';
+import { classifyExtraPatterns, drilledLevelOf, MAX_EXTRA_PATTERNS } from '@/lib/srs/scaffolding';
+import { QUIZ_DISTRACTOR_COUNT } from '@/lib/session/quiz-options';
 import {
   renderCalibrationShadow,
   renderDueBatch,
@@ -33,7 +33,6 @@ import {
   type McpServer,
 } from '@/lib/mcp/tool-kit';
 
-// Reminder appended to composing-related descriptions — the FULL protocol lives in the `practice` prompt.
 const COMPOSE_NOTE =
   'Compose strictly per the returned `settings`: direction (JA_VI = give a Japanese sentence, they ' +
   'translate to Vietnamese; VI_JA = give a Vietnamese sentence, they translate to Japanese), ' +
@@ -43,7 +42,6 @@ const COMPOSE_NOTE =
   'settings.vocabCeiling. NEVER reveal the answer before the user has replied.';
 
 export function registerPracticeTools(server: McpServer) {
-  // ---------------- practice loop ----------------
   server.tool(
     'get_due_items',
     '(For TRANSLATION practice. For fill-in-the-blank QUIZ practice do NOT use this tool — use ' +
@@ -128,12 +126,7 @@ export function registerPracticeTools(server: McpServer) {
               }
             : undefined;
         const now = new Date();
-        // The learner-model digest used to be computed and rendered HERE, once per sentence. Eval
-        // Scenario G (2026-07-28) showed it changed no composed sentence across two confusion pairs,
-        // so it moved to `get_stats` — read once per session. Dropping it also drops `computeDossier`
-        // from this path, which was a second set of history scans on EVERY exercise, not just tokens.
         const batch = await getDueBatch(now, maxItems, focus, exerciseType);
-        // Planning sheet is Claude-only — no verbatim display order here.
         return okWithMarkdown(renderDueBatch(batch), batch, {
           verbatim: false,
         });
@@ -170,11 +163,6 @@ export function registerPracticeTools(server: McpServer) {
       exerciseType: EXERCISE_TYPE.optional().describe(
         'Exercise type for this sentence, UPPERCASE (default TRANSLATION)',
       ),
-      // REQUIRED in practice, but kept OPTIONAL in Zod on purpose — same reasoning as submit_review's
-      // sentenceId below: a schema rejection reaches the client as a bare "too_small" with no way
-      // forward, whereas the runtime guard in the handler names exactly what to resend. The protocol
-      // declared `items` REQUIRED while the schema left it free, so an item-less (hence unratable)
-      // sentence staged happily — verified 2026-07-26.
       items: z
         .array(z.object({ itemId: ID, role: ROLE }))
         .optional()
@@ -235,8 +223,6 @@ export function registerPracticeTools(server: McpServer) {
         ),
     },
     guard('stage_sentence', async (args, _extra: unknown) => {
-      // An item-less staged row can never be graded (submit_review has nothing to rate), so the turn
-      // is silently lost. Reject BEFORE writing, with the exact recovery call.
       if (!args.items?.length) {
         return mcpError(
           'Missing items — nothing was staged. A sentence with no items cannot be rated (no FSRS ' +
@@ -247,12 +233,6 @@ export function registerPracticeTools(server: McpServer) {
             'hold that batch, call get_due_items again and compose from the batch it returns.',
         );
       }
-      // A QUIZ turn without `quiz` is REFUSED, not tolerated. Measured on the live database
-      // 2026-07-28: 35 of 35 quiz rows held only the sentence — the four options existed nowhere but
-      // the chat, so the answer's position was Claude's to choose and no query could audit it (the
-      // learner reported the answer landing on C repeatedly, and the data could neither confirm nor
-      // refute it). Making the server path OPTIONAL made it a suggestion; this makes it the only way
-      // through.
       if (args.exerciseType === 'QUIZ' && !args.quiz) {
         return mcpError(
           'Missing quiz — a QUIZ turn must send its four options as DATA so the SERVER places the ' +
@@ -267,8 +247,6 @@ export function registerPracticeTools(server: McpServer) {
         );
       }
       const { sentenceId, quiz } = await stageSentence(args);
-      // Classified AFTER the write: the row is the record of what the learner was exposed to, and it
-      // must survive even if this lookup throws. The note is an extra, never a precondition.
       const scaffold = args.extraPatterns?.length
         ? await classifyExtraPatterns(
             args.extraPatterns,
@@ -277,8 +255,6 @@ export function registerPracticeTools(server: McpServer) {
             ),
           )
         : [];
-      // In-result nudge (strongest placement — the model reads this the moment it gets the id):
-      // make it copy THIS exact id into submit_review, never a fabricated placeholder.
       const text =
         `Sentence and reference translation recorded. sentenceId = "${sentenceId}"\n` +
         `Once you have graded, call submit_review with THIS EXACT sentenceId (copy ` +
@@ -305,10 +281,6 @@ export function registerPracticeTools(server: McpServer) {
       'second call for an already-graded sentence is rejected). (Per-parameter detail: see the field ' +
       'descriptions below.)',
     {
-      // Advertised OPTIONAL on purpose: a REQUIRED field would be rejected by the MCP SDK's
-      // arg-validation BEFORE our handler runs, so a "missing sentenceId" would reach the client
-      // as a bare technical error and our recovery guidance below would never be shown. Optional
-      // here → the missing/blank case lands in the handler, which returns a self-healing message.
       sentenceId: z
         .string()
         .optional()
@@ -318,17 +290,6 @@ export function registerPracticeTools(server: McpServer) {
         ),
       userAnswer: z.string().min(1),
       feedback: z.string().optional(),
-      // REQUIRED since 2026-08-11. It was optional for months while every prompt step already listed
-      // it ("call submit_review with: sentenceId, userAnswer, feedback, score, ratings") — prose
-      // demanding it while the schema permitted its absence is the exact gap that produced the
-      // learner's repeated "I finished the turn and there is no score": a missing score vanished from
-      // BOTH surfaces at once (the verbatim block omits the line, the card rendered an empty slot).
-      // Required means the omission is now a rejected call, and the rejection is SAFE: nothing is
-      // written, the sentence stays PENDING, so Claude retrying with a score loses no rating (proved in
-      // e2e/mcp.spec.ts, "KHÔNG gửi score"). Measured while writing that test: the SDK validates
-      // arguments against this schema BEFORE the handler, so the rejected call never reaches `guard()`
-      // and does NOT appear in mcp_tool_call — the refusal is loud to Claude, but still invisible to our
-      // own counter. A grading turn without a grade is not a turn worth storing either way.
       score: z
         .number()
         .int()
@@ -422,8 +383,6 @@ export function registerPracticeTools(server: McpServer) {
     },
     guard('submit_review', async (args, _extra: unknown) => {
       const sentenceId = args.sentenceId?.trim();
-      // Missing id = this sentence was never staged. Instead of a dead-end, hand back the exact
-      // recovery call so the model self-heals in the same turn and the review still gets recorded.
       if (!sentenceId) {
         return mcpError(
           'Missing sentenceId — this sentence was never staged, so nothing was written to the review ' +
@@ -442,9 +401,6 @@ export function registerPracticeTools(server: McpServer) {
         sentenceId,
         ratings: args.ratings.map((r) => ({ ...r, rating: r.rating as 1 | 2 | 3 | 4 })),
       });
-      // Both notes ride AFTER the verbatim block (never inside it — the block owns the numbered menu,
-      // and a second numbered list would make "1" ambiguous). Neither applies anything: the shadow
-      // proposes a setting nobody changes, the harvest proposes a card write that needs a yes.
       return okWithNotes(renderGradeResult(result), result, [
         renderCalibrationShadow(result.calibration),
         renderTeachBackHarvest(result.teachBack),

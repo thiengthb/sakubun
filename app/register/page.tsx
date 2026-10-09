@@ -2,15 +2,12 @@ import Link from 'next/link';
 import { ShieldCheck } from 'lucide-react';
 import { RegisterForm } from './register-form';
 import { Button } from '@/components/ui/button';
-import { isGoogleEnabled } from '@/lib/google-enabled';
-import { isRegistrationOpen } from '@/lib/registration';
+import { isGoogleEnabled } from '@/lib/auth/google-enabled';
+import { isRegistrationOpen } from '@/lib/auth/registration';
 
-// Google availability + the registration gate are both resolved server-side at request time.
 export const dynamic = 'force-dynamic';
 
 export default async function RegisterPage() {
-  // Single-user app: the form exists only to create THE account. Once it exists this page states so
-  // plainly instead of collecting a password that lib/auth.ts would reject anyway.
   if (!(await isRegistrationOpen())) {
     return (
       <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col items-center justify-center gap-4 px-6 text-center">

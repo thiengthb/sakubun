@@ -1,22 +1,3 @@
-// LƯỚI SMOKE CHO CẢ BỀ MẶT MCP — mọi tool phải GỌI ĐƯỢC qua HTTP thật.
-//
-// Vì sao file này tồn tại (2026-08-10). Server đăng ký 31 tool. Trước hôm nay, trong 31 cái đó đúng
-// HAI cái từng được gọi qua HTTP trong bất cứ test nào: `ping` và `list_calibration_proposals`. Con bug
-// làm mất lượt luyện của người học sống sót qua 671 unit test vì `submit_review` — tool được chạm mỗi
-// lượt — chưa từng được gọi. 29 tool còn lại vẫn đang ở đúng tình trạng đó.
-//
-// Và bề mặt này hỏng IM LẶNG: `guard()` trong lib/mcp/tool-kit.ts biến mọi exception thành
-// `isError: true` với HTTP **200** (cố ý — để Claude đọc được lời lỗi thay vì một -32603 trần). Nên
-// một tool hỏng hoàn toàn vẫn cho `curl` mã 200, `/api/health` vẫn xanh, `npm run verify` vẫn xanh.
-// Phép kiểm duy nhất có nghĩa là GỌI nó và soi `isError`.
-//
-// Cái này KHÔNG kiểm: liệu Claude có tuân thủ protocol dạy học, mô tả tool có lái nó đúng hướng. Đó là
-// inferential — cần một buổi thật trên Claude Desktop và một người đọc output (chỗ của `evals/`).
-// Ở đây chỉ chốt phần tất định: tool nhận được tham số, chạy, và không nổ.
-//
-// COVERAGE KHÔNG ĐƯỢC PHÉP IM LẶNG. Danh sách dưới được đối chiếu với `tools/list` của server: thêm
-// một tool mà quên payload → test ĐỎ kèm tên tool, chứ không âm thầm bỏ qua nó.
-
 import { expect, test } from '@playwright/test';
 import {
   callTool,
@@ -27,17 +8,6 @@ import {
   toolJson,
 } from './mcp-client';
 
-/**
- * Tài khoản + token + kho sạch (`seedMcpAccount`), CỘNG một calibration proposal dựng sẵn.
- *
- * Vì sao phải dựng tay: KHÔNG có đường nào trong app tạo được nó ở đây. `submit_review` chỉ gọi
- * `recordCalibrationProposal` khi shadow thật sự đề xuất một thay đổi (lib/practice.ts, `if
- * (calibration)`), và một lượt duy nhất chưa đủ bằng chứng — đo được: lần chạy đầu của lưới này,
- * `list_calibration_proposals` trả rỗng và `set_proposal_verdict` đỏ vì id trống. Ép cho đủ bằng
- * chứng nghĩa là gắn lưới smoke vào ngưỡng bên trong calibration; dựng một hàng thì
- * `set_proposal_verdict` có đường HẠNH PHÚC thật mà không cần biết ngưỡng đó là bao nhiêu.
- * `createdAt` để SQLite tự điền (DEFAULT CURRENT_TIMESTAMP) — không tự tay định dạng DateTime.
- */
 async function seed(): Promise<void> {
   await seedMcpAccount();
   const db = openE2eDb();
@@ -53,7 +23,6 @@ async function seed(): Promise<void> {
   }
 }
 
-/** Id do các bước trước sinh ra, cho các bước sau dùng. */
 interface Ctx {
   grammarItemId: string;
   vocabItemId: string;
@@ -63,22 +32,13 @@ interface Ctx {
 }
 
 type Step = {
-  /** Tên tool đúng như server đăng ký. */
   name: string;
-  /** Tham số. Hàm để đọc được id sinh ra ở bước trước. */
   args: (ctx: Ctx) => Record<string, unknown>;
-  /** Lấy id ra khỏi kết quả cho các bước sau. */
   capture?: (json: Record<string, unknown>, ctx: Ctx) => void;
-  /** Vì sao bước này đứng ở đây, khi thứ tự là điều kiện đúng đắn chứ không phải tuỳ ý. */
   why?: string;
 };
 
-/**
- * THỨ TỰ CÓ Ý NGHĨA: tool tạo dữ liệu đứng trước tool cần dữ liệu đó. Mỗi bước chạy đúng một lần,
- * tuần tự, và chia sẻ một `ctx` duy nhất.
- */
 const STEPS: Step[] = [
-  // ── không phụ thuộc gì ────────────────────────────────────────────────────
   { name: 'ping', args: () => ({}) },
   { name: 'get_settings', args: () => ({}) },
   { name: 'get_stats', args: () => ({}) },
@@ -93,7 +53,6 @@ const STEPS: Step[] = [
     why: 'Bốn mode là bốn nhánh của PROTOCOL_BY_MODE — một mode thiếu chỉ nổ khi người học đổi kiểu luyện giữa buổi.',
   },
 
-  // ── kho rỗng: các tool đọc phải trả "rỗng hợp lệ", không phải lỗi ─────────
   {
     name: 'list_grammar',
     args: () => ({}),
@@ -104,7 +63,6 @@ const STEPS: Step[] = [
   { name: 'get_due_items', args: () => ({}) },
   { name: 'get_quiz_items', args: () => ({}) },
 
-  // ── thêm dữ liệu ─────────────────────────────────────────────────────────
   {
     name: 'preview_import',
     args: () => ({
@@ -152,7 +110,6 @@ const STEPS: Step[] = [
   },
   { name: 'check_library', args: () => ({ query: 'SMOKE〜わけだ' }) },
 
-  // ── sửa dữ liệu đã có ────────────────────────────────────────────────────
   {
     name: 'enrich_items',
     args: (ctx) => ({
@@ -169,17 +126,10 @@ const STEPS: Step[] = [
   },
   {
     name: 'patch_enrichment',
-    // `add` / `set`, KHÔNG phải field phẳng: bản đầu của lưới này gửi `pitfalls` ở gốc và tool trả
-    // "NOTHING was written ... hoặc tham số rỗng" — nó bỏ qua key nó không biết. Lỗi của test, không
-    // của app, nhưng đáng ghi: một payload sai kiểu này trông y như một tool hỏng.
     args: (ctx) => ({ itemId: ctx.grammarItemId, add: { pitfalls: ['Đừng lẫn với 〜はずだ'] } }),
     why: 'patch MERGE (`add`), khác enrich_items GHI ĐÈ — chạy sau nó để cả hai nhánh đều được chạm.',
   },
   {
-    // Thẻ TỪ VỰNG đi qua đúng tool đó nhưng khác thước đo (lib/enrichment-quality.ts): không đòi
-    // `structure`, đòi ≥2 collocations · ≥2 ví dụ ĐỀU có `vi` · ít nhất một từ đồng nghĩa/trái nghĩa.
-    // Gọi thật qua HTTP là cách duy nhất chứng minh lược đồ nhận được hình dạng này — Zod bỏ IM LẶNG
-    // mọi key nó không biết, nên một field mới mà server chưa khai sẽ "thành công" và mất dữ liệu.
     name: 'enrich_items',
     args: (ctx) => ({
       items: [
@@ -212,8 +162,6 @@ const STEPS: Step[] = [
     args: () => ({ quality: 'needs-work' }),
     capture: (json) => {
       const rows = ((json.items ?? json) as { expression: string }[]) ?? [];
-      // Đây là cửa mà TỪ VỰNG không có cho tới 2026-08-12: không có bộ lọc chất lượng thì không có
-      // danh sách cần làm, nên vòng quét enrich không bao giờ với tới được từ vựng.
       expect(
         rows.some((r) => r.expression === '煙草'),
         `từ vừa được soạn thẻ ĐỦ không được nằm trong danh sách cần làm: ${JSON.stringify(rows)}`,
@@ -225,7 +173,6 @@ const STEPS: Step[] = [
   { name: 'update_vocab', args: (ctx) => ({ itemId: ctx.vocabItemId, meaningVi: 'thuốc lá (danh từ)' }) },
   { name: 'update_settings', args: () => ({ grammarLevels: ['N3', 'N2'] }) },
 
-  // ── nhóm ─────────────────────────────────────────────────────────────────
   {
     name: 'create_group',
     args: () => ({ name: 'Nhóm smoke' }),
@@ -247,7 +194,6 @@ const STEPS: Step[] = [
     args: (ctx) => ({ groupId: ctx.groupId, itemIds: [ctx.grammarItemId] }),
   },
 
-  // ── vòng luyện ───────────────────────────────────────────────────────────
   {
     name: 'stage_sentence',
     args: (ctx) => ({
@@ -267,8 +213,6 @@ const STEPS: Step[] = [
       sentenceId: ctx.pendingSentenceId,
       userAnswer: 'Thì ra đường đang tắc.',
       ratings: [{ itemId: ctx.grammarItemId, rating: 3, role: 'TARGET' }],
-      // `score` bắt buộc từ 2026-08-11: một lượt không có điểm là một lượt người học đọc thành "app
-      // không chấm". Thiếu nó thì SDK chặn ở -32602, trước cả handler.
       score: 72,
     }),
     why: 'Tool duy nhất ghi lịch FSRS. Nó cũng sinh ra calibration proposal cho bước dưới.',
@@ -288,7 +232,6 @@ const STEPS: Step[] = [
   },
   { name: 'skip_sentence', args: (ctx) => ({ sentenceId: ctx.pendingSentenceId }) },
 
-  // ── calibration: nửa đọc và nửa duyệt ────────────────────────────────────
   {
     name: 'list_calibration_proposals',
     args: () => ({}),
@@ -308,7 +251,6 @@ const STEPS: Step[] = [
     args: (ctx) => ({ id: ctx.proposalId, verdict: 'agree' }),
   },
 
-  // ── treo/bỏ treo: để CUỐI, vì nó đổi trạng thái cả kho ───────────────────
   {
     name: 'set_item_suspended',
     args: (ctx) => ({ itemId: ctx.grammarItemId, suspended: false }),
@@ -318,13 +260,11 @@ const STEPS: Step[] = [
 ];
 
 test('mọi tool MCP đều gọi được qua HTTP thật, không cái nào nổ', async ({ request }) => {
-  // 31 tool, vài cái gọi nhiều lần (get_protocol 4 mode) — ngân sách rộng hơn mặc định 60s.
   test.setTimeout(180_000);
   await seed();
 
   await initializeMcp(request);
 
-  // ── Coverage: bảng trên phải phủ ĐÚNG bộ tool server đăng ký ─────────────
   const list = await rpc(request, 'tools/list', {});
   const advertised = ((list.result as { tools?: { name: string }[] })?.tools ?? []).map(
     (t) => t.name,
@@ -340,7 +280,6 @@ test('mọi tool MCP đều gọi được qua HTTP thật, không cái nào n�
   expect(ghosts, `Lưới gọi tool mà server không đăng ký: ${ghosts.join(', ')}`).toEqual([]);
   expect(advertised.length, 'phải có tool để mà gọi').toBeGreaterThan(20);
 
-  // ── Gọi từng bước, tuần tự ───────────────────────────────────────────────
   const ctx: Ctx = {
     grammarItemId: '',
     vocabItemId: '',
@@ -354,7 +293,6 @@ test('mọi tool MCP đều gọi được qua HTTP thật, không cái nào n�
     const args = step.args(ctx);
     const res = await callTool(request, step.name, args);
     if (res.isError) {
-      // Gom hết rồi báo một lần: một lần chạy nên nói ra MỌI tool đang hỏng, không phải cái đầu tiên.
       failures.push(`${step.name}(${JSON.stringify(args).slice(0, 120)}) → ${res.text.slice(0, 200)}`);
       continue;
     }
@@ -364,14 +302,6 @@ test('mọi tool MCP đều gọi được qua HTTP thật, không cái nào n�
   expect(failures, `Tool trả lỗi:\n  ${failures.join('\n  ')}`).toEqual([]);
 });
 
-// DỌN hàng proposal đã dựng, và đây không phải sự sạch sẽ hình thức: `e2e/mcp.spec.ts` chạy SAU spec
-// này (thứ tự chữ cái) và chốt rằng `list_calibration_proposals` trả về rỗng — "DB e2e không có
-// proposal nào, nên phong bì phải là rỗng hợp lệ". Không dọn thì `prop-smoke` rò sang đó và làm nó ĐỎ
-// vì một lý do không liên quan gì tới nó. Đo được khi chạy CẢ bộ: mcp.spec.ts:145 đỏ, 33 ca còn lại
-// xanh — và tôi chỉ thấy vì đã chạy full suite thay vì chạy riêng spec này.
-//
-// `afterEach` chứ không phải dòng cuối trong test body: hook vẫn chạy khi test ĐỎ, còn dòng cuối thì
-// không — và một spec chỉ dọn khi nó thành công là một spec làm hỏng cả bộ đúng lúc đang có lỗi.
 test.afterEach(() => {
   const db = openE2eDb();
   try {
@@ -381,22 +311,6 @@ test.afterEach(() => {
   }
 });
 
-/**
- * NGÂN SÁCH BỀ MẶT — đo bằng BYTE, không đếm tool.
- *
- * `harness.config.json → mcp.maxTools: 20` đếm TOOL, trong khi thuế Claude trả là TOKEN, và không có
- * gì trong repo đọc ngưỡng đó (issue #5). Kết quả: một ngưỡng đo sai đơn vị, không ai cưỡng chế. 31
- * tool ở đây nặng ~53 KB, nhưng 20 tool toàn loại nặng thì còn nặng hơn — nên "cắt cho đủ 20" là tối
- * ưu sai chỗ, đúng điều issue #20 đo được.
- *
- * Phép chốt này là **computational control** thay cho ngưỡng chết đó: `tools/list` là thứ Claude tải
- * MỖI PHIÊN, nên nó là ngân sách thật. Trần đặt cao hơn số hiện tại một khoảng để việc thêm một tool
- * bình thường không đỏ; vượt trần thì phải là một hành động CÓ Ý THỨC (đọc bảng phân tích đính kèm,
- * rồi sửa con số này kèm lý do), chứ không phải một lần phình ra không ai thấy.
- *
- * Đo được 2026-08-11: **52.221 byte / 31 tool** (trước hôm nay là 55.576 — chênh lệch là bản sao
- * schema nested trong `update_settings` và hai mô tả chết mà #22 bỏ). Trần dưới đây chừa ~7%.
- */
 const SURFACE_BUDGET_BYTES = 56_000;
 
 test('ngân sách bề mặt tool: tools/list phải nằm trong trần BYTE', async ({ request }, testInfo) => {
@@ -415,8 +329,6 @@ test('ngân sách bề mặt tool: tools/list phải nằm trong trần BYTE', a
   const total = tools.reduce((sum, t) => sum + t.total, 0);
   const heaviest = [...tools].sort((a, b) => b.total - a.total);
 
-  // Đính kèm bảng phân tích: khi phép chốt này đỏ, câu hỏi tiếp theo luôn là "byte nằm ở đâu", và câu
-  // trả lời phải nằm ngay trong báo cáo chứ không phải trong một lần đo lại bằng tay.
   await testInfo.attach('mcp-surface.txt', {
     contentType: 'text/plain',
     body:

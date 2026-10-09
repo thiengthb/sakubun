@@ -1,38 +1,17 @@
 'use client';
 
 import { useEffect, useRef, useState, type RefObject } from 'react';
-import { fitItemCount } from '@/lib/fit-rows';
+import { fitItemCount } from '@/lib/core/fit-rows';
 
-/**
- * How many list items fit on screen so a paginated list + its pagination bar sit ENTIRELY within the
- * viewport (no page scroll, controls never pushed off the bottom). Reusable across every paginated
- * MiniServer surface — a data table (`components/data-table.tsx`) or a client card list (via
- * `usePagedList`).
- *
- * Unlike a fixed "reserve N px" guess, this measures the WHOLE layout from the DOM:
- *   - `topRef`     — the rows/cards container; its top edge and its first child's height are measured
- *                    (so the actual row/card height is used, not an estimate), and for a grid its live
- *                    column count is read from `grid-template-columns`.
- *   - `footerRef`  — the pagination bar; its REAL height is reserved, so a footer that wraps to two
- *                    lines on a narrow screen simply leaves room for fewer rows instead of overflowing.
- *
- * Recomputes on viewport resize and whenever the footer or the content above reflows (ResizeObserver).
- * Returns `null` until first measured — callers fall back to a fixed size meanwhile. The pure math is
- * `lib/fit-rows.ts` (unit-tested); this file is only the measurement glue.
- */
 export interface UseFitRowsOptions {
   topRef: RefObject<HTMLElement | null>;
   footerRef?: RefObject<HTMLElement | null>;
-  /** Fallback row/card pitch used only until the first row is measured from the DOM. */
   rowHeight: number;
-  /** Vertical gap between rows added to the measured row height (a grid's row-gap; 0 for a table). */
   rowGap?: number;
-  /** Read the live column count from the container's `grid-template-columns` (a responsive card grid). */
   grid?: boolean;
   bottomGap?: number;
   min?: number;
   max?: number;
-  /** Footer height reserved until the footer element is measured. */
   footerFallback?: number;
 }
 
@@ -42,23 +21,12 @@ export function useFitRows({
   rowHeight,
   rowGap = 0,
   grid = false,
-  // Only the page's own bottom padding below the footer (PageShell is `pt-6 pb-6` — 24px at the
-  // bottom, a reserved gutter for the floating back-to-top button) + a few px of safety. The gap above
-  // the footer, the table's horizontal scrollbar and the footer height are all measured into
-  // `footerChrome` below. Keep in step with PageShell's `pb-*`: too small and the fitted list ends up
-  // under the button, too large and it wastes a row.
   bottomGap = 28,
   min,
   max,
   footerFallback = 56,
 }: UseFitRowsOptions): number | null {
   const [count, setCount] = useState<number | null>(null);
-  // Last COMMITTED measurement — the anchor for the anti-jitter deadband below. A recompute only
-  // adopts a new count when a "hard" input moved (viewport height, the rows' top edge, or the grid's
-  // column count); a ±1-row wobble at a constant viewport height is treated as scrollbar/reflow noise
-  // and ignored. Without this the count oscillated N <-> N-1 forever at a fit boundary (rendering N
-  // rows tips the page into a scrollbar -> width shrinks -> a card/footer wraps -> pitch grows ->
-  // recompute to N-1 -> scrollbar gone -> back to N -> ...), which is the visible "giật giật".
   const committed = useRef<{
     count: number;
     innerHeight: number;
@@ -74,10 +42,16 @@ export function useFitRows({
         const top = topRef.current;
         if (!top) return;
         const topRect = top.getBoundingClientRect();
-        // A hidden tab (Radix keeps inactive TabsContent mounted with display:none) or a not-yet-
-        // rendered list measures as 0 — skip so we never clobber a good value with garbage.
         const childCount = top.childElementCount;
-        if (topRect.height <= 0 || childCount === 0) return;
+        // A display:none element measures 0 and has no offsetParent. Report null rather than keep
+        // the last count: callers that hold two of these (a table body and a card grid, only one of
+        // which is ever visible) tell them apart by which one still answers.
+        if (top.offsetParent === null || topRect.height <= 0) {
+          committed.current = null;
+          setCount((prev) => (prev === null ? prev : null));
+          return;
+        }
+        if (childCount === 0) return;
 
         let itemsPerRow = 1;
         if (grid) {
@@ -87,16 +61,9 @@ export function useFitRows({
           itemsPerRow = Math.max(1, tracks.length);
         }
 
-        // AVERAGE row pitch (total height / rendered rows), not the first row: table rows vary in
-        // height (furigana ruby makes some taller) and cards vary with note lines, so keying off row 1
-        // under-counts and overflows. Dividing the whole block includes the inter-row gaps for free.
         const visualRows = Math.max(1, Math.ceil(childCount / itemsPerRow));
         const pitch = topRect.height > 0 ? topRect.height / visualRows : rowHeight + rowGap;
 
-        // Reserve the ACTUAL chrome between the rows and the bottom of the footer — the gap above the
-        // footer, the table's own horizontal scrollbar (a wide table has one, ~15px, sitting right
-        // there), and the footer's real height — by measuring footer.bottom − rows.bottom in one shot.
-        // This difference is constant as rows are added/removed (both edges shift together), so no loop.
         const footEl = footerRef?.current;
         const footerChrome = footEl
           ? footEl.getBoundingClientRect().bottom - topRect.bottom
@@ -114,9 +81,6 @@ export function useFitRows({
           max,
         });
 
-        // Anti-jitter deadband. A "hard" change (viewport height moved, the rows' top edge moved, or
-        // the grid re-columned) always commits. Otherwise a small ±one-row difference at a stable
-        // viewport is the scrollbar/reflow flap described above — hold the current count steady.
         const prev = committed.current;
         const hardChange =
           !prev ||
@@ -132,10 +96,6 @@ export function useFitRows({
 
     compute();
     window.addEventListener('resize', compute);
-    // The footer height changes at breakpoints (wrap) and content above can reflow without a window
-    // resize (a toolbar wrapping, a tab's list toggling columns) — observe both. NOT document.body:
-    // its height changes on every count change (and on scroll-induced reflow), which fed the very
-    // oscillation the deadband above guards against; top + footer already cover late-mounting rows.
     const ro = new ResizeObserver(compute);
     if (footerRef?.current) ro.observe(footerRef.current);
     if (topRef.current) ro.observe(topRef.current);

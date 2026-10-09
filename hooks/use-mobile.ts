@@ -8,11 +8,6 @@ function subscribe(onChange: () => void) {
   return () => mql.removeEventListener('change', onChange);
 }
 
-/**
- * `true` when the viewport is below the mobile breakpoint. Uses `useSyncExternalStore` instead of a
- * setState-in-effect (repo lint rule `react-hooks/set-state-in-effect`); the server snapshot assumes
- * desktop so SSR markup is stable until hydration.
- */
 export function useIsMobile() {
   return React.useSyncExternalStore(
     subscribe,

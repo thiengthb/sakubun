@@ -1,12 +1,12 @@
 import { z } from 'zod';
-import { computeDossier, isEmptyDossier } from '@/lib/dossier';
+import { computeDossier, isEmptyDossier } from '@/lib/session/dossier';
 import {
   contrastSchema,
   enrichmentSchema,
   exampleSchema,
   provenanceSchema,
   relatedSchema,
-} from '@/lib/enrichment';
+} from '@/lib/library/enrichment';
 import {
   getStats,
   getWeakReport,
@@ -18,9 +18,9 @@ import {
   setItemSuspended,
   setProposalVerdict,
   updateItem,
-} from '@/lib/practice';
-import { getLibraryHealth } from '@/lib/library-health';
-import { getSessionRecap } from '@/lib/session-recap';
+} from '@/lib/library/practice';
+import { getLibraryHealth } from '@/lib/library/health';
+import { getSessionRecap } from '@/lib/session/recap';
 import {
   renderConsentGuard,
   renderDossier,
@@ -40,7 +40,6 @@ import {
 } from '@/lib/mcp/tool-kit';
 
 export function registerManageTools(server: McpServer) {
-  // ---------------- progress & management ----------------
   server.tool(
     'get_stats',
     'Progress overview (READ-ONLY) + a one-line library health check: total grammar library, patterns ' +
@@ -60,31 +59,15 @@ export function registerManageTools(server: McpServer) {
     {},
     guard('get_stats', async (_args, _extra: unknown) => {
       const now = new Date();
-      // The health aggregate and the learner model both ride the call Claude ALREADY makes at session
-      // open (the PUSH law), so neither needs a tool anyone has to remember. Composed HERE and not
-      // inside `getStats`, because the web dashboard calls that too and must not pay for either scan.
       const stats = await getStats(now);
-      // Both ride the call Claude ALREADY makes at session open (the PUSH law); the recap needs the
-      // learner's day-cutoff, which getStats has already loaded, so it goes second rather than
-      // re-reading settings.
       const [health, dossier, recap] = await Promise.all([
         getLibraryHealth(now),
         computeDossier(now),
         getSessionRecap(stats.settings.dayCutoffHour, now),
       ]);
-      // The dossier stays OUT of the markdown: that block is `verbatim: true`, i.e. Vietnamese text
-      // shown to the learner as-is, and the digest is Claude-facing English (the `verbatim` boundary
-      // rule). Handing a learner a printout of their own error model is not a session opening. It
-      // rides as a Claude-facing NOTE after the block instead — this is the ONLY place the digest is
-      // rendered now (eval Scenario G, 2026-07-28: on the per-sentence composition sheet it changed
-      // nothing across 6 trials and 2 deliberately different confusion pairs, so it moved here, where
-      // it is read ONCE per session and its job — aim the focus menu — is what the description asks
-      // for anyway).
       return okWithNotes(
         renderStats(stats, health, recap),
         { ...stats, library: health, dossier: isEmptyDossier(dossier) ? null : dossier },
-        // renderStats relays at most ONE clean-up offer; it needs the same consent rule as the
-        // other two proposal surfaces (apply a rule to EVERY surface, never just the one tested).
         [renderConsentGuard(health.suggestions), renderDossier(dossier)],
       );
     }),
@@ -146,10 +129,6 @@ export function registerManageTools(server: McpServer) {
       level: LEVEL.optional(),
       search: z.string().optional(),
       suspended: z.boolean().optional(),
-      // Both card filters were GRAMMAR-ONLY until 2026-08-12, which meant there was no way to ask "which
-      // words still need a card" — the sweep prompt could only ever target patterns. A word carries the
-      // same `enrichment` column and is scored against the VOCAB bar (collocations, đồng nghĩa/trái
-      // nghĩa, ví dụ có dịch), so the same two filters belong here.
       enriched: z
         .boolean()
         .optional()
@@ -252,8 +231,6 @@ export function registerManageTools(server: McpServer) {
           pitfalls: z.array(z.string().min(1)).optional(),
           contrasts: z.array(contrastSchema).optional(),
           examples: z.array(exampleSchema).optional(),
-          // {term, reading, vi, note} — a relation is identified by `term`, so re-sending one with a
-          // reworded gloss is reported as a duplicate rather than appended twice.
           synonyms: z.array(relatedSchema).optional(),
           antonyms: z.array(relatedSchema).optional(),
         })
@@ -267,9 +244,6 @@ export function registerManageTools(server: McpServer) {
         })
         .optional(),
     },
-    // No `.max()` on the add arrays on purpose: the merge enforces the schema caps and REPORTS the
-    // overflow, which Claude can act on — a Zod rejection would arrive as a bare `too_big` (the same
-    // reasoning as the stage_sentence runtime guard, plan step 0.4).
     guard('patch_enrichment', async (args, _extra: unknown) => {
       const result = await patchEnrichment(args);
       if (result.patched) return ok(result);
@@ -296,8 +270,6 @@ export function registerManageTools(server: McpServer) {
     }),
   );
 
-  // Shared body for the kind-specific content edits below. '' clears an optional column; undefined
-  // leaves it unchanged. NEVER touches the FSRS schedule (updateItem only writes content columns).
   const emptyToNull = (v: string | undefined): string | null | undefined =>
     v === undefined ? undefined : v === '' ? null : v;
   const runContentUpdate = async (
@@ -423,19 +395,6 @@ export function registerManageTools(server: McpServer) {
     ),
   );
 
-  // ---------------- calibration: the SHADOW proposals, and the learner's verdict on them ----------
-  //
-  // Why these exist (added 2026-08-07). The calibration controller has run in shadow mode since
-  // 2026-07-28: every graded turn may record what it WOULD have changed, and that row carries a
-  // `verdict` column so the rollout gate ("a week of shadow proposals reviewed with the user") can be
-  // answered with a number instead of a memory. The write path shipped; the READ path never did.
-  // Measured in the 2026-08-06 sweep: `listCalibrationProposals` and `setProposalVerdict` had no
-  // caller outside tests — no UI, no tool — so the proposals accumulated where nobody could reach
-  // them, and the gate they exist to serve could never be met.
-  //
-  // MCP is the right surface rather than a web page: in this app Claude IS the interface the learner
-  // talks to, and reviewing a proposal is a conversation ("hồi nãy app định hạ độ khó xuống — đúng
-  // không?"), not a table to scan. Both tools are additive and touch nothing else.
   server.tool(
     'list_calibration_proposals',
     'READ-ONLY. The calibration controller runs in SHADOW mode: after a graded turn it may record ' +

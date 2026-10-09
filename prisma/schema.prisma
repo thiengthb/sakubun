@@ -7,29 +7,23 @@ datasource db {
   provider = "sqlite"
 }
 
-// A study item — one vocabulary word or one grammar pattern. Single-user app: no tenant column.
-
 model Item {
   id            String    @id @default(cuid())
-  kind          String // "GRAMMAR" | "VOCAB" (legacy "WORD" rows were purged 2026-07-07; column KEPT so vocab could revive cheaply — it did, 2026-07-11)
-  expression    String // JA surface form (word) or pattern (e.g. 〜ばかりに)
-  reading       String? // kana reading (words; optional for grammar — dropped for kana-only patterns)
-  hanviet       String? // âm Hán Việt (Sino-Vietnamese reading) — Claude-filled for VOCAB kanji words (2026-07-18)
+  kind          String
+  expression    String
+  reading       String?
+  hanviet       String?
   meaningVi     String
-  level         String    @default("N5") // N5 | N4 | N3 | N2 | N1
-  notes         String? // nuance / attach rules / example structure
-  tags          String? // JSON string[] (SQLite has no native lists)
-  source        String    @default("MANUAL") // MAZII | MANUAL | MCP
-  // Why a VOCAB word entered the inbox (null = a plain look-up / grammar item): "misused" (used it
-  // wrong), "unclear" (met it but didn't understand), "unknown" (at-level but never produced). Drives
-  // the /vocab reason badge + filter; Claude sets it via add_vocab's `reason`. GRAMMAR items leave it null.
+  level         String    @default("N5")
+  notes         String?
+  tags          String?
+  source        String    @default("MANUAL")
+
   captureReason String?
   suspended     Boolean   @default(false)
-  // Learner-flagged favourite (the star toggle on the resources tables + item detail page). Purely a
-  // UI/organisation flag — never touches FSRS scheduling. Added 2026-07-21.
+
   starred       Boolean   @default(false)
-  // Claude-generated usage card (lib/enrichment.ts schema): usage, collocations, example,
-  // pitfalls, contrasts, register. Feeds sentence generation + mini-lessons.
+
   enrichment    String?
   enrichedAt    DateTime?
 
@@ -39,19 +33,13 @@ model Item {
   reviews ReviewLog[]
   groups  GroupMember[]
 
-  // Elo CHALLENGE (2026-07-26, lib/calibration.ts) — "how likely is a success on this item at a given
-  // ability", discovered from graded outcomes. NOT FSRS difficulty (that is "how fast is this
-  // forgotten", lives on SrsState and stays untouched — invariant 1). Nullable + no backfill: null
-  // means "not measured yet", and calibration seeds it from the item's JLPT level on first use.
   challenge             Float?
   challengeObservations Int    @default(0)
 
   @@unique([kind, expression])
-  // Hot path: getDueBatch/getStats/listItems filter by kind.
+
   @@index([kind])
 }
-
-// FSRS card state — 1:1 with Item, fields mirror ts-fsrs Card.
 
 model SrsState {
   id            String    @id @default(cuid())
@@ -64,34 +52,26 @@ model SrsState {
   learningSteps Int       @default(0)
   reps          Int       @default(0)
   lapses        Int       @default(0)
-  state         Int       @default(0) // ts-fsrs State: 0 New · 1 Learning · 2 Review · 3 Relearning
+  state         Int       @default(0)
   lastReview    DateTime?
 
-  // The hottest read (get_due_items, every sentence) filters SrsState by `due`.
   @@index([due])
-  // getDueBatch fires several `state` counts/filters per batch (new vs due buckets).
+
   @@index([state])
 }
 
-// Append-only review history (never deleted, even on reset — yakudoku invariant kept).
-
 model ReviewLog {
   id          String    @id @default(cuid())
-  // Nullable + SetNull (was required + Cascade): deleting an Item PRESERVES its review logs (invariant
-  // #2 — ReviewLog is append-only; the app never deletes a log). A deleted item's logs keep counting
-  // toward streak/activity; item-scoped reports skip null-item rows (see getWeakReport, listSentences).
+
   itemId      String?
   item        Item?     @relation(fields: [itemId], references: [id], onDelete: SetNull)
-  rating      Int // 1 Again · 2 Hard · 3 Good · 4 Easy
-  state       Int // ts-fsrs state at review time (0 = first-ever review)
-  role        String    @default("TARGET") // TARGET | SECONDARY — the item's role in the sentence
-  errorTags   String? // JSON string[] from the fixed taxonomy (lib/error-tags.ts) when rating ≤ 2
-  // JSON Confusion[] ({tag?, used, required}) — the CONFUSION PAIR behind the tag, when the grader can
-  // name one (lib/error-tags.ts). Additive + nullable + NO backfill: every row written before
-  // 2026-07-27 simply has none, and every reader must tolerate null exactly as it already tolerates a
-  // null itemId (invariant #2). A flat tag says "word-choice"; this says WHICH word for WHICH pattern.
+  rating      Int
+  state       Int
+  role        String    @default("TARGET")
+  errorTags   String?
+
   errorDetail String?
-  due         DateTime // due AFTER this review
+  due         DateTime
   stability   Float
   difficulty  Float
   reviewedAt  DateTime  @default(now())
@@ -100,48 +80,34 @@ model ReviewLog {
 
   @@index([reviewedAt])
   @@index([itemId, reviewedAt])
-  // getWeakReport / weak-spot queries filter (rating, reviewedAt).
+
   @@index([rating, reviewedAt])
 }
 
-// One practiced sentence (audit trail for Claude's generation + grading).
-
 model Sentence {
   id            String    @id @default(cuid())
-  direction     String // JA_VI | VI_JA
-  context       String? // 2–4-word topic tag (vi) — powers the "don't repeat contexts" novelty guard
-  exerciseType  String    @default("TRANSLATION") // TRANSLATION | CLOZE | DIALOGUE | QUIZ | CONVERSATION (situational production, 2026-07-23)
-  sourceText    String // the sentence shown to the user (source language)
-  // JA source only: the sourceText re-annotated by Claude as 漢字[かな] so the history card can show
-  // per-kanji furigana on hover (lib/furigana.ts). Null when not provided / VI source.
+  direction     String
+  context       String?
+  exerciseType  String    @default("TRANSLATION")
+  sourceText    String
+
   sourceRuby    String?
   userAnswer    String
-  suggested     String? // Claude's model/corrected translation
-  // VI→JA reference answer re-annotated as 漢字[かな] so the history card shows hover-furigana on the
-  // Japanese answer (symmetric to sourceRuby for the JA prompt). Null for JA source / not provided.
+  suggested     String?
+
   suggestedRuby String?
-  feedback      String? // Claude's grading note (vi)
-  score         Int? // optional 0–100 overall impression
-  // Batch captured at stage time: JSON [{itemId, role}]. Lets the "viewed-but-not-answered → all
-  // Again" path (skipSentence) know WHICH patterns to mark, since patterns otherwise attach only at
-  // submit_review via ReviewLog. Null for pre-2026-07-11 rows.
+  feedback      String?
+  score         Int?
+
   stagedItems   String?
-  /// DECLARED SCAFFOLDING (2026-07-28): JSON string[] of grammar Claude knowingly used BEYOND the
-  /// scheduled batch. The protocol has always allowed unscheduled lower-level grammar as material,
-  /// "NOT graded and NOT listed" — so a pattern the learner had never met could pass by unexplained
-  /// and the rule "never add grammar HARDER than the level being drilled" had nothing enforcing it.
-  /// Plain strings, not a relation: the whole point is that some of these are NOT library items yet.
-  /// Null for every row staged before this shipped, and for a turn that declared none.
+
   extraPatterns String?
-  // PENDING (staged, awaiting answer — the reference is already frozen, visible in history for
-  // audit) | GRADED (submit_review) | SKIPPED (user skipped / auto-skipped → kept, NOT counted by FSRS).
+
   status        String    @default("PENDING")
-  // Learner-flagged favourite (the star toggle on a history card) — mark a translation worth revisiting.
-  // Purely a UI/organisation flag; does not affect FSRS or grading. Added 2026-07-21.
+
   starred       Boolean   @default(false)
   createdAt     DateTime  @default(now())
-  // Set by submit_review when the user answers. answeredAt − createdAt = time-to-answer, surfaced in
-  // analytics (lib/analytics.ts). Null for PENDING/SKIPPED rows (they never produced an answer).
+
   answeredAt    DateTime?
 
   reviews ReviewLog[]
@@ -149,117 +115,61 @@ model Sentence {
   @@index([createdAt])
 }
 
-/// The ASSERTED half of the student model (2026-07-27) — a small prose annex to the derived aggregates
-/// in lib/dossier.ts. Claude writes at most MAX_ASSERTED_NOTES of these per learner, riding
-/// submit_review, and lib/learner-notes.ts owns every read and write.
-///
-/// A free-form model memory is the shape that killed the study plan (built 2026-07-12, deleted
-/// 2026-07-14): unverifiable and monotonically growing. Three columns exist purely to make this one
-/// different — `evidence` (sentenceIds the learner can re-read to CHALLENGE the claim; never empty,
-/// and every id is verified to be theirs before the row is written), `expiresAt` (a note about a
-/// person has a shelf life), and the hard cap enforced on insert (a 6th note EVICTS one).
 model LearnerNote {
   id String @id @default(cuid())
 
-  /// VIETNAMESE, deliberately breaking the "model-facing text is English" rule: that rule holds
-  /// because model-facing text never reaches the learner, and this text does — the dashboard shows it
-  /// so they can argue with it. A claim about someone they cannot read is not one they can challenge.
   text String
 
-  /// JSON string[] of Sentence ids, at least one, capped. SQLite has no native lists, and these are
-  /// deliberately NOT a relation: a note must survive its evidence being deleted, degrading into a
-  /// claim whose support can no longer be re-read (which is what makes it expire rather than persist).
   evidence String
 
   createdAt DateTime @default(now())
   expiresAt DateTime
 
-  /// The only read: notes that have not expired yet.
   @@index([expiresAt])
 }
 
-/// The learner's ABILITY estimate — one row per user, updated on every graded rating
-/// (lib/calibration.ts). Separate from Settings on purpose: Settings is a JSON blob the learner edits,
-/// this is machine-maintained numeric state written on the hot review path, and mixing the two would
-/// make a settings save race with a review.
-///
-/// Ability is a VECTOR, not a score: L2 receptive knowledge is consistently larger than productive
-/// knowledge, so one number cannot describe a learner who READS N3 and PRODUCES N4 — which is the
-/// exact complaint that started the calibration work (2026-07-26). Each axis carries its
-/// own observation count because that is what drives its Elo learning rate (dynamicK).
 model LearnerAbility {
-  /// Single row for the single learner (was one row per user). The default id is a CONVENIENCE for
-  /// rows created from here on, NOT a guarantee about rows that already exist: a DB seeded before
-  /// 2026-08-03 still carries the cuid it got while this table was per-user, because the migration
-  /// that added this default copied every existing id verbatim. 20260810071900 renames that row, but
-  /// readers must still write the ability row by the id they READ (lib/practice.ts) — assuming the
-  /// constant here is what cost the deploy nine graded turns on 2026-08-08.
+
   id String @id @default("singleton")
 
-  /// JA→VI comprehension.
   abilityReceptive       Float @default(1000)
   receptiveObservations  Int   @default(0)
-  /// VI→JA production (including the scaffolded rungs, discounted by SUPPORT_OFFSET).
+
   abilityProductive      Float @default(1000)
   productiveObservations Int   @default(0)
-  /// Situational appropriateness — only CONVERSATION turns are evidence for it.
+
   abilityRegister        Float @default(1000)
   registerObservations   Int   @default(0)
 
   updatedAt DateTime @updatedAt
 }
 
-/// SHADOW-PROPOSAL HISTORY (2026-07-28) — an APPEND-ONLY log of what the calibration controller
-/// WOULD have changed, and whether the learner later said it was right.
-///
-/// Why it exists: the calibration rollout gate requires "a week of shadow proposals reviewed with the
-/// user" before any phase may AUTO-APPLY a settings change — that gate is what makes the plan
-/// falsifiable. But a proposal was only ever COMPUTED per turn and rendered into the tool
-/// result, and `LearnerAbility` overwrites in place, so after the turn nothing survived. Reviewing a
-/// week meant scrolling a week of chat. A mechanism that leaves no auditable trace cannot be the
-/// evidence for shipping the mechanism.
 model CalibrationProposal {
   id String @id @default(cuid())
 
-  /// 'difficulty' | 'sentenceSize' | 'rung' — the setting the controller would have moved.
   target    String
-  /// 'up' | 'down'.
+
   direction String
-  /// Stringified on purpose: `sentenceSize` is a word ("medium") and `difficulty` a number. One column
-  /// pair that reads the same for both beats two nullable pairs that must be kept in sync.
+
   fromValue String
   toValue   String
 
-  /// The axis whose evidence triggered it, and the numbers it was standing on at that moment. Stored
-  /// rather than recomputed: `LearnerAbility` moves every turn, so a later read would show what the
-  /// learner is NOW, not what the proposal was actually based on.
   axis         String
   measured     Float
   ability      Float
   observations Int
 
-  /// The learner-facing Vietnamese sentence the tutor was told to say. Kept verbatim so the review
-  /// judges what the learner actually heard, not a reconstruction of it.
   reason String
 
-  /// The graded turn that produced it. Deliberately NOT a relation, for the same reason
-  /// `LearnerNote.evidence` is not one: a proposal must survive its evidence being deleted, degrading
-  /// into a claim whose support can no longer be re-read.
   sentenceId String?
 
   createdAt DateTime @default(now())
 
-  /// The GATE's answer: null = not yet reviewed | 'agree' | 'disagree'. This is the column that turns
-  /// "we looked at a week of proposals" into a number Phase 3 can be held to, and it is the same
-  /// human-verdict-as-oracle shape the platform uses for the idea queue.
   verdict String?
 
-  /// The only read: proposals, newest first, for the review.
   @@index([createdAt])
 }
 
-// Singleton settings row for the single learner (was one row per user). JSON blob validated by
-// lib/settings-schema.ts (Zod owns the shape); lib/practice.ts reads/writes the one row.
 model Settings {
   id        Int      @id @default(autoincrement())
   data      String
@@ -335,17 +245,12 @@ model Verification {
   @@map("verification")
 }
 
-// Per-user personal token for the MCP endpoint — Claude Desktop connects AS this user by pasting
-// the token into its mcp-remote header. Stores ONLY a SHA-256 hash of the token (never the token);
-// the MCP route hashes the incoming bearer and looks it up. Deleting a row — or banning the user —
-// revokes access instantly (the centralized kill switch). NOT the better-auth api-key plugin
-// (peer-dep / zod-v4 conflict — see lib/auth.ts); same bearer-token pattern todo/yakudoku use.
 model McpKey {
   id         String    @id @default(cuid())
   userId     String
   user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  name       String // user-facing label ("laptop", "desktop")
-  tokenHash  String    @unique // SHA-256 hex of the token
+  name       String
+  tokenHash  String    @unique
   lastUsedAt DateTime?
   createdAt  DateTime  @default(now())
 
@@ -353,25 +258,12 @@ model McpKey {
   @@map("mcp_key")
 }
 
-// One row per MCP tool NAME — a counter, not a call log.
-//
-// Two questions this table answers, neither of which could be answered before 2026-08-11:
-//   1. Which of the tools Claude is shown does it ever actually reach for? `guard()` already printed
-//      one line per call, but to stdout — so the answer died with the container, and the whole
-//      "trim the tool surface" argument (issue #20) had 12 calls of evidence.
-//   2. Which tools are FAILING? A tool that throws still answers HTTP 200 with isError, so a broken
-//      tool is invisible to the client, to `npm run verify`, and to the learner — only the container
-//      log knew, until it was restarted (see the 2026-08-08 session: nine discarded turns).
-//
-// Per-call rows would answer more (a time series) and cost more (unbounded growth in a database
-// nobody prunes) — and nothing here needs to know WHEN the fourth call happened. `lastError` is
-// truncated by lib/mcp/usage.ts; it is the last thing that went wrong, not a history of them.
 model McpToolCall {
-  name          String   @id // the MCP tool name, e.g. "submit_review"
+  name          String   @id
   calls         Int      @default(0)
-  errors        Int      @default(0) // calls that ended in isError — a tool at calls == errors is broken
-  lastMs        Int? // duration of the most recent call
-  lastError     String? // truncated message of the most recent failure
+  errors        Int      @default(0)
+  lastMs        Int?
+  lastError     String?
   lastErrorAt   DateTime?
   firstCalledAt DateTime @default(now())
   lastCalledAt  DateTime @default(now())
@@ -379,37 +271,19 @@ model McpToolCall {
   @@map("mcp_tool_call")
 }
 
-// ---------------------------------------------------------------------------------------------------
-// Study groups — named collections of Items that scope focused practice (lib/groups.ts).
-//
-// Restored 2026-08-05. They shipped 2026-07-21, then went out with the whole multi-user + community
-// surface on 2026-08-03 (migration drop_multiuser_and_community) because their rows carried the tenant
-// `userId` columns that pass removed. The FEATURE was never the problem — grouping items by theme is
-// useful to one learner too — so this is the same model minus the tenancy: no `userId` on either table,
-// exactly like Item / SrsState / ReviewLog. The boundary is the login (CLAUDE.md §Gotchas).
-//
-// Groups NEVER touch FSRS. They are an organisation + practice-scoping layer; scheduling stays in
-// SrsState and is only ever computed by submitReview().
-// ---------------------------------------------------------------------------------------------------
-
 model Group {
   id        String   @id @default(cuid())
   name      String
-  // Soft constraint on which Item kinds may join: "vocab" | "grammar" | "mixed". SQLite/Prisma cannot
-  // enforce it, so lib/groups.ts does (itemKindFitsGroup) on every add.
+
   kind      String   @default("mixed")
-  color     String? // optional accent token name for the UI chip
-  note      String? // optional description (the theme / why these belong together)
+  color     String?
+  note      String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   members GroupMember[]
 }
 
-// Join row: one Item's membership in one Group (many-to-many). Cascade on BOTH sides — deleting a group
-// drops its memberships, deleting an item drops its memberships — and neither touches the other's rows.
-// NB this is the one place a cascade is right: a membership has no meaning without both ends, unlike
-// ReviewLog, which outlives its item on purpose (SetNull, invariant 2).
 model GroupMember {
   groupId String
   group   Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)

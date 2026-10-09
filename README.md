@@ -1,52 +1,142 @@
 # sakubun
 
-App luyện dịch Nhật–Việt theo ngữ pháp, cho **một người dùng**, deploy thật, mọi thứ sau `/login`.
+Luyện dịch Nhật–Việt với SRS (FSRS). Next.js 16 + Prisma 7 + SQLite, phục vụ cả web và một MCP
+server để Claude Desktop hoặc ChatGPT chấm bài.
 
-Người học luyện bằng cách nói chuyện với **Claude Desktop qua MCP**; **app giữ dữ liệu, FSRS, hạn mức
-ngày và cài đặt**, còn Claude soạn câu và chấm. Web không sinh câu và không chấm — repo này không gọi
-API Anthropic ở đâu cả, và MCP là một chiều: Claude gọi app.
-
-Năm trang: **Phân tích · Tài nguyên · Lịch sử · Cài đặt · Hướng dẫn**.
-
-## Bắt đầu
+## Chạy local
 
 ```bash
-node tooling/init.mjs          # dựng môi trường (chạy được trên mọi OS)
-npm run dev                    # http://localhost:3789
-npm run verify                 # gen → typecheck → lint → test → build
-npx playwright test            # e2e thật, browser thật
+cp .env.example .env        # điền BETTER_AUTH_SECRET: openssl rand -base64 32
+npm ci
+npm run gen                 # prisma generate
+npm run db:migrate          # tạo prisma/dev.db
+npm run dev                 # http://localhost:3789
 ```
 
-Làm việc trong repo này thì **đọc `CLAUDE.md` trước** — lệnh và các gotcha quan trọng
-(ngắn, một trang). File này chỉ là cửa vào; nó cố ý không nhắc lại
-những gì `CLAUDE.md` đã nói.
-
-## Bản đồ
-
-| Thư mục | Là gì |
-|---|---|
-| `app/` · `components/` | Next.js App Router + UI. Mọi chuỗi người học đọc là **tiếng Việt**. |
-| `lib/` | Tầng miền. `lib/practice.ts` giữ `submitReview()` — **lối duy nhất tính lịch FSRS**. |
-| `lib/mcp/` | Bề mặt MCP cho Claude Desktop (bearer token per-user). |
-| `lib/trpc/` · `mobile/` | Transport và app Expo cho điện thoại. Xem `docs/progress/mobile-app.md`. |
-| `prisma/` | Schema + migration. Prisma 7 + driver adapter; đọc `AGENTS.md §Gotchas` trước khi sửa. |
-| `e2e/` | Playwright. Bề mặt nào không có ở đây thì coi như **chưa được kiểm**. |
-| `docs/` | Quyết định, runbook, nhật ký tiến độ. Bắt đầu ở `docs/ARCHITECTURE.md`. |
-| `tooling/` | Công cụ sản phẩm: `learning-lab` (chạy thử một buổi học), `db-restore`. |
-
-## Deploy
-
-Docker, chạy ngay trên máy, dữ liệu ở volume có tên:
+## Kiểm thử
 
 ```bash
-docker compose up -d --build                          # app + VOICEVOX (TTS tiếng Nhật)
-docker compose -f docker-compose.tunnel.yml up -d     # Cloudflare Tunnel ra ngoài
+npm run verify              # gen + typecheck + lint + test + build
+npm test                    # vitest — chạy trên DB tạm, không đụng dev.db
+npm run e2e                 # playwright — tự dựng dev server + DB riêng
 ```
 
-Secret ở `.env.docker` / `.env.tunnel` (gitignored, không vào image). **Người bấm nút production** —
-xem `.claude/rules/danger-zones.md`.
+`npm test` không cần chuẩn bị gì: mỗi suite gọi `createTestDb()` để dựng một SQLite mới trong
+`os.tmpdir()` từ `prisma/migrations`, rồi `resetLearningData()` dọn sạch giữa các test.
 
-## Bản nhiều người dùng
+## Deploy bằng Docker
 
-Nhóm, thư viện chung, feed, thông báo, admin nằm ở nhánh `feat/multiuser-community`. Cần thì **lấy lại
-từ đó**, đừng dựng lại từ đầu.
+```bash
+cp .env.docker.example .env.docker   # điền BETTER_AUTH_SECRET + BETTER_AUTH_URL
+docker compose up -d --build
+```
+
+Xong. Container tự khởi động lại cùng Docker (`restart: unless-stopped`), app nghe ở cổng 3789.
+
+Vài điểm cần biết:
+
+- **Dữ liệu nằm trong volume `sakubun_sakubun_data`**, mount tại `/data`. Xoá container không mất
+  lịch sử học; `docker compose down` cũng không (chỉ `down --volumes` mới xoá).
+- **Đừng đặt `DATABASE_URL` trong `.env.docker`.** Image đã ghim `file:/data/sakubun.db` — đúng chỗ
+  volume được mount. Ghi đè biến đó là trỏ app sang DB khác và mất toàn bộ lịch sử.
+- **Migration chạy lúc container khởi động** (`prisma migrate deploy`), trước khi server lên.
+- **`BETTER_AUTH_URL` phải là URL trình duyệt thật sự dùng.** Sai giá trị này thì cookie phiên không
+  được chấp nhận và bạn không đăng nhập được.
+- **Nếu đăng nhập bằng Google thì cặp `GOOGLE_*` là bắt buộc**, không phải tuỳ chọn: tài khoản tạo
+  qua Google không có dòng mật khẩu, thiếu hai biến đó là better-auth bỏ provider và không còn
+  đường vào.
+- **VOICEVOX** (TTS tiếng Nhật) chạy như service thứ hai, không mở ra host — chỉ app gọi qua mạng
+  nội bộ của compose. Nếu nó chết thì client tự rơi về giọng Web Speech của trình duyệt.
+
+Sao lưu:
+
+```bash
+docker run --rm -v sakubun_sakubun_data:/data -v "$PWD":/out alpine \
+  cp /data/sakubun.db /out/sakubun-backup-$(date +%Y%m%d).db
+```
+
+## Kết nối MCP
+
+Tạo token ở **Cài đặt → Tài khoản → Token MCP**. Nên tạo token riêng cho từng client (ví dụ
+`claude-desktop`, `chatgpt`) để có thể thu hồi từng kết nối mà không ngắt client còn lại.
+
+### Claude Desktop
+
+Mở **Settings → Developer → Edit Config**, rồi thêm cấu hình sau vào `claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "sakubun": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote",
+        "https://sakubun.example.com/api/mcp",
+        "--header",
+        "Authorization: Bearer <MCP_TOKEN>"
+      ]
+    }
+  }
+}
+```
+
+Thay URL và token bằng giá trị của bạn, rồi khởi động lại Claude Desktop.
+
+### ChatGPT
+
+ChatGPT dùng đúng endpoint và token đó: `https://sakubun.example.com/api/mcp`, với HTTP header
+`Authorization: Bearer <MCP_TOKEN>`. Trên ChatGPT web, bật Developer mode, vào **Settings → Apps →
+Create**, nhập endpoint và cơ chế xác thực để gửi header trên, rồi **Scan Tools** và tạo app. Chọn
+app trong chat mới để sử dụng.
+
+Endpoint phải là HTTPS công khai; ChatGPT không thể gọi `localhost`. Nếu Sakubun chỉ đang chạy trên
+máy của bạn, hãy deploy hoặc dùng Secure MCP Tunnel. Xem [hướng dẫn MCP chính thức của
+OpenAI](https://help.openai.com/en/articles/12584461-developer-mode-and-full-mcp-connectors-in-chatgpt).
+Hiện thao tác ghi/sửa qua MCP đang beta cho ChatGPT Business và Enterprise/Edu; tài khoản Pro chỉ
+dùng app MCP với quyền đọc/tìm kiếm.
+
+## Cấu trúc
+
+```
+app/                      Route (Next.js App Router), server action, API route handler
+components/
+  ui/                     Primitive (shadcn) — không biết gì về nghiệp vụ
+  common/                 Dùng chung toàn app: DataTable, CardDeck, SectionHeading…
+  layout/                 Khung màn hình: sidebar, breadcrumb, shell, error boundary
+  features/               Theo màn hình: dashboard, groups, history, resources, settings
+lib/
+  core/                   Không phụ thuộc nghiệp vụ: cn, ngày giờ, làm sạch text, ActionResult
+  auth/                   better-auth, phiên đăng nhập, đăng ký, MCP key, email
+  db/                     Prisma client + trình dựng DB cho test
+  japanese/               Furigana, romaji
+  srs/                    FSRS, chọn bài, retention, calibration, streak
+  library/                Kho học của người dùng + tầng dữ liệu practice
+  session/                Một lượt luyện: loại bài, nhãn lỗi, coach, recap
+  transfer/               Nhập/xuất (Excel, Anki, sao lưu tài khoản)
+  insights/               Tổng hợp chỉ đọc cho dashboard
+  settings/               Schema cài đặt
+  design/                 Các LUẬT frontend, viết dưới dạng test (xem bên dưới)
+  mcp/                    Bề mặt API MCP cho Claude Desktop và ChatGPT
+e2e/                      Playwright
+```
+
+Test nằm cạnh code nó kiểm (`lib/srs/srs.test.ts` bên `lib/srs/srs.ts`).
+
+### Luật frontend
+
+`lib/design/` không chứa code chạy — nó chứa các luật, dưới dạng test. Chạy `npm test` là kiểm luôn:
+
+| Luật | File |
+| --- | --- |
+| Kích thước vuông dùng `size-N`, không `h-N w-N`; component trong `ui/`+`common/` phải nhận `className`; class ghép bằng `cn()`; component trình bày không nằm trong file route; `features/` không import chéo nhau; `lib/core` không biết nghiệp vụ | `component-standards.test.ts` |
+| Không dùng cỡ chữ ngoài thang, không `text-xl+` ngoài hero/số liệu | `type-scale.test.ts` |
+| `<TabsList>` cấp trang phải đi qua `PageShell headerAside` | `layout-standard.test.ts` |
+| Skeleton phải khớp số tab / khung của trang thật | `skeleton-parity.test.ts` |
+| Màu chữ trên nền phải đạt ngưỡng tương phản | `contrast.test.ts` |
+| Chuỗi tiếng Nhật phát được phải đi qua `SpokenLine` | `spoken-line.test.ts` |
+| Không emoji trong source | `no-emoji.test.ts` |
+| Chỗ nào cần cắt chữ thì dùng `Truncate` | `truncate.test.ts` |
+
+Muốn phá luật thì phải thêm file vào allowlist ngay trong test đó, **kèm lý do** — nên ngoại lệ luôn
+có người chịu trách nhiệm, thay vì trôi đi âm thầm.
