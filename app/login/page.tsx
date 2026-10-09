@@ -1,11 +1,19 @@
 import { LoginForm } from './login-form';
-import { isGoogleEnabled } from '@/lib/auth/google-enabled';
-import { isRegistrationOpen } from '@/lib/auth/registration';
+import { allowedEmail, isGoogleEnabled, isPasswordLoginEnabled } from '@/lib/auth/login-policy';
 
 export const dynamic = 'force-dynamic';
 
-export default async function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
+  const { error } = await searchParams;
   return (
-    <LoginForm googleEnabled={isGoogleEnabled()} registrationOpen={await isRegistrationOpen()} />
+    <LoginForm
+      googleReady={isGoogleEnabled() && !!allowedEmail()}
+      passwordLogin={isPasswordLoginEnabled()}
+      error={error ?? null}
+    />
   );
 }

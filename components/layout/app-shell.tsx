@@ -12,7 +12,7 @@ import { ThemeToggle } from '@/components/layout/theme-toggle';
 import { SidebarUser } from '@/components/layout/sidebar-user';
 import { useSession } from '@/lib/auth/auth-client';
 
-const CHROMELESS = ['/login', '/register'];
+const CHROMELESS = ['/login'];
 
 const NAV_ITEMS = [
   { href: '/', label: 'Phân tích', icon: LayoutDashboard, exact: true },

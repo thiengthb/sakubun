@@ -34,7 +34,11 @@ export function GoogleSignInButton({ label = 'Tiếp tục với Google' }: { la
 
   async function onClick() {
     setPending(true);
-    const { error } = await authClient.signIn.social({ provider: 'google', callbackURL: '/' });
+    const { error } = await authClient.signIn.social({
+      provider: 'google',
+      callbackURL: '/',
+      errorCallbackURL: '/login',
+    });
     if (error) {
       setPending(false);
       toast.error(error.message ?? 'Không đăng nhập được bằng Google');

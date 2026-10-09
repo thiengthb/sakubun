@@ -1,6 +1,6 @@
 import path from 'node:path';
 import { defineConfig, devices } from '@playwright/test';
-import { E2E_BASE_URL, E2E_DB_FILE, E2E_PORT } from './e2e/fixtures';
+import { E2E_BASE_URL, E2E_DB_FILE, E2E_EMAIL, E2E_PORT } from './e2e/fixtures';
 
 const E2E_DB_URL = `file:${path.join(process.cwd(), E2E_DB_FILE)}`;
 
@@ -31,6 +31,9 @@ export default defineConfig({
     env: {
       DATABASE_URL: E2E_DB_URL,
       BETTER_AUTH_URL: E2E_BASE_URL,
+      // Google is the only real way in; e2e uses the dev-only password door (lib/auth/login-policy.ts).
+      TEST_PASSWORD_LOGIN: '1',
+      ALLOWED_EMAIL: E2E_EMAIL,
       BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET ?? ['e2e', 'secret', '0123456789'].join('-'),
     },
   },
