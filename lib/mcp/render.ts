@@ -462,6 +462,13 @@ export function renderScaffold(patterns: readonly ScaffoldPattern[]): string | n
   return joinLines(lines);
 }
 
+// Self-hosted tutors (Hermes on Gemma) improvised exercises from patterns outside the library when
+// the queue ran dry, so nothing was staged or graded. Spell out the only way forward.
+export const OFF_LIBRARY_RULE =
+  ' NEVER compose an exercise from a pattern that is not in this library. If the user wants something ' +
+  'new: add_grammar it FIRST, then call get_due_items again with that pattern as the focus, then ' +
+  'stage_sentence BEFORE you show the exercise. An exercise that is not staged is not recorded.';
+
 export function renderDueBatch(batch: DueBatch): string {
   if (batch.items.length === 0) {
     // An empty library is NOT an empty queue. Without this the very first /practice of a fresh
@@ -472,7 +479,8 @@ export function renderDueBatch(batch: DueBatch): string {
         '_(The grammar library is EMPTY — this is a new account, not a finished day.)_ Do NOT say ' +
         'the session is over or that nothing is due. Tell the user their library has no patterns ' +
         'yet and offer to fill it: run the `import_grammar` prompt to paste a list from Mazii or a ' +
-        'textbook, or give you a few patterns to add with add_grammar right now.'
+        'textbook, or give you a few patterns to add with add_grammar right now.' +
+        OFF_LIBRARY_RULE
       );
     }
     const wait = batch.nextDueAt
@@ -506,7 +514,7 @@ export function renderDueBatch(batch: DueBatch): string {
           `grammar at the levels they are studying.`
         : '';
     const held = batch.withheld.length > 0 ? ` ${withheldLines(batch.withheld).join(' ')}` : '';
-    return `_(No items for the next sentence. ${wait})_${focusNote}${beyond}${held}`;
+    return `_(No items for the next sentence. ${wait})_${focusNote}${beyond}${held}${OFF_LIBRARY_RULE}`;
   }
   const rows = batch.items.map((i) => {
     const enrichment = i.enrichment ?? null;
