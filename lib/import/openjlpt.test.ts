@@ -26,13 +26,20 @@ const VI = {
   'v:3': { meaningVi: 'mọi; tất cả' },
   'v:4': { meaningVi: 'đèo' },
 };
-const HV = { 確: { reading: 'xác' }, 認: { reading: 'nhận' }, 峠: { reading: null } };
+const HV = {
+  確: { reading: 'xác', source: 'agree' },
+  認: { reading: 'nhận', source: 'agree' },
+  峠: { reading: null, source: 'invalid' },
+  児: { reading: 'nhĩ', source: 'llm-only' },
+};
 
 describe('spellHanviet', () => {
   it('ghép âm từng chữ kanji, viết hoa; thiếu một chữ thì bỏ trống cả từ', () => {
     expect(spellHanviet('確認する', HV)).toBe('XÁC NHẬN');
     expect(spellHanviet('峠', HV)).toBeNull();
     expect(spellHanviet('あらゆる', HV)).toBeNull();
+    // Only dictionary-confirmed readings: a model-only guess leaves the whole word blank.
+    expect(spellHanviet('児童', HV)).toBeNull();
   });
 });
 

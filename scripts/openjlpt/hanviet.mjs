@@ -21,6 +21,21 @@ const SYSTEM =
   'Chỉ trả JSON: {"items":[{"k":"…","hv":"…"|null}]} với đúng các chữ được giao.';
 
 export const norm = (s) => (s ?? '').normalize('NFC').trim().toLowerCase();
+const TONES = /[\u0300\u0301\u0303\u0309\u0323]/g;
+// Same syllable whatever the tone-mark placement (hoá/hóa) or i/y spelling (kỳ/kì).
+export function sameSyllable(a, b) {
+  const key = (s) => {
+    const d = norm(s).normalize('NFD');
+    return [d.replace(TONES, '').normalize('NFC').replace(/y/g, 'i'), (d.match(TONES) ?? []).sort().join('')].join('|');
+  };
+  return !!a && !!b && key(a) === key(b);
+}
+const isVietnamese = (s) => !!s && /^[a-zà-ỹđ]+$/u.test(norm(s));
+export function classify(reading, unihan) {
+  if (!isVietnamese(reading)) return 'invalid';
+  if (!unihan?.length) return 'llm-only';
+  return unihan.some((c) => sameSyllable(reading, c)) ? 'agree' : 'disagree';
+}
 
 // Spell a word's Hán Việt from its kanji; null if any kanji has no reading (better nothing than half).
 export function spellHanviet(expression, table) {
@@ -68,17 +83,14 @@ async function main() {
     }
     for (const { k, hv } of items) {
       if (!batch.includes(k)) continue;
-      const cands = (unihan[k] ?? []).map(norm);
       const llm = hv ? norm(hv) : null;
-      table[k] = {
-        reading: llm ?? null,
-        source: cands.length === 0 ? 'llm-only' : llm && cands.includes(llm) ? 'agree' : 'disagree',
-        unihan: unihan[k] ?? [],
-      };
+      table[k] = { reading: llm, source: classify(llm, unihan[k]), unihan: unihan[k] ?? [] };
     }
     await writeFile(outPath, JSON.stringify(table, null, 0).replace(/},"/g, '},\n"') + '\n');
     console.log(`${Math.min(i + BATCH, todo.length)}/${todo.length}`);
   }
+  for (const v of Object.values(table)) v.source = classify(v.reading, v.unihan);
+  await writeFile(outPath, JSON.stringify(table, null, 0).replace(/},"/g, '},\n"') + '\n');
   const bad = Object.entries(table).filter(([, v]) => v.source !== 'agree');
   await writeFile(
     path.join(DIR, 'hanviet-review.md'),
