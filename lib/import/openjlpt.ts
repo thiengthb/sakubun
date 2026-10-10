@@ -36,7 +36,9 @@ const KANJI = /[一-鿿]/;
 
 // A word's Hán Việt spelled from its kanji; null when any kanji has no reading (half a reading misleads).
 export function spellHanviet(expression: string, table: HanvietTable): string | null {
-  const ks = [...expression].filter((c) => KANJI.test(c));
+  // 々 repeats the kanji before it (清々しい → THANH THANH).
+  const chars = [...expression].map((c, i, a) => (c === '々' && i > 0 ? a[i - 1] : c));
+  const ks = chars.filter((c) => KANJI.test(c));
   if (ks.length === 0) return null;
   const parts = ks.map((c) => (table[c]?.source === 'agree' ? table[c].reading : null));
   return parts.every(Boolean) ? parts.join(' ').toUpperCase() : null;
@@ -105,7 +107,8 @@ export function buildImport(src: OjSource, vi: ViMap, hv: HanvietTable, now: Dat
       // Same word listed at two levels (116 in v0.3.0): keep the EASIER level, add the other meaning.
       out.merged++;
       if (LEVELS.indexOf(e.level) < LEVELS.indexOf(prev.level)) prev.level = e.level;
-      if (!prev.meaningVi.split('; ').includes(meaningVi)) prev.meaningVi = `${prev.meaningVi}; ${meaningVi}`;
+      if (!prev.meaningVi.split('; ').includes(meaningVi))
+        prev.meaningVi = `${prev.meaningVi}; ${meaningVi}`;
       continue;
     }
     const item = {

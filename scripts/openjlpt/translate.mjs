@@ -11,7 +11,7 @@ const DIR = path.join(process.cwd(), 'data/openjlpt');
 const LLM = process.env.LLM_URL ?? 'http://100.85.167.65:8090/v1/chat/completions';
 const KEY = process.env.LLM_KEY;
 const MODEL = process.env.MODEL ?? 'gemma4-26b';
-const BATCH = 25;
+const BATCH = Number(process.env.BATCH ?? 25);
 
 const arg = (name) => {
   const i = process.argv.indexOf(name);
@@ -64,7 +64,10 @@ async function translate(batch) {
     if (!e || typeof it.meaningVi !== 'string' || !it.meaningVi.trim()) continue;
     out[it.id] = {
       meaningVi: it.meaningVi.trim(),
-      hanviet: e.id.startsWith('v:') && hasKanji(e.expression) && it.hanviet ? String(it.hanviet).trim() : null,
+      hanviet:
+        e.id.startsWith('v:') && hasKanji(e.expression) && it.hanviet
+          ? String(it.hanviet).trim()
+          : null,
     };
   }
   return out;
@@ -84,7 +87,10 @@ async function main() {
   const all = [...src.grammar, ...src.vocab];
   const sample = arg('--sample');
   let todo = sample
-    ? [...spread(src.grammar, Math.round(sample * 0.3)), ...spread(src.vocab, sample - Math.round(sample * 0.3))]
+    ? [
+        ...spread(src.grammar, Math.round(sample * 0.3)),
+        ...spread(src.vocab, sample - Math.round(sample * 0.3)),
+      ]
     : all;
   todo = todo.filter((e) => !vi[e.id]);
   const limit = arg('--limit');
@@ -104,12 +110,17 @@ async function main() {
     Object.assign(vi, got);
     await writeFile(viPath, JSON.stringify(vi, null, 1) + '\n');
     const done = Math.min(i + BATCH, todo.length);
-    console.log(`${done}/${todo.length} (${Object.keys(got).length}/${batch.length} ok) · ${Math.round((Date.now() - t0) / 1000)}s`);
+    console.log(
+      `${done}/${todo.length} (${Object.keys(got).length}/${batch.length} ok) · ${Math.round((Date.now() - t0) / 1000)}s`,
+    );
   }
 
   if (sample) {
     const ids = new Set(
-      [...spread(src.grammar, Math.round(sample * 0.3)), ...spread(src.vocab, sample - Math.round(sample * 0.3))].map((e) => e.id),
+      [
+        ...spread(src.grammar, Math.round(sample * 0.3)),
+        ...spread(src.vocab, sample - Math.round(sample * 0.3)),
+      ].map((e) => e.id),
     );
     const rows = all
       .filter((e) => ids.has(e.id))

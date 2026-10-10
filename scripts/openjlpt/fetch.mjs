@@ -57,13 +57,24 @@ async function main() {
   }
   const want = meta.counts;
   if (grammar.length !== want.grammar.total || vocab.length !== want.vocab.total)
-    throw new Error(`count mismatch: grammar ${grammar.length}/${want.grammar.total}, vocab ${vocab.length}/${want.vocab.total}`);
+    throw new Error(
+      `count mismatch: grammar ${grammar.length}/${want.grammar.total}, vocab ${vocab.length}/${want.vocab.total}`,
+    );
   await mkdir(path.dirname(OUT), { recursive: true });
   await writeFile(
     OUT,
-    JSON.stringify({ source: 'OpenJLPT', version: meta.version, commit: COMMIT, license: meta.license, grammar, vocab }) + '\n',
+    JSON.stringify({
+      source: 'OpenJLPT',
+      version: meta.version,
+      commit: COMMIT,
+      license: meta.license,
+      grammar,
+      vocab,
+    }) + '\n',
   );
-  console.log(`grammar ${grammar.length}, vocab ${vocab.length} → ${path.relative(process.cwd(), OUT)}`);
+  console.log(
+    `grammar ${grammar.length}, vocab ${vocab.length} → ${path.relative(process.cwd(), OUT)}`,
+  );
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) await main();

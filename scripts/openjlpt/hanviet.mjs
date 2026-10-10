@@ -26,7 +26,10 @@ const TONES = /[\u0300\u0301\u0303\u0309\u0323]/g;
 export function sameSyllable(a, b) {
   const key = (s) => {
     const d = norm(s).normalize('NFD');
-    return [d.replace(TONES, '').normalize('NFC').replace(/y/g, 'i'), (d.match(TONES) ?? []).sort().join('')].join('|');
+    return [
+      d.replace(TONES, '').normalize('NFC').replace(/y/g, 'i'),
+      (d.match(TONES) ?? []).sort().join(''),
+    ].join('|');
   };
   return !!a && !!b && key(a) === key(b);
 }
@@ -96,10 +99,18 @@ async function main() {
     path.join(DIR, 'hanviet-review.md'),
     `# Âm Hán Việt cần xem lại (${bad.length} chữ)\n\nGemma và từ điển Unihan không khớp, hoặc Unihan không có chữ này. ` +
       `Sửa cột "Dùng" nếu sai.\n\n| Chữ | Dùng (Gemma) | Unihan gợi ý | Loại |\n|---|---|---|---|\n` +
-      bad.map(([k, v]) => `| ${k} | ${v.reading ?? '—'} | ${v.unihan.join(', ') || '—'} | ${v.source} |`).join('\n') +
+      bad
+        .map(
+          ([k, v]) =>
+            `| ${k} | ${v.reading ?? '—'} | ${v.unihan.join(', ') || '—'} | ${v.source} |`,
+        )
+        .join('\n') +
       '\n',
   );
-  const counts = Object.values(table).reduce((m, v) => ((m[v.source] = (m[v.source] ?? 0) + 1), m), {});
+  const counts = Object.values(table).reduce(
+    (m, v) => ((m[v.source] = (m[v.source] ?? 0) + 1), m),
+    {},
+  );
   console.log(JSON.stringify(counts));
 }
 

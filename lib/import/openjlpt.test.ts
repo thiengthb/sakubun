@@ -9,7 +9,13 @@ const SRC: OjSource = {
   version: '0.3.0',
   commit: 'x',
   grammar: [
-    { id: 'g:wake', expression: '〜わけだ', level: 'N3', meaningEn: 'no wonder', formation: 'V + わけだ' },
+    {
+      id: 'g:wake',
+      expression: '〜わけだ',
+      level: 'N3',
+      meaningEn: 'no wonder',
+      formation: 'V + わけだ',
+    },
     { id: 'g:novi', expression: '〜ものの', level: 'N2', meaningEn: 'although' },
   ],
   vocab: [
@@ -38,6 +44,7 @@ describe('spellHanviet', () => {
     expect(spellHanviet('確認する', HV)).toBe('XÁC NHẬN');
     expect(spellHanviet('峠', HV)).toBeNull();
     expect(spellHanviet('あらゆる', HV)).toBeNull();
+    expect(spellHanviet('確々', HV)).toBe('XÁC XÁC');
     // Only dictionary-confirmed readings: a model-only guess leaves the whole word blank.
     expect(spellHanviet('児童', HV)).toBeNull();
   });
@@ -53,7 +60,11 @@ describe('buildImport', () => {
   it('gộp từ trùng ở hai cấp: giữ cấp dễ hơn, nối thêm nghĩa', () => {
     const kakunin = r.items.filter((i) => i.expression === '確認');
     expect(kakunin).toHaveLength(1);
-    expect(kakunin[0]).toMatchObject({ level: 'N4', meaningVi: 'xác nhận; kiểm tra', hanviet: 'XÁC NHẬN' });
+    expect(kakunin[0]).toMatchObject({
+      level: 'N4',
+      meaningVi: 'xác nhận; kiểm tra',
+      hanviet: 'XÁC NHẬN',
+    });
     expect(r.merged).toBe(1);
   });
 
@@ -99,8 +110,13 @@ describe('nạp qua importer tài khoản có sẵn', () => {
 
     await importAccountData(parsed.data, { dryRun: false });
     expect(await prisma.item.count()).toBe(built.items.length); // 3 new + the learner's own あらゆる
-    expect((await prisma.item.findFirst({ where: { expression: 'あらゆる' } }))?.meaningVi).toBe('nghĩa của tôi');
-    const kakunin = await prisma.item.findFirst({ where: { expression: '確認' }, include: { srs: true } });
+    expect((await prisma.item.findFirst({ where: { expression: 'あらゆる' } }))?.meaningVi).toBe(
+      'nghĩa của tôi',
+    );
+    const kakunin = await prisma.item.findFirst({
+      where: { expression: '確認' },
+      include: { srs: true },
+    });
     expect(kakunin?.source).toBe('OPENJLPT');
     expect(kakunin?.srs?.state).toBe(0);
   });

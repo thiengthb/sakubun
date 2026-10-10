@@ -13,9 +13,13 @@ const hv = await read('hanviet-kanji.json');
 const r = buildImport(src, vi, hv, new Date());
 await writeFile(
   path.join(DIR, 'sakubun-import.json'),
-  JSON.stringify({ exportedAt: new Date().toISOString(), items: r.items, srsStates: r.srsStates }) + '\n',
+  JSON.stringify({ exportedAt: new Date().toISOString(), items: r.items, srsStates: r.srsStates }) +
+    '\n',
 );
-const byKind = r.items.reduce<Record<string, number>>((m, i) => ((m[i.kind] = (m[i.kind] ?? 0) + 1), m), {});
+const byKind = r.items.reduce<Record<string, number>>(
+  (m, i) => ((m[i.kind] = (m[i.kind] ?? 0) + 1), m),
+  {},
+);
 console.log(
   `items ${r.items.length} ${JSON.stringify(byKind)} · merged ${r.merged} · skipped ${r.skipped.length}` +
     ` · with hanviet ${r.items.filter((i) => i.hanviet).length}`,
