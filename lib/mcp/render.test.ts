@@ -277,6 +277,19 @@ describe('renderDueBatch', () => {
     ).not.toContain('Nothing else is queued today');
   });
 
+  it('an empty batch forbids off-library exercises and spells out add → focus → stage', () => {
+    // Hermes on Gemma, queue dry: it taught a pattern that was not in the library and showed an
+    // exercise it never staged, so nothing was recorded.
+    for (const md of [
+      renderDueBatch({ ...baseBatch, nextDueAt: new Date(Date.now() + 8 * 24 * 3600 * 1000) }),
+      renderDueBatch({ ...baseBatch, libraryEmpty: true }),
+    ]) {
+      expect(md).toContain('NEVER compose an exercise from a pattern that is not in this library');
+      expect(md).toContain('add_grammar it FIRST');
+      expect(md).toContain('stage_sentence BEFORE you show the exercise');
+    }
+  });
+
   it('empty batch mentions the next due time', () => {
     const md = renderDueBatch({ ...baseBatch, nextDueAt: new Date(Date.now() + 10 * 60 * 1000) });
     expect(md).toContain('phút nữa');
