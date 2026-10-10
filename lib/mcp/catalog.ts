@@ -68,6 +68,12 @@ export const MCP_CATALOG: CatalogEntry[] = [
       'Bỏ qua câu đang chờ (khi người dùng nói "bỏ qua"/"skip") — câu vẫn lưu vào lịch sử kèm đáp án tham khảo nhưng KHÔNG tính vào FSRS',
   },
   {
+    name: 'get_review_load',
+    kind: 'tool',
+    summary:
+      'Số thẻ đến hạn và số mẫu mới dự kiến cho từng ngày tới (chỉ đọc, chỉ con số) — để trợ lý lịch đặt giờ ôn',
+  },
+  {
     name: 'get_stats',
     kind: 'tool',
     summary:

@@ -6,6 +6,7 @@ import { registerCoreTools } from '@/lib/mcp/tools/core';
 import { registerGroupTools } from '@/lib/mcp/tools/groups';
 import { registerLookupTools } from '@/lib/mcp/tools/lookup';
 import { registerManageTools } from '@/lib/mcp/tools/manage';
+import { registerPlannerTools } from '@/lib/mcp/tools/planner';
 import { registerPracticeTools } from '@/lib/mcp/tools/practice';
 import { registerQuizTools } from '@/lib/mcp/tools/quiz';
 import { setToolCallRecorder, type McpServer } from '@/lib/mcp/tool-kit';
@@ -21,6 +22,7 @@ const REGISTER_TOOLS = [
   registerLookupTools,
   registerQuizTools,
   registerGroupTools,
+  registerPlannerTools,
 ];
 
 export function registerAll(server: McpServer, profile: McpProfile): void {
@@ -44,4 +46,5 @@ function handlerFor(profile: McpProfile) {
 export const mcpHandlers: Record<McpProfile, (req: Request) => Promise<Response>> = {
   full: handlerFor('full'),
   tutor: handlerFor('tutor'),
+  planner: handlerFor('planner'),
 };

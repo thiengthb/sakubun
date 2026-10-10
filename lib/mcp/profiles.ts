@@ -20,19 +20,28 @@ export const TUTOR_TOOLS = [
   'get_weak_report',
 ] as const;
 
-export type McpProfile = 'full' | 'tutor';
+// `planner` is for a scheduling assistant (e.g. a calendar bot): load COUNTS only, read-only, no item
+// content and no learner model. A key whose scope is `planner` can never reach any other profile.
+export const PLANNER_TOOLS = ['ping', 'get_review_load'] as const;
+
+export type McpProfile = 'full' | 'tutor' | 'planner';
+
+const ALLOWED: Record<Exclude<McpProfile, 'full'>, readonly string[]> = {
+  tutor: TUTOR_TOOLS,
+  planner: PLANNER_TOOLS,
+};
 
 // null = not a profile we know; the route answers 400 rather than silently serving the full set.
 export function parseProfile(value: string | null): McpProfile | null {
   if (value === null || value === '' || value === 'full') return 'full';
-  if (value === 'tutor') return 'tutor';
+  if (value === 'tutor' || value === 'planner') return value;
   return null;
 }
 
 // A view of `server` whose tool() drops every tool outside the profile; prompts pass through.
 export function restrictToProfile(server: McpServer, profile: McpProfile): McpServer {
   if (profile === 'full') return server;
-  const allowed = new Set<string>(TUTOR_TOOLS);
+  const allowed = new Set<string>(ALLOWED[profile]);
   return new Proxy(server, {
     get(target, prop, receiver) {
       if (prop !== 'tool') return Reflect.get(target, prop, receiver);

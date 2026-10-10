@@ -34,10 +34,15 @@ describe('MCP profiles', () => {
     expect(registered('tutor').prompts).toEqual(registered('full').prompts);
   });
 
+  it('planner chỉ có ping + get_review_load (đọc số liệu, không nội dung)', () => {
+    expect(registered('planner').tools.sort()).toEqual(['get_review_load', 'ping']);
+  });
+
   it('parseProfile: không có tham số = full, tên lạ = null', () => {
     expect(parseProfile(null)).toBe('full');
     expect(parseProfile('')).toBe('full');
     expect(parseProfile('tutor')).toBe('tutor');
+    expect(parseProfile('planner')).toBe('planner');
     expect(parseProfile('admin')).toBeNull();
   });
 });
