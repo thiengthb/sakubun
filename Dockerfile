@@ -59,7 +59,8 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 # tzdata so the FSRS day cutoff ("4 AM belongs to yesterday") follows local time.
-RUN apk add --no-cache tzdata
+# apk upgrade: pick up Alpine security fixes newer than the node base image (e.g. zlib 1.3.2-r1).
+RUN apk upgrade --no-cache && apk add --no-cache tzdata
 ENV TZ=Asia/Ho_Chi_Minh
 
 # Next standalone output: server.js + pruned node_modules.
