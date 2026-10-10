@@ -7,6 +7,7 @@ export const TUTOR_TOOLS = [
   'ping',
   'get_protocol',
   'get_settings',
+  'update_settings',
   'get_stats',
   'get_due_items',
   'stage_sentence',
