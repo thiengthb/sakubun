@@ -251,6 +251,8 @@ model McpKey {
   user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   name       String
   tokenHash  String    @unique
+  // 'full' | 'planner' — see lib/auth/mcp-key.ts
+  scope      String    @default("full")
   lastUsedAt DateTime?
   createdAt  DateTime  @default(now())
 

@@ -17,13 +17,23 @@ export async function createMcpKey(
   return { id: key.id, token };
 }
 
-export async function verifyMcpToken(token: string): Promise<string | null> {
+// scope 'full' (every key made in Settings) may use any profile; 'planner' is pinned to the planner
+// profile (read-only load counts), whatever the URL asks for.
+export type McpKeyScope = 'full' | 'planner';
+
+export async function verifyMcpKey(
+  token: string,
+): Promise<{ userId: string; scope: McpKeyScope } | null> {
   if (!token) return null;
   const key = await prisma.mcpKey.findUnique({
     where: { tokenHash: hashToken(token) },
-    select: { id: true, userId: true, user: { select: { banned: true } } },
+    select: { id: true, userId: true, scope: true, user: { select: { banned: true } } },
   });
   if (!key || key.user.banned) return null;
   await prisma.mcpKey.update({ where: { id: key.id }, data: { lastUsedAt: new Date() } });
-  return key.userId;
+  return { userId: key.userId, scope: key.scope === 'planner' ? 'planner' : 'full' };
+}
+
+export async function verifyMcpToken(token: string): Promise<string | null> {
+  return (await verifyMcpKey(token))?.userId ?? null;
 }
