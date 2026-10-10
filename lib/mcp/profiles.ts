@@ -15,6 +15,7 @@ export const TUTOR_TOOLS = [
   'skip_sentence',
   'check_library',
   'add_vocab',
+  'add_grammar',
   'get_quiz_items',
   'get_weak_report',
 ] as const;
