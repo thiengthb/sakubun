@@ -60,10 +60,7 @@ describe('falsifiable — a note without CHECKABLE evidence is not written', () 
   it('keeps only the ids that really resolve, and writes the note', async () => {
     await resetData();
     const real = await aSentence();
-    const res = await N.recordLearnerNote(
-      { text: text(3), evidence: [real, 'ghost-id'] },
-      NOW,
-    );
+    const res = await N.recordLearnerNote({ text: text(3), evidence: [real, 'ghost-id'] }, NOW);
     expect(res.recorded).toBe('added');
     const [note] = await N.listLearnerNotes(NOW);
     expect(note.evidence).toEqual([real]);
@@ -78,10 +75,7 @@ describe('falsifiable — a note without CHECKABLE evidence is not written', () 
       reason: 'too-short',
     });
     expect(
-      await N.recordLearnerNote(
-        { text: 'x'.repeat(N.MAX_NOTE_CHARS + 1), evidence: [real] },
-        NOW,
-      ),
+      await N.recordLearnerNote({ text: 'x'.repeat(N.MAX_NOTE_CHARS + 1), evidence: [real] }, NOW),
     ).toEqual({ recorded: 'rejected', reason: 'too-long' });
   });
 });
@@ -127,9 +121,7 @@ describe('bounded — the annex cannot grow', () => {
     if (res.recorded !== 'added') throw new Error('unreachable');
     expect(res.evicted).toBe(doomed!.id);
 
-    const after = await N.listLearnerNotes(
-      new Date(NOW.getTime() + N.MAX_ASSERTED_NOTES * DAY),
-    );
+    const after = await N.listLearnerNotes(new Date(NOW.getTime() + N.MAX_ASSERTED_NOTES * DAY));
     expect(after).toHaveLength(N.MAX_ASSERTED_NOTES);
     expect(after.map((n) => n.text)).not.toContain(text(100));
     expect(after.map((n) => n.text)).toContain(text(999));
@@ -144,7 +136,6 @@ describe('self-cleaning — a claim about a person has a shelf life', () => {
     const afterTtl = new Date(NOW.getTime() + (N.NOTE_TTL_DAYS + 1) * DAY);
     expect(await N.listLearnerNotes(afterTtl)).toEqual([]);
   });
-
 });
 
 describe('5.4 — the note is a PASSENGER on submit_review, never a toll on it', () => {

@@ -58,9 +58,7 @@ const toNote = (row: NoteRow): AssertedNote => ({
   expiresAt: row.expiresAt,
 });
 
-export async function listLearnerNotes(
-  now: Date = new Date(),
-): Promise<AssertedNote[]> {
+export async function listLearnerNotes(now: Date = new Date()): Promise<AssertedNote[]> {
   const rows = await prisma.learnerNote.findMany({
     where: { expiresAt: { gt: now } },
     orderBy: { createdAt: 'desc' },

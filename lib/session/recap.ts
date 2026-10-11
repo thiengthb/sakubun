@@ -19,7 +19,7 @@ export async function getSessionRecap(
   now: Date = new Date(),
 ): Promise<SessionRecap | null> {
   const last = await prisma.reviewLog.findFirst({
-        orderBy: { reviewedAt: 'desc' },
+    orderBy: { reviewedAt: 'desc' },
     select: { reviewedAt: true },
   });
   if (!last) return null;

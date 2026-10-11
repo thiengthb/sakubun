@@ -38,9 +38,12 @@ async function aSentence(at: Date): Promise<string> {
   return row.id;
 }
 
-async function review(
-  o: { itemId?: string | null; rating: number; at: Date; sentenceId?: string },
-): Promise<void> {
+async function review(o: {
+  itemId?: string | null;
+  rating: number;
+  at: Date;
+  sentenceId?: string;
+}): Promise<void> {
   await prisma.reviewLog.create({
     data: {
       itemId: o.itemId ?? null,
@@ -140,8 +143,7 @@ describe('it names what went wrong THEN, not the all-time weak list', () => {
     const at = new Date(NOW.getTime() - DAY);
     for (let n = 0; n < R.MAX_SHAKY + 2; n++) {
       const id = await addItem(`pattern-${n}`);
-      for (let m = 0; m <= R.MAX_SHAKY + 2 - n; m++)
-        await review({ itemId: id, rating: 1, at });
+      for (let m = 0; m <= R.MAX_SHAKY + 2 - n; m++) await review({ itemId: id, rating: 1, at });
     }
     const recap = await R.getSessionRecap(CUTOFF, NOW);
     expect(recap!.shaky).toHaveLength(R.MAX_SHAKY);
