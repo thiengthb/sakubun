@@ -1,3 +1,4 @@
+import { reviewStaging } from '@/lib/session/staging-review';
 import { z } from 'zod';
 import {
   MAX_ASSERTED_NOTES,
@@ -246,13 +247,19 @@ export function registerPracticeTools(server: McpServer) {
             'to display.',
         );
       }
-      const { sentenceId, quiz } = await stageSentence(args);
-      const scaffold = args.extraPatterns?.length
+      const reviewed = await reviewStaging(args);
+      const staged = reviewed.args;
+      if (!staged.items?.length) {
+        return mcpError(
+          `Nothing left to stage: ${reviewed.notes.join(' ')} Rewrite the sentence so it actually uses ` +
+            'the batch items, then call stage_sentence again.',
+        );
+      }
+      const { sentenceId, quiz } = await stageSentence(staged);
+      const scaffold = staged.extraPatterns?.length
         ? await classifyExtraPatterns(
-            args.extraPatterns,
-            await drilledLevelOf(
-              args.items.map((i) => i.itemId),
-            ),
+            staged.extraPatterns,
+            await drilledLevelOf(staged.items.map((i) => i.itemId)),
           )
         : [];
       const text =
@@ -264,7 +271,11 @@ export function registerPracticeTools(server: McpServer) {
         '```json\n' +
         JSON.stringify({ sentenceId, scaffold }) +
         '\n```';
-      const notes = [renderQuizOptions(quiz), renderScaffold(scaffold)].filter(Boolean);
+      const notes = [
+        reviewed.notes.length ? `**CHECKS:** ${reviewed.notes.join(' ')}` : null,
+        renderQuizOptions(quiz),
+        renderScaffold(scaffold),
+      ].filter(Boolean);
       return {
         content: [{ type: 'text' as const, text: [text, ...notes].join('\n\n') }],
       };

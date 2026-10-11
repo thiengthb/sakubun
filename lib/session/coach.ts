@@ -250,10 +250,7 @@ export function coach(input: CoachInput): CoachResult {
       line: `「${expression}」 bị hoãn vì hết hạn mức mẫu mới hôm nay — nâng hạn mức lên chứ?`,
       tool: 'update_settings',
       args: {
-        dailyNewGrammar: Math.min(
-          MAX_DAILY_NEW_GRAMMAR,
-          (input.settings.dailyNewGrammar ?? 3) + 1,
-        ),
+        dailyNewGrammar: Math.min(MAX_DAILY_NEW_GRAMMAR, (input.settings.dailyNewGrammar ?? 3) + 1),
       },
     });
   }

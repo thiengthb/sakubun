@@ -280,8 +280,7 @@ describe('best topics — relative to the learner, never absolute', () => {
 
 describe('error-tag trend — a SHARE of misses, so practising less is not "improving"', () => {
   async function misses(itemId: string, daysAgo: number, tag: string, n: number) {
-    for (let i = 0; i < n; i++)
-      await review({ itemId, rating: 1, daysAgo, errorTags: [tag] });
+    for (let i = 0; i < n; i++) await review({ itemId, rating: 1, daysAgo, errorTags: [tag] });
   }
 
   it('claims nothing when either window is too thin', async () => {

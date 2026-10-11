@@ -108,7 +108,8 @@ describe('candidate distractors come from the library, not from memory', () => {
 });
 
 describe('parseQuizOptionLine', () => {
-  const line = '**A.** 〜ないでください · **B.** 〜ながら · **C.** 〜たほうがいいです · **D.** 〜てもいいです';
+  const line =
+    '**A.** 〜ないでください · **B.** 〜ながら · **C.** 〜たほうがいいです · **D.** 〜てもいいです';
 
   it('reads the four options back out of the rendered line', () => {
     expect(parseQuizOptionLine(line)).toEqual([
@@ -125,13 +126,18 @@ describe('parseQuizOptionLine', () => {
   });
 
   it('round-trips whatever buildQuizOptions rendered', () => {
-    const built = buildQuizOptions('〜わけにはいかない', ['〜ざるをえない', '〜ようがない', '〜どころか']);
+    const built = buildQuizOptions('〜わけにはいかない', [
+      '〜ざるをえない',
+      '〜ようがない',
+      '〜どころか',
+    ]);
     expect(parseQuizOptionLine(built.line)).toEqual(built.options);
   });
 });
 
 describe('quizAnswerMismatch', () => {
-  const line = '**A.** 〜ないでください · **B.** 〜ながら · **C.** 〜たほうがいいです · **D.** 〜てもいいです';
+  const line =
+    '**A.** 〜ないでください · **B.** 〜ながら · **C.** 〜たほうがいいです · **D.** 〜てもいいです';
   const src = `この部屋でご飯を食べ（＿＿）か。\n\n${line}`;
 
   it('flags the exact lab case: says A, quotes the pattern sitting at D', () => {

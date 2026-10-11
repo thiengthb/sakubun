@@ -88,7 +88,10 @@ export function buildQuizOptions(
 export function parseQuizOptionLine(text: string): { letter: QuizLetter; pattern: string }[] {
   const out: { letter: QuizLetter; pattern: string }[] = [];
   for (const letter of QUIZ_LETTERS) {
-    const m = new RegExp(`\\*\\*${letter}\\.\\*\\*\\s*([^\\n]*?)(?=\\s*·\\s*\\*\\*[A-D]\\.\\*\\*|\\s*$)`, 'm').exec(text);
+    const m = new RegExp(
+      `\\*\\*${letter}\\.\\*\\*\\s*([^\\n]*?)(?=\\s*·\\s*\\*\\*[A-D]\\.\\*\\*|\\s*$)`,
+      'm',
+    ).exec(text);
     if (m?.[1]?.trim()) out.push({ letter, pattern: m[1].trim() });
   }
   return out;

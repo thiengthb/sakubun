@@ -385,7 +385,15 @@ const TOOL_ARGS: Record<string, readonly string[]> = {
   ],
   enrich_items: ['items'],
   patch_enrichment: ['itemId', 'add', 'set'],
-  update_vocab: ['itemId', 'expression', 'reading', 'sinoVietnamese', 'meaningVi', 'notes', 'level'],
+  update_vocab: [
+    'itemId',
+    'expression',
+    'reading',
+    'sinoVietnamese',
+    'meaningVi',
+    'notes',
+    'level',
+  ],
 };
 
 const HEALTH_BASE: LibraryHealthFacts = {
@@ -427,8 +435,10 @@ describe('coach — every suggestion is a call that would actually work', () => 
         expect(allowed, `no arg contract known for tool ${s.tool}`).toBeDefined();
         for (const [key, value] of Object.entries(s.args)) {
           expect(allowed, `${s.code} → ${s.tool} { ${key} }`).toContain(key);
-          expect(value, `${s.code} → ${s.tool} { ${key}: ${String(value)} } is a placeholder`).not
-            .toBeNull();
+          expect(
+            value,
+            `${s.code} → ${s.tool} { ${key}: ${String(value)} } is a placeholder`,
+          ).not.toBeNull();
           expect(value, `${s.code} → ${s.tool} { ${key} } is undefined`).toBeDefined();
         }
         seen.add(s.code);
