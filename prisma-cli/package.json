@@ -1,0 +1,12 @@
+{
+  "name": "sakubun-prisma-cli",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Locked runtime dependency for prisma migrate deploy",
+  "dependencies": {
+    "prisma": "7.10.0"
+  },
+  "overrides": {
+    "mysql2": "3.22.0"
+  }
+}
