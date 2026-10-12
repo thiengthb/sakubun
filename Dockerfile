@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # ---------- Stage 1: install dependencies ----------
-FROM node:24-alpine AS deps
+FROM node:24.19.0-alpine3.24 AS deps
 WORKDIR /app
 # Toolchain in case better-sqlite3 has no musl prebuild for this node version.
 RUN apk add --no-cache python3 make g++
@@ -16,8 +16,8 @@ COPY prisma ./prisma
 # `npm rebuild` ALWAYS compiles from source, and node-gyp's default is to download the musl headers
 # from unofficial-builds.nodejs.org. BuildKit's network has no route to IPv6 while node resolves AAAA
 # first, so that download dies with AggregateError [ETIMEDOUT] in ~500ms and takes the build with it.
-# `docker run` does not reproduce it (wget goes IPv4), which is why an image built before
-# node:24-alpine moved to 24.19.0 never hit this.
+# `docker run` does not reproduce it (wget goes IPv4), which is why this is pinned to the
+# Node 24.19.0 image whose bundled headers are known to match the runtime.
 #
 # Pointing node-gyp at the headers the node image already ships (/usr/local/include/node) removes the
 # download entirely — no IPv6 workaround to rot, and the headers are guaranteed to match the node
@@ -29,7 +29,7 @@ RUN --mount=type=cache,target=/root/.npm \
     npm_config_fetch_retry_maxtimeout=120000 npm ci && npm rebuild better-sqlite3
 
 # ---------- Stage 2: build ----------
-FROM node:24-alpine AS build
+FROM node:24.19.0-alpine3.24 AS build
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
@@ -39,22 +39,18 @@ RUN --mount=type=cache,target=/app/.next/cache npx prisma generate && npm run bu
 # ---------- Stage 2b: minimal prisma CLI (only for `migrate deploy` at startup) ----------
 # Separate stage so the runtime gets the CLI at the pinned version without bloating the app's
 # pruned standalone node_modules.
-FROM node:24-alpine AS prisma-cli
+FROM node:24.19.0-alpine3.24 AS prisma-cli
 WORKDIR /cli
-# Copy as pkg.json, NOT package.json. With a package.json in cwd, `npm install prisma@X --omit=dev`
-# (a) installs the app's entire dependency tree — hundreds of packages instead of one — and
-# (b) SKIPS prisma itself, because it lives in devDependencies and --omit=dev drops dev deps even
-# when named explicitly. Result: a huge node_modules with NO .bin/prisma → the container exits 127
-# at `migrate deploy`.
-COPY package.json ./pkg.json
+# The runtime CLI has its own minimal, committed lockfile. `npm install prisma@X` without one
+# produces a different dependency tree on every rebuild and previously shipped stale CVEs.
+COPY prisma-cli/package.json prisma-cli/package-lock.json ./
 COPY .npmrc ./
 RUN --mount=type=cache,target=/root/.npm \
-    PRISMA_VERSION="$(node -p "require('./pkg.json').devDependencies.prisma")" && \
     npm_config_fetch_retries=5 npm_config_fetch_retry_maxtimeout=120000 \
-    npm install --no-save prisma@"$PRISMA_VERSION"
+    npm ci --omit=dev
 
 # ---------- Stage 3: runtime ----------
-FROM node:24-alpine
+FROM node:24.19.0-alpine3.24
 WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
