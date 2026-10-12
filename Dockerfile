@@ -60,7 +60,10 @@ ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 # tzdata so the FSRS day cutoff ("4 AM belongs to yesterday") follows local time.
 # apk upgrade: pick up Alpine security fixes newer than the node base image (e.g. zlib 1.3.2-r1).
-RUN apk upgrade --no-cache && apk add --no-cache tzdata
+# This runtime starts Node and the checked-in Prisma CLI directly; it never invokes npm or npx.
+# Remove the globally bundled npm tree so its build-only dependency CVEs cannot ship in production.
+RUN apk upgrade --no-cache && apk add --no-cache tzdata \
+    && rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx
 ENV TZ=Asia/Ho_Chi_Minh
 
 # Next standalone output: server.js + pruned node_modules.
