@@ -1,4 +1,4 @@
-name: ci
+name: ci  # deploy.yml runs on workflow_run of this name: renaming it stops deploys silently
 
 on:
   pull_request:

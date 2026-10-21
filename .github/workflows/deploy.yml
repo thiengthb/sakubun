@@ -1,6 +1,6 @@
 # .github/workflows/deploy.yml in an app repo: build on GitHub, push to ghcr. miniserver pulls it within ~2 minutes.
 # Builds only after `ci` passed on main, from the exact commit CI tested (nuc-infra F-09, M2 step 6).
-# To rebuild a commit, re-run its `ci` run.
+# To rebuild a commit, re-run its `ci` run. That retags :latest to that commit, so re-running an old run is a rollback.
 name: build-and-push
 on:
   workflow_run:
