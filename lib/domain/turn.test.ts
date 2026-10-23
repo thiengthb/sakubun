@@ -105,14 +105,18 @@ describe('checkStage', () => {
     const result = checkStage(draft, grammar, [8, 10]);
     expect(result).toEqual({
       ok: false,
-      error: 'ja is 18 characters; write 8-10, then call stage_turn again.',
+      error:
+        'ja is 18 characters; write 8-10, or pass hint if the learner asked for another length, then call stage_turn again.',
     });
   });
 
   it('lets a spoken hint lift the window but keeps the hard ceiling', () => {
     expect(checkStage({ ...draft, hint: 'câu ngắn hơn' }, grammar, [26, 42]).ok).toBe(true);
     const long = { ...draft, ja: 'ばかりに' + 'あ'.repeat(MAX_SENTENCE_CHARS), hint: 'dài' };
-    expect(checkStage(long, grammar, [26, 42]).ok).toBe(false);
+    expect(checkStage(long, grammar, [26, 42])).toEqual({
+      ok: false,
+      error: `ja is ${MAX_SENTENCE_CHARS + 4} characters; keep it at most ${MAX_SENTENCE_CHARS}, then call stage_turn again.`,
+    });
   });
 
   it('refuses a sentence without the target', () => {
