@@ -19,7 +19,6 @@ import {
 import {
   parseErrorDetail,
   parseErrorTags,
-  serializeErrorDetail,
   type Confusion,
   type ErrorTag,
 } from '@/lib/session/error-tags';
@@ -43,6 +42,7 @@ import {
   type QualityTier,
 } from '@/lib/library/enrichment-quality';
 import { asItemKind, GRAMMAR_KIND, VOCAB_KIND } from '@/lib/library/item-kinds';
+import { recordReviews, type ReviewInput } from '@/lib/app/record-review';
 import { coachTeachBack, type TeachBackHarvest } from '@/lib/session/coach';
 import {
   recordLearnerNote,
@@ -63,7 +63,6 @@ import { type Streak, computeStreak, studyDayKey } from '@/lib/srs/streak';
 import {
   LEECH_LAPSES,
   newSrsFields,
-  rateOnce,
   SUSPEND_SUGGEST_LAPSES,
   type RatingValue,
   type SrsFields,
@@ -908,8 +907,6 @@ export async function submitReview(
       },
     }),
   ];
-  const resultItems: SubmitReviewResult['items'] = [];
-
   const ability = await getOrSeedAbility(settings);
   const axes = axesFor(sentence.direction, sentence.exerciseType);
   const primaryAxis = axes[0];
@@ -933,6 +930,7 @@ export async function submitReview(
   };
   const ratingNotes: string[] = [];
 
+  const reviews: ReviewInput[] = [];
   for (const { itemId, rating: claimedRating, role, errorTags, errorDetail } of ratings) {
     const state = byItemId.get(itemId)!;
     const verdict = earnedRating(claimedRating as Rating, evidence);
@@ -940,10 +938,6 @@ export async function submitReview(
     if (verdict.downgradedFrom) {
       ratingNotes.push(`${state.item.expression}: Easy → Good (${verdict.reason})`);
     }
-    const { next, log } = rateOnce(state, rating, {
-      retention: settings.desiredRetention,
-      now,
-    });
     const itemChallenge = state.item.challenge ?? initialChallenge(state.item.level);
     let challengeAfter = itemChallenge;
     for (const axis of axes) {
@@ -971,32 +965,7 @@ export async function submitReview(
         },
       }),
     );
-    writes.push(
-      prisma.srsState.update({ where: { itemId }, data: { ...next } }),
-      prisma.reviewLog.create({
-        data: {
-          errorTags: errorTags?.length ? JSON.stringify(errorTags) : null,
-          errorDetail: serializeErrorDetail(errorDetail),
-          itemId,
-          rating: log.rating,
-          state: log.state,
-          role: role ?? 'TARGET',
-          due: log.due,
-          stability: log.stability,
-          difficulty: log.difficulty,
-          reviewedAt: now,
-          sentenceId,
-        },
-      }),
-    );
-    resultItems.push({
-      itemId,
-      expression: state.item.expression,
-      rating,
-      state: next.state,
-      nextDue: next.due,
-      intervalDays: Math.max(0, Math.round((next.due.getTime() - now.getTime()) / 86400000)),
-    });
+    reviews.push({ itemId, srs: state, rating, role, sentenceId, errorTags, errorDetail });
   }
 
   writes.push(
@@ -1013,7 +982,19 @@ export async function submitReview(
     }),
   );
 
-  await prisma.$transaction(writes);
+  const recorded = await recordReviews(reviews, {
+    retention: settings.desiredRetention,
+    now,
+    alsoWrite: writes,
+  });
+  const resultItems: SubmitReviewResult['items'] = recorded.map(({ itemId, rating, next }) => ({
+    itemId,
+    expression: byItemId.get(itemId)!.item.expression,
+    rating,
+    state: next.state,
+    nextDue: next.due,
+    intervalDays: Math.max(0, Math.round((next.due.getTime() - now.getTime()) / 86400000)),
+  }));
   invalidateStreak(); // a fresh review may tick the streak up — drop the cache so the beacon sees it
 
   const [today, dueNow, nextDueAt, calibration, learnerNote] = await Promise.all([
