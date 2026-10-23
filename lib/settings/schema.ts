@@ -2,6 +2,8 @@ import { z } from 'zod';
 
 export const JLPT_LEVELS = ['N5', 'N4', 'N3', 'N2', 'N1'] as const;
 export const DIRECTIONS = ['JA_VI', 'VI_JA', 'ALTERNATING'] as const;
+// How the new core picks a translation direction (lib/domain/compose.ts): auto follows the item.
+export const DIRECTION_MODES = ['auto', 'JA_VI', 'VI_JA'] as const;
 export const SENTENCE_SIZES = [
   'xshort',
   'short',
@@ -79,18 +81,21 @@ export const DIFFICULTY_ANCHORS: Record<number, { en: string; vi: string }> = {
 
 export type JlptLevel = (typeof JLPT_LEVELS)[number];
 export type Direction = (typeof DIRECTIONS)[number];
+export type DirectionMode = (typeof DIRECTION_MODES)[number];
 export type SentenceSize = (typeof SENTENCE_SIZES)[number];
 
 export const settingsSchema = z.object({
   grammarLevels: z.array(z.enum(JLPT_LEVELS)).min(1).default(['N5']),
   vocabCeiling: z.enum(JLPT_LEVELS).nullable().default(null),
   direction: z.enum(DIRECTIONS).default('ALTERNATING'),
+  directionMode: z.enum(DIRECTION_MODES).default('auto'),
   difficulty: z.number().int().min(1).max(5).default(2),
   sentenceSize: z.enum(SENTENCE_SIZES).default('medium'),
   translationStyle: z.enum(TRANSLATION_STYLES).default('natural'),
   register: z.enum(REGISTERS).default('polite'),
   topics: z.array(z.string().trim().min(1)).max(20).default([]),
   dailyNewGrammar: z.number().int().min(0).max(20).default(3),
+  dailyNewVocab: z.number().int().min(0).max(50).default(15),
   maxNewPerSentence: z.number().int().min(1).max(5).default(1),
   maxReviewsPerDay: z.number().int().min(10).max(500).default(100),
   vocabPerSentence: z.number().int().min(0).max(5).default(2),
@@ -141,6 +146,7 @@ export type CompositionSettings = Pick<Settings, (typeof COMPOSITION_SETTING_KEY
 export function toCompositionSettings(settings: Settings): CompositionSettings {
   const out = {} as Record<string, unknown>;
   for (const key of COMPOSITION_SETTING_KEYS) out[key] = settings[key];
+  out.direction = legacyDirection(settings);
   return out as CompositionSettings;
 }
 
@@ -155,12 +161,23 @@ export function resolveVocabCeiling(
   return settings.vocabCeiling ?? hardestLevel(settings.grammarLevels);
 }
 
+// The web edits `directionMode`; the old MCP path still reads a Direction. Until roadmap 3.2 removes
+// that path, this is the one bridge between them: auto alternates there, a fixed mode stays fixed.
+export function legacyDirection(settings: Pick<Settings, 'directionMode'>): Direction {
+  return settings.directionMode === 'auto' ? 'ALTERNATING' : settings.directionMode;
+}
+
 export function migrateSettingsInput(raw: unknown): unknown {
   if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) return raw;
   const o = { ...(raw as Record<string, unknown>) };
-  if (!('levels' in o)) return o;
-  if (o.grammarLevels === undefined && Array.isArray(o.levels)) o.grammarLevels = o.levels;
-  delete o.levels;
+  if ('levels' in o) {
+    if (o.grammarLevels === undefined && Array.isArray(o.levels)) o.grammarLevels = o.levels;
+    delete o.levels;
+  }
+  // Settings stored before directionMode existed, and an MCP client still sending `direction`.
+  if (o.directionMode === undefined && typeof o.direction === 'string') {
+    o.directionMode = o.direction === 'ALTERNATING' ? 'auto' : o.direction;
+  }
   return o;
 }
 

@@ -27,7 +27,9 @@ test('login → dashboard → a settings change persists across reload', async (
   await expect(page.getByLabel('Mẫu ngữ pháp mới / ngày')).toHaveValue('11');
 });
 
-test('slider «Cỡ câu» đọc ra CHỮ, không phải chỉ số', async ({ page }) => {
+test('Luyện tập shows only the eight settings; sentence-shape fields are gone', async ({
+  page,
+}) => {
   await page.goto('/login');
   await page.getByLabel('Email').fill(E2E_EMAIL);
   await page.getByLabel('Mật khẩu').fill(E2E_LOGIN);
@@ -35,12 +37,15 @@ test('slider «Cỡ câu» đọc ra CHỮ, không phải chỉ số', async ({ 
   await page.waitForURL((u) => !u.pathname.startsWith('/login'), { timeout: 30_000 });
 
   await page.goto('/settings');
-  const size = page.getByRole('slider', { name: 'Cỡ câu' });
-  await expect(size).toBeVisible();
-  await expect(size).toHaveAttribute('aria-valuenow', /\d+/);
-  await expect(size).toHaveAttribute('aria-valuetext', 'Vừa');
+  await expect(page.getByLabel('Từ vựng mới / ngày')).toBeVisible();
+  await expect(page.getByRole('slider', { name: 'Tốc độ đọc' })).toBeVisible();
+  // Derived from the item since the core rewrite (docs/decisions/0001-core-rewrite.md).
+  await expect(page.getByRole('slider', { name: 'Cỡ câu' })).toHaveCount(0);
+  await expect(page.getByRole('slider', { name: 'Độ phức tạp của câu' })).toHaveCount(0);
 
-  const difficulty = page.getByRole('slider', { name: 'Độ phức tạp của câu' });
-  await expect(difficulty).toHaveAttribute('aria-valuenow', /\d+/);
-  expect(await difficulty.getAttribute('aria-valuetext')).toBeNull();
+  await page.getByLabel('Từ vựng mới / ngày').fill('9');
+  await page.getByRole('button', { name: /^(Lưu|Đã lưu)$/ }).click();
+  await expect(page.getByRole('button', { name: 'Đã lưu' })).toBeVisible();
+  await page.reload();
+  await expect(page.getByLabel('Từ vựng mới / ngày')).toHaveValue('9');
 });

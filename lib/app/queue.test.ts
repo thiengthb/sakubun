@@ -51,9 +51,10 @@ beforeEach(async () => {
 
 describe('getQueue', () => {
   it('introduces new vocabulary under its own daily cap, not as due', async () => {
-    await seed('VOCAB', Q.DEFAULT_DAILY_NEW_VOCAB + 5);
+    await P.saveSettings({ dailyNewVocab: 4 });
+    await seed('VOCAB', 9);
     const queue = await Q.getQueue(NOW);
-    expect(queue.cards).toHaveLength(Q.DEFAULT_DAILY_NEW_VOCAB);
+    expect(queue.cards).toHaveLength(4);
     expect(queue.cards.every((c) => c.kind === 'VOCAB' && c.state === 0)).toBe(true);
   });
 

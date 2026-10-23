@@ -3,6 +3,7 @@ import {
   COMPOSITION_SETTING_KEYS,
   DEFAULT_SETTINGS,
   hardestLevel,
+  legacyDirection,
   migrateSettingsInput,
   parseStoredSettings,
   resolveVocabCeiling,
@@ -78,15 +79,41 @@ describe('settingsSchema', () => {
   });
 });
 
+describe('direction setting', () => {
+  it('settings stored before directionMode carry their direction over', () => {
+    for (const [direction, mode] of [
+      ['JA_VI', 'JA_VI'],
+      ['VI_JA', 'VI_JA'],
+      ['ALTERNATING', 'auto'],
+    ] as const) {
+      expect(parseStoredSettings(JSON.stringify({ direction })).directionMode).toBe(mode);
+    }
+  });
+
+  it('a patch naming the old `direction` sets directionMode; an explicit directionMode wins', () => {
+    expect(
+      settingsPatchSchema.parse(migrateSettingsInput({ direction: 'VI_JA' })).directionMode,
+    ).toBe('VI_JA');
+    const both = migrateSettingsInput({ direction: 'VI_JA', directionMode: 'auto' });
+    expect(settingsPatchSchema.parse(both).directionMode).toBe('auto');
+  });
+
+  it('the old MCP path reads directionMode: auto alternates, a fixed mode stays fixed', () => {
+    expect(legacyDirection({ directionMode: 'auto' })).toBe('ALTERNATING');
+    expect(legacyDirection({ directionMode: 'VI_JA' })).toBe('VI_JA');
+    const stale = {
+      ...DEFAULT_SETTINGS,
+      direction: 'JA_VI' as const,
+      directionMode: 'VI_JA' as const,
+    };
+    expect(toCompositionSettings(stale).direction).toBe('VI_JA');
+  });
+});
+
 describe('toCompositionSettings', () => {
   it('drops the fields no composition path reads', () => {
     const projected = toCompositionSettings(DEFAULT_SETTINGS);
-    for (const dead of [
-      'voiceSpeaker',
-      'speechRate',
-      'dayCutoffHour',
-      'desiredRetention',
-    ]) {
+    for (const dead of ['voiceSpeaker', 'speechRate', 'dayCutoffHour', 'desiredRetention']) {
       expect(projected).not.toHaveProperty(dead);
     }
   });

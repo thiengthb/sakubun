@@ -38,11 +38,12 @@ export default function Loading() {
         </>
       }
     >
-      {/* Three bands, matching the Luyện tập tab: Nội dung học · Nhịp học · Trình bày & tự động. */}
+      {/* Four bands, matching the Luyện tập tab: Học gì · Nhịp học · Hiển thị & giọng đọc · Nâng cao. */}
       <div className="space-y-8">
-        <BandSkeleton groups={[300, 420]} />
-        <BandSkeleton groups={[200, 120]} />
-        <BandSkeleton groups={[200, 140]} />
+        <BandSkeleton groups={[90]} />
+        <BandSkeleton groups={[100, 90]} />
+        <BandSkeleton groups={[230]} />
+        <BandSkeleton groups={[170]} />
       </div>
     </PageSkeleton>
   );
