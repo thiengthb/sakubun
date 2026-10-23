@@ -103,22 +103,3 @@ export async function callTool(
   const result = (body.result ?? {}) as { content?: { text?: string }[]; isError?: boolean };
   return { text: result.content?.[0]?.text ?? '', isError: result.isError === true };
 }
-
-export async function callToolOk(
-  api: APIRequestContext,
-  name: string,
-  args: Record<string, unknown>,
-): Promise<Record<string, unknown>> {
-  const res = await callTool(api, name, args);
-  expect(res.isError, `tool ${name} trả lỗi: ${res.text}`).toBe(false);
-  return toolJson(res.text);
-}
-
-export function toolJson(text: string): Record<string, unknown> {
-  const fence = text.match(/```json\n([\s\S]*?)\n```/);
-  try {
-    return JSON.parse(fence ? fence[1] : text) as Record<string, unknown>;
-  } catch {
-    return {};
-  }
-}

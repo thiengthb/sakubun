@@ -8,22 +8,13 @@ import { estimateTokens } from '@/lib/mcp/token-estimate';
 
 // What the MCP server costs a client in tokens, measured on the real protocol: a client connects
 // in memory and reads exactly what Claude would read. The numbers are printed on every run so CI
-// logs show them. Ceilings stop the surface from growing while the rewrite is under way
-// (docs/roadmap.md); phase 3 replaces them with the v2 targets (tool definitions under 2,000, the
-// opening protocol under 1,500, each tool result under 300).
+// logs show them. The targets come from docs/roadmap.md (phase 3): tool definitions under 2,000, the
+// opening protocol under 1,500, each tool result under 300. Before v2 the default surface cost
+// ~14,300 tokens of definitions plus a ~7,900-token practice prompt (baseline 2026-10-23).
 
 createTestDb('sakubun-tokens-');
 
-// Baseline measured 2026-10-23: full 14,289 · tutor 8,521 · practice prompt 7,902 · get_due_items 901.
-// Each ceiling is that baseline plus about 5%.
-const CEILING = {
-  fullToolDefinitions: 15_000,
-  tutorToolDefinitions: 9_000,
-  practicePrompt: 8_300,
-  dueItemsResult: 1_000,
-};
-
-// The v2 targets from docs/roadmap.md, enforced on the v2 profile while it runs beside the old one.
+// The v2 targets from docs/roadmap.md, enforced on the default profile.
 const V2_TARGET = {
   toolDefinitions: 2_000,
   protocol: 1_500,
@@ -99,41 +90,6 @@ afterAll(async () => {
     `\nMCP token estimate (lib/mcp/token-estimate.ts)\n${report.join('\n')}\n\n`,
   );
   await Promise.all(clients.map((c) => c.close()));
-});
-
-describe('MCP token footprint', () => {
-  it('tool definitions, full profile (Claude Desktop)', async () => {
-    const { count, tokens } = await toolDefinitionTokens('full');
-    report.push(`  tool definitions, full:  ${count} tools, ~${tokens} tokens`);
-    expect(tokens).toBeLessThanOrEqual(CEILING.fullToolDefinitions);
-  });
-
-  it('tool definitions, tutor profile (Hermes)', async () => {
-    const { count, tokens } = await toolDefinitionTokens('tutor');
-    report.push(`  tool definitions, tutor: ${count} tools, ~${tokens} tokens`);
-    expect(tokens).toBeLessThanOrEqual(CEILING.tutorToolDefinitions);
-  });
-
-  it('opening prompt of a translation session', async () => {
-    const client = await connect('full');
-    const prompt = await client.getPrompt({ name: 'practice' });
-    const text = prompt.messages
-      .map((m) => (m.content.type === 'text' ? m.content.text : ''))
-      .join('\n');
-    const tokens = estimateTokens(text);
-    report.push(`  prompt "practice":       ${text.length} chars, ~${tokens} tokens`);
-    expect(tokens).toBeLessThanOrEqual(CEILING.practicePrompt);
-  });
-
-  it('first tool result of a turn (get_due_items)', async () => {
-    const client = await connect('full');
-    const result = await client.callTool({ name: 'get_due_items', arguments: {} });
-    const text = resultText(result);
-    expect(result.isError).not.toBe(true);
-    const tokens = estimateTokens(text);
-    report.push(`  result get_due_items:    ${text.length} chars, ~${tokens} tokens`);
-    expect(tokens).toBeLessThanOrEqual(CEILING.dueItemsResult);
-  });
 });
 
 describe('MCP v2 token targets', () => {

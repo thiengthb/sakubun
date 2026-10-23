@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseProfile, TUTOR_TOOLS, V2_TOOLS, type McpProfile } from '@/lib/mcp/profiles';
+import { parseProfile, PLANNER_TOOLS, V2_TOOLS, type McpProfile } from '@/lib/mcp/profiles';
 import { registerAll } from '@/lib/mcp/server';
 
 // A stand-in server that only records what gets registered.
@@ -15,44 +15,21 @@ function registered(profile: McpProfile) {
 }
 
 describe('MCP profiles', () => {
-  it('full đăng ký mọi tool, kể cả các tool ngoài vòng học', () => {
-    const { tools } = registered('full');
-    expect(tools.length).toBeGreaterThan(TUTOR_TOOLS.length);
-    expect(tools).toContain('enrich_items');
-  });
-
-  it('tutor chỉ đăng ký đúng danh sách vòng học', () => {
-    expect(registered('tutor').tools.sort()).toEqual([...TUTOR_TOOLS].sort());
-  });
-
-  it('mọi tên trong TUTOR_TOOLS đều là tool có thật (đổi tên tool thì test này đỏ)', () => {
-    const all = new Set(registered('full').tools);
-    expect(TUTOR_TOOLS.filter((t) => !all.has(t))).toEqual([]);
-  });
-
-  it('prompt giữ nguyên ở cả hai profile', () => {
-    expect(registered('tutor').prompts).toEqual(registered('full').prompts);
-  });
-
-  it('planner chỉ có ping + get_review_load (đọc số liệu, không nội dung)', () => {
-    expect(registered('planner').tools.sort()).toEqual(['get_review_load', 'ping']);
-  });
-
-  it('v2 chỉ có bảy tool mới và một prompt hoc, không lẫn tool cũ', () => {
+  it('v2 chỉ có bảy tool mới và một prompt hoc', () => {
     const { tools, prompts } = registered('v2');
     expect(tools.sort()).toEqual([...V2_TOOLS].sort());
     expect(prompts).toEqual(['hoc']);
-    expect(
-      registered('full').tools.filter((t) => (V2_TOOLS as readonly string[]).includes(t)),
-    ).toEqual([]);
   });
 
-  it('parseProfile: không có tham số = full, tên lạ = null', () => {
-    expect(parseProfile(null)).toBe('full');
-    expect(parseProfile('')).toBe('full');
-    expect(parseProfile('tutor')).toBe('tutor');
+  it('planner chỉ có ping + get_review_load (đọc số liệu, không nội dung), không prompt', () => {
+    const { tools, prompts } = registered('planner');
+    expect(tools.sort()).toEqual([...PLANNER_TOOLS].sort());
+    expect(prompts).toEqual([]);
+  });
+
+  it('parseProfile: không tham số và tên cũ (full, tutor) = v2, tên lạ = null', () => {
+    for (const value of [null, '', 'v2', 'full', 'tutor']) expect(parseProfile(value)).toBe('v2');
     expect(parseProfile('planner')).toBe('planner');
-    expect(parseProfile('v2')).toBe('v2');
     expect(parseProfile('admin')).toBeNull();
   });
 });

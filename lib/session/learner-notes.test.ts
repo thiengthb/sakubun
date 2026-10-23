@@ -197,14 +197,4 @@ describe('the annex reaches the tutor through the dossier, not through a new too
     expect(D.isEmptyDossier(dossier)).toBe(false);
     expect(dossier.notes.map((n) => n.text)).toEqual([text(8)]);
   });
-
-  it('but notes NEVER reach the rendered digest — they ride the JSON only', async () => {
-    const D = await import('@/lib/session/dossier');
-    const R = await import('@/lib/mcp/render');
-    await resetData();
-    const s = await aSentence();
-    await N.recordLearnerNote({ text: text(9), evidence: [s] }, NOW);
-    const block = R.renderDossier(await D.computeDossier(NOW));
-    expect(block).toBeNull();
-  });
 });

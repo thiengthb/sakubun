@@ -4,6 +4,13 @@ import { guard, ok, type McpServer } from '@/lib/mcp/tool-kit';
 
 export function registerPlannerTools(server: McpServer) {
   server.tool(
+    'ping',
+    'Check that the MCP connection is alive. Returns { ok, time }.',
+    {},
+    guard('ping', async () => ok({ ok: true, time: new Date().toISOString() })),
+  );
+
+  server.tool(
     'get_review_load',
     'Read-only study load for the next `days` study days, for planning study time: grammarDue, ' +
       'vocabDue (overdue count on day 1), newGrammarPlanned; plus reviewedToday. Counts only.',

@@ -50,7 +50,11 @@ describe('recordToolCall', () => {
   });
 
   it('một lời gọi hỏng cộng errors và giữ lại lời của lỗi', async () => {
-    await U.recordToolCall('submit_review', 40, 'thiếu một hàng LearnerAbility trong cơ sở dữ liệu');
+    await U.recordToolCall(
+      'submit_review',
+      40,
+      'thiếu một hàng LearnerAbility trong cơ sở dữ liệu',
+    );
 
     const row = await prisma.mcpToolCall.findUniqueOrThrow({ where: { name: 'submit_review' } });
     expect(row.calls, 'một lời gọi hỏng vẫn LÀ một lời gọi').toBe(1);
@@ -66,9 +70,10 @@ describe('recordToolCall', () => {
     const row = await prisma.mcpToolCall.findUniqueOrThrow({ where: { name: 'submit_review' } });
     expect(row.calls).toBe(2);
     expect(row.errors, 'số lần hỏng là tích luỹ').toBe(1);
-    expect(row.lastError, 'lời của lỗi phải còn — nó là bằng chứng duy nhất sau khi log biến mất').toBe(
-      'P2025',
-    );
+    expect(
+      row.lastError,
+      'lời của lỗi phải còn — nó là bằng chứng duy nhất sau khi log biến mất',
+    ).toBe('P2025');
   });
 
   it('lỗi dài bị cắt, để một stack trace không phình bảng đếm', async () => {
@@ -81,19 +86,19 @@ describe('recordToolCall', () => {
 
 describe('readToolUsage', () => {
   it('tool bận nhất lên trước, và tool CHƯA BAO GIỜ được gọi được nêu tên', async () => {
-    await U.recordToolCall('check_library', 10);
-    await U.recordToolCall('check_library', 10);
-    await U.recordToolCall('check_library', 10);
-    await U.recordToolCall('submit_review', 20);
+    await U.recordToolCall('next_turn', 10);
+    await U.recordToolCall('next_turn', 10);
+    await U.recordToolCall('next_turn', 10);
+    await U.recordToolCall('grade_turn', 20);
 
     const report = await U.readToolUsage();
-    expect(report.rows.map((r) => r.name)).toEqual(['check_library', 'submit_review']);
+    expect(report.rows.map((r) => r.name)).toEqual(['next_turn', 'grade_turn']);
     expect(report.rows[0].calls).toBe(3);
 
     const catalogTools = MCP_CATALOG.filter((e) => e.kind === 'tool').map((e) => e.name);
     expect(report.toolCount, 'mẫu số là số tool bản đồ đang quảng cáo').toBe(catalogTools.length);
     expect(report.neverCalled, 'đúng phần bù, không phải một danh sách viết tay').toEqual(
-      catalogTools.filter((n) => n !== 'check_library' && n !== 'submit_review'),
+      catalogTools.filter((n) => n !== 'next_turn' && n !== 'grade_turn'),
     );
     expect(report.rows.length + report.neverCalled.length).toBe(report.toolCount);
   });
@@ -129,7 +134,9 @@ describe('guard + recorder, nối đúng như server.ts nối', () => {
     const row = await prisma.mcpToolCall.findUniqueOrThrow({ where: { name: 'get_stats' } });
     expect(row.calls).toBe(1);
     expect(row.errors).toBe(0);
-    expect(row.lastMs, 'thời gian có thể là 0 ms, nhưng phải là một con số').toBeGreaterThanOrEqual(0);
+    expect(row.lastMs, 'thời gian có thể là 0 ms, nhưng phải là một con số').toBeGreaterThanOrEqual(
+      0,
+    );
   });
 
   it('một tool ném lỗi được đếm là hỏng, kèm lời của lỗi thật', async () => {

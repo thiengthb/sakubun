@@ -1,9 +1,5 @@
 import type { createMcpHandler } from 'mcp-handler';
-import { z, ZodError } from 'zod';
-import { ERROR_TAGS } from '@/lib/session/error-tags';
-import { EXERCISE_TYPES } from '@/lib/session/exercise-types';
-import { verbatimEnvelope } from '@/lib/mcp/render';
-import { JLPT_LEVELS } from '@/lib/settings/schema';
+import { ZodError } from 'zod';
 
 export type McpServer = Parameters<Parameters<typeof createMcpHandler>[0]>[0];
 
@@ -13,32 +9,6 @@ export function ok(data: unknown) {
 
 export function mcpError(message: string) {
   return { content: [{ type: 'text' as const, text: message }], isError: true as const };
-}
-
-export function okWithMarkdown(markdown: string, data: unknown, { verbatim = true } = {}) {
-  const block = verbatim ? verbatimEnvelope(markdown) : markdown;
-  return {
-    content: [
-      {
-        type: 'text' as const,
-        text: `${block}\n\n\`\`\`json\n${JSON.stringify(data)}\n\`\`\``,
-      },
-    ],
-  };
-}
-
-export function okWithNotes(
-  markdown: string,
-  data: unknown,
-  notes: readonly (string | null)[],
-  opts?: { verbatim?: boolean },
-) {
-  const out = okWithMarkdown(markdown, data, opts);
-  const extra = notes.filter((n): n is string => n !== null && n.length > 0);
-  if (extra.length === 0) return out;
-  return {
-    content: [{ type: 'text' as const, text: `${out.content[0].text}\n\n${extra.join('\n\n')}` }],
-  };
 }
 
 function recordNotFoundModel(e: unknown): string | null {
@@ -56,14 +26,9 @@ function recordNotFoundMessage(model: string): string {
   switch (model) {
     case 'Item':
     case 'SrsState':
-      return 'Không tìm thấy item với id đó (có thể đã bị xoá hoặc id sai). Gọi list_grammar / list_vocab để lấy id hiện tại.';
-    case 'Sentence':
-      return 'Không tìm thấy câu với sentenceId đó (có thể đã bị xoá). Gọi stage_sentence để dựng lại câu, rồi chấm bằng sentenceId mới — đừng bịa id.';
-    case 'Group':
-    case 'GroupMember':
-      return 'Không tìm thấy nhóm với id đó (có thể đã bị xoá hoặc id sai). Gọi list_groups để lấy id hiện tại.';
-    case 'CalibrationProposal':
-      return 'Không tìm thấy proposal với id đó. Gọi list_calibration_proposals để lấy id hiện tại.';
+      return 'Unknown itemId (deleted or mistyped). Call lookup or next_turn for a current one.';
+    case 'Turn':
+      return 'Unknown turnId. Call next_turn, then stage_turn.';
     default:
       return (
         `Lỗi phía server: thiếu một hàng ${model || '(không rõ bảng)'} trong cơ sở dữ liệu. ` +
@@ -109,7 +74,11 @@ function errorDigest(e: unknown): string {
 
   const model = recordNotFoundModel(e);
   const tag = `[${code}${model ? ` ${model}` : ''}] `;
-  const lastLine = raw.split('\n').filter((l) => l.trim().length > 0).at(-1) ?? raw;
+  const lastLine =
+    raw
+      .split('\n')
+      .filter((l) => l.trim().length > 0)
+      .at(-1) ?? raw;
   return tag + tail(lastLine, DIGEST_CHARS - tag.length);
 }
 
@@ -136,13 +105,3 @@ export function guard<Args extends unknown[], R>(name: string, fn: (...args: Arg
     }
   };
 }
-
-export const ID = z.string().min(1);
-export const ITEM_IDS = z.array(ID).min(1).max(200);
-
-export const RATING = z.number().int().min(1).max(4);
-export const DIRECTION = z.enum(['JA_VI', 'VI_JA']);
-export const ROLE = z.enum(['TARGET', 'SECONDARY', 'VOCAB']);
-export const LEVEL = z.enum(JLPT_LEVELS);
-export const ERROR_TAG = z.enum(ERROR_TAGS);
-export const EXERCISE_TYPE = z.enum(EXERCISE_TYPES);

@@ -5,10 +5,8 @@ createTestDb('sakubun-dossier-');
 
 type DossierMod = typeof import('@/lib/session/dossier');
 type Db = typeof import('@/lib/db/db');
-type Render = typeof import('@/lib/mcp/render');
 
 let D: DossierMod;
-let R: Render;
 let prisma: Db['prisma'];
 
 const NOW = new Date('2026-07-27T10:00:00Z');
@@ -73,7 +71,6 @@ async function sentence(
 
 beforeAll(async () => {
   D = await import('@/lib/session/dossier');
-  R = await import('@/lib/mcp/render');
   ({ prisma } = await import('@/lib/db/db'));
 });
 
@@ -88,12 +85,6 @@ describe('an empty history yields an EMPTY dossier', () => {
     expect(dossier.register).toBeNull();
     expect(dossier.topics).toEqual([]);
     expect(dossier.tagTrend).toEqual([]);
-  });
-
-  it('renders NOTHING rather than an empty header', async () => {
-    await resetData();
-    expect(R.renderDossier(await D.computeDossier(NOW))).toBeNull();
-    expect(R.renderDossier(null)).toBeNull();
   });
 });
 
@@ -334,8 +325,8 @@ describe('confusion pairs come from the SAME aggregate the coach proposes from',
   });
 });
 
-describe('the digest rides EVERY sentence, so its size is a gate not a hope', () => {
-  it('never exceeds the line budget even with every aggregate populated', async () => {
+describe('the dossier caps its lists even with every aggregate populated', () => {
+  it('never lists more confusions or strong patterns than the caps', async () => {
     await resetData();
     const target = await addItem('〜ざるを得ない');
 
@@ -397,39 +388,5 @@ describe('the digest rides EVERY sentence, so its size is a gate not a hope', ()
     expect(D.isEmptyDossier(dossier)).toBe(false);
     expect(dossier.confusions.length).toBeLessThanOrEqual(D.MAX_CONFUSIONS_SHOWN);
     expect(dossier.strong.length).toBeLessThanOrEqual(D.MAX_STRONG);
-
-    const block = R.renderDossier(dossier);
-    expect(block).not.toBeNull();
-    const rendered = block!.split('\n');
-    expect(rendered.length).toBe(R.MAX_DOSSIER_LINES);
-    expect(block).toContain('LEARNER MODEL');
-    expect(block).toMatch(/never/i);
-  });
-});
-
-describe('the digest is a SESSION-OPEN block, never a per-sentence one', () => {
-  async function withConfusion(): Promise<{ itemId: string }> {
-    await resetData();
-    const itemId = await addItem('〜ざるを得ない');
-    for (let i = 0; i < 3; i++) {
-      const sid = await sentence({ daysAgo: i + 1 });
-      await review({
-        itemId,
-        rating: 1,
-        daysAgo: i + 1,
-        errorTags: ['word-choice'],
-        errorDetail: [{ used: '〜しかない', required: '〜ざるを得ない' }],
-        sentenceId: sid,
-      });
-    }
-    return { itemId };
-  }
-
-  it('aims a confusion at the SESSION, never at one exercise', async () => {
-    await withConfusion();
-    const block = R.renderDossier(await D.computeDossier(NOW));
-    expect(block).toContain('worth aiming a session at');
-    expect(block).not.toContain('batch');
-    expect(block).not.toContain('compose');
   });
 });
