@@ -49,12 +49,15 @@ function TestPasswordForm() {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setPending(true);
-    const { error } = await signIn.email({ email, password, callbackURL: '/' });
+    const { data, error } = await signIn.email({ email, password, callbackURL: '/' });
     setPending(false);
     if (error) {
       toast.error(error.message ?? 'Đăng nhập không thành công');
       return;
     }
+    // The auth client already follows a redirect answer: '/' normally, or the OAuth authorize step
+    // when claude.ai or ChatGPT sent thien here to connect.
+    if (data?.redirect) return;
     router.push('/');
     router.refresh();
   }
