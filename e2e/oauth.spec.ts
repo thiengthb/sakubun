@@ -211,6 +211,18 @@ test('/api/mcp không token trả 401 chỉ đường tới metadata; token bị
   expect((await mcp(request, forged, 'initialize')).status()).toBe(401);
 });
 
+// The jwt() plugin's session JWT is signed with the same key as the access tokens; only its issuer and
+// audience differ, and /api/mcp must notice.
+test('JWT phiên đăng nhập (/api/auth/token) không mở được /api/mcp', async ({ page }) => {
+  await seedMcpAccount();
+  await signInDirectly(page);
+  const res = await page.request.get('/api/auth/token');
+  expect(res.ok(), await res.text()).toBe(true);
+  const sessionJwt = ((await res.json()) as { token: string }).token;
+  expect(sessionJwt.split('.')).toHaveLength(3);
+  expect((await mcp(page.request, sessionJwt, 'initialize')).status()).toBe(401);
+});
+
 test('callback lạ không bao giờ nhận được code, kể cả khi client đã đăng ký nó', async ({
   page,
   request,
