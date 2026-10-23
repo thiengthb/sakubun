@@ -47,6 +47,26 @@ const reviewLogSchema = z.object({
   difficulty: z.number(),
   reviewedAt: z.coerce.date().optional(),
   sentenceId: z.string().nullish(),
+  turnId: z.string().nullish(),
+  channel: z.string().nullish(),
+});
+
+const turnSchema = z.object({
+  id: z.string().min(1),
+  itemId: z.string().nullish(),
+  direction: z.string(),
+  ja: z.string(),
+  jaRuby: z.string().nullish(),
+  vi: z.string(),
+  hint: z.string().nullish(),
+  status: z.string().default('staged'),
+  answer: z.string().nullish(),
+  rating: z.number().int().nullish(),
+  hinted: z.boolean().default(false),
+  errorTags: z.string().nullish(),
+  feedback: z.string().nullish(),
+  createdAt: z.coerce.date().optional(),
+  gradedAt: z.coerce.date().nullish(),
 });
 
 const sentenceSchema = z.object({
@@ -96,6 +116,7 @@ export const accountBackupSchema = z.object({
   srsStates: z.array(srsStateSchema).default([]),
   reviewLogs: z.array(reviewLogSchema).default([]),
   sentences: z.array(sentenceSchema).default([]),
+  turns: z.array(turnSchema).default([]),
   settings: settingsSchema.nullish(),
   groups: z.array(groupSchema).default([]),
   groupMembers: z.array(groupMemberSchema).default([]),
@@ -106,6 +127,7 @@ export type BackupItem = z.infer<typeof itemSchema>;
 export type BackupSrsState = z.infer<typeof srsStateSchema>;
 export type BackupReviewLog = z.infer<typeof reviewLogSchema>;
 export type BackupSentence = z.infer<typeof sentenceSchema>;
+export type BackupTurn = z.infer<typeof turnSchema>;
 export type BackupGroup = z.infer<typeof groupSchema>;
 export type BackupGroupMember = z.infer<typeof groupMemberSchema>;
 

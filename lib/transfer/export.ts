@@ -29,12 +29,13 @@ export async function exportVocabApkg() {
 }
 
 export async function exportUserData() {
-  const [items, srsStates, reviewLogs, sentences, settings, groups, groupMembers] =
+  const [items, srsStates, reviewLogs, sentences, turns, settings, groups, groupMembers] =
     await Promise.all([
       prisma.item.findMany({}),
       prisma.srsState.findMany({}),
       prisma.reviewLog.findMany({}),
       prisma.sentence.findMany({}),
+      prisma.turn.findMany({}),
       prisma.settings.findFirst({}),
       prisma.group.findMany({}),
       prisma.groupMember.findMany({}),
@@ -46,12 +47,14 @@ export async function exportUserData() {
       items: items.length,
       reviewLogs: reviewLogs.length,
       sentences: sentences.length,
+      turns: turns.length,
       groups: groups.length,
     },
     items,
     srsStates,
     reviewLogs,
     sentences,
+    turns,
     settings,
     groups,
     groupMembers,

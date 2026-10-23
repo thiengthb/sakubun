@@ -13,6 +13,7 @@ import {
   type BackupReviewLog,
   type BackupSentence,
   type BackupSrsState,
+  type BackupTurn,
   type IdPlan,
   type TableDiff,
 } from '@/lib/transfer/schema';
@@ -91,11 +92,28 @@ function sentenceData(row: BackupSentence) {
   };
 }
 
+function turnData(row: BackupTurn) {
+  return {
+    direction: row.direction,
+    ja: row.ja,
+    jaRuby: row.jaRuby ?? null,
+    vi: row.vi,
+    hint: row.hint ?? null,
+    status: row.status,
+    answer: row.answer ?? null,
+    rating: row.rating ?? null,
+    hinted: row.hinted,
+    errorTags: row.errorTags ?? null,
+    feedback: row.feedback ?? null,
+    gradedAt: row.gradedAt ?? null,
+  };
+}
+
 export async function importAccountData(
   backup: AccountBackup,
   { dryRun }: { dryRun: boolean },
 ): Promise<ImportResult> {
-  const [items, srsStates, reviewLogs, sentences, settings, groups, groupMembers] =
+  const [items, srsStates, reviewLogs, sentences, turns, settings, groups, groupMembers] =
     await Promise.all([
       prisma.item.findMany({
         select: { id: true, kind: true, expression: true },
@@ -103,6 +121,7 @@ export async function importAccountData(
       prisma.srsState.findMany({ select: { itemId: true } }),
       prisma.reviewLog.findMany({ select: { id: true } }),
       prisma.sentence.findMany({ select: { id: true } }),
+      prisma.turn.findMany({ select: { id: true } }),
       prisma.settings.findFirst({ select: { id: true } }),
       prisma.group.findMany({ select: { id: true } }),
       prisma.groupMember.findMany({ select: { groupId: true, itemId: true } }),
@@ -113,6 +132,7 @@ export async function importAccountData(
   const existingSrsItemIds = new Set(srsStates.map((s) => s.itemId));
   const existingLogIds = new Set(reviewLogs.map((r) => r.id));
   const existingSentenceIds = new Set(sentences.map((s) => s.id));
+  const existingTurnIds = new Set(turns.map((t) => t.id));
   const existingGroupIds = new Set(groups.map((g) => g.id));
   const existingMemberKeys = new Set(groupMembers.map((m) => memberKey(m.groupId, m.itemId)));
 
@@ -133,6 +153,14 @@ export async function importAccountData(
   );
   const sentenceIdsAfter = new Set<string>(existingSentenceIds);
   for (const id of sentencePlan.create) sentenceIdsAfter.add(id);
+
+  const turnPlan = planById(
+    backup.turns.map((t) => t.id),
+    existingTurnIds,
+    'upsert',
+  );
+  const turnIdsAfter = new Set<string>(existingTurnIds);
+  for (const id of turnPlan.create) turnIdsAfter.add(id);
 
   const srsUsable = backup.srsStates.filter((s) => itemIdsAfter.has(s.itemId));
   const srsPlan = planById(
@@ -180,6 +208,7 @@ export async function importAccountData(
     toDiff('Lịch ôn FSRS', srsPlan),
     toDiff('Lịch sử ôn', logPlan),
     toDiff('Câu đã luyện', sentencePlan),
+    toDiff('Lượt dịch', turnPlan),
     toDiff('Nhóm', groupPlan),
     toDiff('Mục trong nhóm', memberPlan),
     toDiff('Cài đặt', settingsPlan),
@@ -189,6 +218,7 @@ export async function importAccountData(
 
   const itemsById = byId(backup.items);
   const sentencesById = byId(backup.sentences);
+  const turnsById = byId(backup.turns);
   const srsByItemId = new Map(backup.srsStates.map((s) => [s.itemId, s]));
   const logsById = byId(backup.reviewLogs);
   const groupsById = byId(backup.groups);
@@ -234,6 +264,29 @@ export async function importAccountData(
         });
       }
 
+      const linkedItem = (itemId: string | null | undefined) =>
+        itemId && itemIdsAfter.has(itemId) ? itemId : null;
+      if (turnPlan.create.length > 0) {
+        await tx.turn.createMany({
+          data: turnPlan.create.map((id) => {
+            const row = turnsById.get(id) as BackupTurn;
+            return {
+              id,
+              itemId: linkedItem(row.itemId),
+              createdAt: row.createdAt,
+              ...turnData(row),
+            };
+          }),
+        });
+      }
+      for (const id of turnPlan.update) {
+        const row = turnsById.get(id) as BackupTurn;
+        await tx.turn.update({
+          where: { id },
+          data: { itemId: linkedItem(row.itemId), ...turnData(row) },
+        });
+      }
+
       if (srsPlan.create.length > 0) {
         await tx.srsState.createMany({
           data: srsPlan.create.map((itemId) => {
@@ -253,13 +306,15 @@ export async function importAccountData(
         await tx.reviewLog.createMany({
           data: logPlan.create.map((id) => {
             const row = logsById.get(id) as BackupReviewLog;
-            const linkedItem = row.itemId && itemIdsAfter.has(row.itemId) ? row.itemId : null;
             const linkedSentence =
               row.sentenceId && sentenceIdsAfter.has(row.sentenceId) ? row.sentenceId : null;
+            const linkedTurn = row.turnId && turnIdsAfter.has(row.turnId) ? row.turnId : null;
             return {
               id,
-              itemId: linkedItem,
+              itemId: linkedItem(row.itemId),
               sentenceId: linkedSentence,
+              turnId: linkedTurn,
+              channel: row.channel ?? null,
               rating: row.rating,
               state: row.state,
               role: row.role,
@@ -321,6 +376,7 @@ const SYSTEM_TABLES: SystemTable[] = [
   { name: 'mcp_key', conflict: ['id'] },
   { name: 'Item', conflict: ['id'] },
   { name: 'Sentence', conflict: ['id'] },
+  { name: 'Turn', conflict: ['id'] },
   { name: 'SrsState', conflict: ['id'] },
   { name: 'ReviewLog', conflict: ['id'] },
   { name: 'Group', conflict: ['id'] },
