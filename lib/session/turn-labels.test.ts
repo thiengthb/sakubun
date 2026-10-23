@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { EXERCISE_TYPE } from '@/lib/mcp/tool-kit';
+import { EXERCISE_TYPES } from '@/lib/session/exercise-types';
 import { TURN_LABELS_BY_TYPE, turnLabels, type TurnLabels } from '@/lib/session/turn-labels';
 
 const CHAT: TurnLabels = {
@@ -31,7 +31,7 @@ describe('turnLabels', () => {
   });
 
   it('every NON-translation type is renamed on BOTH surfaces, never on just one', () => {
-    for (const type of EXERCISE_TYPE.options) {
+    for (const type of EXERCISE_TYPES) {
       if (TRANSLATIONS.has(type)) continue;
       const chat = turnLabels(type, CHAT);
       const web = turnLabels(type, WEB);

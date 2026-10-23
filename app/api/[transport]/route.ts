@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 export const maxDuration = 60;
 
-// ?profile=tutor serves the trimmed tool set for a self-hosted model; no parameter = every tool.
+// No parameter (or an old name: full, tutor) = the v2 tools; ?profile=planner = load counts only.
 async function byProfile(req: Request): Promise<Response> {
   const scope = (req as Request & { auth?: { extra?: { scope?: string } } }).auth?.extra?.scope;
   const asked = parseProfile(new URL(req.url).searchParams.get('profile'));

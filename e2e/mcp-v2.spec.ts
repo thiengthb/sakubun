@@ -1,8 +1,8 @@
 import { expect, test } from '@playwright/test';
 import { callTool, initializeMcp, MCP_URL, openE2eDb, rpc, seedMcpAccount } from './mcp-client';
 
-// MCP v2 over the real HTTP route with a real key: the `v2` profile serves the seven new tools beside
-// the old set, and one whole turn lands in Turn and ReviewLog.
+// MCP v2 over the real HTTP route with a real key: one whole turn lands in Turn and ReviewLog.
+// `?profile=v2` is the explicit name of the default set (e2e/mcp.spec.ts covers the default URL).
 
 const V2_URL = `${MCP_URL}?profile=v2`;
 
@@ -12,7 +12,7 @@ function line(text: string, key: string): string {
   return found!.slice(key.length + 1).trim();
 }
 
-test('MCP v2: one whole turn through the v2 profile, old tools untouched', async ({ request }) => {
+test('MCP v2: one whole turn through the v2 profile', async ({ request }) => {
   await seedMcpAccount();
   await initializeMcp(request, V2_URL);
 
@@ -86,11 +86,4 @@ test('MCP v2: one whole turn through the v2 profile, old tools untouched', async
   } finally {
     db.close();
   }
-
-  // The default profile still serves the old tools until roadmap 3.2.
-  await initializeMcp(request);
-  const old = await rpc(request, 'tools/list', {});
-  const oldNames = ((old.result as { tools: { name: string }[] }).tools ?? []).map((t) => t.name);
-  expect(oldNames).toContain('stage_sentence');
-  expect(oldNames).not.toContain('stage_turn');
 });

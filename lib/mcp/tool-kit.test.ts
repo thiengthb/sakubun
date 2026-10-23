@@ -29,15 +29,14 @@ describe('guard — P2025 nói đúng hàng nào thiếu', () => {
     const text = await textFromThrow(p2025('LearnerAbility'));
 
     expect(text).toContain('LearnerAbility');
-    expect(text, 'không được đổ lỗi cho itemId').not.toContain('list_grammar');
-    expect(text, 'không được đổ lỗi cho itemId').not.toContain('item với id đó');
+    expect(text, 'không được đổ lỗi cho itemId').not.toContain('itemId');
     expect(text.toLowerCase(), 'phải nói rõ là đừng thử lại').toContain('đừng thử lại');
   });
 
-  it('một id do máy khách gửi: giữ nguyên lối hồi phục cũ', async () => {
+  it('một id do máy khách gửi: chỉ lối hồi phục bằng tool v2', async () => {
     for (const model of ['Item', 'SrsState']) {
       const text = await textFromThrow(p2025(model));
-      expect(text, model).toContain('list_grammar / list_vocab');
+      expect(text, model).toContain('Call lookup or next_turn');
       expect(text, `${model}: không cấm thử lại, vì thử lại đúng là cách hồi phục`).not.toContain(
         'ĐỪNG thử lại',
       );
@@ -45,19 +44,14 @@ describe('guard — P2025 nói đúng hàng nào thiếu', () => {
   });
 
   it('mỗi loại id có lối hồi phục riêng, trỏ tới tool thật', async () => {
-    expect(await textFromThrow(p2025('Sentence'))).toContain('stage_sentence');
-    expect(await textFromThrow(p2025('Group'))).toContain('list_groups');
-    expect(await textFromThrow(p2025('GroupMember'))).toContain('list_groups');
-    expect(await textFromThrow(p2025('CalibrationProposal'))).toContain(
-      'list_calibration_proposals',
-    );
+    expect(await textFromThrow(p2025('Turn'))).toContain('Call next_turn, then stage_turn');
   });
 
   it('P2025 không kèm meta vẫn an toàn: không bịa tên bảng, vẫn cấm thử lại', async () => {
     const text = await textFromThrow(p2025());
     expect(text).toContain('(không rõ bảng)');
     expect(text.toLowerCase()).toContain('đừng thử lại');
-    expect(text).not.toContain('list_grammar');
+    expect(text).not.toContain('itemId');
   });
 });
 
@@ -150,7 +144,9 @@ describe('guard — đếm việc dùng tool', () => {
 
   it('ZodError: lưu các mục sai, không lưu dấu ngoặc cuối của JSON', async () => {
     const digest = await digestOf(
-      new ZodError([{ code: 'custom', path: ['ratings', 0, 'rating'], message: 'phải từ 1 tới 4' }]),
+      new ZodError([
+        { code: 'custom', path: ['ratings', 0, 'rating'], message: 'phải từ 1 tới 4' },
+      ]),
     );
 
     expect(digest).toBe('[ZodError] ratings.0.rating: phải từ 1 tới 4');
