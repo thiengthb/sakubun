@@ -2,7 +2,7 @@
 
 import { useMemo, useRef, useTransition } from 'react';
 import { toast } from 'sonner';
-import { Layers, Lightbulb, SearchX } from 'lucide-react';
+import { Layers, Lightbulb, SearchX, X } from 'lucide-react';
 import { toastResult } from '@/lib/core/action-toast';
 import { AppBreadcrumbs } from '@/components/layout/app-breadcrumbs';
 import { PageShell } from '@/components/layout/page-shell';
@@ -182,16 +182,20 @@ export function GroupDetailView({
                 {pagedMembers.items.map((m) => (
                   <div key={m.itemId} className="flex h-16 items-center gap-2 px-4">
                     <div className="min-w-0 flex-1 space-y-0.5">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <SpokenLine
-                          text={m.expression}
-                          speakText={speakable(m.expression)}
-                          ruby={buildFuriganaMarkup(m.expression, m.reading)}
-                          showFurigana={showFurigana}
-                          speaker={voiceSpeaker}
-                          rate={speechRate}
-                          label="Nghe"
-                        />
+                      <div className="flex min-w-0 items-center gap-2">
+                        <span className="min-w-0 flex-1">
+                          <SpokenLine
+                            truncate
+                            className="leading-[1.9]"
+                            text={m.expression}
+                            speakText={speakable(m.expression)}
+                            ruby={buildFuriganaMarkup(m.expression, m.reading)}
+                            showFurigana={showFurigana}
+                            speaker={voiceSpeaker}
+                            rate={speechRate}
+                            label="Nghe"
+                          />
+                        </span>
                         {mixed && (
                           <span className="shrink-0 text-xs tracking-wide text-muted-foreground uppercase">
                             {m.kind === 'VOCAB' ? 'từ' : 'ngữ pháp'}
@@ -223,12 +227,14 @@ export function GroupDetailView({
                     />
                     <Button
                       variant="ghost"
-                      size="sm"
+                      size="icon"
                       className="shrink-0 text-muted-foreground hover:text-destructive"
+                      aria-label={`Gỡ ${m.expression} khỏi nhóm`}
+                      title="Gỡ khỏi nhóm"
                       onClick={() => remove(m.itemId)}
                       disabled={isPending}
                     >
-                      Gỡ
+                      <X aria-hidden />
                     </Button>
                   </div>
                 ))}

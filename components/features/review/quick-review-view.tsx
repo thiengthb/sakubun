@@ -223,7 +223,11 @@ export function QuickReviewView({
 
       <div className="sticky bottom-0 flex gap-2.5 bg-background pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
         {showReveal && (
-          <Button size="lg" className="h-14 flex-1 text-base" onClick={() => setRevealed(true)}>
+          <Button
+            size="lg"
+            className="h-14 flex-1 bg-foreground text-base text-background hover:bg-foreground/85"
+            onClick={() => setRevealed(true)}
+          >
             Xem đáp án
           </Button>
         )}
