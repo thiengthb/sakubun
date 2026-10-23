@@ -85,6 +85,7 @@ import {
   migrateSettingsInput,
   parseStoredSettings,
   settingsPatchSchema,
+  syncDirection,
   toCompositionSettings,
   type CompositionSettings,
   type Settings,
@@ -98,7 +99,7 @@ export async function getSettings(): Promise<Settings> {
 
 export async function saveSettings(patch: SettingsPatch): Promise<Settings> {
   const validated = settingsPatchSchema.parse(migrateSettingsInput(patch));
-  const merged: Settings = { ...(await getSettings()), ...validated };
+  const merged = syncDirection({ ...(await getSettings()), ...validated });
   const data = JSON.stringify(merged);
   const existing = await prisma.settings.findFirst({ orderBy: { id: 'asc' } });
   if (existing) await prisma.settings.update({ where: { id: existing.id }, data: { data } });

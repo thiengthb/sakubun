@@ -8,7 +8,7 @@ import {
 } from '@/lib/domain/queue';
 import { getSettings } from '@/lib/library/practice';
 import { GRAMMAR_KIND, VOCAB_KIND, asItemKind } from '@/lib/library/item-kinds';
-import { JLPT_LEVELS, resolveVocabCeiling, type Settings } from '@/lib/settings/schema';
+import { hardestLevel, JLPT_LEVELS, type Settings } from '@/lib/settings/schema';
 import { studyDayStart } from '@/lib/srs/select';
 
 // Reads what the queue needs from the database and lets lib/domain/queue decide. Nothing calls this
@@ -125,7 +125,8 @@ export async function getQueue(now: Date = new Date(), limit?: number): Promise<
         item: {
           ...live,
           kind: VOCAB_KIND,
-          level: { in: levelsUpTo(resolveVocabCeiling(settings)) },
+          // The JLPT levels on the web are the only ceiling; the old hidden vocabCeiling is not read.
+          level: { in: levelsUpTo(hardestLevel(settings.grammarLevels)) },
         },
       },
       orderBy: { item: { createdAt: 'asc' } },

@@ -122,8 +122,8 @@ describe('getQueue', () => {
     expect(queue.cards.filter((c) => c.state === 2)).toHaveLength(10);
   });
 
-  it('keeps new vocabulary at or below the learner level', async () => {
-    await P.saveSettings({ grammarLevels: ['N4'], vocabCeiling: null });
+  it('keeps new vocabulary at or below the learner level, ignoring the old hidden ceiling', async () => {
+    await P.saveSettings({ grammarLevels: ['N4'], vocabCeiling: 'N1' });
     await seed('VOCAB', 1, 'N5');
     await seed('VOCAB', 1, 'N4');
     await seed('VOCAB', 1, 'N2');

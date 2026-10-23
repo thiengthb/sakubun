@@ -181,14 +181,20 @@ export function migrateSettingsInput(raw: unknown): unknown {
   return o;
 }
 
+// `direction` is kept equal to what directionMode means, so get_settings and anything else reading
+// the old key never reports a direction the web has since changed.
+export function syncDirection(settings: Settings): Settings {
+  return { ...settings, direction: legacyDirection(settings) };
+}
+
 export function parseStoredSettings(raw: string | null | undefined): Settings {
   if (!raw) return DEFAULT_SETTINGS;
   try {
     const parsed: unknown = migrateSettingsInput(JSON.parse(raw));
     const result = settingsSchema.safeParse(parsed);
-    if (result.success) return result.data;
+    if (result.success) return syncDirection(result.data);
     const partial = settingsPatchSchema.safeParse(parsed);
-    return { ...DEFAULT_SETTINGS, ...(partial.success ? partial.data : {}) };
+    return syncDirection({ ...DEFAULT_SETTINGS, ...(partial.success ? partial.data : {}) });
   } catch {
     return DEFAULT_SETTINGS;
   }

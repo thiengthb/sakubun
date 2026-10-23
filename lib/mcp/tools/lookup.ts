@@ -28,13 +28,9 @@ export function registerLookupTools(server: McpServer) {
       'ONE line offering to put just that on the card (patch_enrichment MERGES, so nothing already ' +
       'there is lost), and wait for a yes. If the card contradicted you, offer the correction instead ' +
       'of leaving the wrong text in place. Never write without a yes.\n' +
-      'A RATCHET OFFER IS PERISHABLE AND OUTRANKS THE SERVER SUGGESTIONS. It exists only in this turn: ' +
-      'it is built from what YOU just said, and once the conversation moves on nothing can recompute it. ' +
-      'The numbered `suggestions` are the opposite — they are derived from the library, so they will ' +
-      'still be there next session. So when you have a ratchet offer, it REPLACES the lowest-priority ' +
-      'suggestion instead of being added after it (still at most 2 offers total, 1 mid-session — never ' +
-      'a wall). Do NOT silently drop the ratchet because the numbered list is already full; that is how ' +
-      '"the library gets better every session" quietly stops happening.\n' +
+      'A ratchet offer exists only in this turn (the numbered `suggestions` come back next session), ' +
+      'so it REPLACES the lowest-priority suggestion rather than being dropped; still at most 2 ' +
+      'offers, 1 mid-session.\n' +
       "A suggestion's `args` carry only the itemId — YOU supply the content, in patch_enrichment's " +
       'exact shape. A contrast is an OBJECT ARRAY, not a string and not a free-form key: ' +
       'patch_enrichment { itemId, add: { contrasts: [{ with: "<the other pattern>", note: "<one ' +
