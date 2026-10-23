@@ -14,9 +14,13 @@ export interface ReviewInput {
   rating: RatingValue;
   role?: ItemRole;
   sentenceId?: string | null;
+  turnId?: string | null;
   errorTags?: string[];
   errorDetail?: Confusion[];
 }
+
+// Where the review happened. Old callers (the pre-v2 MCP tools) leave it unset.
+export type ReviewChannel = 'web' | 'mcp';
 
 export interface RecordedReview {
   itemId: string;
@@ -26,7 +30,12 @@ export interface RecordedReview {
 
 export async function recordReviews(
   reviews: readonly ReviewInput[],
-  options: { retention: number; now: Date; alsoWrite?: Prisma.PrismaPromise<unknown>[] },
+  options: {
+    retention: number;
+    now: Date;
+    channel?: ReviewChannel;
+    alsoWrite?: Prisma.PrismaPromise<unknown>[];
+  },
 ): Promise<RecordedReview[]> {
   const { retention, now } = options;
   // Two reviews of one item in a call would both be computed from the same stale schedule.
@@ -51,6 +60,8 @@ export async function recordReviews(
           difficulty: log.difficulty,
           reviewedAt: now,
           sentenceId: review.sentenceId ?? null,
+          turnId: review.turnId ?? null,
+          channel: options.channel ?? null,
           errorTags: review.errorTags?.length ? JSON.stringify(review.errorTags) : null,
           errorDetail: serializeErrorDetail(review.errorDetail),
         },

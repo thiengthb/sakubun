@@ -42,7 +42,31 @@ describe('recordReviews', () => {
     expect(after.due).toEqual(recorded.next.due);
     const logs = await prisma.reviewLog.findMany({ where: { itemId } });
     expect(logs).toHaveLength(1);
-    expect(logs[0]).toMatchObject({ rating: 3, state: 0, sentenceId: null, role: 'TARGET' });
+    expect(logs[0]).toMatchObject({
+      rating: 3,
+      state: 0,
+      sentenceId: null,
+      turnId: null,
+      channel: null,
+      role: 'TARGET',
+    });
+  });
+
+  it('links the log row to its turn and records the channel', async () => {
+    const itemId = await seedOne('把握');
+    const srs = await prisma.srsState.findUniqueOrThrow({ where: { itemId } });
+    const turn = await prisma.turn.create({
+      data: { itemId, direction: 'JA_VI', ja: '状況を把握する', vi: 'nắm bắt tình hình' },
+    });
+
+    await R.recordReviews([{ itemId, srs, rating: 2, turnId: turn.id }], {
+      retention: 0.9,
+      now: NOW,
+      channel: 'mcp',
+    });
+
+    const [log] = await prisma.reviewLog.findMany({ where: { itemId } });
+    expect(log).toMatchObject({ rating: 2, turnId: turn.id, channel: 'mcp' });
   });
 
   it("commits the caller's rows in the same transaction: one failure writes nothing", async () => {

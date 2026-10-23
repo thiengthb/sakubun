@@ -32,6 +32,7 @@ model Item {
   srs     SrsState?
   reviews ReviewLog[]
   groups  GroupMember[]
+  turns   Turn[]
 
   challenge             Float?
   challengeObservations Int    @default(0)
@@ -77,6 +78,11 @@ model ReviewLog {
   reviewedAt  DateTime  @default(now())
   sentenceId  String?
   sentence    Sentence? @relation(fields: [sentenceId], references: [id], onDelete: SetNull)
+  // v2: the translation turn this review graded, and where it happened ('web' | 'mcp').
+  // Rows written before v2 leave both null.
+  turnId      String?
+  turn        Turn?     @relation(fields: [turnId], references: [id], onDelete: SetNull)
+  channel     String?
 
   @@index([reviewedAt])
   @@index([itemId, reviewedAt])
@@ -113,6 +119,34 @@ model Sentence {
   reviews ReviewLog[]
 
   @@index([createdAt])
+}
+
+// One v2 translation turn with Claude: exactly one target item. `status` moves
+// staged -> graded | skipped, checked by lib/domain/turn.ts. Pre-v2 multi-item sentences stay in
+// Sentence so History keeps showing them.
+model Turn {
+  id        String    @id @default(cuid())
+  itemId    String?
+  item      Item?     @relation(fields: [itemId], references: [id], onDelete: SetNull)
+  // 'JA_VI': the learner reads `ja` and writes Vietnamese; 'VI_JA': reads `vi`, writes Japanese.
+  direction String
+  ja        String
+  jaRuby    String?
+  vi        String
+  hint      String?
+  status    String    @default("staged")
+  answer    String?
+  rating    Int?
+  hinted    Boolean   @default(false)
+  errorTags String?
+  feedback  String?
+  createdAt DateTime  @default(now())
+  gradedAt  DateTime?
+
+  reviews ReviewLog[]
+
+  @@index([createdAt])
+  @@index([status, createdAt])
 }
 
 model LearnerNote {

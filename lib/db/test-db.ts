@@ -32,10 +32,11 @@ export function applyMigrations(dbFile: string): void {
   }
 }
 
-// Child rows first: ReviewLog/Sentence/SrsState/GroupMember all point at Item or Group, so
+// Child rows first: ReviewLog/Turn/Sentence/SrsState/GroupMember all point at Item or Group, so
 // clearing Item before them would trip the foreign keys SQLite does enforce here.
 const LEARNING_TABLES = [
   'reviewLog',
+  'turn',
   'sentence',
   'srsState',
   'groupMember',
