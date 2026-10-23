@@ -318,7 +318,6 @@ describe('patchEnrichment — a merge that cannot destroy what is already there'
     const row = await prisma.item.findFirst({ where: { id: itemId } });
     expect(row!.enrichment).toContain('Ghi chú của phiên khác.');
   });
-
 });
 
 describe('errorDetail — the confusion pair behind the tag (additive, no backfill)', () => {
@@ -458,6 +457,16 @@ describe('addItems — dedup', () => {
     await resetData();
     const res = await P.addItems([{ expression: '〜ばかりに', meaningVi: 'chỉ vì' }]);
     expect(res.created).toBe(1);
+  });
+});
+
+describe('saveSettings direction', () => {
+  it('get_settings reports the direction the web set, and an MCP patch of `direction` moves both', async () => {
+    await resetData();
+    expect((await P.saveSettings({ directionMode: 'VI_JA' })).direction).toBe('VI_JA');
+    expect((await P.getSettings()).direction).toBe('VI_JA');
+    const viaMcp = await P.saveSettings({ direction: 'ALTERNATING' });
+    expect(viaMcp).toMatchObject({ direction: 'ALTERNATING', directionMode: 'auto' });
   });
 });
 

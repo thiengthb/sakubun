@@ -9,6 +9,7 @@ import {
   resolveVocabCeiling,
   settingsPatchSchema,
   settingsSchema,
+  syncDirection,
   toCompositionSettings,
 } from '@/lib/settings/schema';
 
@@ -96,6 +97,18 @@ describe('direction setting', () => {
     ).toBe('VI_JA');
     const both = migrateSettingsInput({ direction: 'VI_JA', directionMode: 'auto' });
     expect(settingsPatchSchema.parse(both).directionMode).toBe('auto');
+  });
+
+  it('stored settings report a direction that matches directionMode (what get_settings returns)', () => {
+    const stored = JSON.stringify({
+      ...DEFAULT_SETTINGS,
+      direction: 'JA_VI',
+      directionMode: 'VI_JA',
+    });
+    expect(parseStoredSettings(stored).direction).toBe('VI_JA');
+    expect(syncDirection({ ...DEFAULT_SETTINGS, directionMode: 'auto' }).direction).toBe(
+      'ALTERNATING',
+    );
   });
 
   it('the old MCP path reads directionMode: auto alternates, a fixed mode stays fixed', () => {
