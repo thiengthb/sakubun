@@ -23,12 +23,18 @@ export const metadata: Metadata = {
   metadataBase: new URL('https://sakubun.thientnse.site'),
   title: 'sakubun',
   description: 'Luyện dịch Nhật–Việt bằng spaced repetition, học qua MCP',
+  appleWebApp: { capable: true, title: 'sakubun', statusBarStyle: 'default' },
+  icons: { apple: '/icons/apple-touch-icon.png' },
 };
 
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#faf9f5' },
+    { media: '(prefers-color-scheme: dark)', color: '#262624' },
+  ],
 };
 
 export default async function RootLayout({
