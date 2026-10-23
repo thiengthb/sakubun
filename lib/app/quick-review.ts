@@ -246,6 +246,7 @@ export async function answerCard(
   const [recorded] = await recordReviews([{ itemId: answer.itemId, srs, rating }], {
     retention: desiredRetention,
     now,
+    channel: 'web',
   });
   return ok({ rating, correct, nextDue: recorded.next.due });
 }

@@ -158,7 +158,7 @@ describe('answerCard', () => {
     );
     expect(wrong).toMatchObject({ ok: true, data: { rating: 1, correct: false } });
     const log = await prisma.reviewLog.findFirstOrThrow({ where: { itemId: ids['約束'] } });
-    expect(log).toMatchObject({ rating: 1, state: 2 });
+    expect(log).toMatchObject({ rating: 1, state: 2, channel: 'web', turnId: null });
   });
 
   it('refuses a suspended item and writes nothing', async () => {
