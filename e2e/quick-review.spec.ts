@@ -87,9 +87,27 @@ async function login(page: Page) {
   await page.waitForURL((u) => !u.pathname.startsWith('/login'), { timeout: 30_000 });
 }
 
-async function runSession(page: Page) {
+// Server actions post to the page itself, marked by a Next-Action header.
+const isAction = (method: string, headers: Record<string, string>) =>
+  method === 'POST' && 'next-action' in headers;
+
+async function runSession(page: Page, { keyboard = false, dropFirstAnswer = false } = {}) {
   await login(page);
   await page.goto('/review');
+  if (keyboard) {
+    // Keys pressed before React hydrates the page are lost; wait until it owns the DOM.
+    await page.waitForFunction(() => {
+      const el = document.querySelector('[aria-label^="Thẻ "]');
+      return !!el && Object.keys(el).some((k) => k.startsWith('__reactFiber'));
+    });
+  }
+  let dropNext = false;
+  await page.route('**/review', (route) => {
+    const req = route.request();
+    if (!dropNext || !isAction(req.method(), req.headers())) return route.continue();
+    dropNext = false;
+    return route.abort('internetdisconnected');
+  });
 
   let sawCloze = false;
   let sawSentence = false;
@@ -103,13 +121,36 @@ async function runSession(page: Page) {
       await expect(choices.getByRole('button')).toHaveCount(4);
       await expect(page.getByLabel('chỗ trống')).toBeVisible();
       await expect(page.locator('main p[lang="ja"]').first()).not.toContainText('約束');
-      await choices.getByRole('button', { name: /約束/ }).click();
+      const right = choices.getByRole('button', { name: /約束/ });
+      const key = String(
+        (await choices.getByRole('button').allTextContents()).findIndex((t) => t.includes('約束')) +
+          1,
+      );
+      const choose = () => (keyboard ? page.keyboard.press(key) : right.click());
+      if (dropFirstAnswer) {
+        // The answer never reached the server: nothing new is recorded and the choices open again.
+        const before = reviewLogCount();
+        dropNext = true;
+        await choose();
+        await expect(page.getByText('Mất kết nối, chưa lưu. Thử lại.')).toBeVisible();
+        await expect(right).toBeEnabled();
+        expect(reviewLogCount()).toBe(before);
+      }
+      await choose();
       await expect(page.getByText('Đúng, tính là Nhớ.')).toBeVisible();
-      await page.getByRole('button', { name: 'Tiếp' }).click();
+      const next = page.getByRole('button', { name: 'Tiếp' });
+      await expect(next).toBeEnabled();
+      await (keyboard ? page.keyboard.press('Enter') : next.click());
     } else {
       if (await page.getByText('旅行').isVisible()) sawSentence = true;
-      await reveal.click();
-      await page.getByRole('button', { name: /^Nhớ/ }).click();
+      if (keyboard) {
+        await page.keyboard.press('Enter');
+        await expect(page.getByRole('button', { name: /^Nhớ/ })).toBeVisible();
+        await page.keyboard.press(n % 2 ? '2' : 'Enter');
+      } else {
+        await reveal.click();
+        await page.getByRole('button', { name: /^Nhớ/ }).click();
+      }
     }
     // The next card only shows once the server has recorded this answer.
     if (n < 3) await expect(page.getByLabel(`Thẻ ${n + 2} / 4`)).toBeVisible();
@@ -134,6 +175,13 @@ test('quick review on desktop: cloze for a seen word, flip for new ones, every a
 }) => {
   seed();
   await runSession(page);
+});
+
+test('quick review by keyboard, and an answer lost on the way can be given again', async ({
+  page,
+}) => {
+  seed();
+  await runSession(page, { keyboard: true, dropFirstAnswer: true });
 });
 
 test.describe('on a phone', () => {

@@ -91,9 +91,13 @@ export function QuickReviewView({
     if (!card || isPending) return;
     const kind = card.kind;
     startTransition(async () => {
-      const result = await answer(payload);
+      const result = await answer(payload).catch(
+        (): ActionResult<unknown> => ({ ok: false, error: 'Mất kết nối, chưa lưu. Thử lại.' }),
+      );
       if (!result.ok) {
         toast.error(result.error);
+        // Nothing was recorded: free the choices so the learner can answer again in place.
+        if (payload.mode === 'cloze') setPicked(null);
         return;
       }
       setResults((r) => [...r, { kind, correct }]);
@@ -125,13 +129,17 @@ export function QuickReviewView({
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLElement && e.target.closest('input, textarea, select')) return;
-      if (!card || e.metaKey || e.ctrlKey || e.altKey) return;
+      if (!card || e.repeat || e.metaKey || e.ctrlKey || e.altKey) return;
       if (card.mode === 'cloze' && !picked && /^[1-4]$/.test(e.key)) {
         const choice = card.choices[Number(e.key) - 1];
         if (choice) pick(choice.itemId);
+      } else if (showGrade && (e.key === '1' || e.key === '2')) {
+        grade(e.key === '2');
       } else if (e.key === 'Enter' || e.key === ' ') {
         if (showReveal) setRevealed(true);
         else if (graded) next();
+        // A focused grade button handles its own Enter; otherwise Enter means "Nhớ".
+        else if (showGrade && !(e.target instanceof HTMLButtonElement)) grade(true);
         else return;
       } else return;
       e.preventDefault();
@@ -216,6 +224,7 @@ export function QuickReviewView({
               variant="outline"
               className="h-14 flex-1 flex-col gap-0 text-base text-destructive"
               disabled={isPending}
+              aria-keyshortcuts="1"
               onClick={() => grade(false)}
             >
               Chưa nhớ
@@ -225,6 +234,7 @@ export function QuickReviewView({
               size="lg"
               className="h-14 flex-1 flex-col gap-0 text-base"
               disabled={isPending}
+              aria-keyshortcuts="2 Enter"
               onClick={() => grade(true)}
             >
               Nhớ
