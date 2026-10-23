@@ -109,7 +109,7 @@ components/
   ui/                     Primitive (shadcn) — không biết gì về nghiệp vụ
   common/                 Dùng chung toàn app: DataTable, CardDeck, SectionHeading…
   layout/                 Khung màn hình: sidebar, breadcrumb, shell, error boundary
-  features/               Theo màn hình: dashboard, groups, history, resources, settings
+  features/               Theo màn hình: dashboard, groups, history, resources, review, settings
 lib/
   core/                   Không phụ thuộc nghiệp vụ: cn, ngày giờ, làm sạch text, ActionResult
   auth/                   better-auth (chỉ Google), chính sách đăng nhập, MCP key
