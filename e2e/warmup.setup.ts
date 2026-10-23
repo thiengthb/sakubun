@@ -7,6 +7,7 @@ const ROUTES = [
   '/vocab',
   '/resources',
   '/history',
+  '/review',
   '/settings',
   '/groups',
 ];

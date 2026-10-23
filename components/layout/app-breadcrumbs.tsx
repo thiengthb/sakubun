@@ -7,6 +7,7 @@ import {
   History,
   LayoutDashboard,
   Languages,
+  Layers,
   Library,
   Pencil,
   Plus,
@@ -21,6 +22,13 @@ const CRUMBS = {
     icon: LayoutDashboard,
     description:
       'Hai tab: Tiến độ (tổng quan, tiến độ theo ngày, điểm yếu) và Thống kê (biểu đồ độ chính xác, thời gian, theo độ khó/độ dài). Luyện tập diễn ra qua MCP trong Claude Desktop hoặc ChatGPT.',
+  },
+  review: {
+    label: 'Ôn nhanh',
+    href: '/review',
+    icon: Layers,
+    description:
+      'Thẻ ôn trên web: mục mới gặp trong một câu ví dụ, mục đã học điền vào chỗ trống. App tự chấm, không cần Claude.',
   },
   resources: {
     label: 'Tài nguyên',

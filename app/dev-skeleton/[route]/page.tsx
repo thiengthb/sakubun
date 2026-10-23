@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import DashboardLoading from '@/app/loading';
 import HistoryLoading from '@/app/history/loading';
+import ReviewLoading from '@/app/review/loading';
 import SettingsLoading from '@/app/settings/loading';
 import ResourcesLoading from '@/app/resources/loading';
 import ResourceAddLoading from '@/app/resources/new/loading';
@@ -18,6 +19,7 @@ const SKELETONS: Record<string, () => React.ReactElement> = {
   item: ItemLoading,
   'item-edit': ItemEditLoading,
   history: HistoryLoading,
+  review: ReviewLoading,
   settings: SettingsLoading,
   group: GroupLoading,
   'group-new': GroupNewLoading,

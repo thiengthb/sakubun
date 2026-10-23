@@ -23,6 +23,7 @@ const PAIRS: Pair[] = [
   { name: 'item edit', page: '/resources/sk0/edit', skeleton: 'item-edit' },
   { name: 'resources/new', page: '/resources/new?kind=grammar', skeleton: 'resources-new' },
   { name: 'history', page: '/history', skeleton: 'history' },
+  { name: 'review', page: '/review', skeleton: 'review' },
   { name: 'settings', page: '/settings', skeleton: 'settings' },
   { name: 'group detail', page: '/groups/grp-sk/', skeleton: 'group', asideTol: 260 },
   { name: 'group new', page: '/groups/new', skeleton: 'group-new' },

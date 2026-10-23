@@ -35,6 +35,7 @@ const DISPLAY_ALLOW = [
   'components/ui/', // shadcn primitive sizing tokens (button, calendar, …)
   'components/features/groups/group-flashcards.tsx',
   'components/features/history/history-flashcards.tsx',
+  'components/features/review/review-card.tsx', // quick-review card: the sentence and word on show
 ];
 
 const allowed = (path: string) =>
