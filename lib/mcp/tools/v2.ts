@@ -155,7 +155,7 @@ export function registerV2Tools(server: McpServer) {
 
   server.tool(
     'grade_turn',
-    "Grade the learner's answer once: 1 wrong, 2 hard, 3 good, 4 easy.",
+    "Grade the learner's answer once: 1 wrong, 2 shaky, 3 right (usual), 4 instant and flawless.",
     {
       turnId: z.string(),
       answer: z.string().describe('As the learner wrote it'),
