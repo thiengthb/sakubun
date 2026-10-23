@@ -80,6 +80,9 @@ export function QuickReviewView({
   const [index, setIndex] = useState(0);
   const [picked, setPicked] = useState<string | null>(null);
   const [revealed, setRevealed] = useState(false);
+  // A cloze pick the server never recorded. The answer is already on screen, so the same pick is
+  // sent again rather than reopening the choices (a second pick would grade with the answer known).
+  const [unsent, setUnsent] = useState<CardAnswer | null>(null);
   const [results, setResults] = useState<Result[]>([]);
   const [showFurigana, setShowFurigana] = useState(furiganaDefault);
   const [isPending, startTransition] = useTransition();
@@ -91,15 +94,16 @@ export function QuickReviewView({
     if (!card || isPending) return;
     const kind = card.kind;
     startTransition(async () => {
-      const result = await answer(payload).catch(
-        (): ActionResult<unknown> => ({ ok: false, error: 'Mất kết nối, chưa lưu. Thử lại.' }),
-      );
+      const result = await answer(payload).catch((): ActionResult<unknown> => ({
+        ok: false,
+        error: 'Mất kết nối, chưa lưu được.',
+      }));
       if (!result.ok) {
         toast.error(result.error);
-        // Nothing was recorded: free the choices so the learner can answer again in place.
-        if (payload.mode === 'cloze') setPicked(null);
+        if (payload.mode === 'cloze') setUnsent(payload);
         return;
       }
+      setUnsent(null);
       setResults((r) => [...r, { kind, correct }]);
       if (advance) next();
     });
@@ -109,6 +113,7 @@ export function QuickReviewView({
     setIndex((i) => i + 1);
     setPicked(null);
     setRevealed(false);
+    setUnsent(null);
   };
 
   // A cloze is graded the moment a choice is picked; the card stays until "Tiếp".
@@ -116,6 +121,10 @@ export function QuickReviewView({
     if (!card || card.mode !== 'cloze' || picked) return;
     setPicked(choiceId);
     send({ itemId: card.itemId, mode: 'cloze', choiceId }, choiceId === card.itemId, false);
+  };
+  const resend = () => {
+    if (!card || unsent?.mode !== 'cloze') return;
+    send(unsent, unsent.choiceId === card.itemId, false);
   };
   const grade = (remembered: boolean) => {
     if (!card) return;
@@ -138,6 +147,7 @@ export function QuickReviewView({
       } else if (e.key === 'Enter' || e.key === ' ') {
         if (showReveal) setRevealed(true);
         else if (graded) next();
+        else if (unsent) resend();
         // A focused grade button handles its own Enter; otherwise Enter means "Nhớ".
         else if (showGrade && !(e.target instanceof HTMLButtonElement)) grade(true);
         else return;
@@ -244,7 +254,12 @@ export function QuickReviewView({
             </Button>
           </>
         )}
-        {card?.mode === 'cloze' && picked && (
+        {card?.mode === 'cloze' && picked && unsent && (
+          <Button size="lg" className="h-14 flex-1 text-base" disabled={isPending} onClick={resend}>
+            Gửi lại
+          </Button>
+        )}
+        {card?.mode === 'cloze' && picked && !unsent && (
           <Button size="lg" className="h-14 flex-1 text-base" disabled={!graded} onClick={next}>
             Tiếp
           </Button>

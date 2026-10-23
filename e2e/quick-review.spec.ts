@@ -91,7 +91,20 @@ async function login(page: Page) {
 const isAction = (method: string, headers: Record<string, string>) =>
   method === 'POST' && 'next-action' in headers;
 
-async function runSession(page: Page, { keyboard = false, dropFirstAnswer = false } = {}) {
+function clozeRating(): number | undefined {
+  const db = new Database(path.join(process.cwd(), E2E_DB_FILE), { readonly: true });
+  try {
+    const row = db.prepare(`SELECT rating FROM ReviewLog WHERE itemId = 'q1'`).get() as
+      { rating: number } | undefined;
+    return row?.rating;
+  } finally {
+    db.close();
+  }
+}
+
+// By mouse every card is answered right. By keyboard the cloze gets a wrong pick that is lost on
+// the network and sent again, and the three flips are graded with 1, 2 and Enter.
+async function runSession(page: Page, { keyboard = false } = {}) {
   await login(page);
   await page.goto('/review');
   if (keyboard) {
@@ -111,6 +124,7 @@ async function runSession(page: Page, { keyboard = false, dropFirstAnswer = fals
 
   let sawCloze = false;
   let sawSentence = false;
+  const flipKeys = ['1', '2', 'Enter'];
   for (let n = 0; n < 4; n++) {
     await expect(page.getByLabel(`Thẻ ${n + 1} / 4`)).toBeVisible();
     const choices = page.getByRole('group', { name: 'Chọn đáp án' });
@@ -121,32 +135,33 @@ async function runSession(page: Page, { keyboard = false, dropFirstAnswer = fals
       await expect(choices.getByRole('button')).toHaveCount(4);
       await expect(page.getByLabel('chỗ trống')).toBeVisible();
       await expect(page.locator('main p[lang="ja"]').first()).not.toContainText('約束');
-      const right = choices.getByRole('button', { name: /約束/ });
-      const key = String(
-        (await choices.getByRole('button').allTextContents()).findIndex((t) => t.includes('約束')) +
-          1,
-      );
-      const choose = () => (keyboard ? page.keyboard.press(key) : right.click());
-      if (dropFirstAnswer) {
-        // The answer never reached the server: nothing new is recorded and the choices open again.
-        const before = reviewLogCount();
-        dropNext = true;
-        await choose();
-        await expect(page.getByText('Mất kết nối, chưa lưu. Thử lại.')).toBeVisible();
-        await expect(right).toBeEnabled();
-        expect(reviewLogCount()).toBe(before);
-      }
-      await choose();
-      await expect(page.getByText('Đúng, tính là Nhớ.')).toBeVisible();
       const next = page.getByRole('button', { name: 'Tiếp' });
-      await expect(next).toBeEnabled();
-      await (keyboard ? page.keyboard.press('Enter') : next.click());
+      if (keyboard) {
+        const labels = await choices.getByRole('button').allTextContents();
+        const wrong = String(labels.findIndex((t) => !t.includes('約束')) + 1);
+        dropNext = true;
+        await page.keyboard.press(wrong);
+        await expect(page.getByText('Mất kết nối, chưa lưu được.')).toBeVisible();
+        // The answer is on screen now, so the same pick is sent again; the choices stay shut.
+        await expect(choices.getByRole('button').first()).toBeDisabled();
+        expect(reviewLogCount()).toBe(0);
+        await expect(page.getByRole('button', { name: 'Gửi lại' })).toBeEnabled();
+        await page.keyboard.press('Enter');
+        await expect(next).toBeEnabled();
+        expect(clozeRating(), 'the wrong pick sent again is still Again').toBe(1);
+        await expect(page.getByText('Chưa đúng, tính là Chưa nhớ.')).toBeVisible();
+        await page.keyboard.press('Enter');
+      } else {
+        await choices.getByRole('button', { name: /約束/ }).click();
+        await expect(page.getByText('Đúng, tính là Nhớ.')).toBeVisible();
+        await next.click();
+      }
     } else {
       if (await page.getByText('旅行').isVisible()) sawSentence = true;
       if (keyboard) {
         await page.keyboard.press('Enter');
         await expect(page.getByRole('button', { name: /^Nhớ/ })).toBeVisible();
-        await page.keyboard.press(n % 2 ? '2' : 'Enter');
+        await page.keyboard.press(flipKeys.shift()!);
       } else {
         await reveal.click();
         await page.getByRole('button', { name: /^Nhớ/ }).click();
@@ -157,7 +172,7 @@ async function runSession(page: Page, { keyboard = false, dropFirstAnswer = fals
   }
 
   await expect(page.getByText('Xong buổi ôn')).toBeVisible();
-  await expect(page.getByText('4 trên 4 thẻ nhớ')).toBeVisible();
+  await expect(page.getByText(keyboard ? '2 trên 4 thẻ nhớ' : '4 trên 4 thẻ nhớ')).toBeVisible();
   expect(sawCloze, 'the seen word is tested as a cloze').toBe(true);
   expect(sawSentence, 'a new word with an example is met inside its sentence').toBe(true);
   expect(reviewLogCount()).toBe(4);
@@ -177,11 +192,9 @@ test('quick review on desktop: cloze for a seen word, flip for new ones, every a
   await runSession(page);
 });
 
-test('quick review by keyboard, and an answer lost on the way can be given again', async ({
-  page,
-}) => {
+test('quick review by keyboard, and a lost answer is sent again as it was', async ({ page }) => {
   seed();
-  await runSession(page, { keyboard: true, dropFirstAnswer: true });
+  await runSession(page, { keyboard: true });
 });
 
 test.describe('on a phone', () => {
