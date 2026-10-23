@@ -63,8 +63,8 @@ Tạo token ở **Cài đặt → Tài khoản → Token MCP**. Nên tạo token
 
 `/api/mcp` có bảy tool (`next_turn`, `stage_turn`, `grade_turn`, `skip_turn`, `lookup`, `add_items`,
 `status`) và một prompt `hoc`. Mỗi kết quả kết thúc bằng một dòng `next:` nói lời gọi tiếp theo, nên cùng
-một bộ dùng được cho Claude Desktop, ChatGPT và model tự host (Hermes). Tên profile cũ `?profile=tutor` và
-`?profile=full` cũng trả về bộ này. `?profile=planner` chỉ có `ping` và `get_review_load` (đọc số lượng ôn,
+một bộ dùng được cho Claude Desktop và ChatGPT. Tên profile cũ `?profile=full` cũng trả về bộ này;
+`?profile=tutor` (Hermes học, đã bỏ ngày 2026-10-23) trả 400. `?profile=planner` chỉ có `ping` và `get_review_load` (đọc số lượng ôn,
 cho bot xếp lịch); token có scope `planner` không với tới profile nào khác.
 
 ### Claude Desktop

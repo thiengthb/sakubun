@@ -27,9 +27,10 @@ describe('MCP profiles', () => {
     expect(prompts).toEqual([]);
   });
 
-  it('parseProfile: không tham số và tên cũ (full, tutor) = v2, tên lạ = null', () => {
-    for (const value of [null, '', 'v2', 'full', 'tutor']) expect(parseProfile(value)).toBe('v2');
+  it('parseProfile: không tham số và tên cũ full = v2; tutor (Hermes học, đã bỏ) và tên lạ = null', () => {
+    for (const value of [null, '', 'v2', 'full']) expect(parseProfile(value)).toBe('v2');
     expect(parseProfile('planner')).toBe('planner');
+    expect(parseProfile('tutor')).toBeNull();
     expect(parseProfile('admin')).toBeNull();
   });
 });
