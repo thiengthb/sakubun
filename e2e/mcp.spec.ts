@@ -10,8 +10,8 @@ import {
   seedMcpAccount,
 } from './mcp-client';
 
-// The MCP route over real HTTP with a real key (roadmap 3.2): the default surface is the v2 set, old
-// profile names still in client configs land on it too, the planner profile stays counts-only, and
+// The MCP route over real HTTP with a real key (roadmap 3.2): the default surface is the v2 set, the old
+// default name full still lands on it, tutor is gone (400), the planner profile stays counts-only, and
 // only grade_turn moves the FSRS schedule.
 
 const V2_TOOLS = [
@@ -80,7 +80,7 @@ test('MCP từ chối request không có token, và token sai', async ({ request
   expect(badToken.status(), 'token lạ phải 401').toBe(401);
 });
 
-test('mặc định là bộ v2, tên profile cũ cũng về v2, planner chỉ đọc số liệu', async ({
+test('mặc định là bộ v2, tên cũ full cũng về v2, tutor đã bỏ, planner chỉ đọc số liệu', async ({
   request,
 }) => {
   await seedMcpAccount();
@@ -91,11 +91,9 @@ test('mặc định là bộ v2, tên profile cũ cũng về v2, planner chỉ �
     'hoc',
   ]);
 
-  for (const old of ['full', 'tutor']) {
-    const url = `${MCP_URL}?profile=${old}`;
-    await initializeMcp(request, url);
-    expect(await toolNames(request, url), `?profile=${old}`).toEqual(V2_TOOLS);
-  }
+  const full = `${MCP_URL}?profile=full`;
+  await initializeMcp(request, full);
+  expect(await toolNames(request, full), '?profile=full').toEqual(V2_TOOLS);
 
   const planner = `${MCP_URL}?profile=planner`;
   await initializeMcp(request, planner);
@@ -103,11 +101,14 @@ test('mặc định là bộ v2, tên profile cũ cũng về v2, planner chỉ �
   const ping = await callTool(request, 'ping', {}, planner);
   expect(ping.text).toContain('"ok":true');
 
-  const unknown = await request.post(`${MCP_URL}?profile=admin`, {
-    headers: MCP_HEADERS,
-    data: { jsonrpc: '2.0', id: 1, method: 'tools/list', params: {} },
-  });
-  expect(unknown.status()).toBe(400);
+  // `tutor` belonged to Hermes study, which is gone; it answers 400 like any unknown name.
+  for (const gone of ['admin', 'tutor']) {
+    const unknown = await request.post(`${MCP_URL}?profile=${gone}`, {
+      headers: MCP_HEADERS,
+      data: { jsonrpc: '2.0', id: 1, method: 'tools/list', params: {} },
+    });
+    expect(unknown.status(), `?profile=${gone}`).toBe(400);
+  }
 });
 
 test('chỉ grade_turn đẩy được lịch FSRS (bất biến 1)', async ({ request }) => {
