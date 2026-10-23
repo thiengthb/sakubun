@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseProfile, TUTOR_TOOLS, type McpProfile } from '@/lib/mcp/profiles';
+import { parseProfile, TUTOR_TOOLS, V2_TOOLS, type McpProfile } from '@/lib/mcp/profiles';
 import { registerAll } from '@/lib/mcp/server';
 
 // A stand-in server that only records what gets registered.
@@ -38,11 +38,21 @@ describe('MCP profiles', () => {
     expect(registered('planner').tools.sort()).toEqual(['get_review_load', 'ping']);
   });
 
+  it('v2 chỉ có bảy tool mới và một prompt hoc, không lẫn tool cũ', () => {
+    const { tools, prompts } = registered('v2');
+    expect(tools.sort()).toEqual([...V2_TOOLS].sort());
+    expect(prompts).toEqual(['hoc']);
+    expect(
+      registered('full').tools.filter((t) => (V2_TOOLS as readonly string[]).includes(t)),
+    ).toEqual([]);
+  });
+
   it('parseProfile: không có tham số = full, tên lạ = null', () => {
     expect(parseProfile(null)).toBe('full');
     expect(parseProfile('')).toBe('full');
     expect(parseProfile('tutor')).toBe('tutor');
     expect(parseProfile('planner')).toBe('planner');
+    expect(parseProfile('v2')).toBe('v2');
     expect(parseProfile('admin')).toBeNull();
   });
 });

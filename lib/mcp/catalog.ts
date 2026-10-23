@@ -220,4 +220,17 @@ export const MCP_CATALOG: CatalogEntry[] = [
     summary:
       'Soạn thẻ enrichment cho mẫu ngữ pháp VÀ từ vựng còn thiếu (duyệt trước 3 thẻ mẫu rồi chạy theo lô)',
   },
+  // MCP v2 (profile `v2`, roadmap 3.1), beside the tools above until 3.2.
+  { name: 'next_turn', kind: 'tool', summary: 'v2: lấy mục tiếp theo và cách soạn câu cho nó' },
+  {
+    name: 'stage_turn',
+    kind: 'tool',
+    summary: 'v2: lưu câu đề trước khi bạn trả lời; server kiểm câu',
+  },
+  { name: 'grade_turn', kind: 'tool', summary: 'v2: chấm một lần, điểm 1-4, ghi lịch FSRS' },
+  { name: 'skip_turn', kind: 'tool', summary: 'v2: bỏ qua lượt, không tính vào lịch' },
+  { name: 'lookup', kind: 'tool', summary: 'v2: tìm mẫu hoặc từ trong kho của bạn' },
+  { name: 'add_items', kind: 'tool', summary: 'v2: thêm mẫu hoặc từ khi bạn đồng ý' },
+  { name: 'status', kind: 'tool', summary: 'v2: đến hạn bao nhiêu, hôm nay còn lại bao nhiêu' },
+  { name: 'hoc', kind: 'prompt', summary: 'v2: học theo lịch ôn, dịch từng câu với Claude' },
 ];

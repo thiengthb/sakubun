@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { MCP_CATALOG } from '@/lib/mcp/catalog';
 import { MCP_PROMPTS } from '@/lib/mcp/prompts';
+import { HOC_PROMPT } from '@/lib/mcp/v2-prompt';
 
 const TOOLS_DIR = 'lib/mcp/tools';
 const SOURCES = readdirSync(TOOLS_DIR)
@@ -17,7 +18,7 @@ const SOURCES = readdirSync(TOOLS_DIR)
 function registered(): Record<'tool' | 'prompt', Set<string>> {
   const found = {
     tool: new Set<string>(),
-    prompt: new Set(MCP_PROMPTS.map((p) => p.name)),
+    prompt: new Set([...MCP_PROMPTS.map((p) => p.name), HOC_PROMPT.name]),
   };
   for (const file of SOURCES) {
     const src = readFileSync(file, 'utf8');

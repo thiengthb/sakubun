@@ -23,6 +23,25 @@ const CEILING = {
   dueItemsResult: 1_000,
 };
 
+// The v2 targets from docs/roadmap.md, enforced on the v2 profile while it runs beside the old one.
+const V2_TARGET = {
+  toolDefinitions: 2_000,
+  protocol: 1_500,
+  result: 300,
+};
+
+// One sentence per seeded item that passes stage_turn's checks.
+const V2_SENTENCES: Record<string, { ja: string; vi: string }> = {
+  '〜ばかりに': {
+    ja: '少し遅れたばかりに、電車に乗れなかった。',
+    vi: 'Chỉ vì trễ một chút mà lỡ tàu.',
+  },
+  '〜ながら': { ja: '音楽を聞きながら勉強します。', vi: 'Tôi vừa nghe nhạc vừa học.' },
+  '〜てしまう': { ja: '財布を忘れてしまいました。', vi: 'Tôi lỡ quên mất ví.' },
+  約束: { ja: '友達と約束をしました。', vi: 'Tôi đã hứa với bạn.' },
+  急ぐ: { ja: '急いで駅へ行きました。', vi: 'Tôi vội đi ra ga.' },
+};
+
 type Db = typeof import('@/lib/db/db');
 let prisma: Db['prisma'];
 const clients: Client[] = [];
@@ -114,5 +133,63 @@ describe('MCP token footprint', () => {
     const tokens = estimateTokens(text);
     report.push(`  result get_due_items:    ${text.length} chars, ~${tokens} tokens`);
     expect(tokens).toBeLessThanOrEqual(CEILING.dueItemsResult);
+  });
+});
+
+describe('MCP v2 token targets', () => {
+  it('tool definitions', async () => {
+    const { count, tokens } = await toolDefinitionTokens('v2');
+    report.push(`  v2 tool definitions:     ${count} tools, ~${tokens} tokens`);
+    expect(tokens).toBeLessThanOrEqual(V2_TARGET.toolDefinitions);
+  });
+
+  it('protocol (the hoc prompt)', async () => {
+    const client = await connect('v2');
+    const prompt = await client.getPrompt({ name: 'hoc' });
+    const text = prompt.messages
+      .map((m) => (m.content.type === 'text' ? m.content.text : ''))
+      .join('\n');
+    const tokens = estimateTokens(text);
+    report.push(`  v2 prompt "hoc":         ${text.length} chars, ~${tokens} tokens`);
+    expect(tokens).toBeLessThanOrEqual(V2_TARGET.protocol);
+  });
+
+  it('every result of a ten-turn session', async () => {
+    const client = await connect('v2');
+    const sizes = new Map<string, number>();
+    const call = async (name: string, args: Record<string, unknown> = {}) => {
+      const result = await client.callTool({ name, arguments: args });
+      const text = resultText(result);
+      expect(result.isError, `${name}: ${text}`).not.toBe(true);
+      sizes.set(name, Math.max(sizes.get(name) ?? 0, estimateTokens(text)));
+      return text;
+    };
+
+    const items = await prisma.item.findMany({ select: { id: true, expression: true } });
+    for (let turn = 0; turn < 10; turn++) {
+      const item = items[turn % items.length];
+      await call('next_turn', { itemId: item.id, hint: turn === 0 ? 'chủ đề du lịch' : undefined });
+      const staged = await call('stage_turn', {
+        itemId: item.id,
+        ...V2_SENTENCES[item.expression],
+      });
+      const turnId = staged.split('\n')[0].replace('turnId ', '');
+      await call('grade_turn', {
+        turnId,
+        answer: 'Câu trả lời của người học.',
+        rating: turn % 3 === 0 ? 2 : 3,
+        errorTags: turn % 3 === 0 ? ['particle'] : undefined,
+        feedback: 'Đúng ý, nhưng trợ từ に dùng chưa chuẩn.',
+      });
+    }
+    await call('lookup', { query: 'ながら' });
+    await call('status');
+    await call('next_turn');
+
+    const largest = Math.max(...sizes.values());
+    report.push(
+      `  v2 results (max):        ${[...sizes].map(([n, t]) => `${n} ~${t}`).join(', ')}`,
+    );
+    expect(largest).toBeLessThanOrEqual(V2_TARGET.result);
   });
 });

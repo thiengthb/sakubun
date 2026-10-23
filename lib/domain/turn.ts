@@ -78,9 +78,10 @@ const BEFORE_MASEN: Record<string, string> = {
 // The written forms of a pattern's last part that count as using it once it is conjugated.
 // Kanji with okurigana keep the kanji run (急ぐ → 急, 得ない → 得). A kana form ending in ない
 // also counts in its polite forms (いけない → いけません, ならない → なりません, はずがない →
-// はずがありません); one ending in する or くる in any form of the verb; other kana forms lose one
-// conjugating ending (べきだ → べき). A single part that would shrink to one kana (な, た, ま)
-// matches almost anything, so the whole form is kept; after an earlier part it is anchored enough.
+// はずがありません); one ending in する or くる in any form of the verb; one ending in い in its
+// adjective forms (たい → たくない, たかった); other kana forms lose one conjugating ending
+// (べきだ → べき). A single part that would shrink to one kana (な, た, ま) matches almost
+// anything, so the whole form is kept; after an earlier part it is anchored enough.
 export function conjugatedForms(form: string, allowShort = false): string[] {
   if (KANJI.test(form)) {
     const core = form.replace(HIRAGANA_TAIL, '');
@@ -99,6 +100,10 @@ export function conjugatedForms(form: string, allowShort = false): string[] {
     const stem = form.slice(0, -2);
     const kana = form.endsWith('する') ? ['し', 'す', 'さ', 'せ'] : ['き', 'く', 'こ'];
     forms.push(stem, ...kana.map((k) => stem + k));
+  } else if (form.endsWith('い')) {
+    // i-adjective endings: たい → たくない, たかった.
+    const stem = form.slice(0, -1);
+    forms.push(stem, `${stem}く`, `${stem}かっ`);
   } else {
     forms.push(form.replace(CONJUGATING_TAIL, ''));
   }

@@ -15,6 +15,7 @@ export const MCP_HEADERS = {
 
 export const LEARNING_TABLES = [
   'ReviewLog',
+  'Turn',
   'Sentence',
   'SrsState',
   'GroupMember',
@@ -35,8 +36,7 @@ export async function seedMcpAccount({ resetLearningTables = true } = {}): Promi
   const db = openE2eDb();
   try {
     const user = db.prepare('SELECT id FROM user WHERE email = ?').get(E2E_EMAIL) as
-      | { id: string }
-      | undefined;
+      { id: string } | undefined;
     if (!user) throw new Error('chưa seed được tài khoản e2e');
 
     db.prepare('DELETE FROM mcp_key').run();
@@ -64,8 +64,9 @@ export async function rpc(
   api: APIRequestContext,
   method: string,
   params: unknown,
+  url: string = MCP_URL,
 ): Promise<Record<string, unknown>> {
-  const res = await api.post(MCP_URL, {
+  const res = await api.post(url, {
     headers: MCP_HEADERS,
     data: { jsonrpc: '2.0', id: ++rpcId, method, params },
   });
@@ -73,12 +74,17 @@ export async function rpc(
   return parseRpc(await res.text());
 }
 
-export async function initializeMcp(api: APIRequestContext): Promise<void> {
-  const body = await rpc(api, 'initialize', {
-    protocolVersion: '2025-06-18',
-    capabilities: {},
-    clientInfo: { name: 'e2e', version: '0' },
-  });
+export async function initializeMcp(api: APIRequestContext, url: string = MCP_URL): Promise<void> {
+  const body = await rpc(
+    api,
+    'initialize',
+    {
+      protocolVersion: '2025-06-18',
+      capabilities: {},
+      clientInfo: { name: 'e2e', version: '0' },
+    },
+    url,
+  );
   expect(body.result, 'initialize phải trả result').toBeTruthy();
 }
 
@@ -91,8 +97,9 @@ export async function callTool(
   api: APIRequestContext,
   name: string,
   args: Record<string, unknown>,
+  url: string = MCP_URL,
 ): Promise<ToolResult> {
-  const body = await rpc(api, 'tools/call', { name, arguments: args });
+  const body = await rpc(api, 'tools/call', { name, arguments: args }, url);
   const result = (body.result ?? {}) as { content?: { text?: string }[]; isError?: boolean };
   return { text: result.content?.[0]?.text ?? '', isError: result.isError === true };
 }

@@ -24,9 +24,21 @@ export const TUTOR_TOOLS = [
 // content and no learner model. A key whose scope is `planner` can never reach any other profile.
 export const PLANNER_TOOLS = ['ping', 'get_review_load'] as const;
 
-export type McpProfile = 'full' | 'tutor' | 'planner';
+// `v2` is the new server-led tool set (roadmap 3.1), served beside the old ones until 3.2 makes it the
+// default. It is registered on its own in server.ts, with its own single prompt.
+export const V2_TOOLS = [
+  'next_turn',
+  'stage_turn',
+  'grade_turn',
+  'skip_turn',
+  'lookup',
+  'add_items',
+  'status',
+] as const;
 
-const ALLOWED: Record<Exclude<McpProfile, 'full'>, readonly string[]> = {
+export type McpProfile = 'full' | 'tutor' | 'planner' | 'v2';
+
+const ALLOWED: Record<Exclude<McpProfile, 'full' | 'v2'>, readonly string[]> = {
   tutor: TUTOR_TOOLS,
   planner: PLANNER_TOOLS,
 };
@@ -34,13 +46,13 @@ const ALLOWED: Record<Exclude<McpProfile, 'full'>, readonly string[]> = {
 // null = not a profile we know; the route answers 400 rather than silently serving the full set.
 export function parseProfile(value: string | null): McpProfile | null {
   if (value === null || value === '' || value === 'full') return 'full';
-  if (value === 'tutor' || value === 'planner') return value;
+  if (value === 'tutor' || value === 'planner' || value === 'v2') return value;
   return null;
 }
 
 // A view of `server` whose tool() drops every tool outside the profile; prompts pass through.
 export function restrictToProfile(server: McpServer, profile: McpProfile): McpServer {
-  if (profile === 'full') return server;
+  if (profile === 'full' || profile === 'v2') return server;
   const allowed = new Set<string>(ALLOWED[profile]);
   return new Proxy(server, {
     get(target, prop, receiver) {
