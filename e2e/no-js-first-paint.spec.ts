@@ -36,11 +36,13 @@ test('không có JS, mọi ô chọn trong HTML đầu tiên đã có chữ', as
       if (!t.trim()) empty.push(`${path} → ô chọn thứ ${i + 1}`);
     });
 
-    if (path === '/settings') expect(texts.length, 'số ô chọn ở Cài đặt').toBeGreaterThanOrEqual(5);
+    // Luyện tập keeps two selects since the eight-settings tab: Hướng dịch and Giọng đọc.
+    if (path === '/settings') expect(texts.length, 'số ô chọn ở Cài đặt').toBeGreaterThanOrEqual(2);
   }
 
   expect(empty, 'ô chọn rỗng trong HTML server').toEqual([]);
-  expect(total, 'tổng số ô chọn đã kiểm').toBeGreaterThanOrEqual(6);
+  // Two on Cài đặt plus the ones on the list pages: the guard that the scan saw real selects.
+  expect(total, 'tổng số ô chọn đã kiểm').toBeGreaterThanOrEqual(4);
 
   await noJs.close();
 });
@@ -53,7 +55,7 @@ test('chọn giá trị khác thì nhãn trên trigger đổi theo', async ({ pa
   await page.waitForURL((u) => !u.pathname.startsWith('/login'), { timeout: 30_000 });
 
   await page.goto('/settings');
-  const LABELS = ['Nhật → Việt', 'Việt → Nhật', 'Song ngữ (đổi chiều từng câu)'];
+  const LABELS = ['Tự động theo mức nhớ', 'Luôn Nhật → Việt', 'Luôn Việt → Nhật'];
   const direction = page.getByRole('combobox', { name: 'Hướng dịch' });
   await expect(direction).toBeVisible();
   const before = ((await direction.textContent()) ?? '').trim();

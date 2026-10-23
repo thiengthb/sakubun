@@ -424,6 +424,18 @@ describe('pickBatch — per-sentence novelty cap (maxNewPerSentence)', () => {
   });
 });
 
+describe('pickBatch direction', () => {
+  it('follows the directionMode set on the web, not the stale old direction', () => {
+    const batch = pickBatch({
+      due: [item()],
+      ...freshNone,
+      settings: settings({ direction: 'JA_VI', directionMode: 'VI_JA' }),
+      today: noProgress,
+    });
+    expect(batch.direction).toBe('VI_JA');
+  });
+});
+
 describe('resolveDirection', () => {
   it('fixed directions pass through', () => {
     expect(resolveDirection('JA_VI', 5)).toBe('JA_VI');

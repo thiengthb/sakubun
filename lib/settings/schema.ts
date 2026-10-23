@@ -146,6 +146,7 @@ export type CompositionSettings = Pick<Settings, (typeof COMPOSITION_SETTING_KEY
 export function toCompositionSettings(settings: Settings): CompositionSettings {
   const out = {} as Record<string, unknown>;
   for (const key of COMPOSITION_SETTING_KEYS) out[key] = settings[key];
+  out.direction = legacyDirection(settings);
   return out as CompositionSettings;
 }
 
@@ -160,12 +161,23 @@ export function resolveVocabCeiling(
   return settings.vocabCeiling ?? hardestLevel(settings.grammarLevels);
 }
 
+// The web edits `directionMode`; the old MCP path still reads a Direction. Until roadmap 3.2 removes
+// that path, this is the one bridge between them: auto alternates there, a fixed mode stays fixed.
+export function legacyDirection(settings: Pick<Settings, 'directionMode'>): Direction {
+  return settings.directionMode === 'auto' ? 'ALTERNATING' : settings.directionMode;
+}
+
 export function migrateSettingsInput(raw: unknown): unknown {
   if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) return raw;
   const o = { ...(raw as Record<string, unknown>) };
-  if (!('levels' in o)) return o;
-  if (o.grammarLevels === undefined && Array.isArray(o.levels)) o.grammarLevels = o.levels;
-  delete o.levels;
+  if ('levels' in o) {
+    if (o.grammarLevels === undefined && Array.isArray(o.levels)) o.grammarLevels = o.levels;
+    delete o.levels;
+  }
+  // Settings stored before directionMode existed, and an MCP client still sending `direction`.
+  if (o.directionMode === undefined && typeof o.direction === 'string') {
+    o.directionMode = o.direction === 'ALTERNATING' ? 'auto' : o.direction;
+  }
   return o;
 }
 

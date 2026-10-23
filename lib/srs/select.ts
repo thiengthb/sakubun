@@ -1,4 +1,9 @@
-import type { Direction, SentenceSize, Settings } from '@/lib/settings/schema';
+import {
+  legacyDirection,
+  type Direction,
+  type SentenceSize,
+  type Settings,
+} from '@/lib/settings/schema';
 import type { TutorCard } from '@/lib/library/enrichment';
 
 export const SENTENCE_SIZE_SPEC: Record<
@@ -52,10 +57,7 @@ export interface PickedItem extends ItemLite {
   focusHit?: boolean;
 }
 
-export type WithheldReason =
-  | 'daily-new-cap'
-  | 'per-sentence-new-cap'
-  | 'review-cap';
+export type WithheldReason = 'daily-new-cap' | 'per-sentence-new-cap' | 'review-cap';
 
 export interface WithheldItem {
   expression: string;
@@ -107,7 +109,7 @@ export function pickBatch(input: PickInput): PickedBatch {
     }));
     return {
       mode: 'MASTERY',
-      direction: resolveDirection(settings.direction, today.sentences),
+      direction: resolveDirection(legacyDirection(settings), today.sentences),
       items: withVocab(items),
       limits: {
         reviewLimitReached: false,
@@ -177,7 +179,7 @@ export function pickBatch(input: PickInput): PickedBatch {
 
   return {
     mode: 'ACQUIRE',
-    direction: resolveDirection(settings.direction, today.sentences),
+    direction: resolveDirection(legacyDirection(settings), today.sentences),
     items: withVocab(picked),
     limits: {
       reviewLimitReached: reviewsLeft <= 0,
