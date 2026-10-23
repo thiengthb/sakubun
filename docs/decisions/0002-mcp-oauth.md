@@ -29,5 +29,15 @@ working. sakubun has one user; anything that can mint a token for that account m
 - An additive migration adds the provider's tables (`oauthClient`, tokens, consent, `jwks`, ...).
   The app never queries them directly.
 - `BETTER_AUTH_URL` is now required to be right in production: it is the token issuer and audience.
-- Revoking a connected app is not in the UI yet (deferred by thien); deleting the session or the
-  client row revokes it meanwhile.
+- Revoking a connected app is not in the UI yet (deferred by thien). Signing out does not revoke it:
+  claude.ai asks for `offline_access`, and those refresh tokens (30 days) survive a session delete by
+  design (OIDC Back-Channel Logout). Until the revoke UI exists, delete the app's `oauthClient` row,
+  which cascades to its tokens and consent. An access token already issued is a JWT checked locally,
+  so it keeps working until it expires (1 hour).
+- `/.well-known/oauth-protected-resource` sends claude.ai to OAuth as soon as this ships, but
+  `/api/mcp` only accepts OAuth tokens from the next PR on: deploy both together.
+- A changed `ALLOWED_EMAIL` does not stop existing refresh tokens (refresh skips the session hook);
+  delete the clients when that happens.
+- Consent phishing stays possible: anyone can register a client with a claude.ai or ChatGPT callback
+  and send thien the authorize link. The consent page warns to approve only a connection thien just
+  started himself; the revoke list will matter for the same reason.
