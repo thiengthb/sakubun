@@ -187,7 +187,7 @@ describe('daily caps and what counts as due (grammar)', () => {
 });
 
 describe('known flaws the roadmap fixes (expectations flip in the PR that fixes each)', () => {
-  it('every never-studied vocab word is served as due, with no daily new cap (fixed in 1.1-1.2)', async () => {
+  it('every never-studied vocab word is served as due, with no daily new cap (old path; getQueue fixes it, the old path goes in 3.2)', async () => {
     await reset();
     await P.saveSettings({ vocabPerSentence: 2 });
     await seed(['g_anchor']);
@@ -199,7 +199,7 @@ describe('known flaws the roadmap fixes (expectations flip in the PR that fixes 
     expect(vocab.every((v) => v.isNew)).toBe(true);
   });
 
-  it('vocab reviews are invisible to the daily counters (fixed in 1.1-1.2)', async () => {
+  it('vocab reviews are invisible to the daily counters (old path; studiedToday fixes it)', async () => {
     await reset();
     const [vocabId] = await seed(['v_counted'], 'VOCAB');
     await review(vocabId, 3, NOW);

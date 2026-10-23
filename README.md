@@ -116,6 +116,7 @@ lib/
   db/                     Prisma client + trình dựng DB cho test
   japanese/               Furigana, romaji
   domain/                 Lõi học mới, logic thuần: hàng ôn, lượt luyện, chấm ôn nhanh, cách soạn câu
+  app/                    Use-case của lõi mới: đọc/ghi DB rồi gọi domain (getQueue, recordReviews)
   srs/                    FSRS, chọn bài, retention, calibration, streak
   library/                Kho học của người dùng + tầng dữ liệu practice
   session/                Một lượt luyện: loại bài, nhãn lỗi, coach, recap

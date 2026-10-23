@@ -18,7 +18,7 @@ Kế hoạch hợp nhất (wordquiz + kaiwa vào đây): `nuc-infra/docs/researc
 
 ## Gotchas
 
-- **`submitReview()` trong `lib/library/practice.ts` là lối DUY NHẤT tính lịch FSRS.** Không route/component/MCP tool nào ghi `SrsState` trực tiếp
+- **`recordReviews()` trong `lib/app/record-review.ts` là lối DUY NHẤT tính lịch FSRS** (`submitReview()` cũng đi qua nó). Không route/component/MCP tool nào ghi `SrsState` trực tiếp
   (ngoại lệ: nhập lại bản sao lưu nguyên văn). `ReviewLog` chỉ append; xoá Item thì `itemId` thành null.
 - **Prisma 7 dùng driver adapter** (`@prisma/adapter-better-sqlite3`), client sinh ở `lib/generated/prisma` (không commit), CLI đọc `prisma.config.ts`.
 - **Test có DB dùng `createTestDb()` (`lib/db/test-db.ts`)**, không dùng `prisma db push`; dọn giữa các test bằng `resetLearningData()`.
