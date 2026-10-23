@@ -72,6 +72,8 @@ describe('patternAppears', () => {
     // A form that would shrink to one kana must not match anything that has that kana.
     ['〜ない', '雨なのに出かけた。', false],
     ['〜たい', '昨日映画を見た。', false],
+    ['〜たい', '今日はどこにも行きたくない。', true],
+    ['〜たい', '子どものころ、先生になりたかった。', true],
     ['〜まい', '毎朝運動します。', false],
     ['〜くない / 〜かった / 〜くなかった', 'この部屋はあまり広くないです。', true],
     ['〜てくる', 'ちょっとコンビニに行ってきます。', true],
