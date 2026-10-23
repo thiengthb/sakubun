@@ -8,11 +8,9 @@ import { EmptyState } from '@/components/common/empty-state';
 import { usePagedList } from '@/components/common/use-paged-list';
 import { useSessionState } from '@/components/common/use-session-state';
 import { HistoryCard } from '@/components/features/history/history-cards';
-import { HistoryFlashcards } from '@/components/features/history/history-flashcards';
 import {
   DEFAULT_FILTERS,
   HistoryFilters,
-  HistoryModeToggle,
   inDatePreset,
   inDurationBucket,
   isFail,
@@ -36,7 +34,6 @@ export function HistoryList({
   const showFurigana = furiganaInApp(furiganaMode);
   const [search, setSearch] = useSessionState('history.search', '', 'q');
   const [filters, setFilters] = useSessionState<Filters>('history.filters', DEFAULT_FILTERS, 'hf');
-  const [mode, setMode] = useSessionState<'list' | 'card'>('history.mode', 'list', 'view');
   const listRef = useRef<HTMLUListElement>(null);
   const footerRef = useRef<HTMLDivElement>(null);
 
@@ -110,35 +107,21 @@ export function HistoryList({
     resetPage();
   };
 
-  const deckMode = mode === 'card' && filtered.length > 0;
-
   return (
     <div className="space-y-4">
-      {!deckMode && (
-        <HistoryFilters
-          search={search}
-          onSearchChange={(v) => {
-            setSearch(v);
-            resetPage();
-          }}
-          filters={filters}
-          onPatch={patch}
-          onResetFilters={resetFilters}
-          mode={mode}
-          onModeChange={setMode}
-        />
-      )}
+      <HistoryFilters
+        search={search}
+        onSearchChange={(v) => {
+          setSearch(v);
+          resetPage();
+        }}
+        filters={filters}
+        onPatch={patch}
+        onResetFilters={resetFilters}
+      />
 
       {filtered.length === 0 ? (
         <EmptyState icon={SearchX} title="Không có lượt dịch nào khớp bộ lọc." className="py-12" />
-      ) : mode === 'card' ? (
-        <HistoryFlashcards
-          sentences={filtered}
-          voiceSpeaker={voiceSpeaker}
-          speechRate={speechRate}
-          showFurigana={showFurigana}
-          toolbarStart={<HistoryModeToggle mode={mode} onModeChange={setMode} />}
-        />
       ) : (
         <>
           <ul ref={listRef} className="grid grid-cols-1 gap-3 lg:grid-cols-2">

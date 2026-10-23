@@ -33,9 +33,7 @@ const DISPLAY_ALLOW = [
   'components/layout/app-logo.tsx', // 作文 badge glyph
   'components/layout/user-avatar.tsx', // avatar initials sizing
   'components/ui/', // shadcn primitive sizing tokens (button, calendar, …)
-  'components/features/groups/group-flashcards.tsx',
-  'components/features/history/history-flashcards.tsx',
-  'components/features/review/review-card.tsx', // quick-review card: the sentence and word on show
+  'components/common/review-card.tsx', // quick-review card: the sentence and word on show
 ];
 
 const allowed = (path: string) =>

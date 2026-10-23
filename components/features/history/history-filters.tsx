@@ -1,7 +1,5 @@
 'use client';
 
-import { Layers, List } from 'lucide-react';
-import { ExpandingIconButton } from '@/components/common/expanding-icon-button';
 import { Slider } from '@/components/ui/slider';
 import {
   chipFor,
@@ -63,76 +61,79 @@ type SelectKey = Exclude<keyof Filters, 'scoreMin' | 'scoreMax'>;
 // Nine filters that differ only in label and options. As a table they stay one screenful, and the
 // count, the popover rows and the chips below it all read from this one list — so a tenth filter
 // cannot show up in the popover while silently missing from the chips.
-const SELECT_FILTERS: readonly { key: SelectKey; label: string; options: readonly FilterOption[] }[] =
-  [
-    {
-      key: 'direction',
-      label: 'Chiều dịch',
-      options: [
-        { value: 'all', label: 'Mọi chiều' },
-        { value: 'JA_VI', label: 'JP → VN' },
-        { value: 'VI_JA', label: 'VN → JP' },
-      ],
-    },
-    {
-      key: 'result',
-      label: 'Kết quả',
-      options: [
-        { value: 'all', label: 'Mọi kết quả' },
-        { value: 'pass', label: 'Đạt (Good/Easy)' },
-        { value: 'fail', label: 'Có lỗi (Again/Hard)' },
-      ],
-    },
-    {
-      key: 'type',
-      label: 'Dạng bài',
-      options: [
-        { value: 'all', label: 'Mọi dạng' },
-        ...Object.entries(EXERCISE_TYPE_LABELS).map(([value, label]) => ({ value, label })),
-      ],
-    },
-    {
-      key: 'status',
-      label: 'Trạng thái',
-      options: [
-        { value: 'all', label: 'Mọi trạng thái' },
-        ...Object.entries(STATUS_LABELS).map(([value, label]) => ({ value, label })),
-      ],
-    },
-    {
-      key: 'level',
-      label: 'Độ khó (JLPT)',
-      options: [
-        { value: 'all', label: 'Mọi cấp' },
-        ...JLPT_LEVELS.map((l) => ({ value: l, label: l })),
-      ],
-    },
-    {
-      key: 'length',
-      label: 'Độ dài',
-      options: [
-        { value: 'all', label: 'Mọi độ dài' },
-        ...LENGTH_BUCKETS.map((b) => ({ value: b.key, label: b.label })),
-      ],
-    },
-    {
-      key: 'duration',
-      label: 'Thời gian làm',
-      options: [
-        { value: 'all', label: 'Mọi mức' },
-        ...DURATION_BUCKETS.map((b) => ({ value: b.value, label: b.label })),
-      ],
-    },
-    { key: 'datePreset', label: 'Ngày làm', options: DATE_PRESETS },
-    {
-      key: 'starred',
-      label: 'Đánh dấu sao',
-      options: [
-        { value: 'all', label: 'Tất cả' },
-        { value: 'yes', label: 'Đã đánh dấu sao' },
-      ],
-    },
-  ];
+const SELECT_FILTERS: readonly {
+  key: SelectKey;
+  label: string;
+  options: readonly FilterOption[];
+}[] = [
+  {
+    key: 'direction',
+    label: 'Chiều dịch',
+    options: [
+      { value: 'all', label: 'Mọi chiều' },
+      { value: 'JA_VI', label: 'JP → VN' },
+      { value: 'VI_JA', label: 'VN → JP' },
+    ],
+  },
+  {
+    key: 'result',
+    label: 'Kết quả',
+    options: [
+      { value: 'all', label: 'Mọi kết quả' },
+      { value: 'pass', label: 'Đạt (Good/Easy)' },
+      { value: 'fail', label: 'Có lỗi (Again/Hard)' },
+    ],
+  },
+  {
+    key: 'type',
+    label: 'Dạng bài',
+    options: [
+      { value: 'all', label: 'Mọi dạng' },
+      ...Object.entries(EXERCISE_TYPE_LABELS).map(([value, label]) => ({ value, label })),
+    ],
+  },
+  {
+    key: 'status',
+    label: 'Trạng thái',
+    options: [
+      { value: 'all', label: 'Mọi trạng thái' },
+      ...Object.entries(STATUS_LABELS).map(([value, label]) => ({ value, label })),
+    ],
+  },
+  {
+    key: 'level',
+    label: 'Độ khó (JLPT)',
+    options: [
+      { value: 'all', label: 'Mọi cấp' },
+      ...JLPT_LEVELS.map((l) => ({ value: l, label: l })),
+    ],
+  },
+  {
+    key: 'length',
+    label: 'Độ dài',
+    options: [
+      { value: 'all', label: 'Mọi độ dài' },
+      ...LENGTH_BUCKETS.map((b) => ({ value: b.key, label: b.label })),
+    ],
+  },
+  {
+    key: 'duration',
+    label: 'Thời gian làm',
+    options: [
+      { value: 'all', label: 'Mọi mức' },
+      ...DURATION_BUCKETS.map((b) => ({ value: b.value, label: b.label })),
+    ],
+  },
+  { key: 'datePreset', label: 'Ngày làm', options: DATE_PRESETS },
+  {
+    key: 'starred',
+    label: 'Đánh dấu sao',
+    options: [
+      { value: 'all', label: 'Tất cả' },
+      { value: 'yes', label: 'Đã đánh dấu sao' },
+    ],
+  },
+];
 
 function scoreNarrowed(f: Filters): boolean {
   return f.scoreMin > 0 || f.scoreMax < 100;
@@ -177,23 +178,6 @@ export function inDurationBucket(s: SentenceHistoryRow, bucket: string): boolean
   return true;
 }
 
-export function HistoryModeToggle({
-  mode,
-  onModeChange,
-}: {
-  mode: 'list' | 'card';
-  onModeChange: (mode: 'list' | 'card') => void;
-}) {
-  return (
-    <ExpandingIconButton
-      icon={mode === 'list' ? Layers : List}
-      label={mode === 'list' ? 'Flashcard' : 'Danh sách'}
-      aria-pressed={mode === 'card'}
-      onClick={() => onModeChange(mode === 'list' ? 'card' : 'list')}
-    />
-  );
-}
-
 function HistoryFilterPopover({
   filters,
   onPatch,
@@ -217,10 +201,7 @@ function HistoryFilterPopover({
         />
       ))}
 
-      <FilterRow
-        className="col-span-2"
-        label={`Điểm số: ${filters.scoreMin}–${filters.scoreMax}`}
-      >
+      <FilterRow className="col-span-2" label={`Điểm số: ${filters.scoreMin}–${filters.scoreMax}`}>
         <div className="flex h-8 items-center px-1">
           <Slider
             thumbLabel={['Điểm số tối thiểu', 'Điểm số tối đa']}
@@ -242,16 +223,12 @@ export function HistoryFilters({
   filters,
   onPatch,
   onResetFilters,
-  mode,
-  onModeChange,
 }: {
   search: string;
   onSearchChange: (value: string) => void;
   filters: Filters;
   onPatch: (patch: Partial<Filters>) => void;
   onResetFilters: () => void;
-  mode: 'list' | 'card';
-  onModeChange: (mode: 'list' | 'card') => void;
 }) {
   return (
     <div className="space-y-3">
@@ -263,7 +240,6 @@ export function HistoryFilters({
           className="min-w-0 flex-1 sm:max-w-xs"
         />
         <div className="flex shrink-0 items-center gap-2 md:ml-auto">
-          <HistoryModeToggle mode={mode} onModeChange={onModeChange} />
           <HistoryFilterPopover
             filters={filters}
             onPatch={onPatch}

@@ -15,7 +15,7 @@ import { useSessionState } from '@/components/common/use-session-state';
 import { SearchInput } from '@/components/common/search-input';
 import { GROUP_KIND_LABELS } from '@/lib/library/group-kinds';
 import { GroupAddItemsAction, GroupEditAction } from '@/components/features/groups/group-actions';
-import { GroupFlashcards } from '@/components/features/groups/group-flashcards';
+import { GroupCards } from '@/components/features/groups/group-cards';
 import { SpokenLine } from '@/components/common/spoken-line';
 import { ItemDetailDialog } from '@/components/common/item-detail-dialog';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
@@ -24,6 +24,7 @@ import { buildFuriganaMarkup } from '@/lib/japanese/furigana';
 import { speakable } from '@/lib/core/format';
 import { removeItemsFromGroupAction } from '@/app/actions';
 import type { GroupDetail, GroupMemberItem } from '@/lib/library/groups';
+import type { QuickCard } from '@/lib/app/quick-review';
 import { cn } from '@/lib/core/utils';
 
 const cardCls = 'rounded-xl bg-card text-card-foreground ring-1 ring-foreground/10';
@@ -38,12 +39,14 @@ const detailKind = (kind: string): 'grammar' | 'vocab' => (kind === 'VOCAB' ? 'v
 export function GroupDetailView({
   group,
   addable,
+  cards,
   voiceSpeaker,
   speechRate,
   showFurigana = false,
 }: {
   group: GroupDetail;
   addable: GroupMemberItem[];
+  cards: QuickCard[];
   voiceSpeaker?: number;
   speechRate?: number;
   showFurigana?: boolean;
@@ -257,12 +260,11 @@ export function GroupDetailView({
         </TabsContent>
 
         <TabsContent value="flashcard">
-          <GroupFlashcards
-            key={group.members.map((m) => m.itemId).join(',')}
-            members={group.members}
-            voiceSpeaker={voiceSpeaker}
-            speechRate={speechRate}
+          <GroupCards
+            key={cards.map((c) => c.itemId).join(',')}
+            cards={cards}
             showFurigana={showFurigana}
+            tts={{ voiceSpeaker, speechRate }}
           />
         </TabsContent>
       </PageShell>

@@ -13,7 +13,7 @@ import { getSettings } from '@/lib/library/practice';
 import { searchForms } from '@/lib/session/staging-checks';
 import { JLPT_LEVELS } from '@/lib/settings/schema';
 import { studyDayStart } from '@/lib/srs/select';
-import { rateOnce, type RatingValue } from '@/lib/srs/srs';
+import { rateOnce, type RatingValue, type SrsFields } from '@/lib/srs/srs';
 
 // Quick review on the web: the queue's cards dressed for the screen (an example sentence with the
 // item underlined, or a cloze once the item has been seen), and the one call that grades an answer.
@@ -99,6 +99,55 @@ function neighbours(levels: readonly string[]): string[] {
   return [...at].map((i) => JLPT_LEVELS[i]);
 }
 
+type CardItem = {
+  id: string;
+  kind: string;
+  level: string;
+  expression: string;
+  reading: string | null;
+  hanviet: string | null;
+  meaningVi: string;
+  enrichment: string | null;
+};
+
+function baseCard(item: CardItem, srs: SrsFields, retention: number, now: Date): QuickCardBase {
+  const card = parseEnrichment(item.enrichment);
+  return {
+    itemId: item.id,
+    kind: asItemKind(item.kind),
+    level: item.level,
+    expression: item.expression,
+    reading: item.reading,
+    hanviet: item.hanviet,
+    meaningVi: item.meaningVi,
+    structure: card?.structure.join(' / ') || null,
+    note: card?.pitfalls[0] ?? null,
+    isNew: srs.state === CARD_STATE.NEW,
+    dueIfRight: rateOnce(srs, 3, { retention, now }).next.due,
+  };
+}
+
+// The same card for browsing chosen items (a group), in the given order: always a flip card, and
+// nothing is graded, so the FSRS schedule is left alone.
+export async function getItemCards(ids: string[], now: Date = new Date()): Promise<QuickCard[]> {
+  const [settings, items] = await Promise.all([
+    getSettings(),
+    prisma.item.findMany({ where: { id: { in: ids } }, include: { srs: true } }),
+  ]);
+  const byId = new Map(items.map((i) => [i.id, i]));
+  return ids.flatMap((id) => {
+    const item = byId.get(id);
+    if (!item?.srs) return [];
+    return [
+      {
+        ...baseCard(item, item.srs, settings.desiredRetention, now),
+        mode: 'flip' as const,
+        sentence: underlined(item, examplesOf(item)),
+      },
+    ];
+  });
+}
+
 export async function getQuickReview(now: Date = new Date(), limit = 20): Promise<QuickReview> {
   const settings = await getSettings();
   const queue = await getQueue(now, limit);
@@ -132,22 +181,13 @@ export async function getQuickReview(now: Date = new Date(), limit = 20): Promis
   const day = studyDayStart(now, settings.dayCutoffHour).toISOString();
   const cards = queue.cards.map((queued): QuickCard => {
     const item = itemById.get(queued.id)!;
-    const srs = srsById.get(queued.id)!;
-    const card = parseEnrichment(item.enrichment);
+    const base = baseCard(
+      { ...queued, ...item },
+      srsById.get(queued.id)!,
+      settings.desiredRetention,
+      now,
+    );
     const examples = examplesOf(item);
-    const base: QuickCardBase = {
-      itemId: queued.id,
-      kind: queued.kind,
-      level: queued.level,
-      expression: queued.expression,
-      reading: queued.reading,
-      hanviet: item.hanviet,
-      meaningVi: queued.meaningVi,
-      structure: card?.structure.join(' / ') || null,
-      note: card?.pitfalls[0] ?? null,
-      isNew: queued.state === CARD_STATE.NEW,
-      dueIfRight: rateOnce(srs, 3, { retention: settings.desiredRetention, now }).next.due,
-    };
     // A new item is met first as a flip card; a cloze tests one already seen.
     if (!base.isNew) {
       const cloze = buildCloze({

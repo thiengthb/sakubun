@@ -169,3 +169,23 @@ describe('answerCard', () => {
     expect(await prisma.reviewLog.count()).toBe(0);
   });
 });
+
+describe('getItemCards', () => {
+  it('shows chosen items as flip cards in the given order, seen or not, and grades nothing', async () => {
+    const ids = await seed([{ expression: '約束' }, { expression: '準備' }]);
+    await prisma.item.update({ where: { id: ids['約束'] }, data: { enrichment: ENRICHMENT } });
+    await makeSeen(ids['約束']);
+
+    const cards = await Q.getItemCards([ids['準備'], 'missing', ids['約束']], NOW);
+    expect(cards.map((c) => [c.itemId, c.mode, c.isNew])).toEqual([
+      [ids['準備'], 'flip', true],
+      [ids['約束'], 'flip', false],
+    ]);
+    expect(cards[1].sentence?.segments).toContainEqual({
+      text: '約束',
+      reading: 'やくそく',
+      mark: 'target',
+    });
+    expect(await prisma.reviewLog.count()).toBe(0);
+  });
+});
