@@ -20,7 +20,7 @@ import { formatDateTimeVN, humanizeDuration, lengthBucket, ratingLabel } from '@
 import { hasFurigana } from '@/lib/japanese/furigana';
 import { scoreLabel } from '@/lib/insights/score-label';
 import { stripEmoji } from '@/lib/core/text';
-import type { SentenceHistoryRow } from '@/lib/library/practice';
+import type { HistoryRow } from '@/lib/app/history';
 import type { ExerciseType } from '@/lib/session/exercise-types';
 import { turnLabels } from '@/lib/session/turn-labels';
 import { cn } from '@/lib/core/utils';
@@ -37,6 +37,19 @@ export function scoreClass(score: number): string {
   if (score < 70) return 'text-warn';
   if (score < 90) return 'text-ok';
   return 'text-info font-semibold';
+}
+
+// A v2 turn is graded 1-4 rather than scored 0-100, so its header shows the grade.
+function resultLabel(s: HistoryRow): { text: string; className: string } | null {
+  if (s.rating !== null && s.status === 'GRADED') {
+    return { text: ratingLabel(s.rating), className: RATING_CLASS[s.rating] ?? '' };
+  }
+  const label = scoreLabel(s.status, s.score);
+  if (!label) return null;
+  return {
+    text: label.text,
+    className: label.muted ? 'text-muted-foreground' : scoreClass(s.score as number),
+  };
 }
 
 export const EXERCISE_TYPE_LABELS: Record<ExerciseType, string> = {
@@ -58,7 +71,7 @@ export function dirLabel(direction: string): string {
   return direction === 'JA_VI' ? 'JP → VN' : 'VN → JP';
 }
 
-export function durationSecOf(s: SentenceHistoryRow): number | null {
+export function durationSecOf(s: HistoryRow): number | null {
   if (!s.answeredAt) return null;
   const d = (new Date(s.answeredAt).getTime() - new Date(s.createdAt).getTime()) / 1000;
   return d >= 0 && d <= 3600 ? d : null;
@@ -69,7 +82,7 @@ function SourceLine({
   truncate,
   showFurigana = true,
 }: {
-  sentence: SentenceHistoryRow;
+  sentence: HistoryRow;
   truncate?: boolean;
   showFurigana?: boolean;
 }) {
@@ -89,7 +102,7 @@ function AnswerText({
   sentence,
   showFurigana = true,
 }: {
-  sentence: SentenceHistoryRow;
+  sentence: HistoryRow;
   showFurigana?: boolean;
 }) {
   const useRuby =
@@ -202,12 +215,12 @@ function HistoryDetail({
   rate,
   showFurigana = false,
 }: {
-  sentence: SentenceHistoryRow;
+  sentence: HistoryRow;
   speaker?: number;
   rate?: number;
   showFurigana?: boolean;
 }) {
-  const detailScore = scoreLabel(sentence.status, sentence.score);
+  const detailScore = resultLabel(sentence);
   const grammar = sentence.ratings.filter((r) => r.role !== 'VOCAB');
   const vocab = sentence.ratings.filter((r) => r.role === 'VOCAB');
   const typeLabel = exerciseTypeLabel(sentence.exerciseType);
@@ -225,12 +238,7 @@ function HistoryDetail({
           <Badge variant="secondary">{dirLabel(sentence.direction)}</Badge>
           {typeLabel && <Badge variant="outline">{typeLabel}</Badge>}
           {detailScore && (
-            <span
-              className={cn(
-                'text-sm font-medium',
-                detailScore.muted ? 'text-muted-foreground' : scoreClass(sentence.score as number),
-              )}
-            >
+            <span className={cn('text-sm font-medium', detailScore.className)}>
               {detailScore.text}
             </span>
           )}
@@ -331,7 +339,7 @@ function HistoryDetail({
   );
 }
 
-function PendingCard({ sentence }: { sentence: SentenceHistoryRow }) {
+function PendingCard({ sentence }: { sentence: HistoryRow }) {
   return (
     <li className="flex h-full flex-col gap-2 rounded-lg border border-warn/40 bg-warn/5 p-4">
       <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
@@ -368,14 +376,14 @@ export function HistoryCard({
   showFurigana = false,
   autoOpen = false,
 }: {
-  sentence: SentenceHistoryRow;
+  sentence: HistoryRow;
   speaker?: number;
   rate?: number;
   showFurigana?: boolean;
   autoOpen?: boolean;
 }) {
   if (sentence.status === 'PENDING') return <PendingCard sentence={sentence} />;
-  const score = scoreLabel(sentence.status, sentence.score);
+  const score = resultLabel(sentence);
   const typeLabel = exerciseTypeLabel(sentence.exerciseType);
 
   return (
@@ -385,23 +393,17 @@ export function HistoryCard({
         <>
           <Badge variant="secondary">{dirLabel(sentence.direction)}</Badge>
           {typeLabel && <Badge variant="outline">{typeLabel}</Badge>}
-          {score && (
-            <span
-              className={cn(
-                'font-medium',
-                score.muted ? 'text-muted-foreground' : scoreClass(sentence.score as number),
-              )}
-            >
-              {score.text}
-            </span>
-          )}
+          {score && <span className={cn('font-medium', score.className)}>{score.text}</span>}
           <RelativeTime value={sentence.createdAt} className="ml-auto" />
-          <StarButton
-            id={sentence.id}
-            starred={sentence.starred}
-            kind="sentence"
-            className="-my-1 size-6"
-          />
+          {/* Stars live on Sentence; a v2 turn has none yet. */}
+          {sentence.kind === 'sentence' && (
+            <StarButton
+              id={sentence.id}
+              starred={sentence.starred}
+              kind="sentence"
+              className="-my-1 size-6"
+            />
+          )}
         </>
       }
       dialog={() => (

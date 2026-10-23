@@ -2,7 +2,7 @@ import { EmptyState } from '@/components/common/empty-state';
 import { HistoryList } from '@/components/features/history/history-list';
 import { PageShell } from '@/components/layout/page-shell';
 import type { FuriganaMode } from '@/lib/settings/schema';
-import type { SentenceHistoryRow } from '@/lib/library/practice';
+import type { HistoryRow } from '@/lib/app/history';
 
 export function HistoryView({
   sentences,
@@ -10,7 +10,7 @@ export function HistoryView({
   speechRate,
   furiganaMode = 'app',
 }: {
-  sentences: SentenceHistoryRow[];
+  sentences: HistoryRow[];
   voiceSpeaker?: number;
   speechRate?: number;
   furiganaMode?: FuriganaMode;
