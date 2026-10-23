@@ -1,6 +1,6 @@
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { createTestDb } from '@/lib/db/test-db';
-import { buildImport, spellHanviet, type OjSource } from '@/lib/import/openjlpt';
+import { buildImport, exampleFromNotes, spellHanviet, type OjSource } from '@/lib/import/openjlpt';
 
 createTestDb('sakubun-openjlpt-');
 
@@ -15,6 +15,7 @@ const SRC: OjSource = {
       level: 'N3',
       meaningEn: 'no wonder',
       formation: 'V + わけだ',
+      example: { ja: '道理で寒いわけだ。', furigana: null, en: 'No wonder (it is) cold.' },
     },
     { id: 'g:novi', expression: '〜ものの', level: 'N2', meaningEn: 'although' },
   ],
@@ -52,6 +53,17 @@ describe('spellHanviet', () => {
 
 describe('buildImport', () => {
   const r = buildImport(SRC, VI, HV, NOW);
+
+  it('ghi câu ví dụ vào notes và đọc lại được nguyên văn', () => {
+    const wake = r.items.find((i) => i.expression === '〜わけだ')!;
+    expect(exampleFromNotes(wake.notes)).toEqual({
+      ja: '道理で寒いわけだ。',
+      en: 'No wonder (it is) cold.',
+    });
+    expect(exampleFromNotes(r.items.find((i) => i.expression === '峠')!.notes)).toBeNull();
+    expect(exampleFromNotes('Ví dụ: 雨が降る。')).toEqual({ ja: '雨が降る。', en: null });
+    expect(exampleFromNotes(null)).toBeNull();
+  });
 
   it('bỏ qua mục chưa có nghĩa tiếng Việt', () => {
     expect(r.skipped.map((s) => s.id)).toEqual(['g:novi']);
