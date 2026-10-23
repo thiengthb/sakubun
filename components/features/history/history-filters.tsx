@@ -14,7 +14,7 @@ import { SearchInput } from '@/components/common/search-input';
 import { EXERCISE_TYPE_LABELS, durationSecOf } from '@/components/features/history/history-cards';
 import { DATE_PRESETS, LENGTH_BUCKETS, withinDatePreset, type DatePreset } from '@/lib/core/format';
 import { JLPT_LEVELS } from '@/lib/settings/schema';
-import type { SentenceHistoryRow } from '@/lib/library/practice';
+import type { HistoryRow } from '@/lib/app/history';
 
 const STATUS_LABELS: Record<string, string> = {
   GRADED: 'Đã chấm',
@@ -160,15 +160,15 @@ function historyChips(f: Filters, onPatch: (patch: Partial<Filters>) => void): F
   return chips;
 }
 
-export function isFail(s: SentenceHistoryRow): boolean {
+export function isFail(s: HistoryRow): boolean {
   return s.ratings.some((r) => r.rating <= 2);
 }
 
-export function inDatePreset(s: SentenceHistoryRow, preset: string): boolean {
+export function inDatePreset(s: HistoryRow, preset: string): boolean {
   return withinDatePreset(s.answeredAt ?? s.createdAt, preset as DatePreset);
 }
 
-export function inDurationBucket(s: SentenceHistoryRow, bucket: string): boolean {
+export function inDurationBucket(s: HistoryRow, bucket: string): boolean {
   if (bucket === 'all') return true;
   const d = durationSecOf(s);
   if (d == null) return false;

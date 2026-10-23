@@ -18,7 +18,7 @@ import {
 } from '@/components/features/history/history-filters';
 import { lengthBucket, type LengthBucketKey } from '@/lib/core/format';
 import { furiganaInApp, type FuriganaMode } from '@/lib/settings/schema';
-import type { SentenceHistoryRow } from '@/lib/library/practice';
+import type { HistoryRow } from '@/lib/app/history';
 
 export function HistoryList({
   sentences,
@@ -26,7 +26,7 @@ export function HistoryList({
   speechRate,
   furiganaMode = 'app',
 }: {
-  sentences: SentenceHistoryRow[];
+  sentences: HistoryRow[];
   voiceSpeaker?: number;
   speechRate?: number;
   furiganaMode?: FuriganaMode;
