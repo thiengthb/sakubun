@@ -133,6 +133,8 @@ export interface StageTurnInput {
   hint?: string | null;
   // Only with a hint: the learner asked for the other direction.
   direction?: Direction | null;
+  // The exact words in ja that use the item, when it is used in a form the checks miss.
+  uses?: string | null;
 }
 
 export interface StagedTurn {
@@ -163,7 +165,7 @@ export async function stageTurn(
     hint,
   };
   const checked = checkStage(
-    draft,
+    { ...draft, uses: input.uses?.trim() || null },
     { kind: asItemKind(item.kind), expression: item.expression, reading: item.reading },
     spec.lengthJa,
   );
@@ -204,6 +206,10 @@ function parseErrorTags(tags: readonly string[] | undefined): ActionResult<Error
   return ok(list as ErrorTag[]);
 }
 
+function isRecordNotFound(e: unknown): boolean {
+  return typeof e === 'object' && e !== null && 'code' in e && e.code === 'P2025';
+}
+
 async function findTurn(turnId: string) {
   return prisma.turn.findUnique({
     where: { id: turnId },
@@ -237,7 +243,9 @@ export async function gradeTurn(
   const hinted = input.hinted === true;
   const rating = finalRating(parsed.data, hinted);
   const { desiredRetention } = await getSettings();
-  const [recorded] = await recordReviews(
+  // The turn row is updated only while still staged, in the same transaction as the review: of two
+  // grades sent at once, the second fails as a whole and writes nothing.
+  const recordedOrGone = await recordReviews(
     [{ itemId: turn.item.id, srs: turn.item.srs, rating, turnId: turn.id, errorTags: tags.data }],
     {
       retention: desiredRetention,
@@ -245,7 +253,7 @@ export async function gradeTurn(
       channel: 'mcp',
       alsoWrite: [
         prisma.turn.update({
-          where: { id: turn.id },
+          where: { id: turn.id, status: 'staged' },
           data: {
             status: moved.data,
             answer,
@@ -258,7 +266,12 @@ export async function gradeTurn(
         }),
       ],
     },
-  );
+  ).catch((e: unknown) => {
+    if (isRecordNotFound(e)) return null;
+    throw e;
+  });
+  if (!recordedOrGone) return err('Turn already graded. Call next_turn for a new one.');
+  const [recorded] = recordedOrGone;
   return ok({ rating, lowered: rating !== parsed.data, nextDue: recorded.next.due });
 }
 
@@ -267,6 +280,10 @@ export async function skipTurn(turnId: string): Promise<ActionResult<undefined>>
   if (!turn) return err('Unknown turnId. Call next_turn for a new turn.');
   const moved = nextTurnStatus(turn.status as 'staged', { type: 'skip' });
   if (!moved.ok) return moved;
-  await prisma.turn.update({ where: { id: turn.id }, data: { status: moved.data } });
+  const { count } = await prisma.turn.updateMany({
+    where: { id: turn.id, status: 'staged' },
+    data: { status: moved.data },
+  });
+  if (count === 0) return err('Turn already finished. Call next_turn for a new one.');
   return ok(undefined);
 }

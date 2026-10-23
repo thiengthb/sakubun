@@ -64,6 +64,21 @@ describe('patternAppears', () => {
     ['〜にする（decide）', '私はカレーにします。', true],
     ['〜ばかりに', '遅れたせいで乗れなかった。', false],
     ['〜ざるを得ない', '計画を縮小するしかない。', false],
+    // Polite forms of patterns ending in ない.
+    ['〜てはいけない', 'ここでたばこを吸ってはいけません。', true],
+    ['〜なければならない', '明日は早く起きなければなりません。', true],
+    ['〜わけにはいかない', '今日は休むわけにはいきません。', true],
+    ['〜はずがない', 'そんなことがあるはずがありません。', true],
+    // A form that would shrink to one kana must not match anything that has that kana.
+    ['〜ない', '雨なのに出かけた。', false],
+    ['〜たい', '昨日映画を見た。', false],
+    ['〜まい', '毎朝運動します。', false],
+    ['〜くない / 〜かった / 〜くなかった', 'この部屋はあまり広くないです。', true],
+    ['〜てくる', 'ちょっとコンビニに行ってきます。', true],
+    ['〜てならない', '故郷の母のことが心配でならない。', true],
+    ['〜ことに（は）', '驚いたことに、彼は会社を辞めた。', true],
+    ['あまり〜ない', '私はあまりテレビを見ません。', true],
+    ['お〜する', '重そうですね。お持ちしましょうか。', true],
   ];
   it.each(cases)('%s in %s → %s', (expression, ja, expected) => {
     expect(patternAppears(expression, ja)).toBe(expected);
@@ -77,6 +92,7 @@ describe('checkStage', () => {
     jaRuby: null,
     vi: 'Chỉ vì trễ một chút mà không lên được tàu.',
     hint: null,
+    uses: null,
   };
 
   it('accepts a sentence that uses the target within the length window', () => {
@@ -105,6 +121,19 @@ describe('checkStage', () => {
     );
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.error).toContain('does not use 〜ばかりに');
+  });
+
+  it('accepts an irregular form the learner names with uses, copied from ja', () => {
+    const honorific = { kind: 'GRAMMAR' as const, expression: '尊敬語', reading: null };
+    const ja = '社長は何時ごろいらっしゃいますか。';
+    expect(checkStage({ ...draft, ja }, honorific, [12, 22]).ok).toBe(false);
+    expect(checkStage({ ...draft, ja, uses: 'いらっしゃいます' }, honorific, [12, 22]).ok).toBe(
+      true,
+    );
+    expect(checkStage({ ...draft, ja, uses: 'おっしゃる' }, honorific, [12, 22])).toEqual({
+      ok: false,
+      error: 'uses must be two or more characters copied exactly from ja.',
+    });
   });
 
   it('finds a conjugated vocabulary word', () => {

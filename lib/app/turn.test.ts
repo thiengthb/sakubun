@@ -178,6 +178,22 @@ describe('gradeTurn', () => {
     expect(await prisma.reviewLog.count()).toBe(1);
   });
 
+  it('two grades sent at once rate the item once', async () => {
+    const { grammar } = await seed();
+    const turnId = await staged(grammar);
+    const results = await Promise.all([
+      T.gradeTurn({ turnId, answer: 'x', rating: 3 }, NOW),
+      T.gradeTurn({ turnId, answer: 'y', rating: 4 }, NOW),
+    ]);
+    expect(results.filter((r) => r.ok)).toHaveLength(1);
+    expect(results.find((r) => !r.ok)).toEqual({
+      ok: false,
+      error: 'Turn already graded. Call next_turn for a new one.',
+    });
+    expect(await prisma.reviewLog.count()).toBe(1);
+    expect((await prisma.srsState.findUniqueOrThrow({ where: { itemId: grammar } })).reps).toBe(1);
+  });
+
   it('asks for error tags on a wrong answer and rejects unknown ones', async () => {
     const { grammar } = await seed();
     const turnId = await staged(grammar);
