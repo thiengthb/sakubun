@@ -115,7 +115,7 @@ lib/
   auth/                   better-auth (chỉ Google), chính sách đăng nhập, MCP key
   db/                     Prisma client + trình dựng DB cho test
   japanese/               Furigana, romaji
-  domain/                 Lõi học mới, logic thuần: hàng ôn, lượt luyện, chấm ôn nhanh, cách soạn câu
+  domain/                 Lõi học mới, logic thuần: hàng ôn, lượt luyện, chấm ôn nhanh, thẻ điền từ, cách soạn câu
   app/                    Use-case của lõi mới: đọc/ghi DB rồi gọi domain (getQueue, recordReviews)
   srs/                    FSRS, chọn bài, retention, calibration, streak
   library/                Kho học của người dùng + tầng dữ liệu practice
