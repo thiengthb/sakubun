@@ -56,6 +56,19 @@ function notesFor(e: OjEntry): string {
   return parts.join(' · ');
 }
 
+// Reads back the example notesFor wrote, for items whose only sentence lives in their notes.
+export function exampleFromNotes(
+  notes: string | null | undefined,
+): { ja: string; en: string | null } | null {
+  const at = notes?.lastIndexOf('Ví dụ: ') ?? -1;
+  if (!notes || at < 0) return null;
+  const rest = notes.slice(at + 'Ví dụ: '.length).trim();
+  const open = rest.indexOf(' (');
+  const ja = (open < 0 ? rest : rest.slice(0, open)).trim();
+  const en = open < 0 || !rest.endsWith(')') ? null : rest.slice(open + 2, -1).trim() || null;
+  return ja ? { ja, en } : null;
+}
+
 export interface BuildResult {
   items: {
     id: string;
