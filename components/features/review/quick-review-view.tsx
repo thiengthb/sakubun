@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/common/empty-state';
-import { ReviewCard, type CardTts } from '@/components/features/review/review-card';
+import { ReviewCard, type CardTts } from '@/components/common/review-card';
 import type { CardAnswer, QuickCard, QuickReview } from '@/lib/app/quick-review';
 import type { ActionResult } from '@/lib/core/action-result';
 import { humanizeUntil } from '@/lib/core/format';
