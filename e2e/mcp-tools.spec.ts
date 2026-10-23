@@ -43,6 +43,7 @@ const STEPS: Step[] = [
   { name: 'get_settings', args: () => ({}) },
   { name: 'get_stats', args: () => ({}) },
   { name: 'get_weak_report', args: () => ({}) },
+  { name: 'get_review_load', args: () => ({ days: 3 }) },
   { name: 'get_library_health', args: () => ({}) },
   { name: 'get_protocol', args: () => ({ mode: 'practice' }) },
   { name: 'get_protocol', args: () => ({ mode: 'quiz' }) },
