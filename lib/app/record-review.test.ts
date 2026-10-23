@@ -61,4 +61,19 @@ describe('recordReviews', () => {
     expect((await prisma.srsState.findUniqueOrThrow({ where: { itemId } })).reps).toBe(0);
     expect(await prisma.reviewLog.count()).toBe(0);
   });
+
+  it('refuses the same item twice in one call, before writing anything', async () => {
+    const itemId = await seedOne('準備');
+    const srs = await prisma.srsState.findUniqueOrThrow({ where: { itemId } });
+    await expect(
+      R.recordReviews(
+        [
+          { itemId, srs, rating: 3 },
+          { itemId, srs, rating: 1 },
+        ],
+        { retention: 0.9, now: NOW },
+      ),
+    ).rejects.toThrow(/reviewed twice/);
+    expect(await prisma.reviewLog.count()).toBe(0);
+  });
 });

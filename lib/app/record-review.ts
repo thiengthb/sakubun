@@ -29,6 +29,10 @@ export async function recordReviews(
   options: { retention: number; now: Date; alsoWrite?: Prisma.PrismaPromise<unknown>[] },
 ): Promise<RecordedReview[]> {
   const { retention, now } = options;
+  // Two reviews of one item in a call would both be computed from the same stale schedule.
+  const ids = reviews.map((r) => r.itemId);
+  const repeated = ids.find((id, i) => ids.indexOf(id) !== i);
+  if (repeated) throw new Error(`Item ${repeated} is reviewed twice in one call; send it once.`);
   const recorded: RecordedReview[] = [];
   const writes: Prisma.PrismaPromise<unknown>[] = [...(options.alsoWrite ?? [])];
 

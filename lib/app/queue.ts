@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/db/db';
 import {
+  CARD_STATE,
   planQueue,
   type QueueCandidate,
   type QueuePlan,
@@ -15,9 +16,6 @@ import { studyDayStart } from '@/lib/srs/select';
 
 // Daily cap on new vocabulary until roadmap 1.3 turns it into a setting.
 export const DEFAULT_DAILY_NEW_VOCAB = 15;
-
-// Started items fetched per call; far more than one sitting answers.
-const STARTED_FETCH = 300;
 
 export interface QueueCard extends QueueCandidate {
   expression: string;
@@ -73,7 +71,7 @@ export async function studiedToday(settings: Settings, now: Date): Promise<Studi
   });
   const counts: StudiedToday = { newGrammar: 0, newVocab: 0, reviews: 0 };
   for (const log of logs) {
-    if (log.state === 2) counts.reviews++;
+    if (log.state === CARD_STATE.REVIEW) counts.reviews++;
     if (log.state !== 0 || !log.item) continue;
     if (log.item.kind === VOCAB_KIND) counts.newVocab++;
     else counts.newGrammar++;
@@ -97,11 +95,22 @@ export async function getQueue(now: Date = new Date(), limit?: number): Promise<
   const live = { suspended: false };
   const select = { state: true, due: true, item: { select: ITEM_FIELDS } } as const;
 
-  const [started, newGrammar, newVocab, ahead] = await Promise.all([
+  // Learning steps are fetched whole and reviews only up to today's allowance, so a backlog of
+  // overdue reviews can never push a card that is mid-step out of the fetch.
+  const [learning, reviews, newGrammar, newVocab, ahead] = await Promise.all([
     prisma.srsState.findMany({
-      where: { state: { not: 0 }, due: { lte: now }, item: live },
+      where: {
+        state: { in: [CARD_STATE.LEARNING, CARD_STATE.RELEARNING] },
+        due: { lte: now },
+        item: live,
+      },
       orderBy: { due: 'asc' },
-      take: STARTED_FETCH,
+      select,
+    }),
+    prisma.srsState.findMany({
+      where: { state: CARD_STATE.REVIEW, due: { lte: now }, item: live },
+      orderBy: { due: 'asc' },
+      take: Math.max(0, caps.maxReviews - today.reviews),
       select,
     }),
     prisma.srsState.findMany({
@@ -133,7 +142,7 @@ export async function getQueue(now: Date = new Date(), limit?: number): Promise<
     }),
   ]);
 
-  const rows = [...started, ...newGrammar, ...newVocab, ...(ahead ? [ahead] : [])];
+  const rows = [...learning, ...reviews, ...newGrammar, ...newVocab, ...(ahead ? [ahead] : [])];
   const byId = new Map(rows.map((r) => [r.item.id, toCard(r)]));
   const plan = planQueue({ candidates: [...byId.values()], caps, today, now, limit });
   return { ...plan, cards: plan.cards.map((c) => byId.get(c.id)!), today };

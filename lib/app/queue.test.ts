@@ -21,8 +21,11 @@ async function seed(kind: 'GRAMMAR' | 'VOCAB', count: number, level = 'N5'): Pro
     'MCP',
     kind,
   );
-  const rows = await P.listItems({ kind });
-  return expressions.map((e) => rows.find((r) => r.expression === e)!.itemId);
+  const rows = await prisma.item.findMany({
+    where: { kind },
+    select: { id: true, expression: true },
+  });
+  return expressions.map((e) => rows.find((r) => r.expression === e)!.id);
 }
 
 async function review(itemId: string, rating: 1 | 2 | 3 | 4, at: Date): Promise<void> {
@@ -87,6 +90,35 @@ describe('getQueue', () => {
     const queue = await Q.getQueue(later);
     expect(queue.cards[0].id).toBe(due);
     expect(queue.cards.map((c) => c.id)).not.toContain(suspended);
+  });
+
+  it('a backlog of overdue reviews never hides a card that is mid-step', async () => {
+    await P.saveSettings({ maxReviewsPerDay: 500 });
+    const backlog = await seed('VOCAB', 301);
+    const [learning] = await seed('GRAMMAR', 1);
+    await prisma.srsState.updateMany({
+      where: { itemId: { in: backlog } },
+      data: { state: 2, due: new Date(NOW.getTime() - 86_400_000), reps: 3 },
+    });
+    await prisma.srsState.update({
+      where: { itemId: learning },
+      data: { state: 1, due: new Date(NOW.getTime() - MINUTE), reps: 1 },
+    });
+
+    const queue = await Q.getQueue(NOW);
+    expect(queue.cards[0].id).toBe(learning);
+    expect(queue.cards.filter((c) => c.state === 2)).toHaveLength(301);
+  });
+
+  it('fetches reviews only up to what is left of the daily allowance', async () => {
+    await P.saveSettings({ maxReviewsPerDay: 10 });
+    const backlog = await seed('VOCAB', 12);
+    await prisma.srsState.updateMany({
+      where: { itemId: { in: backlog } },
+      data: { state: 2, due: new Date(NOW.getTime() - 86_400_000), reps: 3 },
+    });
+    const queue = await Q.getQueue(NOW);
+    expect(queue.cards.filter((c) => c.state === 2)).toHaveLength(10);
   });
 
   it('keeps new vocabulary at or below the learner level', async () => {
