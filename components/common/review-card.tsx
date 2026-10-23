@@ -43,7 +43,7 @@ function Sentence({
             <span
               key={i}
               aria-label="chỗ trống"
-              className="mx-1 inline-block w-16 border-b-2 border-foreground align-baseline"
+              className="mx-1 inline-block h-[1.15em] w-16 border-b-2 border-foreground align-[-0.2em]"
             >
               {'​'}
             </span>
@@ -119,16 +119,18 @@ export function ReviewCard({
           )}
         </div>
       ) : (
-        <SpokenLine
-          text={card.expression}
-          ruby={ruby}
-          showFurigana={showFurigana}
-          speaker={tts.voiceSpeaker}
-          rate={tts.speechRate}
-          label="Nghe"
-          align="start"
-          className="text-3xl font-semibold"
-        />
+        // No example sentence yet: the item alone, framed so the card does not look empty.
+        <div className="flex justify-center rounded-2xl border bg-card px-4 py-8 text-center">
+          <SpokenLine
+            text={card.expression}
+            ruby={ruby}
+            showFurigana={showFurigana}
+            speaker={tts.voiceSpeaker}
+            rate={tts.speechRate}
+            label="Nghe"
+            className="text-2xl leading-snug font-semibold sm:text-3xl"
+          />
+        </div>
       )}
 
       {card.mode === 'cloze' && (

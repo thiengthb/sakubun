@@ -7,6 +7,7 @@ import { toastResult } from '@/lib/core/action-toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
+import { DataPagination } from '@/components/ui/data-pagination';
 import { EmptyState } from '@/components/common/empty-state';
 import { PageShell } from '@/components/layout/page-shell';
 import { SearchInput } from '@/components/common/search-input';
@@ -17,6 +18,9 @@ import { speakable } from '@/lib/core/format';
 import { buildFuriganaMarkup } from '@/lib/japanese/furigana';
 import { GROUP_KIND_LABELS } from '@/lib/library/group-kinds';
 import type { GroupDetail, GroupMemberItem } from '@/lib/library/groups';
+
+// A phone shows about this many rows above the action bar; more pages beat one 500-row scroll.
+const PAGE_SIZE = 20;
 
 function PickerLine({
   item,
@@ -33,16 +37,20 @@ function PickerLine({
 }) {
   return (
     <span className="min-w-0 flex-1 space-y-0.5">
-      <span className="flex flex-wrap items-center gap-2">
-        <SpokenLine
-          text={item.expression}
-          speakText={speakable(item.expression)}
-          ruby={buildFuriganaMarkup(item.expression, item.reading)}
-          showFurigana={showFurigana}
-          speaker={voiceSpeaker}
-          rate={speechRate}
-          label="Nghe"
-        />
+      <span className="flex min-w-0 items-center gap-2">
+        <span className="min-w-0 flex-1">
+          <SpokenLine
+            truncate
+            className="leading-[1.9]"
+            text={item.expression}
+            speakText={speakable(item.expression)}
+            ruby={buildFuriganaMarkup(item.expression, item.reading)}
+            showFurigana={showFurigana}
+            speaker={voiceSpeaker}
+            rate={speechRate}
+            label="Nghe"
+          />
+        </span>
         {mixed && (
           <span className="shrink-0 text-xs tracking-wide text-muted-foreground uppercase">
             {item.kind === 'VOCAB' ? 'từ' : 'ngữ pháp'}
@@ -76,6 +84,7 @@ export function GroupItemPickerBody({
   onCancel: () => void;
 }) {
   const [query, setQuery] = useState('');
+  const [page, setPage] = useState(1);
   const [sel, setSel] = useState<Set<string>>(new Set());
   const [isPending, startTransition] = useTransition();
   const mixed = group.kind === 'mixed';
@@ -87,6 +96,9 @@ export function GroupItemPickerBody({
       [i.expression, i.reading, i.meaningVi].some((f) => f?.toLowerCase().includes(q)),
     );
   }, [addable, query]);
+
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const shown = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const toggle = (id: string) =>
     setSel((prev) => {
@@ -136,11 +148,21 @@ export function GroupItemPickerBody({
           }
         />
       ) : (
-        <Card className={cn('gap-3', layout === 'dialog' && 'min-h-0 flex-1 overflow-hidden')}>
+        <Card
+          className={cn(
+            'gap-3',
+            layout === 'dialog' && 'min-h-0 flex-1 overflow-hidden',
+            // The sticky action bar needs a card that does not clip it.
+            layout === 'page' && 'overflow-visible',
+          )}
+        >
           <CardContent className="flex flex-row items-center gap-2 sm:gap-3">
             <SearchInput
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                setPage(1);
+              }}
               placeholder="Tìm theo mẫu, cách đọc hoặc nghĩa…"
               className="min-w-0 flex-1 sm:max-w-xs"
             />
@@ -154,7 +176,7 @@ export function GroupItemPickerBody({
           ) : (
             <div className="min-h-0 flex-1 overflow-y-auto border-y border-border">
               <ul className="divide-y divide-border">
-                {filtered.map((i) => (
+                {shown.map((i) => (
                   <li key={i.itemId}>
                     <label className="flex cursor-pointer items-center gap-3 px-4 py-3">
                       <Checkbox
@@ -176,8 +198,21 @@ export function GroupItemPickerBody({
               </ul>
             </div>
           )}
+          <DataPagination
+            page={page}
+            pageCount={pageCount}
+            onPageChange={setPage}
+            className="px-4"
+          />
 
-          <CardContent className="flex items-center gap-2">
+          <CardContent
+            className={cn(
+              'flex items-center gap-2',
+              // On a phone the list runs past the fold: keep the add button in reach.
+              layout === 'page' &&
+                'sticky bottom-0 z-10 rounded-b-xl bg-card py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]',
+            )}
+          >
             <span className="text-sm text-muted-foreground tabular-nums">Đã chọn {sel.size}</span>
             <div className="ml-auto flex gap-2">
               <Button variant="outline" onClick={onCancel} disabled={isPending}>

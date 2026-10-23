@@ -162,7 +162,8 @@
   }
 
   .furigana rt {
-    font-size: 0.6em;
+    /* Half the base size: a wider reading would spread the kanji under it apart. */
+    font-size: 0.5em;
     visibility: hidden;
     user-select: none;
   }

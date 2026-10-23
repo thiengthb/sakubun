@@ -60,7 +60,7 @@ export function GroupCards({
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex min-h-[calc(100dvh-9rem)] flex-col gap-4">
       <div className="flex items-center gap-2">
         <p className="flex-1 text-sm text-muted-foreground">
           Chỉ để xem lại, không tính vào lịch ôn.
@@ -91,24 +91,26 @@ export function GroupCards({
         ))}
       </div>
 
-      {done || !card ? (
-        <div className="flex flex-col items-center gap-2 py-10 text-center">
-          <p className="font-semibold">Đã xem hết {cards.length} thẻ</p>
-          <p className="text-sm text-muted-foreground">
-            Muốn được chấm và xếp lịch thì ôn ở trang Ôn nhanh.
-          </p>
-        </div>
-      ) : (
-        <ReviewCard
-          key={card.itemId}
-          card={card}
-          picked={null}
-          revealed={revealed}
-          showFurigana={showFurigana}
-          tts={tts}
-          onPick={() => {}}
-        />
-      )}
+      <div className="flex-1">
+        {done || !card ? (
+          <div className="flex flex-col items-center gap-2 py-10 text-center">
+            <p className="font-semibold">Đã xem hết {cards.length} thẻ</p>
+            <p className="text-sm text-muted-foreground">
+              Muốn được chấm và xếp lịch thì ôn ở trang Ôn nhanh.
+            </p>
+          </div>
+        ) : (
+          <ReviewCard
+            key={card.itemId}
+            card={card}
+            picked={null}
+            revealed={revealed}
+            showFurigana={showFurigana}
+            tts={tts}
+            onPick={() => {}}
+          />
+        )}
+      </div>
 
       <div className="sticky bottom-0 flex gap-2.5 bg-background pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
         <Button
@@ -121,15 +123,25 @@ export function GroupCards({
           Trước
         </Button>
         {done ? (
-          <Button size="lg" className="h-14 flex-1 text-base" onClick={() => go(0)}>
+          <Button key="restart" size="lg" className="h-14 flex-1 text-base" onClick={() => go(0)}>
             Xem lại từ đầu
           </Button>
         ) : revealed ? (
-          <Button size="lg" className="h-14 flex-1 text-base" onClick={() => go(index + 1)}>
+          <Button
+            key="next"
+            size="lg"
+            className="h-14 flex-1 text-base"
+            onClick={() => go(index + 1)}
+          >
             Tiếp
           </Button>
         ) : (
-          <Button size="lg" className="h-14 flex-1 text-base" onClick={() => setRevealed(true)}>
+          <Button
+            key="reveal"
+            size="lg"
+            className="h-14 flex-1 bg-foreground text-base text-background hover:bg-foreground/85"
+            onClick={() => setRevealed(true)}
+          >
             Xem đáp án
           </Button>
         )}
