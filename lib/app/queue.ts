@@ -14,9 +14,6 @@ import { studyDayStart } from '@/lib/srs/select';
 // Reads what the queue needs from the database and lets lib/domain/queue decide. Nothing calls this
 // yet; quick review (roadmap 2.3) and next_turn (3.1) will.
 
-// Daily cap on new vocabulary until roadmap 1.3 turns it into a setting.
-export const DEFAULT_DAILY_NEW_VOCAB = 15;
-
 export interface QueueCard extends QueueCandidate {
   expression: string;
   reading: string | null;
@@ -89,7 +86,7 @@ export async function getQueue(now: Date = new Date(), limit?: number): Promise<
   const today = await studiedToday(settings, now);
   const caps = {
     newGrammar: settings.dailyNewGrammar,
-    newVocab: DEFAULT_DAILY_NEW_VOCAB,
+    newVocab: settings.dailyNewVocab,
     maxReviews: settings.maxReviewsPerDay,
   };
   const live = { suspended: false };

@@ -1,4 +1,4 @@
-import type { JlptLevel } from '@/lib/settings/schema';
+import type { DirectionMode, JlptLevel } from '@/lib/settings/schema';
 import { JLPT_LEVELS } from '@/lib/settings/schema';
 import { CARD_STATE } from '@/lib/domain/queue';
 
@@ -7,7 +7,6 @@ import { CARD_STATE } from '@/lib/domain/queue';
 // one level easier while the item is still new. A wish spoken in chat travels as a hint, unsaved.
 
 export type Direction = 'JA_VI' | 'VI_JA';
-export type DirectionMode = 'auto' | Direction;
 export type Register = 'casual' | 'polite' | 'honorific' | 'written';
 
 // Stability (days) from which an item counts as known well enough to be produced, not just read.
