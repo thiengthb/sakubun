@@ -71,6 +71,18 @@ describe('MCP v2', () => {
     expect(prompts.map((p) => p.name)).toEqual(['hoc']);
   });
 
+  it('tells Claude that a right answer is a 3 and Easy needs an instant, flawless one', async () => {
+    // Claude graded every right answer 4 (Easy) on 2026-10-23, pushing items 84 days out.
+    const { tools } = await client.listTools();
+    expect(tools.find((t) => t.name === 'grade_turn')?.description).toMatch(
+      /3 right \(usual\), 4 instant and flawless/,
+    );
+    const hoc = await client.getPrompt({ name: 'hoc' });
+    const text = (hoc.messages[0].content as { text: string }).text;
+    expect(text).toContain('3 right (the usual grade)');
+    expect(text).toContain('4 only if instant and flawless');
+  });
+
   it('runs one whole turn and each result names the next call', async () => {
     const next = await call('next_turn');
     expect(next.isError).toBe(false);
