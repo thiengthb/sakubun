@@ -11,7 +11,7 @@ follow `nuc-infra/AGENTS.md`.
 | 1.1 | `lib/domain`: queue (separate caps for grammar and vocabulary), turn state machine, grading rules; not wired in | Domain tests green | low |
 | 1.2 | `lib/app/recordReview` + `getQueue`; old `submitReview` goes through `recordReview` | Characterization tests still green | medium |
 | 1.3 | Eight settings (migrate old settings) + lean Settings tab | Settings e2e green | medium |
-| 2.1 | Clickable flashcard prototypes, two directions (not a PR) | thien picks one | - |
+| 2.1 | Clickable flashcard prototypes, two directions (not a PR) | Done: thien picked B, context first (sentence with the target underlined, answer revealed below) | - |
 | 2.2 | Cloze builder from example sentences (WordQuiz algorithm) | Tests: one right answer, four distinct choices, answer not leaked | low |
 | 2.3 | `/review` page + the single card component, wired to `answerCard` | e2e at 390px and desktop | medium |
 | 2.4 | PWA (manifest, icon) | Installs on a phone home screen | low |
