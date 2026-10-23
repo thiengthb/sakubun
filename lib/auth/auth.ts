@@ -15,6 +15,9 @@ const BASE_URL = process.env.BETTER_AUTH_URL || 'http://localhost:3789';
 // The MCP endpoint as claude.ai and ChatGPT see it; OAuth tokens are issued for this audience only.
 export const MCP_RESOURCE = new URL('/api/mcp', BASE_URL).href;
 
+// Who signs those tokens: better-auth under its default /api/auth base path.
+export const AUTH_ISSUER = new URL('/api/auth', BASE_URL).href;
+
 const NOT_ALLOWED = 'Tài khoản này không được phép dùng sakubun.';
 
 async function assertRegistrationOpen(): Promise<void> {
