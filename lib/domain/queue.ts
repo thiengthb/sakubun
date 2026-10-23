@@ -1,8 +1,10 @@
+import type { ItemKind } from '@/lib/library/item-kinds';
+
 // What to study next, as pure logic: the data layer reads candidates and today's counts, this file
 // decides. Grammar and vocabulary are equal items, each with its own daily cap for new items.
 // Decision: docs/decisions/0001-core-rewrite.md.
 
-export type ItemKind = 'GRAMMAR' | 'VOCAB';
+export type { ItemKind };
 
 // ts-fsrs State values.
 export const CARD_STATE = { NEW: 0, LEARNING: 1, REVIEW: 2, RELEARNING: 3 } as const;
