@@ -25,7 +25,10 @@ export default defineConfig({
   ],
   webServer: {
     command: `npx next dev -p ${E2E_PORT}`,
-    url: E2E_BASE_URL,
+    // Readiness is probed before globalSetup recreates the DB file, so probe a route that never
+    // touches the DB: the OAuth provider writes to it the first time auth starts, and a handle on the
+    // old file would turn every later write into SQLITE_READONLY_DBMOVED.
+    url: `${E2E_BASE_URL}/manifest.webmanifest`,
     reuseExistingServer: false,
     timeout: 120_000,
     env: {

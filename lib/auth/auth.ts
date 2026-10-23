@@ -1,10 +1,19 @@
 import { betterAuth } from 'better-auth';
 import { APIError } from 'better-auth/api';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
-import { admin } from 'better-auth/plugins';
+import { admin, jwt } from 'better-auth/plugins';
 import { nextCookies } from 'better-auth/next-js';
+import { mcp } from '@better-auth/mcp';
 import { prisma } from '@/lib/db/db';
 import { isAllowedEmail, isGoogleEnabled, isPasswordLoginEnabled } from '@/lib/auth/login-policy';
+import { isAllowedRedirectUri } from '@/lib/auth/oauth-redirects';
+
+// The OAuth provider needs a fixed base URL (it is the token issuer), so an unset BETTER_AUTH_URL falls
+// back to the dev server instead of being derived from each request.
+const BASE_URL = process.env.BETTER_AUTH_URL || 'http://localhost:3789';
+
+// The MCP endpoint as claude.ai and ChatGPT see it; OAuth tokens are issued for this audience only.
+export const MCP_RESOURCE = new URL('/api/mcp', BASE_URL).href;
 
 const NOT_ALLOWED = 'Tài khoản này không được phép dùng sakubun.';
 
@@ -26,7 +35,7 @@ async function assertRegistrationOpen(): Promise<void> {
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, { provider: 'sqlite' }),
-  baseURL: process.env.BETTER_AUTH_URL,
+  baseURL: BASE_URL,
   trustedOrigins: [
     'http://localhost:3789',
     'https://sakubun.thientnse.site',
@@ -52,7 +61,8 @@ export const auth = betterAuth({
     user: {
       create: {
         before: async (user) => {
-          if (!isAllowedEmail(user.email)) throw new APIError('FORBIDDEN', { message: NOT_ALLOWED });
+          if (!isAllowedEmail(user.email))
+            throw new APIError('FORBIDDEN', { message: NOT_ALLOWED });
           await assertRegistrationOpen();
         },
         after: async (user) => {
@@ -68,10 +78,29 @@ export const auth = betterAuth({
             where: { id: session.userId },
             select: { email: true },
           });
-          if (!isAllowedEmail(user?.email)) throw new APIError('FORBIDDEN', { message: NOT_ALLOWED });
+          if (!isAllowedEmail(user?.email))
+            throw new APIError('FORBIDDEN', { message: NOT_ALLOWED });
         },
       },
     },
   },
-  plugins: [admin(), nextCookies()],
+  plugins: [
+    admin(),
+    // Signs the OAuth access tokens; its keys live in the jwks table, so there is no new secret.
+    jwt(),
+    // OAuth for /api/mcp (roadmap 4.1): claude.ai and ChatGPT register themselves (DCR), thien signs in
+    // on /login as usual and approves on /consent. Codes only go to the hosts in oauth-redirects.ts.
+    mcp({
+      loginPage: '/login',
+      consentPage: '/consent',
+      resource: MCP_RESOURCE,
+      allowDynamicClientRegistration: true,
+      allowUnauthenticatedClientRegistration: true,
+      // No client_credentials: every token comes from thien signing in and approving.
+      grantTypes: ['authorization_code', 'refresh_token'],
+      validateRedirectUri: (uri, _registered, exactMatch) =>
+        exactMatch && isAllowedRedirectUri(uri),
+    }),
+    nextCookies(),
+  ],
 });

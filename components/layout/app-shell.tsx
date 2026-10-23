@@ -12,7 +12,8 @@ import { ThemeToggle } from '@/components/layout/theme-toggle';
 import { SidebarUser } from '@/components/layout/sidebar-user';
 import { useSession } from '@/lib/auth/auth-client';
 
-const CHROMELESS = ['/login'];
+// Auth pages: /login, and /consent where claude.ai or ChatGPT asks for access.
+const CHROMELESS = ['/login', '/consent'];
 
 const NAV_ITEMS = [
   { href: '/', label: 'Phân tích', icon: LayoutDashboard, exact: true },

@@ -53,6 +53,7 @@ describe('UI layout standard (nuc-platform/12-ui-layout-standard.md)', () => {
     const EXEMPT = new Set([
       'app/login/page.tsx', // chromeless (AuthNav, no breadcrumb)
       'app/register/page.tsx', // chromeless
+      'app/consent/page.tsx', // chromeless like /login: the OAuth step between claude.ai and sakubun
       'app/dev-skeleton/[route]/page.tsx',
     ]);
     const offenders: string[] = [];
