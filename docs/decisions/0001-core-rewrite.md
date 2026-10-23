@@ -1,6 +1,6 @@
 # 0001. Rewrite the learning core, keep the UI
 
-- Status: accepted in direction, details per PR
+- Status: accepted (plan approved by thien on 2026-10-23), details per PR
 - Date: 2026-10-23
 
 ## Context
@@ -25,11 +25,24 @@ good and the learner wants it kept.
 - Cut: the conversation practice mode, long passages (`huge`, `paragraph`, `story_practice`), and the
   quiz flow where the AI writes and grades the options.
 
-## Open
-
-- Grammar and vocabulary as equal items in the queue: decided after reading kaiwa-canvas and wordquiz.
-- Self-graded practice on the web (vocabulary quiz, flashcards) without an AI.
-- OAuth on `/api/mcp` so the Claude web and mobile apps can connect.
+- Grammar and vocabulary are equal items in one FSRS queue, each with its own daily new cap (defaults:
+  5 grammar, 15 vocabulary). Items never studied are not due.
+- Two ways to practise on the same queue: quick review on the web (flip card, two buttons; cloze with
+  four choices built deterministically from example sentences, graded by the server), and translation
+  turns with Claude over MCP (rated 1-4).
+- Sentence settings are derived from the item, not filled in a form: FSRS state picks the direction
+  (new or learning: Japanese to Vietnamese; stable: Vietnamese to Japanese), the JLPT level picks the
+  length, one step easier while new. Overrides spoken in chat travel as a `hint` and are not saved.
+  The web keeps eight settings: JLPT level, new grammar per day, new vocabulary per day, max reviews per
+  day, direction mode, furigana, voice, rate (plus retention and day cutoff under advanced).
+- The explanation card has five fields: meaning, structure, at most two examples (ja, vi, ruby), one
+  note, register. Filled from imported data first; Claude fills a missing field the first time the item
+  is taught, through `stage_turn`. No versions, quality tiers, merge engine or bulk enrichment.
+  Synonyms and antonyms are optional extras, not required.
+- `LearnerNote` and `McpToolCall` are removed with the other unused tables, after a backup.
+- OAuth on `/api/mcp` (better-auth) so the Claude web and mobile apps can connect; Bearer stays for
+  Claude Desktop and Hermes.
+- Order and PR list: `docs/roadmap.md`.
 
 ## Consequences
 

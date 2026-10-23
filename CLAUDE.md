@@ -37,11 +37,14 @@ Nhánh từ `main`, Conventional Commits, PR nhỏ một mục đích; CI chạy
 
 - **Người quyết cái gì và vì sao** (mục tiêu, hành vi học, schema, xoá dữ liệu); **AI làm và chứng minh nó chạy**
   (nhánh, code, test, PR, sửa CI và review comment).
-- AI không push thẳng `main`, không tự merge, không đụng production.
+- AI không push thẳng `main`, không đụng production. Merge theo nhãn rủi ro của `nuc-infra/AGENTS.md`:
+  `risk:low` (docs, test, code chưa nối vào app) AI merge khi CI xanh; `risk:medium` AI merge khi CI xanh và một
+  phiên khác đã review; `risk:high` (luật làm việc, OAuth, secret, xoá dữ liệu, ngoài lộ trình) thien merge.
+- Lộ trình đã duyệt nằm ở `docs/roadmap.md`; việc ngoài lộ trình thì hỏi trước.
 - Việc nhỏ, rõ: AI làm luôn và mở PR. Việc lớn (đổi hành vi học, schema, kiến trúc): AI viết kế hoạch ngắn,
   người duyệt rồi mới code.
 - Mỗi PR một mục đích, nên dưới khoảng 400 dòng thay đổi; mô tả nói rõ hành vi trước và sau.
-- **Xong** = `npm run verify` xanh, có test cho hành vi mới, CI xanh, người merge. Đổi UI thì kèm ảnh chụp
+- **Xong** = `npm run verify` xanh, có test cho hành vi mới, CI xanh, merge đúng theo nhãn rủi ro. Đổi UI thì kèm ảnh chụp
   hoặc chạy `npm run e2e`.
 - Quyết định thiết kế lớn ghi một file ngắn `docs/decisions/NNNN-<slug>.md` (bối cảnh, quyết định, hệ quả).
 - Logic thuần (không Prisma, không I/O) tách khỏi truy vấn DB.
