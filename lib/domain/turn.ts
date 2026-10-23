@@ -178,7 +178,10 @@ export function checkStage(
   const length = sentenceLength(ja);
   if (length < min || length > max) {
     return err(
-      `ja is ${length} characters; write ${lengthJa[0]}-${lengthJa[1]}, then call stage_turn again.`,
+      draft.hint
+        ? `ja is ${length} characters; keep it at most ${MAX_SENTENCE_CHARS}, then call stage_turn again.`
+        : `ja is ${length} characters; write ${lengthJa[0]}-${lengthJa[1]}, or pass hint if the learner ` +
+            'asked for another length, then call stage_turn again.',
     );
   }
   const uses = draft.uses?.trim() ?? '';
