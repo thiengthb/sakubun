@@ -131,7 +131,7 @@ export function TableSkeleton({
         fallback={Math.min(rows, 5)}
         min={min}
         max={max}
-        className="grid gap-2 md:grid-cols-2 md:gap-3 lg:hidden"
+        className="flex flex-col gap-2 lg:hidden"
         item={RESOURCE_CARD}
       />
       <div className="space-y-2 rounded-lg border p-4 max-lg:hidden">

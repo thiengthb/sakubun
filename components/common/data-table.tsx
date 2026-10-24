@@ -552,59 +552,61 @@ export function DataTable<T>({
       ) : (
         <>
           {renderCard && (
-            <ul
-              data-slot="data-table-cards"
-              className={cn(
-                'grid gap-2 md:grid-cols-2 md:gap-3',
-                // Below 1024px cards are the layout no matter what the switch says (`lg:hidden`).
-                // In card view the same list becomes the wide layout too.
-                cards ? 'xl:grid-cols-3' : 'lg:hidden',
-              )}
-            >
-              {cardRows.map((row, i) => {
-                const selected = enableRowSelection && row.getIsSelected();
-                return (
-                  <li
-                    key={row.id}
-                    className={cn(
-                      'rounded-xl border-2 border-border p-3 shadow-lift-card transition-colors',
-                      selected && 'border-primary bg-primary/5',
-                      cardHref && 'relative hover:bg-muted/40 [&_button]:relative [&_button]:z-10',
-                    )}
-                  >
-                    {cardHref && (
-                      <Link
-                        href={cardHref(row.original)}
-                        className="absolute inset-0 rounded-lg focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-                      >
-                        <span className="sr-only">
-                          {cardHrefLabel?.(row.original) ?? 'Xem chi tiết'}
-                        </span>
-                      </Link>
-                    )}
-                    <div className="flex items-start gap-2.5">
-                      {enableRowSelection && (
-                        <Checkbox
-                          className="relative z-10 mt-1 shrink-0"
-                          checked={selected}
-                          onCheckedChange={(v) => row.toggleSelected(v === true)}
-                          aria-label="Chọn mục này"
-                        />
+            // Below 1024px cards are the layout no matter what the switch says (`lg:hidden`); in
+            // card view the same list is the wide layout too. Columns follow the list's own width
+            // (a container query), so a laptop sidebar does not squeeze two cards into a phone's room.
+            <div className={cn('@container', !cards && 'lg:hidden')}>
+              <ul
+                data-slot="data-table-cards"
+                className="grid gap-2 @2xl:grid-cols-2 @2xl:gap-3 @5xl:grid-cols-3"
+              >
+                {cardRows.map((row, i) => {
+                  const selected = enableRowSelection && row.getIsSelected();
+                  return (
+                    <li
+                      key={row.id}
+                      className={cn(
+                        'rounded-xl border-2 border-border p-3 shadow-lift-card transition-colors',
+                        selected && 'border-primary bg-primary/5',
+                        cardHref &&
+                          'relative hover:bg-muted/40 [&_button]:relative [&_button]:z-10',
                       )}
-                      <div className="min-w-0 flex-1">
-                        {renderCard(row.original, i + 1)}
+                    >
+                      {cardHref && (
+                        <Link
+                          href={cardHref(row.original)}
+                          className="absolute inset-0 rounded-lg focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                        >
+                          <span className="sr-only">
+                            {cardHrefLabel?.(row.original) ?? 'Xem chi tiết'}
+                          </span>
+                        </Link>
+                      )}
+                      <div className="flex items-start gap-2.5">
+                        {enableRowSelection && (
+                          <Checkbox
+                            className="relative z-10 mt-1 shrink-0"
+                            checked={selected}
+                            onCheckedChange={(v) => row.toggleSelected(v === true)}
+                            aria-label="Chọn mục này"
+                          />
+                        )}
+                        <div className="min-w-0 flex-1">{renderCard(row.original, i + 1)}</div>
                       </div>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
           )}
 
           {renderCard && (
             <div
               ref={sentinelRef}
-              className={cn('py-2 text-center text-xs text-muted-foreground', !cards && 'lg:hidden')}
+              className={cn(
+                'py-2 text-center text-xs text-muted-foreground',
+                !cards && 'lg:hidden',
+              )}
             >
               {moreCards ? 'Đang tải thêm…' : `${filteredCount} ${countNoun}`}
             </div>
