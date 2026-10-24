@@ -1,12 +1,12 @@
 'use client';
 
 import { useMemo, useState, useTransition } from 'react';
-import { Save } from 'lucide-react';
+import { Database, Dumbbell, Save, UserRound } from 'lucide-react';
 import { toastResult } from '@/lib/core/action-toast';
-import { PageShell } from '@/components/layout/page-shell';
-import { ExpandingIconButton } from '@/components/common/expanding-icon-button';
+import { FormFooter, PageShell } from '@/components/layout/page-shell';
+import { Button } from '@/components/ui/button';
 import { Tabs } from '@/components/ui/tabs';
-import { TabSelect } from '@/components/common/tab-select';
+import { PageTabs } from '@/components/common/page-tabs';
 import { PracticeTab } from '@/components/features/settings/settings-practice-tab';
 import { DataTab } from '@/components/features/settings/settings-data-tab';
 import { AccountTab } from '@/components/features/settings/settings-account-tab';
@@ -31,9 +31,9 @@ interface SettingsFormProps {
 }
 
 const SETTINGS_TABS = [
-  { value: 'practice', label: 'Luyện tập' },
-  { value: 'data', label: 'Dữ liệu' },
-  { value: 'account', label: 'Tài khoản' },
+  { value: 'practice', label: 'Luyện tập', icon: Dumbbell },
+  { value: 'data', label: 'Dữ liệu', icon: Database },
+  { value: 'account', label: 'Tài khoản', icon: UserRound },
 ] as const;
 
 const SAVEABLE_TABS = new Set(['practice', 'data']);
@@ -74,32 +74,21 @@ export function SettingsForm({ initial, account }: SettingsFormProps) {
   return (
     <Tabs value={tab} onValueChange={setTab}>
       <PageShell
-        section="settings"
-        headerAside={
-          <>
-            <TabSelect
-              items={SETTINGS_TABS}
-              value={tab}
-              onValueChange={setTab}
-              label="Chọn mục cài đặt"
-            />
-            {SAVEABLE_TABS.has(tab) && (
-              <ExpandingIconButton
-                type="button"
-                icon={Save}
-                label={isSaving ? 'Đang lưu…' : dirty ? 'Lưu' : 'Đã lưu'}
-                variant="default"
-                disabled={isSaving || !dirty}
-                onClick={onSave}
-                className="ml-auto"
-              />
-            )}
-          </>
-        }
+        template="form"
+        title="Cài đặt"
+        tabs={<PageTabs items={SETTINGS_TABS} label="Chọn mục cài đặt" />}
       >
         <PracticeTab settings={settings} set={set} setSettings={setSettings} />
         <DataTab />
         <AccountTab {...account} />
+        {SAVEABLE_TABS.has(tab) && (
+          <FormFooter status={dirty ? 'Có thay đổi chưa lưu' : 'Mọi thay đổi đã được lưu'}>
+            <Button type="button" disabled={isSaving || !dirty} onClick={onSave}>
+              <Save aria-hidden />
+              {isSaving ? 'Đang lưu…' : 'Lưu'}
+            </Button>
+          </FormFooter>
+        )}
       </PageShell>
     </Tabs>
   );

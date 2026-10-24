@@ -97,8 +97,11 @@ describe('loading skeletons match their routes', () => {
       expect(block, `could not find the tab list in ${t.source}`).not.toBeNull();
       const tabs = [...block![1].matchAll(/value:/g)].length;
       const loading = readFileSync(t.loading, 'utf8');
-      const count = /<TabsAside[^>]*count=\{(\d+)\}/.exec(loading);
-      expect(count, `${t.loading} renders no <TabsAside count={…}>`).not.toBeNull();
+      const count = /<(?:TabsAside|PageTabsSkeleton)[^>]*count=\{(\d+)\}/.exec(loading);
+      expect(
+        count,
+        `${t.loading} renders no <TabsAside count={…}> or <PageTabsSkeleton count={…}>`,
+      ).not.toBeNull();
       expect(
         Number(count![1]),
         `${t.loading} draws ${count![1]} tab placeholders but ${t.source} renders ${tabs} tabs — ` +
@@ -114,7 +117,9 @@ describe('loading skeletons match their routes', () => {
     ];
     const offenders: string[] = [];
     for (const [source, loading] of pairs) {
-      const hasHeaderTabs = /headerAside=\{[\s\S]{0,400}?TabSelect/.test(readFileSync(source, 'utf8'));
+      const hasHeaderTabs = /headerAside=\{[\s\S]{0,400}?TabSelect/.test(
+        readFileSync(source, 'utf8'),
+      );
       const skeletonHasRail = /<TabsAside/.test(readFileSync(loading, 'utf8'));
       if (!hasHeaderTabs && skeletonHasRail) offenders.push(`${loading} (page: ${source})`);
     }

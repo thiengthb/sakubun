@@ -7,6 +7,8 @@ import {
   type BreadcrumbSection,
 } from '@/components/layout/app-breadcrumbs';
 import { BreadcrumbPlaceholder } from '@/components/layout/breadcrumbs';
+import { FORM_FOOTER, PAGE_CHROME } from '@/components/layout/page-chrome';
+import type { PageTemplate } from '@/components/layout/page-shell';
 
 export {
   FitList,
@@ -28,6 +30,9 @@ const WIDTH: Record<PageWidth, string> = {
 
 export function PageSkeleton({
   children,
+  template,
+  title,
+  tabs,
   width = 'full',
   section,
   action,
@@ -35,12 +40,38 @@ export function PageSkeleton({
   className,
 }: {
   children?: ReactNode;
+  /** Template pages: the same chrome as PageShell's, from page-chrome.ts. */
+  template?: PageTemplate;
+  /** Template pages: the h1, known up front for a top page. */
+  title?: string;
+  tabs?: ReactNode;
   width?: PageWidth;
   section?: BreadcrumbSection;
   action?: BreadcrumbAction;
   aside?: ReactNode;
   className?: string;
 }) {
+  if (template) {
+    return (
+      <div className={cn(PAGE_CHROME.page, className)} data-template={template}>
+        <div className={PAGE_CHROME.header}>
+          <div className={PAGE_CHROME.stack}>
+            <div className={PAGE_CHROME.trail} />
+            <div className={PAGE_CHROME.row}>
+              <div className="flex shrink-0 items-center md:hidden">
+                <Skeleton className="size-9 rounded-sm" />
+              </div>
+              <div className={PAGE_CHROME.block}>
+                <h1 className={PAGE_CHROME.title}>{title}</h1>
+              </div>
+            </div>
+          </div>
+          {tabs && <div className={PAGE_CHROME.tabs}>{tabs}</div>}
+        </div>
+        {children}
+      </div>
+    );
+  }
   return (
     <div className={cn('w-full min-w-0 space-y-4 pt-6 pb-6 text-sm', WIDTH[width], className)}>
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2 max-md:flex-nowrap max-md:gap-x-2">
@@ -92,6 +123,33 @@ export function TabsAside({
         ))}
       </div>
     </>
+  );
+}
+
+/** Underline tabs on a template page: `count` words on the tabs row. */
+export function PageTabsSkeleton({ count, widths = [] }: { count: number; widths?: number[] }) {
+  return (
+    <div className="flex h-8 items-center gap-4">
+      {Array.from({ length: count }, (_, i) => (
+        <Skeleton key={i} className="h-4 rounded-sm" style={{ width: widths[i] ?? 64 }} />
+      ))}
+    </div>
+  );
+}
+
+/** The form template's footer, as tall as FormFooter with one button. */
+export function FormFooterSkeleton({ status = true }: { status?: boolean }) {
+  return (
+    <div className={FORM_FOOTER.bar}>
+      {status && (
+        <div className={FORM_FOOTER.status}>
+          <Skeleton className="h-3 w-36" />
+        </div>
+      )}
+      <div className={FORM_FOOTER.actions}>
+        <Skeleton className="h-9 w-20 rounded-sm md:h-7" />
+      </div>
+    </div>
   );
 }
 

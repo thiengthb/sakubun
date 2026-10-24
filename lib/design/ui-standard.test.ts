@@ -115,6 +115,12 @@ describe('ui standard: each check goes red on a bad sample', () => {
     expect(check('no-form-dialog', '<DialogContent><Input /></DialogContent>')).toEqual([]);
   });
 
+  it('page-template', () => {
+    expect(check('page-template', '<PageShell section="settings">x</PageShell>')).toHaveLength(1);
+    expect(check('page-template', '<PageShell template="form">x</PageShell>')).toHaveLength(1);
+    expect(check('page-template', '<PageSkeleton template="form" title="Cài đặt" />')).toEqual([]);
+  });
+
   it('elements() finds the body across nesting and arrow functions in props', () => {
     const [el] = elements('<Button onClick={() => go(1)}><Button>in</Button><X /></Button>', [
       'Button',

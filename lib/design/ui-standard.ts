@@ -229,6 +229,19 @@ export const UI_RULES: UiRule[] = [
         return [{ line: lineAt(src, el.index), excerpt: `<${el.name}> holds ${what}` }];
       }),
   },
+  {
+    id: 'page-template',
+    rule:
+      'Every page uses one PageShell template (list, detail, form, dashboard) with a title; the ' +
+      'old breadcrumb header goes away page by page in step 6.',
+    check: ({ src }) =>
+      elements(src, ['PageShell', 'PageSkeleton'])
+        .filter((el) => !/\btemplate=/.test(el.open) || !/\btitle=/.test(el.open))
+        .map((el) => ({
+          line: lineAt(src, el.index),
+          excerpt: `<${el.name}> without template and title`,
+        })),
+  },
 ];
 
 export function runUiRules(files: Source[], rules: UiRule[] = UI_RULES): PatternResult[] {

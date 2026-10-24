@@ -30,6 +30,7 @@ const DISPLAY_ALLOW = [
   'components/features/dashboard/retention-gauge.tsx', // data-viz number/labels
   'components/features/resources/item-forgetting-curve.tsx',
   'components/features/resources/item-analytics.tsx', // per-item stat numbers
+  'components/layout/page-chrome.ts', // template page title: 18px phone, 24px laptop (docs/ui-standard.md)
   'components/layout/app-logo.tsx', // 作文 badge glyph
   'components/layout/user-avatar.tsx', // avatar initials sizing
   'components/ui/', // shadcn primitive sizing tokens (button, calendar, …)
@@ -86,6 +87,7 @@ describe('Typography type scale (nuc-platform/12-ui-layout-standard.md §typogra
     const must: [string, RegExp][] = [
       ['components/layout/page-shell.tsx', /pt-6 pb-6 text-sm'/],
       ['components/layout/page-skeleton.tsx', /pt-6 pb-6 text-sm'/],
+      ['components/layout/page-chrome.ts', /page: '[^']*\btext-sm\b/],
       ['components/layout/breadcrumbs.tsx', /<ol className="[^"]*\btext-sm\b/],
       ['components/ui/card.tsx', /'group\/card [^']*\btext-sm\b/],
       ['components/ui/table.tsx', /'w-full caption-bottom text-sm'/],
