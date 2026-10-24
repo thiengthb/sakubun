@@ -87,11 +87,6 @@ describe('invariant #9 — Japanese content renders through SpokenLine', () => {
         'RatingChip — a dense per-item tag on the card, same exception',
       ],
       [
-        'components/features/dashboard/learner-profile.tsx',
-        'the CONFUSION PAIR row (used -> required) — a dense summary like the weakness badges ' +
-          'beside it. The evidence quote in the same file IS a SpokenLine when the source is Japanese',
-      ],
-      [
         'components/features/resources/resource-add-form.tsx',
         'add/import surface — the bulk-import preview table and the field-entry inputs, not study content',
       ],
