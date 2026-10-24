@@ -5,6 +5,8 @@ import { cn } from '@/lib/core/utils';
 // dashboard stat tiles). One size, size-8 with a size-4 icon: the tile carries the colour, the
 // icon never grows to make a point.
 const TONE = {
+  // Raised like a primary button: the settings rows lead with it.
+  primary: 'bg-primary text-primary-foreground shadow-lift-primary',
   brand: 'bg-brand-wash text-accent-brand',
   ok: 'bg-ok-wash text-ok',
   info: 'bg-info-wash text-info',

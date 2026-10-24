@@ -42,7 +42,8 @@ test('không có JS, mọi ô chọn trong HTML đầu tiên đã có chữ', as
 
   expect(empty, 'ô chọn rỗng trong HTML server').toEqual([]);
   // One on Cài đặt plus the ones on the list pages: the guard that the scan saw real selects.
-  expect(total, 'tổng số ô chọn đã kiểm').toBeGreaterThanOrEqual(3);
+  // (Cài đặt lost its phone tab select to the underline tabs of the form template.)
+  expect(total, 'tổng số ô chọn đã kiểm').toBeGreaterThanOrEqual(2);
 
   await noJs.close();
 });

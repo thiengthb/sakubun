@@ -33,7 +33,7 @@ const PAIRS: Pair[] = [
 
 const MEASURE = () => {
   const de = document.documentElement;
-  const shell = document.querySelector('main .pt-6.pb-6') as HTMLElement | null;
+  const shell = document.querySelector('main .pt-6.pb-6, main [data-template]') as HTMLElement | null;
   if (!shell) return null;
   const row = shell.firstElementChild as HTMLElement | null;
   const box = (el: Element | null | undefined) => {

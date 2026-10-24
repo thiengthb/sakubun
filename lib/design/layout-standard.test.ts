@@ -22,6 +22,7 @@ describe('UI layout standard (nuc-platform/12-ui-layout-standard.md)', () => {
       'components/layout/page-shell.tsx', // documents the slot in a comment; renders no TabsList
       'components/features/resources/item-analytics.tsx', // detail page: Chỉ số / Thẻ are content sub-tabs UNDER the item header
       'components/common/tab-select.tsx',
+      'components/common/page-tabs.tsx', // template pages: PageShell's own `tabs` row under the title
     ]);
     const offenders: string[] = [];
     for (const root of ['app', 'components']) {

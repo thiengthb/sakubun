@@ -10,6 +10,7 @@ import {
   Loader2,
   LogIn,
   Pencil,
+  Plus,
   Trash2,
   X,
 } from 'lucide-react';
@@ -18,7 +19,6 @@ import { authClient } from '@/lib/auth/auth-client';
 import { createMcpKeyAction, revokeMcpKeyAction } from '@/app/settings/actions';
 import { UserAvatar } from '@/components/layout/user-avatar';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Dialog,
   DialogClose,
@@ -31,6 +31,9 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { SettingsTab } from '@/components/features/settings/settings-tab';
+import { SettingsSection } from '@/components/features/settings/settings-section';
+import { SettingRow } from '@/components/features/settings/setting-row';
+import { IconTile } from '@/components/common/icon-tile';
 import { McpUsageCard } from '@/components/features/settings/mcp-usage-card';
 import { ConfirmDialog } from '@/components/common/confirm-dialog';
 import { CopyCommandButton } from '@/components/common/copy-command-button';
@@ -73,24 +76,6 @@ function fmtDate(iso: string): string {
   });
 }
 
-function MetaTile({
-  icon: Icon,
-  label,
-  value,
-}: {
-  icon: typeof CalendarDays;
-  label: string;
-  value: string;
-}) {
-  return (
-    <div className="grid grid-cols-[auto_1fr] items-start gap-x-3 rounded-lg border bg-muted/30 p-3">
-      <Icon className="row-span-2 mt-0.5 size-4 shrink-0 text-muted-foreground" />
-      <dt className="min-w-0 text-xs text-muted-foreground">{label}</dt>
-      <dd className="min-w-0 truncate font-medium">{value}</dd>
-    </div>
-  );
-}
-
 const MIN_PASSWORD = 8;
 
 export function AccountTab({
@@ -131,6 +116,7 @@ export function AccountTab({
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [changingPassword, setChangingPassword] = useState(false);
+  const [passwordOpen, setPasswordOpen] = useState(false);
 
   function startEditName() {
     setDisplayName(savedName);
@@ -181,6 +167,7 @@ export function AccountTab({
     }
     setCurrentPassword('');
     setNewPassword('');
+    setPasswordOpen(false);
     toast.success('Đã đổi mật khẩu');
   }
 
@@ -221,179 +208,163 @@ export function AccountTab({
   return (
     <>
       <SettingsTab value="account" surface="bare">
-        <Card>
-          <CardContent className="space-y-6">
-            <div className="flex items-center gap-4">
-              <UserAvatar name={savedName} image={image} className="size-14 text-lg" />
-              <div className="min-w-0 flex-1">
-                {editingName ? (
-                  <form onSubmit={onSaveName} className="flex items-center gap-2">
-                    <Input
-                      aria-label="Tên hiển thị"
-                      value={displayName}
-                      onChange={(e) => setDisplayName(e.target.value)}
-                      placeholder="Tên hiển thị của bạn"
-                      maxLength={60}
-                      autoFocus
-                      className="h-8"
-                      wrapperClassName="min-w-0 flex-1"
-                    />
-                    <Button
-                      type="submit"
-                      size="icon"
-                      className="size-8 shrink-0"
-                      disabled={!nameDirty || savingName}
-                      aria-label="Lưu tên"
-                    >
-                      {savingName ? <Loader2 className="animate-spin" /> : <Check />}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="size-8 shrink-0"
-                      onClick={cancelEditName}
-                      disabled={savingName}
-                      aria-label="Huỷ"
-                    >
-                      <X />
-                    </Button>
-                  </form>
-                ) : (
-                  <div className="flex min-w-0 items-center gap-1">
-                    <p className="truncate font-medium">{savedName || 'Chưa đặt tên'}</p>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="size-7 shrink-0 text-muted-foreground"
-                      onClick={startEditName}
-                      aria-label="Sửa tên hiển thị"
-                    >
-                      <Pencil className="size-3.5" />
-                    </Button>
-                  </div>
-                )}
-                <p className="truncate text-sm text-muted-foreground">{email}</p>
-              </div>
-            </div>
-
-            <dl className="grid gap-3 sm:grid-cols-2">
-              <MetaTile
-                icon={CalendarDays}
-                label="Ngày tham gia"
-                value={joinedAt ? formatDateVN(joinedAt) : '—'}
-              />
-              <MetaTile
-                icon={LogIn}
-                label="Đăng nhập gần nhất"
-                value={lastLoginAt ? formatDateTimeVN(lastLoginAt) : 'Chưa có'}
-              />
-            </dl>
-
-            {hasPassword ? (
-              <form onSubmit={onChangePassword} className="space-y-3 border-t pt-6">
-                <p className="font-medium">Đổi mật khẩu</p>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="current-password">Mật khẩu hiện tại</Label>
-                    <Input
-                      id="current-password"
-                      type="password"
-                      autoComplete="current-password"
-                      value={currentPassword}
-                      onChange={(e) => setCurrentPassword(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="new-password">Mật khẩu mới</Label>
-                    <Input
-                      id="new-password"
-                      type="password"
-                      autoComplete="new-password"
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      placeholder={`Tối thiểu ${MIN_PASSWORD} ký tự`}
-                    />
-                  </div>
+        <SettingsSection title="Hồ sơ">
+          <div className="col-span-full flex min-h-14 items-center gap-3 px-4 py-2.5">
+            <UserAvatar name={savedName} image={image} className="size-9" />
+            <div className="min-w-0 flex-1">
+              {editingName ? (
+                <form onSubmit={onSaveName} className="flex items-center gap-2">
+                  <Input
+                    aria-label="Tên hiển thị"
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
+                    placeholder="Tên hiển thị"
+                    maxLength={60}
+                    autoFocus
+                    wrapperClassName="min-w-0 flex-1"
+                  />
+                  <Button
+                    type="submit"
+                    size="icon"
+                    disabled={!nameDirty || savingName}
+                    aria-label="Lưu tên"
+                  >
+                    {savingName ? <Loader2 className="animate-spin" /> : <Check />}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={cancelEditName}
+                    disabled={savingName}
+                    aria-label="Huỷ"
+                  >
+                    <X />
+                  </Button>
+                </form>
+              ) : (
+                <div className="flex min-w-0 items-center gap-1">
+                  <p className="truncate font-bold">{savedName || 'Chưa đặt tên'}</p>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="shrink-0 text-muted-foreground"
+                    onClick={startEditName}
+                    aria-label="Sửa tên hiển thị"
+                  >
+                    <Pencil />
+                  </Button>
                 </div>
-                <Button
-                  type="submit"
-                  disabled={changingPassword || !currentPassword || !newPassword}
-                >
-                  {changingPassword && <Loader2 className="animate-spin" />}
-                  Đổi mật khẩu
-                </Button>
-              </form>
+              )}
+              <p className="truncate text-xs text-muted-foreground">{email}</p>
+            </div>
+          </div>
+          <SettingRow icon={CalendarDays} label="Tham gia">
+            <span className="tabular-nums">{joinedAt ? formatDateVN(joinedAt) : '—'}</span>
+          </SettingRow>
+          <SettingRow icon={LogIn} label="Đăng nhập">
+            <span className="tabular-nums">
+              {lastLoginAt ? formatDateTimeVN(lastLoginAt) : 'Chưa có'}
+            </span>
+          </SettingRow>
+          <SettingRow
+            icon={KeyRound}
+            label="Mật khẩu"
+            info={hasPassword ? undefined : 'Bạn đăng nhập bằng Google nên không có mật khẩu.'}
+            className="col-span-full"
+          >
+            {hasPassword ? (
+              <Button
+                variant="outline"
+                aria-expanded={passwordOpen}
+                onClick={() => setPasswordOpen((o) => !o)}
+              >
+                <Pencil aria-hidden />
+                Đổi
+              </Button>
             ) : (
-              <div className="flex items-center rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
-                Bạn đăng nhập bằng Google nên tài khoản không có mật khẩu để đổi.
-              </div>
+              <span className="text-muted-foreground">Google</span>
             )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Token MCP</CardTitle>
-            <CardDescription>
-              Claude Desktop và ChatGPT dùng token này để kết nối tới sakubun DƯỚI DANH NGHĨA bạn.
-              Tạo một token riêng cho mỗi client để có thể thu hồi độc lập. Token chỉ hiện MỘT lần
-              khi tạo — lưu lại ngay.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <form onSubmit={onCreate} className="flex items-end gap-3">
-              <div className="min-w-0 flex-1 space-y-2">
-                <Label htmlFor="token-name">Tên token</Label>
+          </SettingRow>
+          {hasPassword && passwordOpen && (
+            <form
+              onSubmit={onChangePassword}
+              className="col-span-full grid gap-3 px-4 pb-4 @md:grid-cols-[1fr_1fr_auto] @md:items-end"
+            >
+              <div className="space-y-1.5">
+                <Label htmlFor="current-password">Hiện tại</Label>
                 <Input
-                  id="token-name"
-                  value={label}
-                  onChange={(e) => setLabel(e.target.value)}
-                  placeholder="laptop, máy bàn…"
-                  maxLength={40}
+                  id="current-password"
+                  type="password"
+                  autoComplete="current-password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
                 />
               </div>
-              <Button type="submit" disabled={creating}>
-                {creating && <Loader2 className="animate-spin" />}
-                Tạo token
+              <div className="space-y-1.5">
+                <Label htmlFor="new-password">Mới</Label>
+                <Input
+                  id="new-password"
+                  type="password"
+                  autoComplete="new-password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder={`Ít nhất ${MIN_PASSWORD} ký tự`}
+                />
+              </div>
+              <Button type="submit" disabled={changingPassword || !currentPassword || !newPassword}>
+                {changingPassword && <Loader2 className="animate-spin" />}
+                Đổi
               </Button>
             </form>
+          )}
+        </SettingsSection>
 
-            {keys.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Chưa có token nào.</p>
-            ) : (
-              <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {keys.map((k) => (
-                  <li
-                    key={k.id}
-                    className="flex items-start justify-between gap-2 rounded-lg border p-4"
-                  >
-                    <div className="min-w-0 space-y-1">
-                      <p className="flex items-center gap-2 font-medium">
-                        <KeyRound className="size-4 shrink-0 text-muted-foreground" />
-                        <span className="truncate">{k.name}</span>
-                      </p>
-                      <p className="text-xs text-muted-foreground">Tạo {fmtDate(k.createdAt)}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {k.lastUsedAt ? `Dùng gần nhất ${fmtDate(k.lastUsedAt)}` : 'Chưa dùng'}
-                      </p>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="-mt-1 -mr-1 shrink-0"
-                      aria-label={`Thu hồi token ${k.name}`}
-                      onClick={() => setRevokeTarget(k)}
-                    >
-                      <Trash2 className="text-destructive" />
-                    </Button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </CardContent>
-        </Card>
+        <SettingsSection
+          title="Token MCP"
+          info="Claude Desktop và ChatGPT dùng token để kết nối dưới tên bạn. Mỗi client một token để thu hồi riêng. Token chỉ hiện một lần khi tạo."
+        >
+          <form onSubmit={onCreate} className="col-span-full flex items-center gap-2 px-4 py-2.5">
+            <Input
+              aria-label="Tên token"
+              value={label}
+              onChange={(e) => setLabel(e.target.value)}
+              placeholder="Tên token: laptop, máy bàn…"
+              maxLength={40}
+              wrapperClassName="min-w-0 flex-1"
+            />
+            <Button type="submit" disabled={creating}>
+              {creating ? <Loader2 className="animate-spin" aria-hidden /> : <Plus aria-hidden />}
+              Thêm
+            </Button>
+          </form>
+          {keys.length === 0 ? (
+            <p className="col-span-full px-4 py-3 text-sm text-muted-foreground">Chưa có token.</p>
+          ) : (
+            keys.map((k) => (
+              <div key={k.id} className="flex min-h-14 items-center gap-3 px-4 py-2.5">
+                <IconTile icon={KeyRound} tone="muted" />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-medium">{k.name}</p>
+                  <p className="truncate text-xs text-muted-foreground tabular-nums">
+                    Tạo {fmtDate(k.createdAt)} ·{' '}
+                    {k.lastUsedAt ? `dùng ${fmtDate(k.lastUsedAt)}` : 'chưa dùng'}
+                  </p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="shrink-0"
+                  aria-label={`Thu hồi token ${k.name}`}
+                  onClick={() => setRevokeTarget(k)}
+                >
+                  <Trash2 className="text-destructive" />
+                </Button>
+              </div>
+            ))
+          )}
+        </SettingsSection>
 
         <McpUsageCard usage={mcpUsage} />
       </SettingsTab>
@@ -402,10 +373,7 @@ export function AccountTab({
         <DialogContent className="h-fit max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>Token MCP mới</DialogTitle>
-            <DialogDescription>
-              Sao chép và lưu ngay — token này SẼ KHÔNG hiện lại. Dán vào Claude Desktop hoặc dùng
-              khi tạo app MCP trong ChatGPT theo hướng dẫn bên dưới.
-            </DialogDescription>
+            <DialogDescription>Chép và lưu ngay: token chỉ hiện một lần.</DialogDescription>
           </DialogHeader>
           <div className="space-y-2">
             <code className="block max-h-32 overflow-y-auto rounded-md bg-muted px-3 py-2 font-mono text-xs break-all select-all">

@@ -14,7 +14,7 @@ import {
   Target,
   Volume2,
 } from 'lucide-react';
-import { Card } from '@/components/ui/card';
+import { SettingsSection } from '@/components/features/settings/settings-section';
 import {
   Select,
   SelectContent,
@@ -78,10 +78,9 @@ export function PracticeTab({
 
   return (
     <SettingsTab value="practice" surface="bare">
-      <Card className="@container max-w-3xl gap-0 divide-y py-0">
+      <SettingsSection>
         <SettingRow
           icon={BookOpen}
-          tone="brand"
           label="Cấp JLPT"
           info="Mẫu và từ mới chỉ lấy từ các cấp được chọn; từ mới không khó hơn cấp cao nhất. Mục đã học vẫn ôn bất kể cấp."
           wide
@@ -102,7 +101,7 @@ export function PracticeTab({
           </ToggleGroup>
         </SettingRow>
 
-        <SettingRow icon={ListPlus} tone="brand" label="Mẫu mới" unit="/ ngày">
+        <SettingRow icon={ListPlus} label="Mẫu mới" unit="/ ngày">
           <Stepper
             label="Mẫu ngữ pháp mới / ngày"
             min={0}
@@ -111,7 +110,7 @@ export function PracticeTab({
             onChange={(v) => set('dailyNewGrammar', v)}
           />
         </SettingRow>
-        <SettingRow icon={SquarePlus} tone="brand" label="Từ mới" unit="/ ngày">
+        <SettingRow icon={SquarePlus} label="Từ mới" unit="/ ngày">
           <Stepper
             label="Từ vựng mới / ngày"
             min={0}
@@ -123,7 +122,6 @@ export function PracticeTab({
         </SettingRow>
         <SettingRow
           icon={Repeat}
-          tone="ok"
           label="Ôn tối đa"
           unit="/ ngày"
           info="Chạm trần thì phần còn lại dời sang ngày sau, không mất."
@@ -140,7 +138,6 @@ export function PracticeTab({
 
         <SettingRow
           icon={ArrowLeftRight}
-          tone="info"
           label="Hướng dịch"
           info="Tự động: mục mới hoặc đang học dịch Nhật → Việt; mục đã nhớ chắc dịch Việt → Nhật."
           wide
@@ -163,7 +160,6 @@ export function PracticeTab({
 
         <SettingRow
           glyph="あ"
-          tone="info"
           label="Furigana"
           aside={
             <ruby lang="ja" aria-hidden className="ml-1 shrink-0 text-base text-muted-foreground">
@@ -180,7 +176,6 @@ export function PracticeTab({
 
         <SettingRow
           icon={Volume2}
-          tone="ok"
           label="Giọng đọc"
           info="Giọng VOICEVOX cho các nút phát âm. Chưa bật VOICEVOX thì app dùng giọng của trình duyệt."
           wide
@@ -212,7 +207,7 @@ export function PracticeTab({
           />
         </SettingRow>
 
-        <SettingRow icon={Gauge} tone="warn" label="Tốc độ" wide>
+        <SettingRow icon={Gauge} label="Tốc độ" wide>
           <ToggleGroup
             type="single"
             variant="choice"
@@ -234,9 +229,9 @@ export function PracticeTab({
           aria-expanded={advancedOpen}
           aria-controls={advancedId}
           onClick={() => setAdvancedOpen((o) => !o)}
-          className="flex min-h-14 w-full items-center gap-3 px-4 py-2.5 text-left transition-colors outline-none hover:bg-muted/50 focus-visible:bg-muted/50"
+          className="col-span-full flex min-h-14 w-full items-center gap-3 px-4 py-2.5 text-left transition-colors outline-none hover:bg-muted/50 focus-visible:bg-muted/50"
         >
-          <IconTile icon={SlidersHorizontal} tone="muted" />
+          <IconTile icon={SlidersHorizontal} tone="primary" />
           <span className="text-sm font-medium">Nâng cao</span>
           <span className="truncate text-xs text-muted-foreground tabular-nums">
             {retention}% · {settings.dayCutoffHour}h
@@ -249,10 +244,13 @@ export function PracticeTab({
             )}
           />
         </button>
-        <div id={advancedId} hidden={!advancedOpen} className="divide-y">
+        <div
+          id={advancedId}
+          hidden={!advancedOpen}
+          className="col-span-full grid gap-px bg-border @4xl:grid-cols-2 [&>*]:bg-card"
+        >
           <SettingRow
             icon={Target}
-            tone="muted"
             label="Mục tiêu nhớ"
             info="Lịch ôn FSRS. Cao hơn thì ôn dày hơn: nhớ chắc hơn nhưng nhiều lượt hơn (mặc định 90%)."
           >
@@ -267,7 +265,6 @@ export function PracticeTab({
           </SettingRow>
           <SettingRow
             icon={Moon}
-            tone="muted"
             label="Chốt ngày"
             info="Lượt ôn trước giờ này tính vào ngày hôm trước."
           >
@@ -281,7 +278,7 @@ export function PracticeTab({
             />
           </SettingRow>
         </div>
-      </Card>
+      </SettingsSection>
     </SettingsTab>
   );
 }

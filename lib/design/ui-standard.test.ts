@@ -82,6 +82,10 @@ describe('ui standard: each check goes red on a bad sample', () => {
     expect(
       check('create-label', `${imp}<ExpandingIconButton icon={Plus} label="Thêm mục" />`),
     ).toHaveLength(1);
+    expect(
+      check('create-label', `${imp}<Button>{busy ? <Loader2 /> : <Plus />}\n  Thêm\n</Button>`),
+    ).toEqual([]);
+    expect(check('create-label', `${imp}<Button><Plus />{label}</Button>`)).toHaveLength(1);
     expect(check('create-label', `${imp}<Button><Plus aria-hidden />\n  Thêm\n</Button>`)).toEqual(
       [],
     );
@@ -113,6 +117,12 @@ describe('ui standard: each check goes red on a bad sample', () => {
       check('no-form-dialog', '<DialogContent><Input /><Textarea /></DialogContent>'),
     ).toHaveLength(1);
     expect(check('no-form-dialog', '<DialogContent><Input /></DialogContent>')).toEqual([]);
+  });
+
+  it('page-template', () => {
+    expect(check('page-template', '<PageShell section="settings">x</PageShell>')).toHaveLength(1);
+    expect(check('page-template', '<PageShell template="form">x</PageShell>')).toHaveLength(1);
+    expect(check('page-template', '<PageSkeleton template="form" title="Cài đặt" />')).toEqual([]);
   });
 
   it('elements() finds the body across nesting and arrow functions in props', () => {

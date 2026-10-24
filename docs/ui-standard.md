@@ -46,9 +46,9 @@ chỗ sai mới làm test đỏ, chỗ đã sửa cũng làm test đỏ cho tớ
 
 | Luật | Khoá bởi |
 | --- | --- |
-| Điện thoại: một hàng 36px gồm logo, khối tiêu đề hai dòng, nút, sao. Trang cấp một: tiêu đề trên, meta dưới. Trang lồng: đường dẫn trên, tiêu đề dưới. | ảnh; test `phone-header` đến cùng PageShell mới ở bước 6 |
-| Laptop: dòng đường dẫn phía trên tiêu đề luôn giữ chỗ, kể cả khi trống. | như trên |
-| Tab gạch chân; icon trên tab chỉ hiện trên laptop. | ảnh |
+| Điện thoại: một hàng 36px gồm logo, khối tiêu đề hai dòng, nút, sao. Trang cấp một: tiêu đề trên, meta dưới. Trang lồng: đường dẫn trên, tiêu đề dưới. | `e2e/phone-header.spec.ts`, ảnh |
+| Laptop: dòng đường dẫn phía trên tiêu đề luôn giữ chỗ, kể cả khi trống. | `components/layout/page-chrome.ts`, ảnh |
+| Tab gạch chân (`PageTabs`); icon trên tab chỉ hiện trên laptop. | ảnh |
 
 ## Bốn khuôn trang
 
@@ -62,7 +62,7 @@ chỗ sai mới làm test đỏ, chỗ đã sửa cũng làm test đỏ cho tớ
 | Luật | Khoá bởi |
 | --- | --- |
 | Thêm và sửa là trang riêng. Hộp thoại chỉ để xác nhận hoặc sửa nhanh một ô: không chứa component form, tối đa một ô nhập. | `ui-standard` `no-form-dialog` |
-| Mỗi trang dùng đúng một khuôn của PageShell. | test `page-template` và ảnh chuẩn bốn khuôn đến cùng PageShell mới ở bước 6 |
+| Mỗi trang dùng đúng một khuôn của PageShell (`template` và `title`); PageShell và PageSkeleton cùng lấy class từ `page-chrome.ts`. | `ui-standard` `page-template`, `e2e/skeleton.spec.ts` |
 
 ## Bố cục
 

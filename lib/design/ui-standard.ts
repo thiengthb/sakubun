@@ -181,7 +181,9 @@ export const UI_RULES: UiRule[] = [
         .filter((el) => iconsOf(el, lucide).includes('Plus'))
         .flatMap((el) => {
           const prop = /(?<![\w-])label=(?:"([^"]*)"|\{([^}]*)\})/.exec(el.open);
+          // An expression that renders JSX ({busy ? <Loader2 /> : <Plus />}) is an icon, not words.
           const text = el.body
+            .replace(/\{[^{}]*<[^{}]*\}/g, '')
             .replace(/<[^>]*>/g, '')
             .replace(/\s+/g, ' ')
             .trim();
@@ -228,6 +230,19 @@ export const UI_RULES: UiRule[] = [
         const what = forms.length > 0 ? `<${forms[0]}>` : `${fields.length} fields`;
         return [{ line: lineAt(src, el.index), excerpt: `<${el.name}> holds ${what}` }];
       }),
+  },
+  {
+    id: 'page-template',
+    rule:
+      'Every page uses one PageShell template (list, detail, form, dashboard) with a title; the ' +
+      'old breadcrumb header goes away page by page in step 6.',
+    check: ({ src }) =>
+      elements(src, ['PageShell', 'PageSkeleton'])
+        .filter((el) => !/\btemplate=/.test(el.open) || !/\btitle=/.test(el.open))
+        .map((el) => ({
+          line: lineAt(src, el.index),
+          excerpt: `<${el.name}> without template and title`,
+        })),
   },
 ];
 

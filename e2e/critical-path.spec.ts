@@ -20,8 +20,8 @@ test('login → dashboard → a settings change persists across reload', async (
     'active',
   );
   await page.getByRole('textbox', { name: 'Mẫu ngữ pháp mới / ngày', exact: true }).fill('11');
-  await page.getByRole('button', { name: /^(Lưu|Đã lưu)$/ }).click();
-  await expect(page.getByRole('button', { name: 'Đã lưu' })).toBeVisible();
+  await page.getByRole('button', { name: 'Lưu', exact: true }).click();
+  await expect(page.getByText('Mọi thay đổi đã được lưu')).toBeVisible();
 
   await page.reload();
   await expect(
@@ -50,8 +50,8 @@ test('Luyện tập shows only the eight settings; sentence-shape fields are gon
   await expect(page.getByRole('slider', { name: 'Độ phức tạp của câu' })).toHaveCount(0);
 
   await page.getByRole('textbox', { name: 'Từ vựng mới / ngày', exact: true }).fill('9');
-  await page.getByRole('button', { name: /^(Lưu|Đã lưu)$/ }).click();
-  await expect(page.getByRole('button', { name: 'Đã lưu' })).toBeVisible();
+  await page.getByRole('button', { name: 'Lưu', exact: true }).click();
+  await expect(page.getByText('Mọi thay đổi đã được lưu')).toBeVisible();
   await page.reload();
   await expect(page.getByRole('textbox', { name: 'Từ vựng mới / ngày', exact: true })).toHaveValue(
     '9',
@@ -87,8 +87,8 @@ test('Luyện tập rows: stepper, segmented choice and the folded Nâng cao all
   await page.getByRole('button', { name: 'Giảm Mục tiêu ghi nhớ (FSRS)' }).click();
   const target = await retention.inputValue();
 
-  await page.getByRole('button', { name: /^(Lưu|Đã lưu)$/ }).click();
-  await expect(page.getByRole('button', { name: 'Đã lưu' })).toBeVisible();
+  await page.getByRole('button', { name: 'Lưu', exact: true }).click();
+  await expect(page.getByText('Mọi thay đổi đã được lưu')).toBeVisible();
   await page.reload();
 
   await expect(
