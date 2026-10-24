@@ -40,16 +40,7 @@ test.beforeAll(async () => {
   try {
     if (process.env.AUDIT_SEED_DB) {
       db.exec(`ATTACH DATABASE '${process.env.AUDIT_SEED_DB}' AS snap`);
-      for (const t of [
-        'Item',
-        'SrsState',
-        'Sentence',
-        'ReviewLog',
-        'Settings',
-        'LearnerAbility',
-        'LearnerNote',
-        'CalibrationProposal',
-      ]) {
+      for (const t of ['Item', 'SrsState', 'Sentence', 'ReviewLog', 'Settings']) {
         db.exec(`DELETE FROM "${t}"`);
         db.exec(`INSERT INTO "${t}" SELECT * FROM snap."${t}"`);
       }
@@ -62,8 +53,8 @@ test.beforeAll(async () => {
 
     const item = db.prepare(
       `INSERT INTO Item (id, kind, expression, reading, hanviet, meaningVi, level, notes, source,
-                         captureReason, suspended, starred, createdAt, challengeObservations)
-       VALUES (?, ?, ?, ?, ?, ?, ?, NULL, 'MCP', ?, 0, ?, ?, 0)`,
+                         captureReason, suspended, starred, createdAt)
+       VALUES (?, ?, ?, ?, ?, ?, ?, NULL, 'MCP', ?, 0, ?, ?)`,
     );
     const srs = db.prepare(
       `INSERT INTO SrsState (id, itemId, due, stability, difficulty, scheduledDays, learningSteps,
@@ -80,10 +71,41 @@ test.beforeAll(async () => {
     const iso = (ms: number) => new Date(ms).toISOString().replace('Z', '+00:00');
     GRAMMAR.forEach(([expression, meaningVi, level], n) => {
       const id = `g${n}`;
-      item.run(id, 'GRAMMAR', expression, null, null, meaningVi, level, null, n % 4 === 0 ? 1 : 0, iso(now - n * DAY));
-      srs.run(`sg${n}`, id, iso(now + ((n % 14) + 1) * DAY), 3 + n, 5 + (n % 5), n, n % 7, 1 + (n % 3), 1 + (n % 3), iso(now - n * DAY));
+      item.run(
+        id,
+        'GRAMMAR',
+        expression,
+        null,
+        null,
+        meaningVi,
+        level,
+        null,
+        n % 4 === 0 ? 1 : 0,
+        iso(now - n * DAY),
+      );
+      srs.run(
+        `sg${n}`,
+        id,
+        iso(now + ((n % 14) + 1) * DAY),
+        3 + n,
+        5 + (n % 5),
+        n,
+        n % 7,
+        1 + (n % 3),
+        1 + (n % 3),
+        iso(now - n * DAY),
+      );
       for (let r = 0; r < 3; r++)
-        log.run(`lg${n}-${r}`, id, 1 + ((n + r) % 4), (n + r) % 4, iso(now + DAY), 3 + n, 5, iso(now - (r * 2 + (n % 5)) * DAY));
+        log.run(
+          `lg${n}-${r}`,
+          id,
+          1 + ((n + r) % 4),
+          (n + r) % 4,
+          iso(now + DAY),
+          3 + n,
+          5,
+          iso(now - (r * 2 + (n % 5)) * DAY),
+        );
     });
     db.prepare(
       `INSERT INTO "Group" (id, name, kind, color, note, createdAt, updatedAt)
@@ -95,10 +117,41 @@ test.beforeAll(async () => {
 
     VOCAB.forEach(([expression, reading, hanviet, meaningVi, level, reason], n) => {
       const id = `v${n}`;
-      item.run(id, 'VOCAB', expression, reading, hanviet, meaningVi, level, reason, n % 5 === 0 ? 1 : 0, iso(now - n * DAY));
-      srs.run(`sv${n}`, id, iso(now + (n - 3) * DAY), 2 + n, 4 + (n % 6), n, n % 5, n % 3, n % 4, iso(now - n * DAY));
+      item.run(
+        id,
+        'VOCAB',
+        expression,
+        reading,
+        hanviet,
+        meaningVi,
+        level,
+        reason,
+        n % 5 === 0 ? 1 : 0,
+        iso(now - n * DAY),
+      );
+      srs.run(
+        `sv${n}`,
+        id,
+        iso(now + (n - 3) * DAY),
+        2 + n,
+        4 + (n % 6),
+        n,
+        n % 5,
+        n % 3,
+        n % 4,
+        iso(now - n * DAY),
+      );
       for (let r = 0; r < 3; r++)
-        log.run(`lv${n}-${r}`, id, 1 + ((n + r + 2) % 4), (n + r) % 4, iso(now + DAY), 2 + n, 6, iso(now - (r * 3 + (n % 6)) * DAY));
+        log.run(
+          `lv${n}-${r}`,
+          id,
+          1 + ((n + r + 2) % 4),
+          (n + r) % 4,
+          iso(now + DAY),
+          2 + n,
+          6,
+          iso(now - (r * 3 + (n % 6)) * DAY),
+        );
     });
   } finally {
     db.close();
@@ -182,11 +235,16 @@ test('item detail: level, state and star sit below the breadcrumb row', async ({
   const star = await page.getByRole('button', { name: /đánh dấu sao/i }).boundingBox();
   const level = await page.getByText('N3', { exact: true }).first().boundingBox();
   const tabs = await page.getByRole('tab', { name: /Chỉ số/ }).boundingBox();
-  expect(crumb && star && level && tabs, 'header, star, level badge and tabs must all render').toBeTruthy();
+  expect(
+    crumb && star && level && tabs,
+    'header, star, level badge and tabs must all render',
+  ).toBeTruthy();
 
   const rowBottom = crumb!.y + crumb!.height;
   expect(star!.y, 'the star is back on the breadcrumb row').toBeGreaterThanOrEqual(rowBottom);
-  expect(level!.y, 'the level badge is back on the breadcrumb row').toBeGreaterThanOrEqual(rowBottom);
+  expect(level!.y, 'the level badge is back on the breadcrumb row').toBeGreaterThanOrEqual(
+    rowBottom,
+  );
   expect(star!.y).toBeLessThan(tabs!.y);
   expect(level!.y).toBeLessThan(tabs!.y);
 });
@@ -228,7 +286,8 @@ test('every page renders clean and fits a 390px viewport', async ({ page }) => {
         const r = el.getBoundingClientRect();
         if (r.width === 0 || r.height === 0) continue;
         if ((r.right > vw + 1 || r.left < -1) && !contained(el)) {
-          const cls = typeof el.className === 'string' ? el.className.split(/\s+/).slice(0, 4).join('.') : '';
+          const cls =
+            typeof el.className === 'string' ? el.className.split(/\s+/).slice(0, 4).join('.') : '';
           offenders.push(
             `${el.tagName.toLowerCase()}.${cls} at ${Math.round(r.left)}..${Math.round(r.right)} "${el.textContent?.trim().slice(0, 30)}"`,
           );
@@ -243,10 +302,14 @@ test('every page renders clean and fits a 390px viewport', async ({ page }) => {
         `${name}: page is ${m.scrollW - m.clientW}px wider than the ${m.clientW}px viewport` +
           (m.offenders.length ? ` — widened by: ${m.offenders.join(' ; ')}` : ''),
       );
-    else if (m.offenders.length) failures.push(`${name}: outside the viewport: ${m.offenders.join(' ; ')}`);
+    else if (m.offenders.length)
+      failures.push(`${name}: outside the viewport: ${m.offenders.join(' ; ')}`);
   }
 
-  expect(failures, `mobile layout problems at ${VIEWPORT.width}px:\n${failures.join('\n')}`).toEqual([]);
+  expect(
+    failures,
+    `mobile layout problems at ${VIEWPORT.width}px:\n${failures.join('\n')}`,
+  ).toEqual([]);
 });
 
 async function signIn(page: import('@playwright/test').Page): Promise<void> {
@@ -269,10 +332,13 @@ test('mobile: the filter panel is a bottom sheet, full width, anchored to the bo
   await expect(sheet).toBeVisible();
 
   await expect
-    .poll(async () => {
-      const b = (await sheet.boundingBox())!;
-      return Math.round(b.y + b.height - VIEWPORT.height);
-    }, { message: "the sheet's bottom edge settles on the screen's bottom edge" })
+    .poll(
+      async () => {
+        const b = (await sheet.boundingBox())!;
+        return Math.round(b.y + b.height - VIEWPORT.height);
+      },
+      { message: "the sheet's bottom edge settles on the screen's bottom edge" },
+    )
     .toBe(0);
 
   const box = (await sheet.boundingBox())!;
@@ -321,7 +387,9 @@ const TABBED: [string, string][] = [
   ['dashboard', '/'],
 ];
 
-test('switching tabs raises no client error — the state the page sweep never enters', async ({ page }) => {
+test('switching tabs raises no client error — the state the page sweep never enters', async ({
+  page,
+}) => {
   test.setTimeout(120_000);
   await signIn(page);
 
@@ -329,7 +397,8 @@ test('switching tabs raises no client error — the state the page sweep never e
   page.on('pageerror', (e) => problems.push(`pageerror: ${e.message.split('\n')[0]}`));
   page.on('console', (m) => {
     if (m.type() === 'error') problems.push(`console.error: ${m.text().split('\n')[0]}`);
-    else if (/hydrat|server rendered HTML/i.test(m.text())) problems.push(`console.${m.type()}: ${m.text().slice(0, 400)}`);
+    else if (/hydrat|server rendered HTML/i.test(m.text()))
+      problems.push(`console.${m.type()}: ${m.text().slice(0, 400)}`);
   });
 
   const failures: string[] = [];
@@ -340,7 +409,9 @@ test('switching tabs raises no client error — the state the page sweep never e
     const tabs = page.getByRole('tab');
     const count = await tabs.count();
     if (count < 2) {
-      failures.push(`${name}: found ${count} tab(s) — this route is in TABBED but has nothing to switch`);
+      failures.push(
+        `${name}: found ${count} tab(s) — this route is in TABBED but has nothing to switch`,
+      );
       continue;
     }
 

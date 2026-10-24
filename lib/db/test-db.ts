@@ -15,11 +15,14 @@ export function createTestDb(prefix: string): string {
   return url;
 }
 
-export function applyMigrations(dbFile: string): void {
+// `before` stops at the first migration whose name sorts at or after it: a database as an older
+// release left it, for tests of old backups.
+export function applyMigrations(dbFile: string, { before }: { before?: string } = {}): void {
   const db = new Database(dbFile);
   try {
     const migrations = readdirSync(MIGRATIONS_DIR)
       .filter((name) => statSync(path.join(MIGRATIONS_DIR, name)).isDirectory())
+      .filter((name) => !before || name < before)
       .sort();
     if (migrations.length === 0) {
       throw new Error(`No migrations found in ${MIGRATIONS_DIR} — cannot build a test schema.`);
@@ -42,9 +45,6 @@ const LEARNING_TABLES = [
   'groupMember',
   'group',
   'item',
-  'calibrationProposal',
-  'learnerNote',
-  'learnerAbility',
   'settings',
 ] as const satisfies readonly (keyof PrismaClient)[];
 

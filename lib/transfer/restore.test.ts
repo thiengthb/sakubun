@@ -175,8 +175,8 @@ describe('v2 turns survive a backup', () => {
     applyMigrations(file);
     const db = new Database(file);
     db.prepare(
-      `INSERT INTO Item (id, kind, expression, meaningVi, level, source, createdAt, challengeObservations)
-       VALUES ('itm-restore-1', 'GRAMMAR', '〜つつある', 'đang dần', 'N2', 'MCP', '2026-08-01T00:00:00.000+00:00', 0)`,
+      `INSERT INTO Item (id, kind, expression, meaningVi, level, source, createdAt)
+       VALUES ('itm-restore-1', 'GRAMMAR', '〜つつある', 'đang dần', 'N2', 'MCP', '2026-08-01T00:00:00.000+00:00')`,
     ).run();
     db.prepare(
       `INSERT INTO Turn (id, itemId, direction, ja, vi, status) VALUES (?, ?, 'JA_VI', ?, ?, 'graded')`,
@@ -193,5 +193,29 @@ describe('v2 turns survive a backup', () => {
     const log = await prisma.reviewLog.findUniqueOrThrow({ where: { id: TURN_LOG.id } });
     expect(log).toMatchObject({ turnId: TURN.id, channel: 'mcp' });
     expect(await prisma.turn.count()).toBe(1);
+  });
+
+  it('restores a backup made before the v1 tables were dropped, skipping what no longer exists', async () => {
+    await resetLearningData(prisma);
+    const file = path.join(mkdtempSync(path.join(os.tmpdir(), 'sakubun-sysbak-old-')), 'backup.db');
+    applyMigrations(file, { before: '20261024100000_drop_v1_tables' });
+    const db = new Database(file);
+    db.prepare(
+      `INSERT INTO Item (id, kind, expression, meaningVi, level, source, createdAt, challenge, challengeObservations)
+       VALUES ('itm-old-1', 'VOCAB', '猫', 'mèo', 'N5', 'MCP', '2026-08-01T00:00:00.000+00:00', 1.5, 3)`,
+    ).run();
+    db.prepare(
+      `INSERT INTO LearnerNote (id, text, evidence, expiresAt)
+       VALUES ('n1', 'Hay nhầm に và で', '[]', '2026-09-01T00:00:00.000+00:00')`,
+    ).run();
+    db.close();
+
+    const res = await I.importSystemBackup(file, { dryRun: false });
+
+    expect(res.tables.map((t) => t.table)).not.toContain('LearnerNote');
+    expect(await prisma.item.findUniqueOrThrow({ where: { id: 'itm-old-1' } })).toMatchObject({
+      expression: '猫',
+      meaningVi: 'mèo',
+    });
   });
 });

@@ -21,9 +21,6 @@ export const LEARNING_TABLES = [
   'GroupMember',
   'Group',
   'Item',
-  'CalibrationProposal',
-  'LearnerNote',
-  'LearnerAbility',
   'Settings',
 ] as const;
 

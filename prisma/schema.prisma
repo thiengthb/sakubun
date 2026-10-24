@@ -34,9 +34,6 @@ model Item {
   groups  GroupMember[]
   turns   Turn[]
 
-  challenge             Float?
-  challengeObservations Int    @default(0)
-
   @@unique([kind, expression])
 
   @@index([kind])
@@ -107,8 +104,6 @@ model Sentence {
 
   stagedItems   String?
 
-  extraPatterns String?
-
   status        String    @default("PENDING")
 
   starred       Boolean   @default(false)
@@ -147,61 +142,6 @@ model Turn {
 
   @@index([createdAt])
   @@index([status, createdAt])
-}
-
-model LearnerNote {
-  id String @id @default(cuid())
-
-  text String
-
-  evidence String
-
-  createdAt DateTime @default(now())
-  expiresAt DateTime
-
-  @@index([expiresAt])
-}
-
-model LearnerAbility {
-
-  id String @id @default("singleton")
-
-  abilityReceptive       Float @default(1000)
-  receptiveObservations  Int   @default(0)
-
-  abilityProductive      Float @default(1000)
-  productiveObservations Int   @default(0)
-
-  abilityRegister        Float @default(1000)
-  registerObservations   Int   @default(0)
-
-  updatedAt DateTime @updatedAt
-}
-
-model CalibrationProposal {
-  id String @id @default(cuid())
-
-  target    String
-
-  direction String
-
-  fromValue String
-  toValue   String
-
-  axis         String
-  measured     Float
-  ability      Float
-  observations Int
-
-  reason String
-
-  sentenceId String?
-
-  createdAt DateTime @default(now())
-
-  verdict String?
-
-  @@index([createdAt])
 }
 
 model Settings {

@@ -381,9 +381,6 @@ const SYSTEM_TABLES: SystemTable[] = [
   { name: 'ReviewLog', conflict: ['id'] },
   { name: 'Group', conflict: ['id'] },
   { name: 'GroupMember', conflict: ['groupId', 'itemId'] },
-  { name: 'LearnerNote', conflict: ['id'] },
-  { name: 'LearnerAbility', conflict: ['id'] },
-  { name: 'CalibrationProposal', conflict: ['id'] },
   {
     name: 'Settings',
     conflict: ['id'],
