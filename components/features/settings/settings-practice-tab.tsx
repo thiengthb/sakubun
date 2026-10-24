@@ -27,7 +27,8 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { SpeakButton } from '@/components/common/speak-button';
 import { Stepper } from '@/components/common/stepper';
 import { SettingsTab } from '@/components/features/settings/settings-tab';
-import { SettingIcon, SettingRow } from '@/components/features/settings/setting-row';
+import { IconTile } from '@/components/common/icon-tile';
+import { SettingRow } from '@/components/features/settings/setting-row';
 import { cn } from '@/lib/core/utils';
 import {
   furiganaInApp,
@@ -242,7 +243,7 @@ export function PracticeTab({
           onClick={() => setAdvancedOpen((o) => !o)}
           className="flex min-h-14 w-full items-center gap-3 px-4 py-2.5 text-left transition-colors outline-none hover:bg-muted/50 focus-visible:bg-muted/50"
         >
-          <SettingIcon icon={SlidersHorizontal} tone="muted" />
+          <IconTile icon={SlidersHorizontal} tone="muted" />
           <span className="text-sm font-medium">Nâng cao</span>
           <span className="truncate text-xs text-muted-foreground tabular-nums">
             {retention}% · {settings.dayCutoffHour}h

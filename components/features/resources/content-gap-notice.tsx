@@ -1,7 +1,10 @@
 import Link from 'next/link';
-import { ArrowRight, FileWarning } from 'lucide-react';
+import { FileWarning } from 'lucide-react';
+import { Explain } from '@/components/common/explain';
 
-export function ContentGapNotice({
+// A chip in the dashboard header: how many studied patterns have a card that is not good enough.
+// The why (intro, quiz distractors and the card tab all get poorer) is its tooltip, not a banner.
+export function ContentGapChip({
   studiedWithoutCard,
   enriched,
   total,
@@ -11,27 +14,19 @@ export function ContentGapNotice({
   total: number;
 }) {
   if (studiedWithoutCard === 0) return null;
+  const why = `${studiedWithoutCard} mẫu bạn đang học có thẻ chưa đạt: bài giới thiệu, phương án nhiễu của quiz và tab thẻ đều nghèo đi vì thiếu nó. Toàn kho ${enriched}/${total} thẻ đạt.`;
 
   return (
-    <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-xl border border-warn/40 bg-warn/5 p-4">
-      <FileWarning className="size-4 shrink-0 text-warn" aria-hidden />
-      <p className="text-body">
-        <span className="font-medium text-warn tabular-nums">{studiedWithoutCard}</span> mẫu bạn
-        đang học có thẻ chưa đạt
-        <span className="text-muted-foreground">
-          {' '}
-          — bài giới thiệu mẫu mới, phương án nhiễu của quiz và tab thẻ đều nghèo đi vì thiếu nó.
-        </span>
-      </p>
-      <span className="text-xs text-muted-foreground tabular-nums">
-        toàn kho {enriched}/{total} thẻ đạt
-      </span>
+    <Explain text={why}>
       <Link
         href="/resources?card=needs-work"
-        className="inline-flex items-center gap-1 text-sm text-accent-brand hover:underline"
+        aria-label={`${studiedWithoutCard} thẻ thiếu, xem các mẫu đó`}
+        className="target-44 ml-auto inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full bg-warn-wash px-2.5 text-sm font-medium text-warn transition-colors hover:bg-warn/15 focus-visible:ring-3 focus-visible:ring-ring/50"
       >
-        Xem các mẫu đó <ArrowRight className="size-4" aria-hidden />
+        <FileWarning className="size-4" aria-hidden />
+        <span className="tabular-nums">{studiedWithoutCard}</span>
+        <span className="max-sm:sr-only">thẻ thiếu</span>
       </Link>
-    </div>
+    </Explain>
   );
 }

@@ -1,78 +1,83 @@
+import { type ReactNode } from 'react';
 import { type LucideIcon } from 'lucide-react';
+import { Card } from '@/components/ui/card';
+import { IconTile, type IconTone } from '@/components/common/icon-tile';
+import { InfoTooltip } from '@/components/common/info-tooltip';
 import { ScrollEndOnMount } from '@/components/common/scroll-end-on-mount';
 import { chartEmptyMessage } from '@/lib/insights/chart-empty';
 import { cn } from '@/lib/core/utils';
 
-// The dashboard's own chart vocabulary: stat tiles, a chart frame, bar rows, the activity heatmap
-// and the two legends. It lived inside app/page.tsx, which made it invisible to anything else and
-// made the route file 548 lines of mostly presentation.
+// The dashboard's chart vocabulary: stat tiles, a chart frame, bar rows, the activity heatmap and
+// the state legend. Every frame names itself with an icon and one or two words; what a number
+// counts and where it comes from sits behind the (i), never as a caption under it.
 
-export function StatCard({
-  icon: Icon,
-  label,
-  value,
-  hint,
-  hero = false,
+export function StatTile({
+  icon,
+  media,
+  tone = 'brand',
+  items,
+  compact,
+  explain,
+  className,
 }: {
-  icon: LucideIcon;
-  label: string;
-  value: string;
-  hint?: string;
-  hero?: boolean;
+  icon?: LucideIcon;
+  media?: ReactNode;
+  tone?: IconTone;
+  items: { value: ReactNode; label: string }[];
+  /** One value for a phone-width tile when `items` holds two that would not fit side by side. */
+  compact?: { value: ReactNode; label: string };
+  explain?: ReactNode;
+  className?: string;
 }) {
-  return (
-    <div
-      className={cn(
-        'relative overflow-hidden rounded-xl border border-border/70 bg-card p-4',
-        hero && 'border-accent-brand/30',
-      )}
-    >
-      {hero && (
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 bg-gradient-to-br from-accent-brand/10 to-transparent"
-        />
-      )}
-      <div className="relative">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Icon className="size-4" aria-hidden />
-          {label}
-        </div>
-        <div
-          className={cn(
-            'mt-2 font-semibold',
-            hero ? 'text-2xl sm:text-3xl' : 'text-xl sm:text-2xl',
-          )}
-        >
-          {value}
-        </div>
-        {hint && <div className="mt-1 text-xs text-muted-foreground">{hint}</div>}
+  const metric = (item: { value: ReactNode; label: string }, className?: string) => (
+    <div key={item.label} className={cn('min-w-0', className)}>
+      <div className="truncate text-title2 leading-tight font-semibold tabular-nums">
+        {item.value}
       </div>
+      <div className="truncate text-xs text-muted-foreground">{item.label}</div>
     </div>
+  );
+  return (
+    <Card className={cn('relative flex-row items-center gap-3 p-4', className)}>
+      {media ?? <IconTile icon={icon} tone={tone} />}
+      <div className={cn('flex min-w-0 flex-1 gap-4', compact && 'max-sm:hidden')}>
+        {items.map((item) => metric(item))}
+      </div>
+      {compact && metric(compact, 'flex-1 sm:hidden')}
+      {explain && (
+        <InfoTooltip label={`Giải thích: ${items.map((i) => i.label).join(', ')}`}>
+          {explain}
+        </InfoTooltip>
+      )}
+    </Card>
   );
 }
 
 export function ChartCard({
+  icon: Icon,
   title,
-  children,
+  info,
   action,
+  children,
   className,
 }: {
+  icon: LucideIcon;
   title: string;
-  children: React.ReactNode;
-  action?: React.ReactNode;
+  info?: ReactNode;
+  action?: ReactNode;
+  children: ReactNode;
   className?: string;
 }) {
   return (
-    <div
-      className={cn('h-full space-y-4 rounded-xl border border-border/70 bg-card p-4', className)}
-    >
-      <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
-        <h3 className="text-body font-medium text-muted-foreground">{title}</h3>
-        {action}
+    <Card className={cn('h-full gap-3 p-4', className)}>
+      <div className="flex min-w-0 items-center gap-1.5">
+        <Icon className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+        <h3 className="truncate text-sm font-medium">{title}</h3>
+        {info && <InfoTooltip label={`Giải thích: ${title}`}>{info}</InfoTooltip>}
+        {action && <div className="ml-auto shrink-0">{action}</div>}
       </div>
       {children}
-    </div>
+    </Card>
   );
 }
 
@@ -93,7 +98,6 @@ export function Bars({
     <div className="flex items-end gap-1.5">
       {data.map((d, i) => (
         <div key={`${d.label}-${i}`} className="flex min-w-0 flex-1 flex-col items-center gap-1">
-          <span className="text-[10px] text-muted-foreground">{d.value || ''}</span>
           <div className="flex h-24 w-full items-end">
             <div
               className={cn('w-full rounded-t', barClass)}
@@ -102,15 +106,8 @@ export function Bars({
               aria-hidden
             />
           </div>
-          <span className="max-w-full truncate text-[10px] text-muted-foreground">
-            {d.short ? (
-              <>
-                <span className="md:hidden">{d.short}</span>
-                <span className="max-md:hidden">{d.label}</span>
-              </>
-            ) : (
-              d.label
-            )}
+          <span className="max-w-full truncate text-caption2 text-muted-foreground tabular-nums">
+            {d.short ?? d.label}
           </span>
         </div>
       ))}
@@ -118,23 +115,14 @@ export function Bars({
   );
 }
 
-export function WeakList({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="space-y-1.5">
-      <p className="text-xs text-muted-foreground">{label}</p>
-      <div className="flex flex-wrap gap-2">{children}</div>
-    </div>
-  );
-}
-
 export function HeatmapLegend() {
   return (
-    <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+    <div className="flex items-center gap-1 text-caption2 text-muted-foreground">
       ít
-      <span className="size-3 rounded-[3px] bg-muted" />
-      <span className="size-3 rounded-[3px] bg-accent-brand/40" />
-      <span className="size-3 rounded-[3px] bg-accent-brand/70" />
-      <span className="size-3 rounded-[3px] bg-accent-brand" />
+      <span className="size-3 rounded-sm bg-muted" />
+      <span className="size-3 rounded-sm bg-accent-brand/40" />
+      <span className="size-3 rounded-sm bg-accent-brand/70" />
+      <span className="size-3 rounded-sm bg-accent-brand" />
       nhiều
     </div>
   );
@@ -158,7 +146,7 @@ export function Heatmap({ data, max }: { data: { day: string; count: number }[];
           return (
             <div
               key={d.day}
-              className={cn('size-3 rounded-[3px]', d.count === 0 ? 'bg-muted' : 'bg-accent-brand')}
+              className={cn('size-3 rounded-sm', d.count === 0 ? 'bg-muted' : 'bg-accent-brand')}
               style={d.count === 0 ? undefined : { opacity: 0.3 + 0.7 * ratio }}
               title={`${d.day}: ${d.count} lượt`}
               aria-hidden
@@ -178,57 +166,24 @@ const STATE_SEGMENTS = [
   { key: 'suspended', label: 'Tạm ngưng', bar: 'bg-muted-foreground/50' },
 ] as const;
 
-export function StateLegend() {
+// The legend doubles as the whole-library count per state, which used to be a card of its own.
+function StateLegend({ totals }: { totals: Record<string, number> }) {
   return (
     <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
       {STATE_SEGMENTS.map((s) => (
         <span key={s.key} className="inline-flex items-center gap-1.5">
           <span className={cn('size-2.5 rounded-full', s.bar)} aria-hidden />
           {s.label}
+          <span className="font-medium text-foreground tabular-nums">{totals[s.key] ?? 0}</span>
         </span>
       ))}
     </div>
   );
 }
 
-export function MasteryBar({ mastery }: { mastery: Record<string, number> }) {
-  const total = STATE_SEGMENTS.reduce((sum, s) => sum + (mastery[s.key] ?? 0), 0);
-  if (total === 0) {
-    return (
-      <p className="py-4 text-center text-subhead text-muted-foreground">Kho chưa có mẫu nào.</p>
-    );
-  }
-  return (
-    <div className="space-y-3">
-      <div className="flex h-3 w-full overflow-hidden rounded-full">
-        {STATE_SEGMENTS.map((s) => {
-          const v = mastery[s.key] ?? 0;
-          if (v === 0) return null;
-          return (
-            <div
-              key={s.key}
-              className={s.bar}
-              style={{ width: `${(v / total) * 100}%` }}
-              title={`${s.label}: ${v}`}
-            />
-          );
-        })}
-      </div>
-      <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-        {STATE_SEGMENTS.map((s) => (
-          <span key={s.key} className="inline-flex items-center gap-1.5">
-            <span className={cn('size-2.5 rounded-full', s.bar)} aria-hidden />
-            {s.label}
-            <span className="font-medium text-foreground">{mastery[s.key] ?? 0}</span>
-          </span>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 export function LevelBars({
   data,
+  totals,
 }: {
   data: {
     level: string;
@@ -239,6 +194,7 @@ export function LevelBars({
     suspended: number;
     total: number;
   }[];
+  totals: Record<string, number>;
 }) {
   if (data.length === 0) {
     return (
@@ -250,7 +206,7 @@ export function LevelBars({
       {data.map((d) => (
         <div key={d.level} className="flex items-center gap-3">
           <span className="w-8 shrink-0 text-xs font-medium tabular-nums">{d.level}</span>
-          <div className="flex h-3 flex-1 overflow-hidden rounded-full bg-muted">
+          <div className="flex h-2.5 flex-1 overflow-hidden rounded-full bg-muted">
             {STATE_SEGMENTS.map((s) => {
               const v = d[s.key];
               if (v === 0) return null;
@@ -269,7 +225,7 @@ export function LevelBars({
           </span>
         </div>
       ))}
-      <StateLegend />
+      <StateLegend totals={totals} />
     </div>
   );
 }

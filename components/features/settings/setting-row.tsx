@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { type LucideIcon } from 'lucide-react';
+import { IconTile, type IconTone } from '@/components/common/icon-tile';
 import { InfoTooltip } from '@/components/common/info-tooltip';
 import { cn } from '@/lib/core/utils';
 
@@ -7,41 +8,6 @@ import { cn } from '@/lib/core/utils';
 // self-explanatory, and the control on the right. Explanations live behind the (i), never as a
 // paragraph under the row. The rows sit in a @container card, so a wide control (pills, a segmented
 // choice) drops under its name when the CARD is narrow, whatever the viewport.
-const TONE = {
-  brand: 'bg-brand-wash text-accent-brand',
-  ok: 'bg-ok-wash text-ok',
-  info: 'bg-info-wash text-info',
-  warn: 'bg-warn-wash text-warn',
-  muted: 'bg-muted text-muted-foreground',
-} as const;
-
-export type SettingTone = keyof typeof TONE;
-
-export function SettingIcon({
-  icon: Icon,
-  glyph,
-  tone,
-  className,
-}: {
-  icon?: LucideIcon;
-  glyph?: string;
-  tone: SettingTone;
-  className?: string;
-}) {
-  return (
-    <span
-      aria-hidden
-      className={cn(
-        'flex size-8 shrink-0 items-center justify-center rounded-lg text-sm',
-        TONE[tone],
-        className,
-      )}
-    >
-      {Icon ? <Icon className="size-4" /> : <span lang="ja">{glyph}</span>}
-    </span>
-  );
-}
-
 export function SettingRow({
   icon,
   glyph,
@@ -56,7 +22,7 @@ export function SettingRow({
 }: {
   icon?: LucideIcon;
   glyph?: string;
-  tone: SettingTone;
+  tone: IconTone;
   label: string;
   unit?: string;
   info?: ReactNode;
@@ -69,7 +35,7 @@ export function SettingRow({
     <div
       className={cn('flex min-h-14 flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2.5', className)}
     >
-      <SettingIcon icon={icon} glyph={glyph} tone={tone} />
+      <IconTile icon={icon} glyph={glyph} tone={tone} />
       <div className="flex min-w-0 flex-1 items-center gap-1.5">
         <span className="truncate text-sm font-medium">{label}</span>
         {unit && <span className="shrink-0 text-xs text-muted-foreground">{unit}</span>}

@@ -79,8 +79,8 @@ describe('invariant #9 — Japanese content renders through SpokenLine', () => {
   it('an item expression is never rendered as bare text outside the declared exceptions', () => {
     const ALLOW = new Map([
       [
-        'components/common/weak-item-badge.tsx',
-        'dense summary badge; links to the item page, which is playable',
+        'components/features/dashboard/weak-chips.tsx',
+        'dense 30-day weak-spot chips; each links to the item page, which is playable',
       ],
       [
         'components/features/history/history-cards.tsx',

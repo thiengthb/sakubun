@@ -1,41 +1,42 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
+import { StatTile } from '@/components/features/dashboard/dashboard-charts';
 import { StreakCelebration } from '@/components/features/dashboard/streak-celebration';
 import { StreakFlame } from '@/components/features/dashboard/streak-flame';
 import { tierForStreak } from '@/lib/srs/streak-tiers';
 
-export function StreakCard({ current, hint }: { current: number; hint?: string }) {
+// The streak stat tile: the flame stands where the other tiles have their icon, and pressing it
+// replays the celebration.
+export function StreakCard({ current, explain }: { current: number; explain?: ReactNode }) {
   const t = tierForStreak(current);
   const [preview, setPreview] = useState(0);
   return (
-    <div className="relative overflow-hidden rounded-xl border border-border/70 bg-card p-4">
-      {current > 0 && (
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0"
-          style={{
-            opacity: t.heat,
-            background: `radial-gradient(120px 90px at 22px 42px, ${t.f2}, transparent 70%)`,
-          }}
-        />
-      )}
-      <div className="relative">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+    <div className="relative">
+      <StatTile
+        media={
           <button
             type="button"
             onClick={() => setPreview((p) => p + 1)}
             aria-label="Xem lại hiệu ứng chuỗi ngày"
-            title="Bấm để xem hiệu ứng lửa"
-            className="-m-1 rounded-md p-1 transition-transform hover:scale-110 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+            className="relative flex size-8 shrink-0 items-center justify-center rounded-lg bg-warn-wash transition-transform hover:scale-105 focus-visible:ring-3 focus-visible:ring-ring/50"
           >
-            <StreakFlame count={current} className="size-[18px]" />
+            {current > 0 && (
+              <span
+                aria-hidden
+                className="pointer-events-none absolute inset-0 rounded-lg"
+                style={{
+                  opacity: t.heat,
+                  background: `radial-gradient(closest-side, ${t.f2}, transparent)`,
+                }}
+              />
+            )}
+            <StreakFlame count={current} className="relative size-4" />
           </button>
-          Chuỗi ngày học
-        </div>
-        <div className="mt-2 text-2xl font-semibold tabular-nums">{current} ngày</div>
-        {hint && <div className="mt-1 text-xs text-muted-foreground">{hint}</div>}
-      </div>
+        }
+        items={[{ value: current, label: 'Chuỗi ngày' }]}
+        explain={explain}
+      />
       <StreakCelebration current={current} previewNonce={preview} auto={false} />
     </div>
   );
