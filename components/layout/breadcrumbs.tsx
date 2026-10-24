@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ChevronRight, type LucideIcon } from 'lucide-react';
+import { ChevronRight, Loader2, type LucideIcon } from 'lucide-react';
 import { Explain } from '@/components/common/explain';
 import { cn } from '@/lib/core/utils';
 
@@ -65,5 +65,16 @@ export function Breadcrumbs({ items, className }: { items: Crumb[]; className?: 
         })}
       </ol>
     </nav>
+  );
+}
+
+// A one-crumb trail for a skeleton that cannot know the page's crumbs. It lives here, in the client
+// module, because an icon component cannot cross from a server component into a client one.
+export function BreadcrumbPlaceholder({ className }: { className?: string }) {
+  return (
+    <Breadcrumbs
+      items={[{ label: 'Đang tải', icon: Loader2, description: '' }]}
+      className={className}
+    />
   );
 }
