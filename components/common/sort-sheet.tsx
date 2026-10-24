@@ -38,7 +38,7 @@ export function SortSheet({
   const label = active ? `Sắp xếp: ${current?.label ?? ''}` : 'Sắp xếp';
 
   return (
-    <div className="relative shrink-0 md:hidden">
+    <div className="relative shrink-0 lg:hidden">
       <BottomSheet
         trigger={
           <ExpandingIconButton

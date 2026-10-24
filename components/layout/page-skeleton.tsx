@@ -210,7 +210,7 @@ export function ToolbarSkeleton({
     <div className="flex flex-row items-center gap-2 sm:gap-3">
       <Skeleton className="h-9 min-w-0 flex-1 rounded-sm sm:max-w-xs md:h-7" />
       <div className="flex shrink-0 items-center gap-2 md:ml-auto">
-        {columnMenu && <Skeleton className="size-7 rounded-sm max-md:hidden" />}
+        {columnMenu && <Skeleton className="size-7 rounded-sm max-lg:hidden" />}
         {/* Filter and sort are labelled buttons ("Lọc", "Sắp xếp"), not bare icons. */}
         {Array.from({ length: filters }, (_, i) => (
           <Skeleton key={i} className="h-9 w-16 rounded-sm md:h-7" />

@@ -131,10 +131,10 @@ export function TableSkeleton({
         fallback={Math.min(rows, 5)}
         min={min}
         max={max}
-        className="flex flex-col gap-2 md:hidden"
+        className="grid gap-2 md:grid-cols-2 md:gap-3 lg:hidden"
         item={RESOURCE_CARD}
       />
-      <div className="space-y-2 rounded-lg border p-4 max-md:hidden">
+      <div className="space-y-2 rounded-lg border p-4 max-lg:hidden">
         <div className="flex items-center gap-3 border-b pb-2">
           <div className="size-6 shrink-0" />
           <Skeleton className="h-3 w-24 flex-[3]" style={{ maxWidth: 100 }} />
@@ -153,7 +153,12 @@ export function TableSkeleton({
           item={TABLE_ROW}
         />
       </div>
-      {footer && <PaginationFooterSkeleton />}
+      {/* Below 1024px the cards load more as they scroll: no pagination. */}
+      {footer && (
+        <div className="max-lg:hidden">
+          <PaginationFooterSkeleton />
+        </div>
+      )}
     </div>
   );
 }

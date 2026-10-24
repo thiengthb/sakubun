@@ -84,6 +84,9 @@ const VIEW_CHOICES = [
   { value: 'cards', label: 'Xem dạng thẻ', icon: LayoutGrid },
 ] as const satisfies readonly { value: DataTableView; label: string; icon: LucideIcon }[];
 
+// Cards (below 1024px, and the card view on a wider screen) show this many more each time the end
+// of the list scrolls into view; only the table pages (docs/ui-standard.md › Bố cục).
+const CARD_STEP = 20;
 const EMPTY_SORTING: SortingState = [];
 const EMPTY_SIZING: ColumnSizingState = {};
 
@@ -108,7 +111,6 @@ export interface DataTableProps<T> {
   pageSizeOptions?: number[];
   initialPageSize?: number;
   estimatedRowHeight?: number;
-  estimatedCardHeight?: number;
   rowClassName?: (row: T) => string | undefined;
   totalCount?: number;
   countNoun?: string;
@@ -140,7 +142,6 @@ export function DataTable<T>({
   pageSizeOptions = [25, 50, 100],
   initialPageSize = 50,
   estimatedRowHeight = 45,
-  estimatedCardHeight = 116,
   rowClassName,
   totalCount,
   countNoun = 'dòng',
@@ -196,20 +197,9 @@ export function DataTable<T>({
   );
   const [autoFit, setAutoFit] = useSessionState<boolean>(`${persistKey}.autofit`, true);
   const bodyRef = useRef<HTMLTableSectionElement>(null);
-  const cardsRef = useRef<HTMLUListElement>(null);
   const footerRef = useRef<HTMLDivElement>(null);
-  const fitRows = useFitRows({ topRef: bodyRef, footerRef, rowHeight: estimatedRowHeight });
-  // Card view fills a grid, so the count that fits is rows × columns, not rows. The hook reads the
-  // real column count out of `grid-template-columns` and the real card height off the first row, so
-  // a 3-across grid asks for 3× the page a 1-across phone does — measured, not guessed.
-  const fitCards = useFitRows({
-    topRef: cardsRef,
-    footerRef,
-    rowHeight: estimatedCardHeight,
-    grid: true,
-  });
-  // Exactly one of the two is visible at any width, and the hidden one reports null.
-  const fit = fitCards ?? fitRows;
+  // Only the table pages; the cards load more as they scroll, so their fit is not asked for.
+  const fit = useFitRows({ topRef: bodyRef, footerRef, rowHeight: estimatedRowHeight });
   const effectivePageSize = autoFit && fit != null ? fit : pageSize;
   const sizeOptions = useMemo(
     () =>
@@ -329,6 +319,30 @@ export function DataTable<T>({
 
   const filteredCount = table.getFilteredRowModel().rows.length;
   const rows = table.getRowModel().rows;
+  // The card list starts over whenever what it lists changes: a new search, sort or filter.
+  const allRows = table.getPrePaginationRowModel().rows;
+  const listKey = JSON.stringify([globalFilter, sorting, filteredCount]);
+  const [more, setMore] = useState({ key: listKey, shown: CARD_STEP });
+  const shownCards = more.key === listKey ? more.shown : CARD_STEP;
+  const cardRows = allRows.slice(0, shownCards);
+  const moreCards = shownCards < allRows.length;
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el || !moreCards) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((e) => e.isIntersecting)) return;
+        setMore((m) => ({
+          key: listKey,
+          shown: (m.key === listKey ? m.shown : CARD_STEP) + CARD_STEP,
+        }));
+      },
+      { rootMargin: '400px 0px' },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [moreCards, listKey]);
   const pageCount = table.getPageCount();
   const safePageIndex = Math.min(pageIndex, Math.max(0, pageCount - 1));
   const start = safePageIndex * effectivePageSize;
@@ -432,7 +446,7 @@ export function DataTable<T>({
           <div
             role="group"
             aria-label="Kiểu hiển thị"
-            className="flex shrink-0 items-center gap-1.5 max-md:hidden"
+            className="flex shrink-0 items-center gap-1.5 max-lg:hidden"
           >
             {VIEW_CHOICES.map(({ value, label, icon: Icon }) => {
               const active = view === value;
@@ -480,7 +494,7 @@ export function DataTable<T>({
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="outline"
-                  className="gap-0 max-md:hidden"
+                  className="gap-0 max-lg:hidden"
                   aria-label="Hiển thị cột"
                   title="Hiển thị cột"
                 >
@@ -539,16 +553,15 @@ export function DataTable<T>({
         <>
           {renderCard && (
             <ul
-              ref={cardsRef}
               data-slot="data-table-cards"
               className={cn(
-                'grid gap-2',
-                // `md:hidden` is the mobile-only case: cards are the phone layout no matter what the
-                // desktop switch says. In card view the same list becomes the desktop layout too.
-                cards ? 'md:grid-cols-2 md:gap-3 xl:grid-cols-3' : 'md:hidden',
+                'grid gap-2 md:grid-cols-2 md:gap-3',
+                // Below 1024px cards are the layout no matter what the switch says (`lg:hidden`).
+                // In card view the same list becomes the wide layout too.
+                cards ? 'xl:grid-cols-3' : 'lg:hidden',
               )}
             >
-              {rows.map((row, i) => {
+              {cardRows.map((row, i) => {
                 const selected = enableRowSelection && row.getIsSelected();
                 return (
                   <li
@@ -579,7 +592,7 @@ export function DataTable<T>({
                         />
                       )}
                       <div className="min-w-0 flex-1">
-                        {renderCard(row.original, start + i + 1)}
+                        {renderCard(row.original, i + 1)}
                       </div>
                     </div>
                   </li>
@@ -588,7 +601,16 @@ export function DataTable<T>({
             </ul>
           )}
 
-          <div className={cn(renderCard && 'max-md:hidden', cards && 'md:hidden')}>
+          {renderCard && (
+            <div
+              ref={sentinelRef}
+              className={cn('py-2 text-center text-xs text-muted-foreground', !cards && 'lg:hidden')}
+            >
+              {moreCards ? 'Đang tải thêm…' : `${filteredCount} ${countNoun}`}
+            </div>
+          )}
+
+          <div className={cn(renderCard && 'max-lg:hidden', cards && 'lg:hidden')}>
             <Table className="table-fixed" style={{ minWidth: table.getTotalSize() }}>
               <TableHeader>
                 {table.getHeaderGroups().map((hg) => (
@@ -777,7 +799,7 @@ export function DataTable<T>({
             </Table>
           </div>
 
-          <div ref={footerRef}>
+          <div ref={footerRef} className={cn(renderCard && 'max-lg:hidden', cards && 'lg:hidden')}>
             <DataPagination
               count={
                 <>
