@@ -3,11 +3,24 @@
 // (確認 → XÁC NHẬN). Per-word guesses by the model were wrong for ~1 in 6 kanji words; a single
 // character is a much easier question, and Unihan gives candidates to check it against.
 //   LLM_URL=… LLM_KEY=… node scripts/openjlpt/hanviet.mjs
+//   node scripts/openjlpt/hanviet.mjs --reclassify    (no model calls: re-check saved readings only)
 // Reads data/openjlpt/unihan-vi.json (scripts/openjlpt/unihan.py), writes data/openjlpt/hanviet-kanji.json
-// { kanji: { reading, source: "agree" | "llm-only" | "disagree", unihan: [...] } } (resumable) and
-// data/openjlpt/hanviet-review.md listing every "disagree" for a human to check.
+// { kanji: { reading, source: "agree" | "override" | "llm-only" | "disagree" | "invalid", unihan: [...],
+//   dict: [...], llm? } } (`llm` keeps the model's reading while an override replaces it)
+// (resumable) and data/openjlpt/hanviet-review.md listing every reading not confirmed, for a human to check.
+//
+// A reading is confirmed ("agree") when Unihan or the Hán Việt dictionary of hanviet-pinyin-words lists
+// it. Unihan alone left 772 kanji unconfirmed: it has no Vietnamese for many characters and often gives
+// only the Nôm reading (年 "nên"). The dictionary is keyed by traditional characters, so a Japanese
+// shinjitai is also looked up by its old form from kyujitai (気 → 氣).
+//
+// The dictionary also lists Nôm and minor readings (箒 chổi), so a match can confirm a wrong reading.
+// data/openjlpt/hanviet-overrides.json fixes those by hand: `kanji` sets a reading (source "override"),
+// `words` spells a whole word whose kanji reads differently there (銀行 NGÂN HÀNG, not HÀNH).
 import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import { hanvietData } from 'hanviet-pinyin-words';
+import kyujitai from 'kyujitai/data/kyujitai.json' with { type: 'json' };
 
 const DIR = path.join(process.cwd(), 'data/openjlpt');
 const LLM = process.env.LLM_URL ?? 'http://100.85.167.65:8090/v1/chat/completions';
@@ -34,10 +47,23 @@ export function sameSyllable(a, b) {
   return !!a && !!b && key(a) === key(b);
 }
 const isVietnamese = (s) => !!s && /^[a-zà-ỹđ]+$/u.test(norm(s));
-export function classify(reading, unihan) {
+export function classify(reading, unihan, dict = []) {
   if (!isVietnamese(reading)) return 'invalid';
-  if (!unihan?.length) return 'llm-only';
-  return unihan.some((c) => sameSyllable(reading, c)) ? 'agree' : 'disagree';
+  const candidates = [...(unihan ?? []), ...dict];
+  if (!candidates.length) return 'llm-only';
+  return candidates.some((c) => sameSyllable(reading, c)) ? 'agree' : 'disagree';
+}
+
+const OLD_FORM = Object.fromEntries(kyujitai.kyuji.map(([shinjitai, kyuji]) => [shinjitai, kyuji]));
+// Dictionary readings of a kanji, also under its pre-1946 form.
+export function dictReadings(kanji) {
+  const out = [];
+  for (const form of [kanji, OLD_FORM[kanji]]) {
+    for (const readings of Object.values(hanvietData[form] ?? {})) {
+      for (const r of readings) if (!out.includes(norm(r))) out.push(norm(r));
+    }
+  }
+  return out;
 }
 
 // Spell a word's Hán Việt from its kanji; null if any kanji has no reading (better nothing than half).
@@ -69,11 +95,13 @@ async function ask(chars) {
 }
 
 async function main() {
-  if (!KEY) throw new Error('LLM_KEY is not set');
+  const reclassifyOnly = process.argv.includes('--reclassify');
+  if (!KEY && !reclassifyOnly) throw new Error('LLM_KEY is not set');
   const unihan = JSON.parse(await readFile(path.join(DIR, 'unihan-vi.json'), 'utf8'));
   const outPath = path.join(DIR, 'hanviet-kanji.json');
   const table = JSON.parse(await readFile(outPath, 'utf8').catch(() => '{}'));
-  const todo = Object.keys(unihan).filter((k) => !table[k]);
+  const overrides = JSON.parse(await readFile(path.join(DIR, 'hanviet-overrides.json'), 'utf8'));
+  const todo = reclassifyOnly ? [] : Object.keys(unihan).filter((k) => !table[k]);
   for (let i = 0; i < todo.length; i += BATCH) {
     const batch = todo.slice(i, i + BATCH);
     let items = [];
@@ -87,22 +115,36 @@ async function main() {
     for (const { k, hv } of items) {
       if (!batch.includes(k)) continue;
       const llm = hv ? norm(hv) : null;
-      table[k] = { reading: llm, source: classify(llm, unihan[k]), unihan: unihan[k] ?? [] };
+      table[k] = { reading: llm, source: 'llm-only', unihan: unihan[k] ?? [] };
     }
     await writeFile(outPath, JSON.stringify(table, null, 0).replace(/},"/g, '},\n"') + '\n');
     console.log(`${Math.min(i + BATCH, todo.length)}/${todo.length}`);
   }
-  for (const v of Object.values(table)) v.source = classify(v.reading, v.unihan);
+  for (const [k, v] of Object.entries(table)) {
+    v.dict = dictReadings(k);
+    if (overrides.kanji[k]) {
+      v.llm ??= v.reading;
+      v.reading = overrides.kanji[k];
+      v.source = 'override';
+    } else {
+      if (v.llm !== undefined) v.reading = v.llm;
+      delete v.llm;
+      v.source = classify(v.reading, v.unihan, v.dict);
+    }
+  }
   await writeFile(outPath, JSON.stringify(table, null, 0).replace(/},"/g, '},\n"') + '\n');
-  const bad = Object.entries(table).filter(([, v]) => v.source !== 'agree');
+  const bad = Object.entries(table).filter(
+    ([, v]) => v.source !== 'agree' && v.source !== 'override',
+  );
   await writeFile(
     path.join(DIR, 'hanviet-review.md'),
-    `# Âm Hán Việt cần xem lại (${bad.length} chữ)\n\nGemma và từ điển Unihan không khớp, hoặc Unihan không có chữ này. ` +
-      `Sửa cột "Dùng" nếu sai.\n\n| Chữ | Dùng (Gemma) | Unihan gợi ý | Loại |\n|---|---|---|---|\n` +
+    `# Âm Hán Việt cần xem lại (${bad.length} chữ)\n\nÂm của Gemma không có trong từ điển Hán Việt lẫn Unihan, ` +
+      `hoặc cả hai không có chữ này. Sửa cột "Dùng" nếu sai.\n\n` +
+      `| Chữ | Dùng (Gemma) | Từ điển gợi ý | Unihan gợi ý | Loại |\n|---|---|---|---|---|\n` +
       bad
         .map(
           ([k, v]) =>
-            `| ${k} | ${v.reading ?? '—'} | ${v.unihan.join(', ') || '—'} | ${v.source} |`,
+            `| ${k} | ${v.reading ?? '—'} | ${v.dict.join(', ') || '—'} | ${v.unihan.join(', ') || '—'} | ${v.source} |`,
         )
         .join('\n') +
       '\n',
