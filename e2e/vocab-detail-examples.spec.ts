@@ -30,8 +30,8 @@ test.beforeAll(async () => {
     db.prepare('DELETE FROM Item WHERE id = ?').run(ID);
     db.prepare(
       `INSERT INTO Item (id, kind, expression, reading, hanviet, meaningVi, level, notes, source,
-                         captureReason, suspended, starred, createdAt, challengeObservations, enrichment)
-       VALUES (?, 'VOCAB', '飲む', 'のむ', 'ẩm', 'uống', 'N5', ?, 'MCP', NULL, 0, 0, ?, 0, ?)`,
+                         captureReason, suspended, starred, createdAt, enrichment)
+       VALUES (?, 'VOCAB', '飲む', 'のむ', 'ẩm', 'uống', 'N5', ?, 'MCP', NULL, 0, 0, ?, ?)`,
     ).run(ID, STORED, new Date().toISOString().replace('Z', '+00:00'), CARD);
   } finally {
     db.close();

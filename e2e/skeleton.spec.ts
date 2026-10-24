@@ -67,8 +67,8 @@ test.beforeAll(async () => {
       db.exec(`DELETE FROM "${t}"`);
     const item = db.prepare(
       `INSERT INTO Item (id, kind, expression, reading, hanviet, meaningVi, level, notes, source,
-         captureReason, suspended, starred, createdAt, challengeObservations)
-       VALUES (?, 'GRAMMAR', ?, NULL, NULL, ?, 'N2', NULL, 'MCP', NULL, 0, 0, ?, 0)`,
+         captureReason, suspended, starred, createdAt)
+       VALUES (?, 'GRAMMAR', ?, NULL, NULL, ?, 'N2', NULL, 'MCP', NULL, 0, 0, ?)`,
     );
     for (let n = 0; n < 40; n++)
       item.run(`sk${n}`, `〜ばかりに${n}`, `chỉ vì ${n} (một nghĩa dài vừa phải để card cao như thật)`, iso(now - n * 1000));

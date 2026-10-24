@@ -16,8 +16,8 @@ function seed() {
       db.exec(`DELETE FROM "${t}"`);
     const item = db.prepare(
       `INSERT INTO Item (id, kind, expression, reading, hanviet, meaningVi, level, notes, source,
-         captureReason, suspended, starred, createdAt, challengeObservations, enrichment)
-       VALUES (?, 'VOCAB', ?, ?, NULL, ?, 'N2', NULL, 'MCP', NULL, 0, 0, ?, 0, ?)`,
+         captureReason, suspended, starred, createdAt, enrichment)
+       VALUES (?, 'VOCAB', ?, ?, NULL, ?, 'N2', NULL, 'MCP', NULL, 0, 0, ?, ?)`,
     );
     const srs = db.prepare(
       `INSERT INTO SrsState (id, itemId, due, stability, difficulty, scheduledDays, learningSteps,
@@ -60,8 +60,8 @@ function seedLong() {
   try {
     const item = db.prepare(
       `INSERT INTO Item (id, kind, expression, reading, hanviet, meaningVi, level, notes, source,
-         captureReason, suspended, starred, createdAt, challengeObservations)
-       VALUES (?, 'VOCAB', ?, NULL, NULL, ?, 'N1', NULL, 'MCP', NULL, 0, 0, ?, 0)`,
+         captureReason, suspended, starred, createdAt)
+       VALUES (?, 'VOCAB', ?, NULL, NULL, ?, 'N1', NULL, 'MCP', NULL, 0, 0, ?)`,
     );
     item.run(
       'long',

@@ -38,8 +38,8 @@ async function seed() {
 
   const item = db.prepare(
     `INSERT INTO Item (id, kind, expression, reading, hanviet, meaningVi, level, notes, source,
-       captureReason, suspended, starred, enrichment, createdAt, challengeObservations)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'MCP', ?, ?, ?, ?, ?, 0)`,
+       captureReason, suspended, starred, enrichment, createdAt)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'MCP', ?, ?, ?, ?, ?)`,
   );
   item.run(
     'g1',
@@ -170,10 +170,10 @@ async function seed() {
 
   db.prepare(
     `INSERT INTO Sentence (id, direction, context, exerciseType, sourceText, sourceRuby, userAnswer,
-       suggested, suggestedRuby, feedback, score, stagedItems, extraPatterns, status, starred,
+       suggested, suggestedRuby, feedback, score, stagedItems, status, starred,
        createdAt, answeredAt)
      VALUES ('s1', 'VI_JA', NULL, 'TRANSLATION', 'Tôi vừa mới đến.', NULL, '来たばかりです。',
-       '来たばかりです。', NULL, NULL, 90, NULL, NULL, 'GRADED', 0, ?, ?)`,
+       '来たばかりです。', NULL, NULL, 90, NULL, 'GRADED', 0, ?, ?)`,
   ).run(iso(now), iso(now + 1000));
   db.close();
 }

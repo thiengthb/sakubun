@@ -12,8 +12,8 @@ test('bulk add/remove to group, and the item-detail membership chips', async ({ 
     db.exec(`DELETE FROM "${t}"`);
   const item = db.prepare(
     `INSERT INTO Item (id, kind, expression, reading, hanviet, meaningVi, level, notes, source,
-       captureReason, suspended, starred, createdAt, challengeObservations)
-     VALUES (?, ?, ?, NULL, NULL, ?, 'N2', NULL, 'MCP', NULL, 0, 0, ?, 0)`,
+       captureReason, suspended, starred, createdAt)
+     VALUES (?, ?, ?, NULL, NULL, ?, 'N2', NULL, 'MCP', NULL, 0, 0, ?)`,
   );
   item.run('g0', 'GRAMMAR', '〜ばかりに', 'chỉ vì', iso(now));
   item.run('g1', 'GRAMMAR', '〜ざるを得ない', 'buộc phải', iso(now - 1000));
