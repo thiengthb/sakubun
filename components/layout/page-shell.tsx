@@ -39,7 +39,7 @@ export function PageShell({
   const crumb =
     breadcrumb ?? (section ? <AppBreadcrumbs section={section} action={action} /> : null);
   return (
-    <div className={cn('w-full min-w-0 space-y-4 pt-6 pb-6 text-sm', WIDTH[width], className)}>
+    <div className={cn('w-full min-w-0 space-y-4 pt-6 pb-6 text-body', WIDTH[width], className)}>
       <ScrollRestorer />
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2 max-md:flex-nowrap max-md:gap-x-2">
         <MobileTopBar />

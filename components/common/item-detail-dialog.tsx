@@ -107,7 +107,7 @@ export function ItemDetailDialog({
               label={kind === 'grammar' ? 'Nghe mẫu' : 'Nghe từ'}
             />
             {showReading && !showFurigana && (
-              <span className="text-base font-normal text-muted-foreground">
+              <span className="text-body font-normal text-muted-foreground">
                 （{item.reading}）
               </span>
             )}
@@ -116,7 +116,7 @@ export function ItemDetailDialog({
           <DialogDescription>{item.meaningVi}</DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-5 text-sm">
+        <div className="space-y-5 text-body">
           {kind === 'vocab' && item.hanviet && (
             <section className="space-y-1">
               <SectionTag>Âm Hán Việt</SectionTag>

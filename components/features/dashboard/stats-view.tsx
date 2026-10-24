@@ -134,11 +134,11 @@ function ChartCard({
   return (
     <div className={cn('space-y-3 rounded-lg border border-border/70 p-4', className)}>
       <div>
-        <h3 className="text-sm font-medium">{title}</h3>
+        <h3 className="text-body font-medium">{title}</h3>
         {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
       </div>
       {empty ? (
-        <p className="py-10 text-center text-sm text-muted-foreground">{empty}</p>
+        <p className="py-10 text-center text-subhead text-muted-foreground">{empty}</p>
       ) : (
         children
       )}

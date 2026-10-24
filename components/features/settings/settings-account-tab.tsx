@@ -274,7 +274,7 @@ export function AccountTab({
                     </Button>
                   </div>
                 )}
-                <p className="truncate text-sm text-muted-foreground">{email}</p>
+                <p className="truncate text-subhead text-muted-foreground">{email}</p>
               </div>
             </div>
 
@@ -326,7 +326,7 @@ export function AccountTab({
                 </Button>
               </form>
             ) : (
-              <div className="flex items-center rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
+              <div className="flex items-center rounded-lg border border-dashed p-4 text-subhead text-muted-foreground">
                 Bạn đăng nhập bằng Google nên tài khoản không có mật khẩu để đổi.
               </div>
             )}
@@ -361,7 +361,7 @@ export function AccountTab({
             </form>
 
             {keys.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Chưa có token nào.</p>
+              <p className="text-subhead text-muted-foreground">Chưa có token nào.</p>
             ) : (
               <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {keys.map((k) => (

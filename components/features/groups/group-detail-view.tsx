@@ -203,7 +203,9 @@ export function GroupDetailView({
                         )}
                       </div>
                       {m.meaningVi && (
-                        <div className="truncate text-sm text-muted-foreground">{m.meaningVi}</div>
+                        <div className="truncate text-subhead text-muted-foreground">
+                          {m.meaningVi}
+                        </div>
                       )}
                     </div>
                     <ItemDetailDialog

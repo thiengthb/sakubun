@@ -33,7 +33,7 @@ function Section({
       <AccordionTrigger className="py-2 hover:no-underline">
         <SectionTag>{title}</SectionTag>
       </AccordionTrigger>
-      <AccordionContent className="text-sm">{children}</AccordionContent>
+      <AccordionContent className="text-body">{children}</AccordionContent>
     </AccordionItem>
   );
 }
@@ -113,7 +113,7 @@ export function EnrichmentCard({
     return (
       <div className={cn('w-full', className)}>
         {storedExample && (
-          <section className="space-y-1 px-1 pb-3 text-sm">
+          <section className="space-y-1 px-1 pb-3 text-body">
             <p className="text-xs text-muted-foreground">Ví dụ</p>
             <SpokenLine
               text={storedExample}

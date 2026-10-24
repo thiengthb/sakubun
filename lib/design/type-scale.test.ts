@@ -77,4 +77,20 @@ describe('Typography type scale (nuc-platform/12-ui-layout-standard.md §typogra
         offenders.join('\n'),
     ).toEqual([]);
   });
+
+  it('reading content is 17px (text-body); controls keep their own 14px', () => {
+    // thien's call (2026-10-24): content follows the thienui type scale (text-body = 17px on a 16px
+    // root), buttons, tabs and labels stay text-sm. The baseline is set once, on the page shell and
+    // its skeleton; cards and breadcrumbs (which stand in for page titles) must not shrink it back.
+    const must: [string, RegExp][] = [
+      ['components/layout/page-shell.tsx', /pt-6 pb-6 text-body'/],
+      ['components/layout/page-skeleton.tsx', /pt-6 pb-6 text-body'/],
+      ['components/layout/breadcrumbs.tsx', /<ol className="[^"]*\btext-body\b/],
+      ['components/ui/card.tsx', /'group\/card [^']*\btext-body\b/],
+    ];
+    const missing = must
+      .filter(([file, re]) => !re.test(readFileSync(file, 'utf8')))
+      .map(([f]) => f);
+    expect(missing, 'These set the 17px content baseline; keep text-body there:').toEqual([]);
+  });
 });

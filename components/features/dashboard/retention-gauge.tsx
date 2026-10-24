@@ -1,5 +1,9 @@
 import { cn } from '@/lib/core/utils';
-import { retentionVerdict, type RetentionVerdictKind, type TrueRetention } from '@/lib/srs/retention';
+import {
+  retentionVerdict,
+  type RetentionVerdictKind,
+  type TrueRetention,
+} from '@/lib/srs/retention';
 
 export function RetentionGauge({
   actual,
@@ -25,14 +29,14 @@ export function RetentionGauge({
   if (verdict.kind === 'insufficient') {
     return (
       <div className="space-y-2">
-        <p className="text-sm">{verdict.message}</p>
+        <p className="text-body">{verdict.message}</p>
         <p className="text-xs text-muted-foreground">
           Đang có <span className="tabular-nums">{actual.correct}</span>/
           <span className="tabular-nums">{actual.reviews}</span> lượt đúng
           {actualPct === null ? '' : ` (${actualPct}%)`} ở những mẫu đã vào giai đoạn Ôn tập, trong{' '}
           <span className="tabular-nums">{windowDays}</span> ngày qua. Chưa so với mục tiêu{' '}
-          <span className="tabular-nums">{targetPct}%</span> vì mẫu còn quá nhỏ để con số nói được điều
-          gì.
+          <span className="tabular-nums">{targetPct}%</span> vì mẫu còn quá nhỏ để con số nói được
+          điều gì.
         </p>
       </div>
     );
@@ -44,7 +48,7 @@ export function RetentionGauge({
         <span className={cn('text-3xl font-semibold tabular-nums', tone.text)}>
           {actualPct === null ? '—' : `${actualPct}%`}
         </span>
-        <span className="text-sm text-muted-foreground">
+        <span className="text-subhead text-muted-foreground">
           bạn thực sự nhớ được · mục tiêu <span className="tabular-nums">{targetPct}%</span>
         </span>
       </div>
@@ -64,7 +68,7 @@ export function RetentionGauge({
         />
       </div>
 
-      <p className="text-sm text-muted-foreground">{verdict.message}</p>
+      <p className="text-subhead text-muted-foreground">{verdict.message}</p>
 
       <p className="text-xs text-muted-foreground">
         Tính trên <span className="tabular-nums">{actual.correct}</span>/

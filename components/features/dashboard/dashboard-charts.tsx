@@ -68,7 +68,7 @@ export function ChartCard({
       className={cn('h-full space-y-4 rounded-xl border border-border/70 bg-card p-4', className)}
     >
       <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
-        <h3 className="text-sm font-medium text-muted-foreground">{title}</h3>
+        <h3 className="text-body font-medium text-muted-foreground">{title}</h3>
         {action}
       </div>
       {children}
@@ -87,7 +87,7 @@ export function Bars({
 }) {
   const max = Math.max(1, ...data.map((d) => d.value));
   if (data.every((d) => d.value === 0)) {
-    return <p className="py-8 text-center text-sm text-muted-foreground">{empty}</p>;
+    return <p className="py-8 text-center text-subhead text-muted-foreground">{empty}</p>;
   }
   return (
     <div className="flex items-end gap-1.5">
@@ -148,7 +148,7 @@ export function Heatmap({ data, max }: { data: { day: string; count: number }[];
     noun: 'hoạt động nào',
   });
   if (empty) {
-    return <p className="py-8 text-center text-sm text-muted-foreground">{empty}</p>;
+    return <p className="py-8 text-center text-subhead text-muted-foreground">{empty}</p>;
   }
   return (
     <ScrollEndOnMount>
@@ -194,7 +194,9 @@ export function StateLegend() {
 export function MasteryBar({ mastery }: { mastery: Record<string, number> }) {
   const total = STATE_SEGMENTS.reduce((sum, s) => sum + (mastery[s.key] ?? 0), 0);
   if (total === 0) {
-    return <p className="py-4 text-center text-sm text-muted-foreground">Kho chưa có mẫu nào.</p>;
+    return (
+      <p className="py-4 text-center text-subhead text-muted-foreground">Kho chưa có mẫu nào.</p>
+    );
   }
   return (
     <div className="space-y-3">
@@ -239,7 +241,9 @@ export function LevelBars({
   }[];
 }) {
   if (data.length === 0) {
-    return <p className="py-4 text-center text-sm text-muted-foreground">Kho chưa có mẫu nào.</p>;
+    return (
+      <p className="py-4 text-center text-subhead text-muted-foreground">Kho chưa có mẫu nào.</p>
+    );
   }
   return (
     <div className="space-y-3">

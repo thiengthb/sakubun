@@ -91,7 +91,7 @@ export function DailyProgress({
   return (
     <div className="space-y-4 rounded-xl border border-border/70 bg-card p-4">
       <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-2">
-        <h2 className="text-sm font-medium text-muted-foreground">
+        <h2 className="text-body font-medium text-muted-foreground">
           {isToday ? 'Tiến độ hôm nay' : 'Tiến độ theo ngày'}
         </h2>
         <div className="flex items-center gap-1 max-md:w-full max-md:justify-between">

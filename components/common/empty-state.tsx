@@ -32,12 +32,12 @@ export function EmptyState({
         </span>
       )}
       <div className="space-y-1">
-        {title && <p className="text-sm font-medium">{title}</p>}
+        {title && <p className="text-body font-medium">{title}</p>}
         {description && (
-          <p className="mx-auto max-w-sm text-sm text-muted-foreground">{description}</p>
+          <p className="mx-auto max-w-sm text-subhead text-muted-foreground">{description}</p>
         )}
         {children && (
-          <div className="mx-auto max-w-sm text-sm text-muted-foreground">{children}</div>
+          <div className="mx-auto max-w-sm text-subhead text-muted-foreground">{children}</div>
         )}
       </div>
       {action && <div>{action}</div>}
