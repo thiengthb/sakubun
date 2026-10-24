@@ -429,3 +429,33 @@ test('bộ lọc đang bật hiện thành chip, xoá được từng cái', asy
   await expect(chip).toHaveCount(0);
   expect(await shownCount(page, 'mẫu')).toBe(4);
 });
+
+// docs/ui-standard.md: adding and editing are pages of their own, never a form in a dialog. The
+// list's one create action is "Thêm" in the page header, and it follows the open tab.
+test('Thêm và Sửa mở trang riêng, không mở hộp thoại', async ({ page }) => {
+  await seed();
+  await login(page);
+
+  for (const [width, height] of [
+    [1440, 900],
+    [390, 844],
+  ] as const) {
+    await page.setViewportSize({ width, height });
+    for (const kind of ['grammar', 'vocab'] as const) {
+      await page.goto(`/resources?tab=${kind}`, { waitUntil: 'networkidle' });
+      const add = page.locator('header').getByRole('link', { name: 'Thêm', exact: true });
+      await expect(add, `${width}px ${kind}: one Thêm in the header`).toHaveCount(1);
+      await add.click();
+      await page.waitForURL((u) => u.pathname === '/resources/new', { timeout: 15_000 });
+      expect(new URL(page.url()).searchParams.get('kind')).toBe(kind);
+      await expect(page.getByRole('dialog')).toHaveCount(0);
+    }
+  }
+
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/resources?tab=grammar', { waitUntil: 'networkidle' });
+  await page.getByRole('button', { name: 'Tác vụ' }).first().click();
+  await page.getByRole('menuitem', { name: 'Sửa' }).click();
+  await page.waitForURL((u) => /^\/resources\/[^/]+\/edit$/.test(u.pathname), { timeout: 15_000 });
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+});

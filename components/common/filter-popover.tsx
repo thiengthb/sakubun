@@ -117,7 +117,7 @@ export function FilterChips({
           type="button"
           onClick={chip.onClear}
           aria-label={`Bỏ lọc ${chip.label}: ${chip.value}`}
-          className="group/chip inline-flex max-w-full items-center gap-1 rounded-full border border-border bg-muted/50 py-0.5 pr-1 pl-2.5 text-xs transition-colors hover:border-foreground/30 hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+          className="group/chip inline-flex max-w-full items-center gap-1 rounded-sm border border-border bg-muted/50 py-0.5 pr-1 pl-2.5 text-xs transition-colors hover:border-foreground/30 hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
         >
           {/* min-w-0: flex items default to min-width:auto, so without it `truncate` never fires
               and a long value widens the pill instead of ellipsing. */}
@@ -172,11 +172,14 @@ export function FilterPopover({
   const trigger = (
     <ExpandingIconButton
       icon={SlidersHorizontal}
-      label={activeCount > 0 ? `Bộ lọc (${activeCount} đang bật)` : 'Bộ lọc'}
+      label="Lọc"
+      labelOnPhone
+      aria-label={activeCount > 0 ? `Bộ lọc (${activeCount} đang bật)` : 'Bộ lọc'}
+      title={activeCount > 0 ? `Bộ lọc (${activeCount} đang bật)` : 'Bộ lọc'}
       badge={
         activeCount > 0 ? (
           <Badge
-            className="h-4 min-w-4 justify-center px-1 text-xs tabular-nums max-md:hidden"
+            className="h-4 min-w-4 justify-center px-1 text-xs tabular-nums"
             variant="secondary"
           >
             {activeCount}

@@ -12,15 +12,7 @@ import {
 } from 'lucide-react';
 import { toastResult } from '@/lib/core/action-toast';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import { ConfirmDialog } from '@/components/common/confirm-dialog';
-import { ItemEditForm } from '@/components/features/resources/item-edit-form';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -52,7 +44,6 @@ export function RowActions({
   kind: 'grammar' | 'vocab';
   hideDetail?: boolean;
 }) {
-  const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const noun = kind === 'grammar' ? 'mẫu ngữ pháp' : 'từ vựng';
@@ -90,19 +81,11 @@ export function RowActions({
               <DropdownMenuSeparator />
             </>
           )}
-          <DropdownMenuItem asChild className="md:hidden">
+          {/* Editing is a page at every width (docs/ui-standard.md: no form in a dialog). */}
+          <DropdownMenuItem asChild>
             <Link href={`/resources/${item.itemId}/edit`}>
               <Pencil className="size-4" /> Sửa
             </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            className="max-md:hidden"
-            onSelect={(e) => {
-              e.preventDefault();
-              setEditOpen(true);
-            }}
-          >
-            <Pencil className="size-4" /> Sửa
           </DropdownMenuItem>
           <DropdownMenuItem
             onSelect={(e) => {
@@ -132,18 +115,6 @@ export function RowActions({
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-
-      <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Sửa {noun}</DialogTitle>
-            <DialogDescription>
-              Chỉ sửa nội dung. Lịch ôn (FSRS) của mục được giữ nguyên.
-            </DialogDescription>
-          </DialogHeader>
-          <ItemEditForm item={item} kind={kind} onDone={() => setEditOpen(false)} />
-        </DialogContent>
-      </Dialog>
 
       <ConfirmDialog
         open={deleteOpen}

@@ -726,7 +726,7 @@ export function DataTable<T>({
                           <button
                             type="button"
                             aria-label="Phím tắt của bảng"
-                            className="inline-flex size-5 items-center justify-center rounded-full text-muted-foreground/60 transition-colors hover:text-foreground focus-visible:text-foreground"
+                            className="inline-flex size-5 items-center justify-center rounded-sm text-muted-foreground/60 transition-colors hover:text-foreground focus-visible:text-foreground"
                           >
                             <Info className="size-3.5" aria-hidden />
                           </button>

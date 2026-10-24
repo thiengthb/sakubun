@@ -21,7 +21,7 @@ export function ContentGapChip({
       <Link
         href="/resources?card=needs-work"
         aria-label={`${studiedWithoutCard} thẻ thiếu, xem các mẫu đó`}
-        className="target-44 ml-auto inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full bg-warn-wash px-2.5 text-sm font-medium text-warn transition-colors hover:bg-warn/15 focus-visible:ring-3 focus-visible:ring-ring/50"
+        className="target-44 ml-auto inline-flex h-9 shrink-0 items-center gap-1.5 rounded-sm md:h-7 bg-warn-wash px-2.5 text-sm font-medium text-warn transition-colors hover:bg-warn/15 focus-visible:ring-3 focus-visible:ring-ring/50"
       >
         <FileWarning className="size-4" aria-hidden />
         <span className="tabular-nums">{studiedWithoutCard}</span>

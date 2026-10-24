@@ -16,7 +16,7 @@ import {
   type FilterChip,
   type FilterOption,
 } from '@/components/common/filter-popover';
-import { GroupCreateAction, GroupEditAction } from '@/components/features/groups/group-actions';
+import { GroupEditAction } from '@/components/features/groups/group-actions';
 import { GroupKindBadge } from '@/components/features/groups/group-kind-badge';
 import { GROUP_KIND_LABELS } from '@/lib/library/group-kinds';
 import { SearchInput } from '@/components/common/search-input';
@@ -131,7 +131,6 @@ export function GroupsView({ groups }: { groups: GroupSummary[] }) {
                 options={SORTS}
               />
             </FilterPopover>
-            <GroupCreateAction />
           </div>
         </div>
       )}
@@ -142,8 +141,7 @@ export function GroupsView({ groups }: { groups: GroupSummary[] }) {
         <EmptyState
           icon={Layers}
           title="Chưa có nhóm nào"
-          description="Tạo nhóm đầu tiên để gom các mục bạn muốn luyện chung."
-          action={<GroupCreateAction variant="empty" />}
+          description="Bấm Thêm để gom các mục muốn luyện chung."
         />
       ) : filtered.length === 0 ? (
         <EmptyState
