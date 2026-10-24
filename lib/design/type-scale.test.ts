@@ -93,4 +93,26 @@ describe('Typography type scale (nuc-platform/12-ui-layout-standard.md §typogra
       .map(([f]) => f);
     expect(missing, 'These set the 17px content baseline; keep text-body there:').toEqual([]);
   });
+
+  it('containers that hold content do not shrink it back to 14px', () => {
+    // Before this, TabsContent, Table and the Dialog/Sheet/Accordion bodies each set text-sm, so
+    // everything inside a tab, a table row or a dialog read at 14px whatever the page said.
+    const must: [string, RegExp][] = [
+      ['components/ui/table.tsx', /'w-full caption-bottom text-body'/],
+      ['components/ui/table.tsx', /'h-10 px-2 [^']*\btext-sm\b/], // header cells are labels
+      ['components/ui/dialog.tsx', /bg-popover p-4 text-body /],
+      ['components/ui/dialog.tsx', /'text-subhead text-muted-foreground/],
+      ['components/ui/sheet.tsx', /bg-clip-padding text-body /],
+      ['components/ui/sheet.tsx', /'text-subhead text-muted-foreground'/],
+      ['components/ui/accordion.tsx', /overflow-hidden text-body /],
+    ];
+    const missing = must
+      .filter(([file, re]) => !re.test(readFileSync(file, 'utf8')))
+      .map(([f, re]) => `${f}  ${re}`);
+    expect(missing, 'Content containers must keep the 17px body size:').toEqual([]);
+    expect(
+      readFileSync('components/ui/tabs.tsx', 'utf8'),
+      'TabsContent inherits the page body size; a text-sm on it shrinks every tab',
+    ).not.toMatch(/'flex-1 [^']*text-sm[^']*outline-none'/);
+  });
 });

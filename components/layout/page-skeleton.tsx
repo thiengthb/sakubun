@@ -6,6 +6,7 @@ import {
   type BreadcrumbAction,
   type BreadcrumbSection,
 } from '@/components/layout/app-breadcrumbs';
+import { BreadcrumbPlaceholder } from '@/components/layout/breadcrumbs';
 
 export {
   FitList,
@@ -52,7 +53,13 @@ export function PageSkeleton({
             <AppBreadcrumbs section={section} action={action} />
           </div>
         ) : (
-          <Skeleton className="h-6 w-44 shrink-0 max-md:w-28" />
+          // A detail page's crumb ends in the entity's name, which the skeleton cannot know. An
+          // invisible one-crumb trail holds the row at the breadcrumb's own height (it grew with
+          // the 17px body text) at the old bar's width, and the bar is drawn over it.
+          <div className="relative flex w-44 shrink-0 overflow-hidden max-md:w-28" aria-hidden>
+            <BreadcrumbPlaceholder className="invisible" />
+            <Skeleton className="absolute inset-y-0.5 inset-x-0" />
+          </div>
         )}
         {aside && (
           <div className="ml-auto flex min-w-0 flex-wrap items-center gap-2 max-md:flex-nowrap md:ml-0 md:flex-1">
