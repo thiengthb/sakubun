@@ -27,8 +27,8 @@ export interface OjSource {
   vocab: OjEntry[];
 }
 export type ViMap = Record<string, { meaningVi: string; hanviet?: string | null }>;
-// `source` from scripts/openjlpt/hanviet.mjs; only 'agree' (model and Unihan match) is used — the
-// learner chose blanks over readings that are wrong about 1 time in 10.
+// `source` from scripts/openjlpt/hanviet.mjs; only 'agree' (Unihan or the Hán Việt dictionary lists the
+// model's reading) is used — the learner chose blanks over readings that are wrong about 1 time in 10.
 export type HanvietTable = Record<string, { reading: string | null; source?: string }>;
 
 const LEVELS = ['N5', 'N4', 'N3', 'N2', 'N1'];

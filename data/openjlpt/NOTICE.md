@@ -10,3 +10,8 @@ OpenJLPT itself builds on:
 - JLPT level lists by Jonathan Waller (tanos.co.uk), CC BY
 - JMdict / KANJIDIC2 (Electronic Dictionary Research and Development Group), CC BY-SA
 - Example sentences from Tatoeba (tatoeba.org), CC BY 2.0 FR
+
+Hán Việt readings per kanji are confirmed against two references (`scripts/openjlpt/hanviet.mjs`):
+- Unicode Unihan database (kVietnamese), Unicode License v3
+- hanviet-pinyin-words by Phong Phan (https://github.com/ph0ngp/hanviet-pinyin-words), MIT, with the
+  shinjitai to kyūjitai table of kyujitai by hakatashi (https://github.com/hakatashi/kyujitai.js), MIT
