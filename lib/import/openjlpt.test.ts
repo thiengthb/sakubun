@@ -39,6 +39,7 @@ const HV = {
   峠: { reading: null, source: 'invalid' },
   児: { reading: 'nhĩ', source: 'llm-only' },
   乾: { reading: 'can', source: 'override' },
+  込: { reading: null, source: 'none' },
 };
 
 describe('spellHanviet', () => {
@@ -51,6 +52,8 @@ describe('spellHanviet', () => {
     expect(spellHanviet('児童', HV)).toBeNull();
     // A reading set by hand counts like a confirmed one.
     expect(spellHanviet('乾', HV)).toBe('CAN');
+    // A kanji reviewed as having no Hán Việt reading (a kokuji) keeps its words blank.
+    expect(spellHanviet('申込', { ...HV, 申: { reading: 'thân', source: 'agree' } })).toBeNull();
   });
 });
 

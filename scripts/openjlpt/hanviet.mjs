@@ -5,7 +5,7 @@
 //   LLM_URL=… LLM_KEY=… node scripts/openjlpt/hanviet.mjs
 //   node scripts/openjlpt/hanviet.mjs --reclassify    (no model calls: re-check saved readings only)
 // Reads data/openjlpt/unihan-vi.json (scripts/openjlpt/unihan.py), writes data/openjlpt/hanviet-kanji.json
-// { kanji: { reading, source: "agree" | "override" | "llm-only" | "disagree" | "invalid", unihan: [...],
+// { kanji: { reading, source: "agree" | "override" | "none" | "llm-only" | "disagree" | "invalid", unihan: [...],
 //   dict: [...], llm? } } (`llm` keeps the model's reading while an override replaces it)
 // (resumable) and data/openjlpt/hanviet-review.md listing every reading not confirmed, for a human to check.
 //
@@ -16,7 +16,9 @@
 //
 // The dictionary also lists Nôm and minor readings (箒 chổi), so a match can confirm a wrong reading.
 // data/openjlpt/hanviet-overrides.json fixes those by hand: `kanji` sets a reading (source "override"),
-// `words` spells a whole word whose kanji reads differently there (銀行 NGÂN HÀNG, not HÀNH).
+// or null for a kanji with no Hán Việt reading, such as a Japanese-made kokuji (込, source "none": words
+// using it stay blank and it leaves the review list); `words` spells a whole word whose kanji reads
+// differently there (銀行 NGÂN HÀNG, not HÀNH).
 import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { hanvietData } from 'hanviet-pinyin-words';
@@ -122,10 +124,10 @@ async function main() {
   }
   for (const [k, v] of Object.entries(table)) {
     v.dict = dictReadings(k);
-    if (overrides.kanji[k]) {
+    if (Object.hasOwn(overrides.kanji, k)) {
       v.llm ??= v.reading;
       v.reading = overrides.kanji[k];
-      v.source = 'override';
+      v.source = v.reading === null ? 'none' : 'override';
     } else {
       if (v.llm !== undefined) v.reading = v.llm;
       delete v.llm;
@@ -134,7 +136,7 @@ async function main() {
   }
   await writeFile(outPath, JSON.stringify(table, null, 0).replace(/},"/g, '},\n"') + '\n');
   const bad = Object.entries(table).filter(
-    ([, v]) => v.source !== 'agree' && v.source !== 'override',
+    ([, v]) => !['agree', 'override', 'none'].includes(v.source),
   );
   await writeFile(
     path.join(DIR, 'hanviet-review.md'),

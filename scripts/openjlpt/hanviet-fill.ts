@@ -1,23 +1,26 @@
 // Data migration for readings confirmed or corrected after the import: spells every OpenJLPT word with the
 // old kanji table and with the new one plus hanviet-overrides.json, and writes an UPDATE for each word
-// whose reading appears or changes (lib/import/hanviet-fill.ts).
+// whose reading appears or changes (lib/import/hanviet-fill.ts). Pass the old overrides file too when the
+// old state already had word overrides (every fill after 20261024070000_hanviet_fill).
 //   git show <old-commit>:data/openjlpt/hanviet-kanji.json > /tmp/old.json
-//   node scripts/openjlpt/hanviet-fill.ts /tmp/old.json prisma/migrations/<timestamp>_<name>/migration.sql
+//   git show <old-commit>:data/openjlpt/hanviet-overrides.json > /tmp/old-overrides.json
+//   node scripts/openjlpt/hanviet-fill.ts /tmp/old.json prisma/migrations/<timestamp>_<name>/migration.sql [/tmp/old-overrides.json]
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { hanvietFillSql } from '../../lib/import/hanviet-fill.ts';
 import { buildImport } from '../../lib/import/openjlpt.ts';
 
-const [oldTablePath, outPath] = process.argv.slice(2);
+const [oldTablePath, outPath, oldOverridesPath] = process.argv.slice(2);
 if (!oldTablePath || !outPath)
-  throw new Error('usage: hanviet-fill.ts <old-table.json> <migration.sql>');
+  throw new Error('usage: hanviet-fill.ts <old-table.json> <migration.sql> [old-overrides.json]');
 
 const DIR = path.join(process.cwd(), 'data/openjlpt');
 const read = async (f: string) => JSON.parse(await readFile(f, 'utf8'));
 const src = await read(path.join(DIR, 'source.json'));
 const vi = await read(path.join(DIR, 'vi.json'));
 const now = new Date();
-const before = buildImport(src, vi, await read(oldTablePath), now).items;
+const oldWords = oldOverridesPath ? (await read(oldOverridesPath)).words : {};
+const before = buildImport(src, vi, await read(oldTablePath), now, oldWords).items;
 const { words } = await read(path.join(DIR, 'hanviet-overrides.json'));
 const after = buildImport(
   src,
