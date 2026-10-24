@@ -23,7 +23,7 @@ export function SidebarUser({
   }
 
   return (
-    <div className="flex items-center gap-2 rounded-lg border bg-sidebar-accent/40 p-2 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:border-0 group-data-[collapsible=icon]:bg-transparent group-data-[collapsible=icon]:p-0">
+    <div className="flex items-center gap-2 rounded-lg border-2 border-control-edge bg-card p-2 shadow-lift group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:border-0 group-data-[collapsible=icon]:bg-transparent group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:shadow-none">
       <UserAvatar name={user.name} image={user.image} size="md" />
       <div className="min-w-0 flex-1 group-data-[collapsible=icon]:hidden">
         <div className="truncate text-sm font-medium leading-tight">{user.name}</div>

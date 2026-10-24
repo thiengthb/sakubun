@@ -49,10 +49,9 @@ const DIRECTION_OPTIONS: { value: DirectionMode; label: string }[] = [
   { value: 'auto', label: 'Tự động' },
 ];
 
-// A muted track with the chosen segment lifted onto the card colour, as in the tab rail.
-const SEGMENTED = 'w-full bg-muted p-0.5 @md:w-auto';
-const SEGMENT =
-  'flex-1 px-3 text-muted-foreground hover:bg-transparent data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm @md:flex-none';
+// Separate raised chips (the `choice` variant), never a sunken track.
+const SEGMENTED = 'w-full @md:w-auto';
+const SEGMENT = 'flex-1 px-3 @md:flex-none';
 
 export function PracticeTab({
   settings,
@@ -89,18 +88,14 @@ export function PracticeTab({
         >
           <ToggleGroup
             type="multiple"
-            variant="outline"
+            variant="choice"
             aria-label="Cấp JLPT"
             value={settings.grammarLevels}
             onValueChange={setLevels}
             className="grid w-full grid-cols-5 gap-1.5 @md:flex @md:w-auto"
           >
             {JLPT_LEVELS.map((level) => (
-              <ToggleGroupItem
-                key={level}
-                value={level}
-                className="rounded-full px-3 data-[state=on]:border-primary data-[state=on]:bg-primary/10 data-[state=on]:text-primary"
-              >
+              <ToggleGroupItem key={level} value={level} className="px-3">
                 {level}
               </ToggleGroupItem>
             ))}
@@ -152,6 +147,7 @@ export function PracticeTab({
         >
           <ToggleGroup
             type="single"
+            variant="choice"
             aria-label="Hướng dịch"
             value={settings.directionMode}
             onValueChange={(v) => v && set('directionMode', v as DirectionMode)}
@@ -219,6 +215,7 @@ export function PracticeTab({
         <SettingRow icon={Gauge} tone="warn" label="Tốc độ" wide>
           <ToggleGroup
             type="single"
+            variant="choice"
             aria-label="Tốc độ đọc"
             value={String(settings.speechRate)}
             onValueChange={(v) => v && set('speechRate', Number(v))}

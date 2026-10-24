@@ -44,9 +44,8 @@ export function PageSkeleton({
   return (
     <div className={cn('w-full min-w-0 space-y-4 pt-6 pb-6 text-sm', WIDTH[width], className)}>
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2 max-md:flex-nowrap max-md:gap-x-2">
-        <div className="flex shrink-0 items-center gap-2 md:hidden">
-          <Skeleton className="size-6 rounded-md" />
-          <div className="h-5 w-px bg-border" aria-hidden />
+        <div className="flex shrink-0 items-center md:hidden">
+          <Skeleton className="size-9 rounded-sm" />
         </div>
         {section ? (
           <div className="flex min-w-0 max-md:shrink-0">
@@ -83,7 +82,7 @@ export function TabsAside({
 }) {
   return (
     <>
-      <Skeleton className="h-8 shrink-0 rounded-lg md:hidden" style={{ width: select }} />
+      <Skeleton className="h-9 shrink-0 rounded-sm md:hidden" style={{ width: select }} />
       <div
         className="hidden h-8 shrink-0 items-center gap-1 rounded-lg bg-muted p-[3px] md:flex"
         style={{ width: rail }}
@@ -112,13 +111,13 @@ export function FormCardSkeleton({
         {Array.from({ length: fields }, (_, i) => (
           <div key={i} className="space-y-1.5 px-4">
             <Skeleton className="h-4 w-28" />
-            <Skeleton className="h-8 w-full rounded-lg" />
+            <Skeleton className="h-9 w-full rounded-sm md:h-7" />
           </div>
         ))}
         {footer && (
           <div className="flex items-center justify-end gap-2 px-4">
-            <Skeleton className="h-8 w-20 rounded-md" />
-            <Skeleton className="h-8 w-24 rounded-md" />
+            <Skeleton className="h-9 w-20 rounded-sm md:h-7" />
+            <Skeleton className="h-9 w-24 rounded-sm md:h-7" />
           </div>
         )}
       </div>
@@ -137,13 +136,13 @@ export function ToolbarSkeleton({
 }) {
   return (
     <div className="flex flex-row items-center gap-2 sm:gap-3">
-      <Skeleton className="h-8 min-w-0 flex-1 rounded-lg sm:max-w-xs" />
+      <Skeleton className="h-9 min-w-0 flex-1 rounded-sm sm:max-w-xs md:h-7" />
       <div className="flex shrink-0 items-center gap-2 md:ml-auto">
-        {columnMenu && <Skeleton className="size-8 rounded-md max-md:hidden" />}
+        {columnMenu && <Skeleton className="size-7 rounded-sm max-md:hidden" />}
         {Array.from({ length: filters }, (_, i) => (
-          <Skeleton key={i} className="size-8 rounded-md" />
+          <Skeleton key={i} className="size-9 rounded-sm md:size-7" />
         ))}
-        {action && <Skeleton className="size-8 rounded-md" />}
+        {action && <Skeleton className="size-9 rounded-sm md:size-7" />}
       </div>
     </div>
   );

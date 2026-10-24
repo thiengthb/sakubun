@@ -44,6 +44,7 @@ import { Button } from '@/components/ui/button';
 import { Explain } from '@/components/common/explain';
 import { EmptyState } from '@/components/common/empty-state';
 import { Checkbox } from '@/components/ui/checkbox';
+import { choiceChipClass } from '@/components/ui/toggle';
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -225,12 +226,19 @@ export function DataTable<T>({
     },
     [setAutoFit, setPageSize, setPageIndex],
   );
-  const [showRowNumbers, setShowRowNumbers] = useSessionState<boolean>(`${persistKey}.rownum`, true);
+  const [showRowNumbers, setShowRowNumbers] = useSessionState<boolean>(
+    `${persistKey}.rownum`,
+    true,
+  );
 
   // Mobile is card-only and has no switch: the choice below applies from `md` up, which is why both
   // branches stay CSS-driven rather than reading a media query — a JS breakpoint would flip the
   // layout after hydration.
-  const [view, setView] = useSessionState<DataTableView>(`${persistKey}.view`, 'table', `${up}view`);
+  const [view, setView] = useSessionState<DataTableView>(
+    `${persistKey}.view`,
+    'table',
+    `${up}view`,
+  );
   const cards = renderCard != null && view === 'cards';
 
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
@@ -424,7 +432,7 @@ export function DataTable<T>({
           <div
             role="group"
             aria-label="Kiểu hiển thị"
-            className="flex shrink-0 items-center gap-0.5 rounded-md border border-input p-0.5 max-md:hidden"
+            className="flex shrink-0 items-center gap-1.5 max-md:hidden"
           >
             {VIEW_CHOICES.map(({ value, label, icon: Icon }) => {
               const active = view === value;
@@ -438,9 +446,7 @@ export function DataTable<T>({
                     className={cn(
                       'inline-flex size-7 items-center justify-center rounded-sm transition-colors',
                       'focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
-                      active
-                        ? 'bg-secondary text-foreground'
-                        : 'text-muted-foreground hover:text-foreground',
+                      choiceChipClass(active),
                     )}
                   >
                     <Icon className="size-4" aria-hidden />
@@ -548,7 +554,7 @@ export function DataTable<T>({
                   <li
                     key={row.id}
                     className={cn(
-                      'rounded-lg border border-border/70 p-3 transition-colors',
+                      'rounded-xl border-2 border-border p-3 shadow-lift-card transition-colors',
                       selected && 'border-primary bg-primary/5',
                       cardHref && 'relative hover:bg-muted/40 [&_button]:relative [&_button]:z-10',
                     )}
