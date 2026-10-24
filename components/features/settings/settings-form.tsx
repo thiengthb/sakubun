@@ -36,7 +36,7 @@ const SETTINGS_TABS = [
   { value: 'account', label: 'Tài khoản', icon: UserRound },
 ] as const;
 
-const SAVEABLE_TABS = new Set(['practice', 'data']);
+const SAVEABLE_TABS = new Set(['practice']);
 
 // Nội dung / Nhịp học / Nghe & nói merged into one tab. sessionStorage still holds the old value
 // for anyone who had Settings open, and Radix renders NOTHING for a value with no TabsContent —

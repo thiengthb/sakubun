@@ -1,8 +1,9 @@
 'use client';
 
-import { useRef, useState, type ComponentType } from 'react';
+import { useId, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
+  ChevronDown,
   Database,
   FileDown,
   FileUp,
@@ -15,14 +16,6 @@ import {
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -40,6 +33,9 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { SettingsTab } from '@/components/features/settings/settings-tab';
+import { SettingsSection } from '@/components/features/settings/settings-section';
+import { SettingRow } from '@/components/features/settings/setting-row';
+import { CopyCommandButton } from '@/components/common/copy-command-button';
 import { cn } from '@/lib/core/utils';
 
 const RESTORE_COMMANDS = `docker compose down
@@ -59,34 +55,6 @@ interface ImportResult {
   warnings: string[];
 }
 type ImportKind = 'learning' | 'full';
-
-function IconBadge({
-  icon: Icon,
-  tone = 'default',
-}: {
-  icon: ComponentType<{ className?: string }>;
-  tone?: 'default' | 'warn';
-}) {
-  return (
-    <span
-      className={cn(
-        'flex size-9 shrink-0 items-center justify-center rounded-lg',
-        tone === 'warn' ? 'bg-warn/10 text-warn' : 'bg-primary/10 text-primary',
-      )}
-    >
-      <Icon className="size-4.5" />
-    </span>
-  );
-}
-
-function SectionHeading({ children, hint }: { children: React.ReactNode; hint?: string }) {
-  return (
-    <div className="space-y-0.5">
-      <h2 className="font-heading text-sm font-semibold">{children}</h2>
-      {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
-    </div>
-  );
-}
 
 async function downloadFrom(url: string, fallbackName: string) {
   const res = await fetch(url);
@@ -122,6 +90,8 @@ export function DataTab() {
   } | null>(null);
   const [applying, setApplying] = useState(false);
   const learningInput = useRef<HTMLInputElement>(null);
+  const [restoreOpen, setRestoreOpen] = useState(false);
+  const restoreId = useId();
   const fullInput = useRef<HTMLInputElement>(null);
 
   const exportAnki = async () => {
@@ -227,192 +197,134 @@ export function DataTab() {
 
   return (
     <SettingsTab value="data" surface="bare">
-      <div className="space-y-6">
-        <section className="space-y-3">
-          <SectionHeading hint="Những gì bạn đã xây được trong app, ở dạng tệp mang đi được.">
-            Dữ liệu học
-          </SectionHeading>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <div className="flex items-start gap-3">
-                  <IconBadge icon={FileDown} />
-                  <div className="min-w-0 space-y-1">
-                    <CardTitle className="text-sm">Bản sao dữ liệu học (JSON)</CardTitle>
-                    <CardDescription className="text-xs">
-                      Từ vựng và ngữ pháp đã thêm, lịch ôn FSRS, lịch sử ôn, câu đã luyện, nhóm và
-                      cài đặt. Nạp lại là <span className="font-medium text-foreground">gộp</span> —
-                      thêm cái thiếu, cập nhật cái đã có, không xóa gì; bạn xem trước rồi mới xác
-                      nhận.
-                    </CardDescription>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardFooter className="mt-auto flex-wrap gap-2">
-                <Button onClick={exportLearning} disabled={busy !== null}>
-                  <FileDown className="size-4" aria-hidden />
-                  {busy === 'learning' ? 'Đang tạo…' : 'Tải JSON'}
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => learningInput.current?.click()}
-                  disabled={busy !== null}
-                >
-                  {busy === 'sync' ? (
-                    <Loader2 className="size-4 animate-spin" aria-hidden />
-                  ) : (
-                    <FileUp className="size-4" aria-hidden />
-                  )}
-                  Nạp từ tệp JSON
-                </Button>
-                <input
-                  ref={learningInput}
-                  type="file"
-                  accept=".json,application/json"
-                  className="hidden"
-                  onChange={(e) => {
-                    void pickForSync('learning', e.target.files?.[0] ?? null);
-                    e.target.value = '';
-                  }}
-                />
-              </CardFooter>
-            </Card>
+      <SettingsSection
+        title="Dữ liệu học"
+        info="Những gì bạn đã xây trong app, ở dạng tệp mang đi được."
+      >
+        <SettingRow
+          icon={FileDown}
+          label="Bản sao JSON"
+          info="Mục đã thêm, lịch ôn, lịch sử ôn, nhóm và cài đặt. Nạp lại là gộp: thêm cái thiếu, cập nhật cái đã có, không xoá gì; bạn xem trước rồi mới xác nhận."
+        >
+          <Button variant="outline" onClick={exportLearning} disabled={busy !== null}>
+            <FileDown aria-hidden />
+            {busy === 'learning' ? 'Đang tạo…' : 'Tải'}
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => learningInput.current?.click()}
+            disabled={busy !== null}
+          >
+            {busy === 'sync' ? (
+              <Loader2 className="animate-spin" aria-hidden />
+            ) : (
+              <FileUp aria-hidden />
+            )}
+            Nạp
+          </Button>
+          <input
+            ref={learningInput}
+            type="file"
+            accept=".json,application/json"
+            className="hidden"
+            onChange={(e) => {
+              void pickForSync('learning', e.target.files?.[0] ?? null);
+              e.target.value = '';
+            }}
+          />
+        </SettingRow>
+        <SettingRow
+          icon={Layers}
+          label="Anki"
+          info="Bộ thẻ .apkg từ từ vựng đã lưu: mặt trước là từ, mặt sau cách đọc, Hán Việt, nghĩa và ví dụ. Tải lại thì cập nhật thẻ cũ, không tạo trùng."
+        >
+          <Button variant="outline" onClick={exportAnki} disabled={busy !== null}>
+            <Layers aria-hidden />
+            {busy === 'anki' ? 'Đang tạo…' : 'Tải'}
+          </Button>
+        </SettingRow>
+      </SettingsSection>
 
-            <Card>
-              <CardHeader>
-                <div className="flex items-start gap-3">
-                  <IconBadge icon={Layers} />
-                  <div className="min-w-0 space-y-1">
-                    <CardTitle className="text-sm">Xuất sang Anki</CardTitle>
-                    <CardDescription className="text-xs">
-                      Bộ thẻ <code className="text-foreground">.apkg</code> từ từ vựng đã lưu — mặt
-                      trước là từ, mặt sau cách đọc, âm Hán Việt, nghĩa và ví dụ. Tải lại sẽ cập
-                      nhật thẻ cũ, không tạo trùng.
-                    </CardDescription>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardFooter className="mt-auto">
-                <Button onClick={exportAnki} disabled={busy !== null}>
-                  <Layers className="size-4" aria-hidden />
-                  {busy === 'anki' ? 'Đang tạo…' : 'Tải bộ thẻ Anki'}
-                </Button>
-              </CardFooter>
-            </Card>
+      <SettingsSection
+        title="Toàn bộ dữ liệu"
+        info="Bản sao đầy đủ duy nhất, có cả tài khoản, token MCP và ghi chú gia sư."
+      >
+        <SettingRow
+          icon={Database}
+          label="Sao lưu .db"
+          info="Ảnh chụp SQLite đã kiểm tra toàn vẹn. Tệp nằm cùng ổ với Docker: chép tiếp sang ổ khác hoặc cloud."
+        >
+          <Button variant="outline" onClick={backupFull} disabled={busy !== null}>
+            <Database aria-hidden />
+            {busy === 'full' ? 'Đang tạo…' : 'Tải'}
+          </Button>
+        </SettingRow>
+        <SettingRow
+          icon={Upload}
+          label="Nạp .db"
+          info="Chỉ thêm bản ghi còn thiếu, giữ nguyên cái đã có. Tệp mang theo cả tài khoản trong đó: sao lưu trước, xem kỹ bảng thay đổi rồi mới xác nhận."
+        >
+          <Button
+            variant="outline"
+            onClick={() => fullInput.current?.click()}
+            disabled={busy !== null}
+          >
+            {busy === 'sync' ? (
+              <Loader2 className="animate-spin" aria-hidden />
+            ) : (
+              <Upload aria-hidden />
+            )}
+            Chọn tệp
+          </Button>
+          <input
+            ref={fullInput}
+            type="file"
+            accept=".db,application/vnd.sqlite3,application/octet-stream"
+            className="hidden"
+            onChange={(e) => {
+              void pickForSync('full', e.target.files?.[0] ?? null);
+              e.target.value = '';
+            }}
+          />
+        </SettingRow>
+        <SettingRow
+          icon={HardDriveDownload}
+          label="Khôi phục"
+          info="Thay hẳn cơ sở dữ liệu bằng một bản sao lưu, mất mọi thay đổi sau bản đó. Phải làm từ ngoài container. Muốn thử một bản sao lưu còn dùng được: Nạp .db rồi Hủy ở bước xem trước."
+          className="col-span-full"
+        >
+          <Button
+            variant="outline"
+            aria-expanded={restoreOpen}
+            aria-controls={restoreId}
+            onClick={() => setRestoreOpen((o) => !o)}
+          >
+            <ChevronDown
+              aria-hidden
+              className={cn('transition-transform', restoreOpen && 'rotate-180')}
+            />
+            Lệnh
+          </Button>
+        </SettingRow>
+        <div id={restoreId} hidden={!restoreOpen} className="col-span-full space-y-2 px-4 pb-4">
+          <p className="text-xs text-muted-foreground">
+            Chạy ở thư mục có <code className="text-foreground">docker-compose.yml</code>:
+          </p>
+          <div className="relative">
+            <pre className="overflow-x-auto rounded-sm bg-muted p-3 text-xs">
+              <code>{RESTORE_COMMANDS}</code>
+            </pre>
+            <CopyCommandButton
+              command={RESTORE_COMMANDS}
+              label="Chép lệnh"
+              size="icon-sm"
+              showCopiedText={false}
+              toastDescription="none"
+              className="absolute top-2 right-2"
+            />
           </div>
-        </section>
-
-        <section className="space-y-3">
-          <SectionHeading hint="Bản sao đầy đủ duy nhất: có cả tài khoản đăng nhập, khóa MCP và ghi chú gia sư. Nạp vào chỉ THÊM, không ghi đè, không xóa.">
-            Toàn bộ tệp dữ liệu
-          </SectionHeading>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <div className="flex items-start gap-3">
-                  <IconBadge icon={Database} />
-                  <div className="min-w-0 space-y-1">
-                    <CardTitle className="text-sm">Sao lưu toàn bộ (.db)</CardTitle>
-                    <CardDescription className="text-xs">
-                      Ảnh chụp SQLite nhất quán của toàn bộ cơ sở dữ liệu, đã kiểm tra toàn vẹn
-                      trước khi trao cho bạn. Đây là bản duy nhất khôi phục lại được đúng mọi thứ —
-                      tệp nằm cùng ổ với Docker, nhớ chép tiếp sang ổ khác hoặc cloud.
-                    </CardDescription>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardFooter className="mt-auto">
-                <Button onClick={backupFull} disabled={busy !== null}>
-                  <Database className="size-4" aria-hidden />
-                  {busy === 'full' ? 'Đang tạo…' : 'Tải bản sao lưu'}
-                </Button>
-              </CardFooter>
-            </Card>
-
-            <Card className="ring-warn/30">
-              <CardHeader>
-                <div className="flex items-start gap-3">
-                  <IconBadge icon={Upload} tone="warn" />
-                  <div className="min-w-0 space-y-1">
-                    <CardTitle className="text-sm">Nạp thêm từ tệp .db</CardTitle>
-                    <CardDescription className="text-xs">
-                      Gộp một tệp <code className="text-foreground">.db</code> vào cơ sở dữ liệu
-                      đang chạy: <span className="font-medium text-foreground">chỉ thêm</span> bản
-                      ghi còn thiếu, những gì đã có được giữ nguyên. Tệp mang theo cả tài khoản
-                      trong đó — hãy sao lưu trước và xem kỹ bảng thay đổi rồi mới xác nhận.
-                    </CardDescription>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardFooter className="mt-auto">
-                <Button
-                  variant="outline"
-                  onClick={() => fullInput.current?.click()}
-                  disabled={busy !== null}
-                >
-                  {busy === 'sync' ? (
-                    <Loader2 className="size-4 animate-spin" aria-hidden />
-                  ) : (
-                    <Upload className="size-4" aria-hidden />
-                  )}
-                  Chọn tệp .db
-                </Button>
-                <input
-                  ref={fullInput}
-                  type="file"
-                  accept=".db,application/vnd.sqlite3,application/octet-stream"
-                  className="hidden"
-                  onChange={(e) => {
-                    void pickForSync('full', e.target.files?.[0] ?? null);
-                    e.target.value = '';
-                  }}
-                />
-              </CardFooter>
-            </Card>
-          </div>
-
-          <Card>
-            <CardHeader>
-              <div className="flex items-start gap-3">
-                <IconBadge icon={HardDriveDownload} />
-                <div className="min-w-0 space-y-1">
-                  <CardTitle className="text-sm">Khôi phục nguyên trạng (nâng cao)</CardTitle>
-                  <CardDescription className="text-xs">
-                    Thay hẳn cơ sở dữ liệu bằng một bản sao lưu — mất mọi thay đổi phát sinh sau bản
-                    đó. Chỉ dùng khi cần quay về đúng một thời điểm. App không tự làm được việc này:
-                    tiến trình đang giữ tệp DB mở, nên phải thay từ ngoài container.
-                  </CardDescription>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <details className="group/restore rounded-lg border border-border/70 bg-muted/30">
-                <summary className="flex cursor-pointer list-none items-center gap-2 px-3 py-2 text-sm font-medium select-none">
-                  <HardDriveDownload className="size-4 text-muted-foreground" aria-hidden />
-                  Xem các lệnh thay tệp thủ công
-                </summary>
-                <div className="space-y-2 border-t border-border/70 p-3">
-                  <p className="text-xs text-muted-foreground">
-                    Chạy ở thư mục chứa <code className="text-foreground">docker-compose.yml</code>,
-                    thay tên tệp cho đúng:
-                  </p>
-                  <pre className="overflow-x-auto rounded-md bg-background p-3 text-xs">
-                    <code>{RESTORE_COMMANDS}</code>
-                  </pre>
-                  <p className="text-xs text-muted-foreground">
-                    <HardDriveDownload className="mr-1 inline size-3.5" aria-hidden />
-                    Muốn chắc một bản sao lưu còn dùng được: bấm{' '}
-                    <span className="text-foreground">Chọn tệp .db</span> ở thẻ trên và chọn chính
-                    tệp đó. Bước xem trước kiểm tra toàn vẹn tệp rồi đếm từng bảng mà không ghi gì —
-                    tệp hỏng sẽ báo lỗi ngay, còn “không có gì mới” nghĩa là nó khớp đúng dữ liệu
-                    hiện tại. Bấm Hủy để kết thúc.
-                  </p>
-                </div>
-              </details>
-            </CardContent>
-          </Card>
-        </section>
-      </div>
+        </div>
+      </SettingsSection>
 
       <Dialog
         open={preview !== null}

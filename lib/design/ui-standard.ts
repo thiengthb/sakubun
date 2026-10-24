@@ -181,7 +181,9 @@ export const UI_RULES: UiRule[] = [
         .filter((el) => iconsOf(el, lucide).includes('Plus'))
         .flatMap((el) => {
           const prop = /(?<![\w-])label=(?:"([^"]*)"|\{([^}]*)\})/.exec(el.open);
+          // An expression that renders JSX ({busy ? <Loader2 /> : <Plus />}) is an icon, not words.
           const text = el.body
+            .replace(/\{[^{}]*<[^{}]*\}/g, '')
             .replace(/<[^>]*>/g, '')
             .replace(/\s+/g, ' ')
             .trim();

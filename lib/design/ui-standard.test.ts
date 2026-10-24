@@ -82,6 +82,10 @@ describe('ui standard: each check goes red on a bad sample', () => {
     expect(
       check('create-label', `${imp}<ExpandingIconButton icon={Plus} label="Thêm mục" />`),
     ).toHaveLength(1);
+    expect(
+      check('create-label', `${imp}<Button>{busy ? <Loader2 /> : <Plus />}\n  Thêm\n</Button>`),
+    ).toEqual([]);
+    expect(check('create-label', `${imp}<Button><Plus />{label}</Button>`)).toHaveLength(1);
     expect(check('create-label', `${imp}<Button><Plus aria-hidden />\n  Thêm\n</Button>`)).toEqual(
       [],
     );

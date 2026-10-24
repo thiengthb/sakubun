@@ -18,7 +18,7 @@ test('hộp thoại token MCP mang theo cấu hình nối Claude Desktop và Cha
 
   await page.goto('/settings?tab=account', { waitUntil: 'networkidle' });
   await page.getByLabel('Tên token').fill('e2e-connect');
-  await page.getByRole('button', { name: 'Tạo token' }).click();
+  await page.getByRole('button', { name: 'Thêm', exact: true }).click();
 
   const dialog = page.getByRole('dialog').filter({ hasText: 'Token MCP mới' });
   await expect(dialog).toBeVisible({ timeout: 30_000 });

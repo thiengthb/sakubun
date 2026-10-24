@@ -194,6 +194,7 @@ test('bảng đếm tool ghi lời gọi v2 và hiện trên /settings', async (
     await expect(page.getByRole('tabpanel', { name: 'Tài khoản' })).toBeVisible({ timeout: 2000 });
   }).toPass({ timeout: 30_000 });
   await expect(page.getByRole('cell', { name: 'status', exact: true })).toBeVisible();
-  await expect(page.getByText(/tool CHƯA BAO GIỜ được gọi/)).toBeVisible();
+  // The never-called list is folded under its count.
+  await page.getByText(/tool chưa dùng/).click();
   await expect(page.getByText('next_turn', { exact: false })).toBeVisible();
 });

@@ -1,4 +1,4 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { SettingsSection } from '@/components/features/settings/settings-section';
 import {
   Table,
   TableBody,
@@ -21,23 +21,13 @@ export function McpUsageCard({ usage }: { usage: ToolUsageReport }) {
   const failing = usage.rows.filter((r) => r.errors > 0);
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Hoạt động MCP</CardTitle>
-        <CardDescription>
-          Mỗi lần Claude Desktop hoặc ChatGPT gọi một tool của sakubun, lần gọi đó được đếm ở đây.
-          Bảng này nằm trong cơ sở dữ liệu nên nó SỐNG QUA việc khởi động lại app — khác với log,
-          thứ biến mất cùng container. Dùng nó để biết client thật sự dùng gì, và để thấy tool nào
-          đang lỗi (một tool lỗi vẫn trả kết quả &quot;thành công&quot; ở tầng HTTP, nên đây là chỗ
-          duy nhất thấy được).
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
+    <SettingsSection
+      title="Hoạt động MCP"
+      info="Mỗi lần Claude hoặc ChatGPT gọi một tool, lần gọi được đếm ở đây và còn sau khi app khởi động lại. Tool lỗi vẫn trả thành công ở tầng HTTP, nên đây là chỗ duy nhất thấy được."
+    >
+      <div className="col-span-full space-y-4 px-4 py-3">
         {usage.rows.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            Chưa ghi nhận lời gọi nào. Nối Claude Desktop hoặc ChatGPT bằng token ở trên rồi luyện
-            một lượt, số sẽ xuất hiện ở đây.
-          </p>
+          <p className="text-sm text-muted-foreground">Chưa có lời gọi nào.</p>
         ) : (
           <>
             <p className="text-sm text-muted-foreground">
@@ -68,7 +58,7 @@ export function McpUsageCard({ usage }: { usage: ToolUsageReport }) {
                         {r.name}
                         {r.inCatalog ? null : (
                           <span className="ml-2 font-sans text-xs text-muted-foreground">
-                            (không còn trong bản đồ tool)
+                            (đã bỏ)
                           </span>
                         )}
                       </TableCell>
@@ -108,16 +98,16 @@ export function McpUsageCard({ usage }: { usage: ToolUsageReport }) {
         )}
 
         {usage.neverCalled.length > 0 && (
-          <div className="space-y-1 border-t pt-4">
-            <p className="text-sm">
-              {usage.neverCalled.length}/{usage.toolCount} tool CHƯA BAO GIỜ được gọi
-            </p>
-            <p className="font-mono text-xs break-words text-muted-foreground">
+          <details className="border-t pt-3">
+            <summary className="cursor-pointer text-sm select-none">
+              {usage.neverCalled.length}/{usage.toolCount} tool chưa dùng
+            </summary>
+            <p className="mt-1 font-mono text-xs break-words text-muted-foreground">
               {usage.neverCalled.join(' · ')}
             </p>
-          </div>
+          </details>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </SettingsSection>
   );
 }
