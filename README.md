@@ -153,6 +153,7 @@ Test nằm cạnh code nó kiểm (`lib/srs/srs.test.ts` bên `lib/srs/srs.ts`).
 | Chuỗi tiếng Nhật phát được phải đi qua `SpokenLine` | `spoken-line.test.ts` |
 | Không emoji trong source | `no-emoji.test.ts` |
 | Chỗ nào cần cắt chữ thì dùng `Truncate` | `truncate.test.ts` |
+| Quy chuẩn UI (`docs/ui-standard.md`): thang bo, không nút bo tròn hẳn, class nổi/viền chỉ nằm trong component dùng chung, nút tạo mới ghi "Thêm", nút chỉ có icon dùng icon dễ hiểu, không form trong hộp thoại; nợ cũ ở `ui-standard-debt.json`, chỉ giảm | `ui-standard.test.ts` |
 | 37 luật của hệ thiết kế thienui (cỡ icon, cỡ nút, màu token, focus, ...), chép từ registry thienui vào `tooling/thienui-guards/` | `thienui-guards.test.ts` |
 
 Muốn phá luật thì phải thêm file vào allowlist ngay trong test đó, **kèm lý do** — nên ngoại lệ luôn
