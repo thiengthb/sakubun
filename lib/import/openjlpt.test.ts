@@ -38,6 +38,7 @@ const HV = {
   認: { reading: 'nhận', source: 'agree' },
   峠: { reading: null, source: 'invalid' },
   児: { reading: 'nhĩ', source: 'llm-only' },
+  乾: { reading: 'can', source: 'override' },
 };
 
 describe('spellHanviet', () => {
@@ -48,6 +49,8 @@ describe('spellHanviet', () => {
     expect(spellHanviet('確々', HV)).toBe('XÁC XÁC');
     // Only dictionary-confirmed readings: a model-only guess leaves the whole word blank.
     expect(spellHanviet('児童', HV)).toBeNull();
+    // A reading set by hand counts like a confirmed one.
+    expect(spellHanviet('乾', HV)).toBe('CAN');
   });
 });
 
@@ -88,6 +91,11 @@ describe('buildImport', () => {
     expect(r.srsStates[0]).toMatchObject({ state: 0, reps: 0, due: NOW.toISOString() });
     expect(JSON.parse(r.items[0].tags)).toEqual(['openjlpt', 'jlpt-n3']);
     expect(r.items.every((i) => i.source === 'OPENJLPT')).toBe(true);
+  });
+
+  it('âm cả từ đặt tay thắng âm ghép từ chữ', () => {
+    const items = buildImport(SRC, VI, HV, NOW, { 確認: 'XÁC NHẬN (tay)' }).items;
+    expect(items.find((i) => i.expression === '確認')?.hanviet).toBe('XÁC NHẬN (tay)');
   });
 
   it('id ổn định giữa các lần build', () => {

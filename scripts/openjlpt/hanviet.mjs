@@ -5,13 +5,18 @@
 //   LLM_URL=… LLM_KEY=… node scripts/openjlpt/hanviet.mjs
 //   node scripts/openjlpt/hanviet.mjs --reclassify    (no model calls: re-check saved readings only)
 // Reads data/openjlpt/unihan-vi.json (scripts/openjlpt/unihan.py), writes data/openjlpt/hanviet-kanji.json
-// { kanji: { reading, source: "agree" | "llm-only" | "disagree" | "invalid", unihan: [...], dict: [...] } }
+// { kanji: { reading, source: "agree" | "override" | "llm-only" | "disagree" | "invalid", unihan: [...],
+//   dict: [...], llm? } } (`llm` keeps the model's reading while an override replaces it)
 // (resumable) and data/openjlpt/hanviet-review.md listing every reading not confirmed, for a human to check.
 //
 // A reading is confirmed ("agree") when Unihan or the Hán Việt dictionary of hanviet-pinyin-words lists
 // it. Unihan alone left 772 kanji unconfirmed: it has no Vietnamese for many characters and often gives
 // only the Nôm reading (年 "nên"). The dictionary is keyed by traditional characters, so a Japanese
 // shinjitai is also looked up by its old form from kyujitai (気 → 氣).
+//
+// The dictionary also lists Nôm and minor readings (箒 chổi), so a match can confirm a wrong reading.
+// data/openjlpt/hanviet-overrides.json fixes those by hand: `kanji` sets a reading (source "override"),
+// `words` spells a whole word whose kanji reads differently there (銀行 NGÂN HÀNG, not HÀNH).
 import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { hanvietData } from 'hanviet-pinyin-words';
@@ -95,6 +100,7 @@ async function main() {
   const unihan = JSON.parse(await readFile(path.join(DIR, 'unihan-vi.json'), 'utf8'));
   const outPath = path.join(DIR, 'hanviet-kanji.json');
   const table = JSON.parse(await readFile(outPath, 'utf8').catch(() => '{}'));
+  const overrides = JSON.parse(await readFile(path.join(DIR, 'hanviet-overrides.json'), 'utf8'));
   const todo = reclassifyOnly ? [] : Object.keys(unihan).filter((k) => !table[k]);
   for (let i = 0; i < todo.length; i += BATCH) {
     const batch = todo.slice(i, i + BATCH);
@@ -116,10 +122,20 @@ async function main() {
   }
   for (const [k, v] of Object.entries(table)) {
     v.dict = dictReadings(k);
-    v.source = classify(v.reading, v.unihan, v.dict);
+    if (overrides.kanji[k]) {
+      v.llm ??= v.reading;
+      v.reading = overrides.kanji[k];
+      v.source = 'override';
+    } else {
+      if (v.llm !== undefined) v.reading = v.llm;
+      delete v.llm;
+      v.source = classify(v.reading, v.unihan, v.dict);
+    }
   }
   await writeFile(outPath, JSON.stringify(table, null, 0).replace(/},"/g, '},\n"') + '\n');
-  const bad = Object.entries(table).filter(([, v]) => v.source !== 'agree');
+  const bad = Object.entries(table).filter(
+    ([, v]) => v.source !== 'agree' && v.source !== 'override',
+  );
   await writeFile(
     path.join(DIR, 'hanviet-review.md'),
     `# Âm Hán Việt cần xem lại (${bad.length} chữ)\n\nÂm của Gemma không có trong từ điển Hán Việt lẫn Unihan, ` +

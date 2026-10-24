@@ -10,7 +10,8 @@ const read = async (f: string) => JSON.parse(await readFile(path.join(DIR, f), '
 const src = await read('source.json');
 const vi = await read('vi.json');
 const hv = await read('hanviet-kanji.json');
-const r = buildImport(src, vi, hv, new Date());
+const { words } = await read('hanviet-overrides.json');
+const r = buildImport(src, vi, hv, new Date(), words);
 await writeFile(
   path.join(DIR, 'sakubun-import.json'),
   JSON.stringify({ exportedAt: new Date().toISOString(), items: r.items, srsStates: r.srsStates }) +

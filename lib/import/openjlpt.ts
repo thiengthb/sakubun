@@ -28,8 +28,12 @@ export interface OjSource {
 }
 export type ViMap = Record<string, { meaningVi: string; hanviet?: string | null }>;
 // `source` from scripts/openjlpt/hanviet.mjs; only 'agree' (Unihan or the Hán Việt dictionary lists the
-// model's reading) is used — the learner chose blanks over readings that are wrong about 1 time in 10.
+// model's reading) and 'override' (set by hand) are used — the learner chose blanks over readings that
+// are wrong about 1 time in 10.
 export type HanvietTable = Record<string, { reading: string | null; source?: string }>;
+// Whole words whose kanji read differently there (銀行 NGÂN HÀNG), from hanviet-overrides.json `words`.
+export type HanvietWords = Record<string, string>;
+const TRUSTED = new Set(['agree', 'override']);
 
 const LEVELS = ['N5', 'N4', 'N3', 'N2', 'N1'];
 const KANJI = /[一-鿿]/;
@@ -40,7 +44,7 @@ export function spellHanviet(expression: string, table: HanvietTable): string | 
   const chars = [...expression].map((c, i, a) => (c === '々' && i > 0 ? a[i - 1] : c));
   const ks = chars.filter((c) => KANJI.test(c));
   if (ks.length === 0) return null;
-  const parts = ks.map((c) => (table[c]?.source === 'agree' ? table[c].reading : null));
+  const parts = ks.map((c) => (TRUSTED.has(table[c]?.source ?? '') ? table[c].reading : null));
   return parts.every(Boolean) ? parts.join(' ').toUpperCase() : null;
 }
 
@@ -101,7 +105,13 @@ export interface BuildResult {
   merged: number;
 }
 
-export function buildImport(src: OjSource, vi: ViMap, hv: HanvietTable, now: Date): BuildResult {
+export function buildImport(
+  src: OjSource,
+  vi: ViMap,
+  hv: HanvietTable,
+  now: Date,
+  words: HanvietWords = {},
+): BuildResult {
   const out: BuildResult = { items: [], srsStates: [], skipped: [], merged: 0 };
   const byKey = new Map<string, BuildResult['items'][number]>();
   const rows: [string, OjEntry][] = [
@@ -129,7 +139,7 @@ export function buildImport(src: OjSource, vi: ViMap, hv: HanvietTable, now: Dat
       kind,
       expression: e.expression,
       reading: kind === 'VOCAB' && e.reading && KANJI.test(e.expression) ? e.reading : null,
-      hanviet: kind === 'VOCAB' ? spellHanviet(e.expression, hv) : null,
+      hanviet: kind === 'VOCAB' ? (words[e.expression] ?? spellHanviet(e.expression, hv)) : null,
       meaningVi,
       level: e.level,
       notes: notesFor(e),

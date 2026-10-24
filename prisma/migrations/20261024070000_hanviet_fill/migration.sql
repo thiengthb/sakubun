@@ -1,5 +1,7 @@
--- Fill Hán Việt for OpenJLPT words whose kanji readings were confirmed later (scripts/openjlpt/hanviet-fill.ts).
--- Only rows still without a reading are touched.
+-- Hán Việt for OpenJLPT words whose readings were confirmed or corrected later (scripts/openjlpt/hanviet-fill.ts).
+-- Only rows still holding what the import wrote (no reading, or the old spelling) are touched.
+UPDATE "Item" SET "hanviet" = 'TRIÊU' WHERE "id" = 'openjlpt-vocab-695aad811ab9' AND "source" = 'OPENJLPT' AND "hanviet" = 'TRIỀU';
+UPDATE "Item" SET "hanviet" = 'TRIÊU' WHERE "id" = 'openjlpt-vocab-1aefcdd3bf7e' AND "source" = 'OPENJLPT' AND "hanviet" = 'TRIỀU';
 UPDATE "Item" SET "hanviet" = 'NOÃN' WHERE "id" = 'openjlpt-vocab-c141850f9e8a' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'HẬU' WHERE "id" = 'openjlpt-vocab-a102b13e22a5' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'THỬ' WHERE "id" = 'openjlpt-vocab-2f7806f919a5' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
@@ -22,7 +24,7 @@ UPDATE "Item" SET "hanviet" = 'PHONG LỮ' WHERE "id" = 'openjlpt-vocab-b75b20ed
 UPDATE "Item" SET "hanviet" = 'BIỆN ĐƯƠNG' WHERE "id" = 'openjlpt-vocab-c321b9bd7ee2' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'GIÁC' WHERE "id" = 'openjlpt-vocab-40ef63fb3ef1' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'VỊNH' WHERE "id" = 'openjlpt-vocab-40b84dfc2a6b' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
-UPDATE "Item" SET "hanviet" = 'ÂM LẠC' WHERE "id" = 'openjlpt-vocab-6376c974631e' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
+UPDATE "Item" SET "hanviet" = 'ÂM NHẠC' WHERE "id" = 'openjlpt-vocab-6376c974631e' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'NỮ' WHERE "id" = 'openjlpt-vocab-26bc84961cad' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'NỮ TỬ' WHERE "id" = 'openjlpt-vocab-64c62dc21287' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'QUY' WHERE "id" = 'openjlpt-vocab-3a9f9a5edc18' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
@@ -38,12 +40,13 @@ UPDATE "Item" SET "hanviet" = 'THIẾT PHÙ' WHERE "id" = 'openjlpt-vocab-4c3076
 UPDATE "Item" SET "hanviet" = 'NGƯU NHỤC' WHERE "id" = 'openjlpt-vocab-f0b1b8bb6bdd' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'NGƯU NHŨ' WHERE "id" = 'openjlpt-vocab-ce72cd6b4eb0' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'KHỨ NIÊN' WHERE "id" = 'openjlpt-vocab-1fd586b4aaaa' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
-UPDATE "Item" SET "hanviet" = 'NGÂN HÀNH' WHERE "id" = 'openjlpt-vocab-291477e39388' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
+UPDATE "Item" SET "hanviet" = 'NGÂN HÀNG' WHERE "id" = 'openjlpt-vocab-291477e39388' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'KIM DIỆU NHẬT' WHERE "id" = 'openjlpt-vocab-8d75edae77c9' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'DƯỢC' WHERE "id" = 'openjlpt-vocab-c98fb0141cc4' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'ĐÀM' WHERE "id" = 'openjlpt-vocab-283112eb7d8b' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'ĐÀM' WHERE "id" = 'openjlpt-vocab-f85262d10b92' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'CẢNH QUAN' WHERE "id" = 'openjlpt-vocab-3396fa9206ce' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
+UPDATE "Item" SET "hanviet" = 'KIM TRIÊU' WHERE "id" = 'openjlpt-vocab-101ade837073' AND "source" = 'OPENJLPT' AND "hanviet" = 'KIM TRIỀU';
 UPDATE "Item" SET "hanviet" = 'KẾT CẤU' WHERE "id" = 'openjlpt-vocab-bbf0ab71a872' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'KẾT HÔN' WHERE "id" = 'openjlpt-vocab-19d4bd88114a' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'NGUYỆT DIỆU NHẬT' WHERE "id" = 'openjlpt-vocab-1108ea53f7ab' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
@@ -68,7 +71,7 @@ UPDATE "Item" SET "hanviet" = 'HẢO' WHERE "id" = 'openjlpt-vocab-991f96a8ce57'
 UPDATE "Item" SET "hanviet" = 'TỌA' WHERE "id" = 'openjlpt-vocab-82f9b87241f1' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'BỐI QUẢNG' WHERE "id" = 'openjlpt-vocab-9860c80214f6' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'TẨY TRẠC' WHERE "id" = 'openjlpt-vocab-bacc4d5a4736' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
-UPDATE "Item" SET "hanviet" = 'ĐẠI SỬ QUÁN' WHERE "id" = 'openjlpt-vocab-63f645b1b9be' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
+UPDATE "Item" SET "hanviet" = 'ĐẠI SỨ QUÁN' WHERE "id" = 'openjlpt-vocab-63f645b1b9be' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'ĐẠI HẢO' WHERE "id" = 'openjlpt-vocab-21bb71d48c26' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'ĐÀI SỞ' WHERE "id" = 'openjlpt-vocab-cfa298cca1c7' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'LẠC' WHERE "id" = 'openjlpt-vocab-4bfcc646bf26' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
@@ -118,11 +121,11 @@ UPDATE "Item" SET "hanviet" = 'TRÚ' WHERE "id" = 'openjlpt-vocab-56c5ea57375b' 
 UPDATE "Item" SET "hanviet" = 'TRÚ NGỰ PHẠN' WHERE "id" = 'openjlpt-vocab-6fc05bcffa95' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'QUẢNG' WHERE "id" = 'openjlpt-vocab-14a64db61704' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'BIÊN' WHERE "id" = 'openjlpt-vocab-382ace0477f7' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
-UPDATE "Item" SET "hanviet" = 'MIỄN CƯỜNG' WHERE "id" = 'openjlpt-vocab-a709b05c384a' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
+UPDATE "Item" SET "hanviet" = 'MIỄN CƯỠNG' WHERE "id" = 'openjlpt-vocab-a709b05c384a' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'MẠO TỬ' WHERE "id" = 'openjlpt-vocab-8dccc4a2e6ce' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'TẾ' WHERE "id" = 'openjlpt-vocab-d226567e1131' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'BẢN BẰNG' WHERE "id" = 'openjlpt-vocab-8d396db58a53' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
-UPDATE "Item" SET "hanviet" = 'MỖI TRIỀU' WHERE "id" = 'openjlpt-vocab-316693e2899a' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
+UPDATE "Item" SET "hanviet" = 'MỖI TRIÊU' WHERE "id" = 'openjlpt-vocab-316693e2899a' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'MỖI NGUYỆT' WHERE "id" = 'openjlpt-vocab-c4fd40d052c2' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'MỖI CHU' WHERE "id" = 'openjlpt-vocab-4af73d5eb3c6' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'MỖI NHẬT' WHERE "id" = 'openjlpt-vocab-d63043a38863' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
@@ -135,6 +138,7 @@ UPDATE "Item" SET "hanviet" = 'NHÃN KÍNH' WHERE "id" = 'openjlpt-vocab-d572076
 UPDATE "Item" SET "hanviet" = 'MỘC DIỆU NHẬT' WHERE "id" = 'openjlpt-vocab-d807e193c517' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'VẤN ĐỀ' WHERE "id" = 'openjlpt-vocab-b633603bf69f' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'DÃ THÁI' WHERE "id" = 'openjlpt-vocab-dac5927ab517' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
+UPDATE "Item" SET "hanviet" = 'DỊ' WHERE "id" = 'openjlpt-vocab-808fa934cec2' AND "source" = 'OPENJLPT' AND "hanviet" = 'DỊCH';
 UPDATE "Item" SET "hanviet" = 'TỊCH PHẠN' WHERE "id" = 'openjlpt-vocab-b419c88c7d9d' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'BƯU TIỆN CỤC' WHERE "id" = 'openjlpt-vocab-6cc6046ae8ce' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'TUYẾT' WHERE "id" = 'openjlpt-vocab-7d742a7f9f36' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
@@ -171,10 +175,11 @@ UPDATE "Item" SET "hanviet" = 'HẢI NGẠN' WHERE "id" = 'openjlpt-vocab-0c317e
 UPDATE "Item" SET "hanviet" = 'QUY' WHERE "id" = 'openjlpt-vocab-8066f371e59e' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'KÍNH' WHERE "id" = 'openjlpt-vocab-a675a8e931ad' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'SỨC' WHERE "id" = 'openjlpt-vocab-5ffa1d880f96' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
+UPDATE "Item" SET "hanviet" = 'KHÓA TRƯỞNG' WHERE "id" = 'openjlpt-vocab-49caa3acdf98' AND "source" = 'OPENJLPT' AND "hanviet" = 'KHÓA TRƯỜNG';
 UPDATE "Item" SET "hanviet" = 'BỈ NỮ' WHERE "id" = 'openjlpt-vocab-4325ce7f3fa1' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'PHÁT' WHERE "id" = 'openjlpt-vocab-f45938c905d5' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'GIẢO' WHERE "id" = 'openjlpt-vocab-799be77d7c90' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
-UPDATE "Item" SET "hanviet" = 'CÀN' WHERE "id" = 'openjlpt-vocab-bca11d4d7123' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
+UPDATE "Item" SET "hanviet" = 'CAN' WHERE "id" = 'openjlpt-vocab-bca11d4d7123' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'GIẢN ĐƠN' WHERE "id" = 'openjlpt-vocab-08c75256e151' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'KHÍ' WHERE "id" = 'openjlpt-vocab-a7c7729d6449' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'NGUY HIỂM' WHERE "id" = 'openjlpt-vocab-265af6914f6b' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
@@ -192,6 +197,7 @@ UPDATE "Item" SET "hanviet" = 'KINH TẾ' WHERE "id" = 'openjlpt-vocab-91fe20ca1
 UPDATE "Item" SET "hanviet" = 'CẢNH SÁT' WHERE "id" = 'openjlpt-vocab-27c99021b382' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'TỬ' WHERE "id" = 'openjlpt-vocab-219e08c96026' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'GIAO NGOẠI' WHERE "id" = 'openjlpt-vocab-768df1b2712e' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
+UPDATE "Item" SET "hanviet" = 'HIỆU TRƯỞNG' WHERE "id" = 'openjlpt-vocab-9f38d8a720fc' AND "source" = 'OPENJLPT' AND "hanviet" = 'HIỆU TRƯỜNG';
 UPDATE "Item" SET "hanviet" = 'QUỐC TẾ' WHERE "id" = 'openjlpt-vocab-27460572ce76' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'NGỰ CHỦ NHÂN' WHERE "id" = 'openjlpt-vocab-320fcceb39d7' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'TẾ' WHERE "id" = 'openjlpt-vocab-fe033050e52f' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
@@ -203,7 +209,9 @@ UPDATE "Item" SET "hanviet" = 'TAO' WHERE "id" = 'openjlpt-vocab-5e9e1fa02997' A
 UPDATE "Item" SET "hanviet" = 'THÍ NGHIỆM' WHERE "id" = 'openjlpt-vocab-a86d6df82827' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'ĐỊA CHẤN' WHERE "id" = 'openjlpt-vocab-00904b6827e1' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'THỜI ĐẠI' WHERE "id" = 'openjlpt-vocab-a3a61975e11c' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
+UPDATE "Item" SET "hanviet" = 'CHI ĐẠC' WHERE "id" = 'openjlpt-vocab-7d7907edd590' AND "source" = 'OPENJLPT' AND "hanviet" = 'CHI ĐỘ';
 UPDATE "Item" SET "hanviet" = 'SỰ VỤ SỞ' WHERE "id" = 'openjlpt-vocab-ec037d3765b3' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
+UPDATE "Item" SET "hanviet" = 'XÃ TRƯỞNG' WHERE "id" = 'openjlpt-vocab-88048f03b55c' AND "source" = 'OPENJLPT' AND "hanviet" = 'XÃ TRƯỜNG';
 UPDATE "Item" SET "hanviet" = 'TRÚ SỞ' WHERE "id" = 'openjlpt-vocab-fb69b1ae94ab' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'XUẤT TỊCH' WHERE "id" = 'openjlpt-vocab-77383070c507' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'XUẤT PHÁT' WHERE "id" = 'openjlpt-vocab-545dfc7d5479' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
@@ -221,13 +229,13 @@ UPDATE "Item" SET "hanviet" = 'CHIẾN TRANH' WHERE "id" = 'openjlpt-vocab-b324f
 UPDATE "Item" SET "hanviet" = 'TỔ PHỤ' WHERE "id" = 'openjlpt-vocab-bb0883fddfc0' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'TỔ MẪU' WHERE "id" = 'openjlpt-vocab-2fdb1b3a1002' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'ĐÀI PHONG' WHERE "id" = 'openjlpt-vocab-785e422c5e41' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
-UPDATE "Item" SET "hanviet" = 'PHÓNG' WHERE "id" = 'openjlpt-vocab-6647a9adc756' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
+UPDATE "Item" SET "hanviet" = 'PHỎNG' WHERE "id" = 'openjlpt-vocab-6647a9adc756' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'ĐIỆP' WHERE "id" = 'openjlpt-vocab-d5ac2f996349' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'LỆ' WHERE "id" = 'openjlpt-vocab-6463c574ce87' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'BẰNG' WHERE "id" = 'openjlpt-vocab-18563e1b2119' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'LẠC' WHERE "id" = 'openjlpt-vocab-42adfe119b3c' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'LẠC' WHERE "id" = 'openjlpt-vocab-92a7ee35dc79' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
-UPDATE "Item" SET "hanviet" = 'VI' WHERE "id" = 'openjlpt-vocab-b172e8adb88f' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
+UPDATE "Item" SET "hanviet" = 'VỊ' WHERE "id" = 'openjlpt-vocab-b172e8adb88f' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'NOÃN PHÒNG' WHERE "id" = 'openjlpt-vocab-63312cad9a1e' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'TRUYỀN' WHERE "id" = 'openjlpt-vocab-7672d14409e6' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'TỤC' WHERE "id" = 'openjlpt-vocab-f2b380e5e697' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
@@ -262,6 +270,7 @@ UPDATE "Item" SET "hanviet" = 'TRÚ GIAN' WHERE "id" = 'openjlpt-vocab-cf6d248a2
 UPDATE "Item" SET "hanviet" = 'TRÚ HƯU' WHERE "id" = 'openjlpt-vocab-ac3354829ddb' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'TĂNG' WHERE "id" = 'openjlpt-vocab-6c1a9beb110f' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'PHỨC TẠP' WHERE "id" = 'openjlpt-vocab-cd0969a31428' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
+UPDATE "Item" SET "hanviet" = 'BỘ TRƯỞNG' WHERE "id" = 'openjlpt-vocab-61d1fe17fee8' AND "source" = 'OPENJLPT' AND "hanviet" = 'BỘ TRƯỜNG';
 UPDATE "Item" SET "hanviet" = 'BỐ ĐOÀN' WHERE "id" = 'openjlpt-vocab-874ab98ce4f9' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'CHU' WHERE "id" = 'openjlpt-vocab-477d0f8152b3' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'BIỆT' WHERE "id" = 'openjlpt-vocab-ab420126abcb' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
@@ -372,6 +381,7 @@ UPDATE "Item" SET "hanviet" = 'KHÍ ÔN' WHERE "id" = 'openjlpt-vocab-7aeef663f3
 UPDATE "Item" SET "hanviet" = 'KHÍ HẬU' WHERE "id" = 'openjlpt-vocab-23d55b02c35f' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'NGẠN' WHERE "id" = 'openjlpt-vocab-255436714454' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'QUY TRẠCH' WHERE "id" = 'openjlpt-vocab-55ee3cafb21f' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
+UPDATE "Item" SET "hanviet" = 'NGHỊ TRƯỞNG' WHERE "id" = 'openjlpt-vocab-5b97e192f48a' AND "source" = 'OPENJLPT' AND "hanviet" = 'NGHỊ TRƯỜNG';
 UPDATE "Item" SET "hanviet" = 'KHÍ PHÓ' WHERE "id" = 'openjlpt-vocab-274e0009b0d9' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'KHÍ NHẬP' WHERE "id" = 'openjlpt-vocab-572311a2c273' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'KHÍ ĐỘC' WHERE "id" = 'openjlpt-vocab-000f92061a03' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
@@ -395,7 +405,7 @@ UPDATE "Item" SET "hanviet" = 'CÂN NHỤC' WHERE "id" = 'openjlpt-vocab-bebd752
 UPDATE "Item" SET "hanviet" = 'KIM DUNG' WHERE "id" = 'openjlpt-vocab-8b04b6bd0fc7' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'KIM DIỆU' WHERE "id" = 'openjlpt-vocab-370140d315d7' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'THỰC' WHERE "id" = 'openjlpt-vocab-f0d8d8199b28' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
-UPDATE "Item" SET "hanviet" = 'KHỨU' WHERE "id" = 'openjlpt-vocab-ceae7b326622' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
+UPDATE "Item" SET "hanviet" = 'XÚ' WHERE "id" = 'openjlpt-vocab-ceae7b326622' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'KHU BIỆT' WHERE "id" = 'openjlpt-vocab-338a93d0a431' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'KHỔ LAO' WHERE "id" = 'openjlpt-vocab-58451fc1eea6' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'KẾ' WHERE "id" = 'openjlpt-vocab-71c41593121e' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
@@ -489,9 +499,9 @@ UPDATE "Item" SET "hanviet" = 'SỬ DỤNG' WHERE "id" = 'openjlpt-vocab-0e2d3a3
 UPDATE "Item" SET "hanviet" = 'THỪA KHÁCH' WHERE "id" = 'openjlpt-vocab-2227e0e4034c' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'CHÍNH TRỰC' WHERE "id" = 'openjlpt-vocab-62a3a1c4bbd5' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'THƯỜNG THỨC' WHERE "id" = 'openjlpt-vocab-09c0b7030602' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
-UPDATE "Item" SET "hanviet" = 'THIỂU NỮ' WHERE "id" = 'openjlpt-vocab-22d9b9afb945' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
+UPDATE "Item" SET "hanviet" = 'THIẾU NỮ' WHERE "id" = 'openjlpt-vocab-22d9b9afb945' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'XUNG ĐỘT' WHERE "id" = 'openjlpt-vocab-7ab08bf3ba2d' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
-UPDATE "Item" SET "hanviet" = 'THIỂU NIÊN' WHERE "id" = 'openjlpt-vocab-5addc4e4387a' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
+UPDATE "Item" SET "hanviet" = 'THIẾU NIÊN' WHERE "id" = 'openjlpt-vocab-5addc4e4387a' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'THƯƠNG MẠI' WHERE "id" = 'openjlpt-vocab-fb1c50c15487' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'NỮ VƯƠNG' WHERE "id" = 'openjlpt-vocab-78345041d3ed' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'THỰC TRÁC' WHERE "id" = 'openjlpt-vocab-1d4c856156c6' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
@@ -516,6 +526,7 @@ UPDATE "Item" SET "hanviet" = 'CÂN' WHERE "id" = 'openjlpt-vocab-3ae1e0648435' 
 UPDATE "Item" SET "hanviet" = 'KHUYẾN' WHERE "id" = 'openjlpt-vocab-c42d7b8955d6' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'KÝ' WHERE "id" = 'openjlpt-vocab-cb59482af7ee' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'TẾ' WHERE "id" = 'openjlpt-vocab-a1066efb31f4' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
+UPDATE "Item" SET "hanviet" = 'THÀNH TRƯỞNG' WHERE "id" = 'openjlpt-vocab-a9a0e915a1eb' AND "source" = 'OPENJLPT' AND "hanviet" = 'THÀNH TRƯỜNG';
 UPDATE "Item" SET "hanviet" = 'THANH NIÊN' WHERE "id" = 'openjlpt-vocab-a0c5fa2d9f7c' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'TRÁCH NHIỆM' WHERE "id" = 'openjlpt-vocab-55ecc61b672c' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'THIẾT KẾ' WHERE "id" = 'openjlpt-vocab-9a48f85e79fd' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
@@ -535,7 +546,7 @@ UPDATE "Item" SET "hanviet" = 'ĐỀ' WHERE "id" = 'openjlpt-vocab-39ec5783e2f6'
 UPDATE "Item" SET "hanviet" = 'THỂ ÔN' WHERE "id" = 'openjlpt-vocab-3d5bb1614d14' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'ĐẠI KHÍ' WHERE "id" = 'openjlpt-vocab-ce503bea9a38' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'TRỆ TẠI' WHERE "id" = 'openjlpt-vocab-57643921c36b' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
-UPDATE "Item" SET "hanviet" = 'ĐẠI SỬ' WHERE "id" = 'openjlpt-vocab-239faedd8c7b' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
+UPDATE "Item" SET "hanviet" = 'ĐẠI SỨ' WHERE "id" = 'openjlpt-vocab-239faedd8c7b' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'ĐỐI TƯỢNG' WHERE "id" = 'openjlpt-vocab-c89cacba47a1' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'ĐỐI' WHERE "id" = 'openjlpt-vocab-7c9efee02172' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'ĐẠI CHIẾN' WHERE "id" = 'openjlpt-vocab-75570ae4fb69' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
@@ -546,7 +557,7 @@ UPDATE "Item" SET "hanviet" = 'TRỰC' WHERE "id" = 'openjlpt-vocab-a2e341ad14fa
 UPDATE "Item" SET "hanviet" = 'KINH' WHERE "id" = 'openjlpt-vocab-bfa7eae66019' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'CHỦNG' WHERE "id" = 'openjlpt-vocab-f4ad4c9e227c' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'THÚC' WHERE "id" = 'openjlpt-vocab-e798ef0b79b9' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
-UPDATE "Item" SET "hanviet" = 'ĐÀN' WHERE "id" = 'openjlpt-vocab-633e345c5b56' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
+UPDATE "Item" SET "hanviet" = 'ĐẠN' WHERE "id" = 'openjlpt-vocab-633e345c5b56' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'LẠI' WHERE "id" = 'openjlpt-vocab-e06604baf4e0' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'THÙY' WHERE "id" = 'openjlpt-vocab-2b09b85cf18c' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'ĐƠN VỊ' WHERE "id" = 'openjlpt-vocab-e9e46f2eb444' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
@@ -651,7 +662,7 @@ UPDATE "Item" SET "hanviet" = 'BIỆN ĐƯƠNG' WHERE "id" = 'openjlpt-vocab-781
 UPDATE "Item" SET "hanviet" = 'BỔNG' WHERE "id" = 'openjlpt-vocab-3b88cce536d1' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'MẠO HIỂM' WHERE "id" = 'openjlpt-vocab-9722abd03a41' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'PHONG PHÚ' WHERE "id" = 'openjlpt-vocab-013fe56a424a' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
-UPDATE "Item" SET "hanviet" = 'PHÓNG VẤN' WHERE "id" = 'openjlpt-vocab-c76e18688aa8' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
+UPDATE "Item" SET "hanviet" = 'PHỎNG VẤN' WHERE "id" = 'openjlpt-vocab-c76e18688aa8' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'BỘ ĐẠO' WHERE "id" = 'openjlpt-vocab-1aec77f6de55' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'PHẬT' WHERE "id" = 'openjlpt-vocab-d4c284baad9f' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'VI TIẾU' WHERE "id" = 'openjlpt-vocab-e564bd1d7d41' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
@@ -692,6 +703,7 @@ UPDATE "Item" SET "hanviet" = 'NHƯỢNG' WHERE "id" = 'openjlpt-vocab-e8e70b755
 UPDATE "Item" SET "hanviet" = 'PHONG' WHERE "id" = 'openjlpt-vocab-bd22a1fa97de' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'TÚY' WHERE "id" = 'openjlpt-vocab-bd14b2027d3c' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'DẠNG' WHERE "id" = 'openjlpt-vocab-74a252dd437c' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
+UPDATE "Item" SET "hanviet" = 'DUNG DỊ' WHERE "id" = 'openjlpt-vocab-d293c4d7ec5d' AND "source" = 'OPENJLPT' AND "hanviet" = 'DUNG DỊCH';
 UPDATE "Item" SET "hanviet" = 'DƯƠNG KHÍ' WHERE "id" = 'openjlpt-vocab-2a38477a340f' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'DẠNG TỬ' WHERE "id" = 'openjlpt-vocab-51802c9b81d3' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'DIỆU NHẬT' WHERE "id" = 'openjlpt-vocab-234df0a0cf39' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
@@ -720,6 +732,7 @@ UPDATE "Item" SET "hanviet" = 'VŨ HỘ' WHERE "id" = 'openjlpt-vocab-8992574cf8
 UPDATE "Item" SET "hanviet" = 'QUÁI' WHERE "id" = 'openjlpt-vocab-271f15e567be' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'CẢI' WHERE "id" = 'openjlpt-vocab-7f110f1ea561' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'CẢI' WHERE "id" = 'openjlpt-vocab-58511f25d25a' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
+UPDATE "Item" SET "hanviet" = 'AN DỊ' WHERE "id" = 'openjlpt-vocab-ce4061986508' AND "source" = 'OPENJLPT' AND "hanviet" = 'AN DỊCH';
 UPDATE "Item" SET "hanviet" = 'Y THỰC TRÚ' WHERE "id" = 'openjlpt-vocab-2094cd348f3f' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'Ý ĐỊA ÁC' WHERE "id" = 'openjlpt-vocab-4d585a3497f0' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'NHẤT ỨNG' WHERE "id" = 'openjlpt-vocab-5434dbe6f0ad' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
@@ -782,6 +795,8 @@ UPDATE "Item" SET "hanviet" = 'HỌC NIÊN' WHERE "id" = 'openjlpt-vocab-d224469
 UPDATE "Item" SET "hanviet" = 'CÁCH BIỆT' WHERE "id" = 'openjlpt-vocab-c87835ee5539' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'XÁC SUẤT' WHERE "id" = 'openjlpt-vocab-63ddbac0a2bd' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'QUẢI TOÁN' WHERE "id" = 'openjlpt-vocab-2a04c5fc8364' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
+UPDATE "Item" SET "hanviet" = 'TRÙNG' WHERE "id" = 'openjlpt-vocab-03b521e22297' AND "source" = 'OPENJLPT' AND "hanviet" = 'TRỌNG';
+UPDATE "Item" SET "hanviet" = 'TRÙNG' WHERE "id" = 'openjlpt-vocab-869908d6f7a1' AND "source" = 'OPENJLPT' AND "hanviet" = 'TRỌNG';
 UPDATE "Item" SET "hanviet" = 'SỨC' WHERE "id" = 'openjlpt-vocab-459c4353b889' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'THẢI XUẤT' WHERE "id" = 'openjlpt-vocab-568e86dab5e2' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'QUẢ THỰC' WHERE "id" = 'openjlpt-vocab-abe0618e8d16' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
@@ -790,7 +805,7 @@ UPDATE "Item" SET "hanviet" = 'THẢI GIA' WHERE "id" = 'openjlpt-vocab-6f1562ed
 UPDATE "Item" SET "hanviet" = 'CÁ SỞ' WHERE "id" = 'openjlpt-vocab-9894ff48e2b3' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'PHIẾN GIẢ DANH' WHERE "id" = 'openjlpt-vocab-2e516003cf84' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'PHIẾN KÝ' WHERE "id" = 'openjlpt-vocab-c69f24d4c0e6' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
-UPDATE "Item" SET "hanviet" = 'LẠC KHÍ' WHERE "id" = 'openjlpt-vocab-5ca2bd4e8667' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
+UPDATE "Item" SET "hanviet" = 'NHẠC KHÍ' WHERE "id" = 'openjlpt-vocab-5ca2bd4e8667' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'GIẢ ĐỊNH' WHERE "id" = 'openjlpt-vocab-404e27b37030' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'GIẢ DANH' WHERE "id" = 'openjlpt-vocab-4951e79fe51b' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'GIẢ DANH KHIỂN' WHERE "id" = 'openjlpt-vocab-d9902afec182' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
@@ -798,18 +813,18 @@ UPDATE "Item" SET "hanviet" = 'CHUNG' WHERE "id" = 'openjlpt-vocab-0f752c8e2399'
 UPDATE "Item" SET "hanviet" = 'PHỦ' WHERE "id" = 'openjlpt-vocab-5094980e9347' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'THẦN DẠNG' WHERE "id" = 'openjlpt-vocab-837032d7dca8' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'THẾ ĐAO' WHERE "id" = 'openjlpt-vocab-eb723893ffc8' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
-UPDATE "Item" SET "hanviet" = 'CÀN' WHERE "id" = 'openjlpt-vocab-d86f43413ec4' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
+UPDATE "Item" SET "hanviet" = 'CAN' WHERE "id" = 'openjlpt-vocab-d86f43413ec4' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'KHÁT' WHERE "id" = 'openjlpt-vocab-ac3f035949bf' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'VI THẾ' WHERE "id" = 'openjlpt-vocab-1cd9d7423511' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'HOÁN KHÍ' WHERE "id" = 'openjlpt-vocab-6d121b3e8644' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'GIÁM THƯỞNG' WHERE "id" = 'openjlpt-vocab-8468f519933e' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
-UPDATE "Item" SET "hanviet" = 'CÀN TÁO' WHERE "id" = 'openjlpt-vocab-bb31f9f433f1' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
+UPDATE "Item" SET "hanviet" = 'CAN TÁO' WHERE "id" = 'openjlpt-vocab-bb31f9f433f1' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'QUAN TRẮC' WHERE "id" = 'openjlpt-vocab-0abd07d17fce' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'HÀN ĐỚI' WHERE "id" = 'openjlpt-vocab-43d910527aeb' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'QUAN SẢNH' WHERE "id" = 'openjlpt-vocab-7ab18773d36f' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
-UPDATE "Item" SET "hanviet" = 'CÀN ĐIỆN TRÌ' WHERE "id" = 'openjlpt-vocab-a973588d29d2' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
+UPDATE "Item" SET "hanviet" = 'CAN ĐIỆN TRÌ' WHERE "id" = 'openjlpt-vocab-a973588d29d2' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'QUAN NIỆM' WHERE "id" = 'openjlpt-vocab-fac9f774d216' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
-UPDATE "Item" SET "hanviet" = 'CÀN BÔI' WHERE "id" = 'openjlpt-vocab-a5c6e9ec8432' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
+UPDATE "Item" SET "hanviet" = 'CAN BÔI' WHERE "id" = 'openjlpt-vocab-a5c6e9ec8432' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'QUAN' WHERE "id" = 'openjlpt-vocab-62942eccc087' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'KHÍ ÁP' WHERE "id" = 'openjlpt-vocab-85da6b2ac82f' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'CƠ SỞ' WHERE "id" = 'openjlpt-vocab-789ebecdb4aa' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
@@ -817,7 +832,7 @@ UPDATE "Item" SET "hanviet" = 'KHÍ THỂ' WHERE "id" = 'openjlpt-vocab-eae69ff0
 UPDATE "Item" SET "hanviet" = 'KHÁCH TỊCH' WHERE "id" = 'openjlpt-vocab-8974c207d343' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'CƯỜNG HÓA' WHERE "id" = 'openjlpt-vocab-75b2b4705c34' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'HÀNH SỰ' WHERE "id" = 'openjlpt-vocab-fadc771a234f' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
-UPDATE "Item" SET "hanviet" = 'HÀNH LIỆT' WHERE "id" = 'openjlpt-vocab-185e8f94cb9a' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
+UPDATE "Item" SET "hanviet" = 'HÀNG LIỆT' WHERE "id" = 'openjlpt-vocab-185e8f94cb9a' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'KHÍ PHÓ' WHERE "id" = 'openjlpt-vocab-2320c88ae7f9' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'BĂNG' WHERE "id" = 'openjlpt-vocab-8af09c73995d' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'DƯỢC CHỈ' WHERE "id" = 'openjlpt-vocab-897cf9285344' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
@@ -844,9 +859,9 @@ UPDATE "Item" SET "hanviet" = 'KHIÊM TỐN' WHERE "id" = 'openjlpt-vocab-0efec5
 UPDATE "Item" SET "hanviet" = 'HUYỆN SẢNH' WHERE "id" = 'openjlpt-vocab-27cc66811c23' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'HIỂN VI KÍNH' WHERE "id" = 'openjlpt-vocab-782b13332078' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'KỲ' WHERE "id" = 'openjlpt-vocab-54722a77c27a' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
-UPDATE "Item" SET "hanviet" = 'CƯỜNG DẪN' WHERE "id" = 'openjlpt-vocab-b1365cb3c678' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
+UPDATE "Item" SET "hanviet" = 'CƯỠNG DẪN' WHERE "id" = 'openjlpt-vocab-b1365cb3c678' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'CÔNG NGHỆ' WHERE "id" = 'openjlpt-vocab-5a07a528b23a' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
-UPDATE "Item" SET "hanviet" = 'HIẾU HÀNH' WHERE "id" = 'openjlpt-vocab-7e9d71fa093a' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
+UPDATE "Item" SET "hanviet" = 'HIẾU HẠNH' WHERE "id" = 'openjlpt-vocab-7e9d71fa093a' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'KHẨU THỰC' WHERE "id" = 'openjlpt-vocab-36f0487756ba' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'HIỆU XÁ' WHERE "id" = 'openjlpt-vocab-fc0ba2b6de7a' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'CẤU TẠO' WHERE "id" = 'openjlpt-vocab-e00534344c41' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
@@ -910,7 +925,7 @@ UPDATE "Item" SET "hanviet" = 'CHỦ NGỮ' WHERE "id" = 'openjlpt-vocab-c53b797
 UPDATE "Item" SET "hanviet" = 'CHỦ DỊCH' WHERE "id" = 'openjlpt-vocab-cb6f3f153cf9' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'TUẦN HOÀN' WHERE "id" = 'openjlpt-vocab-7a4e08859c54' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'THUẬN TỰ' WHERE "id" = 'openjlpt-vocab-a00b9ab29dad' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
-UPDATE "Item" SET "hanviet" = 'TƯƠNG KỲ' WHERE "id" = 'openjlpt-vocab-0c0a08589757' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
+UPDATE "Item" SET "hanviet" = 'TƯỚNG KỲ' WHERE "id" = 'openjlpt-vocab-0c0a08589757' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'CHƯNG KHÍ' WHERE "id" = 'openjlpt-vocab-75f8d82c13b1' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'CHƯỚNG TỬ' WHERE "id" = 'openjlpt-vocab-9b004af92def' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'THỪA XA' WHERE "id" = 'openjlpt-vocab-9d6402401ede' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
@@ -944,7 +959,8 @@ UPDATE "Item" SET "hanviet" = 'ĐỒ BIỂU' WHERE "id" = 'openjlpt-vocab-f469b6
 UPDATE "Item" SET "hanviet" = 'MẶC' WHERE "id" = 'openjlpt-vocab-e81f8bad67ca' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'TRỪNG' WHERE "id" = 'openjlpt-vocab-36532d181c03' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'TƯƠNG PHÁC' WHERE "id" = 'openjlpt-vocab-2b0bc6a7f5c8' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
-UPDATE "Item" SET "hanviet" = 'THANH THIỂU NIÊN' WHERE "id" = 'openjlpt-vocab-aca3ef3ed4a8' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
+UPDATE "Item" SET "hanviet" = 'THANH THIẾU NIÊN' WHERE "id" = 'openjlpt-vocab-aca3ef3ed4a8' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
+UPDATE "Item" SET "hanviet" = 'SINH TRƯỞNG' WHERE "id" = 'openjlpt-vocab-6ce303f39587' AND "source" = 'OPENJLPT' AND "hanviet" = 'SINH TRƯỜNG';
 UPDATE "Item" SET "hanviet" = 'CHÍNH ĐẢNG' WHERE "id" = 'openjlpt-vocab-f8eef3136464' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'SINH NIÊN NGUYỆT NHẬT' WHERE "id" = 'openjlpt-vocab-ac354d7920e3' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'TÍNH BIỆT' WHERE "id" = 'openjlpt-vocab-736c0a248028' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
@@ -998,13 +1014,14 @@ UPDATE "Item" SET "hanviet" = 'ĐỊA ĐỚI' WHERE "id" = 'openjlpt-vocab-014ad
 UPDATE "Item" SET "hanviet" = 'TRUNG TUẦN' WHERE "id" = 'openjlpt-vocab-eab858039685' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'TRUNG NIÊN' WHERE "id" = 'openjlpt-vocab-367e2623c781' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'TRƯỜNG SỞ' WHERE "id" = 'openjlpt-vocab-bf1f0a0ebec1' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
-UPDATE "Item" SET "hanviet" = 'TRƯỜNG NỮ' WHERE "id" = 'openjlpt-vocab-af3d8055a60d' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
+UPDATE "Item" SET "hanviet" = 'TRƯỞNG NỮ' WHERE "id" = 'openjlpt-vocab-af3d8055a60d' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'ĐỈNH ĐIỂM' WHERE "id" = 'openjlpt-vocab-c9419f0de6f4' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
+UPDATE "Item" SET "hanviet" = 'TRƯỞNG NAM' WHERE "id" = 'openjlpt-vocab-c9fdf4e791bf' AND "source" = 'OPENJLPT' AND "hanviet" = 'TRƯỜNG NAM';
 UPDATE "Item" SET "hanviet" = 'TRỰC HẬU' WHERE "id" = 'openjlpt-vocab-74e36d5ebf34' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'TRỰC TIỀN' WHERE "id" = 'openjlpt-vocab-2d145981efa5' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'TRỰC THÔNG' WHERE "id" = 'openjlpt-vocab-14f784dc0192' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'TRỰC LƯU' WHERE "id" = 'openjlpt-vocab-42b961c88a6b' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
-UPDATE "Item" SET "hanviet" = 'TRỮ TẠNG' WHERE "id" = 'openjlpt-vocab-942cefa11166' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
+UPDATE "Item" SET "hanviet" = 'TRỮ TÀNG' WHERE "id" = 'openjlpt-vocab-942cefa11166' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'TRỰC GIÁC' WHERE "id" = 'openjlpt-vocab-e9d89bc6c8ea' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'TRỰC KÍNH' WHERE "id" = 'openjlpt-vocab-306fecb9d8e7' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'THÔNG DỊCH' WHERE "id" = 'openjlpt-vocab-1a1fdd491029' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
@@ -1135,7 +1152,7 @@ UPDATE "Item" SET "hanviet" = 'BIỆT BIỆT' WHERE "id" = 'openjlpt-vocab-3730e
 UPDATE "Item" SET "hanviet" = 'TIỆN SỞ' WHERE "id" = 'openjlpt-vocab-4c279182a8e7' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'VỌNG VIỄN KÍNH' WHERE "id" = 'openjlpt-vocab-7f985252eb60' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'PHƯƠNG GIÁC' WHERE "id" = 'openjlpt-vocab-c7746f86d7e9' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
-UPDATE "Item" SET "hanviet" = 'CHỔI' WHERE "id" = 'openjlpt-vocab-6dec72b7aff9' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
+UPDATE "Item" SET "hanviet" = 'TRỬU' WHERE "id" = 'openjlpt-vocab-6dec72b7aff9' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'BAO ĐỚI' WHERE "id" = 'openjlpt-vocab-8d2ca7beaf55' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'BÀO ĐINH' WHERE "id" = 'openjlpt-vocab-0510b97c5b15' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'PHƯƠNG DIỆN' WHERE "id" = 'openjlpt-vocab-c64f974fa90b' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
@@ -1159,6 +1176,7 @@ UPDATE "Item" SET "hanviet" = 'GIÁP' WHERE "id" = 'openjlpt-vocab-bea27178d94a'
 UPDATE "Item" SET "hanviet" = 'KIẾN TRỰC' WHERE "id" = 'openjlpt-vocab-9113ada7a6cd' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'KIẾN QUÁN' WHERE "id" = 'openjlpt-vocab-453d876a9bea' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'THỰC' WHERE "id" = 'openjlpt-vocab-5694926819df' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
+UPDATE "Item" SET "hanviet" = 'THÂN PHẬN' WHERE "id" = 'openjlpt-vocab-a1f8d8584408' AND "source" = 'OPENJLPT' AND "hanviet" = 'THÂN PHÂN';
 UPDATE "Item" SET "hanviet" = 'VỊ MÃN' WHERE "id" = 'openjlpt-vocab-86598cbb6d59' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'CHƯNG THỬ' WHERE "id" = 'openjlpt-vocab-eb974d35ca74' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'TỬ' WHERE "id" = 'openjlpt-vocab-01caea5810ee' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
@@ -1169,7 +1187,7 @@ UPDATE "Item" SET "hanviet" = 'HUỆ' WHERE "id" = 'openjlpt-vocab-48eedd136e01'
 UPDATE "Item" SET "hanviet" = 'MỤC GIÁC' WHERE "id" = 'openjlpt-vocab-8cac75d8844d' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'DIỆN TÍCH' WHERE "id" = 'openjlpt-vocab-e89998bd95c2' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'DIỆN TIẾP' WHERE "id" = 'openjlpt-vocab-69bc7e0c9e8d' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
-UPDATE "Item" SET "hanviet" = 'DIỆN ĐẢO KHỨU' WHERE "id" = 'openjlpt-vocab-95a66d5e4174' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
+UPDATE "Item" SET "hanviet" = 'DIỆN ĐẢO XÚ' WHERE "id" = 'openjlpt-vocab-95a66d5e4174' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'TRỮ' WHERE "id" = 'openjlpt-vocab-c6b2d1946780' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'TRỮ' WHERE "id" = 'openjlpt-vocab-af009500b7a5' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'THÂN DỊCH' WHERE "id" = 'openjlpt-vocab-3384bf56c630' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
@@ -1216,7 +1234,7 @@ UPDATE "Item" SET "hanviet" = 'CẤU' WHERE "id" = 'openjlpt-vocab-421bfc8be63b'
 UPDATE "Item" SET "hanviet" = 'ÁC' WHERE "id" = 'openjlpt-vocab-a4a3bc709046' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'ÁC NHẬT' WHERE "id" = 'openjlpt-vocab-685ff6712996' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'NGẠC' WHERE "id" = 'openjlpt-vocab-5e3ee7e4c87e' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
-UPDATE "Item" SET "hanviet" = 'TRIỀU TẨM PHƯỜNG' WHERE "id" = 'openjlpt-vocab-dada5d8d2cc7' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
+UPDATE "Item" SET "hanviet" = 'TRIÊU TẨM PHƯỜNG' WHERE "id" = 'openjlpt-vocab-dada5d8d2cc7' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'TIẾU' WHERE "id" = 'openjlpt-vocab-e39d349c9eca' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'TIÊU' WHERE "id" = 'openjlpt-vocab-5dc4d569c542' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'ÁC HÓA' WHERE "id" = 'openjlpt-vocab-3b680aaaec7c' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
@@ -1290,10 +1308,11 @@ UPDATE "Item" SET "hanviet" = 'TRÌ' WHERE "id" = 'openjlpt-vocab-16850784024b' 
 UPDATE "Item" SET "hanviet" = 'TRÌ' WHERE "id" = 'openjlpt-vocab-a165ade6c7e7' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'NGHIÊM' WHERE "id" = 'openjlpt-vocab-b8b718db5241' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'HÀNH' WHERE "id" = 'openjlpt-vocab-f3c586c5b7e3' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
+UPDATE "Item" SET "hanviet" = 'TRƯỞNG' WHERE "id" = 'openjlpt-vocab-4d2263f11266' AND "source" = 'OPENJLPT' AND "hanviet" = 'TRƯỜNG';
 UPDATE "Item" SET "hanviet" = 'ÁP KÝ' WHERE "id" = 'openjlpt-vocab-8ede6dfbace3' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'TRÌ' WHERE "id" = 'openjlpt-vocab-2c6de30b987b' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'SỬ' WHERE "id" = 'openjlpt-vocab-52bbef08d548' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
-UPDATE "Item" SET "hanviet" = 'PHÓNG' WHERE "id" = 'openjlpt-vocab-26711d817137' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
+UPDATE "Item" SET "hanviet" = 'PHỎNG' WHERE "id" = 'openjlpt-vocab-26711d817137' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'ĐỒNG NIÊN' WHERE "id" = 'openjlpt-vocab-0691b3a0e7ce' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'ĐỚI' WHERE "id" = 'openjlpt-vocab-744be6c00dad' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'GIÁC' WHERE "id" = 'openjlpt-vocab-31a14fbe07eb' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
@@ -1325,7 +1344,7 @@ UPDATE "Item" SET "hanviet" = 'HỌC NGHỆ' WHERE "id" = 'openjlpt-vocab-37bc8c
 UPDATE "Item" SET "hanviet" = 'KHUẾCH TẢN' WHERE "id" = 'openjlpt-vocab-b0a260e2bb50' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'CÁC CHỦNG' WHERE "id" = 'openjlpt-vocab-f06e11ca4bac' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'CÁCH TÂN' WHERE "id" = 'openjlpt-vocab-b0df065cc9ba' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
-UPDATE "Item" SET "hanviet" = 'LẠC PHỔ' WHERE "id" = 'openjlpt-vocab-7315225d2a5e' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
+UPDATE "Item" SET "hanviet" = 'NHẠC PHỔ' WHERE "id" = 'openjlpt-vocab-7315225d2a5e' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'CÁCH MỆNH' WHERE "id" = 'openjlpt-vocab-099647632d98' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'QUẢI' WHERE "id" = 'openjlpt-vocab-84f2499cac7d' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'NHAI' WHERE "id" = 'openjlpt-vocab-9c496b1a4d70' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
@@ -1351,6 +1370,7 @@ UPDATE "Item" SET "hanviet" = 'LẠC' WHERE "id" = 'openjlpt-vocab-b0094762d2d7'
 UPDATE "Item" SET "hanviet" = 'GIẢ' WHERE "id" = 'openjlpt-vocab-4b7b6aee832c' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'QUÁ LAO' WHERE "id" = 'openjlpt-vocab-db1bb7b2dcaf' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'QUAN' WHERE "id" = 'openjlpt-vocab-d8948e054072' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
+UPDATE "Item" SET "hanviet" = 'GIẢN DỊ' WHERE "id" = 'openjlpt-vocab-3771166987b7' AND "source" = 'OPENJLPT' AND "hanviet" = 'GIẢN DỊCH';
 UPDATE "Item" SET "hanviet" = 'HÀN KHÍ' WHERE "id" = 'openjlpt-vocab-110e30680265' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'QUÁN HÀNH' WHERE "id" = 'openjlpt-vocab-2db3e00747cd' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'KHUYẾN CÁO' WHERE "id" = 'openjlpt-vocab-a2cce48cedcc' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
@@ -1409,9 +1429,9 @@ UPDATE "Item" SET "hanviet" = 'KINH DỊ' WHERE "id" = 'openjlpt-vocab-986d3c52a
 UPDATE "Item" SET "hanviet" = 'HIỆP HỘI' WHERE "id" = 'openjlpt-vocab-962a6d812248' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'HIỆP NGHỊ' WHERE "id" = 'openjlpt-vocab-b70f70069fb9' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'CƯỜNG NGẠNH' WHERE "id" = 'openjlpt-vocab-9eb09dfb8482' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
-UPDATE "Item" SET "hanviet" = 'CƯỜNG HÀNH' WHERE "id" = 'openjlpt-vocab-ff4c4fb17691' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
+UPDATE "Item" SET "hanviet" = 'CƯỠNG HÀNH' WHERE "id" = 'openjlpt-vocab-ff4c4fb17691' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'GIÁO TÀI' WHERE "id" = 'openjlpt-vocab-561129749a50' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
-UPDATE "Item" SET "hanviet" = 'CƯỜNG CHẾ' WHERE "id" = 'openjlpt-vocab-ffce29d63708' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
+UPDATE "Item" SET "hanviet" = 'CƯỠNG CHẾ' WHERE "id" = 'openjlpt-vocab-ffce29d63708' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'HÀNH CHÍNH' WHERE "id" = 'openjlpt-vocab-71e138a59fac' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'HIỆP ĐIỀU' WHERE "id" = 'openjlpt-vocab-7d577cec5856' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'HIỆP ĐỊNH' WHERE "id" = 'openjlpt-vocab-1cc73055a28e' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
@@ -1433,7 +1453,7 @@ UPDATE "Item" SET "hanviet" = 'KHÔNG PHÚC' WHERE "id" = 'openjlpt-vocab-0e3985
 UPDATE "Item" SET "hanviet" = 'CHỦNG CHỦNG' WHERE "id" = 'openjlpt-vocab-c24d9e739576' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'CỰU SỰ' WHERE "id" = 'openjlpt-vocab-4502adc8714e' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'THIÊM DẪN' WHERE "id" = 'openjlpt-vocab-09d0f0f0347c' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
-UPDATE "Item" SET "hanviet" = 'TẠNG' WHERE "id" = 'openjlpt-vocab-03dba44cfa99' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
+UPDATE "Item" SET "hanviet" = 'TÀNG' WHERE "id" = 'openjlpt-vocab-03dba44cfa99' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'QUÂN HẠM' WHERE "id" = 'openjlpt-vocab-47c42a9897df' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'QUÂN CHỦ' WHERE "id" = 'openjlpt-vocab-b8cd0ddbc087' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'KINH QUÁ' WHERE "id" = 'openjlpt-vocab-dc174dc098b6' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
@@ -1456,7 +1476,7 @@ UPDATE "Item" SET "hanviet" = 'QUYẾT HÀNH' WHERE "id" = 'openjlpt-vocab-c794a
 UPDATE "Item" SET "hanviet" = 'KẾT THÚC' WHERE "id" = 'openjlpt-vocab-6b9c732a2826' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'YÊN' WHERE "id" = 'openjlpt-vocab-173ff74f658d' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'YÊN' WHERE "id" = 'openjlpt-vocab-3999db2f7bd7' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
-UPDATE "Item" SET "hanviet" = 'CÀN' WHERE "id" = 'openjlpt-vocab-7f10671bd5ae' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
+UPDATE "Item" SET "hanviet" = 'CAN' WHERE "id" = 'openjlpt-vocab-7f10671bd5ae' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'QUYỀN' WHERE "id" = 'openjlpt-vocab-1e4f438fd855' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'QUYỀN UY' WHERE "id" = 'openjlpt-vocab-caaada62dfaf' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'QUYỀN HẠN' WHERE "id" = 'openjlpt-vocab-67615d305804' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
@@ -1470,7 +1490,7 @@ UPDATE "Item" SET "hanviet" = 'QUYỀN LỰC' WHERE "id" = 'openjlpt-vocab-0fd90
 UPDATE "Item" SET "hanviet" = 'CÂU' WHERE "id" = 'openjlpt-vocab-c0b759a12cce' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'HẢO Ý' WHERE "id" = 'openjlpt-vocab-452a5f73629e' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'HÀNH VI' WHERE "id" = 'openjlpt-vocab-1ea67d8df800' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
-UPDATE "Item" SET "hanviet" = 'HÀNH VIÊN' WHERE "id" = 'openjlpt-vocab-e1810ea2f1e2' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
+UPDATE "Item" SET "hanviet" = 'HÀNG VIÊN' WHERE "id" = 'openjlpt-vocab-e1810ea2f1e2' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'HẢO HUỐNG' WHERE "id" = 'openjlpt-vocab-f81363463b2d' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'KHOÁNG NGHIỆP' WHERE "id" = 'openjlpt-vocab-f2fef6ce99c6' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'HOÀNG HOÀNG' WHERE "id" = 'openjlpt-vocab-95c0e4c7b92f' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
@@ -1488,6 +1508,7 @@ UPDATE "Item" SET "hanviet" = 'CẤU NHẬP' WHERE "id" = 'openjlpt-vocab-234283
 UPDATE "Item" SET "hanviet" = 'HOANG PHẾ' WHERE "id" = 'openjlpt-vocab-6fa46f41465a' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'CẤU MÃI' WHERE "id" = 'openjlpt-vocab-ffadf37e566d' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'HẢO BÌNH' WHERE "id" = 'openjlpt-vocab-97892f24c78b' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
+UPDATE "Item" SET "hanviet" = 'HÀNG PHỤC' WHERE "id" = 'openjlpt-vocab-5dfbda1ee6d4' AND "source" = 'OPENJLPT' AND "hanviet" = 'GIÁNG PHỤC';
 UPDATE "Item" SET "hanviet" = 'CÔNG MỘ' WHERE "id" = 'openjlpt-vocab-b1fe6b465c35' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'TIỂU MẠI' WHERE "id" = 'openjlpt-vocab-72a4b486ade9' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'HIỆU SUẤT' WHERE "id" = 'openjlpt-vocab-aab19ae30d70' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
@@ -1551,8 +1572,8 @@ UPDATE "Item" SET "hanviet" = 'SƠN NHẠC' WHERE "id" = 'openjlpt-vocab-7da73ce
 UPDATE "Item" SET "hanviet" = 'SƠN PHÚC' WHERE "id" = 'openjlpt-vocab-552c5f6a1ebf' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'SƠN MẠCH' WHERE "id" = 'openjlpt-vocab-cc083d50685c' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'TỰ DỤC' WHERE "id" = 'openjlpt-vocab-f8df63768583' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
-UPDATE "Item" SET "hanviet" = 'CƯỜNG' WHERE "id" = 'openjlpt-vocab-77e66bafc6e9' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
-UPDATE "Item" SET "hanviet" = 'CƯỜNG' WHERE "id" = 'openjlpt-vocab-6db81e5dd330' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
+UPDATE "Item" SET "hanviet" = 'CƯỠNG' WHERE "id" = 'openjlpt-vocab-77e66bafc6e9' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
+UPDATE "Item" SET "hanviet" = 'CƯỠNG' WHERE "id" = 'openjlpt-vocab-6db81e5dd330' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'XỈ KHOA' WHERE "id" = 'openjlpt-vocab-7878d7a46305' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'THỊ NHAI' WHERE "id" = 'openjlpt-vocab-6a38e375eec8' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'THỊ GIÁC' WHERE "id" = 'openjlpt-vocab-10a3abfabe23' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
@@ -1564,7 +1585,7 @@ UPDATE "Item" SET "hanviet" = 'TỪ KHÍ' WHERE "id" = 'openjlpt-vocab-2125016b4
 UPDATE "Item" SET "hanviet" = 'TƯ KIM' WHERE "id" = 'openjlpt-vocab-aee66d2cd31c' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'THẤP KHÍ' WHERE "id" = 'openjlpt-vocab-b4d41dc0a385' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'THI HÀNH' WHERE "id" = 'openjlpt-vocab-c22b98a3f065' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
-UPDATE "Item" SET "hanviet" = 'THỊ HẢO' WHERE "id" = 'openjlpt-vocab-8a452afa0124' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
+UPDATE "Item" SET "hanviet" = 'THỊ HIẾU' WHERE "id" = 'openjlpt-vocab-8a452afa0124' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'THỜI KHẮC BIỂU' WHERE "id" = 'openjlpt-vocab-2e26a00ed8bb' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'THỜI SAI' WHERE "id" = 'openjlpt-vocab-926d72c49621' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'TƯ SẢN' WHERE "id" = 'openjlpt-vocab-d5277406f3dc' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
@@ -1588,7 +1609,7 @@ UPDATE "Item" SET "hanviet" = 'THỦY PHÁT' WHERE "id" = 'openjlpt-vocab-b5fc3c
 UPDATE "Item" SET "hanviet" = 'SÁP' WHERE "id" = 'openjlpt-vocab-9cf6513526cf' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'CHI PHƯƠNG' WHERE "id" = 'openjlpt-vocab-2eef1156d919' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'NHIỄM' WHERE "id" = 'openjlpt-vocab-c6b5106aa4a2' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
-UPDATE "Item" SET "hanviet" = 'SỬ MỆNH' WHERE "id" = 'openjlpt-vocab-a8e1b4222387' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
+UPDATE "Item" SET "hanviet" = 'SỨ MỆNH' WHERE "id" = 'openjlpt-vocab-a8e1b4222387' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'XÃ TRẠCH' WHERE "id" = 'openjlpt-vocab-f88d6d96a66b' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'TÀ DIỆN' WHERE "id" = 'openjlpt-vocab-f61e0d138eb1' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'SA LỢI' WHERE "id" = 'openjlpt-vocab-865237498b1e' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
@@ -1599,7 +1620,7 @@ UPDATE "Item" SET "hanviet" = 'TẬP KÍCH' WHERE "id" = 'openjlpt-vocab-b0c7060
 UPDATE "Item" SET "hanviet" = 'TÙNG SỰ' WHERE "id" = 'openjlpt-vocab-5a9fb8560ecc' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'SUNG THỰC' WHERE "id" = 'openjlpt-vocab-fe4f43935957' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'TU SỨC' WHERE "id" = 'openjlpt-vocab-6420fdb3b66e' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
-UPDATE "Item" SET "hanviet" = 'TRỌNG PHỨC' WHERE "id" = 'openjlpt-vocab-945ef04d63dd' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
+UPDATE "Item" SET "hanviet" = 'TRÙNG PHỨC' WHERE "id" = 'openjlpt-vocab-945ef04d63dd' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'TÙNG LAI' WHERE "id" = 'openjlpt-vocab-a623a8aa409a' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'THỦ VỆ' WHERE "id" = 'openjlpt-vocab-d915e3517367' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'CHỦ DIỄN' WHERE "id" = 'openjlpt-vocab-e81cb17271a8' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
@@ -1685,7 +1706,7 @@ UPDATE "Item" SET "hanviet" = 'TƯƠNG ỨNG' WHERE "id" = 'openjlpt-vocab-04ee1
 UPDATE "Item" SET "hanviet" = 'TĂNG CƯỜNG' WHERE "id" = 'openjlpt-vocab-bcb8b5d12c32' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'TẨU HÀNH' WHERE "id" = 'openjlpt-vocab-a52315756a88' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'SƯU TRA' WHERE "id" = 'openjlpt-vocab-101edf9dfa81' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
-UPDATE "Item" SET "hanviet" = 'TẠNG TƯƠNG' WHERE "id" = 'openjlpt-vocab-9566f47ce466' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
+UPDATE "Item" SET "hanviet" = 'TÀNG TƯƠNG' WHERE "id" = 'openjlpt-vocab-9566f47ce466' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'TRANG SỨC' WHERE "id" = 'openjlpt-vocab-49e434723c9f' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'TĂNG TIẾN' WHERE "id" = 'openjlpt-vocab-1f26fad34594' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'TAO ĐỘNG' WHERE "id" = 'openjlpt-vocab-c694ba9537f1' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
@@ -1724,6 +1745,7 @@ UPDATE "Item" SET "hanviet" = 'GIẢ LỆNH' WHERE "id" = 'openjlpt-vocab-dba8df
 UPDATE "Item" SET "hanviet" = 'LẠI' WHERE "id" = 'openjlpt-vocab-1f22c5db03c7' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'LƯU' WHERE "id" = 'openjlpt-vocab-56efe86ad40a' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'TỨ' WHERE "id" = 'openjlpt-vocab-b19af03fa347' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
+UPDATE "Item" SET "hanviet" = 'DUNG DỊ' WHERE "id" = 'openjlpt-vocab-a9bdb8a375fc' AND "source" = 'OPENJLPT' AND "hanviet" = 'DUNG DỊCH';
 UPDATE "Item" SET "hanviet" = 'ĐA DẠNG' WHERE "id" = 'openjlpt-vocab-fa7a7e0eb843' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'ĐÃI' WHERE "id" = 'openjlpt-vocab-78599b48755e' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'ĐƠN NHẤT' WHERE "id" = 'openjlpt-vocab-636159baab01' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
@@ -1741,8 +1763,10 @@ UPDATE "Item" SET "hanviet" = 'TRẬT TỰ' WHERE "id" = 'openjlpt-vocab-b89732c
 UPDATE "Item" SET "hanviet" = 'TRUNG KẾ' WHERE "id" = 'openjlpt-vocab-b9ae8b935acb' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'TRUNG THỰC' WHERE "id" = 'openjlpt-vocab-fd07d4952bd8' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'TRUNG PHÚC' WHERE "id" = 'openjlpt-vocab-31a501742883' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
+UPDATE "Item" SET "hanviet" = 'TRÚNG ĐỘC' WHERE "id" = 'openjlpt-vocab-b635894a8410' AND "source" = 'OPENJLPT' AND "hanviet" = 'TRUNG ĐỘC';
 UPDATE "Item" SET "hanviet" = 'SẢNH' WHERE "id" = 'openjlpt-vocab-cf9c274f3076' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'TRÀNG' WHERE "id" = 'openjlpt-vocab-e40e18bae1ed' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
+UPDATE "Item" SET "hanviet" = 'TRƯỞNG QUAN' WHERE "id" = 'openjlpt-vocab-ad6465b488eb' AND "source" = 'OPENJLPT' AND "hanviet" = 'TRƯỜNG QUAN';
 UPDATE "Item" SET "hanviet" = 'TRƯNG THU' WHERE "id" = 'openjlpt-vocab-e8f2a3d04c06' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'TRỰC DIỆN' WHERE "id" = 'openjlpt-vocab-9f1f35f1540f' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'TRỮ SÚC' WHERE "id" = 'openjlpt-vocab-b24ccde88d19' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
@@ -1833,7 +1857,7 @@ UPDATE "Item" SET "hanviet" = 'HOÀI' WHERE "id" = 'openjlpt-vocab-61fa48b0edd6'
 UPDATE "Item" SET "hanviet" = 'HÀ KHÍ' WHERE "id" = 'openjlpt-vocab-a339ddda118a' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'HÀ TỐT' WHERE "id" = 'openjlpt-vocab-388553dd0763' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'HÀ' WHERE "id" = 'openjlpt-vocab-3b64e9b57378' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
-UPDATE "Item" SET "hanviet" = 'SINH KHỨU' WHERE "id" = 'openjlpt-vocab-4cc9cfc56d01' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
+UPDATE "Item" SET "hanviet" = 'SINH XÚ' WHERE "id" = 'openjlpt-vocab-4cc9cfc56d01' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'SINH ÔN' WHERE "id" = 'openjlpt-vocab-0b7584121891' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'TỊNH' WHERE "id" = 'openjlpt-vocab-f2708616c9f6' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'HOẠT' WHERE "id" = 'openjlpt-vocab-2cff8016216c' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
@@ -1861,7 +1885,7 @@ UPDATE "Item" SET "hanviet" = 'NHIỆM VỤ' WHERE "id" = 'openjlpt-vocab-1b1f68
 UPDATE "Item" SET "hanviet" = 'NHIỆM MỆNH' WHERE "id" = 'openjlpt-vocab-252767113581' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'CHIỂU' WHERE "id" = 'openjlpt-vocab-89969a9e6daf' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'TẨM' WHERE "id" = 'openjlpt-vocab-05dd69ecdb0b' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
-UPDATE "Item" SET "hanviet" = 'CƯỜNG THỈNH' WHERE "id" = 'openjlpt-vocab-022562d1e8a3' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
+UPDATE "Item" SET "hanviet" = 'CƯỠNG THỈNH' WHERE "id" = 'openjlpt-vocab-022562d1e8a3' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'NHIỆT LƯỢNG' WHERE "id" = 'openjlpt-vocab-c091965226ab' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'NIÊM' WHERE "id" = 'openjlpt-vocab-e0fa9dc6d562' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'NIÊM' WHERE "id" = 'openjlpt-vocab-0aa35945f729' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
@@ -1869,7 +1893,7 @@ UPDATE "Item" SET "hanviet" = 'NIÊN GIÁM' WHERE "id" = 'openjlpt-vocab-9c6fe25
 UPDATE "Item" SET "hanviet" = 'NIÊN HIỆU' WHERE "id" = 'openjlpt-vocab-58e18cfd7c2b' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'NHIÊN THIÊU' WHERE "id" = 'openjlpt-vocab-74d12121712c' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'NIÊN SINH' WHERE "id" = 'openjlpt-vocab-d5ab84b435fb' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
-UPDATE "Item" SET "hanviet" = 'NIÊN TRƯỜNG' WHERE "id" = 'openjlpt-vocab-ddf80d10fdcd' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
+UPDATE "Item" SET "hanviet" = 'NIÊN TRƯỞNG' WHERE "id" = 'openjlpt-vocab-ddf80d10fdcd' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'NHIÊN LIỆU' WHERE "id" = 'openjlpt-vocab-028448f9baf5' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'NIÊN LUÂN' WHERE "id" = 'openjlpt-vocab-e21170c3ad55' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'NÃO' WHERE "id" = 'openjlpt-vocab-bb2590464060' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
@@ -1983,7 +2007,7 @@ UPDATE "Item" SET "hanviet" = 'PHỐ TRANG' WHERE "id" = 'openjlpt-vocab-2569245
 UPDATE "Item" SET "hanviet" = 'PHÁT TÁC' WHERE "id" = 'openjlpt-vocab-d43e16df0b9a' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'PHÁT TÚC' WHERE "id" = 'openjlpt-vocab-413a12813f23' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'BẢN KHÍ' WHERE "id" = 'openjlpt-vocab-d3a1d737966a' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
-UPDATE "Item" SET "hanviet" = 'MAI TẠNG' WHERE "id" = 'openjlpt-vocab-0910abebd07e' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
+UPDATE "Item" SET "hanviet" = 'MAI TÀNG' WHERE "id" = 'openjlpt-vocab-0910abebd07e' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'TIỀN MẠI' WHERE "id" = 'openjlpt-vocab-cc6aec5a74fc' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'NHIỆM' WHERE "id" = 'openjlpt-vocab-4cf146374841' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'QUYỂN' WHERE "id" = 'openjlpt-vocab-64b12140b671' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
@@ -2012,6 +2036,7 @@ UPDATE "Item" SET "hanviet" = 'KIẾN ĐỘ' WHERE "id" = 'openjlpt-vocab-d7d75a
 UPDATE "Item" SET "hanviet" = 'DÂN CHỦ' WHERE "id" = 'openjlpt-vocab-d03ed3db291c' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'VÔ TÀ KHÍ' WHERE "id" = 'openjlpt-vocab-d2cc96375629' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'VÔ ÁM' WHERE "id" = 'openjlpt-vocab-85d154567ea8' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
+UPDATE "Item" SET "hanviet" = 'MỆNH TRÚNG' WHERE "id" = 'openjlpt-vocab-7a130d7fde44' AND "source" = 'OPENJLPT' AND "hanviet" = 'MỆNH TRUNG';
 UPDATE "Item" SET "hanviet" = 'MINH LIỄU' WHERE "id" = 'openjlpt-vocab-b5967bf99812' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'HUỆ' WHERE "id" = 'openjlpt-vocab-be2f27921c08' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'HUỆ' WHERE "id" = 'openjlpt-vocab-a3e17d31ee20' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
@@ -2038,6 +2063,7 @@ UPDATE "Item" SET "hanviet" = 'THÚY' WHERE "id" = 'openjlpt-vocab-beb50c1d2502'
 UPDATE "Item" SET "hanviet" = 'VẤN' WHERE "id" = 'openjlpt-vocab-5c2e7a60896d' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'ƯU' WHERE "id" = 'openjlpt-vocab-9badb0882237' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'ỐC PHU' WHERE "id" = 'openjlpt-vocab-d07f19922101' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
+UPDATE "Item" SET "hanviet" = 'DỊ' WHERE "id" = 'openjlpt-vocab-e3963c4ddec6' AND "source" = 'OPENJLPT' AND "hanviet" = 'DỊCH';
 UPDATE "Item" SET "hanviet" = 'DÃ ĐẢNG' WHERE "id" = 'openjlpt-vocab-d34efb6a1b62' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'ÁM' WHERE "id" = 'openjlpt-vocab-0e9f166c7e13' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
 UPDATE "Item" SET "hanviet" = 'KHIỂN THÔNG' WHERE "id" = 'openjlpt-vocab-9febc9f6acd3' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;
