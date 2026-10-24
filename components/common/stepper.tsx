@@ -77,7 +77,7 @@ export function Stepper({
           onBlur={() => setDraft(null)}
           onKeyDown={onKeyDown}
           wrapperClassName={cn('h-full', suffix ? 'w-7' : 'w-10')}
-          className="h-full rounded-none border-0 bg-transparent px-0 text-center text-body font-semibold tabular-nums focus-visible:ring-0 md:text-body dark:bg-transparent"
+          className="h-full rounded-none border-0 bg-transparent px-0 text-center text-base font-semibold tabular-nums focus-visible:ring-0 md:text-sm dark:bg-transparent"
         />
         {suffix && <span className="text-xs text-muted-foreground">{suffix}</span>}
       </label>

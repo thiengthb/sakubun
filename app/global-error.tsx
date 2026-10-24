@@ -18,7 +18,7 @@ export default function GlobalError({ error, reset }: ErrorBoundaryProps) {
           <TriangleAlert className="size-10 text-alert" aria-hidden />
           <div className="space-y-1.5">
             <h1 className="text-xl font-semibold">Ứng dụng gặp lỗi nghiêm trọng</h1>
-            <p className="max-w-md text-subhead text-muted-foreground">
+            <p className="max-w-md text-sm text-muted-foreground">
               sakubun không khởi động được giao diện. Dữ liệu trong volume không bị ảnh hưởng. Thử
               tải lại; nếu vẫn lỗi, xem log bằng{' '}
               <code className="font-mono">docker logs sakubun</code>.

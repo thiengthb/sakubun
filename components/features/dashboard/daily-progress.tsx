@@ -59,7 +59,7 @@ function Ring({
           </div>
         </div>
         <div className="min-w-0">
-          <div className="text-body font-semibold tabular-nums">
+          <div className="text-sm font-semibold tabular-nums">
             {done}
             <span className="font-normal text-muted-foreground">/{total}</span>
           </div>

@@ -183,7 +183,7 @@ export function GroupsView({ groups }: { groups: GroupSummary[] }) {
                 </div>
 
                 {g.note && (
-                  <p className="line-clamp-2 text-subhead text-muted-foreground">{g.note}</p>
+                  <p className="line-clamp-2 text-sm text-muted-foreground">{g.note}</p>
                 )}
 
                 <div className="mt-auto flex flex-wrap items-center gap-x-2 gap-y-1 pt-1 text-xs text-muted-foreground">

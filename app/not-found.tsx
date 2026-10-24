@@ -10,7 +10,7 @@ export default function NotFound() {
       <SearchX className="size-10 text-muted-foreground" aria-hidden />
       <div className="space-y-1.5">
         <h1 className="text-xl font-semibold">Không tìm thấy trang</h1>
-        <p className="max-w-md text-subhead text-muted-foreground">
+        <p className="max-w-md text-sm text-muted-foreground">
           Đường dẫn này không tồn tại — có thể mục bạn mở đã bị xoá, hoặc link đã cũ.
         </p>
       </div>

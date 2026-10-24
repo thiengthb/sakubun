@@ -65,7 +65,7 @@ export function ItemGroups({
               </span>
             ))
           : addable.length > 0 && (
-              <span className="text-subhead text-muted-foreground">Chưa thuộc nhóm nào</span>
+              <span className="text-sm text-muted-foreground">Chưa thuộc nhóm nào</span>
             )}
 
         {addable.length > 0 && (
@@ -93,7 +93,7 @@ export function ItemGroups({
         )}
 
         {!hasAnyGroup && (
-          <span className="text-subhead text-muted-foreground">
+          <span className="text-sm text-muted-foreground">
             Chưa có nhóm phù hợp.{' '}
             <Link href="/resources?tab=groups" className="underline">
               Tạo nhóm

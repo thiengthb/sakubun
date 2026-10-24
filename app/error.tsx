@@ -17,7 +17,7 @@ export default function RouteError({ error, reset }: ErrorBoundaryProps) {
       <TriangleAlert className="size-10 text-alert" aria-hidden />
       <div className="space-y-1.5">
         <h1 className="text-xl font-semibold">Có lỗi xảy ra</h1>
-        <p className="max-w-md text-subhead text-muted-foreground">
+        <p className="max-w-md text-sm text-muted-foreground">
           Trang này không tải được. Dữ liệu học của bạn vẫn an toàn — thử lại thường là xong. Nếu
           vẫn lỗi, kiểm tra container sakubun còn chạy không.
         </p>

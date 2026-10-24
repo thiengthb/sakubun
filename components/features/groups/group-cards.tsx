@@ -52,7 +52,7 @@ export function GroupCards({
       <div className="flex flex-col items-center gap-3 rounded-xl bg-card px-6 py-14 text-center ring-1 ring-foreground/10">
         <Sparkles className="size-6 text-primary" />
         <p className="font-medium">Chưa có thẻ nào để xem</p>
-        <p className="max-w-sm text-subhead text-muted-foreground">
+        <p className="max-w-sm text-sm text-muted-foreground">
           Sang tab <b>Danh sách</b> và thêm mục vào nhóm, rồi quay lại đây.
         </p>
       </div>
@@ -62,7 +62,7 @@ export function GroupCards({
   return (
     <div className="flex min-h-[calc(100dvh-9rem)] flex-col gap-4">
       <div className="flex items-center gap-2">
-        <p className="flex-1 text-subhead text-muted-foreground">
+        <p className="flex-1 text-sm text-muted-foreground">
           Chỉ để xem lại, không tính vào lịch ôn.
         </p>
         <Button
@@ -95,7 +95,7 @@ export function GroupCards({
         {done || !card ? (
           <div className="flex flex-col items-center gap-2 py-10 text-center">
             <p className="font-semibold">Đã xem hết {cards.length} thẻ</p>
-            <p className="text-subhead text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               Muốn được chấm và xếp lịch thì ôn ở trang Ôn nhanh.
             </p>
           </div>

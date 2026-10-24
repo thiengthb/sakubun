@@ -170,7 +170,7 @@ export function PracticeTab({
           tone="info"
           label="Furigana"
           aside={
-            <ruby lang="ja" aria-hidden className="ml-1 shrink-0 text-body text-muted-foreground">
+            <ruby lang="ja" aria-hidden className="ml-1 shrink-0 text-base text-muted-foreground">
               漢字<rt className={cn(!furigana && 'invisible')}>かんじ</rt>
             </ruby>
           }

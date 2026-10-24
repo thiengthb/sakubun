@@ -20,7 +20,7 @@ export function ConsentForm({ request }: { request: ConsentRequest | null }) {
     return (
       <AuthCard title="Yêu cầu không hợp lệ" description="Liên kết đã hết hạn hoặc bị sửa">
         <CardContent>
-          <p className="text-subhead text-muted-foreground">
+          <p className="text-sm text-muted-foreground">
             Quay lại ứng dụng vừa mở trang này và kết nối lại từ đầu.
           </p>
         </CardContent>
@@ -44,15 +44,15 @@ export function ConsentForm({ request }: { request: ConsentRequest | null }) {
       description={request.clientName ?? 'Một ứng dụng không ghi tên'}
     >
       <CardContent className="space-y-4">
-        <p className="text-body">
+        <p className="text-sm">
           Ứng dụng này sẽ dùng được các công cụ học của sakubun bằng tài khoản của bạn: xem lịch ôn,
           soạn câu, chấm điểm và thêm mục.
         </p>
-        <p className="text-body">
+        <p className="text-sm">
           Quyền sẽ được gửi về:{' '}
           <span className="font-medium">{request.redirectHost ?? 'không rõ địa chỉ'}</span>
         </p>
-        <p className="text-subhead text-muted-foreground">
+        <p className="text-sm text-muted-foreground">
           Chỉ bấm Cho phép nếu bạn vừa tự kết nối sakubun từ ứng dụng này.
         </p>
         <div className="flex gap-2">

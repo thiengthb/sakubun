@@ -48,7 +48,7 @@ export function RetentionCard({
         <span className={cn('text-title1 leading-none font-semibold tabular-nums', tone.text)}>
           {actualPct === null ? '—' : `${actualPct}%`}
         </span>
-        <span className="text-subhead text-muted-foreground tabular-nums">/ {targetPct}%</span>
+        <span className="text-sm text-muted-foreground tabular-nums">/ {targetPct}%</span>
       </div>
 
       <div className="relative h-2 w-full rounded-full bg-muted" aria-hidden>

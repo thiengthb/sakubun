@@ -92,7 +92,7 @@ export function Bars({
 }) {
   const max = Math.max(1, ...data.map((d) => d.value));
   if (data.every((d) => d.value === 0)) {
-    return <p className="py-8 text-center text-subhead text-muted-foreground">{empty}</p>;
+    return <p className="py-8 text-center text-sm text-muted-foreground">{empty}</p>;
   }
   return (
     <div className="flex items-end gap-1.5">
@@ -137,7 +137,7 @@ export function Heatmap({ data, max }: { data: { day: string; count: number }[];
     noun: 'hoạt động nào',
   });
   if (empty) {
-    return <p className="py-8 text-center text-subhead text-muted-foreground">{empty}</p>;
+    return <p className="py-8 text-center text-sm text-muted-foreground">{empty}</p>;
   }
   return (
     <ScrollEndOnMount>
@@ -199,7 +199,7 @@ export function LevelBars({
 }) {
   if (data.length === 0) {
     return (
-      <p className="py-4 text-center text-subhead text-muted-foreground">Kho chưa có mẫu nào.</p>
+      <p className="py-4 text-center text-sm text-muted-foreground">Kho chưa có mẫu nào.</p>
     );
   }
   return (

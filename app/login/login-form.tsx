@@ -21,14 +21,14 @@ export function LoginForm({
     <AuthCard title="Đăng nhập sakubun" description="Luyện dịch Nhật–Việt qua MCP">
       <CardContent className="space-y-4">
         {error && (
-          <p role="alert" className="rounded-md bg-destructive/10 p-3 text-body text-destructive">
+          <p role="alert" className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
             Không đăng nhập được. sakubun chỉ cho phép một tài khoản Google đã được chỉ định.
           </p>
         )}
         {googleReady ? (
           <GoogleSignInButton label="Đăng nhập với Google" />
         ) : (
-          <p className="text-center text-subhead text-muted-foreground">
+          <p className="text-center text-sm text-muted-foreground">
             Chưa cấu hình đăng nhập Google. Cần đặt GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET và
             ALLOWED_EMAIL cho server.
           </p>
