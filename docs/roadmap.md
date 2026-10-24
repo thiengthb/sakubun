@@ -20,7 +20,7 @@ follow `nuc-infra/AGENTS.md`.
 | 3.2 | `v2` becomes default; remove old tools, prompts and `render.ts`; enforce token budget | Token targets met | medium |
 | 4.1 | OAuth on `/api/mcp` with better-auth, `ALLOWED_EMAIL` only (#95, #96, #97) | Done 2026-10-24: connector added on claude.ai works on the web and in the Claude phone app | high |
 | 4.2 | Connected apps in Settings: list OAuth clients, revoke one (deferred from 4.1 by thien) | Revoked app gets 401 on its next refresh | high |
-| 5.1 | Remove `coach`, `dossier`, `calibration`, `learner-notes`, the rest of `practice.ts` | No old imports left | low |
+| 5.1 | Remove `coach`, `dossier`, `calibration`, `learner-notes`, the rest of `practice.ts` (#100, #101) | Done 2026-10-24: no old imports left; `practice.ts` keeps only live settings, item and stats reads (stats move in 5.3) | low |
 | 5.2 | Migration dropping unused tables and columns (after backup) | Data migration tested on a DB copy | high |
 | 5.3 | Dashboard from one stats source | Dashboard e2e green | low |
 | 5.4 | Shared skeleton, drop `dev-skeleton` | Frontend rules green | low |
