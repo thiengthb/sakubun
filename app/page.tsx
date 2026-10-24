@@ -31,32 +31,27 @@ import { StatsView } from '@/components/features/dashboard/stats-view';
 import { StreakCard } from '@/components/features/dashboard/streak-card';
 import { ContentGapNotice } from '@/components/features/resources/content-gap-notice';
 import { RetentionGauge } from '@/components/features/dashboard/retention-gauge';
-import { LearnerProfile } from '@/components/features/dashboard/learner-profile';
 import { WeakItemBadge } from '@/components/common/weak-item-badge';
 import { ERROR_TAG_LABELS } from '@/lib/session/error-tags';
 import { getAnalytics } from '@/lib/insights/analytics';
 import { getStats, getWeakReport } from '@/lib/library/practice';
-import { computeDossier } from '@/lib/session/dossier';
-import { listLearnerNotesWithEvidence } from '@/lib/session/learner-notes';
 import { getStudyStats } from '@/lib/insights/stats';
 import { getSessionUserId } from '@/lib/auth/current-user';
 
 export const metadata: Metadata = {
   title: 'Phân tích — sakubun',
-  description: 'Tiến độ ôn tập, điểm yếu và hồ sơ học của bạn.',
+  description: 'Tiến độ ôn tập và điểm yếu của bạn.',
 };
 
 export const dynamic = 'force-dynamic';
 
 export default async function HomePage() {
   await getSessionUserId();
-  const [stats, weak, analytics, studyStats, dossier, learnerNotes] = await Promise.all([
+  const [stats, weak, analytics, studyStats] = await Promise.all([
     getStats(),
     getWeakReport(),
     getAnalytics(),
     getStudyStats(),
-    computeDossier(),
-    listLearnerNotesWithEvidence(),
   ]);
   const totalItems = stats.totalItems;
   const hasWeakData =
@@ -191,10 +186,10 @@ export default async function HomePage() {
             level="page"
             icon={Target}
             title="Điểm yếu"
-            hint="30 ngày qua: lỗi hay mắc, mẫu sai nhiều, và những gì trợ lý MCP đã ghi lại về bạn."
+            hint="30 ngày qua: lỗi hay mắc và mẫu sai nhiều."
           />
-          <section className="grid gap-4 lg:grid-cols-2">
-            <div className="h-full space-y-4 rounded-xl border border-border/70 bg-card p-4">
+          <section>
+            <div className="space-y-4 rounded-xl border border-border/70 bg-card p-4">
               {weak.tagCounts.length > 0 && (
                 <WeakList label="Loại lỗi hay mắc">
                   {weak.tagCounts.map((t) => (
@@ -242,28 +237,8 @@ export default async function HomePage() {
                 </WeakList>
               )}
             </div>
-
-            <div className="h-full rounded-xl border border-border/70 bg-card p-4">
-              <LearnerProfile
-                dossier={dossier}
-                notes={learnerNotes}
-                voiceSpeaker={stats.settings.voiceSpeaker}
-                speechRate={stats.settings.speechRate}
-                furiganaMode={stats.settings.furiganaMode}
-              />
-            </div>
           </section>
         </>
-      )}
-
-      {!hasWeakData && (
-        <LearnerProfile
-          dossier={dossier}
-          notes={learnerNotes}
-          voiceSpeaker={stats.settings.voiceSpeaker}
-          speechRate={stats.settings.speechRate}
-          furiganaMode={stats.settings.furiganaMode}
-        />
       )}
 
       <section className="flex flex-wrap gap-x-6 gap-y-2">

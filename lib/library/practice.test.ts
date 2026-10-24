@@ -98,21 +98,6 @@ describe('errorDetail — the confusion pair behind the tag (additive, no backfi
     expect(logs[1].errorDetail).toBeNull();
   });
 
-  it('listConfusionRows returns only rows that carry a pair, with the item expression attached', async () => {
-    await resetData();
-    const itemId = await addOneItem('DETAIL_rows');
-    await studyOnce(itemId, 1, new Date(), {
-      errorTags: ['particle'],
-      errorDetail: [{ used: 'に', required: 'で' }],
-    });
-    await studyOnce(itemId, 3);
-
-    const rows = await P.listConfusionRows();
-    expect(rows).toHaveLength(1);
-    expect(rows[0].expression).toBe('DETAIL_rows');
-    expect(rows[0].confusions).toEqual([{ used: 'に', required: 'で' }]);
-  });
-
   it('getWeakReport is unaffected — the flat tag still drives it', async () => {
     await resetData();
     const itemId = await addOneItem('DETAIL_weak');

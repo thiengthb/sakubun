@@ -8,10 +8,9 @@ import {
   hasKanji,
   isBlankOfMeaning,
 } from '@/lib/core/text';
-import { parseErrorDetail, parseErrorTags, type ErrorTag } from '@/lib/session/error-tags';
+import { parseErrorTags, type ErrorTag } from '@/lib/session/error-tags';
 import { needsWork, scoreEnrichment, type QualityTier } from '@/lib/library/enrichment-quality';
 import { GRAMMAR_KIND, VOCAB_KIND } from '@/lib/library/item-kinds';
-import type { ConfusionRow } from '@/lib/library/mining';
 import { type Streak, computeStreak, studyDayKey } from '@/lib/srs/streak';
 import { LEECH_LAPSES, newSrsFields, SUSPEND_SUGGEST_LAPSES } from '@/lib/srs/srs';
 import {
@@ -375,31 +374,6 @@ export async function getStreak(): Promise<{ current: number; longest: number }>
 }
 
 const QUALITY_SCAN_CAP = 500;
-
-const CONFUSION_WINDOW_DAYS = 90;
-
-export async function listConfusionRows(now: Date = new Date()): Promise<ConfusionRow[]> {
-  const since = new Date(now.getTime() - CONFUSION_WINDOW_DAYS * 86400000);
-  const rows = await prisma.reviewLog.findMany({
-    where: { reviewedAt: { gte: since }, errorDetail: { not: null } },
-    select: {
-      itemId: true,
-      sentenceId: true,
-      reviewedAt: true,
-      errorDetail: true,
-      item: { select: { expression: true } },
-    },
-    orderBy: { reviewedAt: 'desc' },
-    take: 400,
-  });
-  return rows.map((r) => ({
-    itemId: r.itemId,
-    expression: r.item?.expression ?? null,
-    sentenceId: r.sentenceId,
-    reviewedAt: r.reviewedAt,
-    confusions: parseErrorDetail(r.errorDetail),
-  }));
-}
 
 export async function listSentences(limit = 1000, status?: 'PENDING' | 'GRADED' | 'SKIPPED') {
   await autoSkipStalePending();
