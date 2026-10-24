@@ -432,3 +432,28 @@ test('switching tabs raises no client error — the state the page sweep never e
 
   expect(failures, `client errors while switching tabs:\n${failures.join('\n')}`).toEqual([]);
 });
+
+test('mobile: a tap opens the (i) explanations and the ring tooltips', async ({ browser }) => {
+  const context = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    hasTouch: true,
+  });
+  const page = await context.newPage();
+  await signIn(page);
+  // The tooltip that is open now; one closing from the previous tap is still in the DOM.
+  const open = page.locator('[data-slot="tooltip-content"]:not([data-state="closed"])');
+  await page.goto('/', { waitUntil: 'networkidle' });
+
+  // Radix Tooltip alone opens on hover/focus only, so on a phone these were unreachable.
+  await page.getByRole('button', { name: 'Giải thích: Đến hạn' }).tap();
+  await expect(open).toContainText('chưa học');
+
+  await page.getByRole('button', { name: /Lượt ôn/ }).tap();
+  await expect(open).toContainText(/Đúng|Còn|Chưa/);
+
+  await page.goto('/settings', { waitUntil: 'networkidle' });
+  await page.getByRole('button', { name: 'Giải thích: Hướng dịch' }).tap();
+  await expect(open).toContainText('Tự động');
+
+  await context.close();
+});

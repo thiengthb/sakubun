@@ -1,37 +1,38 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import {
+  Activity,
   ArrowRight,
   BookOpenText,
-  Brain,
-  CalendarCheck,
   CalendarClock,
+  CalendarRange,
   GraduationCap,
   Inbox,
+  Layers,
   Target,
 } from 'lucide-react';
-import { SectionHeading } from '@/components/common/section-heading';
 import {
   Bars,
   ChartCard,
   Heatmap,
   HeatmapLegend,
   LevelBars,
-  MasteryBar,
-  StatCard,
-  WeakList,
+  StatTile,
 } from '@/components/features/dashboard/dashboard-charts';
 import { PageShell } from '@/components/layout/page-shell';
 import { EmptyState } from '@/components/common/empty-state';
-import { Badge } from '@/components/ui/badge';
 import { AnalyticsTabs } from '@/components/features/dashboard/analytics-tabs';
 import { DailyProgress } from '@/components/features/dashboard/daily-progress';
 import { LiveRefresh } from '@/components/layout/live-refresh';
 import { StatsView } from '@/components/features/dashboard/stats-view';
 import { StreakCard } from '@/components/features/dashboard/streak-card';
-import { ContentGapNotice } from '@/components/features/resources/content-gap-notice';
-import { RetentionGauge } from '@/components/features/dashboard/retention-gauge';
-import { WeakItemBadge } from '@/components/common/weak-item-badge';
+import {
+  WeakChips,
+  type WeakChip,
+  type WeakKind,
+} from '@/components/features/dashboard/weak-chips';
+import { ContentGapChip } from '@/components/features/resources/content-gap-notice';
+import { RetentionCard } from '@/components/features/dashboard/retention-gauge';
 import { ERROR_TAG_LABELS } from '@/lib/session/error-tags';
 import { getAnalytics } from '@/lib/insights/analytics';
 import { getStats, getWeakReport } from '@/lib/library/practice';
@@ -89,74 +90,98 @@ export default async function HomePage() {
     );
   }
 
+  const weakGroups: { kind: WeakKind; chips: WeakChip[] }[] = [
+    {
+      kind: 'tags',
+      chips: weak.tagCounts.map((t) => ({
+        key: t.tag,
+        text: ERROR_TAG_LABELS[t.tag],
+        count: `×${t.count}`,
+        title: `${ERROR_TAG_LABELS[t.tag]}: ${t.count} lần`,
+      })),
+    },
+    {
+      kind: 'misses',
+      chips: weak.worstItems.map((w) => ({
+        key: w.itemId,
+        text: w.expression,
+        count: `×${w.misses}`,
+        title: `Sai ${w.misses} lần${w.tags.length ? ` · ${w.tags.map((t) => ERROR_TAG_LABELS[t]).join(', ')}` : ''}`,
+        href: `/resources/${w.itemId}`,
+      })),
+    },
+    {
+      kind: 'lapses',
+      chips: weak.leeches.map((l) => ({
+        key: l.itemId,
+        text: l.expression,
+        count: `×${l.lapses}`,
+        title: `Quên ${l.lapses} lần${l.suspendSuggested ? ' · nên tạm ngưng' : ''}`,
+        href: `/resources/${l.itemId}`,
+      })),
+    },
+    {
+      kind: 'hard',
+      chips: analytics.watchlist.map((w) => ({
+        key: w.itemId,
+        text: w.expression,
+        count: w.difficulty.toFixed(1),
+        title: `Độ khó ${w.difficulty.toFixed(1)}/10`,
+        href: `/resources/${w.itemId}`,
+      })),
+    },
+  ];
+
   const progress = (
     <>
-      <SectionHeading
-        level="page"
-        icon={CalendarCheck}
-        title="Hôm nay"
-        hint="Việc đang chờ, và kết quả của lượt vừa chấm."
-      />
-
-      <section className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-        <StatCard
-          hero
+      <section aria-label="Tổng quan" className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <StatTile
           icon={CalendarClock}
-          label="Đến hạn bây giờ"
-          value={String(stats.dueNow)}
-          hint={`${stats.newItems} mẫu chưa học lần nào`}
+          tone="brand"
+          items={[{ value: stats.dueNow, label: 'Đến hạn' }]}
+          explain={`Số lượt ôn đến hạn bây giờ. Còn ${stats.newItems} mẫu chưa học lần nào.`}
         />
         <StreakCard
           current={stats.streak.current}
-          hint={`kỷ lục ${stats.streak.longest} · 30 ngày qua ${analytics.reviewsLast30} lượt`}
+          explain={`Số ngày học liên tiếp. Kỷ lục ${stats.streak.longest} ngày; 30 ngày qua ${analytics.reviewsLast30} lượt ôn.`}
         />
-        <StatCard
+        <StatTile
           icon={GraduationCap}
-          label="Đã thành thạo"
-          value={`${masteredPct}%`}
-          hint={`${analytics.masteredGrammar}/${totalItems} mẫu ở trạng thái Ôn tập`}
+          tone="ok"
+          items={[{ value: `${masteredPct}%`, label: 'Thành thạo' }]}
+          explain={`${analytics.masteredGrammar}/${totalItems} mẫu đang ở trạng thái Ôn tập.`}
         />
-        <StatCard
+        <StatTile
           icon={BookOpenText}
-          label="Kho học"
-          value={`${totalItems} ngữ pháp`}
-          hint={`${analytics.vocabTotal} từ vựng · ${analytics.newLast30} mục mới 30 ngày`}
+          tone="info"
+          items={[
+            { value: totalItems, label: 'Ngữ pháp' },
+            { value: analytics.vocabTotal, label: 'Từ vựng' },
+          ]}
+          compact={{ value: totalItems + analytics.vocabTotal, label: 'Mục' }}
+          explain={`Kho học của bạn: ${totalItems} ngữ pháp, ${analytics.vocabTotal} từ vựng; ${analytics.newLast30} mục mới trong 30 ngày qua.`}
         />
       </section>
 
-      <section>
-        <ContentGapNotice
-          studiedWithoutCard={analytics.studiedWithoutCard}
-          enriched={analytics.enrichedGrammar}
-          total={analytics.grammarTotal}
-        />
-      </section>
-
-      <section>
-        <DailyProgress
-          daily={studyStats.daily}
-          sessionGoal={stats.settings.sessionGoal}
-          dailyNewGrammar={stats.settings.dailyNewGrammar}
-          dueNow={stats.dueNow}
-        />
-      </section>
-
-      <SectionHeading
-        level="page"
-        icon={Brain}
-        title="Trí nhớ"
-        hint="Lịch ôn có bám kịp trí nhớ thật của bạn không, và kho đang đứng ở đâu."
+      <DailyProgress
+        daily={studyStats.daily}
+        sessionGoal={stats.settings.sessionGoal}
+        dailyNewGrammar={stats.settings.dailyNewGrammar}
+        dueNow={stats.dueNow}
       />
 
-      <section className="grid gap-4 lg:grid-cols-3">
-        <ChartCard title="Trí nhớ thực tế so với mục tiêu">
-          <RetentionGauge
-            actual={analytics.trueRetention}
-            desired={analytics.desiredRetention}
-            windowDays={analytics.retentionWindowDays}
-          />
-        </ChartCard>
-        <ChartCard title="Dự báo đến hạn 14 ngày tới" className="lg:col-span-2">
+      <section className="grid gap-3 lg:grid-cols-3">
+        <RetentionCard
+          actual={analytics.trueRetention}
+          desired={analytics.desiredRetention}
+          windowDays={analytics.retentionWindowDays}
+        />
+        <ChartCard
+          icon={CalendarRange}
+          title="14 ngày tới"
+          info="Số mẫu đến hạn ôn mỗi ngày trong 14 ngày tới; số trên cột là số mẫu, dưới cột là ngày."
+          className="lg:col-span-2"
+        >
           <Bars
             data={forecastData}
             barClass="bg-warn/70"
@@ -165,103 +190,50 @@ export default async function HomePage() {
         </ChartCard>
       </section>
 
-      <section className="grid gap-4 lg:grid-cols-2">
-        <ChartCard title="Phân bố ngữ pháp theo cấp JLPT">
-          <LevelBars data={analytics.levelDist} />
+      <section className={hasWeakData ? 'grid gap-3 lg:grid-cols-2' : undefined}>
+        <ChartCard
+          icon={Layers}
+          title="Theo cấp"
+          info="Ngữ pháp theo cấp JLPT, chia theo trạng thái ghi nhớ. Số cạnh chú thích là tổng toàn kho."
+        >
+          <LevelBars data={analytics.levelDist} totals={stats.mastery} />
         </ChartCard>
-        <ChartCard title="Toàn kho theo trạng thái ghi nhớ">
-          <MasteryBar mastery={stats.mastery} />
-        </ChartCard>
-      </section>
-
-      <section>
-        <ChartCard title="Hoạt động 1 năm (lượt ôn mỗi ngày)" action={<HeatmapLegend />}>
-          <Heatmap data={analytics.activity} max={analytics.activityMax} />
-        </ChartCard>
-      </section>
-
-      {hasWeakData && (
-        <>
-          <SectionHeading
-            level="page"
+        {hasWeakData && (
+          <ChartCard
             icon={Target}
             title="Điểm yếu"
-            hint="30 ngày qua: lỗi hay mắc và mẫu sai nhiều."
-          />
-          <section>
-            <div className="space-y-4 rounded-xl border border-border/70 bg-card p-4">
-              {weak.tagCounts.length > 0 && (
-                <WeakList label="Loại lỗi hay mắc">
-                  {weak.tagCounts.map((t) => (
-                    <Badge key={t.tag} variant="outline" className="border-warn/40 text-warn">
-                      {ERROR_TAG_LABELS[t.tag]} ×{t.count}
-                    </Badge>
-                  ))}
-                </WeakList>
-              )}
-              {weak.worstItems.length > 0 && (
-                <WeakList label="Sai nhiều nhất">
-                  {weak.worstItems.map((w) => (
-                    <WeakItemBadge
-                      key={w.itemId}
-                      itemId={w.itemId}
-                      expression={w.expression}
-                      detail={`sai ×${w.misses}${w.tags.length ? ` · ${w.tags.map((t) => ERROR_TAG_LABELS[t]).join(', ')}` : ''}`}
-                    />
-                  ))}
-                </WeakList>
-              )}
-              {weak.leeches.length > 0 && (
-                <WeakList label="Quên đi quên lại">
-                  {weak.leeches.map((l) => (
-                    <WeakItemBadge
-                      key={l.itemId}
-                      itemId={l.itemId}
-                      expression={l.expression}
-                      tone="alert"
-                      detail={`quên ×${l.lapses}${l.suspendSuggested ? ' · nên tạm ngưng' : ''}`}
-                    />
-                  ))}
-                </WeakList>
-              )}
-              {analytics.watchlist.length > 0 && (
-                <WeakList label="Tốn sức nhớ nhất">
-                  {analytics.watchlist.map((w) => (
-                    <WeakItemBadge
-                      key={w.itemId}
-                      itemId={w.itemId}
-                      expression={w.expression}
-                      detail={`độ khó ${w.difficulty.toFixed(1)}/10`}
-                    />
-                  ))}
-                </WeakList>
-              )}
-            </div>
-          </section>
-        </>
-      )}
-
-      <section className="flex flex-wrap gap-x-6 gap-y-2">
-        <Link
-          href="/history"
-          className="inline-flex items-center gap-1 text-sm text-accent-brand hover:underline"
-        >
-          Xem lịch sử dịch <ArrowRight className="size-4" aria-hidden />
-        </Link>
-        <Link
-          href="/resources"
-          className="inline-flex items-center gap-1 text-sm text-accent-brand hover:underline"
-        >
-          Quản lý kho tài nguyên <ArrowRight className="size-4" aria-hidden />
-        </Link>
+            info="30 ngày qua: loại lỗi hay mắc, mẫu sai nhiều, mẫu quên đi quên lại và mẫu tốn sức nhớ nhất. Bấm một mẫu để mở nó."
+          >
+            <WeakChips groups={weakGroups} />
+          </ChartCard>
+        )}
       </section>
+
+      <ChartCard
+        icon={Activity}
+        title="1 năm"
+        info="Số lượt ôn mỗi ngày trong một năm qua."
+        action={<HeatmapLegend />}
+      >
+        <Heatmap data={analytics.activity} max={analytics.activityMax} />
+      </ChartCard>
     </>
   );
 
   return (
     <>
       <LiveRefresh />
-      <AnalyticsTabs progress={progress} stats={<StatsView stats={studyStats} />} />
+      <AnalyticsTabs
+        progress={progress}
+        stats={<StatsView stats={studyStats} />}
+        aside={
+          <ContentGapChip
+            studiedWithoutCard={analytics.studiedWithoutCard}
+            enriched={analytics.enrichedGrammar}
+            total={analytics.grammarTotal}
+          />
+        }
+      />
     </>
   );
 }

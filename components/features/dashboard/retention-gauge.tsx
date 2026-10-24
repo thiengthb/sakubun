@@ -1,11 +1,23 @@
+import { CircleCheck } from 'lucide-react';
+import { ChartCard } from '@/components/features/dashboard/dashboard-charts';
 import { cn } from '@/lib/core/utils';
 import {
+  MIN_REVIEWS_FOR_VERDICT,
   retentionVerdict,
   type RetentionVerdictKind,
   type TrueRetention,
 } from '@/lib/srs/retention';
 
-export function RetentionGauge({
+const TONE: Record<RetentionVerdictKind, { text: string; fill: string }> = {
+  insufficient: { text: 'text-foreground', fill: 'bg-muted-foreground/40' },
+  below: { text: 'text-warn', fill: 'bg-warn/70' },
+  'on-target': { text: 'text-ok', fill: 'bg-ok/70' },
+  above: { text: 'text-ok', fill: 'bg-ok/70' },
+};
+
+// Actual recall against the FSRS target: the number, a bar with the target marked, and the sample
+// size as a chip. The verdict and how the number is counted sit behind the (i).
+export function RetentionCard({
   actual,
   desired,
   windowDays,
@@ -17,43 +29,29 @@ export function RetentionGauge({
   const verdict = retentionVerdict(actual, desired);
   const actualPct = actual.rate === null ? null : Math.round(actual.rate * 100);
   const targetPct = Math.round(desired * 100);
-
-  const toneByKind: Record<RetentionVerdictKind, { text: string; fill: string }> = {
-    insufficient: { text: 'text-muted-foreground', fill: 'bg-muted-foreground/40' },
-    below: { text: 'text-warn', fill: 'bg-warn/70' },
-    'on-target': { text: 'text-ok', fill: 'bg-ok/70' },
-    above: { text: 'text-ok', fill: 'bg-ok/70' },
-  };
-  const tone = toneByKind[verdict.kind];
-
-  if (verdict.kind === 'insufficient') {
-    return (
-      <div className="space-y-2">
-        <p className="text-body">{verdict.message}</p>
-        <p className="text-xs text-muted-foreground">
-          Đang có <span className="tabular-nums">{actual.correct}</span>/
-          <span className="tabular-nums">{actual.reviews}</span> lượt đúng
-          {actualPct === null ? '' : ` (${actualPct}%)`} ở những mẫu đã vào giai đoạn Ôn tập, trong{' '}
-          <span className="tabular-nums">{windowDays}</span> ngày qua. Chưa so với mục tiêu{' '}
-          <span className="tabular-nums">{targetPct}%</span> vì mẫu còn quá nhỏ để con số nói được
-          điều gì.
-        </p>
-      </div>
-    );
-  }
+  const tone = TONE[verdict.kind];
+  const insufficient = verdict.kind === 'insufficient';
 
   return (
-    <div className="space-y-3">
+    <ChartCard
+      icon={CircleCheck}
+      title="Nhớ đúng"
+      info={
+        <>
+          {verdict.message} Tính trên {actual.correct}/{actual.reviews} lượt ôn của những mẫu đã vào
+          giai đoạn Ôn tập, trong {windowDays} ngày qua, so với mục tiêu {targetPct}%. Các bước Học
+          và Học lại không tính, vì chúng không phải phép thử trí nhớ.
+        </>
+      }
+    >
       <div className="flex items-baseline gap-2">
-        <span className={cn('text-3xl font-semibold tabular-nums', tone.text)}>
+        <span className={cn('text-title1 leading-none font-semibold tabular-nums', tone.text)}>
           {actualPct === null ? '—' : `${actualPct}%`}
         </span>
-        <span className="text-subhead text-muted-foreground">
-          bạn thực sự nhớ được · mục tiêu <span className="tabular-nums">{targetPct}%</span>
-        </span>
+        <span className="text-subhead text-muted-foreground tabular-nums">/ {targetPct}%</span>
       </div>
 
-      <div className="relative h-2.5 w-full rounded-full bg-muted" aria-hidden>
+      <div className="relative h-2 w-full rounded-full bg-muted" aria-hidden>
         <div
           className={cn(
             'h-full rounded-full transition-all motion-reduce:transition-none',
@@ -64,18 +62,14 @@ export function RetentionGauge({
         <div
           className="absolute top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-full bg-foreground/70"
           style={{ left: `${targetPct}%` }}
-          title={`Mục tiêu ${targetPct}%`}
         />
       </div>
 
-      <p className="text-subhead text-muted-foreground">{verdict.message}</p>
-
-      <p className="text-xs text-muted-foreground">
-        Tính trên <span className="tabular-nums">{actual.correct}</span>/
-        <span className="tabular-nums">{actual.reviews}</span> lượt ôn của những mẫu đã vào giai
-        đoạn Ôn tập, trong <span className="tabular-nums">{windowDays}</span> ngày qua. Các bước Học
-        và Học lại không tính, vì chúng không phải phép thử trí nhớ.
-      </p>
-    </div>
+      <span className="inline-flex w-fit items-center rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground tabular-nums">
+        {insufficient
+          ? `${actual.reviews}/${MIN_REVIEWS_FOR_VERDICT} lượt`
+          : `${actual.reviews} lượt`}
+      </span>
+    </ChartCard>
   );
 }
