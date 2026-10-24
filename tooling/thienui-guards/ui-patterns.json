@@ -1,0 +1,502 @@
+{
+  "$doc": "LUẬT UI ĐÃ KHOÁ cho thienui và cho mọi project tiêu thụ nó. Registry CHỈ-THÊM (append-only) các luật mà người dùng không bao giờ phải nhắc lại. Hai bên đọc file này: @thienui/guards làm đỏ `pnpm test` khi có vi phạm, và hook `ui-pattern-lock` hiện toàn bộ luật trước lần ghi UI đầu tiên của mỗi phiên. THÊM MỘT MỤC NGAY KHI người dùng sửa một mẫu UI — đừng đợi nó lặp lại lần thứ hai.",
+  "$note-vi-sao-co-why": "Mỗi luật BẮT BUỘC có `why`. Một luật không có lý do sẽ bị người sau (hoặc agent sau) gỡ đi vì trông như một sở thích tuỳ tiện. `why` là thứ làm luật sống lâu hơn phiên làm việc sinh ra nó.",
+  "$note-manual": "`kind: manual` nghĩa là luật người review, không máy kiểm. Nó vẫn thuộc registry vì hook phải hiện nó ra. Nhưng mỗi lần một luật manual bị phạm là một lần nên thử lại xem có cách nào làm nó thành check máy được — sakubun có 13/21 luật manual, và đó là chỗ các luật âm thầm bị bỏ.",
+  "$sourced-from": "docs/ui-patterns.json của sakubun (21 luật, 2026-07-23 → 2026-08-06). Các luật thuộc nghiệp vụ Nhật ngữ/SRS đã bỏ: japanese-three-signals, auto-play-is-not-a-repeat, breadcrumb-detail-is-data-name, row-share-in-menu-short-label.",
+  "patterns": [
+    {
+      "id": "lucide-icons-only",
+      "rule": "Icon lấy từ lucide-react, không bao giờ tự vẽ <svg>, không dùng bộ icon khác, không dùng emoji làm icon.",
+      "why": "Một <svg> tự vẽ sẽ lệch khỏi stroke width, thang cỡ và hành vi currentColor của bộ icon, nên nó trông sai ở dark mode và ở các cỡ khác. Ngoại lệ DUY NHẤT là svg RENDER DỮ LIỆU (đường cong, sparkline) hoặc logo thương hiệu bên thứ ba không có bản lucide. PHẠM VI: luật này KHÔNG áp cho `registry/base/**`. Lý do không phải là nhân nhượng: `base/` là code vendor được `shadcn add` kéo lại từ upstream, và lệnh đó GHI ĐÈ file — bản `text-[0.8rem]`→`text-footnote` tôi sửa trong button.tsx đã bị chính nó xoá ở lô thêm component tiếp theo. Một cổng mà fix của nó bị một lệnh thường ngày hoàn tác là một cổng sẽ bị bỏ qua. Luật MÀU thì vẫn áp khắp nơi kể cả base/, và 55 file vendor qua hết — vì màu là thứ quyết định theme có chạy không, còn văn phong thì không. GIỚI HẠN ĐÃ BIẾT: check là regex theo dòng nên nó không phân biệt được CODE với VĂN XUÔI — viết tên mẫu bị cấm ra nguyên văn trong comment cũng làm cổng đỏ. Kỷ luật thay thế rất rẻ: trong comment thì MÔ TẢ mẫu thay vì viết nó ra.",
+      "canonical": "registry/shells/app-sidebar.tsx",
+      "source": "sakubun · lockedOn 2026-07-23",
+      "check": {
+        "kind": "forbid",
+        "pattern": "<svg[\\s>]",
+        "exclude": [
+          "**/registry/base/**"
+        ]
+      },
+      "allow": {}
+    },
+    {
+      "id": "no-hardcoded-colors",
+      "rule": "Màu lấy từ token theme. Không mã hex, không rgb()/hsl() literal, không class màu tuỳ ý.",
+      "why": "Một màu literal không biết tới theme, nên phần tử đó là thứ duy nhất trên trang không đổi theo sáng/tối — và nó cũng vô hình với cổng contrast, vì cổng chỉ đo token. GIỚI HẠN ĐÃ BIẾT: check là regex theo dòng nên nó không phân biệt được CODE với VĂN XUÔI — viết tên một mẫu bị cấm ra nguyên văn trong comment cũng làm cổng đỏ. Đã cân nhắc bỏ qua comment và loại bỏ: muốn làm đúng thì phải parse AST cho cả .tsx và .css, và một cổng phức tạp hơn là một cổng có nhiều chỗ sai hơn. Kỷ luật thay thế rất rẻ: trong comment thì MÔ TẢ mẫu thay vì viết nó ra.",
+      "canonical": "packages/tokens/src/primitive.json",
+      "source": "sakubun · lockedOn 2026-07-23",
+      "check": {
+        "kind": "forbid",
+        "pattern": "-\\[#[0-9a-fA-F]{3,8}\\]|#[0-9a-fA-F]{6}\\b|\\brgba?\\(\\s*\\d|\\bhsla?\\(\\s*\\d"
+      },
+      "allow": {}
+    },
+    {
+      "id": "no-tailwind-palette-colors",
+      "rule": "Không dùng class màu của bảng màu Tailwind (text-red-500, bg-slate-100, border-zinc-200…). Màu đi qua token ngữ nghĩa: text-foreground, bg-card, text-alert, bg-ok-wash.",
+      "why": "Đây là lỗ mà luật no-hardcoded-colors không bắt được: `text-red-500` không có hex nào nên nó lọt, nhưng nó vẫn là một màu nằm ngoài theme và vẫn không đổi theo dark mode. Nó cũng phá quy tắc 'gán NGHĨA trước khi gán màu' — red-500 không nói nó là lỗi, là phá hoại, hay chỉ là trang trí. GIỚI HẠN ĐÃ BIẾT: check là regex theo dòng nên nó không phân biệt được CODE với VĂN XUÔI — viết tên một mẫu bị cấm ra nguyên văn trong comment cũng làm cổng đỏ. Đã cân nhắc bỏ qua comment và loại bỏ: muốn làm đúng thì phải parse AST cho cả .tsx và .css, và một cổng phức tạp hơn là một cổng có nhiều chỗ sai hơn. Kỷ luật thay thế rất rẻ: trong comment thì MÔ TẢ mẫu thay vì viết nó ra.",
+      "canonical": "packages/tokens/src/semantic.claude.json",
+      "source": "thienui · 2026-10-04",
+      "check": {
+        "kind": "forbid",
+        "pattern": "\\b(?:text|bg|border|ring|fill|stroke|from|via|to|decoration|outline|shadow|accent|caret|divide|placeholder)-(?:slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-(?:50|100|200|300|400|500|600|700|800|900|950)\\b"
+      },
+      "allow": {}
+    },
+    {
+      "id": "primitives-only-in-base",
+      "rule": "Chỉ file trong registry/base/** được import primitive (@base-ui/react, radix-ui, react-aria-components). Mọi tầng trên dùng component của registry/base.",
+      "why": "Cô lập primitive vào MỘT thư mục làm việc đổi tầng primitive trở thành sửa một thư mục thay vì một dự án — và đây không phải giả thuyết: shadcn đã đổi mặc định từ Radix sang Base UI trong 07/2026, và Base UI vừa đổi tên package từ @base-ui-components/react sang @base-ui/react. Hai lần đổi trong một năm ở tầng thấp nhất của hệ. Luật này là thứ biến lần đổi thứ ba thành một chi phí đã biết.",
+      "canonical": "registry/base/button.tsx",
+      "source": "thienui · 2026-10-04",
+      "check": {
+        "kind": "forbid-import",
+        "pattern": "from\\s+['\"]@base-ui/|from\\s+['\"]@base-ui-components/|from\\s+['\"]radix-ui|from\\s+['\"]@radix-ui/|from\\s+['\"]react-aria-components",
+        "from": [
+          "**/registry/patterns/**/*.tsx",
+          "**/registry/shells/**/*.tsx",
+          "**/registry/blocks/**/*.tsx",
+          "**/app/**/*.tsx"
+        ]
+      },
+      "allow": {}
+    },
+    {
+      "id": "no-quarantine-imports",
+      "rule": "Không file nào ngoài chính _quarantine/ được import từ _quarantine/.",
+      "why": "Code vay từ registry bên thứ ba được CHÈN VÀO REPO VÀ BẠN SỞ HỮU NÓ NGAY — gồm cả màu cứng, svg tự vẽ, title=, spacing tuỳ ý. Khu cách ly chỉ có tác dụng nếu không ai import qua nó trước khi nó được soát và tái-token-hoá. Không có luật này thì _quarantine chỉ là một cái tên thư mục.",
+      "canonical": "docs/vay-component.md",
+      "source": "thienui · 2026-10-04",
+      "check": {
+        "kind": "forbid-import",
+        "pattern": "from\\s+['\"][^'\"]*_quarantine",
+        "from": [
+          "**/registry/base/**/*.tsx",
+          "**/registry/patterns/**/*.tsx",
+          "**/registry/shells/**/*.tsx",
+          "**/registry/blocks/**/*.tsx",
+          "**/app/**/*.tsx"
+        ]
+      },
+      "allow": {}
+    },
+    {
+      "id": "no-native-dialogs",
+      "rule": "Không alert() / confirm() / prompt() native. Dùng component dialog của hệ.",
+      "why": "Hai lý do, và cả hai đều cứng. (1) Agent KHÔNG NHÌN THẤY dialog native qua browser automation, nên feature dựa vào chúng hay lỗi âm thầm — và một dialog native chặn mọi event tiếp theo, làm cả phiên automation treo. (2) Chúng không nhận style, không nhận theme, không nhận token. DESIGN.md của sakubun đã CẤM điều này bằng chữ nhưng không có check nào; đây là check đó. GIỚI HẠN ĐÃ BIẾT: check là regex theo dòng nên nó không phân biệt được CODE với VĂN XUÔI — viết tên mẫu bị cấm ra nguyên văn trong comment cũng làm cổng đỏ. Kỷ luật thay thế rất rẻ: trong comment thì MÔ TẢ mẫu thay vì viết nó ra. Regex loại trừ KHAI BÁO (`function confirm(`, `const confirm =`): một hàm nội bộ trùng tên với API của browser không phải vi phạm — dù đặt tên như vậy vẫn là ý tồi vì nó che global. Bản đầu bắt nhầm đúng ca đó khi dựng demo của chính ConfirmDialog. Không cho khoảng trắng trước `(`: lệnh gọi thật không bao giờ có (Prettier xoá nó), còn văn xuôi thì có — `practice prompt (baseline)` trong comment của sakubun từng làm cổng đỏ.",
+      "canonical": "registry/patterns/confirm-dialog.tsx",
+      "source": "sakubun docs/DESIGN.md (mục Cấm, chưa từng có check) · thienui 2026-10-04",
+      "check": {
+        "kind": "forbid",
+        "pattern": "(?:^|[^.\\w])(?<!function )(?<!const )(?<!let )(?<!var )(?:window\\.)?(?:alert|confirm|prompt)\\("
+      },
+      "allow": {}
+    },
+    {
+      "id": "no-raw-durations",
+      "rule": "Thời lượng và easing lấy từ token motion. Không literal trần: duration-[0.35s], transition: 180ms, cubic-bezier(...) viết tay. Giá trị tuỳ ý CÓ trỏ token thì được — duration-[calc(var(--drawer-swipe-strength)*400ms)].",
+      "why": "DESIGN.md của sakubun KHAI duration_fast:120 / base:200 / easing cubic-bezier(.2,.8,.2,1), rồi globals.css rải 180ms, 0.7s, 1.4s, cubic-bezier(.2,.9,.25,1) tại chỗ — bản khai và thực tế lệch nhau mà không gì phát hiện. Regex phải phân biệt BA thứ: literal trần (`duration-[0.35s]` — chặn), giá trị tuỳ ý trỏ token (`duration-[calc(var(--x)*400ms)]` — cho qua), và class thang của Tailwind (`duration-300` — tạm cho qua, xem luật `tailwind-motion-scale-is-not-ours`). Dòng KHAI một custom property (`--ease-standard: cubic-bezier(...)`) là nơi token được định nghĩa, không phải nơi dùng, nên không bị bắt: item theme của registry chép đúng những dòng đó vào globals.css của project tiêu thụ. Hệ quả không phải thẩm mỹ: chuyển động không cùng nhịp đọc ra là giao diện rời rạc, và không thể điều chỉnh toàn hệ bằng một chỗ. PHẠM VI: luật này KHÔNG áp cho `registry/base/**`. Lý do không phải là nhân nhượng: `base/` là code vendor được `shadcn add` kéo lại từ upstream, và lệnh đó GHI ĐÈ file — bản `text-[0.8rem]`→`text-footnote` tôi sửa trong button.tsx đã bị chính nó xoá ở lô thêm component tiếp theo. Một cổng mà fix của nó bị một lệnh thường ngày hoàn tác là một cổng sẽ bị bỏ qua. Luật MÀU thì vẫn áp khắp nơi kể cả base/, và 55 file vendor qua hết — vì màu là thứ quyết định theme có chạy không, còn văn phong thì không.",
+      "canonical": "packages/tokens/src/scale.json",
+      "source": "thienui · 2026-10-04",
+      "check": {
+        "kind": "forbid",
+        "pattern": "(?:duration|ease|delay)-\\[(?![^\\]]*var\\(--)|(?:transition|animation)(?:-duration|-delay|-timing-function)?\\s*:\\s*[^;]*\\b\\d+(?:\\.\\d+)?m?s\\b|(?<!^\\s*--[\\w-]+\\s*:\\s*)cubic-bezier\\(",
+        "exclude": [
+          "**/registry/base/**"
+        ]
+      },
+      "allow": {
+        "packages/tokens/dist/tokens.css": "File sinh tự động từ src/scale.json. Token motion được KHAI ở đây — đây là nguồn, không phải chỗ dùng.",
+        "packages/tokens/dist/base.css": "File sinh tự động. Luật prefers-reduced-motion toàn cục bắt buộc ghi thời lượng 0.01ms trực tiếp, không thể đi qua token."
+      }
+    },
+    {
+      "id": "no-arbitrary-scale-values",
+      "rule": "Không dùng LITERAL TRẦN cho bán kính, khoảng cách và cỡ chữ: rounded-[6px], p-[13px], text-[0.8rem]. Giá trị tuỳ ý CÓ trỏ token thì được — rounded-[min(var(--radius-md),12px)], bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_5%)].",
+      "why": "Một literal trần là một quyết định không được ghi ở đâu: nó không đổi theo theme, và không ai biết nó có chủ ý hay là gõ nhầm. Nhưng một giá trị tuỳ ý TRỎ TOKEN thì ngược lại — nó vẫn đi qua token, chỉ dùng cú pháp tuỳ ý để tính toán (min(), color-mix()). Chính button của shadcn làm vậy, và chặn nó sẽ là chặn đúng cách làm đúng. Ranh giới là 'có var(--) trong ngoặc không', không phải 'có ngoặc vuông không'. PHẠM VI: luật này KHÔNG áp cho `registry/base/**`. Lý do không phải là nhân nhượng: `base/` là code vendor được `shadcn add` kéo lại từ upstream, và lệnh đó GHI ĐÈ file — bản `text-[0.8rem]`→`text-footnote` tôi sửa trong button.tsx đã bị chính nó xoá ở lô thêm component tiếp theo. Một cổng mà fix của nó bị một lệnh thường ngày hoàn tác là một cổng sẽ bị bỏ qua. Luật MÀU thì vẫn áp khắp nơi kể cả base/, và 55 file vendor qua hết — vì màu là thứ quyết định theme có chạy không, còn văn phong thì không.",
+      "canonical": "packages/tokens/src/scale.json",
+      "source": "sakubun docs/DESIGN.md (mục Cấm) · thienui 2026-10-04",
+      "check": {
+        "kind": "forbid",
+        "pattern": "\\b(?:rounded|p|px|py|pt|pb|pl|pr|m|mx|my|mt|mb|ml|mr|gap|space-[xy]|text|w|h|size|leading|tracking)-\\[(?![^\\]]*var\\(--)[\\d.]",
+        "exclude": [
+          "**/registry/base/**"
+        ]
+      },
+      "allow": {}
+    },
+    {
+      "id": "focus-visible-never-removed",
+      "rule": "Không bao giờ tắt outline focus mà không thay bằng một focus ring thấy được. Cụ thể: không focus:outline-none, không outline-none trần.",
+      "why": "Focus bị tắt là điều kiện đủ để bàn phím thành vô dụng — và nó im lặng: chuột vẫn chạy, test vẫn xanh, chỉ người dùng bàn phím và trình đọc màn hình là mất đường. Hệ đã có --ring/--ring-width/--ring-offset và :focus-visible trong base.css, nên không có lý do nào để tắt. PHẠM VI: luật này KHÔNG áp cho `registry/base/**`. Lý do không phải là nhân nhượng: `base/` là code vendor được `shadcn add` kéo lại từ upstream, và lệnh đó GHI ĐÈ file — bản `text-[0.8rem]`→`text-footnote` tôi sửa trong button.tsx đã bị chính nó xoá ở lô thêm component tiếp theo. Một cổng mà fix của nó bị một lệnh thường ngày hoàn tác là một cổng sẽ bị bỏ qua. Luật MÀU thì vẫn áp khắp nơi kể cả base/, và 55 file vendor qua hết — vì màu là thứ quyết định theme có chạy không, còn văn phong thì không.",
+      "canonical": "packages/tokens/dist/base.css",
+      "source": "sakubun docs/DESIGN.md (quality floor) · thienui 2026-10-04",
+      "check": {
+        "kind": "forbid",
+        "pattern": "focus:outline-none|focus-visible:outline-none|outline:\\s*none",
+        "exclude": [
+          "**/registry/base/**"
+        ]
+      },
+      "allow": {}
+    },
+    {
+      "id": "glass-only-on-chrome",
+      "rule": "backdrop-filter / backdrop-blur CHỈ dùng cho chrome đè lên nội dung (header dính, nav rail, sheet, scrim). Không bao giờ sau chữ thân bài, và luôn có token nền đặc làm fallback.",
+      "why": "Trên web, glass là backdrop-filter — nó tốn compositing, và nó PHÁ VỠ MỌI BẢO ĐẢM CONTRAST, vì nền phía sau là nội dung không biết trước. Cổng contrast đo token, nên nó không thể đo một bề mặt mà màu do nội dung quyết định lúc runtime. Giới hạn vào chrome là cách giữ cái cảm giác Liquid Glass mà không biến một phần nội dung thành vùng không ai kiểm được. PHẠM VI: luật này KHÔNG áp cho `registry/base/**`. Lý do không phải là nhân nhượng: `base/` là code vendor được `shadcn add` kéo lại từ upstream, và lệnh đó GHI ĐÈ file — bản `text-[0.8rem]`→`text-footnote` tôi sửa trong button.tsx đã bị chính nó xoá ở lô thêm component tiếp theo. Một cổng mà fix của nó bị một lệnh thường ngày hoàn tác là một cổng sẽ bị bỏ qua. Luật MÀU thì vẫn áp khắp nơi kể cả base/, và 55 file vendor qua hết — vì màu là thứ quyết định theme có chạy không, còn văn phong thì không.",
+      "canonical": "registry/shells/app-shell.tsx",
+      "source": "thienui · 2026-10-04 (HIG Liquid Glass, WWDC25)",
+      "check": {
+        "kind": "forbid",
+        "pattern": "backdrop-(?:blur|filter|saturate)|backdrop-filter\\s*:",
+        "files": [
+          "**/registry/base/**/*.tsx",
+          "**/registry/patterns/**/*.tsx",
+          "**/registry/blocks/**/*.tsx"
+        ],
+        "exclude": [
+          "**/registry/base/**"
+        ]
+      },
+      "allow": {}
+    },
+    {
+      "id": "input-clear-affordance",
+      "rule": "Mọi ô chữ đi qua <Input> dùng chung, component này mang nút xoá (×) khi có nội dung. Không bao giờ dựng <input> trần.",
+      "why": "Người dùng xoá nội dung ô tìm kiếm/lọc liên tục. Thiếu nút xoá là bắt họ bôi đen rồi xoá — và nếu mỗi chỗ tự dựng input thì nút xoá chỉ có ở vài chỗ, nên hành vi không đoán được. PHẠM VI: luật này KHÔNG áp cho `registry/base/**`. Lý do không phải là nhân nhượng: `base/` là code vendor được `shadcn add` kéo lại từ upstream, và lệnh đó GHI ĐÈ file — bản `text-[0.8rem]`→`text-footnote` tôi sửa trong button.tsx đã bị chính nó xoá ở lô thêm component tiếp theo. Một cổng mà fix của nó bị một lệnh thường ngày hoàn tác là một cổng sẽ bị bỏ qua. Luật MÀU thì vẫn áp khắp nơi kể cả base/, và 55 file vendor qua hết — vì màu là thứ quyết định theme có chạy không, còn văn phong thì không. GIỚI HẠN ĐÃ BIẾT: check là regex theo dòng nên nó không phân biệt được CODE với VĂN XUÔI — viết tên mẫu bị cấm ra nguyên văn trong comment cũng làm cổng đỏ. Kỷ luật thay thế rất rẻ: trong comment thì MÔ TẢ mẫu thay vì viết nó ra.",
+      "canonical": "registry/base/input.tsx",
+      "source": "sakubun · lockedOn 2026-07-25",
+      "check": {
+        "kind": "forbid",
+        "pattern": "<input\\b(?![^>]*type=\"(?:file|hidden|radio|checkbox)\")",
+        "exclude": [
+          "**/registry/base/**"
+        ]
+      },
+      "allow": {
+        "**/registry/base/input.tsx": "chính component dùng chung — đây là chỗ <input> trần được phép tồn tại"
+      }
+    },
+    {
+      "id": "explain-is-the-only-tooltip",
+      "rule": "Giải thích một phần tử bằng <Explain>. Không dùng thuộc tính title= trên thẻ DOM, và không dựng Tooltip primitive trực tiếp ngoài registry/patterns.",
+      "why": "title= không hiện trên thiết bị cảm ứng, không hiện cho bàn phím, trễ khoảng một giây, và không nhận style — nên nó trông như một lời giải thích mà thực tế một phần người dùng không bao giờ thấy. Dồn mọi lời giải thích qua MỘT component là cách duy nhất để sửa hành vi đó ở một chỗ. PHẠM VI: luật này KHÔNG áp cho `registry/base/**`. Lý do không phải là nhân nhượng: `base/` là code vendor được `shadcn add` kéo lại từ upstream, và lệnh đó GHI ĐÈ file — bản `text-[0.8rem]`→`text-footnote` tôi sửa trong button.tsx đã bị chính nó xoá ở lô thêm component tiếp theo. Một cổng mà fix của nó bị một lệnh thường ngày hoàn tác là một cổng sẽ bị bỏ qua. Luật MÀU thì vẫn áp khắp nơi kể cả base/, và 55 file vendor qua hết — vì màu là thứ quyết định theme có chạy không, còn văn phong thì không. GIỚI HẠN ĐÃ BIẾT: check là regex theo dòng nên nó không phân biệt được CODE với VĂN XUÔI — viết tên mẫu bị cấm ra nguyên văn trong comment cũng làm cổng đỏ. Kỷ luật thay thế rất rẻ: trong comment thì MÔ TẢ mẫu thay vì viết nó ra. NGOẠI LỆ DUY NHẤT: `registry/demos/tooltip-demo.tsx` — demo của chính primitive là chỗ bắt buộc phải dựng nó trực tiếp. Ngoại lệ khoanh vào ĐÚNG MỘT đường dẫn chứ không mở cho cả thư mục demos, nên mọi file demo khác vẫn phải đi qua `Explain`; và đó cũng là lý do `TooltipDemo` được tách khỏi `overlay-demos.tsx`.",
+      "canonical": "registry/patterns/explain.tsx",
+      "source": "sakubun · lockedOn 2026-07-28",
+      "check": {
+        "kind": "forbid",
+        "pattern": "<(?:span|div|button|a|p|li|td|th|section|header|figure|img|input|label|ul|ol|nav)\\b[^>]*\\stitle=\"|<TooltipTrigger\\b",
+        "exclude": [
+          "**/registry/base/**",
+          "**/registry/demos/tooltip-demo.tsx"
+        ]
+      },
+      "allow": {
+        "**/registry/base/tooltip.tsx": "Chính primitive tooltip — đây là chỗ DUY NHẤT được phép dùng TooltipTrigger trực tiếp, vì mọi chỗ khác đi qua <Explain>.",
+        "**/registry/patterns/explain.tsx": "Component duy nhất được bọc primitive tooltip. Mọi lời giải thích trong app đi qua đây, nên hành vi sửa ở một chỗ.",
+        "**/registry/base/sidebar.tsx": "Sidebar của shadcn dùng tooltip để hiện nhãn khi thu gọn — thuộc component gốc, không phải lời giải thích do ta thêm."
+      }
+    },
+    {
+      "id": "destructive-confirm-uses-dialog",
+      "rule": "Xác nhận một hành động phá hoại / không hoàn tác được (xoá, ban, thu hồi) đi qua <ConfirmDialog>. Không tự dựng dialog cho việc này.",
+      "why": "Một dialog tự dựng sẽ thiếu một trong các thứ: focus trap, Esc để đóng, focus trả về chỗ cũ, nhãn nói rõ hậu quả, trạng thái loading lúc đang xoá. Mỗi thứ thiếu là một đường để người dùng xoá mất dữ liệu mà họ không định xoá.",
+      "canonical": "registry/patterns/confirm-dialog.tsx",
+      "source": "sakubun · lockedOn 2026-07-25 (repeats 3)",
+      "check": {
+        "kind": "forbid",
+        "pattern": "<DialogFooter(?:(?!</DialogFooter>)[\\s\\S])*variant=\"destructive\""
+      },
+      "allow": {
+        "**/registry/patterns/confirm-dialog.tsx": "chính component dùng chung"
+      }
+    },
+    {
+      "id": "bulk-actions-icon-dock",
+      "rule": "Hành động trên nhiều dòng đã chọn render thành <BulkActionButton> chỉ-icon — tên nằm trong tooltip hover/focus, aria-label thì luôn có — trong dock dọc của DataTable.",
+      "why": "Hành động bulk xuất hiện và biến mất theo lựa chọn, nên nếu chúng là nút có chữ thì layout nhảy mỗi lần chọn/bỏ chọn. Dock chỉ-icon ở vị trí cố định giữ layout yên và giữ hành động ở cùng một chỗ trên mọi bảng.",
+      "canonical": "registry/patterns/bulk-action-button.tsx",
+      "source": "sakubun · lockedOn 2026-07-25",
+      "check": {
+        "kind": "require-with",
+        "when": "export function Bulk\\w+Button",
+        "then": "BulkActionButton"
+      },
+      "allow": {}
+    },
+    {
+      "id": "reuse-before-build",
+      "rule": "Trước khi dựng bất kỳ phần UI nào, tìm component dùng chung đã có và dùng nó. Một bản một-lần chỉ được phép sau khi NÓI RÕ vì sao bản dùng chung không đủ.",
+      "why": "Lặp lại là cách một hệ thiết kế chết: hai bản của cùng một thứ sẽ lệch nhau, và lần sửa thứ ba chỉ được áp vào một bản. Yêu cầu nói rõ lý do không phải thủ tục — nó là chỗ phát hiện ra rằng thường bản dùng chung chỉ cần thêm một prop.",
+      "canonical": "apps/docs/registry/patterns/",
+      "source": "sakubun · lockedOn 2026-07-23 (repeats 3)",
+      "check": {
+        "kind": "manual"
+      }
+    },
+    {
+      "id": "all-surfaces",
+      "rule": "Một control, hành vi hoặc luật mới đi tới MỌI bề mặt mà nó áp dụng (qua component dùng chung), và các ngoại lệ phải được nói rõ.",
+      "why": "Một hành vi chỉ có ở một nửa số chỗ thì tệ hơn là không có ở đâu: người dùng học được nó rồi mất nó, và họ không biết được khi nào thì có.",
+      "canonical": "apps/docs/registry/patterns/",
+      "source": "sakubun · lockedOn 2026-07-23 (repeats 3)",
+      "check": {
+        "kind": "manual"
+      }
+    },
+    {
+      "id": "capability-over-rearrangement",
+      "rule": "Đánh giá và đề xuất việc UI theo thứ nó cho người dùng LÀM ĐƯỢC. Không sắp xếp lại một màn hình đã quen trừ khi chính việc sắp xếp lại là yêu cầu.",
+      "why": "Sắp xếp lại làm người dùng mất bộ nhớ không gian đã có mà không đổi lại được năng lực nào. Nó trông như tiến bộ trong ảnh chụp và là thoái bộ khi dùng.",
+      "canonical": "—",
+      "source": "sakubun · lockedOn 2026-07-23 (repeats 2)",
+      "check": {
+        "kind": "manual"
+      }
+    },
+    {
+      "id": "text-must-truncate",
+      "rule": "Mọi chữ một dòng có thể vượt hộp của nó — tên, tiêu đề, email, nhãn, ô bảng, breadcrumb, mục menu — BẮT BUỘC truncate.",
+      "why": "Chữ dài tràn là trạng thái hay bị bỏ nhất, và nó không vỡ nhẹ: nó đẩy layout, làm tràn ngang cả trang, và trên điện thoại thì che nút. 'Chữ dài tràn' nằm trong quality floor vì nó luôn xảy ra với dữ liệu thật.",
+      "canonical": "registry/base/truncate.tsx",
+      "source": "sakubun · lockedOn 2026-07-24",
+      "check": {
+        "kind": "manual"
+      }
+    },
+    {
+      "id": "every-state-designed",
+      "rule": "Mọi bề mặt phải có thiết kế cho SÁU trạng thái: rỗng · đang tải · lỗi · chữ dài tràn · số 0 · số rất lớn.",
+      "why": "Đây là quality floor, không phải điểm cộng. Năm trong sáu trạng thái này không xuất hiện khi dev chạy với dữ liệu mẫu, nên chúng được phát hiện bởi người dùng chứ không bởi ta. Trang preview của mỗi component trong docs BẮT BUỘC hiện đủ sáu.",
+      "canonical": "apps/docs/app/preview/",
+      "source": "sakubun docs/DESIGN.md (quality floor) · thienui 2026-10-04",
+      "check": {
+        "kind": "manual"
+      }
+    },
+    {
+      "id": "six-microstates",
+      "rule": "Mọi phần tử tương tác phải thiết kế đủ sáu vi-trạng thái: default · hover · focus-visible · active/pressed · disabled · loading.",
+      "why": "Thiếu một trong sáu là chỗ giao diện đọc ra 'chưa xong'. active/pressed và loading là hai cái hay thiếu nhất, và chúng đúng là hai cái người dùng cần nhất: pressed xác nhận cú bấm đã nhận, loading nói đừng bấm nữa.",
+      "canonical": "registry/base/button.tsx",
+      "source": "thienui · 2026-10-04 (thực hành Linear/Vercel/Stripe)",
+      "check": {
+        "kind": "manual"
+      }
+    },
+    {
+      "id": "no-animation-on-high-frequency",
+      "rule": "Không animation trên thao tác tần suất cao: command menu, context menu, đổi tab, mở dropdown trong vòng lặp làm việc.",
+      "why": "Tần suất và mới lạ: một animation duyên ở lần đầu là ma sát ở lần thứ năm mươi. Chi phí không phải thời gian mà là người dùng phải ĐỢI giao diện xong trước khi gõ tiếp — nó biến một công cụ thành một màn trình diễn.",
+      "canonical": "—",
+      "source": "thienui · 2026-10-04 (Rauno Freiberg, invisible details)",
+      "check": {
+        "kind": "manual"
+      }
+    },
+    {
+      "id": "container-query-not-viewport",
+      "rule": "Component phản ứng theo bề rộng CONTAINER của nó (@container), không theo viewport. Breakpoint theo viewport chỉ dành cho layout cấp trang.",
+      "why": "Một component dùng lại được phải trông đúng ở mọi chỗ nó bị đặt vào — trong sidebar hẹp, trong card, trong một cột của grid. Breakpoint theo viewport làm nó chỉ đúng ở chỗ nó được thiết kế lần đầu. Đây là khác biệt kiến trúc lớn nhất giữa thienui và code hiện tại của sakubun, nơi container query bằng 0.",
+      "canonical": "registry/patterns/data-table.tsx",
+      "source": "thienui · 2026-10-04",
+      "check": {
+        "kind": "manual"
+      }
+    },
+    {
+      "id": "concentric-radius",
+      "rule": "Góc lồng nhau dùng bán kính đồng tâm: r_trong = r_ngoài − padding, qua --radius-concentric. Không lặp lại cùng một giá trị bán kính cho cả hộp ngoài và hộp trong.",
+      "why": "Hai góc cùng bán kính lồng nhau làm góc trong nhìn như bị bóp — mắt thấy hai đường cong không song song. Đây là chi tiết Apple có đòn bẩy cao nhất trên web và gần như không ai làm, nên nó là một trong những thứ phân biệt 'đúng' với 'đắt'.",
+      "canonical": "packages/tokens/dist/tokens.css",
+      "source": "thienui · 2026-10-04 (Apple HIG, concentricity)",
+      "check": {
+        "kind": "manual"
+      }
+    },
+    {
+      "id": "skeleton-mirrors-its-page",
+      "rule": "Mỗi route có PageShell phải có loading.tsx RIÊNG, dựng bằng PageSkeleton, khớp trang thật Ở MỌI BREAKPOINT — cùng hàng header, cùng số cột, cùng chiều cao hàng.",
+      "why": "Một skeleton không khớp thì tệ hơn không có skeleton: nội dung thật xuất hiện và layout nhảy, nên người dùng mất chỗ đang đọc. Skeleton tồn tại để GIỮ layout, không phải để báo là đang tải.",
+      "canonical": "registry/shells/page-skeleton.tsx",
+      "source": "sakubun · lockedOn 2026-08-05",
+      "check": {
+        "kind": "manual"
+      }
+    },
+    {
+      "id": "pagination-auto-fit",
+      "rule": "Mọi bề mặt phân trang tự chọn số dòng để VỪA VIEWPORT — không có scroll trang, thanh phân trang luôn trên màn hình — qua hook đo dùng chung.",
+      "why": "Thanh phân trang bị đẩy xuống dưới màn hình là một tính năng người dùng không tìm thấy. Chọn số dòng cố định thì sai ở mọi màn hình trừ màn hình của người viết code.",
+      "canonical": "registry/base/use-fit-rows.ts",
+      "source": "sakubun · lockedOn 2026-07-23",
+      "check": {
+        "kind": "manual"
+      }
+    },
+    {
+      "id": "menus-open-below-trigger",
+      "rule": "Danh sách bật ra từ một control (Select / dropdown / menu) mở XUỐNG DƯỚI chân control, không đè lên chính nó.",
+      "why": "Một menu đè lên trigger của nó làm mất ngữ cảnh: người dùng không còn thấy mình đang đổi cái gì. Nhất quán không gian — thứ gì bay ra từ đâu thì phải thấy được nó bay ra từ đó.",
+      "canonical": "registry/base/select.tsx",
+      "source": "sakubun · lockedOn 2026-08-05",
+      "check": {
+        "kind": "manual"
+      }
+    },
+    {
+      "id": "every-control-explains-itself",
+      "rule": "Mỗi phần tử không tự hiển nhiên — nút chỉ-icon, badge, số liệu, nhãn viết tắt — phải mang một câu giải thích qua <Explain>: nó là gì, dùng làm gì, con số đến từ đâu.",
+      "why": "Một icon hoặc một con số không có lời giải thích là một thứ người dùng phải đoán, và họ sẽ đoán sai rồi tin vào cái đoán đó. Với số liệu thì còn tệ hơn: một con số không nói nó được tính thế nào là một con số không dùng được để ra quyết định.",
+      "canonical": "registry/patterns/explain.tsx",
+      "source": "sakubun · lockedOn 2026-07-28",
+      "check": {
+        "kind": "manual"
+      }
+    },
+    {
+      "id": "few-tabs-stay-real-tabs",
+      "rule": "Thanh tab nằm trong THÂN trang mà chỉ có 2–3 tab thì để tab thật (TabsList/TabsTrigger, max-md:w-full để chia đều trên điện thoại), không đổi thành select.",
+      "why": "Hai tab thật là hai thứ người dùng thấy cùng lúc và đổi bằng một cú bấm. Gói chúng vào một select biến một cú bấm thành hai và che mất lựa chọn còn lại.",
+      "canonical": "registry/patterns/tab-select.tsx",
+      "source": "sakubun · lockedOn 2026-08-05",
+      "check": {
+        "kind": "manual"
+      }
+    },
+    {
+      "id": "tags-sit-with-their-content",
+      "rule": "Thẻ tag mô tả một đối tượng (cấp độ, trạng thái) và nút hành động lên chính đối tượng đó nằm CẠNH ĐỐI TƯỢNG trong thân trang, không nằm trên header.",
+      "why": "Thông tin về một đối tượng để xa đối tượng thì người dùng phải tự nối hai chỗ lại. Header là chỗ của điều hướng và danh tính trang, không phải chỗ của thuộc tính dữ liệu.",
+      "canonical": "—",
+      "source": "sakubun · lockedOn 2026-08-05",
+      "check": {
+        "kind": "manual"
+      }
+    },
+    {
+      "id": "cards-move-by-swipe",
+      "rule": "Mọi màn hình dạng thẻ là một CHỒNG THẺ lướt được: một thẻ mỗi lần, bấm/Space để lật, VUỐT ngang (hoặc hai nút mũi tên) để đi tiếp, và giao diện đi theo ngón tay ngay chứ không chờ ngưỡng.",
+      "why": "Dạng thẻ là ẩn dụ vật lý: nếu nó trông như một chồng thẻ thì nó phải hành xử như một chồng thẻ. Phản hồi theo ngón tay là phần hay bị bỏ — chờ một ngưỡng rồi mới nhảy làm cử chỉ cảm giác như bị trễ dù thời gian tổng bằng nhau.",
+      "canonical": "registry/patterns/card-deck.tsx",
+      "source": "sakubun · lockedOn 2026-08-06 (đã tổng quát hoá khỏi flashcard)",
+      "check": {
+        "kind": "manual"
+      }
+    },
+    {
+      "id": "base-is-vendor",
+      "rule": "`registry/base/**` là code VENDOR. Đừng sửa tay nó để thoả một luật văn phong — sửa sẽ bị `shadcn add` ghi đè. Chỉ sửa khi đó là một quyết định thiết kế thật, và khi đó phải ghi lại vào `docs/vendor-patches.md`.",
+      "why": "`shadcn add -o` ghi đè file trong base/. Trong lúc dựng pha 2, bản sửa `text-[0.8rem]`→`text-footnote` ở button.tsx bị xoá đúng như vậy sau hai lô thêm component. Nếu không ghi lại chỗ nào đã patch thì mỗi lần cập nhật vendor là một lần âm thầm mất các quyết định đó — và không ai biết, vì test vẫn xanh.",
+      "canonical": "docs/vendor-patches.md",
+      "source": "thienui · 2026-10-04 (phát hiện trong lúc port 55 primitive)",
+      "check": {
+        "kind": "manual"
+      }
+    },
+    {
+      "id": "tailwind-motion-scale-is-not-ours",
+      "rule": "Trong code TA VIẾT, dùng token motion của thienui thay cho thang duration mặc định của Tailwind (`duration-150`, `duration-300`…).",
+      "why": "Thang của Tailwind là 75/100/150/200/300/500/700/1000; thang của ta là fast 120 / base 200 / slow 320 / deliberate 480. Hai thang khác nhau, nên trộn chúng làm chuyển động trong app không cùng nhịp — và điều chỉnh toàn hệ không còn làm được ở một chỗ. Chưa thành check máy vì `registry/base/**` (vendor) dùng thang Tailwind khắp nơi và ta không sửa code vendor; khi `patterns/` và `shells/` đã dựng xong thì nên nâng luật này lên `forbid` với `exclude` là base/.",
+      "canonical": "packages/tokens/src/scale.json",
+      "source": "thienui · 2026-10-04",
+      "check": {
+        "kind": "manual"
+      }
+    },
+    {
+      "id": "container-query-variant-syntax",
+      "rule": "Biến thể container query max-width viết là `@max-md/tên:`, KHÔNG BAO GIỜ `max-@md/tên:`.",
+      "why": "`max-@md/tabs:hidden` không sinh ra CSS nào — Tailwind bỏ qua một class nó không hiểu, im lặng tuyệt đối: không lỗi build, không cảnh báo, không gạch đỏ trong editor. Pha 6 tìm thấy nó ở hai chỗ, một trong đó là `PAGE_HEADER_ASIDE` — hằng số dùng trên MỌI trang — nên phần ghim phải của header trên màn hẹp chưa bao giờ hoạt động, và không ai thấy vì bố cục vẫn 'trông được'. Cùng hình dạng với lỗi `--p-warm-light-1` ở pha 1 và `--ease-overshoot: 0.2,1.4,0.4,1` ở pha 6: thứ sai thì BIẾN MẤT thay vì kêu lên. Cách duy nhất bắt được là nhìn vào CSS build ra — hoặc dựng một cổng ở đây.",
+      "canonical": "apps/docs/registry/patterns/tab-select.tsx",
+      "source": "pha 6 · đo trên CSS build ra của một project tiêu thụ",
+      "check": {
+        "kind": "forbid",
+        "pattern": "max-@[a-z0-9]+(/[a-z-]+)?:"
+      },
+      "allow": {}
+    },
+    {
+      "id": "icon-size-scale",
+      "rule": "Icon lucide trong code ta viết chỉ có MỘT cỡ: `size-4` (16px), hoặc không ghi cỡ khi nằm trong component đã tự định cỡ. Không `size-3`, `size-3.5`, `size-5`, `size-6`, `size-10`, không `h-*`/`w-*` trên icon. Cần hình lớn cho trạng thái rỗng hay trang lỗi thì đi qua `<EmptyState>`.",
+      "why": "sakubun đo được 9 cỡ icon khác nhau (12 đến 40px) trên cùng một app, và người dùng thấy ngay: 'chỗ icon to, chỗ icon nhỏ, không đồng nhất'. Không cỡ nào trong đó sai riêng lẻ — mỗi chỗ chọn một cỡ trông hợp với nó lúc viết — nên không review nào bắt được, chỉ một cổng đếm toàn repo mới bắt được. Bản mẫu desktop phóng icon lên cỡ điện thoại cũng hỏng theo đúng cách này: icon to để dễ bấm là nhầm hai việc, vì vùng bấm đã có `.target-44` lo mà không cần phóng to phần nhìn. Một cỡ duy nhất thì nhịp thị giác đều, và đổi cả hệ chỉ ở một chỗ. PHẠM VI: không áp cho `registry/base/**` — vendor tự định cỡ icon bên trong component của nó (nút `xs` 12px, `sm` 14px), và đó chính là chỗ cỡ được phép quyết định. GIỚI HẠN ĐÃ BIẾT: bộ chạy nhận diện icon qua tên import từ `lucide-react` và qua hậu tố `Icon` (`const Icon = item.icon`); một icon gán vào biến tên khác thì lọt.",
+      "canonical": "apps/docs/registry/base/button.tsx",
+      "source": "thien · 2026-10-24 (bản mẫu sakubun: icon desktop quá to, cỡ icon lẫn lộn)",
+      "check": {
+        "kind": "jsx-class",
+        "tagsFrom": "lucide-react",
+        "tagSuffix": "Icon",
+        "forbidClass": "^(?:size|w|h|min-w|min-h|max-w|max-h)-",
+        "allowClass": "^size-4$",
+        "exclude": [
+          "**/registry/base/**"
+        ]
+      },
+      "allow": {
+        "**/registry/shells/bottom-nav.tsx": "Thanh điều hướng dưới trên điện thoại là chỗ DUY NHẤT icon đứng một mình không có chữ đi kèm, nên nó dùng 20px để tự đọc được ở khoảng cách một sải tay. Cỡ đó nằm trong component, chỗ gọi không chọn."
+      }
+    },
+    {
+      "id": "no-icon-size-in-components",
+      "rule": "Icon nằm trong `Button`, `Badge`, `Toggle`, `ToggleGroupItem`, `TabsTrigger`, `DropdownMenuItem`, `SelectItem`, `Item` KHÔNG ghi cỡ. Component cha định cỡ icon theo `size` của chính nó.",
+      "why": "`Button` gán cỡ icon qua `[&_svg:not([class*='size-'])]` — 16px ở cỡ mặc định, 14px ở `sm`, 12px ở `xs`. Chỉ cần ghi `size-4` lên icon là selector đó bỏ qua nó: nút `sm` 28px mang icon 16px, to hơn chữ đi cùng, và đổi `size` của nút không còn đổi được icon. sakubun có 39 chỗ như vậy; phần lớn là `size-4` thừa, vô hại cho tới ngày nút đó đổi sang `sm`. PHẠM VI: không áp cho `registry/base/**` — vendor tự định cỡ icon bên trong component của nó (nút `xs` 12px, `sm` 14px), và đó chính là chỗ cỡ được phép quyết định.",
+      "canonical": "apps/docs/registry/base/button.tsx",
+      "source": "thien · 2026-10-24",
+      "check": {
+        "kind": "jsx-class",
+        "tagsFrom": "lucide-react",
+        "tagSuffix": "Icon",
+        "forbidClass": "^(?:size|w|h|min-w|min-h|max-w|max-h)-",
+        "inside": [
+          "Button",
+          "Badge",
+          "Toggle",
+          "ToggleGroupItem",
+          "TabsTrigger",
+          "DropdownMenuItem",
+          "SelectItem",
+          "Item"
+        ],
+        "exclude": [
+          "**/registry/base/**"
+        ]
+      },
+      "allow": {}
+    },
+    {
+      "id": "button-size-by-prop",
+      "rule": "Cỡ của `Button` chỉ chọn qua prop `size` (`xs` · `sm` · `default` · `lg` · `icon-*`). Không ghi đè chiều cao, padding hay cỡ chữ qua `className` (`h-14`, `size-8`, `px-6`, `text-base`). Bề rộng (`w-full`), lề ngoài và vị trí thì được.",
+      "why": "Ghi đè cỡ qua `className` là cách một app có năm chiều cao nút (sakubun: 28, 32, 36, 40, 48px) dù thang chỉ có bốn — và là cách nút desktop to bằng nút điện thoại: chỗ gọi phóng to để dễ bấm trên máy cảm ứng, rồi cùng nút đó hiện y nguyên trên màn hình lớn. Dễ bấm là việc của `.target-44` (vùng bấm 44px, phần nhìn giữ nguyên). Khi cỡ chỉ đến từ `size`, đổi thang nút là sửa một file vendor, và mọi nút trong app đi theo. PHẠM VI: không áp cho `registry/base/**` — vendor tự định cỡ icon bên trong component của nó (nút `xs` 12px, `sm` 14px), và đó chính là chỗ cỡ được phép quyết định.",
+      "canonical": "apps/docs/registry/base/button.tsx",
+      "source": "thien · 2026-10-24",
+      "check": {
+        "kind": "jsx-class",
+        "tags": [
+          "Button"
+        ],
+        "forbidClass": "^(?:h|size|min-h|max-h|p|px|py|pt|pb|pl|pr|ps|pe)-|^text-(?:xs|sm|base|lg|[2-9]?xl|caption[12]|footnote|subhead|callout|body|title[123]|large-title)$",
+        "exclude": [
+          "**/registry/base/**"
+        ]
+      },
+      "allow": {}
+    },
+    {
+      "id": "touch-target-44",
+      "rule": "`Button`, `Toggle` và `TabsTrigger` mang class `target-44`: vùng bấm 44px khi con trỏ là ngón tay, 24px khi là chuột, còn phần nhìn thấy giữ đúng cỡ của prop `size`. Muốn dễ bấm trên điện thoại thì dựa vào vùng bấm này, không phóng to nút.",
+      "why": "Bản mẫu sakubun phóng nút và icon lên cỡ điện thoại để dễ bấm, rồi cùng cỡ đó hiện trên desktop — người dùng thấy ngay 'nút quá to, icon quá to, chỉ hợp với mobile'. Phần nhìn và vùng bấm là hai việc khác nhau: Apple đòi 44pt cho vùng chạm chứ không đòi nút cao 44pt. Đặt vùng bấm trong chính component thì mọi nút trong mọi project có nó mà không ai phải nhớ. Check là `require` trên ba file vendor vì `shadcn add` GHI ĐÈ chúng: sau một lần cập nhật vendor, class này biến mất im lặng, và cổng này là thứ duy nhất kêu lên. Patch ghi trong `docs/vendor-patches.md`.",
+      "canonical": "apps/docs/registry/base/button.tsx",
+      "source": "thien · 2026-10-24",
+      "check": {
+        "kind": "require",
+        "pattern": "target-44",
+        "files": [
+          "**/registry/base/button.tsx",
+          "**/registry/base/toggle.tsx",
+          "**/registry/base/tabs.tsx"
+        ]
+      },
+      "allow": {}
+    }
+  ]
+}
