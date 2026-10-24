@@ -29,7 +29,7 @@ chỗ sai mới làm test đỏ, chỗ đã sửa cũng làm test đỏ cho tớ
 | --- | --- |
 | Mọi viền điều khiển 2px, cùng màu `--control-edge`, sáng và tối. | `ui-standard` `control-language-in-components` |
 | Thứ bấm được thì nổi: bóng đáy 2px, lún xuống khi bấm. Ô gõ chữ phẳng, nền `--field` sáng hơn. | như trên |
-| Mục đang chọn (trang ở sidebar, kiểu xem, lựa chọn trong cài đặt) có nền cam nhạt phủ tới mép và bóng đáy nhẹ, không viền cam đậm. Dùng `variant="choice"` hoặc `choiceChipClass()`. | như trên, ảnh |
+| Mục đang chọn (kiểu xem, lựa chọn trong cài đặt) có nền cam nhạt phủ tới mép và bóng đáy nhẹ, không viền cam đậm. Dùng `variant="choice"` hoặc `choiceChipClass()`. Trang đang mở ở sidebar dùng nền thẻ (trắng ở nền sáng) như thẻ người dùng, vì nền cam nhạt chìm vào nền sidebar. | như trên, ảnh |
 | Nút gợi ý tạo cái chưa có dùng `variant="dashed"`. | ảnh |
 | Các class trên chỉ nằm trong `components/ui`, `common`, `layout`. Trang và feature dùng component, không chép class. | `ui-standard` `control-language-in-components` |
 

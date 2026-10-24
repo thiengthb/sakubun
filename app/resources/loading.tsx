@@ -34,7 +34,7 @@ export default function Loading() {
           groups: (
             <>
               <ToolbarSkeleton filters={1} />
-              <CardsSkeleton />
+              <CardsSkeleton rowHeight={108} footer={false} />
             </>
           ),
         }}

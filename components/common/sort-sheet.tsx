@@ -11,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { BottomSheet, SHEET_CONTROL_CLASS } from '@/components/common/bottom-sheet';
+import { BottomSheet, ResetButton, SHEET_CONTROL_CLASS } from '@/components/common/bottom-sheet';
 import { ExpandingIconButton } from '@/components/common/expanding-icon-button';
 import { cn } from '@/lib/core/utils';
 
@@ -40,6 +40,7 @@ export function SortSheet({
   return (
     <div className="relative shrink-0 lg:hidden">
       <BottomSheet
+        icon={ArrowUpDown}
         trigger={
           <ExpandingIconButton
             icon={ArrowUpDown}
@@ -55,17 +56,7 @@ export function SortSheet({
             ? `Đang xếp theo ${current?.label ?? ''}, ${desc ? 'giảm dần' : 'tăng dần'}.`
             : 'Chọn trường để xếp lại danh sách.'
         }
-        headerAction={
-          active ? (
-            <button
-              type="button"
-              onClick={() => onChange(null)}
-              className="text-xs text-muted-foreground transition-colors hover:text-foreground"
-            >
-              Đặt lại
-            </button>
-          ) : undefined
-        }
+        headerAction={active ? <ResetButton onReset={() => onChange(null)} /> : undefined}
         closeLabel="Xem kết quả"
         className={SHEET_CONTROL_CLASS}
       >

@@ -17,9 +17,8 @@
       "components/ui/sidebar.tsx": 1
     },
     "focus-visible-never-removed": {
-      "components/common/data-table.tsx": 2,
+      "components/common/data-table.tsx": 1,
       "components/common/filter-popover.tsx": 2,
-      "components/features/groups/groups-view.tsx": 1,
       "components/layout/edge-nav-rail.tsx": 2,
       "components/ui/input.tsx": 1
     },

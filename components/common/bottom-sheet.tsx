@@ -1,6 +1,7 @@
 'use client';
 
 import { type ReactNode } from 'react';
+import { RotateCcw, type LucideIcon } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -18,6 +19,7 @@ import { cn } from '@/lib/core/utils';
 export function BottomSheet({
   trigger,
   title,
+  icon: Icon,
   description,
   headerAction,
   closeLabel = 'Xong',
@@ -26,6 +28,8 @@ export function BottomSheet({
 }: {
   trigger: ReactNode;
   title: ReactNode;
+  /** The trigger's icon, beside the title: says which tool this sheet is. */
+  icon?: LucideIcon;
   description: ReactNode;
   headerAction?: ReactNode;
   closeLabel?: string;
@@ -38,10 +42,7 @@ export function BottomSheet({
       <SheetContent
         side="bottom"
         showCloseButton={false}
-        className={cn(
-          'max-h-[85dvh] gap-0 rounded-t-2xl',
-          className,
-        )}
+        className={cn('max-h-[85dvh] gap-0 rounded-t-2xl', className)}
       >
         <div className="flex shrink-0 justify-center pt-2 pb-1">
           <span aria-hidden className="h-1 w-10 rounded-full bg-border" />
@@ -49,7 +50,10 @@ export function BottomSheet({
 
         <SheetHeader className="shrink-0 gap-1 px-4 pt-1 pb-3">
           <div className="flex items-center justify-between gap-2">
-            <SheetTitle className="text-sm">{title}</SheetTitle>
+            <SheetTitle className="flex items-center gap-2 text-base font-bold">
+              {Icon && <Icon className="size-4 shrink-0 text-muted-foreground" aria-hidden />}
+              {title}
+            </SheetTitle>
             {headerAction}
           </div>
           <SheetDescription className="text-xs">{description}</SheetDescription>
@@ -71,3 +75,14 @@ export function BottomSheet({
 
 export const SHEET_CONTROL_CLASS =
   '[&_[data-slot=select-trigger]]:h-10! [&_[data-slot=select-trigger]]:rounded-lg!';
+
+// "Đặt lại" in a filter or sort header: a text button. The brand colour and the icon say it can be
+// pressed, where plain grey words read as a caption.
+export function ResetButton({ onReset }: { onReset: () => void }) {
+  return (
+    <Button variant="link" size="xs" className="-mr-2" onClick={onReset}>
+      <RotateCcw aria-hidden />
+      Đặt lại
+    </Button>
+  );
+}

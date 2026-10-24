@@ -2,7 +2,6 @@
 
 import { type ReactNode } from 'react';
 import { SlidersHorizontal, X } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
@@ -12,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { BottomSheet, SHEET_CONTROL_CLASS } from '@/components/common/bottom-sheet';
+import { BottomSheet, ResetButton, SHEET_CONTROL_CLASS } from '@/components/common/bottom-sheet';
 import { ExpandingIconButton } from '@/components/common/expanding-icon-button';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/core/utils';
@@ -144,18 +143,6 @@ export function FilterChips({
   );
 }
 
-function ResetLink({ onReset }: { onReset: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onReset}
-      className="text-xs text-muted-foreground transition-colors hover:text-foreground"
-    >
-      Đặt lại
-    </button>
-  );
-}
-
 export function FilterPopover({
   activeCount,
   onReset,
@@ -176,16 +163,6 @@ export function FilterPopover({
       labelOnPhone
       aria-label={activeCount > 0 ? `Bộ lọc (${activeCount} đang bật)` : 'Bộ lọc'}
       title={activeCount > 0 ? `Bộ lọc (${activeCount} đang bật)` : 'Bộ lọc'}
-      badge={
-        activeCount > 0 ? (
-          <Badge
-            className="h-4 min-w-4 justify-center px-1 text-xs tabular-nums"
-            variant="secondary"
-          >
-            {activeCount}
-          </Badge>
-        ) : null
-      }
     />
   );
 
@@ -197,13 +174,16 @@ export function FilterPopover({
         {isMobile ? (
           <BottomSheet
             trigger={trigger}
+            icon={SlidersHorizontal}
             title="Bộ lọc"
             description={
               activeCount > 0
                 ? `Đang lọc theo ${activeCount} điều kiện.`
                 : 'Chọn điều kiện để thu hẹp danh sách.'
             }
-            headerAction={activeCount > 0 && onReset ? <ResetLink onReset={onReset} /> : undefined}
+            headerAction={
+              activeCount > 0 && onReset ? <ResetButton onReset={onReset} /> : undefined
+            }
             closeLabel="Xem kết quả"
             className={SHEET_CONTROL_CLASS}
           >
@@ -214,18 +194,22 @@ export function FilterPopover({
             <PopoverTrigger asChild>{trigger}</PopoverTrigger>
             <PopoverContent align={align} className="max-h-[70vh] w-80 gap-3 overflow-y-auto">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Bộ lọc</span>
-                {activeCount > 0 && onReset && <ResetLink onReset={onReset} />}
+                <span className="flex items-center gap-2 text-sm font-bold">
+                  <SlidersHorizontal className="size-4 text-muted-foreground" aria-hidden />
+                  Bộ lọc
+                </span>
+                {activeCount > 0 && onReset && <ResetButton onReset={onReset} />}
               </div>
               <div className="grid grid-cols-2 gap-3">{children}</div>
             </PopoverContent>
           </Popover>
         )}
 
+        {/* The count sits on the button's top-right corner, as a notification count does. */}
         {activeCount > 0 && (
           <span
             aria-hidden
-            className="pointer-events-none absolute -top-1 -right-1 flex size-4 items-center justify-center rounded-full bg-primary text-xs leading-none font-semibold text-primary-foreground tabular-nums ring-2 ring-background md:hidden"
+            className="pointer-events-none absolute -top-1.5 -right-1.5 flex size-4 items-center justify-center rounded-full bg-primary text-xs leading-none font-bold text-primary-foreground tabular-nums ring-2 ring-background"
           >
             {activeCount}
           </span>

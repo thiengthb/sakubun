@@ -2,6 +2,7 @@
 
 import { Fragment, useRef, type ReactNode } from 'react';
 import { cn } from '@/lib/core/utils';
+import { LIST_CARD } from '@/components/common/list-card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useFitRows } from '@/components/ui/use-fit-rows';
 import { useSessionState } from '@/components/common/use-session-state';
@@ -166,8 +167,8 @@ export function TableSkeleton({
 export function CardsSkeleton({
   count = 6,
   rowHeight = 86,
-  columns = 'sm:grid-cols-2 lg:grid-cols-3',
-  rowGap = 12,
+  columns = '@2xl:grid-cols-2 @2xl:gap-3 @5xl:grid-cols-3',
+  rowGap = 8,
   footer = true,
   min,
   max,
@@ -181,7 +182,7 @@ export function CardsSkeleton({
   max?: number;
 }) {
   return (
-    <div className="space-y-3">
+    <div className="@container space-y-3">
       <FitList
         rowHeight={rowHeight}
         rowGap={rowGap}
@@ -189,11 +190,11 @@ export function CardsSkeleton({
         fallback={count}
         min={min}
         max={max}
-        className={cn('grid gap-3', columns)}
+        className={cn('grid gap-2', columns)}
         item={
           <div
             data-skeleton-row
-            className="flex flex-col gap-1.5 rounded-lg border border-border/70 p-3"
+            className={cn(LIST_CARD.base, 'flex flex-col gap-1.5')}
             style={{ height: rowHeight }}
           >
             <div className="flex items-center gap-2">

@@ -1,22 +1,18 @@
+import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/core/utils';
 import { GROUP_KIND_LABELS, type GroupKind } from '@/lib/library/group-kinds';
 
+// The same chip as an item's level and state on its detail page: Badge's outline, in the kind's colour.
 const KIND_CLASS: Record<GroupKind, string> = {
-  vocab: 'border-info/30 bg-info/10 text-info',
-  grammar: 'border-ok/30 bg-ok/10 text-ok',
-  mixed: 'border-border bg-muted text-muted-foreground',
+  vocab: 'border-info/60 text-info',
+  grammar: 'border-ok/60 text-ok',
+  mixed: 'text-muted-foreground',
 };
 
 export function GroupKindBadge({ kind, className }: { kind: GroupKind; className?: string }) {
   return (
-    <span
-      className={cn(
-        'inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium whitespace-nowrap',
-        KIND_CLASS[kind],
-        className,
-      )}
-    >
+    <Badge variant="outline" className={cn(KIND_CLASS[kind], className)}>
       {GROUP_KIND_LABELS[kind]}
-    </span>
+    </Badge>
   );
 }

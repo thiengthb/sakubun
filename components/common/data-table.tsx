@@ -57,7 +57,10 @@ import { FilterChips, type FilterChip } from '@/components/common/filter-popover
 import { SearchInput } from '@/components/common/search-input';
 import { SortSheet, type SortOption } from '@/components/common/sort-sheet';
 import { useSessionState } from '@/components/common/use-session-state';
-import { useFitRows } from '@/components/ui/use-fit-rows';
+import { useScrollMore } from '@/components/common/use-scroll-more';
+import { LIST_CARD } from '@/components/common/list-card';
+import { ScrollMoreStatus } from '@/components/common/scroll-more-status';
+import { useFitRows, usePinnedFooter } from '@/components/ui/use-fit-rows';
 import {
   Table,
   TableBody,
@@ -84,9 +87,8 @@ const VIEW_CHOICES = [
   { value: 'cards', label: 'Xem dạng thẻ', icon: LayoutGrid },
 ] as const satisfies readonly { value: DataTableView; label: string; icon: LucideIcon }[];
 
-// Cards (below 1024px, and the card view on a wider screen) show this many more each time the end
-// of the list scrolls into view; only the table pages (docs/ui-standard.md › Bố cục).
-const CARD_STEP = 20;
+// PAGE_CHROME.page's bottom padding from 768px (md:pb-8): where a table's footer rests.
+const PAGE_BOTTOM = 32;
 const EMPTY_SORTING: SortingState = [];
 const EMPTY_SIZING: ColumnSizingState = {};
 
@@ -198,8 +200,17 @@ export function DataTable<T>({
   const [autoFit, setAutoFit] = useSessionState<boolean>(`${persistKey}.autofit`, true);
   const bodyRef = useRef<HTMLTableSectionElement>(null);
   const footerRef = useRef<HTMLDivElement>(null);
-  // Only the table pages; the cards load more as they scroll, so their fit is not asked for.
-  const fit = useFitRows({ topRef: bodyRef, footerRef, rowHeight: estimatedRowHeight });
+  const spacerRef = useRef<HTMLDivElement>(null);
+  // Only the table pages; the cards load more as they scroll, so their fit is not asked for. The
+  // footer stays PAGE_BOTTOM above the window's bottom, the template page's own bottom padding.
+  const fit = useFitRows({
+    topRef: bodyRef,
+    footerRef,
+    spacerRef,
+    rowHeight: estimatedRowHeight,
+    bottomGap: PAGE_BOTTOM,
+  });
+  usePinnedFooter({ footerRef, spacerRef, bottomGap: PAGE_BOTTOM });
   const effectivePageSize = autoFit && fit != null ? fit : pageSize;
   const sizeOptions = useMemo(
     () =>
@@ -322,27 +333,8 @@ export function DataTable<T>({
   // The card list starts over whenever what it lists changes: a new search, sort or filter.
   const allRows = table.getPrePaginationRowModel().rows;
   const listKey = JSON.stringify([globalFilter, sorting, filteredCount]);
-  const [more, setMore] = useState({ key: listKey, shown: CARD_STEP });
-  const shownCards = more.key === listKey ? more.shown : CARD_STEP;
-  const cardRows = allRows.slice(0, shownCards);
-  const moreCards = shownCards < allRows.length;
-  const sentinelRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const el = sentinelRef.current;
-    if (!el || !moreCards) return;
-    const io = new IntersectionObserver(
-      (entries) => {
-        if (!entries.some((e) => e.isIntersecting)) return;
-        setMore((m) => ({
-          key: listKey,
-          shown: (m.key === listKey ? m.shown : CARD_STEP) + CARD_STEP,
-        }));
-      },
-      { rootMargin: '400px 0px' },
-    );
-    io.observe(el);
-    return () => io.disconnect();
-  }, [moreCards, listKey]);
+  // Cards (below 1024px, and the card view on a wider screen) load more as they scroll.
+  const { items: cardRows, hasMore: moreCards, sentinelRef } = useScrollMore(allRows, listKey);
   const pageCount = table.getPageCount();
   const safePageIndex = Math.min(pageIndex, Math.max(0, pageCount - 1));
   const start = safePageIndex * effectivePageSize;
@@ -548,7 +540,7 @@ export function DataTable<T>({
       {filterChips && <FilterChips chips={filterChips} onReset={onResetFilters} />}
 
       {rows.length === 0 ? (
-        <EmptyState icon={emptyIcon} title={emptyMessage} className="py-12" />
+        <EmptyState icon={emptyIcon} title={emptyMessage} />
       ) : (
         <>
           {renderCard && (
@@ -566,17 +558,13 @@ export function DataTable<T>({
                     <li
                       key={row.id}
                       className={cn(
-                        'rounded-xl border-2 border-border p-3 shadow-lift-card transition-colors',
+                        LIST_CARD.base,
                         selected && 'border-primary bg-primary/5',
-                        cardHref &&
-                          'relative hover:bg-muted/40 [&_button]:relative [&_button]:z-10',
+                        cardHref && LIST_CARD.linked,
                       )}
                     >
                       {cardHref && (
-                        <Link
-                          href={cardHref(row.original)}
-                          className="absolute inset-0 rounded-lg focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-                        >
+                        <Link href={cardHref(row.original)} className={LIST_CARD.link}>
                           <span className="sr-only">
                             {cardHrefLabel?.(row.original) ?? 'Xem chi tiết'}
                           </span>
@@ -601,15 +589,12 @@ export function DataTable<T>({
           )}
 
           {renderCard && (
-            <div
+            <ScrollMoreStatus
               ref={sentinelRef}
-              className={cn(
-                'py-2 text-center text-xs text-muted-foreground',
-                !cards && 'lg:hidden',
-              )}
-            >
-              {moreCards ? 'Đang tải thêm…' : `${filteredCount} ${countNoun}`}
-            </div>
+              hasMore={moreCards}
+              total={`${filteredCount} ${countNoun}`}
+              className={cn(!cards && 'lg:hidden')}
+            />
           )}
 
           <div className={cn(renderCard && 'max-lg:hidden', cards && 'lg:hidden')}>
@@ -802,6 +787,7 @@ export function DataTable<T>({
           </div>
 
           <div ref={footerRef} className={cn(renderCard && 'max-lg:hidden', cards && 'lg:hidden')}>
+            <div ref={spacerRef} aria-hidden />
             <DataPagination
               count={
                 <>
@@ -835,15 +821,20 @@ export function DataTable<T>({
               animate={{ opacity: 1, x: 0, y: '-50%' }}
               exit={{ opacity: 0, x: 24, y: '-50%' }}
               transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-              className="fixed top-1/2 right-3 z-50 flex max-h-[calc(100vh-4rem)] flex-col items-center gap-1.5 overflow-y-auto rounded-2xl border border-border bg-background/95 p-1.5 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-background/80"
+              className="fixed top-1/2 right-3 z-50 flex max-h-[calc(100vh-4rem)] flex-col items-center gap-2 overflow-y-auto rounded-2xl border border-border bg-background/95 p-2 shadow-lg md:gap-2.5 backdrop-blur supports-[backdrop-filter]:bg-background/80"
             >
               <Explain side="left" text={`Đã chọn ${selectedCount} ${countNoun}`}>
-                <span className="inline-flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-sm font-semibold text-primary-foreground tabular-nums">
+                <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary text-sm font-semibold text-primary-foreground tabular-nums">
                   {selectedCount}
                 </span>
               </Explain>
               <Explain side="left" text="Bỏ chọn tất cả (phím Esc).">
-                <Button variant="ghost" size="icon" aria-label="Bỏ chọn" onClick={clearSelection}>
+                <Button
+                  variant="ghost"
+                  size="icon-lg"
+                  aria-label="Bỏ chọn"
+                  onClick={clearSelection}
+                >
                   <X className="size-4" aria-hidden />
                 </Button>
               </Explain>

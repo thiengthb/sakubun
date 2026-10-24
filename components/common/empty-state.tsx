@@ -20,11 +20,13 @@ export function EmptyState({
   children,
 }: EmptyStateProps) {
   // docs/ui-standard.md: a dashed box, left-aligned and as tall as its content, never a centred
-  // block that leaves the page empty.
+  // block that leaves the page empty. A title alone sits level with its icon.
+  const titleOnly = !description && !children && !action;
   return (
     <div
       className={cn(
-        'flex items-start gap-3 rounded-lg border-2 border-dashed border-border px-4 py-5 md:px-6',
+        'flex gap-3 rounded-lg border-2 border-dashed border-border px-4 py-5 md:px-6',
+        titleOnly ? 'items-center' : 'items-start',
         className,
       )}
     >

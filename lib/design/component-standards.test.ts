@@ -49,7 +49,9 @@ describe('component standards', () => {
       'components/common/use-paged-list.ts', // hooks, not components
       'components/common/use-server-action.ts',
       'components/common/use-session-state.ts',
+      'components/common/use-scroll-more.ts',
       'components/common/field-label-context.ts',
+      'components/common/list-card.ts', // class constants a card list spreads, not a component
       'components/ui/use-fit-rows.ts',
       'components/layout/live-refresh.tsx', // render null — they are effects with a component shape
       'components/layout/scroll-restorer.tsx',
