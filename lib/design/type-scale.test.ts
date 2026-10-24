@@ -78,41 +78,34 @@ describe('Typography type scale (nuc-platform/12-ui-layout-standard.md §typogra
     ).toEqual([]);
   });
 
-  it('reading content is 17px (text-body); controls keep their own 14px', () => {
-    // thien's call (2026-10-24): content follows the thienui type scale (text-body = 17px on a 16px
-    // root), buttons, tabs and labels stay text-sm. The baseline is set once, on the page shell and
-    // its skeleton; cards and breadcrumbs (which stand in for page titles) must not shrink it back.
+  it('content reads at one size, 14px, the same as the controls', () => {
+    // thien's call (2026-10-24, reversing the 17px trial): content text is text-sm, like buttons,
+    // tabs and labels, so a page reads at one size. The baseline is set once, on the page shell and
+    // its skeleton, and the containers that hold content (card, table, dialog, sheet, accordion,
+    // tab panel) carry the same size.
     const must: [string, RegExp][] = [
-      ['components/layout/page-shell.tsx', /pt-6 pb-6 text-body'/],
-      ['components/layout/page-skeleton.tsx', /pt-6 pb-6 text-body'/],
-      ['components/layout/breadcrumbs.tsx', /<ol className="[^"]*\btext-body\b/],
-      ['components/ui/card.tsx', /'group\/card [^']*\btext-body\b/],
-    ];
-    const missing = must
-      .filter(([file, re]) => !re.test(readFileSync(file, 'utf8')))
-      .map(([f]) => f);
-    expect(missing, 'These set the 17px content baseline; keep text-body there:').toEqual([]);
-  });
-
-  it('containers that hold content do not shrink it back to 14px', () => {
-    // Before this, TabsContent, Table and the Dialog/Sheet/Accordion bodies each set text-sm, so
-    // everything inside a tab, a table row or a dialog read at 14px whatever the page said.
-    const must: [string, RegExp][] = [
-      ['components/ui/table.tsx', /'w-full caption-bottom text-body'/],
-      ['components/ui/table.tsx', /'h-10 px-2 [^']*\btext-sm\b/], // header cells are labels
-      ['components/ui/dialog.tsx', /bg-popover p-4 text-body /],
-      ['components/ui/dialog.tsx', /'text-subhead text-muted-foreground/],
-      ['components/ui/sheet.tsx', /bg-clip-padding text-body /],
-      ['components/ui/sheet.tsx', /'text-subhead text-muted-foreground'/],
-      ['components/ui/accordion.tsx', /overflow-hidden text-body /],
+      ['components/layout/page-shell.tsx', /pt-6 pb-6 text-sm'/],
+      ['components/layout/page-skeleton.tsx', /pt-6 pb-6 text-sm'/],
+      ['components/layout/breadcrumbs.tsx', /<ol className="[^"]*\btext-sm\b/],
+      ['components/ui/card.tsx', /'group\/card [^']*\btext-sm\b/],
+      ['components/ui/table.tsx', /'w-full caption-bottom text-sm'/],
+      ['components/ui/dialog.tsx', /bg-popover p-4 text-sm /],
+      ['components/ui/sheet.tsx', /bg-clip-padding text-sm /],
+      ['components/ui/accordion.tsx', /overflow-hidden text-sm /],
+      ['components/ui/tabs.tsx', /'flex-1 text-sm outline-none'/],
     ];
     const missing = must
       .filter(([file, re]) => !re.test(readFileSync(file, 'utf8')))
       .map(([f, re]) => `${f}  ${re}`);
-    expect(missing, 'Content containers must keep the 17px body size:').toEqual([]);
+    expect(missing, 'These set the 14px content size; keep text-sm there:').toEqual([]);
+  });
+
+  it('no 17px or 15px text (text-body, text-subhead) in the app', () => {
+    // The theme still defines these sizes; using them brings back two content sizes on one page.
+    const offenders = scan(/\btext-(?:body|subhead)\b/);
     expect(
-      readFileSync('components/ui/tabs.tsx', 'utf8'),
-      'TabsContent inherits the page body size; a text-sm on it shrinks every tab',
-    ).not.toMatch(/'flex-1 [^']*text-sm[^']*outline-none'/);
+      offenders,
+      `Content is text-sm, headings text-base, meta text-xs. Replace:\n${offenders.join('\n')}`,
+    ).toEqual([]);
   });
 });

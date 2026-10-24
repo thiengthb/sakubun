@@ -17,7 +17,7 @@ export function Breadcrumbs({ items, className }: { items: Crumb[]; className?: 
   const compress = items.length > 2;
   return (
     <nav aria-label="Breadcrumb" className={className}>
-      <ol className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-body text-muted-foreground">
+      <ol className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-sm text-muted-foreground">
         {items.map((item, i) => {
           const last = i === items.length - 1;
           const Icon = item.icon;

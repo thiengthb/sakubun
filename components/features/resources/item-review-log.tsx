@@ -72,7 +72,7 @@ export function ReviewLog({
                 rate={speechRate}
                 label="Nghe câu"
                 align="start"
-                className="text-subhead font-normal text-muted-foreground"
+                className="text-sm font-normal text-muted-foreground"
               />
             )}
           </li>

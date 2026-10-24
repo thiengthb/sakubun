@@ -42,7 +42,7 @@ export function PageSkeleton({
   className?: string;
 }) {
   return (
-    <div className={cn('w-full min-w-0 space-y-4 pt-6 pb-6 text-body', WIDTH[width], className)}>
+    <div className={cn('w-full min-w-0 space-y-4 pt-6 pb-6 text-sm', WIDTH[width], className)}>
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2 max-md:flex-nowrap max-md:gap-x-2">
         <div className="flex shrink-0 items-center gap-2 md:hidden">
           <Skeleton className="size-6 rounded-md" />
@@ -54,8 +54,8 @@ export function PageSkeleton({
           </div>
         ) : (
           // A detail page's crumb ends in the entity's name, which the skeleton cannot know. An
-          // invisible one-crumb trail holds the row at the breadcrumb's own height (it grew with
-          // the 17px body text) at the old bar's width, and the bar is drawn over it.
+          // invisible one-crumb trail holds the row at the breadcrumb's own height, whatever the
+          // body size, at a fixed width, and the bar is drawn over it.
           <div className="relative flex w-44 shrink-0 overflow-hidden max-md:w-28" aria-hidden>
             <BreadcrumbPlaceholder className="invisible" />
             <Skeleton className="absolute inset-y-0.5 inset-x-0" />
