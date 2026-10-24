@@ -5,83 +5,162 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
   --font-sans: var(--font-sans);
   --font-mono: var(--font-geist-mono);
   --font-heading: var(--font-sans);
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--sidebar);
-  --color-ring: var(--ring);
-  --color-input: var(--input);
-  --color-border: var(--border);
-  --color-destructive: var(--destructive);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-accent: var(--accent);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-muted: var(--muted);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-secondary: var(--secondary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-primary: var(--primary);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-popover: var(--popover);
-  --color-card-foreground: var(--card-foreground);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
   --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
   --color-accent-brand: var(--accent-brand);
   --color-ok: var(--ok);
   --color-warn: var(--warn);
   --color-alert: var(--alert);
   --color-info: var(--info);
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
+  --color-ok-wash: var(--ok-wash);
+  --color-warn-wash: var(--warn-wash);
+  --color-alert-wash: var(--alert-wash);
+  --color-info-wash: var(--info-wash);
+  --color-brand-wash: var(--brand-wash);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --shadow-1: var(--shadow-1);
+  --shadow-2: var(--shadow-2);
+  --shadow-3: var(--shadow-3);
+  --shadow-4: var(--shadow-4);
+  --text-caption2: 0.6875rem;
+  --text-caption1: 0.75rem;
+  --text-footnote: 0.8125rem;
+  --text-subhead: 0.9375rem;
+  --text-callout: 1rem;
+  --text-body: 1.0625rem;
+  --text-title3: 1.25rem;
+  --text-title2: 1.375rem;
+  --text-title1: 1.75rem;
+  --text-large-title: 2.125rem;
+  --tracking-tight: -0.022em;
+  --tracking-snug: -0.012em;
+  --tracking-normal: 0em;
+  --tracking-label: 0.09em;
+  --leading-caption2: 1.45;
+  --leading-caption1: 1.42;
+  --leading-footnote: 1.4;
+  --leading-subhead: 1.4;
+  --leading-callout: 1.45;
+  --leading-body: 1.47;
+  --leading-title3: 1.3;
+  --leading-title2: 1.25;
+  --leading-title1: 1.18;
+  --leading-large-title: 1.08;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --container-prose: 68ch;
+  --container-narrow: 48ch;
+  --container-wide: 84ch;
+  --radius-base: 0.625rem;
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.625rem;
+  --radius-xl: 0.875rem;
+  --radius-2xl: 1.125rem;
+  --radius-full: 9999px;
+  --ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-enter: cubic-bezier(0.05, 0.7, 0.1, 1);
+  --ease-exit: cubic-bezier(0.3, 0, 0.8, 0.15);
+  --ease-overshoot: cubic-bezier(0.2, 1.4, 0.4, 1);
+  --ease-decelerate: cubic-bezier(0.32, 0.72, 0, 1);
+  --text-caption2--line-height: 1.45;
+  --text-caption1--line-height: 1.42;
+  --text-footnote--line-height: 1.4;
+  --text-subhead--line-height: 1.4;
+  --text-callout--line-height: 1.45;
+  --text-body--line-height: 1.47;
+  --text-title3--line-height: 1.3;
+  --text-title2--line-height: 1.25;
+  --text-title1--line-height: 1.18;
+  --text-large-title--line-height: 1.08;
 }
 
 :root {
+  /* Not a thienui token: the sonner toaster reads it (components/ui/sonner.tsx). Equals --radius-lg. */
+  --radius: 0.625rem;
   --background: oklch(0.982 0.005 95);
   --foreground: oklch(0.191 0.002 107);
-  --card: oklch(1 0 90);
+  --card: oklch(1 0 95);
   --card-foreground: oklch(0.191 0.002 107);
-  --popover: oklch(1 0 90);
+  --popover: oklch(1 0 95);
   --popover-foreground: oklch(0.191 0.002 107);
-
   --primary: oklch(0.672 0.131 39);
   --primary-foreground: oklch(0.191 0.002 107);
   --secondary: oklch(0.9485 0.011 95);
-  --secondary-foreground: oklch(0.28 0.005 100);
+  --secondary-foreground: oklch(0.191 0.002 107);
   --muted: oklch(0.9485 0.011 95);
-
   --muted-foreground: oklch(0.512 0.008 97);
   --accent: oklch(0.925 0.013 94);
-  --accent-foreground: oklch(0.28 0.005 100);
+  --accent-foreground: oklch(0.191 0.002 107);
   --destructive: oklch(0.537 0.2 27);
+  --destructive-foreground: oklch(1 0 95);
   --border: oklch(0.909 0.01 94);
-  --input: oklch(0.895 0.011 94);
-  --ring: var(--accent-brand);
-
+  --input: oklch(0.65 0.01 96);
+  --ring: oklch(0.527 0.1375 39);
   --accent-brand: oklch(0.527 0.1375 39);
-  --ok: oklch(0.496 0.13 155);
-  --warn: oklch(0.514 0.14 85);
+  --ok: oklch(0.496 0.122 155);
+  --warn: oklch(0.514 0.105 85);
   --alert: oklch(0.538 0.2 20);
   --info: oklch(0.51 0.13 245);
-  --radius: 0.625rem;
+  --ok-wash: oklch(0.952 0.022 155);
+  --warn-wash: oklch(0.955 0.03 85);
+  --alert-wash: oklch(0.952 0.023 20);
+  --info-wash: oklch(0.955 0.022 245);
+  --brand-wash: oklch(0.955 0.02 39);
   --sidebar: oklch(0.9485 0.011 95);
-  --sidebar-foreground: oklch(0.24 0.003 100);
+  --sidebar-foreground: oklch(0.191 0.002 107);
   --sidebar-primary: oklch(0.672 0.131 39);
   --sidebar-primary-foreground: oklch(0.191 0.002 107);
   --sidebar-accent: oklch(0.912 0.014 94);
-  --sidebar-accent-foreground: oklch(0.28 0.005 100);
-  --sidebar-border: oklch(0.898 0.011 94);
-  --sidebar-ring: var(--accent-brand);
+  --sidebar-accent-foreground: oklch(0.191 0.002 107);
+  --sidebar-border: oklch(0.909 0.01 94);
+  --sidebar-ring: oklch(0.527 0.1375 39);
+  --chart-1: oklch(0.527 0.1375 39);
+  --chart-2: oklch(0.51 0.13 245);
+  --chart-3: oklch(0.496 0.122 155);
+  --chart-4: oklch(0.514 0.105 85);
+  --chart-5: oklch(0.538 0.2 20);
+  --shadow-1: 0 1px 2px 0 oklch(0.191 0.002 107 / 0.05);
+  --shadow-2:
+    0 1px 2px 0 oklch(0.191 0.002 107 / 0.05), 0 8px 24px -12px oklch(0.191 0.002 107 / 0.12);
+  --shadow-3:
+    0 2px 4px -1px oklch(0.191 0.002 107 / 0.06), 0 12px 32px -12px oklch(0.191 0.002 107 / 0.16);
+  --shadow-4:
+    0 4px 8px -2px oklch(0.191 0.002 107 / 0.08), 0 24px 56px -16px oklch(0.191 0.002 107 / 0.22);
 }
 
 .dark {
@@ -99,23 +178,75 @@
   --muted-foreground: oklch(0.718 0.008 97);
   --accent: oklch(0.347 0.004 107);
   --accent-foreground: oklch(0.982 0.005 95);
-  --destructive: oklch(0.774 0.19 22);
+  --destructive: oklch(0.774 0.13 22);
+  --destructive-foreground: oklch(0.191 0.002 107);
   --border: oklch(0.36 0.004 107);
-  --input: oklch(0.4 0.004 107);
-  --ring: var(--accent-brand);
+  --input: oklch(0.62 0.008 100);
+  --ring: oklch(0.731 0.13 42);
   --accent-brand: oklch(0.731 0.13 42);
   --ok: oklch(0.702 0.14 155);
   --warn: oklch(0.72 0.13 88);
-  --alert: oklch(0.761 0.18 20);
+  --alert: oklch(0.761 0.14 20);
   --info: oklch(0.715 0.13 245);
+  --ok-wash: oklch(0.288 0.04 155);
+  --warn-wash: oklch(0.292 0.042 85);
+  --alert-wash: oklch(0.292 0.055 20);
+  --info-wash: oklch(0.295 0.045 245);
+  --brand-wash: oklch(0.3 0.03 39);
   --sidebar: oklch(0.236 0.002 68);
-  --sidebar-foreground: oklch(0.95 0.005 95);
+  --sidebar-foreground: oklch(0.982 0.005 95);
   --sidebar-primary: oklch(0.672 0.131 39);
   --sidebar-primary-foreground: oklch(0.191 0.002 107);
-  --sidebar-accent: oklch(0.315 0.004 107);
+  --sidebar-accent: oklch(0.325 0.004 107);
   --sidebar-accent-foreground: oklch(0.982 0.005 95);
-  --sidebar-border: oklch(0.32 0.003 107);
-  --sidebar-ring: var(--accent-brand);
+  --sidebar-border: oklch(0.36 0.004 107);
+  --sidebar-ring: oklch(0.731 0.13 42);
+  --chart-1: oklch(0.731 0.13 42);
+  --chart-2: oklch(0.715 0.13 245);
+  --chart-3: oklch(0.702 0.14 155);
+  --chart-4: oklch(0.72 0.13 88);
+  --chart-5: oklch(0.761 0.14 20);
+  --shadow-1: 0 1px 2px 0 oklch(0 0 0 / 0.4);
+  --shadow-2: 0 1px 2px 0 oklch(0 0 0 / 0.4), 0 8px 24px -12px oklch(0 0 0 / 0.6);
+  --shadow-3: 0 2px 4px -1px oklch(0 0 0 / 0.45), 0 12px 32px -12px oklch(0 0 0 / 0.65);
+  --shadow-4: 0 4px 8px -2px oklch(0 0 0 / 0.5), 0 24px 56px -16px oklch(0 0 0 / 0.7);
+}
+
+/* Motion primitives from the thienui theme item (theme-claude). */
+:root {
+  --p-motion-duration-instant: 0ms;
+  --p-motion-duration-fast: 120ms;
+  --p-motion-duration-base: 200ms;
+  --p-motion-duration-slow: 320ms;
+  --p-motion-duration-deliberate: 480ms;
+  --p-motion-easing-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --p-motion-easing-enter: cubic-bezier(0.05, 0.7, 0.1, 1);
+  --p-motion-easing-exit: cubic-bezier(0.3, 0, 0.8, 0.15);
+  --p-motion-easing-overshoot: cubic-bezier(0.2, 1.4, 0.4, 1);
+  --p-motion-easing-decelerate: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+@layer base {
+  /* Hit area: the visible control keeps its size; ::before grows to 24px (mouse) or 44px (touch). */
+  .target-44 {
+    position: relative;
+  }
+  .target-44::before {
+    content: '';
+    position: absolute;
+    inset: 50% auto auto 50%;
+    translate: -50% -50%;
+    min-width: 24px;
+    min-height: 24px;
+    width: 100%;
+    height: 100%;
+  }
+  @media (pointer: coarse) {
+    .target-44::before {
+      min-width: 44px;
+      min-height: 44px;
+    }
+  }
 }
 
 @layer base {

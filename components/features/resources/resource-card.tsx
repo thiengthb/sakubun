@@ -55,7 +55,7 @@ export function ResourceCard({
         <div className="flex shrink-0 items-center gap-0.5">{actions}</div>
       </div>
 
-      <p className="line-clamp-2 text-sm text-muted-foreground">{meaningVi}</p>
+      <p className="line-clamp-2 text-subhead text-muted-foreground">{meaningVi}</p>
 
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
         <span>{suspended ? 'Tạm ngưng' : (STATE_LABELS[srs?.state ?? 0] ?? '—')}</span>

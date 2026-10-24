@@ -58,7 +58,7 @@ function PickerLine({
         )}
       </span>
       {item.meaningVi && (
-        <span className="block truncate text-sm text-muted-foreground">{item.meaningVi}</span>
+        <span className="block truncate text-subhead text-muted-foreground">{item.meaningVi}</span>
       )}
     </span>
   );

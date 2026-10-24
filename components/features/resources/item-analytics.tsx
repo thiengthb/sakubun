@@ -138,11 +138,11 @@ export function ItemAnalytics({
                 align="start"
               />
             </h1>
-            <p className="text-base text-muted-foreground">{stats.meaningVi}</p>
+            <p className="text-body text-muted-foreground">{stats.meaningVi}</p>
           </div>
           <StarButton id={stats.itemId} starred={stats.starred} kind="item" />
         </div>
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 text-sm text-muted-foreground">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 text-subhead text-muted-foreground">
           <Badge variant="outline">{stats.level}</Badge>
           <Badge variant="outline" className={cn(!stats.suspended && STATE_BADGE[srs?.state ?? 0])}>
             {stateLabel}
@@ -278,7 +278,7 @@ export function ItemAnalytics({
             <h2 className="flex items-center gap-2 text-lg font-semibold">
               <History className="size-5 text-muted-foreground" aria-hidden />
               Lịch sử ôn
-              <span className="text-sm font-normal text-muted-foreground">
+              <span className="text-subhead font-normal text-muted-foreground">
                 ({stats.reviewCount} lần)
               </span>
             </h2>
@@ -293,7 +293,7 @@ export function ItemAnalytics({
 
         <TabsContent value="detail" className="space-y-4">
           {isVocab && stats.hanviet && (
-            <section className="space-y-1 text-sm">
+            <section className="space-y-1 text-body">
               <SectionTag>Âm Hán Việt</SectionTag>
               <p className="font-medium capitalize">{stats.hanviet}</p>
             </section>

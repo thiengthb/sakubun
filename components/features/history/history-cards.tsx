@@ -234,11 +234,11 @@ function HistoryDetail({
   return (
     <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
       <DialogHeader>
-        <DialogTitle className="flex flex-wrap items-center gap-2 text-base">
+        <DialogTitle className="flex flex-wrap items-center gap-2 text-body">
           <Badge variant="secondary">{dirLabel(sentence.direction)}</Badge>
           {typeLabel && <Badge variant="outline">{typeLabel}</Badge>}
           {detailScore && (
-            <span className={cn('text-sm font-medium', detailScore.className)}>
+            <span className={cn('text-body font-medium', detailScore.className)}>
               {detailScore.text}
             </span>
           )}
@@ -249,7 +249,7 @@ function HistoryDetail({
         <DialogDescription className="sr-only">Chi tiết lượt dịch</DialogDescription>
       </DialogHeader>
 
-      <div className="space-y-4 text-sm">
+      <div className="space-y-4 text-body">
         <div className="space-y-1">
           <div className="text-xs font-medium text-muted-foreground">{labels.prompt}</div>
           {sentence.direction === 'JA_VI' ? (

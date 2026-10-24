@@ -10,8 +10,8 @@ import { cn } from '@/lib/core/utils';
 // `level` is the only knob: "page" for the top-level bands of a long page, "group" for a block
 // inside one. Everything else is composition — pass an icon or don't, pass an action or don't.
 const LEVEL = {
-  page: { gap: 'gap-3', title: 'text-base', wrapper: 'pt-2' },
-  group: { gap: 'gap-2', title: 'text-sm', wrapper: '' },
+  page: { gap: 'gap-3', title: 'text-title3', wrapper: 'pt-2' },
+  group: { gap: 'gap-2', title: 'text-body', wrapper: '' },
 } as const;
 
 export function SectionHeading({

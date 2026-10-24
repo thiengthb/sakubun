@@ -34,13 +34,13 @@ export function McpUsageCard({ usage }: { usage: ToolUsageReport }) {
       </CardHeader>
       <CardContent className="space-y-4">
         {usage.rows.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
+          <p className="text-subhead text-muted-foreground">
             Chưa ghi nhận lời gọi nào. Nối Claude Desktop hoặc ChatGPT bằng token ở trên rồi luyện
             một lượt, số sẽ xuất hiện ở đây.
           </p>
         ) : (
           <>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-subhead text-muted-foreground">
               {totalCalls} lời gọi · {usage.rows.length}/{usage.toolCount} tool đã được dùng
               {failing.length > 0 ? (
                 <>
@@ -96,7 +96,7 @@ export function McpUsageCard({ usage }: { usage: ToolUsageReport }) {
             {failing.length > 0 && (
               <ul className="space-y-2 border-t pt-4">
                 {failing.map((r) => (
-                  <li key={r.name} className="text-sm">
+                  <li key={r.name} className="text-body">
                     <span className="font-mono text-xs">{r.name}</span>{' '}
                     <span className="text-muted-foreground">lỗi gần nhất:</span>{' '}
                     <span className="text-destructive">{r.lastError ?? 'không rõ'}</span>
@@ -109,7 +109,7 @@ export function McpUsageCard({ usage }: { usage: ToolUsageReport }) {
 
         {usage.neverCalled.length > 0 && (
           <div className="space-y-1 border-t pt-4">
-            <p className="text-sm">
+            <p className="text-body">
               {usage.neverCalled.length}/{usage.toolCount} tool CHƯA BAO GIỜ được gọi
             </p>
             <p className="font-mono text-xs break-words text-muted-foreground">

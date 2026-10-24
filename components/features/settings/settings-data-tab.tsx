@@ -82,7 +82,7 @@ function IconBadge({
 function SectionHeading({ children, hint }: { children: React.ReactNode; hint?: string }) {
   return (
     <div className="space-y-0.5">
-      <h2 className="font-heading text-sm font-semibold">{children}</h2>
+      <h2 className="font-heading text-body font-semibold">{children}</h2>
       {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
     </div>
   );
@@ -238,7 +238,7 @@ export function DataTab() {
                 <div className="flex items-start gap-3">
                   <IconBadge icon={FileDown} />
                   <div className="min-w-0 space-y-1">
-                    <CardTitle className="text-sm">Bản sao dữ liệu học (JSON)</CardTitle>
+                    <CardTitle>Bản sao dữ liệu học (JSON)</CardTitle>
                     <CardDescription className="text-xs">
                       Từ vựng và ngữ pháp đã thêm, lịch ôn FSRS, lịch sử ôn, câu đã luyện, nhóm và
                       cài đặt. Nạp lại là <span className="font-medium text-foreground">gộp</span> —
@@ -283,7 +283,7 @@ export function DataTab() {
                 <div className="flex items-start gap-3">
                   <IconBadge icon={Layers} />
                   <div className="min-w-0 space-y-1">
-                    <CardTitle className="text-sm">Xuất sang Anki</CardTitle>
+                    <CardTitle>Xuất sang Anki</CardTitle>
                     <CardDescription className="text-xs">
                       Bộ thẻ <code className="text-foreground">.apkg</code> từ từ vựng đã lưu — mặt
                       trước là từ, mặt sau cách đọc, âm Hán Việt, nghĩa và ví dụ. Tải lại sẽ cập
@@ -312,7 +312,7 @@ export function DataTab() {
                 <div className="flex items-start gap-3">
                   <IconBadge icon={Database} />
                   <div className="min-w-0 space-y-1">
-                    <CardTitle className="text-sm">Sao lưu toàn bộ (.db)</CardTitle>
+                    <CardTitle>Sao lưu toàn bộ (.db)</CardTitle>
                     <CardDescription className="text-xs">
                       Ảnh chụp SQLite nhất quán của toàn bộ cơ sở dữ liệu, đã kiểm tra toàn vẹn
                       trước khi trao cho bạn. Đây là bản duy nhất khôi phục lại được đúng mọi thứ —
@@ -334,7 +334,7 @@ export function DataTab() {
                 <div className="flex items-start gap-3">
                   <IconBadge icon={Upload} tone="warn" />
                   <div className="min-w-0 space-y-1">
-                    <CardTitle className="text-sm">Nạp thêm từ tệp .db</CardTitle>
+                    <CardTitle>Nạp thêm từ tệp .db</CardTitle>
                     <CardDescription className="text-xs">
                       Gộp một tệp <code className="text-foreground">.db</code> vào cơ sở dữ liệu
                       đang chạy: <span className="font-medium text-foreground">chỉ thêm</span> bản
@@ -376,7 +376,7 @@ export function DataTab() {
               <div className="flex items-start gap-3">
                 <IconBadge icon={HardDriveDownload} />
                 <div className="min-w-0 space-y-1">
-                  <CardTitle className="text-sm">Khôi phục nguyên trạng (nâng cao)</CardTitle>
+                  <CardTitle>Khôi phục nguyên trạng (nâng cao)</CardTitle>
                   <CardDescription className="text-xs">
                     Thay hẳn cơ sở dữ liệu bằng một bản sao lưu — mất mọi thay đổi phát sinh sau bản
                     đó. Chỉ dùng khi cần quay về đúng một thời điểm. App không tự làm được việc này:
@@ -429,7 +429,7 @@ export function DataTab() {
           </DialogHeader>
 
           {previewTotals && (
-            <p className="text-sm">
+            <p className="text-body">
               Sẽ <span className="font-medium text-primary">thêm {previewTotals.create}</span>
               {showUpdates && (
                 <>
@@ -471,7 +471,7 @@ export function DataTab() {
               </Table>
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground">
+            <p className="text-subhead text-muted-foreground">
               Tệp này không có gì mới so với dữ liệu hiện tại — không cần nạp.
             </p>
           )}

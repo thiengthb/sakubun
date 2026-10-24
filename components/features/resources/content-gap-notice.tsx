@@ -15,7 +15,7 @@ export function ContentGapNotice({
   return (
     <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-xl border border-warn/40 bg-warn/5 p-4">
       <FileWarning className="size-4 shrink-0 text-warn" aria-hidden />
-      <p className="text-sm">
+      <p className="text-body">
         <span className="font-medium text-warn tabular-nums">{studiedWithoutCard}</span> mẫu bạn
         đang học có thẻ chưa đạt
         <span className="text-muted-foreground">
