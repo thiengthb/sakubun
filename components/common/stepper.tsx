@@ -46,19 +46,20 @@ export function Stepper({
     <div
       role="group"
       aria-label={label}
+      // One raised frame as tall as a button; flat − and + and a bold number inside.
       className={cn(
-        'flex h-8 shrink-0 items-center rounded-lg border border-input transition-shadow has-[input:focus-visible]:border-ring has-[input:focus-visible]:ring-3 has-[input:focus-visible]:ring-ring/50',
+        'flex h-9 shrink-0 items-center overflow-hidden rounded-sm border-2 border-control-edge bg-card shadow-lift transition-shadow has-[input:focus-visible]:border-ring has-[input:focus-visible]:ring-3 has-[input:focus-visible]:ring-ring/20 md:h-7',
         className,
       )}
     >
       <Button
         type="button"
         variant="ghost"
-        size="icon"
+        size="icon-fill"
         aria-label={`Giảm ${label}`}
         disabled={value <= min}
         onClick={() => nudge(-step)}
-        className="rounded-r-none"
+        className="rounded-none"
       >
         <Minus />
       </Button>
@@ -77,18 +78,18 @@ export function Stepper({
           onBlur={() => setDraft(null)}
           onKeyDown={onKeyDown}
           wrapperClassName={cn('h-full', suffix ? 'w-7' : 'w-10')}
-          className="h-full rounded-none border-0 bg-transparent px-0 text-center text-base font-semibold tabular-nums focus-visible:ring-0 md:text-sm dark:bg-transparent"
+          className="h-full rounded-none border-0 bg-transparent px-0 py-0 text-center text-base font-bold tabular-nums focus-visible:ring-0 md:h-full md:text-sm"
         />
         {suffix && <span className="text-xs text-muted-foreground">{suffix}</span>}
       </label>
       <Button
         type="button"
         variant="ghost"
-        size="icon"
+        size="icon-fill"
         aria-label={`Tăng ${label}`}
         disabled={value >= max}
         onClick={() => nudge(step)}
-        className="rounded-l-none"
+        className="rounded-none"
       >
         <Plus />
       </Button>

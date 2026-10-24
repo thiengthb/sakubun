@@ -40,7 +40,7 @@ export function AppShell({
     <SidebarProvider defaultOpen={defaultSidebarOpen}>
       <AppSidebar
         brand={{
-          title: 'sakubun',
+          title: 'Sakubun',
           subtitle: 'Luyện dịch Nhật–Việt',
           logo: <AppLogo />,
         }}

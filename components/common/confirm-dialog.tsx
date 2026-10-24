@@ -42,7 +42,7 @@ export function ConfirmDialog({
         </DialogHeader>
         {children}
         <DialogFooter>
-          <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={pending}>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={pending}>
             {cancelLabel}
           </Button>
           <Button variant="destructive" onClick={onConfirm} disabled={pending}>
