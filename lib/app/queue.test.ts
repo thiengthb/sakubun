@@ -1,5 +1,6 @@
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { createTestDb, resetLearningData } from '@/lib/db/test-db';
+import type { recordReviews as RecordReviews } from '@/lib/app/record-review';
 
 createTestDb('sakubun-app-queue-');
 
@@ -9,6 +10,7 @@ type Db = typeof import('@/lib/db/db');
 let P: Practice;
 let Q: App;
 let prisma: Db['prisma'];
+let recordReviews: typeof RecordReviews;
 
 // After any real clock reading in CI, so items created "now" by addItems are already in the past.
 const NOW = new Date('2030-01-15T03:00:00.000Z');
@@ -29,19 +31,14 @@ async function seed(kind: 'GRAMMAR' | 'VOCAB', count: number, level = 'N5'): Pro
 }
 
 async function review(itemId: string, rating: 1 | 2 | 3 | 4, at: Date): Promise<void> {
-  const { sentenceId } = await P.stageSentence(
-    { direction: 'JA_VI', sourceText: '文', suggested: 'câu', items: [{ itemId, role: 'TARGET' }] },
-    at,
-  );
-  await P.submitReview(
-    { sentenceId, userAnswer: 'trả lời', ratings: [{ itemId, rating, role: 'TARGET' }] },
-    at,
-  );
+  const srs = await prisma.srsState.findUniqueOrThrow({ where: { itemId } });
+  await recordReviews([{ itemId, srs, rating }], { retention: 0.9, now: at });
 }
 
 beforeAll(async () => {
   P = await import('@/lib/library/practice');
   Q = await import('@/lib/app/queue');
+  ({ recordReviews } = await import('@/lib/app/record-review'));
   ({ prisma } = await import('@/lib/db/db'));
 });
 
