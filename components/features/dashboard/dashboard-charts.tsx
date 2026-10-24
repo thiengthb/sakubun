@@ -98,6 +98,7 @@ export function Bars({
     <div className="flex items-end gap-1.5">
       {data.map((d, i) => (
         <div key={`${d.label}-${i}`} className="flex min-w-0 flex-1 flex-col items-center gap-1">
+          <span className="text-caption2 text-muted-foreground tabular-nums">{d.value || ''}</span>
           <div className="flex h-24 w-full items-end">
             <div
               className={cn('w-full rounded-t', barClass)}

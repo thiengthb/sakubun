@@ -12,6 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import type { DailyStat } from '@/lib/insights/stats';
+import { TapTooltip } from '@/components/common/info-tooltip';
 import { cn } from '@/lib/core/utils';
 
 const WEEKDAYS_VN = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'] as const;
@@ -23,7 +24,8 @@ function dayLabel(key: string): string {
 }
 
 // One goal of the day as a ring: the icon names it, the ring fills toward the goal and turns green
-// when it is met. The sentence that used to sit under each bar is the ring's tooltip.
+// when it is met. The sentence that used to sit under each bar is the ring's tooltip, which a tap
+// opens too.
 function Ring({
   icon: Icon,
   label,
@@ -40,30 +42,32 @@ function Ring({
   const ratio = total > 0 ? Math.min(1, done / total) : 1;
   const complete = total === 0 || done >= total;
   return (
-    <div
-      title={tip}
-      className="flex min-w-0 flex-col items-center gap-1.5 text-center sm:flex-row sm:gap-2.5 sm:text-left"
-    >
-      <div
-        aria-hidden
-        className="relative size-12 shrink-0 rounded-full transition-all motion-reduce:transition-none"
-        style={{
-          background: `conic-gradient(var(${complete ? '--ok' : '--accent-brand'}) ${ratio}turn, var(--muted) 0)`,
-        }}
+    <TapTooltip content={tip}>
+      <button
+        type="button"
+        className="flex min-w-0 flex-col items-center gap-1.5 rounded-lg text-center focus-visible:ring-3 focus-visible:ring-ring/50 sm:flex-row sm:gap-2.5 sm:text-left"
       >
-        <div className="absolute inset-1 flex items-center justify-center rounded-full bg-card">
-          <Icon className={cn('size-4', complete ? 'text-ok' : 'text-accent-brand')} />
+        <div
+          aria-hidden
+          className="relative size-12 shrink-0 rounded-full transition-all motion-reduce:transition-none"
+          style={{
+            background: `conic-gradient(var(${complete ? '--ok' : '--accent-brand'}) ${ratio}turn, var(--muted) 0)`,
+          }}
+        >
+          <div className="absolute inset-1 flex items-center justify-center rounded-full bg-card">
+            <Icon className={cn('size-4', complete ? 'text-ok' : 'text-accent-brand')} />
+          </div>
         </div>
-      </div>
-      <div className="min-w-0">
-        <div className="text-body font-semibold tabular-nums">
-          {done}
-          <span className="font-normal text-muted-foreground">/{total}</span>
+        <div className="min-w-0">
+          <div className="text-body font-semibold tabular-nums">
+            {done}
+            <span className="font-normal text-muted-foreground">/{total}</span>
+          </div>
+          <div className="truncate text-xs text-muted-foreground">{label}</div>
+          <span className="sr-only">{tip}</span>
         </div>
-        <div className="truncate text-xs text-muted-foreground">{label}</div>
-        <span className="sr-only">{tip}</span>
-      </div>
-    </div>
+      </button>
+    </TapTooltip>
   );
 }
 

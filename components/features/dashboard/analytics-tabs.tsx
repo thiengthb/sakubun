@@ -31,7 +31,7 @@ export function AnalyticsTabs({
               onValueChange={setTab}
               label="Chọn khung xem"
             />
-            {aside}
+            {tab === 'tien-do' && aside}
           </>
         }
       >

@@ -179,7 +179,7 @@ export default async function HomePage() {
         <ChartCard
           icon={CalendarRange}
           title="14 ngày tới"
-          info="Số mẫu đến hạn ôn mỗi ngày trong 14 ngày tới. Rê chuột lên cột để xem ngày và số."
+          info="Số mẫu đến hạn ôn mỗi ngày trong 14 ngày tới; số trên cột là số mẫu, dưới cột là ngày."
           className="lg:col-span-2"
         >
           <Bars
