@@ -42,7 +42,9 @@ test('Luyện tập shows only the eight settings; sentence-shape fields are gon
   await expect(
     page.getByRole('textbox', { name: 'Từ vựng mới / ngày', exact: true }),
   ).toBeVisible();
-  await expect(page.getByRole('radiogroup', { name: 'Tốc độ đọc' })).toBeVisible();
+  const rates = page.getByRole('radiogroup', { name: 'Tốc độ đọc' });
+  await expect(rates).toBeVisible();
+  await expect(rates.getByRole('radio')).toHaveText(['0.5×', '0.75×', '1×', '1.25×', '1.5×']);
   // Derived from the item since the core rewrite (docs/decisions/0001-core-rewrite.md).
   await expect(page.getByRole('slider', { name: 'Cỡ câu' })).toHaveCount(0);
   await expect(page.getByRole('slider', { name: 'Độ phức tạp của câu' })).toHaveCount(0);

@@ -37,6 +37,7 @@ import {
   type DirectionMode,
   type Settings,
 } from '@/lib/settings/schema';
+import { speechRateOptions } from '@/lib/settings/speech-rates';
 
 // Eight settings (docs/decisions/0001-core-rewrite.md), one row each, in one card: icon, a short
 // name, an (i) for the why, the control. How a sentence is built (length, register, topic,
@@ -47,8 +48,6 @@ const DIRECTION_OPTIONS: { value: DirectionMode; label: string }[] = [
   { value: 'VI_JA', label: 'Việt → Nhật' },
   { value: 'auto', label: 'Tự động' },
 ];
-
-const SPEECH_RATES = [0.75, 1, 1.25, 1.5];
 
 // A muted track with the chosen segment lifted onto the card colour, as in the tab rail.
 const SEGMENTED = 'w-full bg-muted p-0.5 @md:w-auto';
@@ -68,10 +67,7 @@ export function PracticeTab({
   const advancedId = useId();
   const furigana = furiganaInApp(settings.furiganaMode);
   const retention = Math.round(settings.desiredRetention * 100);
-  // A rate saved before the four presets (0.5, 1.75, 2) still shows as the selected segment.
-  const rates = SPEECH_RATES.includes(settings.speechRate)
-    ? SPEECH_RATES
-    : [...SPEECH_RATES, settings.speechRate].sort((a, b) => a - b);
+  const rates = speechRateOptions(settings.speechRate);
 
   const setLevels = (levels: string[]) => {
     if (levels.length === 0) return; // keep at least one level
