@@ -1,0 +1,126 @@
+{
+  "$doc": "Violations of the thienui design rules that existed when the rules arrived in sakubun (2026-10-24). rule id -> file -> count. Only ever shrinks: thienui-guards.test.ts fails on anything new, and on anything fixed until this file is lowered. It is paid off by moving to thienui components (roadmap 6.x), not by editing it.",
+  "debt": {
+    "button-size-by-prop": {
+      "components/features/groups/group-actions.tsx": 2,
+      "components/features/groups/group-cards.tsx": 4,
+      "components/features/groups/groups-view.tsx": 1,
+      "components/features/review/quick-review-view.tsx": 6,
+      "components/features/settings/settings-account-tab.tsx": 3,
+      "components/layout/scroll-to-top.tsx": 1,
+      "components/layout/sidebar-user.tsx": 1,
+      "components/layout/theme-toggle.tsx": 1,
+      "components/ui/data-pagination.tsx": 3
+    },
+    "explain-is-the-only-tooltip": {
+      "components/common/explain.tsx": 1,
+      "components/common/info-tooltip.tsx": 1,
+      "components/ui/sidebar.tsx": 1
+    },
+    "focus-visible-never-removed": {
+      "components/common/data-table.tsx": 2,
+      "components/common/filter-popover.tsx": 2,
+      "components/common/weak-item-badge.tsx": 1,
+      "components/features/dashboard/streak-card.tsx": 1,
+      "components/features/groups/groups-view.tsx": 1,
+      "components/layout/edge-nav-rail.tsx": 2,
+      "components/ui/input.tsx": 1
+    },
+    "icon-size-scale": {
+      "app/error.tsx": 1,
+      "app/global-error.tsx": 1,
+      "app/not-found.tsx": 1,
+      "components/common/data-table.tsx": 3,
+      "components/common/empty-state.tsx": 1,
+      "components/common/filter-popover.tsx": 1,
+      "components/common/info-tooltip.tsx": 1,
+      "components/common/item-detail-dialog.tsx": 3,
+      "components/common/speak-button.tsx": 2,
+      "components/features/dashboard/daily-progress.tsx": 1,
+      "components/features/groups/group-cards.tsx": 1,
+      "components/features/history/history-cards.tsx": 5,
+      "components/features/resources/item-analytics.tsx": 3,
+      "components/features/resources/item-groups.tsx": 1,
+      "components/features/resources/resource-add-form.tsx": 2,
+      "components/features/settings/settings-account-tab.tsx": 1,
+      "components/features/settings/settings-data-tab.tsx": 3,
+      "components/layout/breadcrumbs.tsx": 1,
+      "components/layout/scroll-to-top.tsx": 1,
+      "components/layout/user-avatar.tsx": 1,
+      "components/ui/input.tsx": 1
+    },
+    "input-clear-affordance": {
+      "components/features/resources/resource-add-form.tsx": 1,
+      "components/features/settings/settings-data-tab.tsx": 2,
+      "components/ui/input.tsx": 1
+    },
+    "lucide-icons-only": {
+      "components/layout/google-signin-button.tsx": 1
+    },
+    "no-arbitrary-scale-values": {
+      "app/error.tsx": 1,
+      "app/not-found.tsx": 1,
+      "app/resources/[id]/loading.tsx": 2,
+      "components/common/active-tab-select.tsx": 2,
+      "components/common/bottom-sheet.tsx": 1,
+      "components/common/filter-popover.tsx": 1,
+      "components/common/fit-skeleton.tsx": 1,
+      "components/common/item-detail-dialog.tsx": 1,
+      "components/common/review-card.tsx": 2,
+      "components/features/dashboard/daily-progress.tsx": 1,
+      "components/features/dashboard/dashboard-charts.tsx": 8,
+      "components/features/dashboard/streak-card.tsx": 1,
+      "components/features/dashboard/streak-flame.tsx": 1,
+      "components/features/groups/group-actions.tsx": 1,
+      "components/features/groups/group-detail-view.tsx": 1,
+      "components/features/groups/group-item-picker.tsx": 1,
+      "components/features/history/history-cards.tsx": 1,
+      "components/features/resources/item-forgetting-curve.tsx": 1,
+      "components/features/resources/item-review-log.tsx": 1,
+      "components/features/resources/resource-add-button.tsx": 1,
+      "components/features/resources/row-actions.tsx": 1,
+      "components/layout/app-logo.tsx": 1,
+      "components/layout/auth-nav.tsx": 1,
+      "components/layout/breadcrumbs.tsx": 2,
+      "components/layout/page-skeleton.tsx": 1,
+      "components/layout/user-avatar.tsx": 2,
+      "components/ui/button.tsx": 1,
+      "components/ui/checkbox.tsx": 1,
+      "components/ui/data-pagination.tsx": 2,
+      "components/ui/dropdown-menu.tsx": 1,
+      "components/ui/sidebar.tsx": 1,
+      "components/ui/switch.tsx": 1,
+      "components/ui/tabs.tsx": 1,
+      "components/ui/tooltip.tsx": 1
+    },
+    "no-hardcoded-colors": {
+      "app/globals.css": 3,
+      "app/layout.tsx": 2,
+      "app/manifest.ts": 2,
+      "components/layout/google-signin-button.tsx": 4,
+      "lib/srs/streak-tiers.ts": 39
+    },
+    "no-icon-size-in-components": {
+      "app/global-error.tsx": 1,
+      "components/common/data-table.tsx": 2,
+      "components/common/expanding-icon-button.tsx": 1,
+      "components/common/item-detail-dialog.tsx": 1,
+      "components/features/groups/group-actions.tsx": 7,
+      "components/features/groups/group-detail-view.tsx": 1,
+      "components/features/groups/group-item-picker.tsx": 1,
+      "components/features/groups/groups-view.tsx": 1,
+      "components/features/resources/bulk-action-button.tsx": 2,
+      "components/features/resources/resource-add-form.tsx": 2,
+      "components/features/resources/row-actions.tsx": 7,
+      "components/features/settings/settings-account-tab.tsx": 1,
+      "components/features/settings/settings-data-tab.tsx": 8,
+      "components/layout/scroll-to-top.tsx": 1,
+      "components/layout/sidebar-user.tsx": 1,
+      "components/layout/theme-toggle.tsx": 2,
+      "components/ui/data-pagination.tsx": 2
+    },
+    "no-raw-durations": {
+      "app/globals.css": 10
+    }
+  }
+}

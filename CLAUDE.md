@@ -26,6 +26,7 @@ Kế hoạch hợp nhất (wordquiz + kaiwa vào đây): `nuc-infra/docs/researc
   route MCP (`app/api/[transport]/route.ts`) bắt buộc token.
 - **Ngôn ngữ**: code/comment/commit tiếng Anh; chuỗi người học đọc trên UI tiếng Việt; không emoji.
 - **Luật frontend là test** trong `lib/design/`. Phá luật thì thêm vào allowlist trong test đó, kèm lý do.
+  Luật thienui (`thienui-guards.test.ts`) có danh sách nợ `thienui-debt.json` chỉ được giảm, không bao giờ thêm vào.
 - Không tự viết crypto, auth/session, date-time math: dùng thư viện đã có.
 - Không bao giờ sửa test cho xanh bằng cách làm yếu phép kiểm; sửa code.
 

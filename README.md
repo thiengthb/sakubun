@@ -141,7 +141,7 @@ Test nằm cạnh code nó kiểm (`lib/srs/srs.test.ts` bên `lib/srs/srs.ts`).
 
 ### Luật frontend
 
-`lib/design/` không chứa code chạy — nó chứa các luật, dưới dạng test. Chạy `npm test` là kiểm luôn:
+`lib/design/` không chứa code của app — nó chứa các luật, dưới dạng test. Chạy `npm test` là kiểm luôn:
 
 | Luật | File |
 | --- | --- |
@@ -153,6 +153,14 @@ Test nằm cạnh code nó kiểm (`lib/srs/srs.test.ts` bên `lib/srs/srs.ts`).
 | Chuỗi tiếng Nhật phát được phải đi qua `SpokenLine` | `spoken-line.test.ts` |
 | Không emoji trong source | `no-emoji.test.ts` |
 | Chỗ nào cần cắt chữ thì dùng `Truncate` | `truncate.test.ts` |
+| 37 luật của hệ thiết kế thienui (cỡ icon, cỡ nút, màu token, focus, ...), chép từ registry thienui vào `tooling/thienui-guards/` | `thienui-guards.test.ts` |
 
 Muốn phá luật thì phải thêm file vào allowlist ngay trong test đó, **kèm lý do** — nên ngoại lệ luôn
 có người chịu trách nhiệm, thay vì trôi đi âm thầm.
+
+Luật thienui đến sau khi app đã có sẵn giao diện, nên những chỗ vi phạm lúc đó được ghi vào
+`lib/design/thienui-debt.json` (luật → file → số chỗ). Danh sách nợ này **chỉ được giảm**: vi phạm mới
+làm test đỏ, và sửa xong một chỗ thì test cũng đỏ cho tới khi hạ danh sách bằng
+`UPDATE_THIENUI_DEBT=1 npx vitest run lib/design/thienui-guards.test.ts` (lệnh này không bao giờ tăng
+một mục). Nợ được trả bằng cách chuyển sang component thienui, không phải bằng cách sửa file.
+Cập nhật bộ luật: cài lại item `guards` từ registry thienui (ghi đè `tooling/thienui-guards/`).
