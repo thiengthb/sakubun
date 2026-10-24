@@ -45,6 +45,7 @@ export function Stepper({
   return (
     <div
       role="group"
+      data-slot="stepper"
       aria-label={label}
       // One raised frame as tall as a button; flat − and + and a bold number inside.
       className={cn(
