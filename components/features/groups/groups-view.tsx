@@ -19,6 +19,7 @@ import { GroupEditAction } from '@/components/features/groups/group-actions';
 import { GroupKindBadge } from '@/components/features/groups/group-kind-badge';
 import { GROUP_KIND_LABELS } from '@/lib/library/group-kinds';
 import { SearchInput } from '@/components/common/search-input';
+import { SearchToolbar } from '@/components/common/search-toolbar';
 import { useScrollMore } from '@/components/common/use-scroll-more';
 import { LIST_CARD } from '@/components/common/list-card';
 import { ScrollMoreStatus } from '@/components/common/scroll-more-status';
@@ -99,37 +100,38 @@ export function GroupsView({ groups }: { groups: GroupSummary[] }) {
   return (
     <div className="space-y-6">
       {groups.length > 0 && (
-        <div className="flex flex-row items-center gap-2 sm:gap-3">
-          <SearchInput
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Tìm nhóm theo tên / ghi chú"
-            className="min-w-0 flex-1 sm:max-w-xs"
-          />
-          <div className="flex shrink-0 items-center gap-2 md:ml-auto">
-            <FilterPopover activeCount={filterCount} onReset={resetFilters}>
-              <SelectFilterRow
-                label="Loại"
-                value={kindFilter}
-                onValueChange={setKindFilter}
-                options={KIND_FILTERS}
-              />
-              <SelectFilterRow
-                label="Số mục"
-                value={member}
-                onValueChange={setMember}
-                options={MEMBER_FILTERS}
-              />
-              <SelectFilterRow
-                className="col-span-2"
-                label="Sắp xếp"
-                value={sort}
-                onValueChange={(v) => setSort(v as SortKey)}
-                options={SORTS}
-              />
-            </FilterPopover>
-          </div>
-        </div>
+        <SearchToolbar
+          search={
+            <SearchInput
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Tìm nhóm theo tên / ghi chú"
+              className="sm:max-w-none"
+            />
+          }
+        >
+          <FilterPopover activeCount={filterCount} onReset={resetFilters}>
+            <SelectFilterRow
+              label="Loại"
+              value={kindFilter}
+              onValueChange={setKindFilter}
+              options={KIND_FILTERS}
+            />
+            <SelectFilterRow
+              label="Số mục"
+              value={member}
+              onValueChange={setMember}
+              options={MEMBER_FILTERS}
+            />
+            <SelectFilterRow
+              className="col-span-2"
+              label="Sắp xếp"
+              value={sort}
+              onValueChange={(v) => setSort(v as SortKey)}
+              options={SORTS}
+            />
+          </FilterPopover>
+        </SearchToolbar>
       )}
 
       {groups.length > 0 && <FilterChips chips={chips} onReset={resetFilters} className="-mt-3" />}
@@ -161,14 +163,14 @@ export function GroupsView({ groups }: { groups: GroupSummary[] }) {
                         className="mt-0.5 size-4 shrink-0 text-muted-foreground"
                         aria-hidden
                       />
-                      <span className="line-clamp-2">{g.name}</span>
+                      <span className="line-clamp-2 min-h-10">{g.name}</span>
                     </span>
                     <span className="flex shrink-0 items-center gap-0.5">
                       <GroupEditAction group={g} />
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="size-8 text-muted-foreground hover:text-destructive"
+                        className="text-muted-foreground hover:text-destructive"
                         onClick={() => setDeleting(g)}
                         aria-label={`Xoá nhóm ${g.name}`}
                       >
@@ -177,7 +179,16 @@ export function GroupsView({ groups }: { groups: GroupSummary[] }) {
                     </span>
                   </div>
 
-                  {g.note && <p className="line-clamp-2 text-sm text-muted-foreground">{g.note}</p>}
+                  {/* Every card is the same height: two lines for the name and two for the note
+                      are kept even when shorter (min-h-10 is two text-sm lines; thien, 2026-10-24). */}
+                  <p
+                    className={cn(
+                      'line-clamp-2 min-h-10 text-sm text-muted-foreground',
+                      !g.note && 'text-muted-foreground/70',
+                    )}
+                  >
+                    {g.note || 'Chưa có ghi chú'}
+                  </p>
 
                   <div className="mt-auto flex flex-wrap items-center gap-x-2 gap-y-1 pt-1 text-xs text-muted-foreground">
                     <span>{g.memberCount} mục</span>
@@ -188,7 +199,7 @@ export function GroupsView({ groups }: { groups: GroupSummary[] }) {
               ))}
             </ul>
           </div>
-          <ScrollMoreStatus ref={sentinelRef} hasMore={hasMore} total={`${filtered.length} nhóm`} />
+          <ScrollMoreStatus ref={sentinelRef} hasMore={hasMore} />
         </>
       )}
 

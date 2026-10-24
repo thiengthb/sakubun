@@ -35,6 +35,7 @@ export function useFitRows({
     innerHeight: number;
     top: number;
     perRow: number;
+    footer: number;
   } | null>(null);
 
   useEffect(() => {
@@ -91,10 +92,18 @@ export function useFitRows({
           !prev ||
           itemsPerRow !== prev.perRow ||
           Math.abs(innerHeight - prev.innerHeight) >= 1 ||
-          Math.abs(topRect.top - prev.top) >= 2;
+          Math.abs(topRect.top - prev.top) >= 2 ||
+          // The footer appears or goes (a table that fits one page has none).
+          Math.abs(footerChrome - prev.footer) >= 2;
         if (prev && !hardChange && Math.abs(next - prev.count) <= itemsPerRow) return;
 
-        committed.current = { count: next, innerHeight, top: topRect.top, perRow: itemsPerRow };
+        committed.current = {
+          count: next,
+          innerHeight,
+          top: topRect.top,
+          perRow: itemsPerRow,
+          footer: footerChrome,
+        };
         setCount((prevCount) => (prevCount === next ? prevCount : next));
       });
     };

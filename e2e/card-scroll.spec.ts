@@ -24,10 +24,18 @@ function seed() {
       item.run(`g${i}`, `〜パターン${i + 1}`, `nghĩa ${i + 1}`, iso(now - i * 60_000));
     const group = db.prepare(
       `INSERT INTO "Group" (id, name, kind, color, note, createdAt, updatedAt)
-       VALUES (?, ?, 'grammar', NULL, NULL, ?, ?)`,
+       VALUES (?, ?, 'grammar', NULL, ?, ?, ?)`,
     );
     for (let i = 0; i < GROUPS; i++)
-      group.run(`grp${i}`, `Nhóm ${i + 1}`, iso(now - i * 60_000), iso(now - i * 60_000));
+      group.run(
+        `grp${i}`,
+        i === 0
+          ? `Nhóm có một cái tên rất dài để xem thẻ có giữ chiều cao không ${'dài '.repeat(20)}`
+          : `Nhóm ${i + 1}`,
+        i === 0 ? `Ghi chú rất dài ${'ghi chú '.repeat(40)}` : null,
+        iso(now - i * 60_000),
+        iso(now - i * 60_000),
+      );
   } finally {
     db.close();
   }
@@ -63,7 +71,8 @@ for (const width of [390, 768]) {
     await expect(cards).toHaveCount(40);
     await page.getByText('Đang tải thêm…').scrollIntoViewIfNeeded();
     await expect(cards).toHaveCount(TOTAL);
-    await expect(page.getByText(`${TOTAL} mẫu`, { exact: true })).toBeVisible();
+    // The end of the list says nothing more: the header already has the count.
+    await expect(page.getByText('Đang tải thêm…')).toHaveCount(0);
 
     // A new search starts the list over.
     await page.getByPlaceholder('Tìm mẫu / cách đọc / nghĩa…').fill('パターン1');
@@ -89,7 +98,80 @@ test('groups are cards that load more as they scroll', async ({ page }) => {
   await expect(page.getByRole('navigation', { name: 'Phân trang' })).toHaveCount(0);
   await page.getByText('Đang tải thêm…').scrollIntoViewIfNeeded();
   await expect(cards).toHaveCount(GROUPS);
-  await expect(page.getByRole('status').filter({ hasText: `${GROUPS} nhóm` })).toBeVisible();
+  await expect(page.getByText('Đang tải thêm…')).toHaveCount(0);
+
+  // thien, 2026-10-24: every card is one height, a long name and note are cut at two lines each,
+  // and a card without a note says so.
+  const heights = await cards.evaluateAll((els) =>
+    els.map((e) => Math.round(e.getBoundingClientRect().height)),
+  );
+  expect(new Set(heights).size, `card heights ${heights.join(', ')}`).toBe(1);
+  await expect(cards.nth(1).getByText('Chưa có ghi chú')).toBeVisible();
+});
+
+test('on a phone the search grows to full width while in use, the tools move below', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await login(page);
+  await page.goto('/resources?tab=grammar', { waitUntil: 'networkidle' });
+  const bar = page.locator('[data-slot="search-toolbar"]').filter({ visible: true }).first();
+  const search = bar.getByRole('textbox');
+  const filter = bar.getByRole('button', { name: /^Bộ lọc/ });
+  const box = async (l: typeof search) => (await l.boundingBox())!;
+
+  await expect
+    .poll(async () => Math.round((await box(filter)).y - (await box(search)).y))
+    .toBeLessThan(8);
+  await search.click();
+  await expect
+    .poll(async () => Math.round((await box(bar)).width - (await box(search)).width))
+    .toBeLessThan(2);
+  await expect
+    .poll(async () => (await box(filter)).y - ((await box(search)).y + (await box(search)).height))
+    .toBeGreaterThan(0);
+  // A query keeps it open after focus leaves; clearing it brings the row back.
+  await search.fill('パターン');
+  await page.locator('body').click({ position: { x: 5, y: 600 } });
+  await expect
+    .poll(async () => Math.round((await box(bar)).width - (await box(search)).width))
+    .toBeLessThan(2);
+  await search.fill('');
+  await page.locator('body').click({ position: { x: 5, y: 600 } });
+  await expect
+    .poll(async () => Math.round((await box(filter)).y - (await box(search)).y))
+    .toBeLessThan(8);
+});
+
+test('a table that fits one page has no footer', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await login(page);
+  await page.goto('/resources?tab=grammar', { waitUntil: 'networkidle' });
+  await expect(page.getByRole('navigation', { name: 'Phân trang' })).toBeVisible();
+  await page.getByPlaceholder('Tìm mẫu / cách đọc / nghĩa…').fill('パターン45');
+  await expect(page.locator('table tbody tr')).toHaveCount(1);
+  await expect(page.getByRole('navigation', { name: 'Phân trang' })).toHaveCount(0);
+  await expect(page.getByText('Số dòng')).toHaveCount(0);
+  await expect(page.getByText(/^1–1 \//)).toHaveCount(0);
+});
+
+test('the filter panel lines up with the right edge of its button on a laptop', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await login(page);
+  await page.goto('/resources?tab=grammar', { waitUntil: 'networkidle' });
+  const trigger = page
+    .getByRole('button', { name: /^Bộ lọc/ })
+    .filter({ visible: true })
+    .first();
+  await trigger.click();
+  const panel = page.locator('[data-slot="popover-content"]');
+  await expect(panel).toBeVisible();
+  const t = (await trigger.boundingBox())!;
+  const p = (await panel.boundingBox())!;
+  expect(Math.abs(t.x + t.width - (p.x + p.width)), 'right edges').toBeLessThan(2);
+  expect(p.x, 'inside the window').toBeGreaterThanOrEqual(0);
 });
 
 // thien, 2026-10-24: the table's footer (count, rows per page, pages) rests on the bottom of the

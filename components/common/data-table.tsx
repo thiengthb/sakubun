@@ -55,6 +55,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { FilterChips, type FilterChip } from '@/components/common/filter-popover';
 import { SearchInput } from '@/components/common/search-input';
+import { SearchToolbar } from '@/components/common/search-toolbar';
 import { SortSheet, type SortOption } from '@/components/common/sort-sheet';
 import { useSessionState } from '@/components/common/use-session-state';
 import { useScrollMore } from '@/components/common/use-scroll-more';
@@ -433,109 +434,111 @@ export function DataTable<T>({
 
   return (
     <div ref={rootRef} className="space-y-4">
-      <div className="flex flex-row items-center gap-2 sm:gap-3">
-        {renderCard && (
-          <div
-            role="group"
-            aria-label="Kiểu hiển thị"
-            className="flex shrink-0 items-center gap-1.5 max-lg:hidden"
-          >
-            {VIEW_CHOICES.map(({ value, label, icon: Icon }) => {
-              const active = view === value;
-              return (
-                <Explain key={value} text={label}>
-                  <button
-                    type="button"
-                    onClick={() => setView(value)}
-                    aria-pressed={active}
-                    aria-label={label}
-                    className={cn(
-                      'inline-flex h-8.5 w-9 items-center justify-center rounded-sm transition-colors md:h-6.5 md:w-7',
-                      'focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
-                      choiceChipClass(active),
-                    )}
-                  >
-                    <Icon className="size-4" aria-hidden />
-                  </button>
-                </Explain>
-              );
-            })}
-          </div>
-        )}
-        {searchPlaceholder && (
-          <SearchInput
-            ref={searchRef}
-            value={globalFilter}
-            onChange={(e) => table.setGlobalFilter(e.target.value)}
-            placeholder={searchPlaceholder}
-            className="min-w-0 flex-1 sm:max-w-xs"
+      <SearchToolbar
+        lead={
+          renderCard && (
+            <div
+              role="group"
+              aria-label="Kiểu hiển thị"
+              className="flex shrink-0 items-center gap-1.5 max-lg:hidden"
+            >
+              {VIEW_CHOICES.map(({ value, label, icon: Icon }) => {
+                const active = view === value;
+                return (
+                  <Explain key={value} text={label}>
+                    <button
+                      type="button"
+                      onClick={() => setView(value)}
+                      aria-pressed={active}
+                      aria-label={label}
+                      className={cn(
+                        'inline-flex h-8.5 w-9 items-center justify-center rounded-sm transition-colors md:h-6.5 md:w-7',
+                        'focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
+                        choiceChipClass(active),
+                      )}
+                    >
+                      <Icon className="size-4" aria-hidden />
+                    </button>
+                  </Explain>
+                );
+              })}
+            </div>
+          )
+        }
+        search={
+          searchPlaceholder && (
+            <SearchInput
+              ref={searchRef}
+              value={globalFilter}
+              onChange={(e) => table.setGlobalFilter(e.target.value)}
+              placeholder={searchPlaceholder}
+              className="sm:max-w-none"
+            />
+          )
+        }
+      >
+        {sortOptions.length > 0 && (
+          <SortSheet
+            options={sortOptions}
+            columnId={activeSort?.id ?? null}
+            desc={activeSort?.desc ?? false}
+            onChange={(next) => changeSorting(next ? [{ id: next.id, desc: next.desc }] : [])}
           />
         )}
-
-        <div className="flex shrink-0 items-center gap-2 md:ml-auto">
-          {sortOptions.length > 0 && (
-            <SortSheet
-              options={sortOptions}
-              columnId={activeSort?.id ?? null}
-              desc={activeSort?.desc ?? false}
-              onChange={(next) => changeSorting(next ? [{ id: next.id, desc: next.desc }] : [])}
-            />
-          )}
-          {showColumnMenu && (
-            <DropdownMenu open={colMenuOpen} onOpenChange={setColMenuOpen}>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="gap-0 max-lg:hidden"
-                  aria-label="Hiển thị cột"
-                  title="Hiển thị cột"
+        {showColumnMenu && (
+          <DropdownMenu open={colMenuOpen} onOpenChange={setColMenuOpen}>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                className="gap-0 max-lg:hidden"
+                aria-label="Hiển thị cột"
+                title="Hiển thị cột"
+              >
+                <Columns3 className="size-4 shrink-0" aria-hidden />
+                <span
+                  aria-hidden
+                  className="max-w-0 overflow-hidden whitespace-nowrap opacity-0 transition-all duration-200 ease-out group-hover/button:ml-1.5 group-hover/button:max-w-24 group-hover/button:opacity-100 group-focus-visible/button:ml-1.5 group-focus-visible/button:max-w-24 group-focus-visible/button:opacity-100 group-aria-expanded/button:ml-1.5 group-aria-expanded/button:max-w-24 group-aria-expanded/button:opacity-100 motion-reduce:transition-none"
                 >
-                  <Columns3 className="size-4 shrink-0" aria-hidden />
-                  <span
-                    aria-hidden
-                    className="max-w-0 overflow-hidden whitespace-nowrap opacity-0 transition-all duration-200 ease-out group-hover/button:ml-1.5 group-hover/button:max-w-24 group-hover/button:opacity-100 group-focus-visible/button:ml-1.5 group-focus-visible/button:max-w-24 group-focus-visible/button:opacity-100 group-aria-expanded/button:ml-1.5 group-aria-expanded/button:max-w-24 group-aria-expanded/button:opacity-100 motion-reduce:transition-none"
-                  >
-                    Cột
-                  </span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>Hiển thị trường</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {enableRowNumbers && (
+                  Cột
+                </span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel>Hiển thị trường</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {enableRowNumbers && (
+                <DropdownMenuCheckboxItem
+                  checked={showRowNumbers}
+                  onCheckedChange={(v) => setShowRowNumbers(v === true)}
+                  onSelect={(e) => e.preventDefault()}
+                >
+                  {rowNumberHeader}
+                </DropdownMenuCheckboxItem>
+              )}
+              {hideableColumns.map((column) => {
+                const meta = column.columnDef.meta as DataTableColumnMeta | undefined;
+                const label =
+                  meta?.label ??
+                  (typeof column.columnDef.header === 'string'
+                    ? column.columnDef.header
+                    : column.id);
+                return (
                   <DropdownMenuCheckboxItem
-                    checked={showRowNumbers}
-                    onCheckedChange={(v) => setShowRowNumbers(v === true)}
+                    key={column.id}
+                    checked={column.getIsVisible()}
+                    onCheckedChange={(v) => column.toggleVisibility(v === true)}
                     onSelect={(e) => e.preventDefault()}
                   >
-                    {rowNumberHeader}
+                    {label}
                   </DropdownMenuCheckboxItem>
-                )}
-                {hideableColumns.map((column) => {
-                  const meta = column.columnDef.meta as DataTableColumnMeta | undefined;
-                  const label =
-                    meta?.label ??
-                    (typeof column.columnDef.header === 'string'
-                      ? column.columnDef.header
-                      : column.id);
-                  return (
-                    <DropdownMenuCheckboxItem
-                      key={column.id}
-                      checked={column.getIsVisible()}
-                      onCheckedChange={(v) => column.toggleVisibility(v === true)}
-                      onSelect={(e) => e.preventDefault()}
-                    >
-                      {label}
-                    </DropdownMenuCheckboxItem>
-                  );
-                })}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
-          {filterSlot}
-          {actionSlot}
-        </div>
-      </div>
+                );
+              })}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+        {filterSlot}
+        {actionSlot}
+      </SearchToolbar>
 
       {filterChips && <FilterChips chips={filterChips} onReset={onResetFilters} />}
 
@@ -592,7 +595,6 @@ export function DataTable<T>({
             <ScrollMoreStatus
               ref={sentinelRef}
               hasMore={moreCards}
-              total={`${filteredCount} ${countNoun}`}
               className={cn(!cards && 'lg:hidden')}
             />
           )}
@@ -788,27 +790,33 @@ export function DataTable<T>({
 
           <div ref={footerRef} className={cn(renderCard && 'max-lg:hidden', cards && 'lg:hidden')}>
             <div ref={spacerRef} aria-hidden />
-            <DataPagination
-              count={
-                <>
-                  {start + 1}–{Math.min(start + effectivePageSize, filteredCount)} / {filteredCount}{' '}
-                  {countNoun}
-                  {totalCount != null && filteredCount !== totalCount && ` (lọc từ ${totalCount})`}
-                </>
-              }
-              page={safePageIndex + 1}
-              pageCount={pageCount}
-              onPageChange={(p) => setPageIndex(p - 1)}
-              pageSize={effectivePageSize}
-              pageSizeOptions={sizeOptions}
-              onPageSizeChange={choosePageSize}
-              autoFit={autoFit}
-              autoFitSize={fit ?? effectivePageSize}
-              onAutoFit={() => {
-                setAutoFit(true);
-                setPageIndex(0);
-              }}
-            />
+            {/* thien, 2026-10-24: one page needs no footer; the count is in the page header. The
+                box stays so the fit and the pinned spacer keep measuring it. */}
+            {pageCount > 1 && (
+              <DataPagination
+                count={
+                  <>
+                    {start + 1}–{Math.min(start + effectivePageSize, filteredCount)} /{' '}
+                    {filteredCount} {countNoun}
+                    {totalCount != null &&
+                      filteredCount !== totalCount &&
+                      ` (lọc từ ${totalCount})`}
+                  </>
+                }
+                page={safePageIndex + 1}
+                pageCount={pageCount}
+                onPageChange={(p) => setPageIndex(p - 1)}
+                pageSize={effectivePageSize}
+                pageSizeOptions={sizeOptions}
+                onPageSizeChange={choosePageSize}
+                autoFit={autoFit}
+                autoFitSize={fit ?? effectivePageSize}
+                onAutoFit={() => {
+                  setAutoFit(true);
+                  setPageIndex(0);
+                }}
+              />
+            )}
           </div>
         </>
       )}

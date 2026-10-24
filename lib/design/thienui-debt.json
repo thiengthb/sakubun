@@ -4,7 +4,6 @@
     "button-size-by-prop": {
       "components/features/groups/group-actions.tsx": 2,
       "components/features/groups/group-cards.tsx": 4,
-      "components/features/groups/groups-view.tsx": 1,
       "components/features/review/quick-review-view.tsx": 6,
       "components/layout/scroll-to-top.tsx": 1,
       "components/layout/sidebar-user.tsx": 1,

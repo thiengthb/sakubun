@@ -146,7 +146,7 @@ export function FilterChips({
 export function FilterPopover({
   activeCount,
   onReset,
-  align = 'start',
+  align = 'end',
   children,
 }: {
   activeCount: number;
@@ -192,7 +192,11 @@ export function FilterPopover({
         ) : (
           <Popover>
             <PopoverTrigger asChild>{trigger}</PopoverTrigger>
-            <PopoverContent align={align} className="max-h-[70vh] w-80 gap-3 overflow-y-auto">
+            <PopoverContent
+              align={align}
+              collisionPadding={16}
+              className="max-h-[70vh] w-80 gap-3 overflow-y-auto"
+            >
               <div className="flex items-center justify-between">
                 <span className="flex items-center gap-2 text-sm font-bold">
                   <SlidersHorizontal className="size-4 text-muted-foreground" aria-hidden />
