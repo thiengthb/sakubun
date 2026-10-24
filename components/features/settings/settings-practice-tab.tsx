@@ -1,10 +1,20 @@
 'use client';
 
-import type { Dispatch, SetStateAction } from 'react';
-import { BookOpenText, CalendarClock, SlidersHorizontal, Volume2 } from 'lucide-react';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Field } from '@/components/common/field';
-import { Input } from '@/components/ui/input';
+import { useId, useState, type Dispatch, type SetStateAction } from 'react';
+import {
+  ArrowLeftRight,
+  BookOpen,
+  ChevronDown,
+  Gauge,
+  ListPlus,
+  Moon,
+  Repeat,
+  SlidersHorizontal,
+  SquarePlus,
+  Target,
+  Volume2,
+} from 'lucide-react';
+import { Card } from '@/components/ui/card';
 import {
   Select,
   SelectContent,
@@ -12,14 +22,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { SpeakButton } from '@/components/common/speak-button';
+import { Stepper } from '@/components/common/stepper';
 import { SettingsTab } from '@/components/features/settings/settings-tab';
-import { SettingsGroup } from '@/components/features/settings/settings-group';
-import { SettingsSection } from '@/components/features/settings/settings-section';
+import { SettingIcon, SettingRow } from '@/components/features/settings/setting-row';
+import { cn } from '@/lib/core/utils';
 import {
-  DIRECTION_MODES,
   furiganaInApp,
   JLPT_LEVELS,
   VOICE_SPEAKERS,
@@ -27,15 +37,22 @@ import {
   type Settings,
 } from '@/lib/settings/schema';
 
-// Eight settings (docs/decisions/0001-core-rewrite.md). How a sentence is built (length, register,
-// topic, difficulty) is derived from the item being studied, so it is no longer a form here; a wish
-// for one session is said to Claude in chat.
+// Eight settings (docs/decisions/0001-core-rewrite.md), one row each, in one card: icon, a short
+// name, an (i) for the why, the control. How a sentence is built (length, register, topic,
+// difficulty) is derived from the item being studied, so it is no longer a form here.
 
-const DIRECTION_MODE_LABELS: Record<DirectionMode, string> = {
-  auto: 'Tự động theo mức nhớ',
-  JA_VI: 'Luôn Nhật → Việt',
-  VI_JA: 'Luôn Việt → Nhật',
-};
+const DIRECTION_OPTIONS: { value: DirectionMode; label: string }[] = [
+  { value: 'JA_VI', label: 'Nhật → Việt' },
+  { value: 'VI_JA', label: 'Việt → Nhật' },
+  { value: 'auto', label: 'Tự động' },
+];
+
+const SPEECH_RATES = [0.75, 1, 1.25, 1.5];
+
+// A muted track with the chosen segment lifted onto the card colour, as in the tab rail.
+const SEGMENTED = 'w-full bg-muted p-0.5 @md:w-auto';
+const SEGMENT =
+  'flex-1 px-3 text-muted-foreground hover:bg-transparent data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm @md:flex-none';
 
 export function PracticeTab({
   settings,
@@ -46,218 +63,231 @@ export function PracticeTab({
   set: <K extends keyof Settings>(key: K, value: Settings[K]) => void;
   setSettings: Dispatch<SetStateAction<Settings>>;
 }) {
-  const toggleLevel = (level: Settings['grammarLevels'][number]) => {
-    setSettings((s) => {
-      const has = s.grammarLevels.includes(level);
-      if (has && s.grammarLevels.length === 1) return s; // keep at least one level
-      return {
-        ...s,
-        grammarLevels: has
-          ? s.grammarLevels.filter((l) => l !== level)
-          : [...s.grammarLevels, level],
-      };
-    });
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+  const advancedId = useId();
+  const furigana = furiganaInApp(settings.furiganaMode);
+  const retention = Math.round(settings.desiredRetention * 100);
+  // A rate saved before the four presets (0.5, 1.75, 2) still shows as the selected segment.
+  const rates = SPEECH_RATES.includes(settings.speechRate)
+    ? SPEECH_RATES
+    : [...SPEECH_RATES, settings.speechRate].sort((a, b) => a - b);
+
+  const setLevels = (levels: string[]) => {
+    if (levels.length === 0) return; // keep at least one level
+    setSettings((s) => ({
+      ...s,
+      grammarLevels: JLPT_LEVELS.filter((l) => levels.includes(l)),
+    }));
   };
 
   return (
-    <SettingsTab value="practice" surface="bare" className="space-y-8">
-      <SettingsSection
-        icon={BookOpenText}
-        title="Học gì"
-        hint="Cấp bạn đang học. Mẫu và từ mới chỉ lấy từ các cấp này."
-      >
-        <SettingsGroup title="Cấp JLPT đang học">
-          <Field
-            label="Cấp JLPT"
-            info="Mẫu ngữ pháp mới lấy từ các cấp được chọn; từ vựng mới không khó hơn cấp cao nhất trong đó. Mục đã học vẫn ôn bất kể cấp."
+    <SettingsTab value="practice" surface="bare">
+      <Card className="@container max-w-3xl gap-0 divide-y py-0">
+        <SettingRow
+          icon={BookOpen}
+          tone="brand"
+          label="Cấp JLPT"
+          info="Mẫu và từ mới chỉ lấy từ các cấp được chọn; từ mới không khó hơn cấp cao nhất. Mục đã học vẫn ôn bất kể cấp."
+          wide
+        >
+          <ToggleGroup
+            type="multiple"
+            variant="outline"
+            aria-label="Cấp JLPT"
+            value={settings.grammarLevels}
+            onValueChange={setLevels}
+            className="grid w-full grid-cols-5 gap-1.5 @md:flex @md:w-auto"
           >
-            <div className="flex h-9 flex-wrap items-center gap-x-5 gap-y-2">
-              {JLPT_LEVELS.map((level) => (
-                <label
-                  key={level}
-                  className="flex cursor-pointer items-center gap-2 text-sm font-medium select-none"
-                >
-                  <Checkbox
-                    checked={settings.grammarLevels.includes(level)}
-                    onCheckedChange={() => toggleLevel(level)}
-                    aria-label={`Cấp ${level}`}
-                  />
-                  {level}
-                </label>
-              ))}
-            </div>
-          </Field>
-        </SettingsGroup>
-      </SettingsSection>
-
-      <SettingsSection
-        icon={CalendarClock}
-        title="Nhịp học"
-        hint="Mỗi ngày bao nhiêu là đủ. Chạm trần thì phần còn lại dời sang ngày sau, không mất."
-      >
-        <SettingsGroup title="Hạn mức mỗi ngày">
-          <div className="grid gap-4 sm:grid-cols-3">
-            <Field label="Mẫu ngữ pháp mới / ngày">
-              <Input
-                type="number"
-                min={0}
-                max={20}
-                value={settings.dailyNewGrammar}
-                onChange={(e) => set('dailyNewGrammar', Number(e.target.value))}
-              />
-            </Field>
-            <Field label="Từ vựng mới / ngày">
-              <Input
-                type="number"
-                min={0}
-                max={50}
-                value={settings.dailyNewVocab}
-                onChange={(e) => set('dailyNewVocab', Number(e.target.value))}
-              />
-            </Field>
-            <Field label="Tối đa lượt ôn / ngày">
-              <Input
-                type="number"
-                min={10}
-                max={500}
-                value={settings.maxReviewsPerDay}
-                onChange={(e) => set('maxReviewsPerDay', Number(e.target.value))}
-              />
-            </Field>
-          </div>
-        </SettingsGroup>
-
-        <SettingsGroup title="Hướng dịch khi luyện với Claude">
-          <Field
-            label="Hướng dịch"
-            info="Tự động: mục mới hoặc đang học thì dịch Nhật → Việt; mục đã nhớ chắc thì dịch Việt → Nhật."
-          >
-            <Select
-              value={settings.directionMode}
-              onValueChange={(v) => set('directionMode', v as DirectionMode)}
-            >
-              <SelectTrigger className="w-full sm:w-72">
-                <SelectValue>{DIRECTION_MODE_LABELS[settings.directionMode]}</SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                {DIRECTION_MODES.map((m) => (
-                  <SelectItem key={m} value={m}>
-                    {DIRECTION_MODE_LABELS[m]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </Field>
-        </SettingsGroup>
-      </SettingsSection>
-
-      <SettingsSection
-        icon={Volume2}
-        title="Hiển thị & giọng đọc"
-        hint="Áp dụng cho câu tiếng Nhật ở mọi nơi trong app."
-      >
-        <SettingsGroup title="Chữ và tiếng">
-          <label className="flex min-w-0 cursor-pointer items-center gap-3 select-none">
-            <Switch
-              checked={furiganaInApp(settings.furiganaMode)}
-              onCheckedChange={(on) => set('furiganaMode', on ? 'app' : 'none')}
-              aria-label="Hiện furigana"
-              className="shrink-0"
-            />
-            <span className="text-sm">Hiện furigana trên kanji</span>
-          </label>
-
-          <Field
-            label="Giọng đọc"
-            info="Giọng VOICEVOX cho các nút phát âm. Chưa bật VOICEVOX thì app dùng giọng của trình duyệt."
-          >
-            <div className="flex items-center gap-2">
-              <Select
-                value={String(settings.voiceSpeaker)}
-                onValueChange={(v) => set('voiceSpeaker', Number(v))}
+            {JLPT_LEVELS.map((level) => (
+              <ToggleGroupItem
+                key={level}
+                value={level}
+                className="rounded-full px-3 data-[state=on]:border-primary data-[state=on]:bg-primary/10 data-[state=on]:text-primary"
               >
-                <SelectTrigger className="w-full sm:w-72">
-                  <SelectValue placeholder="Chọn giọng">
-                    {VOICE_SPEAKERS.find((v) => v.id === settings.voiceSpeaker)?.label ??
-                      `Giọng #${settings.voiceSpeaker}`}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  {VOICE_SPEAKERS.map((v) => (
-                    <SelectItem key={v.id} value={String(v.id)}>
-                      {v.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <SpeakButton
-                text="天気がいいから、散歩しましょう。"
-                label="Nghe thử giọng"
-                speaker={settings.voiceSpeaker}
-                rate={settings.speechRate}
-                className="shrink-0"
-              />
-            </div>
-          </Field>
+                {level}
+              </ToggleGroupItem>
+            ))}
+          </ToggleGroup>
+        </SettingRow>
 
-          <Field label={`Tốc độ đọc: ${settings.speechRate}×`}>
-            <div className="flex h-9 items-center gap-3">
-              <Slider
-                thumbLabel="Tốc độ đọc"
-                min={0.5}
-                max={2}
-                step={0.25}
-                trackClassName="h-3"
-                ticks={[0.75, 1, 1.25, 1.5, 1.75]}
-                value={[settings.speechRate]}
-                onValueChange={([v]) => set('speechRate', v)}
-              />
-              <span className="w-10 shrink-0 text-right text-sm text-muted-foreground tabular-nums">
-                {settings.speechRate}×
-              </span>
-            </div>
-          </Field>
-        </SettingsGroup>
-      </SettingsSection>
+        <SettingRow icon={ListPlus} tone="brand" label="Mẫu mới" unit="/ ngày">
+          <Stepper
+            label="Mẫu ngữ pháp mới / ngày"
+            min={0}
+            max={20}
+            value={settings.dailyNewGrammar}
+            onChange={(v) => set('dailyNewGrammar', v)}
+          />
+        </SettingRow>
+        <SettingRow icon={SquarePlus} tone="brand" label="Từ mới" unit="/ ngày">
+          <Stepper
+            label="Từ vựng mới / ngày"
+            min={0}
+            max={50}
+            step={5}
+            value={settings.dailyNewVocab}
+            onChange={(v) => set('dailyNewVocab', v)}
+          />
+        </SettingRow>
+        <SettingRow
+          icon={Repeat}
+          tone="ok"
+          label="Ôn tối đa"
+          unit="/ ngày"
+          info="Chạm trần thì phần còn lại dời sang ngày sau, không mất."
+        >
+          <Stepper
+            label="Tối đa lượt ôn / ngày"
+            min={10}
+            max={500}
+            step={10}
+            value={settings.maxReviewsPerDay}
+            onChange={(v) => set('maxReviewsPerDay', v)}
+          />
+        </SettingRow>
 
-      <SettingsSection
-        icon={SlidersHorizontal}
-        title="Nâng cao"
-        hint="Ít khi cần đổi. Mặc định đã hợp với hầu hết người học."
-      >
-        <SettingsGroup title="Lịch ôn">
-          <Field
-            label={`Mục tiêu ghi nhớ (FSRS): ${Math.round(settings.desiredRetention * 100)}%`}
-            info="Cao hơn thì khoảng cách ôn ngắn hơn: nhớ chắc hơn nhưng ôn nhiều hơn (mặc định 90%)."
+        <SettingRow
+          icon={ArrowLeftRight}
+          tone="info"
+          label="Hướng dịch"
+          info="Tự động: mục mới hoặc đang học dịch Nhật → Việt; mục đã nhớ chắc dịch Việt → Nhật."
+          wide
+        >
+          <ToggleGroup
+            type="single"
+            aria-label="Hướng dịch"
+            value={settings.directionMode}
+            onValueChange={(v) => v && set('directionMode', v as DirectionMode)}
+            className={SEGMENTED}
           >
-            <div className="flex h-9 items-center">
-              <Slider
-                thumbLabel="Mục tiêu ghi nhớ (FSRS)"
-                min={70}
-                max={97}
-                step={1}
-                trackClassName="h-3"
-                ticks={[75, 80, 85, 90, 95]}
-                value={[Math.round(settings.desiredRetention * 100)]}
-                onValueChange={([v]) => set('desiredRetention', v / 100)}
-              />
-            </div>
-          </Field>
-          <Field
-            label="Giờ chốt ngày học (0–6h)"
+            {DIRECTION_OPTIONS.map((o) => (
+              <ToggleGroupItem key={o.value} value={o.value} className={SEGMENT}>
+                {o.label}
+              </ToggleGroupItem>
+            ))}
+          </ToggleGroup>
+        </SettingRow>
+
+        <SettingRow
+          glyph="あ"
+          tone="info"
+          label="Furigana"
+          aside={
+            <ruby lang="ja" aria-hidden className="ml-1 shrink-0 text-body text-muted-foreground">
+              漢字<rt className={cn(!furigana && 'invisible')}>かんじ</rt>
+            </ruby>
+          }
+        >
+          <Switch
+            checked={furigana}
+            onCheckedChange={(on) => set('furiganaMode', on ? 'app' : 'none')}
+            aria-label="Hiện furigana"
+          />
+        </SettingRow>
+
+        <SettingRow
+          icon={Volume2}
+          tone="ok"
+          label="Giọng đọc"
+          info="Giọng VOICEVOX cho các nút phát âm. Chưa bật VOICEVOX thì app dùng giọng của trình duyệt."
+          wide
+        >
+          <Select
+            value={String(settings.voiceSpeaker)}
+            onValueChange={(v) => set('voiceSpeaker', Number(v))}
+          >
+            <SelectTrigger aria-label="Giọng đọc" className="min-w-0 flex-1 @md:w-60 @md:flex-none">
+              <SelectValue placeholder="Chọn giọng">
+                {VOICE_SPEAKERS.find((v) => v.id === settings.voiceSpeaker)?.label ??
+                  `Giọng #${settings.voiceSpeaker}`}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              {VOICE_SPEAKERS.map((v) => (
+                <SelectItem key={v.id} value={String(v.id)}>
+                  {v.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <SpeakButton
+            text="天気がいいから、散歩しましょう。"
+            label="Nghe thử giọng"
+            speaker={settings.voiceSpeaker}
+            rate={settings.speechRate}
+            className="shrink-0"
+          />
+        </SettingRow>
+
+        <SettingRow icon={Gauge} tone="warn" label="Tốc độ" wide>
+          <ToggleGroup
+            type="single"
+            aria-label="Tốc độ đọc"
+            value={String(settings.speechRate)}
+            onValueChange={(v) => v && set('speechRate', Number(v))}
+            className={SEGMENTED}
+          >
+            {rates.map((r) => (
+              <ToggleGroupItem key={r} value={String(r)} className={cn(SEGMENT, 'tabular-nums')}>
+                {r}×
+              </ToggleGroupItem>
+            ))}
+          </ToggleGroup>
+        </SettingRow>
+
+        <button
+          type="button"
+          aria-expanded={advancedOpen}
+          aria-controls={advancedId}
+          onClick={() => setAdvancedOpen((o) => !o)}
+          className="flex min-h-14 w-full items-center gap-3 px-4 py-2.5 text-left transition-colors outline-none hover:bg-muted/50 focus-visible:bg-muted/50"
+        >
+          <SettingIcon icon={SlidersHorizontal} tone="muted" />
+          <span className="text-sm font-medium">Nâng cao</span>
+          <span className="truncate text-xs text-muted-foreground tabular-nums">
+            {retention}% · {settings.dayCutoffHour}h
+          </span>
+          <ChevronDown
+            aria-hidden
+            className={cn(
+              'ml-auto size-4 shrink-0 text-muted-foreground transition-transform',
+              advancedOpen && 'rotate-180',
+            )}
+          />
+        </button>
+        <div id={advancedId} hidden={!advancedOpen} className="divide-y">
+          <SettingRow
+            icon={Target}
+            tone="muted"
+            label="Mục tiêu nhớ"
+            info="Lịch ôn FSRS. Cao hơn thì ôn dày hơn: nhớ chắc hơn nhưng nhiều lượt hơn (mặc định 90%)."
+          >
+            <Stepper
+              label="Mục tiêu ghi nhớ (FSRS)"
+              suffix="%"
+              min={70}
+              max={97}
+              value={retention}
+              onChange={(v) => set('desiredRetention', v / 100)}
+            />
+          </SettingRow>
+          <SettingRow
+            icon={Moon}
+            tone="muted"
+            label="Chốt ngày"
             info="Lượt ôn trước giờ này tính vào ngày hôm trước."
           >
-            <Input
-              type="number"
+            <Stepper
+              label="Giờ chốt ngày học"
+              suffix="h"
               min={0}
               max={6}
               value={settings.dayCutoffHour}
-              onChange={(e) => set('dayCutoffHour', Number(e.target.value))}
-              className="sm:w-32"
+              onChange={(v) => set('dayCutoffHour', v)}
             />
-          </Field>
-        </SettingsGroup>
-      </SettingsSection>
+          </SettingRow>
+        </div>
+      </Card>
     </SettingsTab>
   );
 }

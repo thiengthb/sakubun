@@ -36,13 +36,13 @@ test('không có JS, mọi ô chọn trong HTML đầu tiên đã có chữ', as
       if (!t.trim()) empty.push(`${path} → ô chọn thứ ${i + 1}`);
     });
 
-    // Luyện tập keeps two selects since the eight-settings tab: Hướng dịch and Giọng đọc.
-    if (path === '/settings') expect(texts.length, 'số ô chọn ở Cài đặt').toBeGreaterThanOrEqual(2);
+    // Luyện tập keeps one select since Hướng dịch became a segmented choice: Giọng đọc.
+    if (path === '/settings') expect(texts.length, 'số ô chọn ở Cài đặt').toBeGreaterThanOrEqual(1);
   }
 
   expect(empty, 'ô chọn rỗng trong HTML server').toEqual([]);
-  // Two on Cài đặt plus the ones on the list pages: the guard that the scan saw real selects.
-  expect(total, 'tổng số ô chọn đã kiểm').toBeGreaterThanOrEqual(4);
+  // One on Cài đặt plus the ones on the list pages: the guard that the scan saw real selects.
+  expect(total, 'tổng số ô chọn đã kiểm').toBeGreaterThanOrEqual(3);
 
   await noJs.close();
 });
@@ -55,17 +55,17 @@ test('chọn giá trị khác thì nhãn trên trigger đổi theo', async ({ pa
   await page.waitForURL((u) => !u.pathname.startsWith('/login'), { timeout: 30_000 });
 
   await page.goto('/settings');
-  const LABELS = ['Tự động theo mức nhớ', 'Luôn Nhật → Việt', 'Luôn Việt → Nhật'];
-  const direction = page.getByRole('combobox', { name: 'Hướng dịch' });
-  await expect(direction).toBeVisible();
-  const before = ((await direction.textContent()) ?? '').trim();
+  const LABELS = ['Nữ · dễ thương (ずんだもん)', 'Nữ · trong trẻo (四国めたん)'];
+  const voice = page.getByRole('combobox', { name: 'Giọng đọc' });
+  await expect(voice).toBeVisible();
+  const before = ((await voice.textContent()) ?? '').trim();
   const target = LABELS.find((l) => l !== before);
   expect(target, 'phải tìm được một nhãn khác nhãn đang hiện').toBeTruthy();
 
-  await direction.click();
+  await voice.click();
   await page.getByRole('option', { name: target, exact: true }).click();
-  await expect(direction).toHaveText(target!);
+  await expect(voice).toHaveText(target!);
 
   await page.reload();
-  await expect(page.getByRole('combobox', { name: 'Hướng dịch' })).toHaveText(before);
+  await expect(page.getByRole('combobox', { name: 'Giọng đọc' })).toHaveText(before);
 });

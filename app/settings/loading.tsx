@@ -1,31 +1,9 @@
 import { PageSkeleton, TabsAside } from '@/components/layout/page-skeleton';
 import { Skeleton } from '@/components/ui/skeleton';
 
-// One band: the SectionHeading (icon tile + title + hint) over its group cards.
-function BandSkeleton({ groups }: { groups: number[] }) {
-  return (
-    <section className="space-y-4">
-      <div className="flex items-start gap-3 pt-2">
-        <Skeleton className="size-8 shrink-0 rounded-lg" />
-        <div className="space-y-1.5">
-          <Skeleton className="h-5 w-36" />
-          <Skeleton className="h-3 w-72 max-w-full" />
-        </div>
-      </div>
-      <div className="space-y-6">
-        {groups.map((height, i) => (
-          <div key={i} className="space-y-3">
-            <div className="space-y-1">
-              <Skeleton className="h-4 w-28" />
-              <Skeleton className="h-3 w-64 max-w-full" />
-            </div>
-            <Skeleton className="rounded-xl" style={{ height }} />
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
+// The Luyện tập tab is one card of rows (components/features/settings/setting-row.tsx): icon tile,
+// short name, control on the right. Nine rows: eight settings and the collapsed Nâng cao.
+const CONTROL_WIDTHS = [220, 104, 104, 104, 260, 32, 280, 220, 16];
 
 export default function Loading() {
   return (
@@ -38,12 +16,14 @@ export default function Loading() {
         </>
       }
     >
-      {/* Four bands, matching the Luyện tập tab: Học gì · Nhịp học · Hiển thị & giọng đọc · Nâng cao. */}
-      <div className="space-y-8">
-        <BandSkeleton groups={[90]} />
-        <BandSkeleton groups={[100, 90]} />
-        <BandSkeleton groups={[230]} />
-        <BandSkeleton groups={[170]} />
+      <div className="max-w-3xl divide-y overflow-hidden rounded-xl ring-1 ring-foreground/10">
+        {CONTROL_WIDTHS.map((width, i) => (
+          <div key={i} className="flex min-h-14 items-center gap-3 px-4 py-2.5">
+            <Skeleton className="size-8 shrink-0 rounded-lg" />
+            <Skeleton className="h-4 w-20 shrink-0" />
+            <Skeleton className="ml-auto h-8 min-w-0 rounded-lg" style={{ width }} />
+          </div>
+        ))}
       </div>
     </PageSkeleton>
   );
