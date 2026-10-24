@@ -444,7 +444,7 @@ export function DataTable<T>({
                     aria-pressed={active}
                     aria-label={label}
                     className={cn(
-                      'inline-flex size-7 items-center justify-center rounded-sm transition-colors',
+                      'inline-flex h-8.5 w-9 items-center justify-center rounded-sm transition-colors md:h-6.5 md:w-7',
                       'focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
                       choiceChipClass(active),
                     )}

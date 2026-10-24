@@ -13,7 +13,7 @@ chỗ sai mới làm test đỏ, chỗ đã sửa cũng làm test đỏ cho tớ
 
 | Luật | Khoá bởi |
 | --- | --- |
-| Nút và ô cao 36px trên điện thoại, 28px từ 768px; vùng chạm 44px trên màn cảm ứng; icon 16px. | `e2e/control-size.spec.ts`, thienui `icon-size-scale`, `button-size-by-prop` |
+| Nút và ô cao 36px trên điện thoại, 28px từ 768px, tính theo mắt nhìn: gờ 2px của nút nổi nằm trong chiều cao đó (khung 34 hoặc 26px, chừa 2px bên dưới cho gờ). Ô nhập và nút cùng hàng trùng mép trên và mép dưới. Vùng chạm 44px trên màn cảm ứng; icon 16px. | `e2e/control-size.spec.ts`, thienui `icon-size-scale`, `button-size-by-prop` |
 | Bo 4px cho nút và ô, 8px cho thẻ và hộp thoại. Chỉ dùng thang `rounded`, `-sm` tới `-2xl`, `-full`, hoặc giá trị tuỳ ý đọc token `--radius-*`. | `ui-standard` `radius-class`, test thang bo |
 | Không nút, link, toggle hay ô nào bo tròn hẳn. `rounded-full` chỉ cho chấm, thanh tiến độ, ảnh đại diện. | `ui-standard` `no-round-controls` |
 

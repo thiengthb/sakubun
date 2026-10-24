@@ -4,6 +4,9 @@ import { Slot } from 'radix-ui';
 
 import { cn } from '@/lib/core/utils';
 
+// Variants with a lip under the face (shadow-lift*).
+const LIFTED: ('default' | 'outline' | 'destructive')[] = ['default', 'outline', 'destructive'];
+
 const buttonVariants = cva(
   "group/button inline-flex shrink-0 items-center justify-center rounded-sm border-2 border-transparent text-sm font-medium whitespace-nowrap transition-all outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
   {
@@ -42,6 +45,18 @@ const buttonVariants = cva(
         'icon-fill': 'aspect-square h-full',
       },
     },
+    // A raised button's 2px lip counts toward its height, so it is as tall as a flat field beside
+    // it: the box gives the lip 2px, kept free below by a margin (docs/ui-standard.md).
+    compoundVariants: [
+      { variant: LIFTED, size: 'default', class: 'mb-0.5 h-8.5 md:h-6.5' },
+      { variant: LIFTED, size: 'xs', class: 'mb-0.5 h-5.5' },
+      { variant: LIFTED, size: 'sm', class: 'mb-0.5 h-6.5' },
+      { variant: LIFTED, size: 'lg', class: 'mb-0.5 h-9.5 md:h-7.5' },
+      { variant: LIFTED, size: 'icon', class: 'mb-0.5 h-8.5 md:h-6.5' },
+      { variant: LIFTED, size: 'icon-xs', class: 'mb-0.5 h-5.5' },
+      { variant: LIFTED, size: 'icon-sm', class: 'mb-0.5 h-6.5' },
+      { variant: LIFTED, size: 'icon-lg', class: 'mb-0.5 h-8.5' },
+    ],
     defaultVariants: {
       variant: 'default',
       size: 'default',

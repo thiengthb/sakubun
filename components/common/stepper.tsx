@@ -47,9 +47,9 @@ export function Stepper({
       role="group"
       data-slot="stepper"
       aria-label={label}
-      // One raised frame as tall as a button; flat − and + and a bold number inside.
+      // One raised frame as tall as a button (lip included); flat − and + and a bold number inside.
       className={cn(
-        'flex h-9 shrink-0 items-center overflow-hidden rounded-sm border-2 border-control-edge bg-card shadow-lift transition-shadow has-[input:focus-visible]:border-ring has-[input:focus-visible]:ring-3 has-[input:focus-visible]:ring-ring/20 md:h-7',
+        'mb-0.5 flex h-8.5 shrink-0 items-center overflow-hidden rounded-sm border-2 border-control-edge bg-card shadow-lift transition-shadow has-[input:focus-visible]:border-ring has-[input:focus-visible]:ring-3 has-[input:focus-visible]:ring-ring/20 md:h-6.5',
         className,
       )}
     >

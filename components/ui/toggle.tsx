@@ -24,6 +24,12 @@ const toggleVariants = cva(
         lg: 'h-9 min-w-9 px-2.5',
       },
     },
+    // The choice chip's 2px lip counts toward its height, like a raised Button's.
+    compoundVariants: [
+      { variant: 'choice', size: 'default', class: 'mb-0.5 h-8.5 md:h-6.5' },
+      { variant: 'choice', size: 'sm', class: 'mb-0.5 h-6.5' },
+      { variant: 'choice', size: 'lg', class: 'mb-0.5 h-8.5' },
+    ],
     defaultVariants: {
       variant: 'default',
       size: 'default',
@@ -46,11 +52,14 @@ function Toggle({
   );
 }
 
-/** A choice chip driven by aria-pressed instead of Radix state: the same look as the `choice` variant. */
+/**
+ * A choice chip driven by aria-pressed instead of Radix state: the same look as the `choice` variant.
+ * The caller sets a height 2px short of the row's; the margin keeps the lip's 2px free below.
+ */
 function choiceChipClass(on: boolean) {
   return on
-    ? 'border-2 border-brand-wash bg-brand-wash font-bold text-accent-brand shadow-lift-chosen active:translate-y-0.5 active:shadow-none'
-    : 'border-2 border-control-edge bg-card font-bold text-muted-foreground shadow-lift hover:text-foreground active:translate-y-0.5 active:shadow-none';
+    ? 'mb-0.5 border-2 border-brand-wash bg-brand-wash font-bold text-accent-brand shadow-lift-chosen active:translate-y-0.5 active:shadow-none'
+    : 'mb-0.5 border-2 border-control-edge bg-card font-bold text-muted-foreground shadow-lift hover:text-foreground active:translate-y-0.5 active:shadow-none';
 }
 
 export { Toggle, toggleVariants, choiceChipClass };
