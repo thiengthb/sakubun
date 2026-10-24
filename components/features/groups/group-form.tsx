@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { toast } from 'sonner';
 import { toastResult } from '@/lib/core/action-toast';
 import { Button } from '@/components/ui/button';
-import { Field } from '@/components/common/field';
+import { Field, FormActions } from '@/components/common/field';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { GROUP_KIND_LABELS } from '@/lib/library/group-kinds';
@@ -27,9 +27,15 @@ export function GroupForm({
   const [note, setNote] = useState(group?.note ?? '');
   const [isPending, startTransition] = useTransition();
 
-  const submit = () => {
+  // The error shows once the form is sent, and clears as the name is filled.
+  const [sent, setSent] = useState(false);
+  const nameError = sent && !name.trim() ? 'Cần nhập tên nhóm' : null;
+
+  const submit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setSent(true);
     if (!name.trim()) {
-      toast.error('Tên nhóm không được trống');
+      e.currentTarget.querySelector<HTMLElement>('#group-name')?.focus();
       return;
     }
     startTransition(async () => {
@@ -41,9 +47,10 @@ export function GroupForm({
   };
 
   return (
-    <div className="space-y-6">
-      <Field label="Tên nhóm">
+    <form onSubmit={submit} noValidate className="space-y-6">
+      <Field label="Tên nhóm" required error={nameError}>
         <Input
+          id="group-name"
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="VD: N4 – Thể て"
@@ -52,24 +59,27 @@ export function GroupForm({
 
       <Field
         label="Loại"
-        info="Loại quyết định mục nào được thêm: Từ vựng chỉ nhận từ, Ngữ pháp chỉ nhận mẫu, Hỗn hợp nhận cả hai."
+        info={
+          'Loại quyết định mục nào được thêm: Từ vựng chỉ nhận từ, Ngữ pháp chỉ nhận mẫu, Hỗn hợp nhận cả hai.' +
+          (editing ? ' Thu hẹp loại không gỡ mục đang có, chỉ chặn mục mới không đúng loại.' : '')
+        }
       >
-        <div className="grid grid-cols-3 gap-2">
+        <ToggleGroup
+          type="single"
+          variant="choice"
+          value={kind}
+          onValueChange={(v) => v && setKind(v as GroupKind)}
+          className="grid w-full grid-cols-3 gap-1.5"
+        >
           {GROUP_KINDS.map((k) => (
-            <Button
-              key={k}
-              type="button"
-              variant={kind === k ? 'default' : 'outline'}
-              onClick={() => setKind(k)}
-              className="w-full"
-            >
+            <ToggleGroupItem key={k} value={k}>
               {GROUP_KIND_LABELS[k]}
-            </Button>
+            </ToggleGroupItem>
           ))}
-        </div>
+        </ToggleGroup>
       </Field>
 
-      <Field label="Ghi chú (tuỳ chọn)">
+      <Field label="Ghi chú">
         <Textarea
           value={note}
           onChange={(e) => setNote(e.target.value)}
@@ -78,14 +88,14 @@ export function GroupForm({
         />
       </Field>
 
-      <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
-        <Button variant="outline" onClick={onCancel} disabled={isPending}>
+      <FormActions>
+        <Button type="button" variant="outline" onClick={onCancel} disabled={isPending}>
           Huỷ
         </Button>
-        <Button onClick={submit} disabled={isPending}>
-          {editing ? 'Lưu' : 'Tạo nhóm'}
+        <Button type="submit" disabled={isPending}>
+          {editing ? 'Lưu' : 'Thêm nhóm'}
         </Button>
-      </div>
-    </div>
+      </FormActions>
+    </form>
   );
 }

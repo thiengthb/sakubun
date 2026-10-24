@@ -203,8 +203,7 @@ test('the header row stays one line at 360px', async ({ page }) => {
   for (const [name, url, tab] of CASES) {
     await page.goto(url, { waitUntil: 'networkidle' });
     if (tab) {
-      await page.getByRole('combobox', { name: 'Cách nhập' }).click();
-      await page.getByRole('option', { name: tab }).click();
+      await page.getByRole('tab', { name: tab }).click();
       await page.waitForTimeout(300);
     }
     const row = await page.evaluate(() => {

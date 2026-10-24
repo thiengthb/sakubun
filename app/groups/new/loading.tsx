@@ -2,8 +2,8 @@ import { FormCardSkeleton, PageSkeleton } from '@/components/layout/page-skeleto
 
 export default function Loading() {
   return (
-    <PageSkeleton width="form" section="groups" action="add">
-      <FormCardSkeleton intro fields={3} />
+    <PageSkeleton template="form" trail title="Thêm nhóm">
+      <FormCardSkeleton fields={3} />
     </PageSkeleton>
   );
 }

@@ -19,6 +19,10 @@ export const PAGE_CHROME = {
   phoneTrail: 'mb-1 flex h-4 min-w-0 items-center md:hidden',
   title: 'text-lg leading-5 font-extrabold break-words md:text-2xl md:leading-tight',
   meta: 'text-xs leading-4 text-muted-foreground md:mt-1',
+  /** Phone, nested page: the trail holds the block's small line, so the meta drops below the row. */
+  phoneMeta: 'text-xs leading-4 text-muted-foreground md:hidden',
+  /** Phone, `actionsOnPhone="split"`: the actions get their own row and share it equally. */
+  phoneActions: 'grid auto-cols-fr grid-flow-col gap-2 md:hidden [&>*]:w-full',
   actions: 'flex shrink-0 items-center gap-2',
   pageIcons: 'flex shrink-0 items-center gap-1',
   /** Underline tabs, the full width of the template. */
