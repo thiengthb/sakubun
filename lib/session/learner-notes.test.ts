@@ -4,11 +4,9 @@ import { createTestDb, resetLearningData } from '@/lib/db/test-db';
 createTestDb('sakubun-notes-');
 
 type Notes = typeof import('@/lib/session/learner-notes');
-type Practice = typeof import('@/lib/library/practice');
 type Db = typeof import('@/lib/db/db');
 
 let N: Notes;
-let P: Practice;
 let prisma: Db['prisma'];
 
 const NOW = new Date('2026-07-27T10:00:00Z');
@@ -35,7 +33,6 @@ const text = (n: number): string =>
 
 beforeAll(async () => {
   N = await import('@/lib/session/learner-notes');
-  P = await import('@/lib/library/practice');
   ({ prisma } = await import('@/lib/db/db'));
 });
 
@@ -135,54 +132,6 @@ describe('self-cleaning — a claim about a person has a shelf life', () => {
     await N.recordLearnerNote({ text: text(5), evidence: [s] }, NOW);
     const afterTtl = new Date(NOW.getTime() + (N.NOTE_TTL_DAYS + 1) * DAY);
     expect(await N.listLearnerNotes(afterTtl)).toEqual([]);
-  });
-});
-
-describe('5.4 — the note is a PASSENGER on submit_review, never a toll on it', () => {
-  async function gradedTurn(note?: { text: string; evidence: string[] }) {
-    await P.addItems([{ expression: '〜ばかりに', meaningVi: 'nghĩa' }]);
-    const item = (await P.listItems()).find((i) => i.expression === '〜ばかりに');
-    if (!item) throw new Error('seed failed');
-    const { sentenceId } = await P.stageSentence({
-      direction: 'VI_JA',
-      sourceText: 'câu nguồn',
-      suggested: 'reference',
-      items: [{ itemId: item.itemId, role: 'TARGET' }],
-    });
-    return P.submitReview({
-      sentenceId,
-      userAnswer: 'đáp án',
-      ratings: [{ itemId: item.itemId, rating: 3 }],
-      ...(note
-        ? { learnerNote: { text: note.text, evidence: [...note.evidence, sentenceId] } }
-        : {}),
-    });
-  }
-
-  it('records nothing and reports null when no note is sent', async () => {
-    await resetData();
-    const result = await gradedTurn();
-    expect(result.learnerNote).toBeNull();
-    expect(await N.listLearnerNotes()).toEqual([]);
-  });
-
-  it('stores the note and echoes the outcome so Claude is not left guessing', async () => {
-    await resetData();
-    const result = await gradedTurn({ text: text(7), evidence: [] });
-    expect(result.learnerNote?.recorded).toBe('added');
-    const [stored] = await N.listLearnerNotes();
-    expect(stored.text).toBe(text(7));
-    expect(stored.evidence).toContain(result.sentenceId);
-  });
-
-  it('still writes the FSRS review when the note is REJECTED', async () => {
-    await resetData();
-    const result = await gradedTurn({ text: 'no', evidence: [] });
-    expect(result.learnerNote).toEqual({ recorded: 'rejected', reason: 'too-short' });
-    expect(result.items).toHaveLength(1);
-    expect(result.items[0].nextDue).toBeInstanceOf(Date);
-    expect(await prisma.reviewLog.count({ where: {} })).toBe(1);
-    expect(await N.listLearnerNotes()).toEqual([]);
   });
 });
 

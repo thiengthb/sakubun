@@ -2,16 +2,17 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { createTestDb, resetLearningData } from '@/lib/db/test-db';
 import type { RatingValue } from '@/lib/srs/srs';
 
-// Characterization tests for the core rewrite (docs/roadmap.md, PR 0.2). They pin what the learning
-// core does TODAY, through the real write path, so each rewrite step shows exactly which behaviour it
-// keeps and which it changes on purpose. The last block records known flaws the roadmap fixes; those
-// expectations flip in the PR that fixes them, never silently.
+// Characterization tests from the core rewrite (docs/roadmap.md, PR 0.2): the FSRS outcome of a review
+// and the append-only log, pinned through the one write path (recordReviews). The old practice path
+// they were first written against is gone (5.1); the numbers must not move.
 
 createTestDb('sakubun-baseline-');
 
 type Practice = typeof import('@/lib/library/practice');
+type RecordModule = typeof import('@/lib/app/record-review');
 type Db = typeof import('@/lib/db/db');
 let P: Practice;
+let R: RecordModule;
 let prisma: Db['prisma'];
 
 // After any real clock reading in CI, so items created "now" by addItems are already in the past.
@@ -38,14 +39,9 @@ async function seed(expressions: string[], kind: 'GRAMMAR' | 'VOCAB' = 'GRAMMAR'
 }
 
 async function review(itemId: string, rating: RatingValue, at: Date) {
-  const { sentenceId } = await P.stageSentence(
-    { direction: 'JA_VI', sourceText: '文', suggested: 'câu', items: [{ itemId, role: 'TARGET' }] },
-    at,
-  );
-  return P.submitReview(
-    { sentenceId, userAnswer: 'trả lời', ratings: [{ itemId, rating, role: 'TARGET' }] },
-    at,
-  );
+  const srs = await prisma.srsState.findUniqueOrThrow({ where: { itemId } });
+  const { desiredRetention } = await P.getSettings();
+  return R.recordReviews([{ itemId, srs, rating }], { retention: desiredRetention, now: at });
 }
 
 async function srsOf(itemId: string) {
@@ -60,6 +56,7 @@ async function srsOf(itemId: string) {
 
 beforeAll(async () => {
   P = await import('@/lib/library/practice');
+  R = await import('@/lib/app/record-review');
   ({ prisma } = await import('@/lib/db/db'));
 });
 
@@ -149,94 +146,5 @@ describe('ReviewLog is append-only', () => {
     const logs = await prisma.reviewLog.findMany({});
     expect(logs).toHaveLength(2);
     expect(logs.every((l) => l.itemId === null)).toBe(true);
-  });
-});
-
-describe('daily caps and what counts as due (grammar)', () => {
-  it('new grammar stops at dailyNewGrammar for the study day', async () => {
-    await reset();
-    await P.saveSettings({ dailyNewGrammar: 2 });
-    const ids = await seed(['g1', 'g2', 'g3', 'g4', 'g5']);
-    await review(ids[0], 3, NOW);
-    await review(ids[1], 3, NOW);
-
-    const batch = await P.getDueBatch(new Date(NOW.getTime() + MINUTE));
-    expect(batch.today.newGrammar).toBe(2);
-    expect(batch.limits.newGrammarLimitReached || batch.items.every((i) => !i.isNew)).toBe(true);
-    expect(batch.items.filter((i) => i.role !== 'VOCAB' && i.isNew)).toEqual([]);
-  });
-
-  it('a suspended item is never served, even when due', async () => {
-    await reset();
-    const [id] = await seed(['g_suspended']);
-    await review(id, 1, NOW);
-    await P.setItemSuspended(id, true);
-
-    const batch = await P.getDueBatch(new Date(NOW.getTime() + 2 * 86_400_000));
-    expect(batch.items.map((i) => i.id)).not.toContain(id);
-    expect(batch.dueNow).toBe(0);
-  });
-
-  it('a never-studied item is new, not due', async () => {
-    await reset();
-    await seed(['g_new']);
-    const batch = await P.getDueBatch(NOW);
-    expect(batch.dueNow).toBe(0);
-    expect(batch.newAvailable.grammar).toBe(1);
-  });
-});
-
-describe('known flaws the roadmap fixes (expectations flip in the PR that fixes each)', () => {
-  it('every never-studied vocab word is served as due, with no daily new cap (old path; getQueue fixes it, the old path goes in 3.2)', async () => {
-    await reset();
-    await P.saveSettings({ vocabPerSentence: 2 });
-    await seed(['g_anchor']);
-    await seed(['v1', 'v2', 'v3', 'v4', 'v5'], 'VOCAB');
-
-    const batch = await P.getDueBatch(NOW);
-    const vocab = batch.items.filter((i) => i.role === 'VOCAB');
-    expect(vocab).toHaveLength(2);
-    expect(vocab.every((v) => v.isNew)).toBe(true);
-  });
-
-  it('vocab reviews are invisible to the daily counters (old path; studiedToday fixes it)', async () => {
-    await reset();
-    const [vocabId] = await seed(['v_counted'], 'VOCAB');
-    await review(vocabId, 3, NOW);
-
-    const settings = await P.getSettings();
-    const today = await P.todayCounts(settings, new Date(NOW.getTime() + MINUTE));
-    expect(today.reviews).toBe(0);
-    expect(today.newGrammar).toBe(0);
-  });
-
-  it('one sentence rates several items at once (fixed in 3.1: one target item per turn)', async () => {
-    await reset();
-    const [a, b] = await seed(['g_a', 'g_b']);
-    const { sentenceId } = await P.stageSentence(
-      {
-        direction: 'JA_VI',
-        sourceText: '文',
-        suggested: 'câu',
-        items: [
-          { itemId: a, role: 'TARGET' },
-          { itemId: b, role: 'SECONDARY' },
-        ],
-      },
-      NOW,
-    );
-    const result = await P.submitReview(
-      {
-        sentenceId,
-        userAnswer: 'trả lời',
-        ratings: [
-          { itemId: a, rating: 3, role: 'TARGET' },
-          { itemId: b, rating: 3, role: 'SECONDARY' },
-        ],
-      },
-      NOW,
-    );
-    expect(result.items).toHaveLength(2);
-    expect(await prisma.reviewLog.count({ where: { sentenceId } })).toBe(2);
   });
 });
