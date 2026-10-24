@@ -67,6 +67,13 @@ một bộ dùng được cho Claude Desktop và ChatGPT. Tên profile cũ `?pro
 `?profile=tutor` (Hermes học, đã bỏ ngày 2026-10-23) trả 400. `?profile=planner` chỉ có `ping` và `get_review_load` (đọc số lượng ôn,
 cho bot xếp lịch); token có scope `planner` không với tới profile nào khác.
 
+### claude.ai và app Claude trên điện thoại (OAuth)
+
+Thêm connector tuỳ chỉnh trên claude.ai với địa chỉ `https://<tên miền>/api/mcp`, không cần token. claude.ai
+mở trang đăng nhập của sakubun (Google, đúng `ALLOWED_EMAIL`), rồi trang **Cho phép truy cập sakubun?**.
+Sau đó connector dùng được trên web, Claude Desktop và app điện thoại. Server chỉ trả quyền về callback
+của claude.ai, ChatGPT và Claude Code (`lib/auth/oauth-redirects.ts`). Chi tiết: `docs/decisions/0002-mcp-oauth.md`.
+
 ### Claude Desktop
 
 Mở **Settings → Developer → Edit Config**, rồi thêm cấu hình sau vào `claude_desktop_config.json`:
