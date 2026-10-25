@@ -177,7 +177,8 @@ export function CardsSkeleton({
   rowHeight?: number;
   columns?: string;
   rowGap?: number;
-  footer?: boolean;
+  /** 'lg': pages from 1024px only, below it the cards load as they scroll (Lịch sử). */
+  footer?: boolean | 'lg';
   min?: number;
   max?: number;
 }) {
@@ -209,7 +210,11 @@ export function CardsSkeleton({
           </div>
         }
       />
-      {footer && <PaginationFooterSkeleton />}
+      {footer && (
+        <div className={cn(footer === 'lg' && 'max-lg:hidden')}>
+          <PaginationFooterSkeleton />
+        </div>
+      )}
     </div>
   );
 }

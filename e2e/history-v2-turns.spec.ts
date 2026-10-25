@@ -31,8 +31,8 @@ test('History shows a v2 turn with its grade beside an old sentence', async ({ p
   await page.waitForURL((u) => !u.pathname.startsWith('/login'), { timeout: 30_000 });
   await page.goto('/history', { waitUntil: 'networkidle' });
 
-  // Cards on every width (thien, Lịch sử round 1): one card per turn.
-  const cards = page.locator('[data-slot="history-cards"] > li');
+  // Cards on every width (thien, Lịch sử round 1), in pages from 1024px: one card per turn.
+  const cards = page.locator('[data-slot="history-cards"][data-layout="pages"] > li');
   const turnCard = cards.filter({ hasText: '音楽を聞きながら勉強します' });
   const oldCard = cards.filter({ hasText: '古い文を読みました' });
   await expect(turnCard).toHaveCount(1);
@@ -54,8 +54,49 @@ test('History shows a v2 turn with its grade beside an old sentence', async ({ p
   const dialog = page.getByRole('dialog');
   await expect(dialog.getByText('Tôi nghe nhạc và học.')).toBeVisible();
   await expect(dialog.getByText('Tôi vừa nghe nhạc vừa học.')).toBeVisible();
-  // The detail leads with the grade and which of four it is.
-  await expect(dialog.getByText('3/4', { exact: true })).toBeVisible();
+});
+
+test('from 1024px History comes in pages of cards, and a new search starts at page 1', async ({
+  page,
+}) => {
+  await seedE2eAccount();
+  const db = new Database(path.join(process.cwd(), E2E_DB_FILE));
+  for (const t of ['ReviewLog', 'Turn', 'Sentence', 'SrsState', 'Item'])
+    db.exec(`DELETE FROM "${t}"`);
+  const insert = db.prepare(
+    `INSERT INTO Sentence (id, direction, exerciseType, sourceText, suggested, userAnswer, score,
+       createdAt, starred, status)
+     VALUES (?, 'VI_JA', 'TRANSLATION', ?, '答え', 'こたえ', 70, ?, 0, 'GRADED')`,
+  );
+  const now = Date.now();
+  for (let i = 0; i < 30; i++)
+    insert.run(`s${i}`, `Câu số ${i}`, new Date(now - i * 60_000).toISOString());
+  db.close();
+
+  await page.goto('/login');
+  await page.getByLabel('Email').fill(E2E_EMAIL);
+  await page.getByLabel('Mật khẩu').fill(E2E_LOGIN);
+  await page.getByRole('button', { name: 'Đăng nhập' }).click();
+  await page.waitForURL((u) => !u.pathname.startsWith('/login'), { timeout: 30_000 });
+  await page.goto('/history', { waitUntil: 'networkidle' });
+
+  const cards = page.locator('[data-slot="history-cards"][data-layout="pages"] > li');
+  await expect(cards).toHaveCount(12);
+  await expect(page.getByText('1–12 / 30 lượt')).toBeVisible();
+  const pages = page.getByRole('navigation', { name: 'Phân trang' });
+  await pages.getByRole('button', { name: 'Trang 3', exact: true }).click();
+  await expect(cards).toHaveCount(6);
+  await expect(cards.first()).toContainText('Câu số 24');
+
+  // Every turn still matches, but a new search is a new list: back to page 1.
+  await page.getByPlaceholder('Tìm trong đề / bài dịch…').fill('Câu số');
+  await expect(cards).toHaveCount(12);
+  await expect(cards.first()).toContainText('Câu số 0');
+
+  // One page needs no footer.
+  await page.getByPlaceholder('Tìm trong đề / bài dịch…').fill('Câu số 1');
+  await expect(cards).toHaveCount(11);
+  await expect(pages).toHaveCount(0);
 });
 
 test.describe('on a phone', () => {
@@ -112,7 +153,7 @@ test.describe('on a phone', () => {
     await page.waitForURL((u) => !u.pathname.startsWith('/login'), { timeout: 30_000 });
     await page.goto('/history', { waitUntil: 'networkidle' });
 
-    const cards = page.locator('[data-slot="history-cards"] > li');
+    const cards = page.locator('[data-slot="history-cards"][data-layout="scroll"] > li');
     await expect(cards).toHaveCount(3);
     const heights = await cards.evaluateAll((els) =>
       els.map((e) => Math.round(e.getBoundingClientRect().height)),
@@ -158,7 +199,7 @@ test.describe('on a phone', () => {
     await page.waitForURL((u) => !u.pathname.startsWith('/login'), { timeout: 30_000 });
     await page.goto('/history', { waitUntil: 'networkidle' });
 
-    const cards = page.locator('[data-slot="history-cards"] > li');
+    const cards = page.locator('[data-slot="history-cards"][data-layout="scroll"] > li');
     await expect(cards).toHaveCount(20);
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
     await expect.poll(() => cards.count()).toBe(30);

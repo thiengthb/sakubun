@@ -81,14 +81,14 @@ test('mỗi kiểu luyện được gọi đúng tên trên thẻ lịch sử', 
     },
   ];
   for (const c of cases) {
-    // A click on the card opens its detail.
-    await page.getByText(c.open, { exact: false }).first().click();
+    // A click on the card opens its detail (the phone's scroll list shares the DOM, hidden).
+    await page.getByText(c.open, { exact: false }).filter({ visible: true }).first().click();
     const dialog = page.getByRole('dialog');
     await expect(dialog).toBeVisible();
     await expect(dialog.getByText(c.prompt, { exact: true })).toBeVisible();
-    await expect(dialog.getByText(c.answer, { exact: true })).toBeVisible();
-    await expect(dialog.getByText(c.reference, { exact: true })).toBeVisible();
-    await expect(dialog.getByText('Bạn dịch', { exact: true })).toHaveCount(0);
+    await expect(dialog.getByText(`${c.answer}:`, { exact: true })).toBeVisible();
+    await expect(dialog.getByText(`${c.reference}:`, { exact: true })).toBeVisible();
+    await expect(dialog.getByText('Bạn dịch:', { exact: true })).toHaveCount(0);
     await page.keyboard.press('Escape');
     await expect(dialog).toHaveCount(0);
   }

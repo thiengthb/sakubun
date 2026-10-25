@@ -1,18 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import {
-  BookOpen,
-  CheckCheck,
-  Clock,
-  GraduationCap,
-  ListChecks,
-  MessageSquareText,
-  PenLine,
-  Ruler,
-  Timer,
-  type LucideIcon,
-} from 'lucide-react';
+import { Clock, GraduationCap, Ruler, Timer } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Explain } from '@/components/common/explain';
 import {
@@ -34,40 +23,23 @@ import type { ExerciseType } from '@/lib/session/exercise-types';
 import { turnLabels } from '@/lib/session/turn-labels';
 import { cn } from '@/lib/core/utils';
 
-// One tone per result (lib/history/result.ts), drawn four ways: a word, a pill, a washed panel
-// and the detail's medal. The washes are the tone tokens IconTile uses, so light and dark both hold.
-// Literal strings so Tailwind sees every class.
-const TONE: Record<ResultTone, { text: string; pill: string; panel: string; medal: string }> = {
+// One tone per result (lib/history/result.ts): a word in the detail, a washed pill on the card,
+// an outlined chip for a graded item. The washes are the tone tokens IconTile uses, so light and
+// dark both hold. Literal strings so Tailwind sees every class.
+const TONE: Record<ResultTone, { text: string; pill: string; chip: string }> = {
   alert: {
     text: 'text-alert',
     pill: 'bg-alert-wash text-alert',
-    panel: 'border-alert/30 bg-alert-wash',
-    medal: 'border-alert/40 bg-alert-wash text-alert',
+    chip: 'border-alert/60 text-alert',
   },
-  warn: {
-    text: 'text-warn',
-    pill: 'bg-warn-wash text-warn',
-    panel: 'border-warn/30 bg-warn-wash',
-    medal: 'border-warn/40 bg-warn-wash text-warn',
-  },
-  ok: {
-    text: 'text-ok',
-    pill: 'bg-ok-wash text-ok',
-    panel: 'border-ok/30 bg-ok-wash',
-    medal: 'border-ok/40 bg-ok-wash text-ok',
-  },
+  warn: { text: 'text-warn', pill: 'bg-warn-wash text-warn', chip: 'border-warn/60 text-warn' },
+  ok: { text: 'text-ok', pill: 'bg-ok-wash text-ok', chip: 'border-ok/60 text-ok' },
   info: {
-    text: 'text-info',
+    text: 'text-info font-semibold',
     pill: 'bg-info-wash text-info',
-    panel: 'border-info/30 bg-info-wash',
-    medal: 'border-info/40 bg-info-wash text-info',
+    chip: 'border-info/60 text-info',
   },
-  muted: {
-    text: 'text-muted-foreground',
-    pill: 'bg-muted text-muted-foreground',
-    panel: 'border-border bg-card',
-    medal: 'border-border bg-muted text-muted-foreground',
-  },
+  muted: { text: 'text-muted-foreground', pill: 'bg-muted text-muted-foreground', chip: '' },
 };
 
 const RATING_TONE: Record<number, ResultTone> = { 1: 'alert', 2: 'warn', 3: 'ok', 4: 'info' };
@@ -179,71 +151,20 @@ function SentenceMeta({
 export function RatingChip({ expression, rating }: { expression: string; rating: number }) {
   const label = ratingLabel(rating);
   return (
-    <span
-      className={cn(
-        'inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-xs font-medium',
-        TONE[RATING_TONE[rating] ?? 'muted'].pill,
-      )}
+    <Badge
+      variant="outline"
+      className={cn('text-xs', TONE[RATING_TONE[rating] ?? 'muted'].chip)}
+      title={label}
+      aria-label={`${expression} — ${label}`}
     >
       <span lang="ja">{expression}</span>
-      <span className="font-bold">{label}</span>
-    </span>
+    </Badge>
   );
 }
 
-// The detail's result, large and in its tone: the first thing the eye finds in the dialog.
-function ResultMedal({ result }: { result: HistoryResult }) {
-  // A score keeps its scale under the number ("/100"); a grade says which of four it is ("1/4").
-  const caption =
-    result.full === result.text ? null : result.full.endsWith('/100') ? '/100' : result.full;
-  return (
-    <div
-      className={cn(
-        'flex h-14 min-w-14 shrink-0 flex-col items-center justify-center gap-1 rounded-lg border px-2',
-        TONE[result.tone].medal,
-      )}
-    >
-      <span
-        className={cn(
-          'leading-none font-bold tabular-nums',
-          result.tone === 'muted' ? 'text-sm' : 'text-lg',
-        )}
-      >
-        {result.text}
-      </span>
-      {caption && <span className="text-xs leading-none font-semibold opacity-80">{caption}</span>}
-    </div>
-  );
-}
-
-function SectionLabel({ icon: Icon, children }: { icon: LucideIcon; children: ReactNode }) {
-  return (
-    <p className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
-      <Icon className="size-4" aria-hidden />
-      {children}
-    </p>
-  );
-}
-
-function AnswerPanel({
-  tone,
-  icon,
-  label,
-  children,
-}: {
-  tone: ResultTone;
-  icon: LucideIcon;
-  label: string;
-  children: ReactNode;
-}) {
-  return (
-    <div className={cn('min-w-0 space-y-1.5 rounded-lg border p-3', TONE[tone].panel)}>
-      <SectionLabel icon={icon}>{label}</SectionLabel>
-      <div className="min-w-0 break-words">{children}</div>
-    </div>
-  );
-}
-
+// The detail as thien approved it in round 1 (round 2's coloured panels were reverted): badges and
+// the result in the title, the prompt with its measures, then the answers, then the graded items.
+// The detail has room for a score's scale, so it reads "62/100".
 export function HistoryDetail({
   sentence,
   speaker,
@@ -267,21 +188,26 @@ export function HistoryDetail({
   });
 
   return (
-    <DialogContent className="max-h-[85vh] gap-5 overflow-y-auto sm:max-w-2xl">
-      <DialogHeader className="flex-row items-center gap-3 pr-8 text-left">
-        {result && <ResultMedal result={result} />}
-        <div className="min-w-0 flex-1 space-y-1.5">
-          <DialogTitle className="text-base font-bold">{typeLabel ?? 'Lượt dịch'}</DialogTitle>
-          <DialogDescription className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
-            <Badge variant="secondary">{dirLabel(sentence.direction)}</Badge>
-            <span>{formatDateTimeVN(sentence.createdAt)}</span>
-          </DialogDescription>
-        </div>
+    <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
+      <DialogHeader>
+        <DialogTitle className="flex flex-wrap items-center gap-2 text-base">
+          <Badge variant="secondary">{dirLabel(sentence.direction)}</Badge>
+          {typeLabel && <Badge variant="outline">{typeLabel}</Badge>}
+          {result && (
+            <span className={cn('text-sm font-medium', TONE[result.tone].text)}>
+              {result.full.endsWith('/100') ? result.full : result.text}
+            </span>
+          )}
+          <span className="mr-6 ml-auto text-xs font-normal text-muted-foreground">
+            {formatDateTimeVN(sentence.createdAt)}
+          </span>
+        </DialogTitle>
+        <DialogDescription className="sr-only">Chi tiết lượt dịch</DialogDescription>
       </DialogHeader>
 
       <div className="space-y-4 text-sm">
-        <section className="space-y-2 rounded-lg bg-muted/60 p-3">
-          <SectionLabel icon={BookOpen}>{labels.prompt}</SectionLabel>
+        <div className="space-y-1">
+          <div className="text-xs font-medium text-muted-foreground">{labels.prompt}</div>
           {sentence.direction === 'JA_VI' ? (
             <SpokenLine
               text={sentence.sourceText}
@@ -294,76 +220,75 @@ export function HistoryDetail({
           ) : (
             <SourceLine sentence={sentence} showFurigana={showFurigana} />
           )}
-          <SentenceMeta
-            level={sentence.level}
-            charCount={sentence.charCount}
-            durationSec={durationSecOf(sentence)}
-          />
-        </section>
+        </div>
 
-        <div className="@container">
-          <div className="grid grid-cols-1 gap-3 @lg:grid-cols-2">
-            <AnswerPanel tone={result?.tone ?? 'muted'} icon={PenLine} label={labels.answer}>
+        <SentenceMeta
+          level={sentence.level}
+          charCount={sentence.charCount}
+          durationSec={durationSecOf(sentence)}
+        />
+
+        <div className="space-y-2 border-t border-border/70 pt-3">
+          {sentence.direction === 'VI_JA' ? (
+            <div className="flex flex-wrap items-end gap-1.5">
+              <span className="text-muted-foreground">{labels.answer}:</span>
+              <SpokenLine
+                text={sentence.userAnswer}
+                showFurigana={showFurigana}
+                speaker={speaker}
+                rate={rate}
+                label="Nghe câu bạn viết"
+              />
+            </div>
+          ) : (
+            <p>
+              <span className="text-muted-foreground">{labels.answer}: </span>
+              {sentence.userAnswer}
+            </p>
+          )}
+          {sentence.suggested && (
+            <div className="flex flex-wrap items-end gap-1.5">
+              <span className="text-muted-foreground">{labels.reference}:</span>
               {sentence.direction === 'VI_JA' ? (
                 <SpokenLine
-                  text={sentence.userAnswer}
+                  text={sentence.suggested}
+                  ruby={sentence.suggestedRuby}
                   showFurigana={showFurigana}
                   speaker={speaker}
                   rate={rate}
-                  label="Nghe câu bạn viết"
+                  label="Nghe đáp án"
                 />
               ) : (
-                <p>{sentence.userAnswer || '—'}</p>
+                <span className="min-w-0">
+                  <AnswerText sentence={sentence} showFurigana={showFurigana} />
+                </span>
               )}
-            </AnswerPanel>
-            {sentence.suggested && (
-              <AnswerPanel tone="ok" icon={CheckCheck} label={labels.reference}>
-                {sentence.direction === 'VI_JA' ? (
-                  <SpokenLine
-                    text={sentence.suggested}
-                    ruby={sentence.suggestedRuby}
-                    showFurigana={showFurigana}
-                    speaker={speaker}
-                    rate={rate}
-                    label="Nghe đáp án"
-                  />
-                ) : (
-                  <p>
-                    <AnswerText sentence={sentence} showFurigana={showFurigana} />
-                  </p>
-                )}
-              </AnswerPanel>
-            )}
-          </div>
+            </div>
+          )}
+          {sentence.feedback && (
+            <p className="text-muted-foreground">{stripEmoji(sentence.feedback)}</p>
+          )}
         </div>
 
-        {sentence.feedback && (
-          <div className="flex gap-2.5 rounded-lg border border-info/30 bg-info-wash p-3">
-            <MessageSquareText className="mt-0.5 size-4 shrink-0 text-info" aria-hidden />
-            <div className="min-w-0 space-y-1">
-              <p className="text-xs font-semibold text-info">Nhận xét</p>
-              <p className="break-words">{stripEmoji(sentence.feedback)}</p>
-            </div>
-          </div>
-        )}
-
         {(grammar.length > 0 || vocab.length > 0) && (
-          <section className="space-y-2">
-            <SectionLabel icon={ListChecks}>Mục được chấm</SectionLabel>
-            {[
-              { label: 'Ngữ pháp', list: grammar },
-              { label: 'Từ vựng', list: vocab },
-            ]
-              .filter((g) => g.list.length > 0)
-              .map((g) => (
-                <div key={g.label} className="flex flex-wrap items-center gap-1.5">
-                  <span className="w-16 shrink-0 text-xs text-muted-foreground">{g.label}</span>
-                  {g.list.map((r, i) => (
-                    <RatingChip key={i} expression={r.expression} rating={r.rating} />
-                  ))}
-                </div>
-              ))}
-          </section>
+          <div className="space-y-2 border-t border-border/70 pt-3">
+            {grammar.length > 0 && (
+              <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1.5">
+                <span className="text-muted-foreground">Ngữ pháp:</span>
+                {grammar.map((r, i) => (
+                  <RatingChip key={`g-${i}`} expression={r.expression} rating={r.rating} />
+                ))}
+              </div>
+            )}
+            {vocab.length > 0 && (
+              <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1.5">
+                <span className="text-muted-foreground">Từ vựng:</span>
+                {vocab.map((r, i) => (
+                  <RatingChip key={`v-${i}`} expression={r.expression} rating={r.rating} />
+                ))}
+              </div>
+            )}
+          </div>
         )}
       </div>
     </DialogContent>

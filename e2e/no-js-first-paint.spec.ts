@@ -42,8 +42,8 @@ test('không có JS, mọi ô chọn trong HTML đầu tiên đã có chữ', as
 
   expect(empty, 'ô chọn rỗng trong HTML server').toEqual([]);
   // The guard that the scan saw real selects: Cài đặt's one at least. (Cài đặt lost its phone tab
-  // select to the underline tabs of the form template; Lịch sử lost its page-size select when it
-  // became a card list that loads as it scrolls.)
+  // select to the underline tabs of the form template; Lịch sử, like the tables, shows its page-size
+  // select only from a second page, and the seed's history fits on one.)
   expect(total, 'tổng số ô chọn đã kiểm').toBeGreaterThanOrEqual(1);
 
   await noJs.close();

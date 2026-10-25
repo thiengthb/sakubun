@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { SearchX } from 'lucide-react';
+import { DataPagination } from '@/components/ui/data-pagination';
 import { Dialog } from '@/components/ui/dialog';
 import { EmptyState } from '@/components/common/empty-state';
 import { FilterChips, SelectFilterRow } from '@/components/common/filter-popover';
@@ -24,12 +25,19 @@ import { HISTORY_SORTS, matchesSearch, sortHistory, type HistorySort } from '@/l
 import { cn } from '@/lib/core/utils';
 import type { HistoryRow } from '@/lib/app/history';
 
+// A laptop page holds four rows of three cards; every size divides into rows of two and three.
+const PAGE_SIZES = [12, 24, 48, 96];
+
 /**
  * The translation timeline as cards on every width (thien, Lịch sử round 1): turns differ by
- * direction and exercise type too much to share table columns. Like Nhóm, the cards load more as
- * they scroll and the sort sits in the filter popover. A turn's detail opens in one dialog the list
- * owns, so a turn graded while the page is open (LiveRefresh) can open it on its own.
+ * direction and exercise type too much to share table columns. Below 1024px the cards load more as
+ * they scroll; from 1024px they come in pages (thien, Lịch sử round 2). Both lists are drawn and CSS
+ * shows one, so the layout never flips after hydration. The sort sits in the filter popover, as on
+ * Nhóm. A turn's detail opens in one dialog the list owns, so a turn graded while the page is open
+ * (LiveRefresh) can open it on its own.
  */
+const GRID = 'grid grid-cols-1 gap-2 @2xl:grid-cols-2 @2xl:gap-3 @5xl:grid-cols-3';
+
 export function HistoryList({
   sentences,
   voiceSpeaker,
@@ -45,11 +53,20 @@ export function HistoryList({
   const [q, setQ] = useSessionState('history.search', '', 'q');
   const [filters, setFilters] = useSessionState<Filters>('history.filters', DEFAULT_FILTERS, 'hf');
   const [sort, setSort] = useSessionState<HistorySort>('history.sort', 'recent', 'hs');
-  const patch = (p: Partial<Filters>) => setFilters((f) => ({ ...f, ...p }));
-  const reset = () => {
+  const [pageSize, setPageSize] = useSessionState<number>('history.size', PAGE_SIZES[0], 'size');
+  const [pageIndex, setPageIndex] = useSessionState<number>('history.page', 0, 'page');
+  // Any change to what the list holds starts it again at page 1.
+  const narrow =
+    <A extends unknown[]>(set: (...a: A) => void) =>
+    (...a: A) => {
+      set(...a);
+      setPageIndex(0);
+    };
+  const patch = narrow((p: Partial<Filters>) => setFilters((f) => ({ ...f, ...p })));
+  const reset = narrow(() => {
     setFilters(DEFAULT_FILTERS);
     setSort('recent');
-  };
+  });
 
   const shown = useMemo(
     () =>
@@ -63,6 +80,10 @@ export function HistoryList({
     shown,
     JSON.stringify([q.trim(), filters, sort]),
   );
+  const pageCount = Math.max(1, Math.ceil(shown.length / pageSize));
+  const page = Math.min(pageIndex, pageCount - 1);
+  const start = page * pageSize;
+  const paged = shown.slice(start, start + pageSize);
 
   // `?open=<id>` (a link from elsewhere) opens that turn once, then leaves the URL.
   const router = useRouter();
@@ -88,6 +109,20 @@ export function HistoryList({
   }, [sentences]);
 
   const opened = openId ? sentences.find((s) => s.id === openId) : undefined;
+  const card = (s: HistoryRow) => (
+    <li
+      key={s.id}
+      className={cn(LIST_CARD.base, 'flex flex-col', s.status !== 'PENDING' && 'hover:bg-muted/40')}
+    >
+      <HistoryCard
+        sentence={s}
+        speaker={voiceSpeaker}
+        rate={speechRate}
+        showFurigana={showFurigana}
+        onOpen={() => setOpenId(s.id)}
+      />
+    </li>
+  );
 
   return (
     <div className="space-y-6">
@@ -95,7 +130,7 @@ export function HistoryList({
         search={
           <SearchInput
             value={q}
-            onChange={(e) => setQ(e.target.value)}
+            onChange={narrow((e) => setQ(e.target.value))}
             placeholder="Tìm trong đề / bài dịch…"
             className="sm:max-w-none"
           />
@@ -106,7 +141,7 @@ export function HistoryList({
             className="col-span-2"
             label="Sắp xếp"
             value={sort}
-            onValueChange={(v) => setSort(v as HistorySort)}
+            onValueChange={narrow((v) => setSort(v as HistorySort))}
             options={HISTORY_SORTS}
           />
         </HistoryFilterPopover>
@@ -121,31 +156,35 @@ export function HistoryList({
           <div className="@container">
             {/* grid-cols-1 is minmax(0, 1fr): an implicit `auto` track would grow to a card's
                 longest unbroken line (a long Vietnamese prompt) and scroll the page sideways. */}
-            <ul
-              data-slot="history-cards"
-              className="grid grid-cols-1 gap-2 @2xl:grid-cols-2 @2xl:gap-3 @5xl:grid-cols-3"
-            >
-              {items.map((s) => (
-                <li
-                  key={s.id}
-                  className={cn(
-                    LIST_CARD.base,
-                    'flex flex-col',
-                    s.status !== 'PENDING' && 'hover:bg-muted/40',
-                  )}
-                >
-                  <HistoryCard
-                    sentence={s}
-                    speaker={voiceSpeaker}
-                    rate={speechRate}
-                    showFurigana={showFurigana}
-                    onOpen={() => setOpenId(s.id)}
-                  />
-                </li>
-              ))}
+            <ul data-slot="history-cards" data-layout="scroll" className={cn(GRID, 'lg:hidden')}>
+              {items.map(card)}
+            </ul>
+            <ul data-slot="history-cards" data-layout="pages" className={cn(GRID, 'max-lg:hidden')}>
+              {paged.map(card)}
             </ul>
           </div>
-          <ScrollMoreStatus ref={sentinelRef} hasMore={hasMore} />
+          <ScrollMoreStatus ref={sentinelRef} hasMore={hasMore} className="lg:hidden" />
+          {/* One page needs no footer; the count is in the page header (thien, 2026-10-24). */}
+          {pageCount > 1 && (
+            <DataPagination
+              className="max-lg:hidden"
+              count={
+                <>
+                  {start + 1}–{start + paged.length} / {shown.length} lượt
+                  {shown.length !== sentences.length && ` (lọc từ ${sentences.length})`}
+                </>
+              }
+              page={page + 1}
+              pageCount={pageCount}
+              onPageChange={(p) => {
+                setPageIndex(p - 1);
+                window.scrollTo({ top: 0 });
+              }}
+              pageSize={pageSize}
+              pageSizeOptions={PAGE_SIZES}
+              onPageSizeChange={narrow(setPageSize)}
+            />
+          )}
         </>
       )}
 
