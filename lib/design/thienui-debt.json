@@ -74,7 +74,6 @@
       "components/ui/data-pagination.tsx": 2,
       "components/ui/dropdown-menu.tsx": 1,
       "components/ui/sidebar.tsx": 1,
-      "components/ui/switch.tsx": 1,
       "components/ui/tabs.tsx": 1,
       "components/ui/tooltip.tsx": 1
     },

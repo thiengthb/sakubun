@@ -94,10 +94,10 @@
   --container-prose: 68ch;
   --container-narrow: 48ch;
   --container-wide: 84ch;
-  --radius-base: 0.25rem;
-  --radius-sm: 0.25rem;
-  --radius-md: 0.25rem;
-  --radius-lg: 0.25rem;
+  --radius-base: 0.4375rem;
+  --radius-sm: 0.4375rem;
+  --radius-md: 0.4375rem;
+  --radius-lg: 0.4375rem;
   --radius-xl: 0.5rem;
   --radius-2xl: 0.5rem;
   --radius-full: 9999px;
@@ -120,7 +120,7 @@
 
 :root {
   /* Not a thienui token: the sonner toaster reads it (components/ui/sonner.tsx). Equals --radius-lg. */
-  --radius: 0.25rem;
+  --radius: 0.4375rem;
   --background: oklch(0.982 0.005 95);
   --foreground: oklch(0.191 0.002 107);
   --card: oklch(1 0 95);
