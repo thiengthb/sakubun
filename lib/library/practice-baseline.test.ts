@@ -21,7 +21,6 @@ const MINUTE = 60_000;
 
 async function reset(): Promise<void> {
   await resetLearningData(prisma);
-  P.invalidateStreak();
 }
 
 async function seed(expressions: string[], kind: 'GRAMMAR' | 'VOCAB' = 'GRAMMAR', level = 'N5') {
