@@ -3,8 +3,9 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { authClient } from '@/lib/auth/auth-client';
-import { Check, Loader2 } from 'lucide-react';
+import { Check, Link2Off, Loader2 } from 'lucide-react';
 import { AuthCard } from '@/components/layout/auth-card';
+import { PageState } from '@/components/layout/page-state';
 import { Button } from '@/components/ui/button';
 import { CardContent } from '@/components/ui/card';
 
@@ -21,13 +22,12 @@ export function ConsentForm({ request }: { request: ConsentRequest | null }) {
 
   if (!request) {
     return (
-      <AuthCard title="Yêu cầu không hợp lệ">
-        <CardContent>
-          <p className="text-sm text-muted-foreground">
-            Liên kết đã hết hạn hoặc bị sửa. Kết nối lại từ ứng dụng vừa mở trang này.
-          </p>
-        </CardContent>
-      </AuthCard>
+      <PageState
+        icon={Link2Off}
+        tone="warn"
+        title="Yêu cầu không hợp lệ"
+        description="Kết nối lại từ ứng dụng vừa mở trang này."
+      />
     );
   }
 

@@ -28,32 +28,28 @@ export function ErrorDigest({ digest }: { digest?: string }) {
 }
 
 /**
- * The root-layout failure, in EmptyState's dashed box drawn by hand (EmptyState itself pulls in the
- * component library). The bare button sizes its icon the way Button does.
+ * The root-layout failure, laid out like PageState but drawn by hand (PageState pulls in the
+ * sidebar). The bare button sizes its icon the way Button does.
  */
 export function FatalErrorPanel({ digest, onReset }: { digest?: string; onReset: () => void }) {
   return (
-    <div className="flex items-start gap-3 rounded-lg border-2 border-dashed border-border px-4 py-5 md:px-6">
-      <span className="flex size-8 shrink-0 items-center justify-center rounded-sm bg-muted text-muted-foreground">
-        <TriangleAlert className="size-4" aria-hidden />
+    <main className="flex min-h-svh flex-col items-center justify-center gap-4 px-4 py-10 text-center">
+      <span className="flex size-16 items-center justify-center rounded-2xl bg-alert-wash text-alert [&_svg]:size-8">
+        <TriangleAlert aria-hidden />
       </span>
-      <div className="min-w-0 flex-1 space-y-1">
-        <p className="text-sm font-bold">Ứng dụng gặp lỗi khi khởi động</p>
-        <p className="max-w-prose text-sm text-muted-foreground">
-          Dữ liệu học vẫn an toàn. Tải lại trang thường là xong.
-        </p>
-        <ErrorDigest digest={digest} />
-        <div className="pt-2">
-          <button
-            type="button"
-            onClick={onReset}
-            className="inline-flex h-9 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:ring-3 focus-visible:ring-ring/50 [&_svg]:size-4"
-          >
-            <RotateCcw aria-hidden />
-            Tải lại
-          </button>
-        </div>
+      <div className="space-y-1">
+        <h1 className="text-xl font-extrabold">Sakubun không mở được</h1>
+        <p className="text-sm text-muted-foreground">Tải lại trang thường là xong.</p>
       </div>
-    </div>
+      <button
+        type="button"
+        onClick={onReset}
+        className="inline-flex h-10 items-center gap-2 rounded-lg bg-primary px-5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:ring-3 focus-visible:ring-ring/50 [&_svg]:size-4"
+      >
+        <RotateCcw aria-hidden />
+        Tải lại
+      </button>
+      <ErrorDigest digest={digest} />
+    </main>
   );
 }
