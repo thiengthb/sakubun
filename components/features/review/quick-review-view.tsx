@@ -45,7 +45,8 @@ function leftLine(left: QuickCard[]): string {
   return `Còn ${left.length} thẻ: ${grammar} ngữ pháp, ${vocab} từ vựng`;
 }
 
-// Laptop: the keys for what can be done now, under the card. A phone has no keyboard.
+// Laptop: the keys for what can be done now, at the left end of the answer bar. A phone has no
+// keyboard, and a narrow laptop page needs the bar's width for the buttons.
 function KeyHints({
   card,
   picked,
@@ -70,7 +71,7 @@ function KeyHints({
           ]
         : [['Space', 'xem đáp án']];
   return (
-    <p className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground max-md:hidden md:mt-8">
+    <p className="mr-auto flex flex-wrap items-center gap-x-4 gap-y-2 self-center text-xs text-muted-foreground max-lg:hidden">
       <span>Phím tắt</span>
       {keys.map(([key, what]) => (
         <span key={key + what} className="flex items-center gap-1.5">
@@ -296,11 +297,11 @@ export function QuickReviewView({
               onPick={pick}
             />
           )}
-          {card && !done && <KeyHints card={card} picked={picked} revealed={revealed} />}
         </div>
 
         {/* Phone: the bar's buttons share the width; laptop: they keep their own size, at the right. */}
         <div className="sticky bottom-0 flex gap-2 bg-background pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] max-sm:[&>*]:flex-1 sm:justify-end sm:[&>*]:min-w-32">
+          {card && !done && <KeyHints card={card} picked={picked} revealed={revealed} />}
           {showReveal && (
             <Button size="lg" onClick={() => setRevealed(true)}>
               Xem đáp án

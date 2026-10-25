@@ -138,7 +138,7 @@ export function ReviewCard({
         // stays silent until answered, since the sentence read aloud would give the answer away.
         <TapToHear
           active={card.mode === 'flip' || answered}
-          className="flex items-start gap-2 text-2xl leading-loose sm:text-3xl"
+          className="flex items-start justify-center gap-2 py-8 text-2xl leading-loose sm:text-3xl md:py-16"
         >
           {(card.mode === 'flip' || answered) && (
             <span className="flex h-lh shrink-0 items-center">
