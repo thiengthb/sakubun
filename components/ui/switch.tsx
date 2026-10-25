@@ -7,12 +7,16 @@ import { cn } from '@/lib/core/utils';
 
 // Duolingo's switch (thien, 2026-10-25): a thick track with the 2px control edge and a lip under
 // it, a plain white knob with its own edge; on, the track takes the primary colour.
+// `brandKnob`: the knob is primary while off, for a switch whose off side is a choice too (the
+// theme switch: off is light mode, and a white knob there read as disabled, thien round 2).
 function Switch({
   className,
   size = 'default',
+  brandKnob = false,
   ...props
 }: React.ComponentProps<typeof SwitchPrimitive.Root> & {
   size?: 'sm' | 'default';
+  brandKnob?: boolean;
 }) {
   return (
     <SwitchPrimitive.Root
@@ -26,7 +30,10 @@ function Switch({
     >
       <SwitchPrimitive.Thumb
         data-slot="switch-thumb"
-        className="pointer-events-none ml-0.5 block rounded-full border-2 bg-white transition-transform duration-200 ease-(--ease-overshoot) group-data-[size=default]/switch:size-5 group-data-[size=sm]/switch:size-4 data-checked:border-press data-unchecked:border-control-edge group-data-[size=default]/switch:data-checked:translate-x-5 group-data-[size=sm]/switch:data-checked:translate-x-4 data-unchecked:translate-x-0 motion-reduce:transition-none"
+        className={cn(
+          'pointer-events-none ml-0.5 block rounded-full border-2 bg-white transition-transform duration-200 ease-(--ease-overshoot) group-data-[size=default]/switch:size-5 group-data-[size=sm]/switch:size-4 data-checked:border-press data-unchecked:border-control-edge group-data-[size=default]/switch:data-checked:translate-x-5 group-data-[size=sm]/switch:data-checked:translate-x-4 data-unchecked:translate-x-0 motion-reduce:transition-none',
+          brandKnob && 'data-unchecked:border-press data-unchecked:bg-primary',
+        )}
       />
     </SwitchPrimitive.Root>
   );

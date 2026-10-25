@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import { Geist_Mono, Inter } from 'next/font/google';
 import { ThemeProvider } from 'next-themes';
 import { MotionConfig } from 'motion/react';
+import { LucideProvider } from 'lucide-react';
 import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { AppShell } from '@/components/layout/app-shell';
@@ -58,9 +59,13 @@ export default async function RootLayout({
           disableTransitionOnChange
         >
           <MotionConfig reducedMotion="user">
-            <TooltipProvider delayDuration={300}>
-              <AppShell defaultSidebarOpen={sidebarOpen}>{children}</AppShell>
-            </TooltipProvider>
+            {/* Icons draw at 1.5, not lucide's 2: at 16px the default stroke read heavier than the
+                600-weight text beside it (thien, item detail round 2, docs/ui-standard.md). */}
+            <LucideProvider strokeWidth={1.5}>
+              <TooltipProvider delayDuration={300}>
+                <AppShell defaultSidebarOpen={sidebarOpen}>{children}</AppShell>
+              </TooltipProvider>
+            </LucideProvider>
           </MotionConfig>
           <Toaster position="bottom-center" />
         </ThemeProvider>

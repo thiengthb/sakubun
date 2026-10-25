@@ -102,6 +102,18 @@ const CONTROLS = [
   'SelectTrigger',
   'Input',
 ];
+const WEIGHTED_CONTROLS = [
+  'Button',
+  'Badge',
+  'DropdownMenuItem',
+  'DropdownMenuCheckboxItem',
+  'DropdownMenuRadioItem',
+  'SelectTrigger',
+  'SelectItem',
+  'TabsTrigger',
+  'Toggle',
+  'ToggleGroupItem',
+];
 const ICON_SIZE = /\bsize=(?:"icon[\w-]*"|\{'icon[\w-]*'\})/;
 
 /** Icons whose meaning nobody has to guess. Anything else needs a word next to it. */
@@ -138,14 +150,15 @@ export const PLAIN_ICONS = new Set([
 
 /** What may follow `rounded`: an optional side (t, b, l, r, s, e, tl, ...), a step, an optional `!`. */
 const RADIUS_SUFFIX =
-  /^(?:-[tblrse]{1,2})?(?:-(?:none|sm|md|lg|xl|2xl|full|\[[^\]]*var\(--radius[^\]]*\]))?!?$/;
+  /^(?:-[tblrse]{1,2})?(?:-(?:none|xs|sm|md|lg|xl|2xl|full|\[[^\]]*var\(--radius[^\]]*\]))?!?$/;
 
 export const UI_RULES: UiRule[] = [
   {
     id: 'radius-class',
     rule:
-      'Rounding comes from the radius scale (none, sm to 2xl, full) or an arbitrary value that ' +
-      'reads a --radius token. Controls are 4px, cards and dialogs 8px.',
+      'Rounding comes from the radius scale (none, xs, sm to 2xl, full) or an arbitrary value ' +
+      'that reads a --radius token. Controls, cards and dialogs are 8px; a box of 20px or less ' +
+      '(a checkbox) is 4px (xs), or 8px would make it a circle.',
     check: ({ src }) =>
       [...src.matchAll(/(?<![\w-])rounded((?:-[^\s"'`]*)?)/g)]
         .filter((m) => !RADIUS_SUFFIX.test(m[1]))
@@ -153,7 +166,7 @@ export const UI_RULES: UiRule[] = [
   },
   {
     id: 'no-round-controls',
-    rule: 'No button, link, toggle or field is fully round: controls use the 4px radius.',
+    rule: 'No button, link, toggle or field is fully round: controls use the 8px radius.',
     check: ({ src }) =>
       elements(src, CONTROLS)
         .filter((el) => /(?<![\w-])rounded-full\b/.test(el.open))
@@ -170,6 +183,16 @@ export const UI_RULES: UiRule[] = [
         /(?<![\w-])(?:shadow-lift[\w-]*|border-control-edge|bg-field|bg-brand-wash|border-brand-wash|border-2|shadow-\[[^\]]*\]|active:translate-y-[\w.]+)/g;
       return [...src.matchAll(rx)].map((m) => ({ line: lineAt(src, m.index), excerpt: m[0] }));
     },
+  },
+  {
+    id: 'control-weight',
+    rule:
+      'Controls (buttons, badges and chips, menu items, tabs, selects, toggles) are weight 500 and ' +
+      'take it from their component; a page never makes one bold.',
+    check: ({ src }) =>
+      elements(src, WEIGHTED_CONTROLS)
+        .filter((el) => /(?<![\w-])font-(?:semibold|bold|extrabold|black)\b/.test(el.open))
+        .map((el) => ({ line: lineAt(src, el.index), excerpt: `<${el.name}> bold` })),
   },
   {
     id: 'create-label',

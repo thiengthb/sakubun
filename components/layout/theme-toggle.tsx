@@ -22,7 +22,12 @@ export function ThemeToggle() {
     <>
       <div className="flex items-center justify-between gap-2 rounded-md px-2 py-1 group-data-[collapsible=icon]:hidden">
         <span className="text-sm font-bold">Giao diện tối</span>
-        <Switch checked={isDark} onCheckedChange={toggle} aria-label="Bật/tắt giao diện tối" />
+        <Switch
+          checked={isDark}
+          onCheckedChange={toggle}
+          brandKnob
+          aria-label="Bật/tắt giao diện tối"
+        />
       </div>
       <Button
         type="button"

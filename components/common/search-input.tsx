@@ -17,7 +17,7 @@ export function SearchInput({
         aria-hidden
         className="pointer-events-none absolute top-1/2 left-1 z-10 flex size-7 -translate-y-1/2 items-center justify-center rounded-sm bg-muted text-muted-foreground transition-colors group-focus-within/search:bg-primary group-focus-within/search:text-primary-foreground md:size-5"
       >
-        <Search className="size-4" strokeWidth={2.5} />
+        <Search className="size-4" />
       </span>
       <Input {...props} className="pl-10 md:pl-8" />
     </div>

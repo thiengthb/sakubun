@@ -363,9 +363,9 @@ test('thẻ chi tiết của TỪ VỰNG hiện trên web: đồng nghĩa, trái
 
   await page.getByRole('tab', { name: 'Chi tiết từ' }).click();
 
-  await expect(page.getByRole('button', { name: /Từ đồng nghĩa/ })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Từ đồng nghĩa/ })).toBeVisible();
   await expect(page.getByText('sự sắm sẵn')).toBeVisible();
-  await expect(page.getByRole('button', { name: /Từ trái nghĩa/ })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Từ trái nghĩa/ })).toBeVisible();
   await expect(page.getByText('lúc diễn thật')).toBeVisible();
 
   await expect(page.getByText('Đã chuẩn bị xong.')).toBeVisible();

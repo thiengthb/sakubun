@@ -90,10 +90,12 @@
   --font-weight-regular: 400;
   --font-weight-medium: 500;
   --font-weight-semibold: 600;
-  --font-weight-bold: 700;
+  --font-weight-bold: 600;
+  --font-weight-extrabold: 700;
   --container-prose: 68ch;
   --container-narrow: 48ch;
   --container-wide: 84ch;
+  --radius-xs: 0.25rem;
   --radius-base: 0.5rem;
   --radius-sm: 0.5rem;
   --radius-md: 0.5rem;

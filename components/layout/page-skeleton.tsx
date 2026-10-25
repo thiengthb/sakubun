@@ -7,7 +7,7 @@ import {
   type BreadcrumbSection,
 } from '@/components/layout/app-breadcrumbs';
 import { BreadcrumbPlaceholder } from '@/components/layout/breadcrumbs';
-import { FORM_FOOTER, PAGE_CHROME } from '@/components/layout/page-chrome';
+import { DETAIL_CHROME, FORM_FOOTER, PAGE_CHROME } from '@/components/layout/page-chrome';
 import type { PageTemplate } from '@/components/layout/page-shell';
 
 export {
@@ -38,6 +38,8 @@ export function PageSkeleton({
   pageIcons,
   trail = false,
   tabs,
+  facts,
+  subtitle,
   width = 'full',
   section,
   action,
@@ -60,12 +62,71 @@ export function PageSkeleton({
   /** Template pages: a nested page, with a parent trail above the title. */
   trail?: boolean;
   tabs?: ReactNode;
+  /** As PageShell's `facts`: how many labelled values; draws the detail header instead. */
+  facts?: number;
+  /** With `facts`: the lines under the title. */
+  subtitle?: ReactNode;
   width?: PageWidth;
   section?: BreadcrumbSection;
   action?: BreadcrumbAction;
   aside?: ReactNode;
   className?: string;
 }) {
+  if (template && facts) {
+    const titleBar = (
+      <h1 className={DETAIL_CHROME.title}>
+        {title ?? (
+          <span className="relative block" aria-hidden>
+            <span className="invisible">あ</span>
+            <Skeleton className="absolute inset-y-1 left-0 w-44" />
+          </span>
+        )}
+      </h1>
+    );
+    return (
+      <div className={cn(PAGE_CHROME.page, className)} data-template={template}>
+        <div className={DETAIL_CHROME.header}>
+          <div className={DETAIL_CHROME.head}>
+            <div className={DETAIL_CHROME.phoneTop}>
+              <Skeleton className="size-9 rounded-sm" />
+              <div className={DETAIL_CHROME.phoneTrail}>
+                {trail && <Skeleton className="h-3 w-28" />}
+              </div>
+              {pageIcons && <div className={PAGE_CHROME.pageIcons}>{pageIcons}</div>}
+            </div>
+            <div className={PAGE_CHROME.trail}>{trail && <Skeleton className="h-3 w-36" />}</div>
+            <div className={DETAIL_CHROME.titleRow}>
+              <div className={DETAIL_CHROME.titleBlock}>
+                {titleBar}
+                {subtitle && <div className={DETAIL_CHROME.subtitle}>{subtitle}</div>}
+              </div>
+              {(actions || pageIcons) && (
+                <div className={DETAIL_CHROME.side}>
+                  {actions}
+                  {pageIcons}
+                </div>
+              )}
+            </div>
+            <div className={DETAIL_CHROME.facts}>
+              {Array.from({ length: facts }, (_, i) => (
+                <div key={i} className={DETAIL_CHROME.fact}>
+                  <div className="flex h-4 items-center">
+                    <Skeleton className="h-3 w-12" />
+                  </div>
+                  <div className="flex h-5 items-center">
+                    <Skeleton className="h-3.5 w-14" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+          {actions && <div className={PAGE_CHROME.phoneActions}>{actions}</div>}
+          {tabs && <div className={PAGE_CHROME.tabs}>{tabs}</div>}
+        </div>
+        {children}
+      </div>
+    );
+  }
   if (template) {
     const split = actionsOnPhone === 'split';
     const metaShape =

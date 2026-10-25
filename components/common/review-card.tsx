@@ -185,7 +185,7 @@ export function ReviewCard({
               </span>
             )}
             {card.hanviet && (
-              <span className="rounded-md border px-1.5 py-0.5 text-xs font-semibold tracking-wide text-muted-foreground">
+              <span className="rounded-md border px-1.5 py-0.5 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
                 {card.hanviet}
               </span>
             )}

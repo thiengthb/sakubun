@@ -47,7 +47,12 @@ test('bulk add/remove to group, and the item-detail membership chips', async ({ 
 
   await page.goto('/resources/g0', { waitUntil: 'networkidle' });
   await expect(page.getByRole('link', { name: 'Nhóm N2' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Thêm vào nhóm' })).toHaveCount(0);
+  // The add button stays (one add button everywhere, thien round 1); with every fitting group
+  // used, its menu offers only a new group.
+  await page.getByRole('button', { name: 'Thêm vào nhóm' }).click();
+  await expect(page.getByRole('menuitem', { name: /Nhóm N2/ })).toHaveCount(0);
+  await expect(page.getByRole('menuitem', { name: 'Nhóm mới' })).toBeVisible();
+  await page.keyboard.press('Escape');
 
   await page.getByRole('button', { name: 'Gỡ khỏi nhóm Nhóm N2' }).click();
   await expect(page.getByText(/Đã gỡ khỏi nhóm/)).toBeVisible({ timeout: 10_000 });

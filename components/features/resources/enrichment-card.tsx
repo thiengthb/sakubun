@@ -13,7 +13,11 @@ import { SectionTag } from '@/components/common/section-tag';
 import { SpokenLine } from '@/components/common/spoken-line';
 import { useSessionState } from '@/components/common/use-session-state';
 import Link from 'next/link';
-import { parseEnrichment, type Related } from '@/lib/library/enrichment';
+import { parseEnrichment } from '@/lib/library/enrichment';
+import {
+  EnrichmentSections,
+  RelationList,
+} from '@/components/features/resources/enrichment-sections';
 import { needsWork, scoreEnrichment, TIER_LABELS } from '@/lib/library/enrichment-quality';
 import { VOCAB_KIND, type ItemKind } from '@/lib/library/item-kinds';
 import type { ContrastLink } from '@/lib/insights/item-stats';
@@ -38,53 +42,6 @@ function Section({
   );
 }
 
-function RelationList({
-  entries,
-  links,
-  voiceSpeaker,
-  speechRate,
-  showFurigana,
-}: {
-  entries: Related[];
-  links: ContrastLink[];
-  voiceSpeaker?: number;
-  speechRate?: number;
-  showFurigana: boolean;
-}) {
-  return (
-    <ul className="space-y-2">
-      {entries.map((r) => {
-        const link = links.find((l) => l.expression === r.term);
-        const ruby = r.reading && r.reading !== r.term ? `${r.term}[${r.reading}]` : undefined;
-        return (
-          <li key={r.term} className="space-y-0.5">
-            <div className="flex flex-wrap items-baseline gap-x-2">
-              <SpokenLine
-                text={r.term}
-                ruby={ruby}
-                showFurigana={showFurigana}
-                speaker={voiceSpeaker}
-                rate={speechRate}
-                label={`Nghe từ ${r.term}`}
-              />
-              <span className="text-muted-foreground">{r.vi}</span>
-              {link && (
-                <Link
-                  href={`/resources/${link.itemId}`}
-                  className="text-xs text-accent-brand underline-offset-2 hover:underline"
-                >
-                  trong kho
-                </Link>
-              )}
-            </div>
-            {r.note && <p className="text-muted-foreground">{r.note}</p>}
-          </li>
-        );
-      })}
-    </ul>
-  );
-}
-
 export function EnrichmentCard({
   raw,
   kind,
@@ -95,6 +52,7 @@ export function EnrichmentCard({
   contrastLinks = [],
   persist = false,
   storedExample = null,
+  layout = 'accordion',
 }: {
   raw: string | null | undefined;
   kind: ItemKind;
@@ -105,6 +63,8 @@ export function EnrichmentCard({
   contrastLinks?: ContrastLink[];
   persist?: boolean;
   storedExample?: string | null;
+  /** `sections`: the item page's open layout; the accordion fits dialogs and narrow places. */
+  layout?: 'accordion' | 'sections';
 }) {
   const [stored, setStored] = useSessionState<string[] | null>('enrichment.open', null);
   const isVocabCard = kind === VOCAB_KIND;
@@ -142,6 +102,20 @@ export function EnrichmentCard({
     storedExample && !cardExamples.some((ex) => ex.ja === storedExample)
       ? [...cardExamples, { ja: storedExample, vi: '', jaRuby: undefined }]
       : cardExamples;
+
+  if (layout === 'sections')
+    return (
+      <EnrichmentSections
+        enrichment={enrichment}
+        examples={exampleList}
+        isVocab={isVocabCard}
+        contrastLinks={contrastLinks}
+        voiceSpeaker={voiceSpeaker}
+        speechRate={speechRate}
+        showFurigana={showFurigana}
+        className={className}
+      />
+    );
 
   const open = [
     enrichment.structure.length > 0 && 'structure',

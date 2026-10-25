@@ -16,7 +16,7 @@ const toggleVariants = cva(
         default: 'bg-transparent',
         outline: 'border border-input bg-transparent hover:bg-muted',
         choice:
-          'border-2 border-control-edge bg-card font-bold text-muted-foreground shadow-lift active:translate-y-0.5 active:shadow-none data-[state=on]:border-brand-wash data-[state=on]:bg-brand-wash data-[state=on]:text-accent-brand data-[state=on]:shadow-lift-chosen',
+          'border-2 border-control-edge bg-card text-muted-foreground shadow-lift active:translate-y-0.5 active:shadow-none data-[state=on]:border-brand-wash data-[state=on]:bg-brand-wash data-[state=on]:text-accent-brand data-[state=on]:shadow-lift-chosen',
       },
       size: {
         default: 'h-9 min-w-9 px-2.5 md:h-7 md:min-w-7',
@@ -58,8 +58,8 @@ function Toggle({
  */
 function choiceChipClass(on: boolean) {
   return on
-    ? 'mb-0.5 border-2 border-brand-wash bg-brand-wash font-bold text-accent-brand shadow-lift-chosen active:translate-y-0.5 active:shadow-none'
-    : 'mb-0.5 border-2 border-control-edge bg-card font-bold text-muted-foreground shadow-lift hover:text-foreground active:translate-y-0.5 active:shadow-none';
+    ? 'mb-0.5 border-2 border-brand-wash bg-brand-wash text-accent-brand shadow-lift-chosen active:translate-y-0.5 active:shadow-none'
+    : 'mb-0.5 border-2 border-control-edge bg-card text-muted-foreground shadow-lift hover:text-foreground active:translate-y-0.5 active:shadow-none';
 }
 
 export { Toggle, toggleVariants, choiceChipClass };

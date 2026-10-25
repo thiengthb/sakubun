@@ -228,7 +228,7 @@ const CONFIG: Record<ResourceKind, KindConfig> = {
         minSize: 90,
         meta: { label: 'Âm Hán Việt', defaultHidden: true, cellClassName: 'text-muted-foreground' },
         cell: ({ row }) => (
-          <Truncate className="text-muted-foreground capitalize">
+          <Truncate className="text-muted-foreground uppercase">
             {row.original.hanviet ?? '—'}
           </Truncate>
         ),
