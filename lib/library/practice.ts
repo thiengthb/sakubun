@@ -1,6 +1,5 @@
 import { prisma } from '@/lib/db/db';
 import type { Prisma } from '@/lib/generated/prisma/client';
-import { studyDayStart } from '@/lib/srs/select';
 import {
   cleanText,
   cleanTextOrNull,
@@ -8,12 +7,10 @@ import {
   hasKanji,
   isBlankOfMeaning,
 } from '@/lib/core/text';
-import { parseErrorTags, type ErrorTag } from '@/lib/session/error-tags';
 import { needsWork, scoreEnrichment, type QualityTier } from '@/lib/library/enrichment-quality';
 import { GRAMMAR_KIND, VOCAB_KIND } from '@/lib/library/item-kinds';
 import { itemLimitError, normalizeHanviet } from '@/lib/library/item-limits';
-import { type Streak, computeStreak, studyDayKey } from '@/lib/srs/streak';
-import { LEECH_LAPSES, newSrsFields, SUSPEND_SUGGEST_LAPSES } from '@/lib/srs/srs';
+import { newSrsFields } from '@/lib/srs/srs';
 import {
   migrateSettingsInput,
   parseStoredSettings,
@@ -143,35 +140,6 @@ export async function addItems(
   return result;
 }
 
-export interface TodayCounts {
-  reviews: number;
-  newGrammar: number;
-  sentences: number;
-}
-
-async function todayCounts(settings: Settings, now: Date = new Date()): Promise<TodayCounts> {
-  const dayStart = studyDayStart(now, settings.dayCutoffHour);
-  const [reviews, newGrammar, sentences] = await Promise.all([
-    prisma.reviewLog.count({
-      where: { reviewedAt: { gte: dayStart }, item: { kind: GRAMMAR_KIND } },
-    }),
-    prisma.reviewLog.count({
-      where: { reviewedAt: { gte: dayStart }, state: 0, item: { kind: GRAMMAR_KIND } },
-    }),
-    prisma.sentence.count({ where: { createdAt: { gte: dayStart }, status: 'GRADED' } }),
-  ]);
-  return { reviews, newGrammar, sentences };
-}
-
-// "Due" means all four things at once: the date has passed, the card is not still NEW (state 0),
-// its item is not suspended, and it is grammar. Four call sites spelled that out separately, so a
-// change to what counts as due had to be found in four places.
-const dueWhere = (now: Date) => ({
-  due: { lte: now },
-  state: { not: 0 },
-  item: { suspended: false, kind: GRAMMAR_KIND },
-});
-
 const PENDING_MAX_AGE_MS = 60 * 60 * 1000; // 1 hour
 
 async function autoSkipStalePending(
@@ -185,124 +153,6 @@ async function autoSkipStalePending(
   });
   return { autoSkipped: result.count };
 }
-
-const STREAK_TTL_MS = 60_000;
-let streakCache: { value: Streak; dayKey: string; at: number } | null = null;
-
-export function invalidateStreak(): void {
-  streakCache = null;
-}
-
-async function studyStreak(cutoffHour: number, now: Date): Promise<Streak> {
-  const dayKey = studyDayKey(now, cutoffHour);
-  const hit = streakCache;
-  if (hit && hit.dayKey === dayKey && now.getTime() - hit.at < STREAK_TTL_MS) return hit.value;
-  const reviewDates = await prisma.reviewLog.findMany({
-    select: { reviewedAt: true },
-  });
-  const value = computeStreak(
-    reviewDates.map((r) => studyDayKey(r.reviewedAt, cutoffHour)),
-    dayKey,
-  );
-  streakCache = { value, dayKey, at: now.getTime() };
-  return value;
-}
-
-export async function getStats(now: Date = new Date()) {
-  const settings = await getSettings();
-  const weekAgo = new Date(now.getTime() - 7 * 86400000);
-  const weekAhead = new Date(now.getTime() + 7 * 86400000);
-  const [totalItems, newItems, dueNow, reviews7d, dueSoon, weakRows, stateRows, suspended, today] =
-    await Promise.all([
-      prisma.item.count({ where: { kind: GRAMMAR_KIND } }),
-      prisma.srsState.count({
-        where: { state: 0, item: { suspended: false, kind: GRAMMAR_KIND } },
-      }),
-      prisma.srsState.count({
-        where: dueWhere(now),
-      }),
-      prisma.reviewLog.count({ where: { reviewedAt: { gte: weekAgo } } }),
-      prisma.srsState.findMany({
-        where: {
-          due: { gt: now, lte: weekAhead },
-          state: { not: 0 },
-          item: { suspended: false, kind: GRAMMAR_KIND },
-        },
-        select: { due: true },
-      }),
-      prisma.srsState.findMany({
-        where: {
-          reps: { gt: 0 },
-          lapses: { gt: 0 },
-          item: { suspended: false, kind: GRAMMAR_KIND },
-        },
-        include: { item: { select: { expression: true, meaningVi: true } } },
-        orderBy: [{ lapses: 'desc' }, { stability: 'asc' }],
-        take: 5,
-      }),
-      prisma.srsState.groupBy({
-        by: ['state'],
-        where: { item: { suspended: false, kind: GRAMMAR_KIND } },
-        _count: true,
-      }),
-      prisma.item.count({ where: { suspended: true, kind: GRAMMAR_KIND } }),
-      todayCounts(settings, now),
-    ]);
-
-  const forecast: Record<string, number> = {};
-  for (const s of dueSoon) {
-    const key = s.due.toISOString().slice(0, 10);
-    forecast[key] = (forecast[key] ?? 0) + 1;
-  }
-
-  const byState = new Map(stateRows.map((r) => [r.state, r._count]));
-  const mastery = {
-    new: byState.get(0) ?? 0,
-    learning: byState.get(1) ?? 0,
-    review: byState.get(2) ?? 0,
-    relearning: byState.get(3) ?? 0,
-    suspended,
-  };
-
-  const streak = await studyStreak(settings.dayCutoffHour, now);
-
-  const windowStart = new Date(now.getTime() - 8 * 86400000);
-  const recentReviews = await prisma.reviewLog.findMany({
-    where: { reviewedAt: { gte: windowStart } },
-    select: { reviewedAt: true },
-  });
-  const dayTally = new Map<string, number>();
-  for (const r of recentReviews) {
-    const k = studyDayKey(r.reviewedAt, settings.dayCutoffHour);
-    dayTally.set(k, (dayTally.get(k) ?? 0) + 1);
-  }
-  const reviewsByDay = Array.from({ length: 7 }, (_, i) => {
-    const key = studyDayKey(new Date(now.getTime() - (6 - i) * 86400000), settings.dayCutoffHour);
-    return { day: key.slice(5), count: dayTally.get(key) ?? 0 };
-  });
-
-  return {
-    totalItems,
-    newItems,
-    dueNow,
-    today,
-    streak,
-    reviewsLast7Days: reviews7d,
-    dueForecast7Days: forecast,
-    reviewsByDay,
-    mastery,
-    weakItems: weakRows.map((s) => ({
-      itemId: s.itemId,
-      expression: s.item.expression,
-      meaningVi: s.item.meaningVi,
-      lapses: s.lapses,
-      reps: s.reps,
-    })),
-    settings,
-  };
-}
-
-export type Stats = Awaited<ReturnType<typeof getStats>>;
 
 export interface ListItemsFilter {
   level?: string;
@@ -377,11 +227,6 @@ export async function listItems(filter: ListItemsFilter = {}) {
     ...(filter.withGroupIds ? { groupIds: i.groups.map((g) => g.groupId) } : {}),
     srs: i.srs,
   }));
-}
-
-export async function getStreak(): Promise<{ current: number; longest: number }> {
-  const settings = await getSettings();
-  return studyStreak(settings.dayCutoffHour, new Date());
 }
 
 const QUALITY_SCAN_CAP = 500;
@@ -497,82 +342,4 @@ export async function deleteItems(ids: string[]): Promise<{ deleted: number }> {
   if (ids.length === 0) return { deleted: 0 };
   const res = await prisma.item.deleteMany({ where: { id: { in: ids } } });
   return { deleted: res.count };
-}
-
-export interface WeakReport {
-  windowDays: number;
-  tagCounts: { tag: ErrorTag; count: number }[];
-  worstItems: {
-    itemId: string;
-    expression: string;
-    misses: number;
-    tags: ErrorTag[];
-  }[];
-  leeches: {
-    itemId: string;
-    expression: string;
-    meaningVi: string;
-    lapses: number;
-    suspendSuggested: boolean;
-  }[];
-}
-
-export async function getWeakReport(now: Date = new Date(), windowDays = 30): Promise<WeakReport> {
-  const since = new Date(now.getTime() - windowDays * 86400000);
-  const [misses, leechRows] = await Promise.all([
-    prisma.reviewLog.findMany({
-      where: { reviewedAt: { gte: since }, rating: { lte: 2 }, item: { isNot: null } },
-      select: {
-        errorTags: true,
-        itemId: true,
-        item: { select: { expression: true } },
-      },
-    }),
-    prisma.srsState.findMany({
-      where: { lapses: { gte: LEECH_LAPSES }, item: { suspended: false } },
-      include: { item: { select: { expression: true, meaningVi: true } } },
-      orderBy: { lapses: 'desc' },
-      take: 15,
-    }),
-  ]);
-
-  const tagTally = new Map<ErrorTag, number>();
-  const perItem = new Map<string, { expression: string; misses: number; tags: Set<ErrorTag> }>();
-  for (const miss of misses) {
-    if (miss.itemId == null) continue; // guarded by the `itemId not null` filter; narrows the type
-    const entry = perItem.get(miss.itemId) ?? {
-      expression: miss.item?.expression ?? '(đã xóa)',
-      misses: 0,
-      tags: new Set<ErrorTag>(),
-    };
-    entry.misses += 1;
-    for (const tag of parseErrorTags(miss.errorTags)) {
-      tagTally.set(tag, (tagTally.get(tag) ?? 0) + 1);
-      entry.tags.add(tag);
-    }
-    perItem.set(miss.itemId, entry);
-  }
-
-  return {
-    windowDays,
-    tagCounts: [...tagTally.entries()]
-      .map(([tag, count]) => ({ tag, count }))
-      .sort((a, b) => b.count - a.count),
-    worstItems: [...perItem.entries()]
-      .map(([itemId, e]) => ({
-        itemId,
-        expression: e.expression,
-        misses: e.misses,
-        tags: [...e.tags],
-      }))
-      .sort((a, b) => b.misses - a.misses)
-      .slice(0, 10),
-    leeches: leechRows.map((s) => ({
-      itemId: s.itemId,
-      expression: s.item.expression,
-      meaningVi: s.item.meaningVi,
-      lapses: s.lapses,
-      suspendSuggested: s.lapses >= SUSPEND_SUGGEST_LAPSES,
-    })),
-  };
 }

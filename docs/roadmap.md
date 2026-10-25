@@ -17,12 +17,12 @@ follow `nuc-infra/AGENTS.md`.
 | 2.4 | PWA (manifest, icon) | Installs on a phone home screen | low |
 | 2.5 | Remove the three old flashcards; Groups and History use the new card | Frontend rules green | low |
 | 3.1 | `Turn` table (migrated from `Sentence`) + seven v2 tools in a `v2` profile, beside the old ones | MCP v2 e2e green | medium |
-| 3.2 | `v2` becomes default; remove old tools, prompts and `render.ts`; enforce token budget | Token targets met | medium |
+| 3.2 | `v2` becomes default; remove old tools, prompts and `render.ts`; enforce token budget (#92, #94) | Done 2026-10-23: old tools, prompts and `render.ts` removed; budget enforced by `lib/mcp/token-budget.test.ts` | medium |
 | 4.1 | OAuth on `/api/mcp` with better-auth, `ALLOWED_EMAIL` only (#95, #96, #97) | Done 2026-10-24: connector added on claude.ai works on the web and in the Claude phone app | high |
 | 4.2 | Connected apps in Settings: list OAuth clients, revoke one (deferred from 4.1 by thien) | Revoked app gets 401 on its next refresh | high |
 | 5.1 | Remove `coach`, `dossier`, `calibration`, `learner-notes`, the rest of `practice.ts` (#100, #101) | Done 2026-10-24: no old imports left; `practice.ts` keeps only live settings, item and stats reads (stats move in 5.3) | low |
 | 5.2 | Migration dropping unused tables and columns (after backup) (#104) | Done 2026-10-24: `LearnerNote`, `LearnerAbility`, `CalibrationProposal`, `Item.challenge*`, `Sentence.extraPatterns` dropped; `McpToolCall` kept for the Settings "Dùng MCP" card; migration tested on a seeded DB copy | high |
-| 5.3 | Dashboard from one stats source | Dashboard e2e green | low |
+| 5.3 | Dashboard from one stats source | Done 2026-10-25: `getDashboard` (`lib/insights/dashboard.ts`) reads once and `dashboard-model.ts` counts every number; old `getStats`, `getWeakReport`, `getAnalytics`, `getStudyStats` removed; dashboard e2e green | low |
 | 5.4 | Shared skeleton, drop `dev-skeleton` | Frontend rules green | low |
 
 Token targets (phase 3): tool definitions under 2,000 tokens, protocol under 1,500, each tool result

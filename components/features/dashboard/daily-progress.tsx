@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import type { DailyStat } from '@/lib/insights/stats';
+import type { DailyStat } from '@/lib/insights/dashboard-model';
 import { TapTooltip } from '@/components/common/info-tooltip';
 import { cn } from '@/lib/core/utils';
 

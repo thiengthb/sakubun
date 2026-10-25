@@ -23,8 +23,8 @@ import { CircleCheck, Layers, Ruler, Timer, TrendingUp, type LucideIcon } from '
 import { useSessionState } from '@/components/common/use-session-state';
 import { ChartCard, StatTile } from '@/components/features/dashboard/dashboard-charts';
 import { chartEmptyMessage } from '@/lib/insights/chart-empty';
-import type { DailyStat, StudyStats } from '@/lib/insights/stats';
-import type { PerfBreakdown } from '@/lib/insights/analytics';
+import type { DailyStat, StudyStats } from '@/lib/insights/dashboard-model';
+import type { PerfBreakdown } from '@/lib/insights/dashboard-model';
 
 const C = {
   accuracy: 'var(--color-ok)',

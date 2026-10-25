@@ -15,7 +15,6 @@ let prisma: Db['prisma'];
 
 async function resetData(): Promise<void> {
   await resetLearningData(prisma);
-  P.invalidateStreak();
 }
 
 async function setCards(cards: { itemId: string; enrichmentJson: string }[]): Promise<void> {
@@ -47,36 +46,6 @@ beforeAll(async () => {
   ({ prisma } = await import('@/lib/db/db'));
 });
 
-describe('getStats / getStreak — the two aggregate paths must agree', () => {
-  it('aggregates a known dataset and both streak computations match', async () => {
-    await resetData();
-    const itemId = await addOneItem('STATS_pattern');
-    const now = new Date();
-    await studyOnce(itemId, 3, now);
-
-    const stats = await P.getStats(now);
-    expect(stats.totalItems).toBe(1);
-    expect(stats.reviewsLast7Days).toBe(1);
-    expect(stats.reviewsByDay).toHaveLength(7);
-    expect(stats.reviewsByDay.at(-1)!.count).toBe(1); // today's bucket holds the one review
-    const masterySansSuspended =
-      stats.mastery.new + stats.mastery.learning + stats.mastery.review + stats.mastery.relearning;
-    expect(masterySansSuspended).toBe(1);
-    expect(stats.streak.current).toBeGreaterThanOrEqual(1);
-
-    const streak = await P.getStreak();
-    expect(streak).toEqual(stats.streak);
-  });
-
-  it('a user with no reviews has a zero streak and an empty 7-day activity row', async () => {
-    await resetData();
-    const stats = await P.getStats();
-    expect(stats.streak.current).toBe(0);
-    expect(stats.reviewsLast7Days).toBe(0);
-    expect(stats.reviewsByDay.every((d) => d.count === 0)).toBe(true);
-  });
-});
-
 describe('errorDetail — the confusion pair behind the tag (additive, no backfill)', () => {
   it('persists the pair, and a review WITHOUT one still writes exactly as before', async () => {
     await resetData();
@@ -96,17 +65,6 @@ describe('errorDetail — the confusion pair behind the tag (additive, no backfi
       { tag: 'word-choice', used: 'ほかに', required: '〜どころか' },
     ]);
     expect(logs[1].errorDetail).toBeNull();
-  });
-
-  it('getWeakReport is unaffected — the flat tag still drives it', async () => {
-    await resetData();
-    const itemId = await addOneItem('DETAIL_weak');
-    await studyOnce(itemId, 1, new Date(), {
-      errorTags: ['particle'],
-      errorDetail: [{ used: 'に', required: 'で' }],
-    });
-    const report = await P.getWeakReport();
-    expect(report.tagCounts.find((t) => t.tag === 'particle')?.count).toBe(1);
   });
 });
 

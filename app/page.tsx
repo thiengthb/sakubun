@@ -35,9 +35,7 @@ import {
 import { ContentGapChip } from '@/components/features/resources/content-gap-notice';
 import { RetentionCard } from '@/components/features/dashboard/retention-gauge';
 import { ERROR_TAG_LABELS } from '@/lib/session/error-tags';
-import { getAnalytics } from '@/lib/insights/analytics';
-import { getStats, getWeakReport } from '@/lib/library/practice';
-import { getStudyStats } from '@/lib/insights/stats';
+import { getDashboard } from '@/lib/insights/dashboard';
 import { getSessionUserId } from '@/lib/auth/current-user';
 
 export const metadata: Metadata = {
@@ -49,22 +47,17 @@ export const dynamic = 'force-dynamic';
 
 export default async function HomePage() {
   await getSessionUserId();
-  const [stats, weak, analytics, studyStats] = await Promise.all([
-    getStats(),
-    getWeakReport(),
-    getAnalytics(),
-    getStudyStats(),
-  ]);
-  const totalItems = stats.totalItems;
+  const data = await getDashboard();
+  const { weak } = data;
+  const totalItems = data.grammarTotal;
   const hasWeakData =
     weak.tagCounts.length > 0 ||
     weak.leeches.length > 0 ||
     weak.worstItems.length > 0 ||
-    analytics.watchlist.length > 0;
-  const masteredPct =
-    totalItems > 0 ? Math.round((analytics.masteredGrammar / totalItems) * 100) : 0;
+    weak.watchlist.length > 0;
+  const masteredPct = totalItems > 0 ? Math.round((data.masteredGrammar / totalItems) * 100) : 0;
 
-  const forecastData = analytics.forecast14.map((f) => ({
+  const forecastData = data.forecast14.map((f) => ({
     label: f.day.slice(5).replace('-', '/'),
     short: f.day.slice(8),
     value: f.count,
@@ -125,7 +118,7 @@ export default async function HomePage() {
     },
     {
       kind: 'hard',
-      chips: analytics.watchlist.map((w) => ({
+      chips: weak.watchlist.map((w) => ({
         key: w.itemId,
         text: w.expression,
         count: w.difficulty.toFixed(1),
@@ -142,41 +135,41 @@ export default async function HomePage() {
         <StatTile
           icon={CalendarClock}
           tone="brand"
-          items={[{ value: stats.dueNow, label: 'Đến hạn' }]}
-          note={`Còn ${stats.newItems} mẫu mới`}
-          explain={`Số lượt ôn đến hạn bây giờ. Còn ${stats.newItems} mẫu chưa học lần nào.`}
+          items={[{ value: data.dueNow, label: 'Đến hạn' }]}
+          note={`Còn ${data.newItems} mẫu mới`}
+          explain={`Số lượt ôn đến hạn bây giờ. Còn ${data.newItems} mẫu chưa học lần nào.`}
         />
         <StreakCard
-          current={stats.streak.current}
-          note={`Kỷ lục ${stats.streak.longest} ngày`}
-          explain={`Số ngày học liên tiếp. Kỷ lục ${stats.streak.longest} ngày; 30 ngày qua ${analytics.reviewsLast30} lượt ôn.`}
+          current={data.streak.current}
+          note={`Kỷ lục ${data.streak.longest} ngày`}
+          explain={`Số ngày học liên tiếp. Kỷ lục ${data.streak.longest} ngày; 30 ngày qua ${data.reviewsLast30} lượt ôn.`}
         />
         <StatTile
           icon={GraduationCap}
           tone="ok"
           items={[{ value: `${masteredPct}%`, label: 'Thành thạo' }]}
-          note={`${analytics.masteredGrammar}/${totalItems} mẫu`}
-          explain={`${analytics.masteredGrammar}/${totalItems} mẫu đang ở trạng thái Ôn tập.`}
+          note={`${data.masteredGrammar}/${totalItems} mẫu`}
+          explain={`${data.masteredGrammar}/${totalItems} mẫu đang ở trạng thái Ôn tập.`}
         />
         <LibraryTile
           grammar={totalItems}
-          vocab={analytics.vocabTotal}
-          explain={`Kho học của bạn: ${totalItems} ngữ pháp, ${analytics.vocabTotal} từ vựng; ${analytics.newLast30} mục mới trong 30 ngày qua.`}
+          vocab={data.vocabTotal}
+          explain={`Kho học của bạn: ${totalItems} ngữ pháp, ${data.vocabTotal} từ vựng; ${data.newLast30} mục mới trong 30 ngày qua.`}
         />
       </section>
 
       <DailyProgress
-        daily={studyStats.daily}
-        sessionGoal={stats.settings.sessionGoal}
-        dailyNewGrammar={stats.settings.dailyNewGrammar}
-        dueNow={stats.dueNow}
+        daily={data.study.daily}
+        sessionGoal={data.settings.sessionGoal}
+        dailyNewGrammar={data.settings.dailyNewGrammar}
+        dueNow={data.dueNow}
       />
 
       <section className="grid gap-3 lg:grid-cols-2">
         <RetentionCard
-          actual={analytics.trueRetention}
-          desired={analytics.desiredRetention}
-          windowDays={analytics.retentionWindowDays}
+          actual={data.retention.actual}
+          desired={data.retention.desired}
+          windowDays={data.retention.windowDays}
         />
         <ChartCard
           icon={CalendarRange}
@@ -197,7 +190,7 @@ export default async function HomePage() {
           title="Theo cấp"
           info="Ngữ pháp theo cấp JLPT, chia theo trạng thái ghi nhớ. Số cạnh chú thích là tổng toàn kho."
         >
-          <LevelBars data={analytics.levelDist} totals={stats.mastery} />
+          <LevelBars data={data.levelDist} totals={data.mastery} />
         </ChartCard>
         {hasWeakData && (
           <ChartCard
@@ -216,7 +209,7 @@ export default async function HomePage() {
         info="Số lượt ôn mỗi ngày trong một năm qua."
         action={<HeatmapLegend />}
       >
-        <Heatmap data={analytics.activity} max={analytics.activityMax} />
+        <Heatmap data={data.activity} max={data.activityMax} />
       </ChartCard>
     </>
   );
@@ -226,13 +219,13 @@ export default async function HomePage() {
       <LiveRefresh />
       <AnalyticsTabs
         progress={progress}
-        stats={<StatsView stats={studyStats} />}
+        stats={<StatsView stats={data.study} />}
         aside={
-          analytics.studiedWithoutCard > 0 ? (
+          data.content.studiedWithoutCard > 0 ? (
             <ContentGapChip
-              studiedWithoutCard={analytics.studiedWithoutCard}
-              enriched={analytics.enrichedGrammar}
-              total={analytics.grammarTotal}
+              studiedWithoutCard={data.content.studiedWithoutCard}
+              enriched={data.content.enrichedGrammar}
+              total={data.grammarTotal}
             />
           ) : undefined
         }

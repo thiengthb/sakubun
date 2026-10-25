@@ -8,7 +8,6 @@ import {
   addItems,
   deleteItem,
   deleteItems,
-  getStreak,
   saveSettings,
   setItemStarred,
   setItemSuspended,
@@ -17,6 +16,7 @@ import {
   updateItem,
   VOCAB_KIND,
 } from '@/lib/library/practice';
+import { getStreak } from '@/lib/insights/streak';
 import { JLPT_LEVELS, settingsPatchSchema, type Settings } from '@/lib/settings/schema';
 import { getSessionUserId } from '@/lib/auth/current-user';
 import {
