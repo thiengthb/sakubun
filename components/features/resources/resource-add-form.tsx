@@ -1,7 +1,7 @@
 'use client';
 
 import { type ReactNode, useMemo, useRef, useState, useTransition } from 'react';
-import { ClipboardPaste, FileSpreadsheet, TextCursorInput, X } from 'lucide-react';
+import { FileSpreadsheet, X } from 'lucide-react';
 import { toastResult } from '@/lib/core/action-toast';
 import { addOneItemAction, importItemsAction, parseExcelAction } from '@/app/actions';
 import { parseImportText, type ParsedEntry, type ParseResult } from '@/lib/transfer/parse';
@@ -73,12 +73,6 @@ const COPY: Record<
       'Dán thẳng các dòng copy từ Excel Mazii (word ⇥ phonetic ⇥ mean ⇥ comment), hoặc mỗi dòng một mục:\n図書館 (としょかん): thư viện N5\n勉強 (べんきょう): học N5',
   },
 };
-
-export const INPUT_TABS = [
-  { value: 'single', label: 'Theo trường', icon: TextCursorInput },
-  { value: 'paste', label: 'Dán danh sách', icon: ClipboardPaste },
-  { value: 'excel', label: 'Nhập Excel', icon: FileSpreadsheet },
-] as const;
 
 export function ResourceAddPanels({ kind, onDone }: { kind: ResourceKind; onDone: () => void }) {
   const copy = COPY[kind];

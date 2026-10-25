@@ -1,4 +1,10 @@
-import { PageSkeleton, PageTabsSkeleton, TabbedSkeleton } from '@/components/layout/page-skeleton';
+import {
+  PageSkeleton,
+  PageTabsSkeleton,
+  SkeletonText,
+  TabbedSkeleton,
+} from '@/components/layout/page-skeleton';
+import { ParentCrumbs } from '@/components/layout/app-breadcrumbs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/core/utils';
 
@@ -19,8 +25,12 @@ export default function Loading() {
   return (
     <PageSkeleton
       template="detail"
-      trail
-      facts={2}
+      trail={<ParentCrumbs section="grammar" self pending />}
+      title={<SkeletonText text="〜ばかりに" />}
+      facts={[
+        { label: 'Cấp độ', value: 'N2' },
+        { label: 'Trạng thái', value: 'Ôn tập' },
+      ]}
       subtitle={
         <div className="flex h-6 items-center">
           <Skeleton className="h-4 w-44" />
@@ -33,7 +43,7 @@ export default function Loading() {
         </>
       }
       pageIcons={<Skeleton className="size-7 rounded-md" />}
-      tabs={<PageTabsSkeleton count={2} widths={[104, 96]} />}
+      tabs={<PageTabsSkeleton set="item" />}
     >
       <div className="@container min-w-0">
         <TabbedSkeleton

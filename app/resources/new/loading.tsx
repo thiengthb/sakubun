@@ -1,11 +1,22 @@
-import { FormCardSkeleton, PageSkeleton, PageTabsSkeleton } from '@/components/layout/page-skeleton';
+'use client';
 
+import { useSearchParams } from 'next/navigation';
+import {
+  FormCardSkeleton,
+  PageSkeleton,
+  PageTabsSkeleton,
+} from '@/components/layout/page-skeleton';
+import { ParentCrumbs } from '@/components/layout/app-breadcrumbs';
+
+// The kind is in the URL, so the loading screen names it as the page will.
 export default function Loading() {
+  const kind = useSearchParams().get('kind') === 'vocab' ? 'vocab' : 'grammar';
   return (
     <PageSkeleton
       template="form"
-      trail
-      tabs={<PageTabsSkeleton count={3} widths={[104, 120, 96]} />}
+      trail={<ParentCrumbs section={kind} self />}
+      title={kind === 'grammar' ? 'Thêm ngữ pháp' : 'Thêm từ vựng'}
+      tabs={<PageTabsSkeleton set="input" />}
     >
       <FormCardSkeleton fields={5} />
     </PageSkeleton>

@@ -2,10 +2,8 @@
 
 import { useTransition, type ReactNode } from 'react';
 import {
-  BookOpenText,
   Pause,
   Play,
-  ChartColumn,
   Brain,
   CalendarClock,
   CalendarPlus,
@@ -17,6 +15,7 @@ import {
 } from 'lucide-react';
 import { ParentCrumbs } from '@/components/layout/app-breadcrumbs';
 import { PageTabs } from '@/components/common/page-tabs';
+import { itemTabs } from '@/components/layout/page-heads';
 import { PageShell } from '@/components/layout/page-shell';
 import { CopyCommandButton } from '@/components/common/copy-command-button';
 import { Button } from '@/components/ui/button';
@@ -91,7 +90,8 @@ export function ItemAnalytics({
   speechRate?: number;
   showFurigana?: boolean;
 }) {
-  const [tab, setTab] = useSessionState('item.tab', 'stats');
+  const tabSet = itemTabs(stats.kind);
+  const [tab, setTab] = useSessionState(tabSet.storeKey, tabSet.initial);
   const [resuming, startResume] = useTransition();
   const { srs } = stats;
   const stateLabel = stats.suspended ? 'Tạm ngưng' : (STATE_LABELS[srs?.state ?? 0] ?? 'Mới');
@@ -191,19 +191,7 @@ export function ItemAnalytics({
           </>
         }
         pageIcons={<StarButton id={stats.itemId} starred={stats.starred} kind="item" />}
-        tabs={
-          <PageTabs
-            items={[
-              { value: 'stats', label: 'Chỉ số & lịch', icon: ChartColumn },
-              {
-                value: 'detail',
-                label: stats.kind === 'grammar' ? 'Thẻ chi tiết' : 'Chi tiết từ',
-                icon: BookOpenText,
-              },
-            ]}
-            label="Chọn khung xem"
-          />
-        }
+        tabs={<PageTabs items={tabSet.items} label={tabSet.label} />}
       >
         {stats.suspended && (
           <StateNotice

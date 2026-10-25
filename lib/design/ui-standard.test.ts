@@ -134,8 +134,18 @@ describe('ui standard: each check goes red on a bad sample', () => {
     expect(check('page-template', '<PageShell section="settings">x</PageShell>')).toHaveLength(1);
     expect(check('page-template', '<PageShell template="form">x</PageShell>')).toHaveLength(1);
     expect(check('page-template', '<PageSkeleton template="form" title="Cài đặt" />')).toEqual([]);
-    expect(check('page-template', '<PageSkeleton template="form" trail />')).toEqual([]);
     expect(check('page-template', '<PageSkeleton title="Cài đặt" />')).toHaveLength(1);
+    // A loading screen writes the words the page will show: no bare title or trail bars.
+    expect(check('page-template', '<PageSkeleton template="form" />')).toHaveLength(1);
+    expect(
+      check('page-template', '<PageSkeleton template="form" title="Sửa nhóm" trail />'),
+    ).toHaveLength(1);
+    expect(
+      check(
+        'page-template',
+        '<PageSkeleton template="form" title="Sửa nhóm" trail={<ParentCrumbs section="groups" self />} />',
+      ),
+    ).toEqual([]);
   });
 
   it('elements() finds the body across nesting and arrow functions in props', () => {
@@ -160,7 +170,8 @@ describe('ui standard: the codebase', () => {
   it('bold is 600 and extra bold 700', () => {
     // thien, item detail round 2 (2026-10-25): 700 and 800 read heavy beside body text.
     const css = readFileSync('app/globals.css', 'utf8');
-    const weight = (name: string) => new RegExp(`--font-weight-${name}:\\s*([^;]+);`).exec(css)?.[1];
+    const weight = (name: string) =>
+      new RegExp(`--font-weight-${name}:\\s*([^;]+);`).exec(css)?.[1];
     expect(['bold', 'extrabold'].map(weight)).toEqual(['600', '700']);
   });
 

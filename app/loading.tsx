@@ -8,7 +8,7 @@ export default function Loading() {
     <PageSkeleton
       template="dashboard"
       title="Phân tích"
-      tabs={<PageTabsSkeleton count={2} widths={[80, 88]} />}
+      tabs={<PageTabsSkeleton set="analytics" />}
     >
       <div className="space-y-3">
         <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">

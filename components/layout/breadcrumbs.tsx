@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { ChevronRight, Loader2, type LucideIcon } from 'lucide-react';
 import { Explain } from '@/components/common/explain';
+import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/core/utils';
 
 export interface Crumb {
@@ -10,6 +11,8 @@ export interface Crumb {
   href?: string;
   icon: LucideIcon;
   description: string;
+  /** A loading screen's crumb that waits on data: drawn as a bar as wide as `label`. */
+  pending?: boolean;
 }
 
 export function Breadcrumbs({
@@ -55,18 +58,25 @@ export function Breadcrumbs({
           );
           return (
             <li key={`${item.label}-${i}`} className="flex items-center gap-1.5">
-              <Explain text={item.description}>
-                {item.href && !last ? (
-                  <Link
-                    href={item.href}
-                    className="inline-flex items-center rounded-md transition-colors hover:text-foreground"
-                  >
-                    {inner}
-                  </Link>
-                ) : (
-                  <span aria-current={last ? 'page' : undefined}>{inner}</span>
-                )}
-              </Explain>
+              {item.pending ? (
+                <span data-pending className="relative inline-flex">
+                  <span className="invisible">{inner}</span>
+                  <Skeleton aria-hidden className="absolute inset-x-0 inset-y-0.5 rounded-sm" />
+                </span>
+              ) : (
+                <Explain text={item.description}>
+                  {item.href && !last ? (
+                    <Link
+                      href={item.href}
+                      className="inline-flex items-center rounded-md transition-colors hover:text-foreground"
+                    >
+                      {inner}
+                    </Link>
+                  ) : (
+                    <span aria-current={last ? 'page' : undefined}>{inner}</span>
+                  )}
+                </Explain>
+              )}
               {!end && (
                 <ChevronRight className="size-3.5 shrink-0 text-muted-foreground/50" aria-hidden />
               )}

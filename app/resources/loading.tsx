@@ -22,7 +22,7 @@ export default function Loading() {
       title="Tài nguyên"
       meta
       actions={<Skeleton className="h-9 w-20 rounded-sm md:h-7" />}
-      tabs={<PageTabsSkeleton count={3} widths={[80, 72, 48]} />}
+      tabs={<PageTabsSkeleton set="resources" />}
     >
       <TabbedSkeleton
         storeKey="resources.tab"

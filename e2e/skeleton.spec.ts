@@ -57,7 +57,24 @@ const MEASURE = () => {
     Array.from(shell.children)
       .slice(1)
       .find((el) => el.getBoundingClientRect().height > 0) ?? null;
+  // The head's words: a skeleton writes what the page will (docs/ui-standard.md › Đang tải) and
+  // marks a word that waits on data with data-pending, read here as "any text".
+  const words = (el: Element | null | undefined) => {
+    if (!el) return null;
+    const c = el.cloneNode(true) as Element;
+    c.querySelectorAll('[data-pending]').forEach((p) => p.replaceWith('\u0001'));
+    c.querySelectorAll('.sr-only').forEach((p) => p.remove());
+    return (c.textContent ?? '').replace(/\s+/g, ' ').trim();
+  };
+  const templated = shell.hasAttribute('data-template');
   return {
+    head: templated
+      ? {
+          title: words(shell.querySelector('h1')),
+          trail: words(shell.querySelector('nav[aria-label="Breadcrumb"]')),
+          tabs: [...shell.querySelectorAll('[role="tab"]')].map(words),
+        }
+      : null,
     shell: box(shell),
     row: box(row),
     firstKid: box(kids[0]),
@@ -150,6 +167,29 @@ for (const width of [1440, 390]) {
         }
       } else if (Boolean(R.aside) !== Boolean(S.aside)) {
         failures.push(at(`aside present on ${R.aside ? 'the page' : 'the skeleton'} only`));
+      }
+      if (R.head && S.head) {
+        const fits = (skel: string | null, real: string | null) => {
+          if (skel === null || real === null) return skel === real;
+          const re = skel
+            .split('\u0001')
+            .map((part) => part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+            .join('.+');
+          return new RegExp(`^${re}$`).test(real);
+        };
+        for (const key of ['title', 'trail'] as const) {
+          if (!fits(S.head[key], R.head[key]))
+            failures.push(at(`skeleton ${key} reads "${S.head[key]}", page "${R.head[key]}"`));
+        }
+        const st = S.head.tabs.join(' | ');
+        const rt = R.head.tabs.join(' | ');
+        if (
+          S.head.tabs.length !== R.head.tabs.length ||
+          !S.head.tabs.every((t, i) => fits(t, R.head!.tabs[i]))
+        )
+          failures.push(at(`skeleton tabs read "${st}", page "${rt}"`));
+      } else if (Boolean(R.head) !== Boolean(S.head)) {
+        failures.push(at(`template header on ${R.head ? 'the page' : 'the skeleton'} only`));
       }
       if (pair.items && width >= 768 && Math.abs(skelItems - realItems) > 1)
         failures.push(at(`skeleton shows ${skelItems} items, page shows ${realItems}`));

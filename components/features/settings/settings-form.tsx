@@ -1,12 +1,13 @@
 'use client';
 
 import { useMemo, useState, useTransition } from 'react';
-import { Database, Dumbbell, Save, UserRound } from 'lucide-react';
+import { Save } from 'lucide-react';
 import { toastResult } from '@/lib/core/action-toast';
 import { FormFooter, PageShell } from '@/components/layout/page-shell';
 import { Button } from '@/components/ui/button';
 import { Tabs } from '@/components/ui/tabs';
 import { PageTabs } from '@/components/common/page-tabs';
+import { SETTINGS_TABS } from '@/components/layout/page-heads';
 import { PracticeTab } from '@/components/features/settings/settings-practice-tab';
 import { DataTab } from '@/components/features/settings/settings-data-tab';
 import { AccountTab } from '@/components/features/settings/settings-account-tab';
@@ -30,12 +31,6 @@ interface SettingsFormProps {
   };
 }
 
-const SETTINGS_TABS = [
-  { value: 'practice', label: 'Luyện tập', icon: Dumbbell },
-  { value: 'data', label: 'Dữ liệu', icon: Database },
-  { value: 'account', label: 'Tài khoản', icon: UserRound },
-] as const;
-
 const SAVEABLE_TABS = new Set(['practice']);
 
 // Nội dung / Nhịp học / Nghe & nói merged into one tab. sessionStorage still holds the old value
@@ -49,7 +44,11 @@ const RETIRED_TABS: Record<string, string> = {
 
 export function SettingsForm({ initial, account }: SettingsFormProps) {
   const [settings, setSettings] = useState<Settings>(initial);
-  const [storedTab, setTab] = useSessionState('settings.tab', 'practice', 'tab');
+  const [storedTab, setTab] = useSessionState(
+    SETTINGS_TABS.storeKey,
+    SETTINGS_TABS.initial,
+    SETTINGS_TABS.urlKey,
+  );
   const tab = RETIRED_TABS[storedTab] ?? storedTab;
   const [saved, setSaved] = useState<Settings>(initial);
 
@@ -76,7 +75,7 @@ export function SettingsForm({ initial, account }: SettingsFormProps) {
       <PageShell
         template="form"
         title="Cài đặt"
-        tabs={<PageTabs items={SETTINGS_TABS} label="Chọn mục cài đặt" />}
+        tabs={<PageTabs items={SETTINGS_TABS.items} label={SETTINGS_TABS.label} />}
       >
         <PracticeTab settings={settings} set={set} setSettings={setSettings} />
         <DataTab />

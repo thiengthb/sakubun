@@ -1,12 +1,14 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/core/utils';
 
 export interface PageTabItem {
   value: string;
-  label: string;
+  /** Text; a loading screen may put a SkeletonText where the word is not known yet. */
+  label: ReactNode;
   /** Shown from 768px up; phones keep the bare word. */
   icon?: LucideIcon;
 }
