@@ -147,22 +147,31 @@ test('a group is browsed on the quick-review card, and browsing grades nothing',
 test.describe('on a phone', () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
-  test('group list rows keep one line each, and the add page pages its list', async ({ page }) => {
+  test('group items fit a phone, and the add page keeps Thêm in reach', async ({ page }) => {
     seedLong();
     await login(page);
     await page.goto('/groups/grpC', { waitUntil: 'networkidle' });
-    const row = page.getByRole('button', { name: /^Gỡ 〜\(よ\)うが/ }).locator('..');
-    expect((await row.boundingBox())!.height, 'a long name does not spill out of its row').toBe(64);
+    const card = page
+      .locator('[data-slot="data-table-cards"] > li')
+      .filter({ hasText: '〜(よ)うが' });
+    expect(
+      await card.evaluate((el) => el.scrollWidth <= el.clientWidth),
+      'a long name wraps inside its card, it does not spill sideways',
+    ).toBe(true);
 
+    // The list template on a phone: cards that load more as they scroll, not pages.
     await page.goto('/groups/grpC/add', { waitUntil: 'networkidle' });
-    await expect(page.getByRole('checkbox', { name: /^Chọn / })).toHaveCount(20);
-    const add = page.getByRole('button', { name: /Thêm .*mục/ });
+    const picks = page.getByRole('checkbox', { name: 'Chọn mục này' });
+    await expect(picks).toHaveCount(20);
+    const add = page.getByRole('button', { name: 'Thêm', exact: true });
     const box = (await add.boundingBox())!;
     expect(box.y + box.height, 'the add button is in reach without scrolling').toBeLessThanOrEqual(
       844,
     );
-    await page.getByRole('button', { name: 'Trang 2' }).click();
-    await expect(page.getByRole('checkbox', { name: /^Chọn / })).toHaveCount(5);
+    await picks.first().click();
+    await expect(page.getByText('Đã chọn 1 mục')).toBeVisible();
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    await expect.poll(() => picks.count()).toBeGreaterThan(20);
   });
 
   test('group cards at 390px: no sideways scroll, the buttons above the fold', async ({ page }) => {

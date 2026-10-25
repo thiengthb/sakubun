@@ -37,7 +37,17 @@ export interface GroupMemberItem {
   level?: string;
   enrichment?: string | null;
   suspended?: boolean;
-  srs?: { state: number; due: Date; reps: number; lapses: number } | null;
+  starred?: boolean;
+  /** When the item entered the library (not the group). */
+  createdAt?: Date;
+  srs?: {
+    state: number;
+    due: Date;
+    reps: number;
+    lapses: number;
+    stability?: number;
+    difficulty?: number;
+  } | null;
 }
 
 export interface GroupDetail extends GroupSummary {
@@ -95,7 +105,18 @@ export async function getGroup(groupId: string): Promise<GroupDetail | null> {
               level: true,
               enrichment: true,
               suspended: true,
-              srs: { select: { state: true, due: true, reps: true, lapses: true } },
+              starred: true,
+              createdAt: true,
+              srs: {
+                select: {
+                  state: true,
+                  due: true,
+                  reps: true,
+                  lapses: true,
+                  stability: true,
+                  difficulty: true,
+                },
+              },
             },
           },
         },
@@ -123,6 +144,8 @@ export async function getGroup(groupId: string): Promise<GroupDetail | null> {
       level: m.item.level,
       enrichment: m.item.enrichment,
       suspended: m.item.suspended,
+      starred: m.item.starred,
+      createdAt: m.item.createdAt,
       srs: m.item.srs,
     })),
   };
@@ -144,7 +167,19 @@ export async function listAddableItems(groupId: string): Promise<GroupMemberItem
 
   const items = await prisma.item.findMany({
     where: { kind: { in: kinds }, groups: { none: { groupId } } },
-    select: { id: true, expression: true, reading: true, meaningVi: true, kind: true },
+    select: {
+      id: true,
+      expression: true,
+      reading: true,
+      meaningVi: true,
+      kind: true,
+      hanviet: true,
+      level: true,
+      suspended: true,
+      starred: true,
+      createdAt: true,
+      srs: { select: { state: true, due: true, reps: true, lapses: true } },
+    },
     orderBy: { expression: 'asc' },
     take: 500,
   });
@@ -154,6 +189,12 @@ export async function listAddableItems(groupId: string): Promise<GroupMemberItem
     reading: i.reading,
     meaningVi: i.meaningVi,
     kind: i.kind,
+    hanviet: i.hanviet,
+    level: i.level,
+    suspended: i.suspended,
+    starred: i.starred,
+    createdAt: i.createdAt,
+    srs: i.srs,
   }));
 }
 

@@ -59,8 +59,10 @@ export function GroupCards({
     );
   }
 
+  // Fills the screen under the list template's header (title, actions, tabs) so the buttons sit
+  // at the bottom without pushing the page into a scroll.
   return (
-    <div className="flex min-h-[calc(100dvh-9rem)] flex-col gap-4">
+    <div className="flex min-h-[calc(100dvh-16rem)] flex-col gap-4">
       <div className="flex items-center gap-2">
         <p className="flex-1 text-sm text-muted-foreground">
           Chỉ để xem lại, không tính vào lịch ôn.

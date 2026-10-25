@@ -124,6 +124,8 @@ export interface DataTableProps<T> {
   enableRowNumbers?: boolean;
   rowNumberHeader?: string;
   bulkActions?: (selectedRows: T[], clearSelection: () => void) => ReactNode;
+  /** The selected row ids, for a page whose main action acts on them (a picker's footer). */
+  onSelectionChange?: (ids: string[]) => void;
   renderCard?: (row: T, index: number) => ReactNode;
   cardHref?: (row: T) => string;
   cardHrefLabel?: (row: T) => string;
@@ -155,6 +157,7 @@ export function DataTable<T>({
   enableRowNumbers = false,
   rowNumberHeader = 'STT',
   bulkActions,
+  onSelectionChange,
   renderCard,
   cardHref,
   cardHrefLabel,
@@ -245,6 +248,9 @@ export function DataTable<T>({
 
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const clearSelection = useCallback(() => setRowSelection({}), []);
+  useEffect(() => {
+    onSelectionChange?.(Object.keys(rowSelection).filter((id) => rowSelection[id]));
+  }, [rowSelection, onSelectionChange]);
 
   const rootRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);

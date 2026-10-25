@@ -3,7 +3,7 @@
 import { useTransition } from 'react';
 import { FolderMinus, FolderPlus } from 'lucide-react';
 import { toastResult } from '@/lib/core/action-toast';
-import { BulkActionButton } from '@/components/features/resources/bulk-action-button';
+import { BulkActionButton } from '@/components/common/bulk-action-button';
 import {
   DropdownMenu,
   DropdownMenuContent,

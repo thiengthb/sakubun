@@ -14,13 +14,9 @@ import {
   type FilterChip,
   type FilterOption,
 } from '@/components/common/filter-popover';
-import {
-  actionsColumn,
-  expressionColumn,
-  meaningColumn,
-  srsMetaColumns,
-} from '@/components/features/resources/resource-columns';
-import { ResourceCard } from '@/components/features/resources/resource-card';
+import { expressionColumn, meaningColumn, srsMetaColumns } from '@/components/common/item-columns';
+import { actionsColumn } from '@/components/features/resources/resource-columns';
+import { ResourceCard } from '@/components/common/resource-card';
 import { RowActions } from '@/components/features/resources/row-actions';
 import { SpokenLine } from '@/components/common/spoken-line';
 import { StarButton } from '@/components/common/star-button';
@@ -114,7 +110,11 @@ const FILTERS = {
   },
 } satisfies Record<
   string,
-  { label: string; options: readonly FilterOption[]; matches: (row: ResourceRow, v: string) => boolean }
+  {
+    label: string;
+    options: readonly FilterOption[];
+    matches: (row: ResourceRow, v: string) => boolean;
+  }
 >;
 
 type FilterKey = keyof typeof FILTERS;
@@ -276,7 +276,7 @@ const CONFIG: Record<ResourceKind, KindConfig> = {
       row.hanviet ? (
         <span className="ml-1.5 text-xs text-muted-foreground uppercase">[{row.hanviet}]</span>
       ) : null,
-    cardAside: (row) => reasonBadge(row, 'px-1.5 py-0 text-xs font-normal'),
+    cardAside: (row) => reasonBadge(row, 'px-1.5 py-0 text-xs'),
   },
 };
 
@@ -301,11 +301,7 @@ export function ResourceTable({
 
   // One hook call per filter key, in a fixed order — `config.filters` is a module constant, so the
   // set never changes for a given mounted table and the hook order stays stable.
-  const level = useSessionState<string>(
-    `${config.persistKey}.level`,
-    'all',
-    config.urlKeys.level,
-  );
+  const level = useSessionState<string>(`${config.persistKey}.level`, 'all', config.urlKeys.level);
   const state = useSessionState<string>(`${config.persistKey}.state`, 'all', config.urlKeys.state);
   const card = useSessionState<string>(`${config.persistKey}.card`, 'all', config.urlKeys.card);
   const reason = useSessionState<string>(

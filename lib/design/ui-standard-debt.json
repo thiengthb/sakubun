@@ -1,31 +1,19 @@
 {
   "$doc": "Breaks of docs/ui-standard.md that existed when the standard was locked (2026-10-24). rule id -> file -> count. Only ever shrinks: ui-standard.test.ts fails on anything new, and on anything fixed until this file is lowered. It is paid off by the step-6 page PRs, not by editing it.",
   "debt": {
-    "create-label": {
-      "components/features/groups/group-actions.tsx": 10,
-      "components/features/groups/group-item-picker.tsx": 1
-    },
     "icon-only-plain": {
       "components/common/filter-popover.tsx": 1,
       "components/common/sort-sheet.tsx": 1,
-      "components/features/groups/group-detail-view.tsx": 1,
       "components/layout/sidebar-user.tsx": 1
-    },
-    "no-form-dialog": {
-      "components/features/groups/group-actions.tsx": 2
     },
     "no-round-controls": {
       "components/common/info-tooltip.tsx": 1,
       "components/layout/scroll-to-top.tsx": 1
     },
     "page-template": {
-      "app/groups/[id]/add/loading.tsx": 1,
-      "app/groups/[id]/loading.tsx": 1,
       "app/history/loading.tsx": 1,
       "app/review/loading.tsx": 1,
       "app/review/page.tsx": 1,
-      "components/features/groups/group-detail-view.tsx": 1,
-      "components/features/groups/group-item-picker.tsx": 1,
       "components/features/history/history-view.tsx": 1
     }
   }

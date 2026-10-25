@@ -1,7 +1,7 @@
 'use client';
 
 import { CirclePause, CirclePlay } from 'lucide-react';
-import { BulkActionButton } from '@/components/features/resources/bulk-action-button';
+import { BulkActionButton } from '@/components/common/bulk-action-button';
 import { useServerAction } from '@/components/common/use-server-action';
 import { setItemsSuspendedAction } from '@/app/actions';
 

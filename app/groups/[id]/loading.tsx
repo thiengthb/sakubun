@@ -1,22 +1,13 @@
 import {
-  ListSkeleton,
   PageSkeleton,
+  PageTabsSkeleton,
+  SkeletonText,
   TabbedSkeleton,
-  TabsAside,
+  TableSkeleton,
   ToolbarSkeleton,
 } from '@/components/layout/page-skeleton';
+import { ParentCrumbs } from '@/components/layout/app-breadcrumbs';
 import { Skeleton } from '@/components/ui/skeleton';
-
-const LIST = (
-  <div className="space-y-6">
-    <ToolbarSkeleton action filters={2} />
-    <ListSkeleton auto rows={6} rowHeight={64} />
-    <div className="flex flex-wrap items-center justify-between gap-3">
-      <Skeleton className="h-4 w-40" />
-      <Skeleton className="h-8 w-64" />
-    </div>
-  </div>
-);
 
 const FLASHCARD = (
   <div className="flex flex-col gap-4">
@@ -37,13 +28,36 @@ const FLASHCARD = (
   </div>
 );
 
+// The group's name is the h1, which only the loaded group knows.
 export default function Loading() {
   return (
-    <PageSkeleton aside={<TabsAside count={2} rail={178} select={126} />}>
+    <PageSkeleton
+      template="list"
+      trail={<ParentCrumbs section="groups" self />}
+      title={<SkeletonText text="Ôn thi N2" />}
+      meta
+      actions={
+        <>
+          <Skeleton className="h-9 w-28 rounded-sm md:h-7" />
+          <Skeleton className="h-9 w-16 rounded-sm md:h-7" />
+          <Skeleton className="h-9 w-20 rounded-sm md:h-7" />
+        </>
+      }
+      actionsOnPhone="split"
+      tabs={<PageTabsSkeleton set="group" />}
+    >
       <TabbedSkeleton
         storeKey="group.tab"
         initial="list"
-        shapes={{ list: LIST, flashcard: FLASHCARD }}
+        shapes={{
+          list: (
+            <>
+              <ToolbarSkeleton columnMenu />
+              <TableSkeleton />
+            </>
+          ),
+          flashcard: FLASHCARD,
+        }}
       />
     </PageSkeleton>
   );

@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import { GroupDetailView } from '@/components/features/groups/group-detail-view';
-import { getGroup, listAddableItems } from '@/lib/library/groups';
+import { getGroup } from '@/lib/library/groups';
 import { getItemCards } from '@/lib/app/quick-review';
 import { getSettings } from '@/lib/library/practice';
 import { getSessionUserId } from '@/lib/auth/current-user';
@@ -13,15 +13,13 @@ export default async function GroupDetailPage({ params }: { params: Promise<{ id
   await getSessionUserId();
   const group = await getGroup(id);
   if (!group) notFound();
-  const [addable, settings, cards] = await Promise.all([
-    listAddableItems(id),
+  const [settings, cards] = await Promise.all([
     getSettings(),
     getItemCards(group.members.map((m) => m.itemId)),
   ]);
   return (
     <GroupDetailView
       group={group}
-      addable={addable ?? []}
       cards={cards}
       voiceSpeaker={settings.voiceSpeaker}
       speechRate={settings.speechRate}
