@@ -1,5 +1,5 @@
 import ExcelJS from 'exceljs';
-import { maziiEntry, type ParseResult } from '@/lib/transfer/parse';
+import { entryLimitReason, maziiEntry, type ParseResult } from '@/lib/transfer/parse';
 
 const MAX_ROWS = 2000;
 
@@ -73,6 +73,11 @@ export async function parseMaziiExcel(buffer: ArrayBuffer): Promise<ParseResult>
         text: word || '(trống)',
         reason: 'thiếu từ hoặc thiếu nghĩa',
       });
+      continue;
+    }
+    const tooLong = entryLimitReason(entry);
+    if (tooLong) {
+      result.errors.push({ line: rowNumber, text: word, reason: tooLong });
       continue;
     }
     if (seen.has(entry.expression)) continue; // duplicate row in the same file

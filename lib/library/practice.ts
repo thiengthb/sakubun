@@ -11,6 +11,7 @@ import {
 import { parseErrorTags, type ErrorTag } from '@/lib/session/error-tags';
 import { needsWork, scoreEnrichment, type QualityTier } from '@/lib/library/enrichment-quality';
 import { GRAMMAR_KIND, VOCAB_KIND } from '@/lib/library/item-kinds';
+import { itemLimitError, normalizeHanviet } from '@/lib/library/item-limits';
 import { type Streak, computeStreak, studyDayKey } from '@/lib/srs/streak';
 import { LEECH_LAPSES, newSrsFields, SUSPEND_SUGGEST_LAPSES } from '@/lib/srs/srs';
 import {
@@ -87,6 +88,16 @@ export async function addItems(
       result.skipped.push({ expression, reason: 'thiếu expression hoặc meaningVi' });
       continue;
     }
+    const tooLong = itemLimitError({
+      expression,
+      meaningVi,
+      reading: cleanTextOrNull(entry.reading),
+      hanviet: cleanTextOrNull(entry.hanviet),
+    });
+    if (tooLong) {
+      result.skipped.push({ expression, reason: tooLong.message });
+      continue;
+    }
     if (seen.has(expression)) {
       result.skipped.push({ expression, reason: 'trùng trong danh sách gửi lên' });
       continue;
@@ -114,7 +125,7 @@ export async function addItems(
           kind,
           expression,
           reading,
-          hanviet: cleanTextOrNull(entry.hanviet),
+          hanviet: normalizeHanviet(cleanTextOrNull(entry.hanviet)),
           meaningVi,
           level: entry.level ?? 'N5',
           notes: cleanTextOrNull(entry.notes),
@@ -460,10 +471,16 @@ export interface UpdateItemInput {
 }
 
 export async function updateItem(itemId: string, input: UpdateItemInput) {
+  const before = await prisma.item.findUniqueOrThrow({
+    where: { id: itemId },
+    select: { expression: true, meaningVi: true, reading: true, hanviet: true },
+  });
+  const tooLong = itemLimitError(input, before);
+  if (tooLong) throw new Error(tooLong.message);
   const data: Prisma.ItemUpdateInput = {};
   if (input.expression !== undefined) data.expression = cleanText(input.expression);
   if (input.reading !== undefined) data.reading = cleanTextOrNull(input.reading);
-  if (input.hanviet !== undefined) data.hanviet = cleanTextOrNull(input.hanviet);
+  if (input.hanviet !== undefined) data.hanviet = normalizeHanviet(cleanTextOrNull(input.hanviet));
   if (input.meaningVi !== undefined) data.meaningVi = cleanText(input.meaningVi);
   if (input.notes !== undefined) data.notes = cleanTextOrNull(input.notes);
   if (input.level !== undefined) data.level = input.level;

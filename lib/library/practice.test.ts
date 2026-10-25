@@ -144,6 +144,48 @@ describe('addItems — dedup', () => {
   });
 });
 
+describe('item length limits (lib/library/item-limits.ts)', () => {
+  it('skips an entry over a limit with the fix, and stores Hán Việt in upper case', async () => {
+    await resetData();
+    const res = await P.addItems(
+      [
+        { expression: '〜にもかかわらず、それでもなお〜しようとする', meaningVi: 'mặc dù' },
+        { expression: '〜ものの', meaningVi: 'x'.repeat(61) },
+        { expression: '配慮', meaningVi: 'sự quan tâm', reading: 'はいりょ', hanviet: 'phối lự' },
+      ],
+      'MCP',
+      'VOCAB',
+    );
+    expect(res.created).toBe(1);
+    expect(res.skipped.map((s) => s.reason)).toEqual([
+      expect.stringMatching(/^Từ \/ mẫu tối đa 20 ký tự/),
+      expect.stringMatching(/^Nghĩa tối đa 60 ký tự/),
+    ]);
+    const row = await prisma.item.findFirstOrThrow({ where: { expression: '配慮' } });
+    expect(row.hanviet).toBe('PHỐI LỰ');
+  });
+
+  it('edits an old long item without forcing it short, and refuses a new long value', async () => {
+    await resetData();
+    const old = await prisma.item.create({
+      data: { kind: 'GRAMMAR', expression: '〜ばかりに', meaningVi: 'y'.repeat(90), source: 'MCP' },
+    });
+    await P.updateItem(old.id, {
+      expression: '〜ばかりに',
+      meaningVi: 'y'.repeat(90),
+      level: 'N2',
+    });
+    expect((await prisma.item.findUniqueOrThrow({ where: { id: old.id } })).level).toBe('N2');
+    await expect(P.updateItem(old.id, { meaningVi: 'z'.repeat(61) })).rejects.toThrow(
+      /^Nghĩa tối đa 60 ký tự, đang có 61/,
+    );
+    await expect(P.updateItem(old.id, { hanviet: 'phối lự' })).resolves.toBeTruthy();
+    expect((await prisma.item.findUniqueOrThrow({ where: { id: old.id } })).hanviet).toBe(
+      'PHỐI LỰ',
+    );
+  });
+});
+
 describe('saveSettings direction', () => {
   it('get_settings reports the direction the web set, and an MCP patch of `direction` moves both', async () => {
     await resetData();
