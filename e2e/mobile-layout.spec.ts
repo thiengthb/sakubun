@@ -220,7 +220,9 @@ test('the header row stays one line at 360px', async ({ page }) => {
   ).toEqual([]);
 });
 
-test('item detail: level, state and star sit below the breadcrumb row', async ({ page }) => {
+test('item detail: star on the title row; meaning, level and actions below it', async ({
+  page,
+}) => {
   await page.setViewportSize(VIEWPORT);
   await page.goto('/login');
   await page.getByLabel('Email').fill(E2E_EMAIL);
@@ -230,22 +232,29 @@ test('item detail: level, state and star sit below the breadcrumb row', async ({
 
   await page.goto('/resources/g4', { waitUntil: 'networkidle' });
 
-  const crumb = await page.locator('nav[aria-label="Breadcrumb"]').first().boundingBox();
-  const star = await page.getByRole('button', { name: /đánh dấu sao/i }).boundingBox();
-  const level = await page.getByText('N3', { exact: true }).first().boundingBox();
-  const tabs = await page.getByRole('tab', { name: /Chỉ số/ }).boundingBox();
+  // docs/ui-standard.md › Đầu trang: a nested page's phone row is logo, trail over title, star.
+  // What does not fit the row (meaning, level, state, the two actions) goes below it.
+  const header = page.locator('[data-template] header');
+  const box = async (l: import('@playwright/test').Locator) => l.boundingBox();
+  const title = await box(header.locator('h1'));
+  const star = await box(page.getByRole('button', { name: /đánh dấu sao/i }));
+  const level = await box(header.getByText('N3', { exact: true }).locator('visible=true'));
+  const actions = await header
+    .getByRole('button', { name: 'Luyện riêng' })
+    .locator('visible=true')
+    .boundingBox();
+  const tabs = await box(page.getByRole('tab', { name: /Chỉ số/ }));
   expect(
-    crumb && star && level && tabs,
-    'header, star, level badge and tabs must all render',
+    title && star && level && actions && tabs,
+    'title, star, level badge, actions and tabs must all render',
   ).toBeTruthy();
 
-  const rowBottom = crumb!.y + crumb!.height;
-  expect(star!.y, 'the star is back on the breadcrumb row').toBeGreaterThanOrEqual(rowBottom);
-  expect(level!.y, 'the level badge is back on the breadcrumb row').toBeGreaterThanOrEqual(
-    rowBottom,
-  );
-  expect(star!.y).toBeLessThan(tabs!.y);
-  expect(level!.y).toBeLessThan(tabs!.y);
+  const mid = (b: { y: number; height: number }) => b.y + b.height / 2;
+  expect(Math.abs(mid(star!) - mid(title!)), 'the star sits on the title row').toBeLessThan(12);
+  const rowBottom = Math.max(title!.y + title!.height, star!.y + star!.height);
+  expect(level!.y, 'the level badge sits below the title row').toBeGreaterThanOrEqual(rowBottom);
+  expect(actions!.y, 'the actions sit below the meta line').toBeGreaterThan(level!.y);
+  expect(actions!.y).toBeLessThan(tabs!.y);
 });
 
 test('every page renders clean and fits a 390px viewport', async ({ page }) => {

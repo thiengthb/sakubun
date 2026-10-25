@@ -11,6 +11,7 @@ const TEMPLATE_PAGES = [
   '/resources/new?kind=grammar',
   '/resources/ph-item/edit',
   '/groups/new',
+  '/resources/ph-item',
 ];
 
 test.beforeAll(async () => {

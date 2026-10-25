@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { Button } from '@/components/ui/button';
 import { useTransition } from 'react';
 import { Plus, X } from 'lucide-react';
 import { toastResult } from '@/lib/core/action-toast';
@@ -74,8 +75,7 @@ export function ItemGroups({
               <ExpandingIconButton
                 icon={Plus}
                 label="Thêm vào nhóm"
-                size="sm"
-                className="rounded-full border-dashed"
+                variant="dashed"
                 disabled={isPending}
               />
             </DropdownMenuTrigger>
@@ -93,12 +93,15 @@ export function ItemGroups({
         )}
 
         {!hasAnyGroup && (
-          <span className="text-sm text-muted-foreground">
-            Chưa có nhóm phù hợp.{' '}
-            <Link href="/resources?tab=groups" className="underline">
-              Tạo nhóm
-            </Link>
-          </span>
+          <>
+            <span className="text-sm text-muted-foreground">Chưa có nhóm phù hợp.</span>
+            <Button asChild variant="dashed">
+              <Link href="/groups/new">
+                <Plus aria-hidden />
+                Thêm
+              </Link>
+            </Button>
+          </>
         )}
       </div>
     </div>

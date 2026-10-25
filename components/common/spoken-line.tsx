@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { SpeakButton } from '@/components/common/speak-button';
 import { hasFurigana, parseFurigana } from '@/lib/japanese/furigana';
 import { cn } from '@/lib/core/utils';
@@ -17,6 +17,8 @@ export function SpokenLine({
   align = 'end',
   playToken = null,
   className,
+  aside,
+  title = false,
 }: {
   text: string;
   speakText?: string;
@@ -29,6 +31,11 @@ export function SpokenLine({
   align?: 'end' | 'start';
   playToken?: string | number | null;
   className?: string;
+  /** Inline after the text, on its baseline: a reading in brackets beside a title. */
+  aside?: ReactNode;
+  /** A page title: a block row whose button sits inside the title's line box, so the row is
+   * exactly one title line tall (20px on a phone, 30px from 768px) and never grows the header. */
+  title?: boolean;
 }) {
   const [ratio, setRatio] = useState(0);
 
@@ -44,10 +51,11 @@ export function SpokenLine({
       className={cn(
         'gap-2',
         align === 'start' ? 'items-start' : 'items-end',
-        truncate ? 'flex w-full' : 'inline-flex',
+        truncate || title ? 'flex w-full' : 'inline-flex',
       )}
     >
       <SpeakButton
+        className={cn(title && '-my-0.5 md:my-0.75')}
         text={speakText ?? text}
         speaker={speaker}
         label={label}
@@ -94,6 +102,7 @@ export function SpokenLine({
           }
           return <span key={si}>{litChars}</span>;
         })}
+        {aside}
       </span>
     </span>
   );

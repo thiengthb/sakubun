@@ -1,3 +1,4 @@
+import { cn } from '@/lib/core/utils';
 import { Badge } from '@/components/ui/badge';
 import {
   Table,
@@ -24,6 +25,23 @@ function RoleBadge({ role }: { role: string }) {
   return <Badge variant="secondary">Chính</Badge>;
 }
 
+const RATING_DOT: Record<number, string> = {
+  1: 'bg-alert',
+  2: 'bg-warn',
+  3: 'bg-ok',
+  4: 'bg-info',
+};
+
+function byMonth(reviews: ItemReviewRow[]): [string, ItemReviewRow[]][] {
+  const groups = new Map<string, ItemReviewRow[]>();
+  for (const r of reviews) {
+    const d = new Date(r.reviewedAt);
+    const key = `Tháng ${d.getMonth() + 1}/${d.getFullYear()}`;
+    groups.set(key, [...(groups.get(key) ?? []), r]);
+  }
+  return [...groups.entries()];
+}
+
 export function ReviewLog({
   reviews,
   voiceSpeaker,
@@ -44,42 +62,60 @@ export function ReviewLog({
     );
   return (
     <>
-      <ul className="flex flex-col gap-2 md:hidden">
-        {reviews.map((r) => (
-          <li key={r.id} className="space-y-1.5 rounded-lg border border-border/70 p-3">
-            <div className="flex items-baseline justify-between gap-2">
-              <span className="font-medium">{stripEmoji(ratingLabel(r.rating))}</span>
-              <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
-                {formatDueExact(new Date(r.reviewedAt))}
-              </span>
-            </div>
-            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
-              <RoleBadge role={r.role} />
-              <span aria-hidden>·</span>
-              <span className="tabular-nums">độ bền {r.stability.toFixed(1)} ngày</span>
-              {r.errorTags.map((t) => (
-                <Badge key={t} variant="outline" className="border-alert/50 text-alert">
-                  {ERROR_TAG_LABELS[t]}
-                </Badge>
+      {/* Narrow column: one list, months as dividers, one row per review: what you answered first. */}
+      <div className="overflow-hidden rounded-lg bg-card ring-1 ring-foreground/10 @2xl:hidden">
+        {byMonth(reviews).map(([month, rows]) => (
+          <section key={month}>
+            <h3 className="bg-muted/70 px-3 py-1 text-xs font-bold text-muted-foreground">
+              {month}
+            </h3>
+            <ul className="divide-y divide-border">
+              {rows.map((r) => (
+                <li key={r.id} className="space-y-1 px-3 py-2.5">
+                  <div className="flex items-center gap-2">
+                    <span
+                      aria-hidden
+                      className={cn(
+                        'size-2 shrink-0 rounded-sm',
+                        RATING_DOT[r.rating] ?? 'bg-muted-foreground',
+                      )}
+                    />
+                    <span className="font-bold">{stripEmoji(ratingLabel(r.rating))}</span>
+                    {r.errorTags.map((t) => (
+                      <Badge key={t} variant="outline" className="border-alert/50 text-alert">
+                        {ERROR_TAG_LABELS[t]}
+                      </Badge>
+                    ))}
+                    <span className="ml-auto shrink-0 text-xs text-muted-foreground tabular-nums">
+                      {formatDueExact(new Date(r.reviewedAt))}
+                    </span>
+                  </div>
+                  <div className="pl-4 text-xs text-muted-foreground tabular-nums">
+                    {r.role === 'SECONDARY' ? 'Vai phụ' : 'Vai chính'} · độ bền{' '}
+                    {r.stability.toFixed(1)} ngày
+                  </div>
+                  {r.sentenceText && (
+                    <div className="pl-4">
+                      <SpokenLine
+                        text={stripEmoji(r.sentenceText)}
+                        ruby={r.sentenceRuby}
+                        showFurigana={showFurigana}
+                        speaker={voiceSpeaker}
+                        rate={speechRate}
+                        label="Nghe câu"
+                        align="start"
+                        className="text-sm font-normal text-muted-foreground"
+                      />
+                    </div>
+                  )}
+                </li>
               ))}
-            </div>
-            {r.sentenceText && (
-              <SpokenLine
-                text={stripEmoji(r.sentenceText)}
-                ruby={r.sentenceRuby}
-                showFurigana={showFurigana}
-                speaker={voiceSpeaker}
-                rate={speechRate}
-                label="Nghe câu"
-                align="start"
-                className="text-sm font-normal text-muted-foreground"
-              />
-            )}
-          </li>
+            </ul>
+          </section>
         ))}
-      </ul>
+      </div>
 
-      <div className="overflow-x-auto max-md:hidden">
+      <div className="overflow-x-auto @max-2xl:hidden">
         <Table>
           <TableHeader>
             <TableRow>
@@ -97,7 +133,14 @@ export function ReviewLog({
                 <TableCell className="whitespace-nowrap text-muted-foreground tabular-nums">
                   {formatDueExact(new Date(r.reviewedAt))}
                 </TableCell>
-                <TableCell className="whitespace-nowrap">
+                <TableCell className="whitespace-nowrap font-bold">
+                  <span
+                    aria-hidden
+                    className={cn(
+                      'mr-2 inline-block size-2 rounded-sm',
+                      RATING_DOT[r.rating] ?? 'bg-muted-foreground',
+                    )}
+                  />
                   {stripEmoji(ratingLabel(r.rating))}
                 </TableCell>
                 <TableCell>

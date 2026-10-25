@@ -25,14 +25,12 @@
       "app/history/loading.tsx": 1,
       "app/loading.tsx": 1,
       "app/page.tsx": 1,
-      "app/resources/[id]/loading.tsx": 1,
       "app/review/loading.tsx": 1,
       "app/review/page.tsx": 1,
       "components/features/dashboard/analytics-tabs.tsx": 1,
       "components/features/groups/group-detail-view.tsx": 1,
       "components/features/groups/group-item-picker.tsx": 1,
-      "components/features/history/history-view.tsx": 1,
-      "components/features/resources/item-analytics.tsx": 1
+      "components/features/history/history-view.tsx": 1
     }
   }
 }
