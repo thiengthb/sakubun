@@ -2,7 +2,7 @@ import { FormCardSkeleton, PageSkeleton } from '@/components/layout/page-skeleto
 
 export default function Loading() {
   return (
-    <PageSkeleton template="form" trail meta>
+    <PageSkeleton template="form" trail>
       <FormCardSkeleton fields={5} />
     </PageSkeleton>
   );

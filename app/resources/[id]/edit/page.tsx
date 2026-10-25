@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { PageShell } from '@/components/layout/page-shell';
 import { ParentCrumbs } from '@/components/layout/app-breadcrumbs';
+import { TitleSubject } from '@/components/common/title-subject';
 import { ItemEditForm } from '@/components/features/resources/item-edit-form';
 import { getItemStats } from '@/lib/insights/item-stats';
 import { getSessionUserId } from '@/lib/auth/current-user';
@@ -20,8 +21,11 @@ export default async function ItemEditPage({ params }: { params: Promise<{ id: s
     <PageShell
       template="form"
       breadcrumb={<ParentCrumbs section={stats.kind} self />}
-      title={stats.kind === 'vocab' ? 'Sửa từ vựng' : 'Sửa ngữ pháp'}
-      meta={<span lang="ja">{stats.expression}</span>}
+      title={
+        <TitleSubject subject={stats.expression} lang="ja">
+          {stats.kind === 'vocab' ? 'Sửa từ vựng' : 'Sửa ngữ pháp'}
+        </TitleSubject>
+      }
     >
       <Card>
         <CardContent>

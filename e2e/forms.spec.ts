@@ -69,6 +69,8 @@ test('edit an item: an emptied required field says so', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await login(page);
   await page.goto('/resources/form-item/edit', { waitUntil: 'networkidle' });
+  // thien, 2026-10-25: the title names the item beside the action, in brackets.
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Sửa ngữ pháp (〜ばかりに)');
   await field(page, 'Nghĩa (tiếng Việt)').fill('');
   await page.getByRole('button', { name: 'Lưu', exact: true }).click();
   await expect(page.getByText('Cần nhập nghĩa')).toBeVisible();
