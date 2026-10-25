@@ -22,7 +22,7 @@ const QUESTION: Record<QuickCard['mode'], Record<QuickCard['kind'], string>> = {
   cloze: { VOCAB: 'Chọn từ hợp với chỗ trống', GRAMMAR: 'Chọn mẫu hợp với chỗ trống' },
 };
 
-function Sentence({
+export function Sentence({
   segments,
   fill,
   showFurigana,
@@ -67,7 +67,7 @@ function Sentence({
   );
 }
 
-function spokenText(segments: Segment[], fill: string): string {
+export function spokenText(segments: Segment[], fill: string): string {
   return segments.map((s) => (s.mark === 'blank' ? fill : s.text)).join('');
 }
 

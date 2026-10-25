@@ -35,6 +35,7 @@ const DISPLAY_ALLOW = [
   'components/layout/user-avatar.tsx', // avatar initials sizing
   'components/ui/', // shadcn primitive sizing tokens (button, calendar, …)
   'components/common/review-card.tsx', // quick-review card: the sentence and word on show
+  'components/features/groups/group-cards.tsx', // flashcard face: the word alone, centred, as the hero
 ];
 
 const allowed = (path: string) =>

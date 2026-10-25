@@ -126,6 +126,12 @@ export interface DataTableProps<T> {
   bulkActions?: (selectedRows: T[], clearSelection: () => void) => ReactNode;
   /** The selected row ids, for a page whose main action acts on them (a picker's footer). */
   onSelectionChange?: (ids: string[]) => void;
+  /**
+   * The page's own footer (a picker's FormFooter). Under the table it sits below the pages, inside
+   * the fitted height, so it never covers them (thien, Nhóm round 1); under the cards it stays a
+   * direct child of the list, so a sticky footer keeps sticking while the cards scroll.
+   */
+  footer?: ReactNode;
   renderCard?: (row: T, index: number) => ReactNode;
   cardHref?: (row: T) => string;
   cardHrefLabel?: (row: T) => string;
@@ -158,6 +164,7 @@ export function DataTable<T>({
   rowNumberHeader = 'STT',
   bulkActions,
   onSelectionChange,
+  footer,
   renderCard,
   cardHref,
   cardHrefLabel,
@@ -549,7 +556,10 @@ export function DataTable<T>({
       {filterChips && <FilterChips chips={filterChips} onReset={onResetFilters} />}
 
       {rows.length === 0 ? (
-        <EmptyState icon={emptyIcon} title={emptyMessage} />
+        <>
+          <EmptyState icon={emptyIcon} title={emptyMessage} />
+          {footer}
+        </>
       ) : (
         <>
           {renderCard && (
@@ -823,7 +833,12 @@ export function DataTable<T>({
                 }}
               />
             )}
+            {footer}
           </div>
+          {footer && renderCard && (
+            // `contents`, so the footer's parent box is the list itself and a sticky footer sticks.
+            <div className={cn('contents', !cards && 'lg:hidden')}>{footer}</div>
+          )}
         </>
       )}
 

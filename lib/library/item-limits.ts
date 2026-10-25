@@ -61,3 +61,9 @@ export function itemLimitError(
 export function normalizeHanviet(s: string | null): string | null {
   return s ? s.toLocaleUpperCase('vi') : s;
 }
+
+/**
+ * How many items a library list loads at once (Tài nguyên, a group's add page). Above any real
+ * library, so a list never quietly stops short of what search should find.
+ */
+export const MAX_LISTED_ITEMS = 10_000;

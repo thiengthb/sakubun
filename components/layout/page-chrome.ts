@@ -12,13 +12,14 @@ export const PAGE_CHROME = {
   header: 'space-y-3',
   /** Laptop only: the trail line above the title. */
   trail: 'flex h-4 min-w-0 items-center max-md:hidden',
-  stack: 'space-y-1',
+  /** Laptop: 8px from the trail to the title and from the title to the meta (thien, Nhóm round 1). */
+  stack: 'space-y-1 md:space-y-2',
   row: 'flex min-h-9 min-w-0 items-center gap-3 md:min-h-7',
   block: 'min-w-0 flex-1',
   /** Phone only: the trail inside the title block, above the title. */
   phoneTrail: 'mb-1 flex h-4 min-w-0 items-center md:hidden',
   title: 'text-lg leading-5 font-extrabold break-words md:text-2xl md:leading-tight',
-  meta: 'text-xs leading-4 text-muted-foreground md:mt-1',
+  meta: 'text-xs leading-4 text-muted-foreground md:mt-2',
   /** Phone, nested page: the trail holds the block's small line, so the meta drops below the row. */
   phoneMeta: 'text-xs leading-4 text-muted-foreground md:hidden',
   /** Phone, `actionsOnPhone="split"`: the actions get their own row and share it equally. */

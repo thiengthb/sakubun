@@ -134,6 +134,7 @@ export function GroupItemTable({
   items,
   mixed,
   onSelectionChange,
+  footer,
   voiceSpeaker,
   speechRate,
   showFurigana = false,
@@ -143,6 +144,8 @@ export function GroupItemTable({
   items: GroupMemberItem[];
   mixed: boolean;
   onSelectionChange?: (ids: string[]) => void;
+  /** A picker's footer: DataTable keeps it clear of the pages. */
+  footer?: ReactNode;
   voiceSpeaker?: number;
   speechRate?: number;
   showFurigana?: boolean;
@@ -198,6 +201,7 @@ export function GroupItemTable({
       enableRowNumbers
       enableRowSelection
       onSelectionChange={onSelectionChange}
+      footer={footer}
       cardHref={members ? (r) => `/resources/${r.itemId}` : undefined}
       cardHrefLabel={(r) => `Xem chi tiết ${r.expression}`}
       renderCard={(r) => (

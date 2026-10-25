@@ -12,12 +12,13 @@ import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { AddButton } from '@/components/common/add-button';
 import { GroupEditButton } from '@/components/features/groups/group-actions';
 import { GroupCards } from '@/components/features/groups/group-cards';
+import { GroupKindBadge } from '@/components/features/groups/group-kind-badge';
 import { GroupItemTable } from '@/components/features/groups/group-item-table';
 import { GROUP_KIND_LABELS } from '@/lib/library/group-kinds';
 import type { GroupDetail } from '@/lib/library/groups';
 import type { QuickCard } from '@/lib/app/quick-review';
 
-// List template: the group's name is the h1, its size, kind and note the meta; Thêm opens the
+// List template: the group's name is the h1, its kind, size and note the meta; Thêm opens the
 // add-items page, Sửa the edit page, and Luyện nhóm (once there is something to practise) copies
 // the command for the MCP client.
 export function GroupDetailView({
@@ -44,10 +45,17 @@ export function GroupDetailView({
         breadcrumb={<ParentCrumbs section="groups" self />}
         title={group.name}
         meta={
-          <>
-            {group.members.length} mục · {GROUP_KIND_LABELS[group.kind]}
-            {group.note && <> · {group.note}</>}
-          </>
+          // thien, Nhóm round 1: the kind is a chip, first; then the size, then the note.
+          <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <GroupKindBadge kind={group.kind} />
+            <span>{group.members.length} mục</span>
+            {group.note && (
+              <>
+                <span aria-hidden>·</span>
+                <span className="min-w-0 break-words">{group.note}</span>
+              </>
+            )}
+          </span>
         }
         actions={
           <>
@@ -93,6 +101,7 @@ export function GroupDetailView({
 
         <TabsContent value="flashcard">
           <GroupCards
+            groupId={group.id}
             key={cards.map((c) => c.itemId).join(',')}
             cards={cards}
             showFurigana={showFurigana}

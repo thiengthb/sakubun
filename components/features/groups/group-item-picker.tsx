@@ -14,7 +14,8 @@ import { GROUP_KIND_LABELS } from '@/lib/library/group-kinds';
 import type { GroupDetail, GroupMemberItem } from '@/lib/library/groups';
 
 // Form template: tick the items to add in the list template's table (cards on a phone), then add
-// them from the footer, which stays in reach while the list scrolls.
+// them from the footer. The table owns where it goes: under the pages on a laptop, so it never
+// covers them and a pick on page 3 is as easy as on page 1; sticky under the cards on a phone.
 export function GroupItemPicker({
   group,
   addable,
@@ -60,27 +61,27 @@ export function GroupItemPicker({
           description={`Mọi ${kinds} trong kho đã ở trong nhóm này.`}
         />
       ) : (
-        <>
-          <GroupItemTable
-            mode="pick"
-            groupId={group.id}
-            items={addable}
-            mixed={mixed}
-            onSelectionChange={setSelected}
-            voiceSpeaker={voiceSpeaker}
-            speechRate={speechRate}
-            showFurigana={showFurigana}
-          />
-          <FormFooter status={`Đã chọn ${selected.length} mục`}>
-            <Button variant="outline" onClick={() => router.push(back)} disabled={isPending}>
-              Huỷ
-            </Button>
-            <Button onClick={submit} disabled={isPending || selected.length === 0}>
-              <Plus aria-hidden />
-              Thêm
-            </Button>
-          </FormFooter>
-        </>
+        <GroupItemTable
+          mode="pick"
+          groupId={group.id}
+          items={addable}
+          mixed={mixed}
+          onSelectionChange={setSelected}
+          voiceSpeaker={voiceSpeaker}
+          speechRate={speechRate}
+          showFurigana={showFurigana}
+          footer={
+            <FormFooter status={`Đã chọn ${selected.length} mục`}>
+              <Button variant="outline" onClick={() => router.push(back)} disabled={isPending}>
+                Huỷ
+              </Button>
+              <Button onClick={submit} disabled={isPending || selected.length === 0}>
+                <Plus aria-hidden />
+                Thêm
+              </Button>
+            </FormFooter>
+          }
+        />
       )}
     </PageShell>
   );

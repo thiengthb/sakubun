@@ -2,6 +2,7 @@ import { prisma } from '@/lib/db/db';
 import { GRAMMAR_KIND, VOCAB_KIND } from '@/lib/library/item-kinds';
 import { cleanText, cleanTextOrNull } from '@/lib/core/text';
 import { groupTextError } from '@/lib/library/group-limits';
+import { MAX_LISTED_ITEMS } from '@/lib/library/item-limits';
 import type { GroupKind } from '@/lib/library/group-kinds';
 
 export { GROUP_KINDS, isGroupKind, type GroupKind } from '@/lib/library/group-kinds';
@@ -181,7 +182,7 @@ export async function listAddableItems(groupId: string): Promise<GroupMemberItem
       srs: { select: { state: true, due: true, reps: true, lapses: true } },
     },
     orderBy: { expression: 'asc' },
-    take: 500,
+    take: MAX_LISTED_ITEMS,
   });
   return items.map((i) => ({
     itemId: i.id,
