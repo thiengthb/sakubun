@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/db/db';
 import { listSentences, type SentenceHistoryRow } from '@/lib/library/practice';
+import { MAX_LISTED_ITEMS } from '@/lib/library/item-limits';
 
 // The History page lists both kinds of translation practice in one timeline: pre-v2 sentences
 // (Sentence, possibly several items) and v2 turns (Turn, exactly one item). A turn is dressed in
@@ -68,7 +69,9 @@ export function turnToRow(turn: TurnHistorySource): HistoryRow {
   };
 }
 
-export async function listHistory(limit = 1000): Promise<HistoryRow[]> {
+// The page lists every turn (the same ceiling as Tài nguyên): a cap below the real count would
+// make the header's count and the search quietly wrong.
+export async function listHistory(limit = MAX_LISTED_ITEMS): Promise<HistoryRow[]> {
   const [sentences, turns] = await Promise.all([
     listSentences(limit),
     prisma.turn.findMany({

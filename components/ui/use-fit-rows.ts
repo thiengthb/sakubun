@@ -3,6 +3,9 @@
 import { useEffect, useRef, useState, type RefObject } from 'react';
 import { fitItemCount } from '@/lib/core/fit-rows';
 
+/** PAGE_CHROME.page's bottom padding from 768px (md:pb-8): where a list's pinned footer rests. */
+export const PAGE_BOTTOM = 32;
+
 export interface UseFitRowsOptions {
   topRef: RefObject<HTMLElement | null>;
   footerRef?: RefObject<HTMLElement | null>;

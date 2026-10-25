@@ -96,4 +96,18 @@ describe('listHistory', () => {
     ]);
     expect(rows[1].rating).toBeNull();
   });
+
+  it('lists more than the old 1000-row cap', async () => {
+    await prisma.turn.createMany({
+      data: Array.from({ length: 1001 }, (_, i) => ({
+        id: `t${i}`,
+        direction: 'JA_VI',
+        ja: TURN.ja,
+        vi: TURN.vi,
+        status: 'graded',
+        rating: 3,
+      })),
+    });
+    expect(await H.listHistory()).toHaveLength(1001);
+  });
 });

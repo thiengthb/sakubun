@@ -61,7 +61,7 @@ import { useSessionState } from '@/components/common/use-session-state';
 import { useScrollMore } from '@/components/common/use-scroll-more';
 import { LIST_CARD } from '@/components/common/list-card';
 import { ScrollMoreStatus } from '@/components/common/scroll-more-status';
-import { useFitRows, usePinnedFooter } from '@/components/ui/use-fit-rows';
+import { PAGE_BOTTOM, useFitRows, usePinnedFooter } from '@/components/ui/use-fit-rows';
 import {
   Table,
   TableBody,
@@ -88,8 +88,6 @@ const VIEW_CHOICES = [
   { value: 'cards', label: 'Xem dạng thẻ', icon: LayoutGrid },
 ] as const satisfies readonly { value: DataTableView; label: string; icon: LucideIcon }[];
 
-// PAGE_CHROME.page's bottom padding from 768px (md:pb-8): where a table's footer rests.
-const PAGE_BOTTOM = 32;
 const EMPTY_SORTING: SortingState = [];
 const EMPTY_SIZING: ColumnSizingState = {};
 

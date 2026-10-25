@@ -21,12 +21,49 @@ test('mỗi kiểu luyện được gọi đúng tên trên thẻ lịch sử', 
      VALUES (?, ?, ?, ?, NULL, ?, NULL, ?, NULL, ?, ?, ?, 0, 'GRADED')`,
   );
   const rows = [
-    ['s-quiz', 'JA_VI', 'QUIZ', 'ここで写真を撮っ（＿＿）か。', '〜てもいいです (C)', 'Chọn C', 0, 'quiz'],
-    ['s-tb', 'JA_VI', 'TEACH_BACK', '〜たことがあります', 'Mẫu này nói về kinh nghiệm.', 'Là đã từng làm gì', 85, 'giảng lại'],
-    ['s-cv', 'VI_JA', 'CONVERSATION', 'Bối cảnh: gọi cho cấp trên. Bạn cần: xin đến muộn.', '申し訳ございません。', 'すみません。', 70, 'hội thoại'],
+    [
+      's-quiz',
+      'JA_VI',
+      'QUIZ',
+      'ここで写真を撮っ（＿＿）か。',
+      '〜てもいいです (C)',
+      'Chọn C',
+      0,
+      'quiz',
+    ],
+    [
+      's-tb',
+      'JA_VI',
+      'TEACH_BACK',
+      '〜たことがあります',
+      'Mẫu này nói về kinh nghiệm.',
+      'Là đã từng làm gì',
+      85,
+      'giảng lại',
+    ],
+    [
+      's-cv',
+      'VI_JA',
+      'CONVERSATION',
+      'Bối cảnh: gọi cho cấp trên. Bạn cần: xin đến muộn.',
+      '申し訳ございません。',
+      'すみません。',
+      70,
+      'hội thoại',
+    ],
   ] as const;
   rows.forEach((r, i) =>
-    insert.run(r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7], new Date(Date.now() - i * 60_000).toISOString()),
+    insert.run(
+      r[0],
+      r[1],
+      r[2],
+      r[3],
+      r[4],
+      r[5],
+      r[6],
+      r[7],
+      new Date(Date.now() - i * 60_000).toISOString(),
+    ),
   );
   db.close();
 
@@ -36,10 +73,16 @@ test('mỗi kiểu luyện được gọi đúng tên trên thẻ lịch sử', 
   const cases = [
     { open: 'ここで写真を撮っ', prompt: 'Câu hỏi', answer: 'Bạn chọn', reference: 'Đáp án' },
     { open: '〜たことがあります', prompt: 'Mẫu', answer: 'Bạn giảng', reference: 'Tham khảo' },
-    { open: 'Bối cảnh: gọi cho cấp trên', prompt: 'Tình huống', answer: 'Bạn nói', reference: 'Câu mẫu' },
+    {
+      open: 'Bối cảnh: gọi cho cấp trên',
+      prompt: 'Tình huống',
+      answer: 'Bạn nói',
+      reference: 'Câu mẫu',
+    },
   ];
   for (const c of cases) {
-    await page.getByText(c.open, { exact: false }).first().click();
+    // A click on the card opens its detail (the phone's scroll list shares the DOM, hidden).
+    await page.getByText(c.open, { exact: false }).filter({ visible: true }).first().click();
     const dialog = page.getByRole('dialog');
     await expect(dialog).toBeVisible();
     await expect(dialog.getByText(c.prompt, { exact: true })).toBeVisible();

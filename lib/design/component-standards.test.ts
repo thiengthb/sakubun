@@ -46,8 +46,7 @@ describe('component standards', () => {
     // places their author did not foresee. A component that hardcodes its own spacing with no way
     // in forces the next caller to wrap it in a div — which is how layout drifts.
     const ALLOW = new Set([
-      'components/common/use-paged-list.ts', // hooks, not components
-      'components/common/use-server-action.ts',
+      'components/common/use-server-action.ts', // hooks, not components
       'components/common/use-session-state.ts',
       'components/common/use-scroll-more.ts',
       'components/common/field-label-context.ts',
@@ -158,6 +157,31 @@ describe('component standards', () => {
       offenders,
       'lib/core is the base layer: dates, text, class names, ActionResult. It must not depend on ' +
         `a domain:\n${offenders.join('\n')}`,
+    ).toEqual([]);
+  });
+
+  it('a paged list rests its footer at the window bottom', () => {
+    // thien, Tài nguyên 2026-10-24: a list's pagination sits a page padding above the window's
+    // bottom, the space a page cannot fill goes above it. Lịch sử round 3 shipped a card list whose
+    // pages floated under the last row, because only DataTable did this. Whoever draws the pager
+    // pins it.
+    const unpinned = (src: string) =>
+      /<DataPagination\b/.test(src) && !/usePinnedFooter\(/.test(src);
+    expect(unpinned('<DataPagination page={1} />'), 'the check must catch a bare pager').toBe(true);
+    expect(unpinned('usePinnedFooter({ footerRef });\n<DataPagination page={1} />')).toBe(false);
+
+    const offenders: string[] = [];
+    for (const root of ['app', 'components']) {
+      for (const file of sources(root)) {
+        if (rel(file) === 'components/ui/data-pagination.tsx') continue;
+        if (unpinned(readFileSync(file, 'utf8'))) offenders.push(rel(file));
+      }
+    }
+    expect(
+      offenders,
+      'These render <DataPagination> without usePinnedFooter (components/ui/use-fit-rows.ts). ' +
+        'Wrap the pager in a footer box with a spacer and pin it, as DataTable and HistoryList do:\n' +
+        offenders.join('\n'),
     ).toEqual([]);
   });
 });

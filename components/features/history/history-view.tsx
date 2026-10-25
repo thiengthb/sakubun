@@ -1,9 +1,12 @@
+import { History } from 'lucide-react';
 import { EmptyState } from '@/components/common/empty-state';
 import { HistoryList } from '@/components/features/history/history-list';
 import { PageShell } from '@/components/layout/page-shell';
-import type { FuriganaMode } from '@/lib/settings/schema';
+import { furiganaInApp, type FuriganaMode } from '@/lib/settings/schema';
 import type { HistoryRow } from '@/lib/app/history';
 
+// List template: every translation turn, newest first. Nothing is created here (the MCP tutor
+// stages and grades turns), so the header has no action.
 export function HistoryView({
   sentences,
   voiceSpeaker,
@@ -16,9 +19,10 @@ export function HistoryView({
   furiganaMode?: FuriganaMode;
 }) {
   return (
-    <PageShell section="history">
+    <PageShell template="list" title="Lịch sử" meta={`${sentences.length} lượt dịch`}>
       {sentences.length === 0 ? (
         <EmptyState
+          icon={History}
           title="Chưa có lượt dịch nào"
           description={
             <>
@@ -31,7 +35,7 @@ export function HistoryView({
           sentences={sentences}
           voiceSpeaker={voiceSpeaker}
           speechRate={speechRate}
-          furiganaMode={furiganaMode}
+          showFurigana={furiganaInApp(furiganaMode)}
         />
       )}
     </PageShell>
