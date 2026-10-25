@@ -118,6 +118,10 @@ const tooltipStyle = {
   fontSize: 12,
 };
 const axisTick = { fill: C.axis, fontSize: 11 };
+// Recharts gives each Y axis 60px by default, which left a wide empty strip on both sides of a
+// phone-width chart (thien, Phân tích round 1). Four digits at 11px fit in 32.
+const AXIS_WIDTH = 32;
+const CHART_MARGIN = { top: 6, right: 0, bottom: 0, left: 0 };
 
 // The shared chart frame, with the sentence that says why a chart is blank in place of the chart.
 function Panel({
@@ -250,10 +254,7 @@ export function StatsView({ stats }: { stats: StudyStats }) {
           empty={emptyFor('reviews', 'lượt ôn nào')}
         >
           <ResponsiveContainer width="100%" height={240}>
-            <ComposedChart
-              data={accuracySeries}
-              margin={{ top: 6, right: 8, bottom: 0, left: -18 }}
-            >
+            <ComposedChart data={accuracySeries} margin={CHART_MARGIN}>
               <CartesianGrid stroke={C.grid} strokeDasharray="3 3" vertical={false} />
               <XAxis
                 dataKey="label"
@@ -263,6 +264,7 @@ export function StatsView({ stats }: { stats: StudyStats }) {
                 minTickGap={16}
               />
               <YAxis
+                width={AXIS_WIDTH}
                 yAxisId="l"
                 domain={[0, 100]}
                 tick={axisTick}
@@ -270,6 +272,7 @@ export function StatsView({ stats }: { stats: StudyStats }) {
                 axisLine={false}
               />
               <YAxis
+                width={AXIS_WIDTH}
                 yAxisId="r"
                 orientation="right"
                 tick={axisTick}
@@ -314,7 +317,7 @@ export function StatsView({ stats }: { stats: StudyStats }) {
           empty={emptyFor('sentences', 'câu nào được chấm')}
         >
           <ResponsiveContainer width="100%" height={240}>
-            <ComposedChart data={timeSeries} margin={{ top: 6, right: 8, bottom: 0, left: -18 }}>
+            <ComposedChart data={timeSeries} margin={CHART_MARGIN}>
               <CartesianGrid stroke={C.grid} strokeDasharray="3 3" vertical={false} />
               <XAxis
                 dataKey="label"
@@ -323,8 +326,15 @@ export function StatsView({ stats }: { stats: StudyStats }) {
                 axisLine={false}
                 minTickGap={16}
               />
-              <YAxis yAxisId="l" tick={axisTick} tickLine={false} axisLine={false} />
               <YAxis
+                width={AXIS_WIDTH}
+                yAxisId="l"
+                tick={axisTick}
+                tickLine={false}
+                axisLine={false}
+              />
+              <YAxis
+                width={AXIS_WIDTH}
                 yAxisId="r"
                 orientation="right"
                 tick={axisTick}
@@ -370,10 +380,7 @@ export function StatsView({ stats }: { stats: StudyStats }) {
           empty={emptyFor('progress', 'hoạt động nào')}
         >
           <ResponsiveContainer width="100%" height={240}>
-            <ComposedChart
-              data={progressSeries}
-              margin={{ top: 6, right: 8, bottom: 0, left: -18 }}
-            >
+            <ComposedChart data={progressSeries} margin={CHART_MARGIN}>
               <CartesianGrid stroke={C.grid} strokeDasharray="3 3" vertical={false} />
               <XAxis
                 dataKey="label"
@@ -382,7 +389,7 @@ export function StatsView({ stats }: { stats: StudyStats }) {
                 axisLine={false}
                 minTickGap={16}
               />
-              <YAxis tick={axisTick} tickLine={false} axisLine={false} />
+              <YAxis width={AXIS_WIDTH} tick={axisTick} tickLine={false} axisLine={false} />
               <Tooltip contentStyle={tooltipStyle} />
               <Bar dataKey="sentences" name="Câu đã luyện" fill={C.time} radius={[3, 3, 0, 0]} />
               <Bar dataKey="newItems" name="Mục mới" fill={C.neu} radius={[3, 3, 0, 0]} />
@@ -434,11 +441,19 @@ function PerfChart({
       })}
     >
       <ResponsiveContainer width="100%" height={240}>
-        <ComposedChart data={data} margin={{ top: 6, right: 8, bottom: 0, left: -18 }}>
+        <ComposedChart data={data} margin={CHART_MARGIN}>
           <CartesianGrid stroke={C.grid} strokeDasharray="3 3" vertical={false} />
           <XAxis dataKey="label" tick={axisTick} tickLine={false} axisLine={false} />
-          <YAxis yAxisId="l" domain={[0, 100]} tick={axisTick} tickLine={false} axisLine={false} />
           <YAxis
+            width={AXIS_WIDTH}
+            yAxisId="l"
+            domain={[0, 100]}
+            tick={axisTick}
+            tickLine={false}
+            axisLine={false}
+          />
+          <YAxis
+            width={AXIS_WIDTH}
             yAxisId="r"
             orientation="right"
             tick={axisTick}
