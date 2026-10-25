@@ -7,7 +7,9 @@ import {
   Dumbbell,
   FileSpreadsheet,
   FolderOpen,
+  GalleryVerticalEnd,
   Languages,
+  List,
   TextCursorInput,
   TrendingUp,
   UserRound,
@@ -67,6 +69,16 @@ export const RESOURCE_TABS: StoredTabSet = {
   urlKey: 'tab',
 };
 
+export const GROUP_TABS: StoredTabSet = {
+  items: [
+    { value: 'list', label: 'Danh sách', icon: List },
+    { value: 'flashcard', label: 'Flashcard', icon: GalleryVerticalEnd },
+  ],
+  label: 'Chọn khung xem',
+  initial: 'list',
+  storeKey: 'group.tab',
+};
+
 export const INPUT_TABS: PageTabSet = {
   items: [
     { value: 'single', label: 'Theo trường', icon: TextCursorInput },
@@ -111,6 +123,7 @@ export const PAGE_TAB_SETS = {
   resources: RESOURCE_TABS,
   input: INPUT_TABS,
   item: itemTabs(),
+  group: GROUP_TABS,
 } satisfies Record<string, PageTabSet>;
 
 export type PageTabSetName = keyof typeof PAGE_TAB_SETS;

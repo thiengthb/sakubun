@@ -86,6 +86,11 @@ describe('loading skeletons match their routes', () => {
       source: 'components/features/resources/item-analytics.tsx',
       loading: 'app/resources/[id]/loading.tsx',
     },
+    {
+      name: 'group detail',
+      source: 'components/features/groups/group-detail-view.tsx',
+      loading: 'app/groups/[id]/loading.tsx',
+    },
   ];
 
   for (const t of TEMPLATE_TABBED) {
@@ -101,32 +106,6 @@ describe('loading skeletons match their routes', () => {
         readFileSync(t.source, 'utf8'),
         `${t.source} does not draw its tabs from ${set![1]}`,
       ).toMatch(new RegExp(`\\b${set![1]}\\b`));
-    });
-  }
-
-  // Untemplated pages keep the old tab rail until their step-6 PR.
-  const TABBED: { name: string; source: string; loading: string; tabsVar: RegExp }[] = [
-    {
-      name: 'group detail',
-      source: 'components/features/groups/group-detail-view.tsx',
-      loading: 'app/groups/[id]/loading.tsx',
-      tabsVar: /const GROUP_TABS = \[([\s\S]*?)\] as const/,
-    },
-  ];
-
-  for (const t of TABBED) {
-    it(`${t.name}: the skeleton draws as many tabs as the page`, () => {
-      const block = t.tabsVar.exec(readFileSync(t.source, 'utf8'));
-      expect(block, `could not find the tab list in ${t.source}`).not.toBeNull();
-      const tabs = [...block![1].matchAll(/value:/g)].length;
-      const loading = readFileSync(t.loading, 'utf8');
-      const count = /<TabsAside[^>]*count=\{(\d+)\}/.exec(loading);
-      expect(count, `${t.loading} renders no <TabsAside count={…}>`).not.toBeNull();
-      expect(
-        Number(count![1]),
-        `${t.loading} draws ${count![1]} tab placeholders but ${t.source} renders ${tabs} tabs — ` +
-          'the rail width is derived from this count, so a stale one is also a mobile overflow.',
-      ).toBe(tabs);
     });
   }
 

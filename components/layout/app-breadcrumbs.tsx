@@ -105,17 +105,23 @@ export function ParentCrumbs({
   section,
   self = false,
   pending = false,
+  record,
 }: {
   section: BreadcrumbSection;
   /** Include `section` itself: a detail or action page under it. */
   self?: boolean;
   /** A loading screen that does not know `section` yet (grammar or vocab): a bar in its place. */
   pending?: boolean;
+  /** A page acting on one record (add items to a group): the record, after `section`. */
+  record?: { label: string; href?: string; pending?: boolean };
 }) {
   const up = PARENT[section];
   const items: Crumb[] = [
     ...(up ? [CRUMBS[up]] : []),
     ...(self ? [{ ...CRUMBS[section], pending }] : []),
+    ...(record
+      ? [{ ...record, icon: CRUMBS[section].icon, description: `Mở ${record.label}` }]
+      : []),
   ];
   return <Breadcrumbs items={items} parentsOnly />;
 }

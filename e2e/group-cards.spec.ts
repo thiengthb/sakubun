@@ -108,36 +108,53 @@ async function openCards(page: Page) {
 
 test.beforeAll(seedE2eAccount);
 
-test('a group is browsed on the quick-review card, and browsing grades nothing', async ({
+test('a group is browsed as flashcards that remember their place, and browsing grades nothing', async ({
   page,
 }) => {
   seed();
   await login(page);
   await openCards(page);
 
-  // The word stands in its example sentence, underlined; the answer opens below on request.
-  await expect(page.getByText('Từ gạch chân nghĩa là gì?')).toBeVisible();
-  await expect(page.getByText('nắm bắt', { exact: true })).toHaveCount(0);
-  await page.getByRole('button', { name: 'Xem đáp án' }).click();
+  // The front is the word alone, no question; the card turns over to its meaning and example.
+  const card = page.getByRole('button', { name: /Bấm để lật/ });
+  await expect(card).toHaveAccessibleName('把握. Bấm để lật');
+  await expect(page.getByText('Từ gạch chân nghĩa là gì?')).toHaveCount(0);
+  await expect(page.getByText('nắm bắt', { exact: true })).not.toBeVisible();
+  await card.click();
   await expect(page.getByText('nắm bắt', { exact: true })).toBeVisible();
   await expect(page.getByText('Nắm bắt tình hình.')).toBeVisible();
+  await page.getByRole('button', { name: 'Lật thẻ' }).click();
+  await expect(page.getByText('nắm bắt', { exact: true })).not.toBeVisible();
 
-  await page.getByRole('button', { name: 'Tiếp' }).click();
+  await page.getByRole('button', { name: 'Thẻ sau' }).click();
   await expect(page.getByLabel('Thẻ 2 / 3')).toBeVisible();
-  await page.getByRole('button', { name: 'Trước' }).click();
+  await page.getByRole('button', { name: 'Thẻ trước' }).click();
   await expect(page.getByLabel('Thẻ 1 / 3')).toBeVisible();
 
-  // The keyboard walks the same way: Enter reveals then moves on, arrows step.
+  // The keyboard walks the same way: arrows step, Space turns the card.
   await page.locator('body').click({ position: { x: 1, y: 1 } });
   await page.keyboard.press('ArrowRight');
   await expect(page.getByLabel('Thẻ 2 / 3')).toBeVisible();
-  await page.keyboard.press('Enter');
+  await page.keyboard.press(' ');
   await expect(page.getByText('mơ hồ', { exact: true })).toBeVisible();
-  await page.keyboard.press('Enter');
-  await expect(page.getByLabel('Thẻ 3 / 3')).toBeVisible();
-  await page.getByRole('button', { name: 'Xem đáp án' }).click();
-  await page.getByRole('button', { name: 'Tiếp' }).click();
 
+  // The place survives a reload.
+  await page.reload({ waitUntil: 'networkidle' });
+  await expect(page.getByLabel('Thẻ 2 / 3')).toBeVisible();
+
+  // Shuffling starts over in another order; the order also survives a reload.
+  const shuffle = page.getByRole('button', { name: 'Đảo thứ tự' });
+  await shuffle.click();
+  await expect(shuffle).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByLabel('Thẻ 1 / 3')).toBeVisible();
+  const first = await page.getByRole('button', { name: /Bấm để lật/ }).getAttribute('aria-label');
+  await page.reload({ waitUntil: 'networkidle' });
+  await expect(page.getByRole('button', { name: /Bấm để lật/ })).toHaveAccessibleName(first!);
+  await shuffle.click();
+  await expect(shuffle).toHaveAttribute('aria-pressed', 'false');
+  await expect(card).toHaveAccessibleName('把握. Bấm để lật');
+
+  for (let i = 0; i < 3; i++) await page.getByRole('button', { name: 'Thẻ sau' }).click();
   await expect(page.getByText('Đã xem hết 3 thẻ')).toBeVisible();
   await page.getByRole('button', { name: 'Xem lại từ đầu' }).click();
   await expect(page.getByLabel('Thẻ 1 / 3')).toBeVisible();
@@ -147,33 +164,43 @@ test('a group is browsed on the quick-review card, and browsing grades nothing',
 test.describe('on a phone', () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
-  test('group list rows keep one line each, and the add page pages its list', async ({ page }) => {
+  test('group items fit a phone, and the add page keeps Thêm in reach', async ({ page }) => {
     seedLong();
     await login(page);
     await page.goto('/groups/grpC', { waitUntil: 'networkidle' });
-    const row = page.getByRole('button', { name: /^Gỡ 〜\(よ\)うが/ }).locator('..');
-    expect((await row.boundingBox())!.height, 'a long name does not spill out of its row').toBe(64);
+    const card = page
+      .locator('[data-slot="data-table-cards"] > li')
+      .filter({ hasText: '〜(よ)うが' });
+    expect(
+      await card.evaluate((el) => el.scrollWidth <= el.clientWidth),
+      'a long name wraps inside its card, it does not spill sideways',
+    ).toBe(true);
 
+    // The list template on a phone: cards that load more as they scroll, not pages.
     await page.goto('/groups/grpC/add', { waitUntil: 'networkidle' });
-    await expect(page.getByRole('checkbox', { name: /^Chọn / })).toHaveCount(20);
-    const add = page.getByRole('button', { name: /Thêm .*mục/ });
+    const picks = page.getByRole('checkbox', { name: 'Chọn mục này' });
+    await expect(picks).toHaveCount(20);
+    const add = page.getByRole('button', { name: 'Thêm', exact: true });
     const box = (await add.boundingBox())!;
     expect(box.y + box.height, 'the add button is in reach without scrolling').toBeLessThanOrEqual(
       844,
     );
-    await page.getByRole('button', { name: 'Trang 2' }).click();
-    await expect(page.getByRole('checkbox', { name: /^Chọn / })).toHaveCount(5);
+    await picks.first().click();
+    // DataTable renders the footer under the cards and under the table; CSS shows one.
+    await expect(page.getByText('Đã chọn 1 mục').filter({ visible: true })).toBeVisible();
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    await expect.poll(() => picks.count()).toBeGreaterThan(20);
   });
 
-  test('group cards at 390px: no sideways scroll, the buttons above the fold', async ({ page }) => {
+  test('group cards at 390px: no sideways scroll, the controls above the fold', async ({
+    page,
+  }) => {
     seed();
     await login(page);
     await openCards(page);
     const m = await page.evaluate(() => {
       const de = document.documentElement;
-      const button = [...document.querySelectorAll('button')].find(
-        (b) => b.textContent === 'Xem đáp án',
-      )!;
+      const button = document.querySelector('button[aria-label="Thẻ sau"]')!;
       return {
         overflowX: de.scrollWidth - de.clientWidth,
         bottom: Math.round(button.getBoundingClientRect().bottom),
@@ -181,7 +208,7 @@ test.describe('on a phone', () => {
       };
     });
     expect(m.overflowX, 'no horizontal scroll').toBeLessThanOrEqual(0);
-    expect(m.bottom, 'the answer button is reachable without scrolling').toBeLessThanOrEqual(
+    expect(m.bottom, 'the next button is reachable without scrolling').toBeLessThanOrEqual(
       m.viewportH,
     );
   });

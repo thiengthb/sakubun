@@ -3,6 +3,7 @@
 import { useCallback, useSyncExternalStore, type Dispatch, type SetStateAction } from 'react';
 
 const PREFIX = 'sakubun:';
+const LOCAL_PREFIX = 'sakubun.local:';
 
 const cache = new Map<string, { raw: string | null; value: unknown }>();
 
@@ -19,11 +20,17 @@ function deserialize<T>(raw: string, initial: T): T {
   }
 }
 
-function read<T>(storeKey: string, initial: T, urlKey?: string): T {
+type Area = 'session' | 'local';
+
+function storage(area: Area): Storage {
+  return area === 'local' ? window.localStorage : window.sessionStorage;
+}
+
+function read<T>(storeKey: string, initial: T, urlKey?: string, area: Area = 'session'): T {
   if (typeof window === 'undefined') return initial;
   let raw: string | null;
   try {
-    raw = window.sessionStorage.getItem(storeKey);
+    raw = storage(area).getItem(storeKey);
   } catch {
     return initial;
   }
@@ -80,28 +87,41 @@ export function useSessionState<T>(
   initial: T,
   urlKey?: string,
 ): [T, Dispatch<SetStateAction<T>>] {
-  const storeKey = PREFIX + key;
+  return useStoredState(PREFIX + key, initial, urlKey, 'session');
+}
+
+/** useSessionState that outlives the tab: for progress the learner comes back to another day. */
+export function useLocalState<T>(key: string, initial: T): [T, Dispatch<SetStateAction<T>>] {
+  // Its own prefix, so a key never reads the other area's cached value.
+  return useStoredState(LOCAL_PREFIX + key, initial, undefined, 'local');
+}
+
+function useStoredState<T>(
+  storeKey: string,
+  initial: T,
+  urlKey: string | undefined,
+  area: Area,
+): [T, Dispatch<SetStateAction<T>>] {
   const subscribeToKey = useCallback((cb: () => void) => subscribe(storeKey, cb), [storeKey]);
   const value = useSyncExternalStore(
     subscribeToKey,
-    () => read(storeKey, initial, urlKey),
+    () => read(storeKey, initial, urlKey, area),
     () => initial,
   );
 
   const setValue = useCallback<Dispatch<SetStateAction<T>>>(
     (action) => {
-      const prev = read(storeKey, initial, urlKey);
+      const prev = read(storeKey, initial, urlKey, area);
       const next = typeof action === 'function' ? (action as (p: T) => T)(prev) : action;
       const raw = JSON.stringify(next);
       try {
-        window.sessionStorage.setItem(storeKey, raw);
-      } catch {
-      }
+        storage(area).setItem(storeKey, raw);
+      } catch {}
       cache.set(storeKey, { raw, value: next });
       if (urlKey) writeUrl(urlKey, next, initial);
       emit(storeKey);
     },
-    [storeKey, initial, urlKey],
+    [storeKey, initial, urlKey, area],
   );
 
   return [value, setValue];

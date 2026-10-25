@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Trash2 } from 'lucide-react';
-import { BulkActionButton } from '@/components/features/resources/bulk-action-button';
+import { BulkActionButton } from '@/components/common/bulk-action-button';
 import { ConfirmDialog } from '@/components/common/confirm-dialog';
 import { useServerAction } from '@/components/common/use-server-action';
 import { deleteItemsAction } from '@/app/actions';

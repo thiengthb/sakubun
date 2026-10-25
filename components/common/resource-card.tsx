@@ -66,7 +66,7 @@ export function ResourceCard({
           </>
         )}
         <span aria-hidden>·</span>
-        <Badge variant="outline" className="px-1.5 py-0 text-xs font-normal">
+        <Badge variant="outline" className="px-1.5 py-0 text-xs">
           {level}
         </Badge>
         {aside}

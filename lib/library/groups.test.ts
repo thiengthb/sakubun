@@ -237,6 +237,19 @@ describe('pickers', () => {
     expect(await G.listAddableItems(g.id)).toEqual([]);
   });
 
+  it('listAddableItems lists the whole library, not the first 500', async () => {
+    await prisma.item.createMany({
+      data: Array.from({ length: 600 }, (_, i) => ({
+        kind: 'VOCAB',
+        expression: `語${i}`,
+        meaningVi: `nghĩa ${i}`,
+        level: 'N3',
+      })),
+    });
+    const g = await G.createGroup({ name: 'kho lớn', kind: 'vocab' });
+    expect(await G.listAddableItems(g.id)).toHaveLength(601);
+  });
+
   it('listAddableItems trả về null khi nhóm không tồn tại', async () => {
     expect(await G.listAddableItems('khong-co-that')).toBeNull();
   });

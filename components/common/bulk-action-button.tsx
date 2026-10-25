@@ -40,9 +40,9 @@ export function BulkActionButton({
         {...props}
       >
         {pending ? (
-          <Loader2 className="size-4 animate-spin motion-reduce:animate-none" aria-hidden />
+          <Loader2 className="animate-spin motion-reduce:animate-none" aria-hidden />
         ) : (
-          <Icon className="size-4" aria-hidden />
+          <Icon aria-hidden />
         )}
       </Button>
     </Explain>
