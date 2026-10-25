@@ -46,7 +46,14 @@ export function GoogleSignInButton({ label = 'Tiếp tục với Google' }: { la
   }
 
   return (
-    <Button type="button" variant="outline" className="w-full" onClick={onClick} disabled={pending}>
+    <Button
+      type="button"
+      variant="outline"
+      size="lg"
+      className="w-full"
+      onClick={onClick}
+      disabled={pending}
+    >
       {pending ? <Loader2 className="animate-spin" /> : <GoogleG className="size-4" />}
       {label}
     </Button>

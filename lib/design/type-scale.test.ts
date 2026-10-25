@@ -17,11 +17,7 @@ function walk(dir: string, out: string[] = []): string[] {
 const rel = (file: string) => relative(process.cwd(), file).split(sep).join('/');
 
 const DISPLAY_ALLOW = [
-  'components/layout/auth-card.tsx', // auth hero — the shared /login + /register card title
-  'components/layout/auth-nav.tsx', // wordmark on the auth pages
-  'app/error.tsx', // error hero
-  'app/global-error.tsx',
-  'app/not-found.tsx',
+  'app/global-error.tsx', // the page title by hand: the root layout failed, PageShell cannot load
   // Dashboard data display: stat-tile metrics and the 10px chart axis labels. Moved out of
   // app/page.tsx when the chart toolkit became a component — the exemption follows the code.
   'components/features/dashboard/dashboard-charts.tsx',

@@ -18,19 +18,19 @@ export function LoginForm({
   error: string | null;
 }) {
   return (
-    <AuthCard title="Đăng nhập sakubun" description="Luyện dịch Nhật–Việt qua MCP">
+    <AuthCard title="Đăng nhập" description="Chỉ tài khoản Google đã được chỉ định mới vào được.">
       <CardContent className="space-y-4">
         {error && (
-          <p role="alert" className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
-            Không đăng nhập được. sakubun chỉ cho phép một tài khoản Google đã được chỉ định.
+          <p role="alert" className="rounded-sm bg-alert-wash px-3 py-2 text-sm text-destructive">
+            Tài khoản này không được phép vào Sakubun.
           </p>
         )}
         {googleReady ? (
           <GoogleSignInButton label="Đăng nhập với Google" />
         ) : (
-          <p className="text-center text-sm text-muted-foreground">
-            Chưa cấu hình đăng nhập Google. Cần đặt GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET và
-            ALLOWED_EMAIL cho server.
+          <p className="rounded-sm bg-muted px-3 py-2 text-sm text-muted-foreground">
+            Server chưa cấu hình đăng nhập Google (GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET,
+            ALLOWED_EMAIL).
           </p>
         )}
         {passwordLogin && <TestPasswordForm />}

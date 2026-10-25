@@ -19,9 +19,6 @@
       "components/ui/input.tsx": 1
     },
     "icon-size-scale": {
-      "app/error.tsx": 1,
-      "app/global-error.tsx": 1,
-      "app/not-found.tsx": 1,
       "components/common/data-table.tsx": 3,
       "components/common/filter-popover.tsx": 1,
       "components/common/info-tooltip.tsx": 1,
@@ -43,8 +40,6 @@
       "components/layout/google-signin-button.tsx": 1
     },
     "no-arbitrary-scale-values": {
-      "app/error.tsx": 1,
-      "app/not-found.tsx": 1,
       "components/common/active-tab-select.tsx": 2,
       "components/common/bottom-sheet.tsx": 1,
       "components/common/filter-popover.tsx": 1,
@@ -52,7 +47,6 @@
       "components/common/item-detail-dialog.tsx": 1,
       "components/features/history/history-cards.tsx": 1,
       "components/features/resources/item-forgetting-curve.tsx": 1,
-      "components/layout/auth-nav.tsx": 1,
       "components/layout/breadcrumbs.tsx": 2,
       "components/layout/page-skeleton.tsx": 1,
       "components/layout/user-avatar.tsx": 2,
@@ -70,7 +64,6 @@
       "lib/srs/streak-tiers.ts": 16
     },
     "no-icon-size-in-components": {
-      "app/global-error.tsx": 1,
       "components/common/data-table.tsx": 2,
       "components/common/expanding-icon-button.tsx": 1,
       "components/common/item-detail-dialog.tsx": 1,

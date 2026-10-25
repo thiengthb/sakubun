@@ -37,7 +37,6 @@ describe('loading skeletons match their routes', () => {
     const EXEMPT: Record<string, string> = {
       app: 'the root loading.tsx IS this route’s (the dashboard) and the fallback for the rest',
       'app/login': 'chromeless auth page — no PageShell, no chrome to placeholder',
-      'app/register': 'chromeless auth page',
       'app/groups': 'redirect stub to /resources?tab=groups — renders no UI',
       'app/items': 'redirect stub to /resources?tab=grammar',
       'app/vocab': 'redirect stub to /resources?tab=vocab',

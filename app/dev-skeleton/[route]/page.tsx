@@ -30,6 +30,8 @@ const SKELETONS: Record<string, () => React.ReactElement> = {
 export default async function DevSkeletonPage({ params }: { params: Promise<{ route: string }> }) {
   if (process.env.NODE_ENV === 'production') notFound();
   const { route } = await params;
+  // The route error page (app/error.tsx), for screenshots: nothing else throws on purpose.
+  if (route === 'error') throw new Error('dev-skeleton: a page that failed to load');
   const Skeleton = SKELETONS[route];
   if (!Skeleton) notFound();
   return <Skeleton />;
