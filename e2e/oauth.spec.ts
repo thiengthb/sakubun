@@ -101,7 +101,7 @@ async function connect(
   await expect(page).toHaveURL(/\/login\?/);
   await signIn(page);
 
-  await expect(page.getByText('Cho phép truy cập sakubun?')).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByText('Cho phép truy cập Sakubun?')).toBeVisible({ timeout: 30_000 });
   await expect(page.getByText('claude.ai', { exact: true })).toBeVisible();
   // A click before hydration does nothing on a freshly compiled dev page.
   await page.waitForLoadState('networkidle');
@@ -238,7 +238,7 @@ test('callback lạ không bao giờ nhận được code, kể cả khi client 
 
   await signInDirectly(page);
   await page.goto(authorizeUrl(clientId, evil, pkce().challenge));
-  await expect(page.getByText('Cho phép truy cập sakubun?')).toHaveCount(0);
+  await expect(page.getByText('Cho phép truy cập Sakubun?')).toHaveCount(0);
   expect(page.url()).not.toContain('evil.example');
   expect(reached).toBe(false);
 });

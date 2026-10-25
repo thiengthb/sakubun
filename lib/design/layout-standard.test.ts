@@ -52,8 +52,7 @@ describe('UI layout standard (nuc-platform/12-ui-layout-standard.md)', () => {
 
   it('every app/**/page.tsx reaches a PageShell', () => {
     const EXEMPT = new Set([
-      'app/login/page.tsx', // chromeless (AuthNav, no breadcrumb)
-      'app/register/page.tsx', // chromeless
+      'app/login/page.tsx', // chromeless: brand and one card, no app menu before sign-in
       'app/consent/page.tsx', // chromeless like /login: the OAuth step between claude.ai and sakubun
       'app/dev-skeleton/[route]/page.tsx',
     ]);
