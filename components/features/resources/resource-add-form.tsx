@@ -26,6 +26,8 @@ import {
 import { TabsContent } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { Field, FormActions } from '@/components/common/field';
+import { ITEM_LIMITS, itemTextError } from '@/lib/library/item-limits';
+import { textLength } from '@/lib/library/group-limits';
 import { Input } from '@/components/ui/input';
 
 export type ResourceKind = 'grammar' | 'vocab';
@@ -113,20 +115,31 @@ function SingleTab({
   const [notes, setNotes] = useState('');
   const [isPending, startTransition] = useTransition();
 
-  // Errors show once the form is sent, and clear as each field is filled.
+  // Too long shows at once, while typing; empty only once the form is sent.
   const [sent, setSent] = useState(false);
   const errors = {
-    expression: sent && !expression.trim() ? `Cần nhập ${copy.exprLabel.toLowerCase()}` : null,
-    meaningVi: sent && !meaningVi.trim() ? 'Cần nhập nghĩa' : null,
+    expression:
+      itemTextError('expression', expression) ??
+      (sent && !expression.trim() ? `Cần nhập ${copy.exprLabel.toLowerCase()}` : null),
+    reading: itemTextError('reading', reading),
+    meaningVi:
+      itemTextError('meaningVi', meaningVi) ??
+      (sent && !meaningVi.trim() ? 'Cần nhập nghĩa' : null),
   };
 
   const submit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setSent(true);
-    if (!expression.trim() || !meaningVi.trim()) {
-      e.currentTarget
-        .querySelector<HTMLElement>(!expression.trim() ? '#add-expression' : '#add-meaning')
-        ?.focus();
+    const bad =
+      !expression.trim() || errors.expression
+        ? '#add-expression'
+        : errors.reading
+          ? '#add-reading'
+          : !meaningVi.trim() || errors.meaningVi
+            ? '#add-meaning'
+            : null;
+    if (bad) {
+      e.currentTarget.querySelector<HTMLElement>(bad)?.focus();
       return;
     }
     startTransition(async () => {
@@ -155,7 +168,12 @@ function SingleTab({
   return (
     <form onSubmit={submit} noValidate className="@container space-y-4">
       <div className="grid gap-4 @2xl:grid-cols-2">
-        <Field label={copy.exprLabel} required error={errors.expression}>
+        <Field
+          label={copy.exprLabel}
+          required
+          error={errors.expression}
+          count={{ value: textLength(expression.trim()), max: ITEM_LIMITS.expression }}
+        >
           <Input
             id="add-expression"
             value={expression}
@@ -165,8 +183,13 @@ function SingleTab({
             autoFocus
           />
         </Field>
-        <Field label="Cách đọc (kana)">
+        <Field
+          label="Cách đọc (kana)"
+          error={errors.reading}
+          count={{ value: textLength(reading.trim()), max: ITEM_LIMITS.reading }}
+        >
           <Input
+            id="add-reading"
             value={reading}
             onChange={(e) => setReading(e.target.value)}
             lang="ja"
@@ -177,6 +200,7 @@ function SingleTab({
           label="Nghĩa (tiếng Việt)"
           required
           error={errors.meaningVi}
+          count={{ value: textLength(meaningVi.trim()), max: ITEM_LIMITS.meaningVi }}
           className="@2xl:col-span-2"
         >
           <Input

@@ -1,3 +1,6 @@
+import { ITEM_LIMITS, itemLimitError } from '@/lib/library/item-limits';
+import { textLength } from '@/lib/library/group-limits';
+
 export interface ParsedEntry {
   expression: string;
   reading?: string;
@@ -17,14 +20,30 @@ const READING_RE = /[（(]([ぁ-ゖー・\s]+)[）)]/;
 
 const MAX_SENSES = 4;
 
+/**
+ * A dictionary meaning cut to a gloss: at most 4 unique senses, and only as many whole senses as
+ * fit the meaning limit (ITEM_LIMITS.meaningVi, with the "…" that marks a cut). A first sense
+ * longer than the limit is kept whole, so the row reports the limit instead of losing words.
+ */
 export function condenseMeaning(mean: string): string {
   const senses = mean
     .split(/[;；]/)
     .map((s) => s.trim())
     .filter(Boolean);
   const unique = [...new Set(senses)];
-  const kept = unique.slice(0, MAX_SENSES).join('; ');
-  return unique.length > MAX_SENSES ? `${kept}…` : kept;
+  const kept: string[] = [];
+  for (const sense of unique.slice(0, MAX_SENSES)) {
+    const next = [...kept, sense].join('; ');
+    const cut = kept.length + 1 < unique.length;
+    if (kept.length > 0 && textLength(next) + (cut ? 1 : 0) > ITEM_LIMITS.meaningVi) break;
+    kept.push(sense);
+  }
+  return kept.length < unique.length ? `${kept.join('; ')}…` : kept.join('; ');
+}
+
+/** The reason a parsed row cannot be added, or null. Same rule addItems enforces on the server. */
+export function entryLimitReason(entry: ParsedEntry): string | null {
+  return itemLimitError(entry)?.message ?? null;
 }
 
 const MAZII_HEADER_RE = /^(word|từ|tu)\b/i;
@@ -66,7 +85,9 @@ export function parseImportText(text: string): ParseResult {
     if (cells.length >= 3) {
       if (MAZII_HEADER_RE.test(cells[0])) return; // header row
       const entry = maziiEntry(cells[0], cells[1], cells[2], cells[3]);
-      if (entry) result.entries.push(entry);
+      const tooLong = entry && entryLimitReason(entry);
+      if (tooLong) result.errors.push({ line: index + 1, text: raw.trim(), reason: tooLong });
+      else if (entry) result.entries.push(entry);
       else if (cells.some(Boolean))
         result.errors.push({
           line: index + 1,
@@ -115,12 +136,13 @@ export function parseImportText(text: string): ParseResult {
       return;
     }
 
-    result.entries.push({
-      expression,
-      reading,
-      meaningVi: meaning,
-      level,
-    });
+    const entry = { expression, reading, meaningVi: meaning, level };
+    const tooLong = entryLimitReason(entry);
+    if (tooLong) {
+      result.errors.push({ line: index + 1, text: withoutBullet, reason: tooLong });
+      return;
+    }
+    result.entries.push(entry);
   });
 
   return result;

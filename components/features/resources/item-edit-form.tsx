@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation';
 import { useServerAction } from '@/components/common/use-server-action';
 import { Button } from '@/components/ui/button';
 import { Field, FormActions } from '@/components/common/field';
+import { ITEM_LIMITS, itemTextError, type LimitedField } from '@/lib/library/item-limits';
+import { textLength } from '@/lib/library/group-limits';
 import { Input } from '@/components/ui/input';
 import {
   Select,
@@ -48,20 +50,34 @@ export function ItemEditForm({
   const notesLabel = kind === 'grammar' ? 'Cấu trúc / ghi chú' : 'Ví dụ';
   const exprLabel = kind === 'grammar' ? 'Mẫu ngữ pháp' : 'Từ';
 
-  // Errors show once the form is sent, and clear as each field is filled.
+  // Too long shows at once, while typing; empty only once the form is sent. An old item longer
+  // than a limit keeps its value: only a changed value is checked, as the server does.
   const [sent, setSent] = useState(false);
+  const tooLong = (field: LimitedField, value: string, was: string | null | undefined) =>
+    value.trim() === (was ?? '').trim() ? null : itemTextError(field, value);
   const errors = {
-    expression: sent && !expression.trim() ? `Cần nhập ${exprLabel.toLowerCase()}` : null,
-    meaningVi: sent && !meaningVi.trim() ? 'Cần nhập nghĩa' : null,
+    expression:
+      tooLong('expression', expression, item.expression) ??
+      (sent && !expression.trim() ? `Cần nhập ${exprLabel.toLowerCase()}` : null),
+    reading: tooLong('reading', reading, item.reading),
+    meaningVi:
+      tooLong('meaningVi', meaningVi, item.meaningVi) ??
+      (sent && !meaningVi.trim() ? 'Cần nhập nghĩa' : null),
   };
 
   const save = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setSent(true);
-    if (!expression.trim() || !meaningVi.trim()) {
-      e.currentTarget
-        .querySelector<HTMLElement>(!expression.trim() ? '#edit-expression' : '#edit-meaning')
-        ?.focus();
+    const bad =
+      !expression.trim() || errors.expression
+        ? '#edit-expression'
+        : errors.reading
+          ? '#edit-reading'
+          : !meaningVi.trim() || errors.meaningVi
+            ? '#edit-meaning'
+            : null;
+    if (bad) {
+      e.currentTarget.querySelector<HTMLElement>(bad)?.focus();
       return;
     }
     run(item.itemId, {
@@ -79,6 +95,7 @@ export function ItemEditForm({
         label={exprLabel}
         required
         error={errors.expression}
+        count={{ value: textLength(expression.trim()), max: ITEM_LIMITS.expression }}
         info={
           kind === 'grammar'
             ? 'Mẫu ngữ pháp (tiếng Nhật). Sửa nội dung KHÔNG ảnh hưởng lịch ôn (FSRS).'
@@ -94,8 +111,13 @@ export function ItemEditForm({
       </Field>
 
       <div className="grid gap-4 @2xl:grid-cols-2">
-        <Field label="Cách đọc">
+        <Field
+          label="Cách đọc"
+          error={errors.reading}
+          count={{ value: textLength(reading.trim()), max: ITEM_LIMITS.reading }}
+        >
           <Input
+            id="edit-reading"
             lang="ja"
             value={reading}
             onChange={(e) => setReading(e.target.value)}
@@ -120,7 +142,12 @@ export function ItemEditForm({
         )}
       </div>
 
-      <Field label="Nghĩa (tiếng Việt)" required error={errors.meaningVi}>
+      <Field
+        label="Nghĩa (tiếng Việt)"
+        required
+        error={errors.meaningVi}
+        count={{ value: textLength(meaningVi.trim()), max: ITEM_LIMITS.meaningVi }}
+      >
         <Input id="edit-meaning" value={meaningVi} onChange={(e) => setMeaningVi(e.target.value)} />
       </Field>
 

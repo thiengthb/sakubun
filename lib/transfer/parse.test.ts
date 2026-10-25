@@ -9,9 +9,29 @@ describe('condenseMeaning', () => {
     expect(condenseMeaning(MAZII_MEAN)).toBe('con người; nhân loại; người; người khác…');
   });
 
+  it('keeps only the whole senses that fit the 60-character meaning limit', () => {
+    const long =
+      'sự quan tâm đến người khác; sự chu đáo trong cư xử; sự cân nhắc kỹ lưỡng; lòng tốt';
+    const out = condenseMeaning(long);
+    expect(out).toBe('sự quan tâm đến người khác; sự chu đáo trong cư xử…');
+    expect(Array.from(out).length).toBeLessThanOrEqual(60);
+  });
+
   it('returns short meanings untouched', () => {
     expect(condenseMeaning('khó')).toBe('khó');
     expect(condenseMeaning('học; việc học')).toBe('học; việc học');
+  });
+});
+
+describe('length limits on import', () => {
+  it('reports a row whose word or meaning is over the limit instead of adding it', () => {
+    const r = parseImportText(
+      ['〜ばかりに: chỉ vì', `〜にもかかわらず、それでもなお〜しようとする: mặc dù`].join('\n'),
+    );
+    expect(r.entries.map((e) => e.expression)).toEqual(['〜ばかりに']);
+    expect(r.errors).toEqual([
+      expect.objectContaining({ line: 2, reason: expect.stringMatching(/^Từ \/ mẫu tối đa 20/) }),
+    ]);
   });
 });
 
