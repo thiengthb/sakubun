@@ -1,10 +1,16 @@
 'use client';
 
 import type { ReactNode } from 'react';
+import { ChartColumn, TrendingUp } from 'lucide-react';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
-import { TabSelect } from '@/components/common/tab-select';
+import { PageTabs } from '@/components/common/page-tabs';
 import { PageShell } from '@/components/layout/page-shell';
 import { useSessionState } from '@/components/common/use-session-state';
+
+const ANALYTICS_TABS = [
+  { value: 'tien-do', label: 'Tiến độ', icon: TrendingUp },
+  { value: 'thong-ke', label: 'Thống kê', icon: ChartColumn },
+] as const;
 
 export function AnalyticsTabs({
   progress,
@@ -19,21 +25,10 @@ export function AnalyticsTabs({
   return (
     <Tabs value={tab} onValueChange={setTab}>
       <PageShell
-        section="dashboard"
-        headerAside={
-          <>
-            <TabSelect
-              items={[
-                { value: 'tien-do', label: 'Tiến độ' },
-                { value: 'thong-ke', label: 'Thống kê' },
-              ]}
-              value={tab}
-              onValueChange={setTab}
-              label="Chọn khung xem"
-            />
-            {tab === 'tien-do' && aside}
-          </>
-        }
+        template="dashboard"
+        title="Phân tích"
+        actions={tab === 'tien-do' ? aside : undefined}
+        tabs={<PageTabs items={ANALYTICS_TABS} label="Chọn khung xem" />}
       >
         <TabsContent value="tien-do" className="space-y-3">
           {progress}

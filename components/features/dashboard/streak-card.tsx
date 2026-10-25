@@ -8,7 +8,15 @@ import { tierForStreak } from '@/lib/srs/streak-tiers';
 
 // The streak stat tile: the flame stands where the other tiles have their icon, and pressing it
 // replays the celebration.
-export function StreakCard({ current, explain }: { current: number; explain?: ReactNode }) {
+export function StreakCard({
+  current,
+  explain,
+  note,
+}: {
+  current: number;
+  explain?: ReactNode;
+  note?: ReactNode;
+}) {
   const t = tierForStreak(current);
   const [preview, setPreview] = useState(0);
   return (
@@ -36,6 +44,7 @@ export function StreakCard({ current, explain }: { current: number; explain?: Re
         }
         items={[{ value: current, label: 'Chuỗi ngày' }]}
         explain={explain}
+        note={note}
       />
       <StreakCelebration current={current} previewNonce={preview} auto={false} />
     </div>

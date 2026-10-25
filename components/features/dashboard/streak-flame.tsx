@@ -37,7 +37,7 @@ export function StreakFlame({
       aria-hidden
       style={vars}
       className={cn(
-        'size-[1em]',
+        'size-4',
         cold ? 'streak-flame--cold' : hero ? 'streak-hero' : 'streak-flame',
         className,
       )}

@@ -1,5 +1,9 @@
+'use client';
+
+import { useState } from 'react';
 import Link from 'next/link';
 import { Brain, RotateCcw, Tag, X, type LucideIcon } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/core/utils';
 
 export interface WeakChip {
@@ -19,6 +23,10 @@ const KIND = {
 
 export type WeakKind = keyof typeof KIND;
 
+// A group shows this many chips; the rest open behind a "+N" chip, so a long month of misses
+// does not push the heatmap a phone screen down.
+const SHOWN = 6;
+
 // The 30-day weak spots as chips, grouped by kind. Each group is led by an icon whose name is its
 // tooltip, so the four lists read as one strip instead of four labelled blocks.
 export function WeakChips({
@@ -28,12 +36,14 @@ export function WeakChips({
   groups: { kind: WeakKind; chips: WeakChip[] }[];
   className?: string;
 }) {
+  const [open, setOpen] = useState<WeakKind[]>([]);
   return (
     <div className={cn('space-y-2', className)}>
       {groups
         .filter((g) => g.chips.length > 0)
         .map(({ kind, chips }) => {
           const { icon: Icon, label, count } = KIND[kind];
+          const hidden = open.includes(kind) ? 0 : Math.max(0, chips.length - SHOWN);
           return (
             <div
               key={kind}
@@ -47,40 +57,44 @@ export function WeakChips({
               >
                 <Icon className="size-4" aria-hidden />
               </span>
-              {chips.map((c) => {
+              {chips.slice(0, chips.length - hidden).map((c) => {
                 const body = (
                   <>
                     <span lang="ja" className="min-w-0 truncate">
                       {c.text}
                     </span>
-                    <span className={cn('shrink-0 font-medium tabular-nums', count)}>
-                      {c.count}
-                    </span>
+                    <span className={cn('shrink-0 tabular-nums', count)}>{c.count}</span>
                   </>
                 );
-                const chipClass =
-                  'inline-flex h-7 max-w-40 min-w-0 items-center gap-1.5 rounded-full border border-border px-2.5 text-xs';
                 return c.href ? (
-                  <Link
-                    key={c.key}
-                    href={c.href}
-                    title={c.title}
-                    className={cn(
-                      chipClass,
-                      'transition-colors hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50',
-                    )}
-                  >
-                    {body}
-                  </Link>
+                  <Badge key={c.key} asChild variant="outline" className={CHIP}>
+                    <Link href={c.href} title={c.title}>
+                      {body}
+                    </Link>
+                  </Badge>
                 ) : (
-                  <span key={c.key} title={c.title} className={chipClass}>
+                  <Badge key={c.key} variant="outline" title={c.title} className={CHIP}>
                     {body}
-                  </span>
+                  </Badge>
                 );
               })}
+              {hidden > 0 && (
+                <Badge asChild variant="outline" className={cn(CHIP, 'border-dashed')}>
+                  <button
+                    type="button"
+                    onClick={() => setOpen((o) => [...o, kind])}
+                    aria-label={`Xem thêm ${hidden} mục: ${label}`}
+                    className="text-muted-foreground tabular-nums"
+                  >
+                    +{hidden}
+                  </button>
+                </Badge>
+              )}
             </div>
           );
         })}
     </div>
   );
 }
+
+const CHIP = 'h-6 max-w-40 min-w-0 justify-start gap-1.5';

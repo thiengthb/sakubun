@@ -20,6 +20,7 @@ import {
   StatTile,
 } from '@/components/features/dashboard/dashboard-charts';
 import { PageShell } from '@/components/layout/page-shell';
+import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/common/empty-state';
 import { AnalyticsTabs } from '@/components/features/dashboard/analytics-tabs';
 import { DailyProgress } from '@/components/features/dashboard/daily-progress';
@@ -71,19 +72,18 @@ export default async function HomePage() {
 
   if (totalItems === 0) {
     return (
-      <PageShell section="dashboard">
+      <PageShell template="dashboard" title="Phân tích">
         <LiveRefresh />
         <EmptyState
           icon={Inbox}
           title="Chưa có gì để học"
-          description="Bắt đầu bằng cách nhập mẫu ngữ pháp vào kho."
+          description="Thêm mẫu ngữ pháp vào Tài nguyên, rồi số liệu sẽ hiện ở đây."
           action={
-            <Link
-              href="/resources"
-              className="inline-flex items-center gap-1 text-sm text-accent-brand hover:underline"
-            >
-              Mở kho tài nguyên <ArrowRight className="size-4" aria-hidden />
-            </Link>
+            <Button asChild variant="outline">
+              <Link href="/resources">
+                Mở Tài nguyên <ArrowRight aria-hidden />
+              </Link>
+            </Button>
           }
         />
       </PageShell>
@@ -134,21 +134,24 @@ export default async function HomePage() {
 
   const progress = (
     <>
-      <section aria-label="Tổng quan" className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <section aria-label="Tổng quan" className="grid grid-cols-2 gap-3 xl:grid-cols-4">
         <StatTile
           icon={CalendarClock}
           tone="brand"
           items={[{ value: stats.dueNow, label: 'Đến hạn' }]}
+          note={`Còn ${stats.newItems} mẫu mới`}
           explain={`Số lượt ôn đến hạn bây giờ. Còn ${stats.newItems} mẫu chưa học lần nào.`}
         />
         <StreakCard
           current={stats.streak.current}
+          note={`Kỷ lục ${stats.streak.longest} ngày`}
           explain={`Số ngày học liên tiếp. Kỷ lục ${stats.streak.longest} ngày; 30 ngày qua ${analytics.reviewsLast30} lượt ôn.`}
         />
         <StatTile
           icon={GraduationCap}
           tone="ok"
           items={[{ value: `${masteredPct}%`, label: 'Thành thạo' }]}
+          note={`${analytics.masteredGrammar}/${totalItems} mẫu`}
           explain={`${analytics.masteredGrammar}/${totalItems} mẫu đang ở trạng thái Ôn tập.`}
         />
         <StatTile
@@ -159,6 +162,7 @@ export default async function HomePage() {
             { value: analytics.vocabTotal, label: 'Từ vựng' },
           ]}
           compact={{ value: totalItems + analytics.vocabTotal, label: 'Mục' }}
+          note={`+${analytics.newLast30} trong 30 ngày`}
           explain={`Kho học của bạn: ${totalItems} ngữ pháp, ${analytics.vocabTotal} từ vựng; ${analytics.newLast30} mục mới trong 30 ngày qua.`}
         />
       </section>
@@ -170,7 +174,7 @@ export default async function HomePage() {
         dueNow={stats.dueNow}
       />
 
-      <section className="grid gap-3 lg:grid-cols-3">
+      <section className="grid gap-3 lg:grid-cols-2">
         <RetentionCard
           actual={analytics.trueRetention}
           desired={analytics.desiredRetention}
@@ -180,7 +184,6 @@ export default async function HomePage() {
           icon={CalendarRange}
           title="14 ngày tới"
           info="Số mẫu đến hạn ôn mỗi ngày trong 14 ngày tới; số trên cột là số mẫu, dưới cột là ngày."
-          className="lg:col-span-2"
         >
           <Bars
             data={forecastData}
@@ -227,11 +230,13 @@ export default async function HomePage() {
         progress={progress}
         stats={<StatsView stats={studyStats} />}
         aside={
-          <ContentGapChip
-            studiedWithoutCard={analytics.studiedWithoutCard}
-            enriched={analytics.enrichedGrammar}
-            total={analytics.grammarTotal}
-          />
+          analytics.studiedWithoutCard > 0 ? (
+            <ContentGapChip
+              studiedWithoutCard={analytics.studiedWithoutCard}
+              enriched={analytics.enrichedGrammar}
+              total={analytics.grammarTotal}
+            />
+          ) : undefined
         }
       />
     </>

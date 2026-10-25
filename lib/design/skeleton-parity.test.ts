@@ -63,7 +63,7 @@ describe('loading skeletons match their routes', () => {
       name: 'dashboard',
       source: 'components/features/dashboard/analytics-tabs.tsx',
       loading: 'app/loading.tsx',
-      tabsVar: /items=\{\[([\s\S]*?)\]\}/,
+      tabsVar: /const ANALYTICS_TABS = \[([\s\S]*?)\] as const/,
     },
     {
       name: 'resources',
