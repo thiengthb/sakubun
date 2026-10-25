@@ -194,7 +194,6 @@ export function FilterPopover({
             <PopoverTrigger asChild>{trigger}</PopoverTrigger>
             <PopoverContent
               align={align}
-              collisionPadding={16}
               className="max-h-[70vh] w-80 gap-3 overflow-y-auto"
             >
               <div className="flex items-center justify-between">

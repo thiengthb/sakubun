@@ -137,11 +137,12 @@ describe('ui standard: each check goes red on a bad sample', () => {
 });
 
 describe('ui standard: the codebase', () => {
-  it('the radius scale is 7px for controls and 8px for cards and dialogs', () => {
-    // thien, 2026-10-25: 7px for controls, chosen from 4 to 10px side by side.
+  it('the radius scale is 8px for controls, cards and dialogs', () => {
+    // thien, 2026-10-25: 7px for controls (chosen from 4 to 10px side by side), then 8px after
+    // seeing 7px on the real pages.
     const css = readFileSync('app/globals.css', 'utf8');
     const radius = (name: string) => new RegExp(`--radius-${name}:\\s*([^;]+);`).exec(css)?.[1];
-    expect(['sm', 'md', 'lg'].map(radius)).toEqual(['0.4375rem', '0.4375rem', '0.4375rem']);
+    expect(['sm', 'md', 'lg'].map(radius)).toEqual(['0.5rem', '0.5rem', '0.5rem']);
     expect(['xl', '2xl'].map(radius)).toEqual(['0.5rem', '0.5rem']);
   });
 
