@@ -130,6 +130,19 @@ test('on a phone the search grows to full width while in use, the tools move bel
   await expect
     .poll(async () => (await box(filter)).y - ((await box(search)).y + (await box(search)).height))
     .toBeGreaterThan(0);
+  // thien, 2026-10-25: below it, sort and filter share the full width equally.
+  const sort = bar.getByRole('button', { name: /Sắp xếp/ });
+  await expect
+    .poll(async () => {
+      const [b, so, fi] = [await box(bar), await box(sort), await box(filter)];
+      return [
+        Math.round(so.x - b.x),
+        Math.round(b.x + b.width - (fi.x + fi.width)),
+        Math.abs(Math.round(so.width - fi.width)),
+        Math.round(b.width - so.width - fi.width), // the row's 8px gap
+      ];
+    })
+    .toEqual([0, 0, 0, 8]);
   // A query keeps it open after focus leaves; clearing it brings the row back.
   await search.fill('パターン');
   await page.locator('body').click({ position: { x: 5, y: 600 } });
@@ -172,6 +185,13 @@ test('the filter panel lines up with the right edge of its button on a laptop', 
   const p = (await panel.boundingBox())!;
   expect(Math.abs(t.x + t.width - (p.x + p.width)), 'right edges').toBeLessThan(2);
   expect(p.x, 'inside the window').toBeGreaterThanOrEqual(0);
+  // Raised like the menus (thien, 2026-10-25): a 2px edge and a lip under it.
+  const look = await panel.evaluate((el) => {
+    const cs = getComputedStyle(el);
+    return { edge: cs.borderTopWidth, lip: cs.boxShadow };
+  });
+  expect(look.edge).toBe('2px');
+  expect(look.lip).toMatch(/0px 2px 0px/);
 });
 
 // thien, 2026-10-24: the table's footer (count, rows per page, pages) rests on the bottom of the
