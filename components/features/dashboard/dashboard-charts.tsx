@@ -19,10 +19,14 @@ export function StatTile({
   compact,
   explain,
   note,
+  mediaOnPhone = false,
+  children,
   className,
 }: {
   icon?: LucideIcon;
   media?: ReactNode;
+  /** Keep `media` on a phone: it is a control (the streak flame replays its celebration). */
+  mediaOnPhone?: boolean;
   tone?: IconTone;
   items: { value: ReactNode; label: string }[];
   /** One value for a phone-width tile when `items` holds two that would not fit side by side. */
@@ -30,6 +34,8 @@ export function StatTile({
   explain?: ReactNode;
   /** One short line of context under the number (a record, a remainder); wraps to two lines. */
   note?: ReactNode;
+  /** Drawn under the numbers, before the note (a split bar). */
+  children?: ReactNode;
   className?: string;
 }) {
   const metric = (item: { value: ReactNode; label: string }, className?: string) => (
@@ -43,13 +49,16 @@ export function StatTile({
   return (
     <Card className={cn('relative flex-row items-start gap-3 p-4', className)}>
       {/* A phone tile is half the width: the number gets the room, the icon goes. */}
-      <div className="max-sm:hidden">{media ?? <IconTile icon={icon} tone={tone} />}</div>
+      <div className={cn(!mediaOnPhone && 'max-sm:hidden')}>
+        {media ?? <IconTile icon={icon} tone={tone} />}
+      </div>
       <div className="min-w-0 flex-1 space-y-1">
         <div className={cn('flex min-w-0 gap-4', compact && 'max-sm:hidden')}>
           {items.map((item) => metric(item))}
         </div>
         {compact && metric(compact, 'sm:hidden')}
-        {note && <p className="line-clamp-2 text-xs text-muted-foreground">{note}</p>}
+        {children}
+        {note && <div className="line-clamp-2 text-xs text-muted-foreground">{note}</div>}
       </div>
       {explain && (
         <InfoTooltip label={`Giải thích: ${items.map((i) => i.label).join(', ')}`}>

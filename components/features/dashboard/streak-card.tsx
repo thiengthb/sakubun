@@ -4,10 +4,10 @@ import { useState, type ReactNode } from 'react';
 import { StatTile } from '@/components/features/dashboard/dashboard-charts';
 import { StreakCelebration } from '@/components/features/dashboard/streak-celebration';
 import { StreakFlame } from '@/components/features/dashboard/streak-flame';
-import { tierForStreak } from '@/lib/srs/streak-tiers';
+import { cn } from '@/lib/core/utils';
 
-// The streak stat tile: the flame stands where the other tiles have their icon, and pressing it
-// replays the celebration.
+// The streak stat tile: the flame stands where the other tiles have their icon, on a phone too,
+// and pressing it pops the flame and replays the celebration.
 export function StreakCard({
   current,
   explain,
@@ -17,29 +17,23 @@ export function StreakCard({
   explain?: ReactNode;
   note?: ReactNode;
 }) {
-  const t = tierForStreak(current);
   const [preview, setPreview] = useState(0);
   return (
-    <div className="relative">
+    <div className="relative h-full">
       <StatTile
+        className="h-full"
+        mediaOnPhone
         media={
           <button
             type="button"
             onClick={() => setPreview((p) => p + 1)}
             aria-label="Xem lại hiệu ứng chuỗi ngày"
-            className="relative flex size-8 shrink-0 items-center justify-center rounded-lg bg-warn-wash transition-transform hover:scale-105 focus-visible:ring-3 focus-visible:ring-ring/50"
+            className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-warn-wash focus-visible:ring-3 focus-visible:ring-ring/50"
           >
-            {current > 0 && (
-              <span
-                aria-hidden
-                className="pointer-events-none absolute inset-0 rounded-lg"
-                style={{
-                  opacity: t.heat,
-                  background: `radial-gradient(closest-side, ${t.f2}, transparent)`,
-                }}
-              />
-            )}
-            <StreakFlame count={current} className="relative size-4" />
+            {/* Remounted on each press so the pop plays again; the flame's own sway runs inside it. */}
+            <span key={preview} className={cn('flex', preview > 0 && 'streak-duo streak-duo--pop')}>
+              <StreakFlame count={current} className="size-6" />
+            </span>
           </button>
         }
         items={[{ value: current, label: 'Chuỗi ngày' }]}

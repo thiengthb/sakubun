@@ -1,14 +1,15 @@
 'use client';
 
-import { useId, type CSSProperties } from 'react';
-import { COLD_FLAME, tierForStreak } from '@/lib/srs/streak-tiers';
+import { type CSSProperties } from 'react';
+import { DUO_FLAME } from '@/lib/srs/streak-tiers';
 import { cn } from '@/lib/core/utils';
 
-const FLAME_PATH =
-  'M12 2c.6 3.2 2.5 4.6 3.9 6.2 1.3 1.5 2.6 3.2 2.6 5.6a6.5 6.5 0 1 1-13 0c0-1.4.5-2.6 1.3-3.3.2 1 .9 1.8 1.9 1.8 1.2 0 1.7-.9 1.7-2.2C10.3 8 9.7 5 12 2Z';
-const CORE_PATH =
-  'M12 12.3c.9 1 1.6 1.9 1.6 3.2A2.6 2.6 0 0 1 9 17.2c0-1 .5-1.8 1.2-2.6.1.6.5 1 1 1 .6 0 .9-.5.9-1.1 0-.9-.4-1.4-.1-2.2Z';
-const INNER_TRANSFORM = 'translate(12 22) scale(0.6) translate(-12 -22)';
+// Duolingo's flame, flat: an orange body with a lick on its left and a yellow core. Grey while
+// there is no streak. thien, Phân tích round 1.
+const BODY =
+  'M12.6 1.2c.4 3.1 2.4 5.1 4.2 7.2 1.7 2 2.9 4 2.9 6.6 0 4.4-3.4 7.6-7.7 7.6S4.3 19.4 4.3 15.2c0-2.6 1.2-4.6 2.8-6.1.2 1.4.9 2.6 2.1 3.2-.5-4.7 1.2-8.6 3.4-11.1Z';
+const CORE =
+  'M12.3 11.4c1.1 1.6 3.3 2.9 3.3 5.6 0 2.3-1.6 3.9-3.6 3.9s-3.6-1.5-3.6-3.6c0-1.3.6-2.3 1.4-3 .1.7.5 1.3 1.1 1.5-.2-1.7.4-3.3 1.4-4.4Z';
 
 export function StreakFlame({
   count,
@@ -18,52 +19,28 @@ export function StreakFlame({
 }: {
   count: number;
   className?: string;
+  /** The celebration's big flame: rises in, then sways. */
   hero?: boolean;
   sizePx?: number;
 }) {
-  const uid = useId().replace(/:/g, '');
-  const outer = `o${uid}`;
-  const inner = `i${uid}`;
   const cold = count < 1;
-  const t = tierForStreak(count);
-  const vars = {
-    ...(cold ? {} : { '--flame2': t.f2, '--glow': t.glow, '--flick': t.flick }),
-    ...(sizePx ? { width: sizePx, height: sizePx } : {}),
-  } as CSSProperties;
-
+  const colors = cold ? DUO_FLAME.cold : DUO_FLAME.lit;
+  const style = (sizePx ? { width: sizePx, height: sizePx } : undefined) as
+    CSSProperties | undefined;
   return (
     <svg
       viewBox="0 0 24 24"
       aria-hidden
-      style={vars}
+      style={style}
       className={cn(
-        'size-4',
-        cold ? 'streak-flame--cold' : hero ? 'streak-hero' : 'streak-flame',
+        'size-4 streak-duo',
+        // A lit flame keeps swaying gently, as Duolingo's does. thien, Phân tích round 2.
+        !cold && (hero ? 'streak-duo--hero' : 'streak-duo--sway'),
         className,
       )}
     >
-      <defs>
-        <linearGradient id={outer} x1="12" y1="2" x2="12" y2="22" gradientUnits="userSpaceOnUse">
-          <stop offset="0" stopColor={cold ? COLD_FLAME.top : t.top} />
-          <stop offset="0.55" stopColor={cold ? COLD_FLAME.mid : t.mid} />
-          <stop offset="1" stopColor={cold ? COLD_FLAME.base : t.base} />
-        </linearGradient>
-        <linearGradient id={inner} x1="12" y1="8" x2="12" y2="22" gradientUnits="userSpaceOnUse">
-          <stop offset="0" stopColor={t.core} />
-          <stop offset="0.6" stopColor={t.top} />
-          <stop offset="1" stopColor={t.mid} />
-        </linearGradient>
-      </defs>
-      <path fill={`url(#${outer})`} d={FLAME_PATH} />
-      {!cold && (
-        <path
-          className="streak-flame-inner"
-          fill={`url(#${inner})`}
-          transform={INNER_TRANSFORM}
-          d={FLAME_PATH}
-        />
-      )}
-      {!cold && t.coreOp > 0 && <path fill={t.core} opacity={t.coreOp} d={CORE_PATH} />}
+      <path fill={colors.body} d={BODY} />
+      <path className={cold ? undefined : 'streak-duo-core'} fill={colors.core} d={CORE} />
     </svg>
   );
 }

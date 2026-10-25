@@ -1,8 +1,8 @@
 import { PageSkeleton, PageTabsSkeleton } from '@/components/layout/page-skeleton';
 import { Skeleton } from '@/components/ui/skeleton';
 
-// Tiến độ, top to bottom: four stat tiles, today's rings, Nhớ đúng + 14 ngày tới, Theo cấp +
-// Điểm yếu, the year heatmap.
+// Tiến độ, top to bottom: four stat tiles, Hôm nay (quests, rings on a phone), Nhớ đúng + 14 ngày
+// tới, Theo cấp + Điểm yếu, the year heatmap.
 export default function Loading() {
   return (
     <PageSkeleton
@@ -16,7 +16,7 @@ export default function Loading() {
             <Skeleton key={i} className="h-24 rounded-lg" />
           ))}
         </div>
-        <Skeleton className="h-20 rounded-lg" />
+        <Skeleton className="h-28 rounded-lg max-sm:h-44" />
         <div className="grid gap-3 lg:grid-cols-2">
           <Skeleton className="h-44 rounded-lg" />
           <Skeleton className="h-44 rounded-lg" />

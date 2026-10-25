@@ -3,7 +3,6 @@ import Link from 'next/link';
 import {
   Activity,
   ArrowRight,
-  BookOpenText,
   CalendarClock,
   CalendarRange,
   GraduationCap,
@@ -27,6 +26,7 @@ import { DailyProgress } from '@/components/features/dashboard/daily-progress';
 import { LiveRefresh } from '@/components/layout/live-refresh';
 import { StatsView } from '@/components/features/dashboard/stats-view';
 import { StreakCard } from '@/components/features/dashboard/streak-card';
+import { LibraryTile } from '@/components/features/dashboard/library-tile';
 import {
   WeakChips,
   type WeakChip,
@@ -97,6 +97,7 @@ export default async function HomePage() {
         key: t.tag,
         text: ERROR_TAG_LABELS[t.tag],
         count: `×${t.count}`,
+        n: t.count,
         title: `${ERROR_TAG_LABELS[t.tag]}: ${t.count} lần`,
       })),
     },
@@ -106,6 +107,7 @@ export default async function HomePage() {
         key: w.itemId,
         text: w.expression,
         count: `×${w.misses}`,
+        n: w.misses,
         title: `Sai ${w.misses} lần${w.tags.length ? ` · ${w.tags.map((t) => ERROR_TAG_LABELS[t]).join(', ')}` : ''}`,
         href: `/resources/${w.itemId}`,
       })),
@@ -116,6 +118,7 @@ export default async function HomePage() {
         key: l.itemId,
         text: l.expression,
         count: `×${l.lapses}`,
+        n: l.lapses,
         title: `Quên ${l.lapses} lần${l.suspendSuggested ? ' · nên tạm ngưng' : ''}`,
         href: `/resources/${l.itemId}`,
       })),
@@ -126,6 +129,7 @@ export default async function HomePage() {
         key: w.itemId,
         text: w.expression,
         count: w.difficulty.toFixed(1),
+        n: w.difficulty,
         title: `Độ khó ${w.difficulty.toFixed(1)}/10`,
         href: `/resources/${w.itemId}`,
       })),
@@ -154,15 +158,9 @@ export default async function HomePage() {
           note={`${analytics.masteredGrammar}/${totalItems} mẫu`}
           explain={`${analytics.masteredGrammar}/${totalItems} mẫu đang ở trạng thái Ôn tập.`}
         />
-        <StatTile
-          icon={BookOpenText}
-          tone="info"
-          items={[
-            { value: totalItems, label: 'Ngữ pháp' },
-            { value: analytics.vocabTotal, label: 'Từ vựng' },
-          ]}
-          compact={{ value: totalItems + analytics.vocabTotal, label: 'Mục' }}
-          note={`+${analytics.newLast30} trong 30 ngày`}
+        <LibraryTile
+          grammar={totalItems}
+          vocab={analytics.vocabTotal}
           explain={`Kho học của bạn: ${totalItems} ngữ pháp, ${analytics.vocabTotal} từ vựng; ${analytics.newLast30} mục mới trong 30 ngày qua.`}
         />
       </section>

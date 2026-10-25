@@ -74,11 +74,10 @@
       "components/ui/tooltip.tsx": 1
     },
     "no-hardcoded-colors": {
-      "app/globals.css": 3,
       "app/layout.tsx": 2,
       "app/manifest.ts": 2,
       "components/layout/google-signin-button.tsx": 4,
-      "lib/srs/streak-tiers.ts": 39
+      "lib/srs/streak-tiers.ts": 16
     },
     "no-icon-size-in-components": {
       "app/global-error.tsx": 1,

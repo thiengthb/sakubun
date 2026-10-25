@@ -52,8 +52,7 @@ export function StreakCelebration({
     }
     try {
       localStorage.setItem(KEY, String(current));
-    } catch {
-    }
+    } catch {}
     if (last == null || !Number.isFinite(last) || current <= last) return;
 
     // eslint-disable-next-line react-hooks/set-state-in-effect -- a one-shot celebration triggered by a localStorage baseline + a prop increase; it's a genuine side effect, not render-derivable state.
@@ -129,10 +128,8 @@ export function StreakCelebration({
               style={{ color: FLAME_WHITE, textShadow: `0 2px 26px ${t.f1}` }}
             >
               {party.count}
-              <span className="ml-1 text-2xl font-bold" style={{ color: t.f2 }}>
-                {' '}
-                ngày
-              </span>
+              {/* The overlay shows the number alone; screen readers still hear what it counts. */}
+              <span className="sr-only"> ngày liên tiếp</span>
             </div>
           </div>
         </motion.div>
