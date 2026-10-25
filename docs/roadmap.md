@@ -23,7 +23,7 @@ follow `nuc-infra/AGENTS.md`.
 | 5.1 | Remove `coach`, `dossier`, `calibration`, `learner-notes`, the rest of `practice.ts` (#100, #101) | Done 2026-10-24: no old imports left; `practice.ts` keeps only live settings, item and stats reads (stats move in 5.3) | low |
 | 5.2 | Migration dropping unused tables and columns (after backup) (#104) | Done 2026-10-24: `LearnerNote`, `LearnerAbility`, `CalibrationProposal`, `Item.challenge*`, `Sentence.extraPatterns` dropped; `McpToolCall` kept for the Settings "Dùng MCP" card; migration tested on a seeded DB copy | high |
 | 5.3 | Dashboard from one stats source | Done 2026-10-25: `getDashboard` (`lib/insights/dashboard.ts`) reads once and `dashboard-model.ts` counts every number; old `getStats`, `getWeakReport`, `getAnalytics`, `getStudyStats` removed; dashboard e2e green | low |
-| 5.4 | Shared skeleton, drop `dev-skeleton` | Frontend rules green | low |
+| 5.4 | Shared skeleton, drop `dev-skeleton` | Done 2026-10-25: `PageShell` and `PageSkeleton` share `page-chrome.ts` (UI redo step 6). `dev-skeleton` stays, by thien's choice: it is the harness `e2e/skeleton.spec.ts` uses to compare each skeleton with its page, and it returns 404 in production. Next dev never shows a route's loading state on a held navigation, so dropping it would mean running that e2e on a production build | low |
 
 Token targets (phase 3): tool definitions under 2,000 tokens, protocol under 1,500, each tool result
 under 300.
