@@ -68,7 +68,9 @@ test('bulk add/remove to group, and the item-detail membership chips', async ({ 
   expect(errors, `console/page errors:\n${errors.join('\n')}`).toEqual([]);
 });
 
-test('group actions: modal on desktop, route on a phone', async ({ page }) => {
+// docs/ui-standard.md: adding is a page of its own at every width, never a form in a dialog. The
+// list's one create action is "Thêm" in the page header, following the open tab.
+test('creating a group is a page, from the header, at every width', async ({ page }) => {
   await seedE2eAccount();
   await page.goto('/login');
   await page.getByLabel('Email').fill(E2E_EMAIL);
@@ -76,21 +78,17 @@ test('group actions: modal on desktop, route on a phone', async ({ page }) => {
   await page.getByRole('button', { name: 'Đăng nhập' }).click();
   await page.waitForURL((u) => !u.pathname.startsWith('/login'), { timeout: 30_000 });
 
-  await page.setViewportSize({ width: 1280, height: 800 });
-  await page.goto('/resources?tab=groups', { waitUntil: 'networkidle' });
-  await expect(page.getByRole('link', { name: 'Tạo nhóm' })).toHaveCount(0);
-  await page.getByRole('button', { name: 'Tạo nhóm' }).click();
-  await expect(page.getByRole('dialog')).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Tạo nhóm mới' })).toBeVisible();
-  expect(new URL(page.url()).pathname, 'desktop must NOT navigate').toBe('/resources');
-  await page.keyboard.press('Escape');
-
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/resources?tab=groups', { waitUntil: 'networkidle' });
-  await expect(page.getByRole('button', { name: 'Tạo nhóm' })).toHaveCount(0);
-  await page.getByRole('link', { name: 'Tạo nhóm' }).click();
-  await page.waitForURL((u) => u.pathname === '/groups/new', { timeout: 15_000 });
-  await expect(page.getByRole('dialog')).toHaveCount(0);
-  await expect(page.getByRole('link', { name: /Nhóm/ }).first()).toBeVisible();
-  await expect(page.getByLabel('Tên nhóm')).toBeVisible();
+  for (const [width, height] of [
+    [1280, 800],
+    [390, 844],
+  ] as const) {
+    await page.setViewportSize({ width, height });
+    await page.goto('/resources?tab=groups', { waitUntil: 'networkidle' });
+    const add = page.locator('header').getByRole('link', { name: 'Thêm', exact: true });
+    await expect(add, `${width}px: one Thêm in the header`).toHaveCount(1);
+    await add.click();
+    await page.waitForURL((u) => u.pathname === '/groups/new', { timeout: 15_000 });
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await expect(page.getByLabel('Tên nhóm')).toBeVisible();
+  }
 });

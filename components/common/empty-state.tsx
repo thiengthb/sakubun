@@ -19,28 +19,28 @@ export function EmptyState({
   className,
   children,
 }: EmptyStateProps) {
+  // docs/ui-standard.md: a dashed box, left-aligned and as tall as its content, never a centred
+  // block that leaves the page empty. A title alone sits level with its icon.
+  const titleOnly = !description && !children && !action;
   return (
     <div
       className={cn(
-        'flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-border/70 px-6 py-16 text-center',
+        'flex gap-3 rounded-lg border-2 border-dashed border-border px-4 py-5 md:px-6',
+        titleOnly ? 'items-center' : 'items-start',
         className,
       )}
     >
       {Icon && (
-        <span className="flex size-12 items-center justify-center rounded-full bg-muted text-muted-foreground/70">
-          <Icon className="size-6" aria-hidden />
+        <span className="flex size-8 shrink-0 items-center justify-center rounded-sm bg-muted text-muted-foreground">
+          <Icon className="size-4" aria-hidden />
         </span>
       )}
-      <div className="space-y-1">
-        {title && <p className="text-sm font-medium">{title}</p>}
-        {description && (
-          <p className="mx-auto max-w-sm text-sm text-muted-foreground">{description}</p>
-        )}
-        {children && (
-          <div className="mx-auto max-w-sm text-sm text-muted-foreground">{children}</div>
-        )}
+      <div className="min-w-0 flex-1 space-y-1">
+        {title && <p className="text-sm font-bold">{title}</p>}
+        {description && <p className="max-w-prose text-sm text-muted-foreground">{description}</p>}
+        {children && <div className="max-w-prose text-sm text-muted-foreground">{children}</div>}
+        {action && <div className="pt-2">{action}</div>}
       </div>
-      {action && <div>{action}</div>}
     </div>
   );
 }

@@ -13,7 +13,8 @@ export function BulkActionButton({
   pending = false,
   side = 'left',
   variant = 'outline',
-  size = 'icon',
+  // 36px at every width: the bar's buttons are its only targets, and 28px was hard to hit.
+  size = 'icon-lg',
   className,
   disabled,
   ref,

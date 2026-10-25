@@ -26,7 +26,9 @@ const VOCAB_CARD = JSON.stringify({
   examples: [{ ja: '準備が整いました。', vi: 'Đã chuẩn bị xong.' }],
   pitfalls: ['Không nhầm với 用意 khi nói về chuẩn bị dài hạn.'],
   synonyms: [{ term: '用意', reading: 'ようい', vi: 'sự sắm sẵn', note: 'thiên về vật cụ thể.' }],
-  antonyms: [{ term: '本番', reading: 'ほんばん', vi: 'lúc diễn thật', note: 'ngược với lúc chuẩn bị.' }],
+  antonyms: [
+    { term: '本番', reading: 'ほんばん', vi: 'lúc diễn thật', note: 'ngược với lúc chuẩn bị.' },
+  ],
 });
 
 async function seed() {
@@ -200,13 +202,11 @@ async function withFilters(page: Page, body: () => Promise<void>) {
   await expect(trigger).toHaveAttribute('aria-expanded', 'false');
 }
 
-async function shownCount(page: Page, noun: string): Promise<number> {
-  const text =
-    (await page
-      .getByText(new RegExp(`/\\s*\\d+\\s*${noun}`))
-      .first()
-      .textContent()) ?? '';
-  return Number(text.match(new RegExp(`/\\s*(\\d+)\\s*${noun}`))?.[1] ?? -1);
+// The rows on the table's one page. A table that fits one page has no footer count
+// (thien, 2026-10-24), and every seed here fits one page.
+async function shownCount(page: Page, _noun: string): Promise<number> {
+  await page.waitForTimeout(300);
+  return page.locator('tbody tr').count();
 }
 
 const TABS = [
@@ -245,7 +245,6 @@ test('phần dùng chung của hai bảng: sắp xếp, cột ẩn mặc định
     await withFilters(page, async () => {
       await pickFilter(page, 'Mọi cấp', 'N2');
       expect(await shownCount(page, t.noun), `${t.tab}: lọc N2 còn 2`).toBe(2);
-      await expect(page.getByText('(lọc từ 4)')).toBeVisible();
       await pickFilter(page, 'N2', 'Mọi cấp');
       expect(await shownCount(page, t.noun), `${t.tab}: bỏ lọc về lại 4`).toBe(4);
     });
@@ -428,4 +427,34 @@ test('bộ lọc đang bật hiện thành chip, xoá được từng cái', asy
   await chip.click();
   await expect(chip).toHaveCount(0);
   expect(await shownCount(page, 'mẫu')).toBe(4);
+});
+
+// docs/ui-standard.md: adding and editing are pages of their own, never a form in a dialog. The
+// list's one create action is "Thêm" in the page header, and it follows the open tab.
+test('Thêm và Sửa mở trang riêng, không mở hộp thoại', async ({ page }) => {
+  await seed();
+  await login(page);
+
+  for (const [width, height] of [
+    [1440, 900],
+    [390, 844],
+  ] as const) {
+    await page.setViewportSize({ width, height });
+    for (const kind of ['grammar', 'vocab'] as const) {
+      await page.goto(`/resources?tab=${kind}`, { waitUntil: 'networkidle' });
+      const add = page.locator('header').getByRole('link', { name: 'Thêm', exact: true });
+      await expect(add, `${width}px ${kind}: one Thêm in the header`).toHaveCount(1);
+      await add.click();
+      await page.waitForURL((u) => u.pathname === '/resources/new', { timeout: 15_000 });
+      expect(new URL(page.url()).searchParams.get('kind')).toBe(kind);
+      await expect(page.getByRole('dialog')).toHaveCount(0);
+    }
+  }
+
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/resources?tab=grammar', { waitUntil: 'networkidle' });
+  await page.getByRole('button', { name: 'Tác vụ' }).first().click();
+  await page.getByRole('menuitem', { name: 'Sửa' }).click();
+  await page.waitForURL((u) => /^\/resources\/[^/]+\/edit$/.test(u.pathname), { timeout: 15_000 });
+  await expect(page.getByRole('dialog')).toHaveCount(0);
 });

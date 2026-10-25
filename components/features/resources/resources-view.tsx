@@ -1,19 +1,20 @@
 'use client';
 
+import { BookText, FolderOpen, Languages } from 'lucide-react';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
-import { TabSelect } from '@/components/common/tab-select';
+import { PageTabs } from '@/components/common/page-tabs';
 import { EmptyState } from '@/components/common/empty-state';
 import { ResourceTable, type ResourceRow } from '@/components/features/resources/resource-table';
 import { PageShell } from '@/components/layout/page-shell';
-import { ResourceAddButton } from '@/components/features/resources/resource-add-button';
+import { AddButton, ResourceAddButton } from '@/components/features/resources/resource-add-button';
 import { useSessionState } from '@/components/common/use-session-state';
 import { GroupsView } from '@/components/features/groups/groups-view';
 import type { GroupSummary } from '@/lib/library/groups';
 
 const RESOURCE_TABS = [
-  { value: 'grammar', label: 'Ngữ pháp' },
-  { value: 'vocab', label: 'Từ vựng' },
-  { value: 'groups', label: 'Nhóm' },
+  { value: 'grammar', label: 'Ngữ pháp', icon: BookText },
+  { value: 'vocab', label: 'Từ vựng', icon: Languages },
+  { value: 'groups', label: 'Nhóm', icon: FolderOpen },
 ] as const;
 
 export function ResourcesView({
@@ -32,32 +33,46 @@ export function ResourcesView({
   showFurigana?: boolean;
 }) {
   const [tab, setTab] = useSessionState('resources.tab', 'grammar', 'tab');
+  // List template: the page's one create action sits in the header and follows the open tab, so
+  // neither the toolbar nor an empty state repeats it.
+  const meta =
+    tab === 'groups'
+      ? `${groups.length} nhóm`
+      : tab === 'vocab'
+        ? `${vocab.length} từ vựng`
+        : `${grammar.length} mẫu ngữ pháp`;
+  const action =
+    tab === 'groups' ? (
+      <AddButton href="/groups/new" />
+    ) : (
+      <ResourceAddButton kind={tab === 'vocab' ? 'vocab' : 'grammar'} />
+    );
+
   return (
     <Tabs value={tab} onValueChange={setTab}>
       <PageShell
-        section="resources"
-        headerAside={
-          <TabSelect items={RESOURCE_TABS} value={tab} onValueChange={setTab} label="Chọn kho" />
-        }
+        template="list"
+        title="Tài nguyên"
+        meta={meta}
+        actions={action}
+        tabs={<PageTabs items={RESOURCE_TABS} label="Chọn kho" />}
       >
         <TabsContent value="grammar">
           {grammar.length === 0 ? (
             <EmptyState
-              title="Kho ngữ pháp đang trống"
+              icon={BookText}
+              title="Chưa có mẫu ngữ pháp"
               description={
                 <>
-                  Nhập bên dưới, hoặc mở Claude Desktop hoặc ChatGPT và dùng prompt{' '}
-                  <code>import_grammar</code>.
+                  Bấm Thêm, hoặc nhờ trợ lý MCP với prompt <code>import_grammar</code>.
                 </>
               }
-              action={<ResourceAddButton kind="grammar" />}
             />
           ) : (
             <ResourceTable
               kind="grammar"
               items={grammar}
               groups={groups}
-              actionSlot={<ResourceAddButton kind="grammar" />}
               voiceSpeaker={voiceSpeaker}
               speechRate={speechRate}
               showFurigana={showFurigana}
@@ -68,21 +83,19 @@ export function ResourcesView({
         <TabsContent value="vocab">
           {vocab.length === 0 ? (
             <EmptyState
-              title="Chưa có từ vựng nào"
+              icon={Languages}
+              title="Chưa có từ vựng"
               description={
                 <>
-                  Thêm thủ công bên dưới, hoặc khi luyện hãy hỏi trợ lý MCP nghĩa một từ (nói{' '}
-                  <em>“thêm từ này”</em>) để nó thêm qua <code>add_vocab</code>.
+                  Bấm Thêm, hoặc khi luyện nói <em>“thêm từ này”</em> để trợ lý MCP thêm.
                 </>
               }
-              action={<ResourceAddButton kind="vocab" />}
             />
           ) : (
             <ResourceTable
               kind="vocab"
               items={vocab}
               groups={groups}
-              actionSlot={<ResourceAddButton kind="vocab" />}
               voiceSpeaker={voiceSpeaker}
               speechRate={speechRate}
               showFurigana={showFurigana}

@@ -6,6 +6,8 @@ import { fitItemCount } from '@/lib/core/fit-rows';
 export interface UseFitRowsOptions {
   topRef: RefObject<HTMLElement | null>;
   footerRef?: RefObject<HTMLElement | null>;
+  /** usePinnedFooter's spacer between the rows and the footer: not part of the footer's chrome. */
+  spacerRef?: RefObject<HTMLElement | null>;
   rowHeight: number;
   rowGap?: number;
   grid?: boolean;
@@ -18,6 +20,7 @@ export interface UseFitRowsOptions {
 export function useFitRows({
   topRef,
   footerRef,
+  spacerRef,
   rowHeight,
   rowGap = 0,
   grid = false,
@@ -32,6 +35,7 @@ export function useFitRows({
     innerHeight: number;
     top: number;
     perRow: number;
+    footer: number;
   } | null>(null);
 
   useEffect(() => {
@@ -66,7 +70,9 @@ export function useFitRows({
 
         const footEl = footerRef?.current;
         const footerChrome = footEl
-          ? footEl.getBoundingClientRect().bottom - topRect.bottom
+          ? footEl.getBoundingClientRect().bottom -
+            topRect.bottom -
+            (spacerRef?.current?.offsetHeight ?? 0)
           : footerFallback;
 
         const innerHeight = window.innerHeight;
@@ -86,10 +92,18 @@ export function useFitRows({
           !prev ||
           itemsPerRow !== prev.perRow ||
           Math.abs(innerHeight - prev.innerHeight) >= 1 ||
-          Math.abs(topRect.top - prev.top) >= 2;
+          Math.abs(topRect.top - prev.top) >= 2 ||
+          // The footer appears or goes (a table that fits one page has none).
+          Math.abs(footerChrome - prev.footer) >= 2;
         if (prev && !hardChange && Math.abs(next - prev.count) <= itemsPerRow) return;
 
-        committed.current = { count: next, innerHeight, top: topRect.top, perRow: itemsPerRow };
+        committed.current = {
+          count: next,
+          innerHeight,
+          top: topRect.top,
+          perRow: itemsPerRow,
+          footer: footerChrome,
+        };
         setCount((prevCount) => (prevCount === next ? prevCount : next));
       });
     };
@@ -104,7 +118,48 @@ export function useFitRows({
       ro.disconnect();
       cancelAnimationFrame(raf);
     };
-  }, [topRef, footerRef, rowHeight, rowGap, grid, bottomGap, min, max, footerFallback]);
+  }, [topRef, footerRef, spacerRef, rowHeight, rowGap, grid, bottomGap, min, max, footerFallback]);
 
   return count;
+}
+
+/**
+ * Keeps a list's footer (count, page size, pages) `bottomGap` above the bottom of the window when
+ * the list is shorter than the window, by growing `spacerRef` above it. The space a fitted page
+ * cannot fill with a whole row then sits between the rows and the footer, not under the footer.
+ */
+export function usePinnedFooter({
+  footerRef,
+  spacerRef,
+  bottomGap,
+}: {
+  footerRef: RefObject<HTMLElement | null>;
+  spacerRef: RefObject<HTMLElement | null>;
+  bottomGap: number;
+}) {
+  useEffect(() => {
+    let raf = 0;
+    const pin = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        const foot = footerRef.current;
+        const spacer = spacerRef.current;
+        if (!foot || !spacer || foot.offsetParent === null) return;
+        const current = spacer.offsetHeight;
+        const footBottom = foot.getBoundingClientRect().bottom + window.scrollY;
+        const want = Math.max(0, Math.floor(current + window.innerHeight - bottomGap - footBottom));
+        if (want !== current) spacer.style.height = `${want}px`;
+      });
+    };
+    pin();
+    window.addEventListener('resize', pin);
+    const ro = new ResizeObserver(pin);
+    const parent = spacerRef.current?.parentElement;
+    if (parent) ro.observe(parent);
+    return () => {
+      window.removeEventListener('resize', pin);
+      ro.disconnect();
+      cancelAnimationFrame(raf);
+    };
+  }, [footerRef, spacerRef, bottomGap]);
 }

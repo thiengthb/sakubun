@@ -4,8 +4,7 @@
     "create-label": {
       "components/features/groups/group-actions.tsx": 10,
       "components/features/groups/group-item-picker.tsx": 1,
-      "components/features/resources/item-groups.tsx": 1,
-      "components/features/resources/resource-add-button.tsx": 2
+      "components/features/resources/item-groups.tsx": 1
     },
     "icon-only-plain": {
       "components/common/filter-popover.tsx": 1,
@@ -14,15 +13,10 @@
       "components/layout/sidebar-user.tsx": 1
     },
     "no-form-dialog": {
-      "components/features/groups/group-actions.tsx": 2,
-      "components/features/resources/resource-add-button.tsx": 1,
-      "components/features/resources/row-actions.tsx": 1
+      "components/features/groups/group-actions.tsx": 2
     },
     "no-round-controls": {
-      "components/common/data-table.tsx": 1,
-      "components/common/filter-popover.tsx": 1,
       "components/common/info-tooltip.tsx": 1,
-      "components/features/resources/content-gap-notice.tsx": 1,
       "components/layout/scroll-to-top.tsx": 1
     },
     "page-template": {
@@ -36,7 +30,6 @@
       "app/resources/[id]/edit/loading.tsx": 1,
       "app/resources/[id]/edit/page.tsx": 1,
       "app/resources/[id]/loading.tsx": 1,
-      "app/resources/loading.tsx": 1,
       "app/resources/new/loading.tsx": 1,
       "app/review/loading.tsx": 1,
       "app/review/page.tsx": 1,
@@ -46,8 +39,7 @@
       "components/features/groups/group-item-picker.tsx": 1,
       "components/features/history/history-view.tsx": 1,
       "components/features/resources/item-analytics.tsx": 1,
-      "components/features/resources/resource-add-page.tsx": 1,
-      "components/features/resources/resources-view.tsx": 1
+      "components/features/resources/resource-add-page.tsx": 1
     }
   }
 }

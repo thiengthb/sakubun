@@ -1,11 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { useMemo, useRef, useState, useTransition } from 'react';
+import { useMemo, useState, useTransition } from 'react';
 import { Layers, SearchX, Trash2 } from 'lucide-react';
 import { toastResult } from '@/lib/core/action-toast';
 import { Button } from '@/components/ui/button';
-import { PagedFooter } from '@/components/common/paged-footer';
 import { ConfirmDialog } from '@/components/common/confirm-dialog';
 import { EmptyState } from '@/components/common/empty-state';
 import {
@@ -16,11 +15,15 @@ import {
   type FilterChip,
   type FilterOption,
 } from '@/components/common/filter-popover';
-import { GroupCreateAction, GroupEditAction } from '@/components/features/groups/group-actions';
+import { GroupEditAction } from '@/components/features/groups/group-actions';
 import { GroupKindBadge } from '@/components/features/groups/group-kind-badge';
 import { GROUP_KIND_LABELS } from '@/lib/library/group-kinds';
 import { SearchInput } from '@/components/common/search-input';
-import { usePagedList } from '@/components/common/use-paged-list';
+import { SearchToolbar } from '@/components/common/search-toolbar';
+import { useScrollMore } from '@/components/common/use-scroll-more';
+import { LIST_CARD } from '@/components/common/list-card';
+import { ScrollMoreStatus } from '@/components/common/scroll-more-status';
+import { cn } from '@/lib/core/utils';
 import { useSessionState } from '@/components/common/use-session-state';
 import { deleteGroupAction } from '@/app/actions';
 import type { GroupSummary } from '@/lib/library/groups';
@@ -43,9 +46,6 @@ const MEMBER_FILTERS = [
   { value: 'empty', label: 'Trống' },
 ] as const;
 
-const cardCls =
-  'relative flex flex-col gap-1.5 rounded-lg border border-border/70 p-3 transition-colors hover:bg-muted/40 [&_button]:relative [&_button]:z-10';
-
 export function GroupsView({ groups }: { groups: GroupSummary[] }) {
   const [deleting, setDeleting] = useState<GroupSummary | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -53,8 +53,6 @@ export function GroupsView({ groups }: { groups: GroupSummary[] }) {
   const [kindFilter, setKindFilter] = useSessionState('groups.kind', 'all', 'gk');
   const [member, setMember] = useSessionState('groups.member', 'all', 'gm');
   const [sort, setSort] = useSessionState<SortKey>('groups.sort', 'recent', 'gs');
-  const listRef = useRef<HTMLUListElement>(null);
-  const footerRef = useRef<HTMLDivElement>(null);
 
   const needle = q.trim().toLowerCase();
   const filterCount = (kindFilter !== 'all' ? 1 : 0) + (member !== 'all' ? 1 : 0);
@@ -84,12 +82,12 @@ export function GroupsView({ groups }: { groups: GroupSummary[] }) {
     return sorted;
   }, [groups, kindFilter, member, sort, needle]);
 
-  const paged = usePagedList(filtered, {
-    topRef: listRef,
-    footerRef,
-    storeKey: 'groups',
-    rowHeight: 130,
-  });
+  // Groups are cards at every width, so they load more as they scroll and never page.
+  const {
+    items: shownGroups,
+    hasMore,
+    sentinelRef,
+  } = useScrollMore(filtered, JSON.stringify([needle, kindFilter, member, sort]));
 
   const confirmDelete = () => {
     if (!deleting) return;
@@ -102,38 +100,38 @@ export function GroupsView({ groups }: { groups: GroupSummary[] }) {
   return (
     <div className="space-y-6">
       {groups.length > 0 && (
-        <div className="flex flex-row items-center gap-2 sm:gap-3">
-          <SearchInput
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Tìm nhóm theo tên / ghi chú"
-            className="min-w-0 flex-1 sm:max-w-xs"
-          />
-          <div className="flex shrink-0 items-center gap-2 md:ml-auto">
-            <FilterPopover activeCount={filterCount} onReset={resetFilters}>
-              <SelectFilterRow
-                label="Loại"
-                value={kindFilter}
-                onValueChange={setKindFilter}
-                options={KIND_FILTERS}
-              />
-              <SelectFilterRow
-                label="Số mục"
-                value={member}
-                onValueChange={setMember}
-                options={MEMBER_FILTERS}
-              />
-              <SelectFilterRow
-                className="col-span-2"
-                label="Sắp xếp"
-                value={sort}
-                onValueChange={(v) => setSort(v as SortKey)}
-                options={SORTS}
-              />
-            </FilterPopover>
-            <GroupCreateAction />
-          </div>
-        </div>
+        <SearchToolbar
+          search={
+            <SearchInput
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Tìm nhóm theo tên / ghi chú"
+              className="sm:max-w-none"
+            />
+          }
+        >
+          <FilterPopover activeCount={filterCount} onReset={resetFilters}>
+            <SelectFilterRow
+              label="Loại"
+              value={kindFilter}
+              onValueChange={setKindFilter}
+              options={KIND_FILTERS}
+            />
+            <SelectFilterRow
+              label="Số mục"
+              value={member}
+              onValueChange={setMember}
+              options={MEMBER_FILTERS}
+            />
+            <SelectFilterRow
+              className="col-span-2"
+              label="Sắp xếp"
+              value={sort}
+              onValueChange={(v) => setSort(v as SortKey)}
+              options={SORTS}
+            />
+          </FilterPopover>
+        </SearchToolbar>
       )}
 
       {groups.length > 0 && <FilterChips chips={chips} onReset={resetFilters} className="-mt-3" />}
@@ -142,64 +140,66 @@ export function GroupsView({ groups }: { groups: GroupSummary[] }) {
         <EmptyState
           icon={Layers}
           title="Chưa có nhóm nào"
-          description="Tạo nhóm đầu tiên để gom các mục bạn muốn luyện chung."
-          action={<GroupCreateAction variant="empty" />}
+          description="Bấm Thêm để gom các mục muốn luyện chung."
         />
       ) : filtered.length === 0 ? (
-        <EmptyState
-          icon={SearchX}
-          title="Không có nhóm nào khớp tìm kiếm / bộ lọc."
-          className="py-12"
-        />
+        <EmptyState icon={SearchX} title="Không có nhóm nào khớp tìm kiếm / bộ lọc." />
       ) : (
         <>
-          <ul ref={listRef} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {paged.items.map((g) => (
-              <li key={g.id} className={cardCls}>
-                <Link
-                  href={`/groups/${g.id}`}
-                  className="absolute inset-0 rounded-lg focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+          <div className="@container">
+            <ul className="grid gap-2 @2xl:grid-cols-2 @2xl:gap-3 @5xl:grid-cols-3">
+              {shownGroups.map((g) => (
+                <li
+                  key={g.id}
+                  className={cn(LIST_CARD.base, LIST_CARD.linked, 'flex flex-col gap-1.5')}
                 >
-                  <span className="sr-only">Mở nhóm {g.name}</span>
-                </Link>
+                  <Link href={`/groups/${g.id}`} className={LIST_CARD.link}>
+                    <span className="sr-only">Mở nhóm {g.name}</span>
+                  </Link>
 
-                <div className="flex items-start justify-between gap-2">
-                  <span className="flex min-w-0 flex-1 items-start gap-2 font-medium">
-                    <Layers className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
-                    <span className="line-clamp-2">{g.name}</span>
-                  </span>
-                  <span className="flex shrink-0 items-center gap-0.5">
-                    <GroupEditAction group={g} />
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="size-8 text-muted-foreground hover:text-destructive"
-                      onClick={() => setDeleting(g)}
-                      aria-label={`Xoá nhóm ${g.name}`}
-                    >
-                      <Trash2 className="size-4" />
-                    </Button>
-                  </span>
-                </div>
+                  <div className="flex items-start justify-between gap-2">
+                    <span className="flex min-w-0 flex-1 items-start gap-2 font-medium">
+                      <Layers
+                        className="mt-0.5 size-4 shrink-0 text-muted-foreground"
+                        aria-hidden
+                      />
+                      <span className="line-clamp-2 min-h-10">{g.name}</span>
+                    </span>
+                    <span className="flex shrink-0 items-center gap-0.5">
+                      <GroupEditAction group={g} />
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-muted-foreground hover:text-destructive"
+                        onClick={() => setDeleting(g)}
+                        aria-label={`Xoá nhóm ${g.name}`}
+                      >
+                        <Trash2 className="size-4" />
+                      </Button>
+                    </span>
+                  </div>
 
-                {g.note && (
-                  <p className="line-clamp-2 text-sm text-muted-foreground">{g.note}</p>
-                )}
+                  {/* Every card is the same height: two lines for the name and two for the note
+                      are kept even when shorter (min-h-10 is two text-sm lines; thien, 2026-10-24). */}
+                  <p
+                    className={cn(
+                      'line-clamp-2 min-h-10 text-sm text-muted-foreground',
+                      !g.note && 'text-muted-foreground/70',
+                    )}
+                  >
+                    {g.note || 'Chưa có ghi chú'}
+                  </p>
 
-                <div className="mt-auto flex flex-wrap items-center gap-x-2 gap-y-1 pt-1 text-xs text-muted-foreground">
-                  <span>{g.memberCount} mục</span>
-                  <span aria-hidden>·</span>
-                  <GroupKindBadge kind={g.kind} className="px-1.5 py-0 font-normal" />
-                </div>
-              </li>
-            ))}
-          </ul>
-          <PagedFooter
-            paged={paged}
-            footerRef={footerRef}
-            noun="nhóm"
-            totalUnfiltered={groups.length}
-          />
+                  <div className="mt-auto flex flex-wrap items-center gap-x-2 gap-y-1 pt-1 text-xs text-muted-foreground">
+                    <span>{g.memberCount} mục</span>
+                    <span aria-hidden>·</span>
+                    <GroupKindBadge kind={g.kind} />
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <ScrollMoreStatus ref={sentinelRef} hasMore={hasMore} />
         </>
       )}
 

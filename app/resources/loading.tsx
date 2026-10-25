@@ -1,22 +1,29 @@
 import {
   CardsSkeleton,
   PageSkeleton,
+  PageTabsSkeleton,
   TabbedSkeleton,
   TableSkeleton,
-  TabsAside,
   ToolbarSkeleton,
 } from '@/components/layout/page-skeleton';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const TABLE = (
   <>
-    <ToolbarSkeleton action filters={1} columnMenu />
+    <ToolbarSkeleton filters={1} columnMenu />
     <TableSkeleton />
   </>
 );
 
 export default function Loading() {
   return (
-    <PageSkeleton section="resources" aside={<TabsAside count={3} rail={216} select={120} />}>
+    <PageSkeleton
+      template="list"
+      title="Tài nguyên"
+      meta
+      actions={<Skeleton className="h-9 w-20 rounded-sm md:h-7" />}
+      tabs={<PageTabsSkeleton count={3} widths={[80, 72, 48]} />}
+    >
       <TabbedSkeleton
         storeKey="resources.tab"
         urlKey="tab"
@@ -26,8 +33,8 @@ export default function Loading() {
           vocab: TABLE,
           groups: (
             <>
-              <ToolbarSkeleton action filters={0} />
-              <CardsSkeleton />
+              <ToolbarSkeleton filters={1} />
+              <CardsSkeleton rowHeight={108} footer={false} />
             </>
           ),
         }}

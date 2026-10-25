@@ -2,6 +2,7 @@
 
 import { Fragment, useRef, type ReactNode } from 'react';
 import { cn } from '@/lib/core/utils';
+import { LIST_CARD } from '@/components/common/list-card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useFitRows } from '@/components/ui/use-fit-rows';
 import { useSessionState } from '@/components/common/use-session-state';
@@ -131,10 +132,10 @@ export function TableSkeleton({
         fallback={Math.min(rows, 5)}
         min={min}
         max={max}
-        className="flex flex-col gap-2 md:hidden"
+        className="flex flex-col gap-2 lg:hidden"
         item={RESOURCE_CARD}
       />
-      <div className="space-y-2 rounded-lg border p-4 max-md:hidden">
+      <div className="space-y-2 rounded-lg border p-4 max-lg:hidden">
         <div className="flex items-center gap-3 border-b pb-2">
           <div className="size-6 shrink-0" />
           <Skeleton className="h-3 w-24 flex-[3]" style={{ maxWidth: 100 }} />
@@ -153,7 +154,12 @@ export function TableSkeleton({
           item={TABLE_ROW}
         />
       </div>
-      {footer && <PaginationFooterSkeleton />}
+      {/* Below 1024px the cards load more as they scroll: no pagination. */}
+      {footer && (
+        <div className="max-lg:hidden">
+          <PaginationFooterSkeleton />
+        </div>
+      )}
     </div>
   );
 }
@@ -161,8 +167,8 @@ export function TableSkeleton({
 export function CardsSkeleton({
   count = 6,
   rowHeight = 86,
-  columns = 'sm:grid-cols-2 lg:grid-cols-3',
-  rowGap = 12,
+  columns = '@2xl:grid-cols-2 @2xl:gap-3 @5xl:grid-cols-3',
+  rowGap = 8,
   footer = true,
   min,
   max,
@@ -176,7 +182,7 @@ export function CardsSkeleton({
   max?: number;
 }) {
   return (
-    <div className="space-y-3">
+    <div className="@container space-y-3">
       <FitList
         rowHeight={rowHeight}
         rowGap={rowGap}
@@ -184,11 +190,11 @@ export function CardsSkeleton({
         fallback={count}
         min={min}
         max={max}
-        className={cn('grid gap-3', columns)}
+        className={cn('grid gap-2', columns)}
         item={
           <div
             data-skeleton-row
-            className="flex flex-col gap-1.5 rounded-lg border border-border/70 p-3"
+            className={cn(LIST_CARD.base, 'flex flex-col gap-1.5')}
             style={{ height: rowHeight }}
           >
             <div className="flex items-center gap-2">

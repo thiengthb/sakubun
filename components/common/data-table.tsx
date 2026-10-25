@@ -55,9 +55,13 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { FilterChips, type FilterChip } from '@/components/common/filter-popover';
 import { SearchInput } from '@/components/common/search-input';
+import { SearchToolbar } from '@/components/common/search-toolbar';
 import { SortSheet, type SortOption } from '@/components/common/sort-sheet';
 import { useSessionState } from '@/components/common/use-session-state';
-import { useFitRows } from '@/components/ui/use-fit-rows';
+import { useScrollMore } from '@/components/common/use-scroll-more';
+import { LIST_CARD } from '@/components/common/list-card';
+import { ScrollMoreStatus } from '@/components/common/scroll-more-status';
+import { useFitRows, usePinnedFooter } from '@/components/ui/use-fit-rows';
 import {
   Table,
   TableBody,
@@ -84,6 +88,8 @@ const VIEW_CHOICES = [
   { value: 'cards', label: 'Xem dạng thẻ', icon: LayoutGrid },
 ] as const satisfies readonly { value: DataTableView; label: string; icon: LucideIcon }[];
 
+// PAGE_CHROME.page's bottom padding from 768px (md:pb-8): where a table's footer rests.
+const PAGE_BOTTOM = 32;
 const EMPTY_SORTING: SortingState = [];
 const EMPTY_SIZING: ColumnSizingState = {};
 
@@ -108,7 +114,6 @@ export interface DataTableProps<T> {
   pageSizeOptions?: number[];
   initialPageSize?: number;
   estimatedRowHeight?: number;
-  estimatedCardHeight?: number;
   rowClassName?: (row: T) => string | undefined;
   totalCount?: number;
   countNoun?: string;
@@ -140,7 +145,6 @@ export function DataTable<T>({
   pageSizeOptions = [25, 50, 100],
   initialPageSize = 50,
   estimatedRowHeight = 45,
-  estimatedCardHeight = 116,
   rowClassName,
   totalCount,
   countNoun = 'dòng',
@@ -196,20 +200,18 @@ export function DataTable<T>({
   );
   const [autoFit, setAutoFit] = useSessionState<boolean>(`${persistKey}.autofit`, true);
   const bodyRef = useRef<HTMLTableSectionElement>(null);
-  const cardsRef = useRef<HTMLUListElement>(null);
   const footerRef = useRef<HTMLDivElement>(null);
-  const fitRows = useFitRows({ topRef: bodyRef, footerRef, rowHeight: estimatedRowHeight });
-  // Card view fills a grid, so the count that fits is rows × columns, not rows. The hook reads the
-  // real column count out of `grid-template-columns` and the real card height off the first row, so
-  // a 3-across grid asks for 3× the page a 1-across phone does — measured, not guessed.
-  const fitCards = useFitRows({
-    topRef: cardsRef,
+  const spacerRef = useRef<HTMLDivElement>(null);
+  // Only the table pages; the cards load more as they scroll, so their fit is not asked for. The
+  // footer stays PAGE_BOTTOM above the window's bottom, the template page's own bottom padding.
+  const fit = useFitRows({
+    topRef: bodyRef,
     footerRef,
-    rowHeight: estimatedCardHeight,
-    grid: true,
+    spacerRef,
+    rowHeight: estimatedRowHeight,
+    bottomGap: PAGE_BOTTOM,
   });
-  // Exactly one of the two is visible at any width, and the hidden one reports null.
-  const fit = fitCards ?? fitRows;
+  usePinnedFooter({ footerRef, spacerRef, bottomGap: PAGE_BOTTOM });
   const effectivePageSize = autoFit && fit != null ? fit : pageSize;
   const sizeOptions = useMemo(
     () =>
@@ -329,6 +331,11 @@ export function DataTable<T>({
 
   const filteredCount = table.getFilteredRowModel().rows.length;
   const rows = table.getRowModel().rows;
+  // The card list starts over whenever what it lists changes: a new search, sort or filter.
+  const allRows = table.getPrePaginationRowModel().rows;
+  const listKey = JSON.stringify([globalFilter, sorting, filteredCount]);
+  // Cards (below 1024px, and the card view on a wider screen) load more as they scroll.
+  const { items: cardRows, hasMore: moreCards, sentinelRef } = useScrollMore(allRows, listKey);
   const pageCount = table.getPageCount();
   const safePageIndex = Math.min(pageIndex, Math.max(0, pageCount - 1));
   const start = safePageIndex * effectivePageSize;
@@ -427,168 +434,172 @@ export function DataTable<T>({
 
   return (
     <div ref={rootRef} className="space-y-4">
-      <div className="flex flex-row items-center gap-2 sm:gap-3">
-        {renderCard && (
-          <div
-            role="group"
-            aria-label="Kiểu hiển thị"
-            className="flex shrink-0 items-center gap-1.5 max-md:hidden"
-          >
-            {VIEW_CHOICES.map(({ value, label, icon: Icon }) => {
-              const active = view === value;
-              return (
-                <Explain key={value} text={label}>
-                  <button
-                    type="button"
-                    onClick={() => setView(value)}
-                    aria-pressed={active}
-                    aria-label={label}
-                    className={cn(
-                      'inline-flex h-8.5 w-9 items-center justify-center rounded-sm transition-colors md:h-6.5 md:w-7',
-                      'focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
-                      choiceChipClass(active),
-                    )}
-                  >
-                    <Icon className="size-4" aria-hidden />
-                  </button>
-                </Explain>
-              );
-            })}
-          </div>
-        )}
-        {searchPlaceholder && (
-          <SearchInput
-            ref={searchRef}
-            value={globalFilter}
-            onChange={(e) => table.setGlobalFilter(e.target.value)}
-            placeholder={searchPlaceholder}
-            className="min-w-0 flex-1 sm:max-w-xs"
+      <SearchToolbar
+        lead={
+          renderCard && (
+            <div
+              role="group"
+              aria-label="Kiểu hiển thị"
+              className="flex shrink-0 items-center gap-1.5 max-lg:hidden"
+            >
+              {VIEW_CHOICES.map(({ value, label, icon: Icon }) => {
+                const active = view === value;
+                return (
+                  <Explain key={value} text={label}>
+                    <button
+                      type="button"
+                      onClick={() => setView(value)}
+                      aria-pressed={active}
+                      aria-label={label}
+                      className={cn(
+                        'inline-flex h-8.5 w-9 items-center justify-center rounded-sm transition-colors md:h-6.5 md:w-7',
+                        'focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
+                        choiceChipClass(active),
+                      )}
+                    >
+                      <Icon className="size-4" aria-hidden />
+                    </button>
+                  </Explain>
+                );
+              })}
+            </div>
+          )
+        }
+        search={
+          searchPlaceholder && (
+            <SearchInput
+              ref={searchRef}
+              value={globalFilter}
+              onChange={(e) => table.setGlobalFilter(e.target.value)}
+              placeholder={searchPlaceholder}
+              className="sm:max-w-none"
+            />
+          )
+        }
+      >
+        {sortOptions.length > 0 && (
+          <SortSheet
+            options={sortOptions}
+            columnId={activeSort?.id ?? null}
+            desc={activeSort?.desc ?? false}
+            onChange={(next) => changeSorting(next ? [{ id: next.id, desc: next.desc }] : [])}
           />
         )}
-
-        <div className="flex shrink-0 items-center gap-2 md:ml-auto">
-          {sortOptions.length > 0 && (
-            <SortSheet
-              options={sortOptions}
-              columnId={activeSort?.id ?? null}
-              desc={activeSort?.desc ?? false}
-              onChange={(next) => changeSorting(next ? [{ id: next.id, desc: next.desc }] : [])}
-            />
-          )}
-          {showColumnMenu && (
-            <DropdownMenu open={colMenuOpen} onOpenChange={setColMenuOpen}>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="gap-0 max-md:hidden"
-                  aria-label="Hiển thị cột"
-                  title="Hiển thị cột"
+        {showColumnMenu && (
+          <DropdownMenu open={colMenuOpen} onOpenChange={setColMenuOpen}>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                className="gap-0 max-lg:hidden"
+                aria-label="Hiển thị cột"
+                title="Hiển thị cột"
+              >
+                <Columns3 className="size-4 shrink-0" aria-hidden />
+                <span
+                  aria-hidden
+                  className="max-w-0 overflow-hidden whitespace-nowrap opacity-0 transition-all duration-200 ease-out group-hover/button:ml-1.5 group-hover/button:max-w-24 group-hover/button:opacity-100 group-focus-visible/button:ml-1.5 group-focus-visible/button:max-w-24 group-focus-visible/button:opacity-100 group-aria-expanded/button:ml-1.5 group-aria-expanded/button:max-w-24 group-aria-expanded/button:opacity-100 motion-reduce:transition-none"
                 >
-                  <Columns3 className="size-4 shrink-0" aria-hidden />
-                  <span
-                    aria-hidden
-                    className="max-w-0 overflow-hidden whitespace-nowrap opacity-0 transition-all duration-200 ease-out group-hover/button:ml-1.5 group-hover/button:max-w-24 group-hover/button:opacity-100 group-focus-visible/button:ml-1.5 group-focus-visible/button:max-w-24 group-focus-visible/button:opacity-100 group-aria-expanded/button:ml-1.5 group-aria-expanded/button:max-w-24 group-aria-expanded/button:opacity-100 motion-reduce:transition-none"
-                  >
-                    Cột
-                  </span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>Hiển thị trường</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {enableRowNumbers && (
+                  Cột
+                </span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel>Hiển thị trường</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {enableRowNumbers && (
+                <DropdownMenuCheckboxItem
+                  checked={showRowNumbers}
+                  onCheckedChange={(v) => setShowRowNumbers(v === true)}
+                  onSelect={(e) => e.preventDefault()}
+                >
+                  {rowNumberHeader}
+                </DropdownMenuCheckboxItem>
+              )}
+              {hideableColumns.map((column) => {
+                const meta = column.columnDef.meta as DataTableColumnMeta | undefined;
+                const label =
+                  meta?.label ??
+                  (typeof column.columnDef.header === 'string'
+                    ? column.columnDef.header
+                    : column.id);
+                return (
                   <DropdownMenuCheckboxItem
-                    checked={showRowNumbers}
-                    onCheckedChange={(v) => setShowRowNumbers(v === true)}
+                    key={column.id}
+                    checked={column.getIsVisible()}
+                    onCheckedChange={(v) => column.toggleVisibility(v === true)}
                     onSelect={(e) => e.preventDefault()}
                   >
-                    {rowNumberHeader}
+                    {label}
                   </DropdownMenuCheckboxItem>
-                )}
-                {hideableColumns.map((column) => {
-                  const meta = column.columnDef.meta as DataTableColumnMeta | undefined;
-                  const label =
-                    meta?.label ??
-                    (typeof column.columnDef.header === 'string'
-                      ? column.columnDef.header
-                      : column.id);
-                  return (
-                    <DropdownMenuCheckboxItem
-                      key={column.id}
-                      checked={column.getIsVisible()}
-                      onCheckedChange={(v) => column.toggleVisibility(v === true)}
-                      onSelect={(e) => e.preventDefault()}
-                    >
-                      {label}
-                    </DropdownMenuCheckboxItem>
-                  );
-                })}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
-          {filterSlot}
-          {actionSlot}
-        </div>
-      </div>
+                );
+              })}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+        {filterSlot}
+        {actionSlot}
+      </SearchToolbar>
 
       {filterChips && <FilterChips chips={filterChips} onReset={onResetFilters} />}
 
       {rows.length === 0 ? (
-        <EmptyState icon={emptyIcon} title={emptyMessage} className="py-12" />
+        <EmptyState icon={emptyIcon} title={emptyMessage} />
       ) : (
         <>
           {renderCard && (
-            <ul
-              ref={cardsRef}
-              data-slot="data-table-cards"
-              className={cn(
-                'grid gap-2',
-                // `md:hidden` is the mobile-only case: cards are the phone layout no matter what the
-                // desktop switch says. In card view the same list becomes the desktop layout too.
-                cards ? 'md:grid-cols-2 md:gap-3 xl:grid-cols-3' : 'md:hidden',
-              )}
-            >
-              {rows.map((row, i) => {
-                const selected = enableRowSelection && row.getIsSelected();
-                return (
-                  <li
-                    key={row.id}
-                    className={cn(
-                      'rounded-xl border-2 border-border p-3 shadow-lift-card transition-colors',
-                      selected && 'border-primary bg-primary/5',
-                      cardHref && 'relative hover:bg-muted/40 [&_button]:relative [&_button]:z-10',
-                    )}
-                  >
-                    {cardHref && (
-                      <Link
-                        href={cardHref(row.original)}
-                        className="absolute inset-0 rounded-lg focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-                      >
-                        <span className="sr-only">
-                          {cardHrefLabel?.(row.original) ?? 'Xem chi tiết'}
-                        </span>
-                      </Link>
-                    )}
-                    <div className="flex items-start gap-2.5">
-                      {enableRowSelection && (
-                        <Checkbox
-                          className="relative z-10 mt-1 shrink-0"
-                          checked={selected}
-                          onCheckedChange={(v) => row.toggleSelected(v === true)}
-                          aria-label="Chọn mục này"
-                        />
+            // Below 1024px cards are the layout no matter what the switch says (`lg:hidden`); in
+            // card view the same list is the wide layout too. Columns follow the list's own width
+            // (a container query), so a laptop sidebar does not squeeze two cards into a phone's room.
+            <div className={cn('@container', !cards && 'lg:hidden')}>
+              <ul
+                data-slot="data-table-cards"
+                className="grid gap-2 @2xl:grid-cols-2 @2xl:gap-3 @5xl:grid-cols-3"
+              >
+                {cardRows.map((row, i) => {
+                  const selected = enableRowSelection && row.getIsSelected();
+                  return (
+                    <li
+                      key={row.id}
+                      className={cn(
+                        LIST_CARD.base,
+                        selected && 'border-primary bg-primary/5',
+                        cardHref && LIST_CARD.linked,
                       )}
-                      <div className="min-w-0 flex-1">
-                        {renderCard(row.original, start + i + 1)}
+                    >
+                      {cardHref && (
+                        <Link href={cardHref(row.original)} className={LIST_CARD.link}>
+                          <span className="sr-only">
+                            {cardHrefLabel?.(row.original) ?? 'Xem chi tiết'}
+                          </span>
+                        </Link>
+                      )}
+                      <div className="flex items-start gap-2.5">
+                        {enableRowSelection && (
+                          <Checkbox
+                            className="relative z-10 mt-1 shrink-0"
+                            checked={selected}
+                            onCheckedChange={(v) => row.toggleSelected(v === true)}
+                            aria-label="Chọn mục này"
+                          />
+                        )}
+                        <div className="min-w-0 flex-1">{renderCard(row.original, i + 1)}</div>
                       </div>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
           )}
 
-          <div className={cn(renderCard && 'max-md:hidden', cards && 'md:hidden')}>
+          {renderCard && (
+            <ScrollMoreStatus
+              ref={sentinelRef}
+              hasMore={moreCards}
+              className={cn(!cards && 'lg:hidden')}
+            />
+          )}
+
+          <div className={cn(renderCard && 'max-lg:hidden', cards && 'lg:hidden')}>
             <Table className="table-fixed" style={{ minWidth: table.getTotalSize() }}>
               <TableHeader>
                 {table.getHeaderGroups().map((hg) => (
@@ -726,7 +737,7 @@ export function DataTable<T>({
                           <button
                             type="button"
                             aria-label="Phím tắt của bảng"
-                            className="inline-flex size-5 items-center justify-center rounded-full text-muted-foreground/60 transition-colors hover:text-foreground focus-visible:text-foreground"
+                            className="inline-flex size-5 items-center justify-center rounded-sm text-muted-foreground/60 transition-colors hover:text-foreground focus-visible:text-foreground"
                           >
                             <Info className="size-3.5" aria-hidden />
                           </button>
@@ -777,28 +788,35 @@ export function DataTable<T>({
             </Table>
           </div>
 
-          <div ref={footerRef}>
-            <DataPagination
-              count={
-                <>
-                  {start + 1}–{Math.min(start + effectivePageSize, filteredCount)} / {filteredCount}{' '}
-                  {countNoun}
-                  {totalCount != null && filteredCount !== totalCount && ` (lọc từ ${totalCount})`}
-                </>
-              }
-              page={safePageIndex + 1}
-              pageCount={pageCount}
-              onPageChange={(p) => setPageIndex(p - 1)}
-              pageSize={effectivePageSize}
-              pageSizeOptions={sizeOptions}
-              onPageSizeChange={choosePageSize}
-              autoFit={autoFit}
-              autoFitSize={fit ?? effectivePageSize}
-              onAutoFit={() => {
-                setAutoFit(true);
-                setPageIndex(0);
-              }}
-            />
+          <div ref={footerRef} className={cn(renderCard && 'max-lg:hidden', cards && 'lg:hidden')}>
+            <div ref={spacerRef} aria-hidden />
+            {/* thien, 2026-10-24: one page needs no footer; the count is in the page header. The
+                box stays so the fit and the pinned spacer keep measuring it. */}
+            {pageCount > 1 && (
+              <DataPagination
+                count={
+                  <>
+                    {start + 1}–{Math.min(start + effectivePageSize, filteredCount)} /{' '}
+                    {filteredCount} {countNoun}
+                    {totalCount != null &&
+                      filteredCount !== totalCount &&
+                      ` (lọc từ ${totalCount})`}
+                  </>
+                }
+                page={safePageIndex + 1}
+                pageCount={pageCount}
+                onPageChange={(p) => setPageIndex(p - 1)}
+                pageSize={effectivePageSize}
+                pageSizeOptions={sizeOptions}
+                onPageSizeChange={choosePageSize}
+                autoFit={autoFit}
+                autoFitSize={fit ?? effectivePageSize}
+                onAutoFit={() => {
+                  setAutoFit(true);
+                  setPageIndex(0);
+                }}
+              />
+            )}
           </div>
         </>
       )}
@@ -811,15 +829,20 @@ export function DataTable<T>({
               animate={{ opacity: 1, x: 0, y: '-50%' }}
               exit={{ opacity: 0, x: 24, y: '-50%' }}
               transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-              className="fixed top-1/2 right-3 z-50 flex max-h-[calc(100vh-4rem)] flex-col items-center gap-1.5 overflow-y-auto rounded-2xl border border-border bg-background/95 p-1.5 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-background/80"
+              className="fixed top-1/2 right-3 z-50 flex max-h-[calc(100vh-4rem)] flex-col items-center gap-2 overflow-y-auto rounded-2xl border border-border bg-background/95 p-2 shadow-lg md:gap-2.5 backdrop-blur supports-[backdrop-filter]:bg-background/80"
             >
               <Explain side="left" text={`Đã chọn ${selectedCount} ${countNoun}`}>
-                <span className="inline-flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-sm font-semibold text-primary-foreground tabular-nums">
+                <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary text-sm font-semibold text-primary-foreground tabular-nums">
                   {selectedCount}
                 </span>
               </Explain>
               <Explain side="left" text="Bỏ chọn tất cả (phím Esc).">
-                <Button variant="ghost" size="icon" aria-label="Bỏ chọn" onClick={clearSelection}>
+                <Button
+                  variant="ghost"
+                  size="icon-lg"
+                  aria-label="Bỏ chọn"
+                  onClick={clearSelection}
+                >
                   <X className="size-4" aria-hidden />
                 </Button>
               </Explain>

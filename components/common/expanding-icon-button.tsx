@@ -10,6 +10,7 @@ export function ExpandingIconButton({
   icon: Icon,
   label,
   badge,
+  labelOnPhone = false,
   className,
   variant = 'outline',
   size = 'default',
@@ -20,6 +21,8 @@ export function ExpandingIconButton({
   icon: LucideIcon;
   label: string;
   badge?: React.ReactNode;
+  /** Always show the label next to the icon: a page's primary action, and the toolbar's words. */
+  labelOnPhone?: boolean;
 }) {
   return (
     <Button
@@ -35,7 +38,11 @@ export function ExpandingIconButton({
       <Icon className="size-4 shrink-0" aria-hidden />
       <span
         aria-hidden
-        className="max-md:hidden max-w-0 overflow-hidden whitespace-nowrap opacity-0 transition-all duration-200 ease-out group-hover/button:ml-1.5 group-hover/button:max-w-40 group-hover/button:opacity-100 group-focus-visible/button:ml-1.5 group-focus-visible/button:max-w-40 group-focus-visible/button:opacity-100 group-aria-[expanded=true]/button:ml-1.5 group-aria-[expanded=true]/button:max-w-40 group-aria-[expanded=true]/button:opacity-100 group-data-[collapsible=icon]:hidden motion-reduce:transition-none"
+        className={
+          labelOnPhone
+            ? 'ml-1.5 whitespace-nowrap group-data-[collapsible=icon]:hidden'
+            : 'max-md:hidden max-w-0 overflow-hidden whitespace-nowrap opacity-0 transition-all duration-200 ease-out group-hover/button:ml-1.5 group-hover/button:max-w-40 group-hover/button:opacity-100 group-focus-visible/button:ml-1.5 group-focus-visible/button:max-w-40 group-focus-visible/button:opacity-100 group-aria-[expanded=true]/button:ml-1.5 group-aria-[expanded=true]/button:max-w-40 group-aria-[expanded=true]/button:opacity-100 group-data-[collapsible=icon]:hidden motion-reduce:transition-none'
+        }
       >
         {label}
       </span>

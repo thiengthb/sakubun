@@ -32,6 +32,8 @@ export function PageSkeleton({
   children,
   template,
   title,
+  meta,
+  actions,
   tabs,
   width = 'full',
   section,
@@ -44,6 +46,10 @@ export function PageSkeleton({
   template?: PageTemplate;
   /** Template pages: the h1, known up front for a top page. */
   title?: string;
+  /** Template pages: a bar where the page shows its meta line (a count the skeleton cannot know). */
+  meta?: boolean;
+  /** Template pages: placeholders right of the title, as wide as the page's buttons. */
+  actions?: ReactNode;
   tabs?: ReactNode;
   width?: PageWidth;
   section?: BreadcrumbSection;
@@ -63,7 +69,15 @@ export function PageSkeleton({
               </div>
               <div className={PAGE_CHROME.block}>
                 <h1 className={PAGE_CHROME.title}>{title}</h1>
+                {meta && (
+                  <div className={PAGE_CHROME.meta}>
+                    <div className="flex h-4 items-center">
+                      <Skeleton className="h-3 w-20" />
+                    </div>
+                  </div>
+                )}
               </div>
+              {actions && <div className={PAGE_CHROME.actions}>{actions}</div>}
             </div>
           </div>
           {tabs && <div className={PAGE_CHROME.tabs}>{tabs}</div>}
@@ -196,9 +210,10 @@ export function ToolbarSkeleton({
     <div className="flex flex-row items-center gap-2 sm:gap-3">
       <Skeleton className="h-9 min-w-0 flex-1 rounded-sm sm:max-w-xs md:h-7" />
       <div className="flex shrink-0 items-center gap-2 md:ml-auto">
-        {columnMenu && <Skeleton className="size-7 rounded-sm max-md:hidden" />}
+        {columnMenu && <Skeleton className="size-7 rounded-sm max-lg:hidden" />}
+        {/* Filter and sort are labelled buttons ("Lọc", "Sắp xếp"), not bare icons. */}
         {Array.from({ length: filters }, (_, i) => (
-          <Skeleton key={i} className="size-9 rounded-sm md:size-7" />
+          <Skeleton key={i} className="h-9 w-16 rounded-sm md:h-7" />
         ))}
         {action && <Skeleton className="size-9 rounded-sm md:size-7" />}
       </div>
