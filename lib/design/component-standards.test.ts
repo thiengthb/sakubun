@@ -207,4 +207,31 @@ describe('component standards', () => {
         offenders.join('\n'),
     ).toEqual([]);
   });
+
+  it('a Hán Việt reading is always shown in square brackets', () => {
+    // thien, Ôn nhanh round 2 (2026-10-25): "[TIỀN]" everywhere, by default; a chip or a bare
+    // value reads like another tag.
+    const offenders: string[] = [];
+    for (const root of ['app', 'components']) {
+      for (const file of sources(root).filter((f) => f.endsWith('.tsx'))) {
+        readFileSync(file, 'utf8')
+          .split('\n')
+          .forEach((line, i) => {
+            for (const m of line.matchAll(/(.)\{\s*(?:[\w$]+\.)?hanviet\s*\}(.)?/g)) {
+              if (m[1] !== '[' || m[2] !== ']') offenders.push(`${rel(file)}:${i + 1}  ${m[0]}`);
+            }
+          });
+      }
+    }
+    expect(offenders, `Write [{...hanviet}]:\n${offenders.join('\n')}`).toEqual([]);
+  });
+
+  it('the open page in the sidebar has a grey edge; only its words are orange', () => {
+    // thien, Ôn nhanh round 2 (2026-10-25): the orange edge was too loud beside the user card.
+    const src = readFileSync('components/ui/sidebar.tsx', 'utf8');
+    const active = [...src.matchAll(/data-active:[\w-]+/g)].map((m) => m[0]);
+    expect(active).toContain('data-active:border-border');
+    expect(active).toContain('data-active:text-accent-brand');
+    expect(active.filter((c) => /border-(?!border)|shadow-lift-(?!card)/.test(c))).toEqual([]);
+  });
 });

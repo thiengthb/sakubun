@@ -1,11 +1,12 @@
 'use client';
 
-import { Check, X } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { SpeakButton } from '@/components/common/speak-button';
 import { SpokenLine } from '@/components/common/spoken-line';
 import type { QuickCard } from '@/lib/app/quick-review';
 import type { Segment } from '@/lib/domain/sentence';
 import { cn } from '@/lib/core/utils';
+import { Badge } from '@/components/ui/badge';
 import { buildFuriganaMarkup } from '@/lib/japanese/furigana';
 
 // The one card of quick review (decision 0001, flashcard style B "context first"): the item stands
@@ -17,8 +18,10 @@ export interface CardTts {
   speechRate?: number;
 }
 
-const QUESTION: Record<QuickCard['mode'], Record<QuickCard['kind'], string>> = {
+const QUESTION: Record<'flip' | 'bare' | 'cloze', Record<QuickCard['kind'], string>> = {
   flip: { VOCAB: 'Từ gạch chân nghĩa là gì?', GRAMMAR: 'Mẫu gạch chân nói lên điều gì?' },
+  // A flip card with no example sentence: the item stands alone.
+  bare: { VOCAB: 'Từ này nghĩa là gì?', GRAMMAR: 'Mẫu này nói lên điều gì?' },
   cloze: { VOCAB: 'Chọn từ hợp với chỗ trống', GRAMMAR: 'Chọn mẫu hợp với chỗ trống' },
 };
 
@@ -32,7 +35,7 @@ export function Sentence({
   showFurigana: boolean;
 }) {
   return (
-    <p lang="ja" className="furigana text-2xl leading-[2.2] font-medium sm:text-3xl">
+    <p lang="ja" className="furigana text-2xl leading-loose font-medium sm:text-3xl">
       {segments.map((s, i) => {
         if (s.mark === 'blank') {
           return fill ? (
@@ -43,7 +46,7 @@ export function Sentence({
             <span
               key={i}
               aria-label="chỗ trống"
-              className="mx-1 inline-block h-[1.15em] w-16 border-b-2 border-foreground align-[-0.2em]"
+              className="mx-1 inline-block h-lh w-16 border-b-2 border-foreground align-bottom"
             >
               {'​'}
             </span>
@@ -51,7 +54,7 @@ export function Sentence({
         }
         const target =
           s.mark === 'target' &&
-          'font-semibold text-accent-brand underline decoration-2 underline-offset-[6px]';
+          'font-semibold text-accent-brand underline decoration-2 underline-offset-8';
         return s.reading ? (
           <ruby key={i} className={cn(target)}>
             {s.text}
@@ -64,6 +67,30 @@ export function Sentence({
         );
       })}
     </p>
+  );
+}
+
+/** Tapping anywhere on the question plays it: a pointer shortcut to the speak button inside, which
+ * stays the control for keyboard and screen reader. */
+function TapToHear({
+  active,
+  className,
+  children,
+}: {
+  active: boolean;
+  className?: string;
+  children: ReactNode;
+}) {
+  return (
+    <div
+      className={cn(active && 'cursor-pointer', className)}
+      onClick={(e) => {
+        if (!active || (e.target as HTMLElement).closest('button')) return;
+        e.currentTarget.querySelector<HTMLButtonElement>('button')?.click();
+      }}
+    >
+      {children}
+    </div>
   );
 }
 
@@ -87,40 +114,52 @@ export function ReviewCard({
   onPick: (choiceId: string) => void;
 }) {
   const answered = card.mode === 'cloze' ? picked !== null : revealed;
-  const right = card.mode === 'cloze' && picked === card.itemId;
   const segments = card.sentence?.segments ?? null;
   const ruby = buildFuriganaMarkup(card.expression, card.reading);
+  // The question already shows a word's kanji, so its answer leads with the reading; a grammar
+  // pattern leads with itself, since the sentence shows only one form of it.
+  const heading = card.kind === 'VOCAB' && card.reading ? card.reading : card.expression;
 
   return (
-    <div className="flex flex-col gap-5">
-      <div className="space-y-1">
-        <p className="text-xs font-medium tracking-wide text-muted-foreground">
-          {card.kind === 'VOCAB' ? 'Từ vựng' : 'Ngữ pháp'} · {card.level}
-          {card.isNew && ' · mới'}
+    <div className="flex flex-col gap-6">
+      <div className="space-y-2">
+        <div className="flex flex-wrap items-center gap-1.5">
+          <Badge variant="outline">{card.kind === 'VOCAB' ? 'Từ vựng' : 'Ngữ pháp'}</Badge>
+          {card.level && <Badge variant="outline">{card.level}</Badge>}
+          {card.isNew && <Badge variant="secondary">Mới</Badge>}
+        </div>
+        <p className="text-base font-bold">
+          {QUESTION[card.mode === 'flip' && !segments ? 'bare' : card.mode][card.kind]}
         </p>
-        <p className="text-lg font-semibold">{QUESTION[card.mode][card.kind]}</p>
       </div>
 
       {segments ? (
-        <div className="flex items-start gap-2">
+        // The sentence plays when tapped; its button sits left, centred on the first line. A cloze
+        // stays silent until answered, since the sentence read aloud would give the answer away.
+        <TapToHear
+          active={card.mode === 'flip' || answered}
+          className="flex items-start justify-center gap-2 py-8 text-2xl leading-loose sm:text-3xl md:py-16"
+        >
+          {(card.mode === 'flip' || answered) && (
+            <span className="flex h-lh shrink-0 items-center">
+              <SpeakButton
+                text={spokenText(segments, card.expression)}
+                label="Nghe câu"
+                speaker={tts.voiceSpeaker}
+                rate={tts.speechRate}
+              />
+            </span>
+          )}
           <Sentence
             segments={segments}
             fill={card.mode === 'cloze' && answered ? card.expression : null}
             showFurigana={showFurigana}
           />
-          {answered && (
-            <SpeakButton
-              text={spokenText(segments, card.expression)}
-              label="Nghe câu"
-              speaker={tts.voiceSpeaker}
-              rate={tts.speechRate}
-              className="mt-2 shrink-0"
-            />
-          )}
-        </div>
+        </TapToHear>
       ) : (
-        // No example sentence yet: the item alone, framed so the card does not look empty.
-        <div className="flex justify-center rounded-2xl border bg-card px-4 py-8 text-center">
+        // No example sentence yet: the item alone in the middle of the free space, unframed; only
+        // the answer below is a card.
+        <TapToHear active className="flex justify-center py-8 md:py-16">
           <SpokenLine
             text={card.expression}
             ruby={ruby}
@@ -128,13 +167,13 @@ export function ReviewCard({
             speaker={tts.voiceSpeaker}
             rate={tts.speechRate}
             label="Nghe"
-            className="text-2xl leading-snug font-semibold sm:text-3xl"
+            className="text-2xl leading-loose font-semibold sm:text-3xl"
           />
-        </div>
+        </TapToHear>
       )}
 
       {card.mode === 'cloze' && (
-        <div className="grid gap-2 sm:grid-cols-2" role="group" aria-label="Chọn đáp án">
+        <div className="grid gap-3 sm:grid-cols-2" role="group" aria-label="Chọn đáp án">
           {card.choices.map((choice, i) => {
             const isAnswer = choice.itemId === card.itemId;
             const isPicked = choice.itemId === picked;
@@ -144,21 +183,25 @@ export function ReviewCard({
                 type="button"
                 disabled={answered}
                 onClick={() => onPick(choice.itemId)}
+                // A Duolingo answer tile: a thick bottom edge that a press sinks into (the margin
+                // takes the 2px it loses, so nothing below moves); once answered, the right one
+                // turns green, a wrong pick red, and the rest step back.
                 className={cn(
-                  'flex min-h-14 items-center gap-3 rounded-xl border bg-card px-3 py-2 text-left transition-colors',
-                  !answered && 'hover:border-foreground',
-                  answered && isAnswer && 'border-ok bg-ok/10 text-ok',
+                  'relative flex min-h-16 items-center justify-center rounded-xl border-2 border-b-4 px-12 py-3 text-center transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
+                  !answered &&
+                    'border-control-edge bg-card hover:bg-muted active:mt-0.5 active:border-b-2',
+                  answered && isAnswer && 'border-ok bg-ok-wash text-ok',
                   answered &&
                     isPicked &&
                     !isAnswer &&
-                    'border-destructive bg-destructive/10 text-destructive',
-                  answered && !isAnswer && !isPicked && 'opacity-50',
+                    'border-destructive bg-alert-wash text-destructive',
+                  answered && !isAnswer && !isPicked && 'border-control-edge bg-card opacity-50',
                 )}
               >
-                <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-muted text-sm font-semibold text-muted-foreground">
+                <span className="absolute left-3 flex size-7 items-center justify-center rounded-md border-2 border-current/20 text-xs font-semibold opacity-80">
                   {i + 1}
                 </span>
-                <span lang="ja" className="text-lg font-medium">
+                <span lang="ja" className="text-lg font-semibold">
                   {choice.expression}
                 </span>
               </button>
@@ -168,25 +211,21 @@ export function ReviewCard({
       )}
 
       {answered && (
-        <div className="space-y-2.5 rounded-2xl border bg-card p-4 motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2">
-          <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
+        <div className="space-y-3 rounded-lg border-2 border-border bg-card p-5 shadow-lift-card motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2">
+          <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
             <SpokenLine
-              text={card.expression}
-              ruby={ruby}
+              text={heading}
+              speakText={card.reading ?? card.expression}
+              ruby={heading === card.expression ? ruby : null}
               showFurigana={showFurigana}
               speaker={tts.voiceSpeaker}
               rate={tts.speechRate}
               label="Nghe"
               className="text-2xl font-bold"
             />
-            {card.reading && (
-              <span lang="ja" className="text-muted-foreground">
-                {card.reading}
-              </span>
-            )}
             {card.hanviet && (
-              <span className="rounded-md border px-1.5 py-0.5 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-                {card.hanviet}
+              <span className="text-base font-semibold text-muted-foreground uppercase">
+                <span className="sr-only">Âm Hán Việt: </span>[{card.hanviet}]
               </span>
             )}
           </div>
@@ -201,23 +240,8 @@ export function ReviewCard({
             <p className="text-muted-foreground">{card.sentence.translation}</p>
           )}
           {card.note && (
-            <p className="rounded-xl bg-warn/10 px-3 py-2">
+            <p className="rounded-sm bg-warn-wash px-3 py-2">
               <span className="font-semibold">Lưu ý</span> {card.note}
-            </p>
-          )}
-          {card.mode === 'cloze' && (
-            <p
-              className={cn(
-                'flex items-center gap-1.5 font-semibold',
-                right ? 'text-ok' : 'text-destructive',
-              )}
-            >
-              {right ? (
-                <Check className="size-4" aria-hidden />
-              ) : (
-                <X className="size-4" aria-hidden />
-              )}
-              {right ? 'Đúng, tính là Nhớ.' : 'Chưa đúng, tính là Chưa nhớ.'}
             </p>
           )}
         </div>

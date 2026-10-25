@@ -156,7 +156,6 @@ export function EnrichmentSections({
               speaker={voiceSpeaker}
               rate={speechRate}
               label="Nghe ví dụ"
-              align="start"
               className="text-base"
             />
             {ex.vi && <p className="text-sm text-muted-foreground">{ex.vi}</p>}

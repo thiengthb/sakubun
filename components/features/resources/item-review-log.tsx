@@ -86,7 +86,6 @@ export function ReviewLog({
                       speaker={voiceSpeaker}
                       rate={speechRate}
                       label="Nghe câu"
-                      align="start"
                       className="text-sm font-normal text-muted-foreground"
                     />
                   )}

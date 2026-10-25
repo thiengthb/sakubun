@@ -98,7 +98,7 @@ export function PageShell({
         <ScrollRestorer />
         <header className={PAGE_CHROME.header}>
           <div className={PAGE_CHROME.stack}>
-            <div className={PAGE_CHROME.trail}>{breadcrumb}</div>
+            {breadcrumb && <div className={PAGE_CHROME.trail}>{breadcrumb}</div>}
             <div className={PAGE_CHROME.row}>
               <MobileTopBar />
               <div className={PAGE_CHROME.block}>

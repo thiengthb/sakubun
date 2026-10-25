@@ -2,15 +2,16 @@
 // PageSkeleton. Both IMPORT these classes: a copied pair drifts, and then the header jumps between
 // the skeleton and the page on every navigation.
 //
-// Laptop: the parent trail is a small line above the title, reserved even when empty, so the title
-// never moves between a top page and a nested one. Phone: the menu logo, the title block and the
+// Laptop: a nested page's parent trail is a small line above the title. A top page draws no empty
+// line for it: its title sits level with the sidebar's logo, and only a nested page's title moves
+// down by the trail (thien, Ôn nhanh round 2: 24px of empty space on every top page). Phone: the menu logo, the title block and the
 // actions share one 36px row; the title block is two tight lines (trail over title on a nested
 // page, title over meta on a top page).
 export const PAGE_CHROME = {
   // A flex column, not space-y: a tab's hidden panels after the open one would each keep a margin.
   page: 'flex w-full min-w-0 max-w-6xl flex-col gap-6 pt-4 pb-10 text-sm md:gap-8 md:pt-6 md:pb-8',
   header: 'space-y-3',
-  /** Laptop only: the trail line above the title. */
+  /** Laptop only, nested pages: the trail line above the title. */
   trail: 'flex h-4 min-w-0 items-center max-md:hidden',
   /** Laptop: 8px from the trail to the title and from the title to the meta (thien, Nhóm round 1). */
   stack: 'space-y-1 md:space-y-2',

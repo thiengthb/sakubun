@@ -14,7 +14,6 @@ export function SpokenLine({
   label,
   rate,
   truncate = false,
-  align = 'end',
   playToken = null,
   className,
   aside,
@@ -28,13 +27,12 @@ export function SpokenLine({
   label?: string;
   rate?: number;
   truncate?: boolean;
-  align?: 'end' | 'start';
   playToken?: string | number | null;
   className?: string;
   /** Inline after the text, on its baseline: a reading in brackets beside a title. */
   aside?: ReactNode;
-  /** A page title: a block row whose button sits inside the title's line box, so the row is
-   * exactly one title line tall (20px on a phone, 30px from 768px) and never grows the header. */
+  /** A page title: a block row one title line tall (20px on a phone, 30px from 768px), so it
+   * never grows the header. */
   title?: boolean;
 }) {
   const [ratio, setRatio] = useState(0);
@@ -46,31 +44,27 @@ export function SpokenLine({
   const starts = segments.map((_, i) =>
     segments.slice(0, i).reduce((n, s) => n + [...s.text].length, 0),
   );
+  // The button is centred on the text's first line, at any size and on every page: its box is one
+  // line of the text tall (h-lh), so the type classes sit on the row and the text inherits them.
   return (
     <span
       className={cn(
-        'gap-2',
-        align === 'start' ? 'items-start' : 'items-end',
+        'items-start gap-2 font-medium',
         truncate || title ? 'flex w-full' : 'inline-flex',
+        className,
       )}
     >
-      <SpeakButton
-        className={cn(title && '-my-0.5 md:my-0.75')}
-        text={speakText ?? text}
-        speaker={speaker}
-        label={label}
-        rate={rate}
-        onProgress={setRatio}
-        playToken={playToken}
-      />
-      <span
-        lang="ja"
-        className={cn(
-          'furigana font-medium',
-          truncate && 'block min-w-0 flex-1 truncate',
-          className,
-        )}
-      >
+      <span className="flex h-lh shrink-0 items-center">
+        <SpeakButton
+          text={speakText ?? text}
+          speaker={speaker}
+          label={label}
+          rate={rate}
+          onProgress={setRatio}
+          playToken={playToken}
+        />
+      </span>
+      <span lang="ja" className={cn('furigana', truncate && 'block min-w-0 flex-1 truncate')}>
         {segments.map((seg, si) => {
           const chars = [...seg.text];
           const start = starts[si];

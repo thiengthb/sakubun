@@ -87,6 +87,19 @@ async function login(page: Page) {
   await page.waitForURL((u) => !u.pathname.startsWith('/login'), { timeout: 30_000 });
 }
 
+// Every rating recorded this session, sorted.
+function ratings(): number[] {
+  const db = new Database(path.join(process.cwd(), E2E_DB_FILE), { readonly: true });
+  try {
+    const rows = db.prepare(`SELECT rating FROM ReviewLog ORDER BY rating`).all() as {
+      rating: number;
+    }[];
+    return rows.map((r) => r.rating);
+  } finally {
+    db.close();
+  }
+}
+
 // Server actions post to the page itself, marked by a Next-Action header.
 const isAction = (method: string, headers: Record<string, string>) =>
   method === 'POST' && 'next-action' in headers;
@@ -103,7 +116,7 @@ function clozeRating(): number | undefined {
 }
 
 // By mouse every card is answered right. By keyboard the cloze gets a wrong pick that is lost on
-// the network and sent again, and the three flips are graded with 1, 2 and Enter.
+// the network and sent again, and the three flips are graded with 1 (Quên), 4 (Dễ) and Enter (Nhớ).
 async function runSession(page: Page, { keyboard = false } = {}) {
   await login(page);
   await page.goto('/review');
@@ -124,7 +137,7 @@ async function runSession(page: Page, { keyboard = false } = {}) {
 
   let sawCloze = false;
   let sawSentence = false;
-  const flipKeys = ['1', '2', 'Enter'];
+  const flipKeys = ['1', '4', 'Enter'];
   for (let n = 0; n < 4; n++) {
     await expect(page.getByLabel(`Thẻ ${n + 1} / 4`)).toBeVisible();
     const choices = page.getByRole('group', { name: 'Chọn đáp án' });
@@ -149,18 +162,19 @@ async function runSession(page: Page, { keyboard = false } = {}) {
         await page.keyboard.press('Enter');
         await expect(next).toBeEnabled();
         expect(clozeRating(), 'the wrong pick sent again is still Again').toBe(1);
-        await expect(page.getByText('Chưa đúng, tính là Chưa nhớ.')).toBeVisible();
         await page.keyboard.press('Enter');
       } else {
         await choices.getByRole('button', { name: /約束/ }).click();
-        await expect(page.getByText('Đúng, tính là Nhớ.')).toBeVisible();
+        await expect(choices.getByRole('button', { name: /約束/ })).toBeDisabled();
         await next.click();
       }
     } else {
       if (await page.getByText('旅行').isVisible()) sawSentence = true;
       if (keyboard) {
         await page.keyboard.press('Enter');
-        await expect(page.getByRole('button', { name: /^Nhớ/ })).toBeVisible();
+        await expect(page.getByRole('group', { name: 'Chấm thẻ' }).getByRole('button')).toHaveCount(
+          4,
+        );
         await page.keyboard.press(flipKeys.shift()!);
       } else {
         await reveal.click();
@@ -172,7 +186,8 @@ async function runSession(page: Page, { keyboard = false } = {}) {
   }
 
   await expect(page.getByText('Xong buổi ôn')).toBeVisible();
-  await expect(page.getByText(keyboard ? '2 trên 4 thẻ nhớ' : '4 trên 4 thẻ nhớ')).toBeVisible();
+  await expect(page.getByText(keyboard ? 'Nhớ 2 trên 4 thẻ.' : 'Nhớ 4 trên 4 thẻ.')).toBeVisible();
+  expect(ratings()).toEqual(keyboard ? [1, 1, 3, 4] : [3, 3, 3, 3]);
   expect(sawCloze, 'the seen word is tested as a cloze').toBe(true);
   expect(sawSentence, 'a new word with an example is met inside its sentence').toBe(true);
   expect(reviewLogCount()).toBe(4);

@@ -117,4 +117,35 @@ describe('invariant #9 — Japanese content renders through SpokenLine', () => {
         `and to the "playable rule" table in components/_INDEX.md:\n${offenders.join('\n')}`,
     ).toEqual([]);
   });
+
+  it('a speak button is centred on the line of text beside it', () => {
+    // thien, Ôn nhanh round 2 (2026-10-25), for every page: the button sits in a box one text line
+    // tall (h-lh) and centres in it, so it lines up with the words at any size, furigana or not.
+    const WRAP = /flex h-lh shrink-0 items-center/;
+    const ALLOW = new Map([
+      ['components/common/speak-button.tsx', 'the button itself'],
+      [
+        'components/features/groups/group-cards.tsx',
+        'an icon toolbar in the card corner, beside the furigana button, not beside a line of text',
+      ],
+      [
+        'components/features/settings/settings-practice-tab.tsx',
+        'the voice preview at the end of a setting row, centred by the row',
+      ],
+    ]);
+    const offenders: string[] = [];
+    for (const { path, src } of sources()) {
+      if (ALLOW.has(path)) continue;
+      const lines = src.split('\n');
+      lines.forEach((line, i) => {
+        if (!line.includes('<SpeakButton')) return;
+        if (!WRAP.test(lines[i - 1] ?? '')) offenders.push(`${path}:${i + 1}`);
+      });
+    }
+    expect(
+      offenders,
+      'Wrap the button: <span className="flex h-lh shrink-0 items-center"><SpeakButton …/></span>, ' +
+        `with the text's size on the row, or use <SpokenLine>:\n${offenders.join('\n')}`,
+    ).toEqual([]);
+  });
 });

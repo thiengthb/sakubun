@@ -6,7 +6,11 @@ import { getSessionUserId } from '@/lib/auth/current-user';
 import { type ActionResult, parseInput } from '@/lib/core/action-result';
 
 const answerSchema = z.discriminatedUnion('mode', [
-  z.object({ itemId: z.string().min(1), mode: z.literal('flip'), remembered: z.boolean() }),
+  z.object({
+    itemId: z.string().min(1),
+    mode: z.literal('flip'),
+    rating: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)]),
+  }),
   z.object({ itemId: z.string().min(1), mode: z.literal('cloze'), choiceId: z.string().min(1) }),
 ]);
 

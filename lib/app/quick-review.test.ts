@@ -80,7 +80,10 @@ describe('getQuickReview', () => {
       reading: 'やくそく',
       mark: 'target',
     });
-    expect(card.dueIfRight.getTime()).toBeGreaterThan(NOW.getTime());
+    // Each button names when the item comes back; a better rating never brings it back sooner.
+    const due = [1, 2, 3, 4].map((r) => card.dueBy[r as 1 | 2 | 3 | 4].getTime());
+    expect(due[0]).toBeGreaterThan(NOW.getTime());
+    expect(due).toEqual([...due].sort((a, b) => a - b));
   });
 
   it('tests a seen item with a cloze: four choices, the answer not in the sentence', async () => {
@@ -135,17 +138,27 @@ describe('getQuickReview', () => {
 });
 
 describe('answerCard', () => {
-  it('records a remembered flip as Good, once; a second tap is refused', async () => {
+  it('records a flip with the rating pressed, once; a second tap is refused', async () => {
     const ids = await seed([{ expression: '約束' }]);
     const itemId = ids['約束'];
 
-    const first = await Q.answerCard({ itemId, mode: 'flip', remembered: true }, NOW);
+    const first = await Q.answerCard({ itemId, mode: 'flip', rating: 3 }, NOW);
     expect(first).toMatchObject({ ok: true, data: { rating: 3, correct: true } });
-    const again = await Q.answerCard({ itemId, mode: 'flip', remembered: true }, NOW);
+    const again = await Q.answerCard({ itemId, mode: 'flip', rating: 3 }, NOW);
     expect(again.ok).toBe(false);
 
     expect(await prisma.reviewLog.count({ where: { itemId } })).toBe(1);
     expect((await prisma.srsState.findUniqueOrThrow({ where: { itemId } })).reps).toBe(1);
+  });
+
+  it('records Hard as it was pressed, not counted as remembered', async () => {
+    const ids = await seed([{ expression: '約束' }]);
+    const itemId = ids['約束'];
+    const hard = await Q.answerCard({ itemId, mode: 'flip', rating: 2 }, NOW);
+    expect(hard).toMatchObject({ ok: true, data: { rating: 2, correct: false } });
+    expect(await prisma.reviewLog.findFirstOrThrow({ where: { itemId } })).toMatchObject({
+      rating: 2,
+    });
   });
 
   it('grades a cloze by the chosen item: a wrong choice is Again', async () => {
@@ -164,7 +177,7 @@ describe('answerCard', () => {
   it('refuses a suspended item and writes nothing', async () => {
     const ids = await seed([{ expression: '約束' }]);
     await P.setItemSuspended(ids['約束'], true);
-    const result = await Q.answerCard({ itemId: ids['約束'], mode: 'flip', remembered: true }, NOW);
+    const result = await Q.answerCard({ itemId: ids['約束'], mode: 'flip', rating: 3 }, NOW);
     expect(result.ok).toBe(false);
     expect(await prisma.reviewLog.count()).toBe(0);
   });
