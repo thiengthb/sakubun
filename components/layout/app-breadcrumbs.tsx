@@ -104,13 +104,19 @@ const PARENT: Partial<Record<BreadcrumbSection, BreadcrumbSection>> = {
 export function ParentCrumbs({
   section,
   self = false,
+  pending = false,
 }: {
   section: BreadcrumbSection;
   /** Include `section` itself: a detail or action page under it. */
   self?: boolean;
+  /** A loading screen that does not know `section` yet (grammar or vocab): a bar in its place. */
+  pending?: boolean;
 }) {
   const up = PARENT[section];
-  const items: Crumb[] = [...(up ? [CRUMBS[up]] : []), ...(self ? [CRUMBS[section]] : [])];
+  const items: Crumb[] = [
+    ...(up ? [CRUMBS[up]] : []),
+    ...(self ? [{ ...CRUMBS[section], pending }] : []),
+  ];
   return <Breadcrumbs items={items} parentsOnly />;
 }
 

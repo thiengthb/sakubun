@@ -1,5 +1,6 @@
 import { CircleCheck } from 'lucide-react';
 import { ChartCard } from '@/components/features/dashboard/dashboard-charts';
+import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/core/utils';
 import {
   MIN_REVIEWS_FOR_VERDICT,
@@ -65,11 +66,11 @@ export function RetentionCard({
         />
       </div>
 
-      <span className="inline-flex w-fit items-center rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground tabular-nums">
+      <Badge variant="outline" className="tabular-nums">
         {insufficient
           ? `${actual.reviews}/${MIN_REVIEWS_FOR_VERDICT} lượt`
           : `${actual.reviews} lượt`}
-      </span>
+      </Badge>
     </ChartCard>
   );
 }

@@ -12,11 +12,7 @@ const CONTROL_WIDTHS = [220, 104, 104, 104, 260, 32, 280, 220];
 
 export default function Loading() {
   return (
-    <PageSkeleton
-      template="form"
-      title="Cài đặt"
-      tabs={<PageTabsSkeleton count={3} widths={[88, 72, 88]} />}
-    >
+    <PageSkeleton template="form" title="Cài đặt" tabs={<PageTabsSkeleton set="settings" />}>
       <div className="@container overflow-hidden rounded-xl ring-2 ring-border ring-inset">
         <div className="grid gap-px bg-border @4xl:grid-cols-2 [&>*]:bg-card">
           {CONTROL_WIDTHS.map((width, i) => (

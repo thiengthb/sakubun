@@ -19,9 +19,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { CircleCheck, Layers, Ruler, Timer, TrendingUp, type LucideIcon } from 'lucide-react';
 import { useSessionState } from '@/components/common/use-session-state';
+import { ChartCard, StatTile } from '@/components/features/dashboard/dashboard-charts';
 import { chartEmptyMessage } from '@/lib/insights/chart-empty';
-import { cn } from '@/lib/core/utils';
 import type { DailyStat, StudyStats } from '@/lib/insights/stats';
 import type { PerfBreakdown } from '@/lib/insights/analytics';
 
@@ -117,32 +118,35 @@ const tooltipStyle = {
   fontSize: 12,
 };
 const axisTick = { fill: C.axis, fontSize: 11 };
+// Recharts gives each Y axis 60px by default, which left a wide empty strip on both sides of a
+// phone-width chart (thien, Phân tích round 1). Four digits at 11px fit in 32.
+const AXIS_WIDTH = 32;
+const CHART_MARGIN = { top: 6, right: 0, bottom: 0, left: 0 };
 
-function ChartCard({
+// The shared chart frame, with the sentence that says why a chart is blank in place of the chart.
+function Panel({
+  icon,
   title,
-  hint,
-  children,
-  className,
+  info,
   empty,
+  className,
+  children,
 }: {
+  icon: LucideIcon;
   title: string;
-  hint?: string;
-  children: React.ReactNode;
-  className?: string;
+  info: string;
   empty?: string | false | null;
+  className?: string;
+  children: React.ReactNode;
 }) {
   return (
-    <div className={cn('space-y-3 rounded-lg border border-border/70 p-4', className)}>
-      <div>
-        <h3 className="text-sm font-medium">{title}</h3>
-        {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
-      </div>
+    <ChartCard icon={icon} title={title} info={info} className={className}>
       {empty ? (
         <p className="py-10 text-center text-sm text-muted-foreground">{empty}</p>
       ) : (
         children
       )}
-    </div>
+    </ChartCard>
   );
 }
 
@@ -189,10 +193,10 @@ export function StatsView({ stats }: { stats: StudyStats }) {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center gap-3">
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-3 sm:flex">
         <Select value={range} onValueChange={(v) => setRange(v as typeof range)}>
-          <SelectTrigger size="sm" className="w-32">
+          <SelectTrigger aria-label="Khoảng thời gian" className="w-full sm:w-32">
             <SelectValue>{RANGES.find((r) => r.value === range)?.label}</SelectValue>
           </SelectTrigger>
           <SelectContent>
@@ -204,7 +208,7 @@ export function StatsView({ stats }: { stats: StudyStats }) {
           </SelectContent>
         </Select>
         <Select value={groupBy} onValueChange={(v) => setGroupBy(v as GroupBy)}>
-          <SelectTrigger size="sm" className="w-40">
+          <SelectTrigger aria-label="Gộp theo" className="w-full sm:w-40">
             <SelectValue>{GROUPS.find((g) => g.value === groupBy)?.label}</SelectValue>
           </SelectTrigger>
           <SelectContent>
@@ -215,33 +219,42 @@ export function StatsView({ stats }: { stats: StudyStats }) {
             ))}
           </SelectContent>
         </Select>
-        <div className="ml-auto flex gap-4 text-sm">
-          <span className="text-muted-foreground">
-            Độ chính xác TB:{' '}
-            <b className="text-foreground tabular-nums">
-              {stats.overallAccuracy == null ? '—' : `${stats.overallAccuracy}%`}
-            </b>
-          </span>
-          <span className="text-muted-foreground">
-            Thời gian TB:{' '}
-            <b className="text-foreground tabular-nums">
-              {stats.overallAvgSec ? `${stats.overallAvgSec}s` : '—'}
-            </b>
-          </span>
-        </div>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <ChartCard
-          title="Độ chính xác theo thời gian"
-          hint="Đường = % đúng mỗi mốc · cột = số lượt ôn · nét đứt = trung bình cả kỳ"
+      <section aria-label="Trung bình" className="grid grid-cols-2 gap-3">
+        <StatTile
+          icon={CircleCheck}
+          tone="ok"
+          items={[
+            {
+              value: stats.overallAccuracy == null ? '—' : `${stats.overallAccuracy}%`,
+              label: 'Độ chính xác TB',
+            },
+          ]}
+          explain="Tỉ lệ lượt ôn đúng trong một năm qua."
+        />
+        <StatTile
+          icon={Timer}
+          tone="brand"
+          items={[
+            {
+              value: stats.overallAvgSec ? `${stats.overallAvgSec}s` : '—',
+              label: 'Thời gian TB',
+            },
+          ]}
+          explain="Số giây trung bình bạn làm một câu, trong một năm qua."
+        />
+      </section>
+
+      <div className="grid gap-3 lg:grid-cols-2">
+        <Panel
+          icon={CircleCheck}
+          title="Độ chính xác"
+          info="Đường: % lượt ôn đúng mỗi mốc. Cột: số lượt ôn. Nét đứt: trung bình cả kỳ."
           empty={emptyFor('reviews', 'lượt ôn nào')}
         >
           <ResponsiveContainer width="100%" height={240}>
-            <ComposedChart
-              data={accuracySeries}
-              margin={{ top: 6, right: 8, bottom: 0, left: -18 }}
-            >
+            <ComposedChart data={accuracySeries} margin={CHART_MARGIN}>
               <CartesianGrid stroke={C.grid} strokeDasharray="3 3" vertical={false} />
               <XAxis
                 dataKey="label"
@@ -251,6 +264,7 @@ export function StatsView({ stats }: { stats: StudyStats }) {
                 minTickGap={16}
               />
               <YAxis
+                width={AXIS_WIDTH}
                 yAxisId="l"
                 domain={[0, 100]}
                 tick={axisTick}
@@ -258,6 +272,7 @@ export function StatsView({ stats }: { stats: StudyStats }) {
                 axisLine={false}
               />
               <YAxis
+                width={AXIS_WIDTH}
                 yAxisId="r"
                 orientation="right"
                 tick={axisTick}
@@ -293,15 +308,16 @@ export function StatsView({ stats }: { stats: StudyStats }) {
               />
             </ComposedChart>
           </ResponsiveContainer>
-        </ChartCard>
+        </Panel>
 
-        <ChartCard
-          title="Thời gian làm bài theo thời gian"
-          hint="Đường = giây/câu mỗi mốc · cột = số câu · nét đứt = trung bình cả kỳ"
+        <Panel
+          icon={Timer}
+          title="Thời gian mỗi câu"
+          info="Đường: số giây trung bình cho một câu mỗi mốc. Cột: số câu. Nét đứt: trung bình cả kỳ."
           empty={emptyFor('sentences', 'câu nào được chấm')}
         >
           <ResponsiveContainer width="100%" height={240}>
-            <ComposedChart data={timeSeries} margin={{ top: 6, right: 8, bottom: 0, left: -18 }}>
+            <ComposedChart data={timeSeries} margin={CHART_MARGIN}>
               <CartesianGrid stroke={C.grid} strokeDasharray="3 3" vertical={false} />
               <XAxis
                 dataKey="label"
@@ -310,8 +326,15 @@ export function StatsView({ stats }: { stats: StudyStats }) {
                 axisLine={false}
                 minTickGap={16}
               />
-              <YAxis yAxisId="l" tick={axisTick} tickLine={false} axisLine={false} />
               <YAxis
+                width={AXIS_WIDTH}
+                yAxisId="l"
+                tick={axisTick}
+                tickLine={false}
+                axisLine={false}
+              />
+              <YAxis
+                width={AXIS_WIDTH}
                 yAxisId="r"
                 orientation="right"
                 tick={axisTick}
@@ -347,19 +370,17 @@ export function StatsView({ stats }: { stats: StudyStats }) {
               />
             </ComposedChart>
           </ResponsiveContainer>
-        </ChartCard>
+        </Panel>
 
-        <ChartCard
-          title="Tiến độ theo ngày"
-          hint="Số câu đã luyện + số mẫu/từ mới giới thiệu mỗi mốc"
+        <Panel
+          icon={TrendingUp}
+          title="Câu và mục mới"
+          info="Mỗi mốc: số câu đã luyện và số mẫu, từ mới được giới thiệu."
           className="lg:col-span-2"
           empty={emptyFor('progress', 'hoạt động nào')}
         >
           <ResponsiveContainer width="100%" height={240}>
-            <ComposedChart
-              data={progressSeries}
-              margin={{ top: 6, right: 8, bottom: 0, left: -18 }}
-            >
+            <ComposedChart data={progressSeries} margin={CHART_MARGIN}>
               <CartesianGrid stroke={C.grid} strokeDasharray="3 3" vertical={false} />
               <XAxis
                 dataKey="label"
@@ -368,24 +389,39 @@ export function StatsView({ stats }: { stats: StudyStats }) {
                 axisLine={false}
                 minTickGap={16}
               />
-              <YAxis tick={axisTick} tickLine={false} axisLine={false} />
+              <YAxis width={AXIS_WIDTH} tick={axisTick} tickLine={false} axisLine={false} />
               <Tooltip contentStyle={tooltipStyle} />
               <Bar dataKey="sentences" name="Câu đã luyện" fill={C.time} radius={[3, 3, 0, 0]} />
               <Bar dataKey="newItems" name="Mục mới" fill={C.neu} radius={[3, 3, 0, 0]} />
             </ComposedChart>
           </ResponsiveContainer>
-        </ChartCard>
+        </Panel>
       </div>
 
-      <div className="grid items-start gap-4 lg:grid-cols-2">
-        <PerfChart title="Điểm & thời gian theo ĐỘ KHÓ (cấp mẫu)" rows={stats.scoreByLevel} />
-        <PerfChart title="Điểm & thời gian theo ĐỘ DÀI câu" rows={stats.scoreByLength} />
+      <div className="grid gap-3 lg:grid-cols-2">
+        <PerfChart icon={Layers} title="Theo cấp" by="cấp JLPT của mẫu" rows={stats.scoreByLevel} />
+        <PerfChart
+          icon={Ruler}
+          title="Theo độ dài câu"
+          by="độ dài câu"
+          rows={stats.scoreByLength}
+        />
       </div>
     </div>
   );
 }
 
-function PerfChart({ title, rows }: { title: string; rows: PerfBreakdown[] }) {
+function PerfChart({
+  icon,
+  title,
+  by,
+  rows,
+}: {
+  icon: LucideIcon;
+  title: string;
+  by: string;
+  rows: PerfBreakdown[];
+}) {
   const data = rows.map((r) => ({
     label: r.label,
     score: r.avgScore,
@@ -393,9 +429,10 @@ function PerfChart({ title, rows }: { title: string; rows: PerfBreakdown[] }) {
     count: r.count,
   }));
   return (
-    <ChartCard
+    <Panel
+      icon={icon}
       title={title}
-      hint="Cột = điểm TB /100 · đường = giây/câu · (1 năm gần nhất)"
+      info={`Điểm và thời gian theo ${by}, một năm qua. Cột: điểm trung bình trên 100. Đường: số giây cho một câu.`}
       empty={chartEmptyMessage({
         hasInWindow: data.length > 0,
         hasInYear: data.length > 0,
@@ -404,11 +441,19 @@ function PerfChart({ title, rows }: { title: string; rows: PerfBreakdown[] }) {
       })}
     >
       <ResponsiveContainer width="100%" height={240}>
-        <ComposedChart data={data} margin={{ top: 6, right: 8, bottom: 0, left: -18 }}>
+        <ComposedChart data={data} margin={CHART_MARGIN}>
           <CartesianGrid stroke={C.grid} strokeDasharray="3 3" vertical={false} />
           <XAxis dataKey="label" tick={axisTick} tickLine={false} axisLine={false} />
-          <YAxis yAxisId="l" domain={[0, 100]} tick={axisTick} tickLine={false} axisLine={false} />
           <YAxis
+            width={AXIS_WIDTH}
+            yAxisId="l"
+            domain={[0, 100]}
+            tick={axisTick}
+            tickLine={false}
+            axisLine={false}
+          />
+          <YAxis
+            width={AXIS_WIDTH}
             yAxisId="r"
             orientation="right"
             tick={axisTick}
@@ -436,6 +481,6 @@ function PerfChart({ title, rows }: { title: string; rows: PerfBreakdown[] }) {
           />
         </ComposedChart>
       </ResponsiveContainer>
-    </ChartCard>
+    </Panel>
   );
 }

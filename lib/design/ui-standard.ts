@@ -257,20 +257,19 @@ export const UI_RULES: UiRule[] = [
   {
     id: 'page-template',
     rule:
-      'Every page uses one PageShell template (list, detail, form, dashboard) with a title; the ' +
-      'old breadcrumb header goes away page by page in step 6.',
+      'Every page uses one PageShell template (list, detail, form, dashboard) with a title, and its ' +
+      'loading screen draws the same head: the same title and trail in words, a SkeletonText only ' +
+      'where a word waits on data; the old breadcrumb header goes away page by page in step 6.',
     check: ({ src }) =>
-      elements(src, ['PageShell', 'PageSkeleton'])
-        // A skeleton cannot know a title it has not loaded (an edit page names its item), so it
-        // only needs the template; it draws a bar where the title goes.
-        .filter(
-          (el) =>
-            !/\btemplate=/.test(el.open) || (el.name === 'PageShell' && !/\btitle=/.test(el.open)),
-        )
-        .map((el) => ({
-          line: lineAt(src, el.index),
-          excerpt: `<${el.name}> without template and title`,
-        })),
+      elements(src, ['PageShell', 'PageSkeleton']).flatMap((el) => {
+        const line = lineAt(src, el.index);
+        if (!/\btemplate=/.test(el.open) || !/\btitle=/.test(el.open))
+          return [{ line, excerpt: `<${el.name}> without template and title` }];
+        // A bare `trail` drew two grey bars where the page writes "Tài nguyên › Nhóm".
+        if (el.name === 'PageSkeleton' && /\btrail(?!=)/.test(el.open))
+          return [{ line, excerpt: `<${el.name} trail> without the crumbs it draws` }];
+        return [];
+      }),
   },
 ];
 

@@ -2,8 +2,9 @@
 
 import type { ReactNode } from 'react';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
-import { TabSelect } from '@/components/common/tab-select';
+import { PageTabs } from '@/components/common/page-tabs';
 import { PageShell } from '@/components/layout/page-shell';
+import { ANALYTICS_TABS } from '@/components/layout/page-heads';
 import { useSessionState } from '@/components/common/use-session-state';
 
 export function AnalyticsTabs({
@@ -15,25 +16,18 @@ export function AnalyticsTabs({
   stats: ReactNode;
   aside?: ReactNode;
 }) {
-  const [tab, setTab] = useSessionState('analytics.tab', 'tien-do', 'tab');
+  const [tab, setTab] = useSessionState(
+    ANALYTICS_TABS.storeKey,
+    ANALYTICS_TABS.initial,
+    ANALYTICS_TABS.urlKey,
+  );
   return (
     <Tabs value={tab} onValueChange={setTab}>
       <PageShell
-        section="dashboard"
-        headerAside={
-          <>
-            <TabSelect
-              items={[
-                { value: 'tien-do', label: 'Tiến độ' },
-                { value: 'thong-ke', label: 'Thống kê' },
-              ]}
-              value={tab}
-              onValueChange={setTab}
-              label="Chọn khung xem"
-            />
-            {tab === 'tien-do' && aside}
-          </>
-        }
+        template="dashboard"
+        title="Phân tích"
+        actions={tab === 'tien-do' ? aside : undefined}
+        tabs={<PageTabs items={ANALYTICS_TABS.items} label={ANALYTICS_TABS.label} />}
       >
         <TabsContent value="tien-do" className="space-y-3">
           {progress}

@@ -57,7 +57,6 @@
       "components/common/fit-skeleton.tsx": 1,
       "components/common/item-detail-dialog.tsx": 1,
       "components/common/review-card.tsx": 2,
-      "components/features/dashboard/streak-flame.tsx": 1,
       "components/features/groups/group-actions.tsx": 1,
       "components/features/groups/group-detail-view.tsx": 1,
       "components/features/groups/group-item-picker.tsx": 1,
@@ -75,11 +74,10 @@
       "components/ui/tooltip.tsx": 1
     },
     "no-hardcoded-colors": {
-      "app/globals.css": 3,
       "app/layout.tsx": 2,
       "app/manifest.ts": 2,
       "components/layout/google-signin-button.tsx": 4,
-      "lib/srs/streak-tiers.ts": 39
+      "lib/srs/streak-tiers.ts": 16
     },
     "no-icon-size-in-components": {
       "app/global-error.tsx": 1,

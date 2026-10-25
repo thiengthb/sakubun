@@ -18,15 +18,24 @@ export function StatTile({
   items,
   compact,
   explain,
+  note,
+  mediaOnPhone = false,
+  children,
   className,
 }: {
   icon?: LucideIcon;
   media?: ReactNode;
+  /** Keep `media` on a phone: it is a control (the streak flame replays its celebration). */
+  mediaOnPhone?: boolean;
   tone?: IconTone;
   items: { value: ReactNode; label: string }[];
   /** One value for a phone-width tile when `items` holds two that would not fit side by side. */
   compact?: { value: ReactNode; label: string };
   explain?: ReactNode;
+  /** One short line of context under the number (a record, a remainder); wraps to two lines. */
+  note?: ReactNode;
+  /** Drawn under the numbers, before the note (a split bar). */
+  children?: ReactNode;
   className?: string;
 }) {
   const metric = (item: { value: ReactNode; label: string }, className?: string) => (
@@ -38,12 +47,19 @@ export function StatTile({
     </div>
   );
   return (
-    <Card className={cn('relative flex-row items-center gap-3 p-4', className)}>
-      {media ?? <IconTile icon={icon} tone={tone} />}
-      <div className={cn('flex min-w-0 flex-1 gap-4', compact && 'max-sm:hidden')}>
-        {items.map((item) => metric(item))}
+    <Card className={cn('relative flex-row items-start gap-3 p-4', className)}>
+      {/* A phone tile is half the width: the number gets the room, the icon goes. */}
+      <div className={cn(!mediaOnPhone && 'max-sm:hidden')}>
+        {media ?? <IconTile icon={icon} tone={tone} />}
       </div>
-      {compact && metric(compact, 'flex-1 sm:hidden')}
+      <div className="min-w-0 flex-1 space-y-1">
+        <div className={cn('flex min-w-0 gap-4', compact && 'max-sm:hidden')}>
+          {items.map((item) => metric(item))}
+        </div>
+        {compact && metric(compact, 'sm:hidden')}
+        {children}
+        {note && <div className="line-clamp-2 text-xs text-muted-foreground">{note}</div>}
+      </div>
       {explain && (
         <InfoTooltip label={`Giải thích: ${items.map((i) => i.label).join(', ')}`}>
           {explain}
@@ -120,10 +136,10 @@ export function HeatmapLegend() {
   return (
     <div className="flex items-center gap-1 text-caption2 text-muted-foreground">
       ít
-      <span className="size-3 rounded-sm bg-muted" />
-      <span className="size-3 rounded-sm bg-accent-brand/40" />
-      <span className="size-3 rounded-sm bg-accent-brand/70" />
-      <span className="size-3 rounded-sm bg-accent-brand" />
+      <span className="size-3 rounded-xs bg-muted" />
+      <span className="size-3 rounded-xs bg-accent-brand/40" />
+      <span className="size-3 rounded-xs bg-accent-brand/70" />
+      <span className="size-3 rounded-xs bg-accent-brand" />
       nhiều
     </div>
   );
@@ -147,7 +163,7 @@ export function Heatmap({ data, max }: { data: { day: string; count: number }[];
           return (
             <div
               key={d.day}
-              className={cn('size-3 rounded-sm', d.count === 0 ? 'bg-muted' : 'bg-accent-brand')}
+              className={cn('size-3 rounded-xs', d.count === 0 ? 'bg-muted' : 'bg-accent-brand')}
               style={d.count === 0 ? undefined : { opacity: 0.3 + 0.7 * ratio }}
               title={`${d.day}: ${d.count} lượt`}
               aria-hidden
@@ -198,9 +214,7 @@ export function LevelBars({
   totals: Record<string, number>;
 }) {
   if (data.length === 0) {
-    return (
-      <p className="py-4 text-center text-sm text-muted-foreground">Kho chưa có mẫu nào.</p>
-    );
+    return <p className="py-4 text-center text-sm text-muted-foreground">Kho chưa có mẫu nào.</p>;
   }
   return (
     <div className="space-y-3">

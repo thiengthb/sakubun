@@ -58,36 +58,59 @@ describe('loading skeletons match their routes', () => {
     ).toEqual([]);
   });
 
-  const TABBED: { name: string; source: string; loading: string; tabsVar: RegExp }[] = [
+  // A template page and its skeleton take the tabs from one PageTabSet in page-heads.tsx, so the
+  // loading screen writes the same tab names and underlines the one that will open.
+  const TEMPLATE_TABBED: { name: string; source: string; loading: string }[] = [
     {
       name: 'dashboard',
       source: 'components/features/dashboard/analytics-tabs.tsx',
       loading: 'app/loading.tsx',
-      tabsVar: /items=\{\[([\s\S]*?)\]\}/,
     },
     {
       name: 'resources',
       source: 'components/features/resources/resources-view.tsx',
       loading: 'app/resources/loading.tsx',
-      tabsVar: /const RESOURCE_TABS = \[([\s\S]*?)\] as const/,
     },
     {
       name: 'settings',
       source: 'components/features/settings/settings-form.tsx',
       loading: 'app/settings/loading.tsx',
-      tabsVar: /const SETTINGS_TABS = \[([\s\S]*?)\] as const/,
     },
+    {
+      name: 'resources/new',
+      source: 'components/features/resources/resource-add-page.tsx',
+      loading: 'app/resources/new/loading.tsx',
+    },
+    {
+      name: 'item detail',
+      source: 'components/features/resources/item-analytics.tsx',
+      loading: 'app/resources/[id]/loading.tsx',
+    },
+  ];
+
+  for (const t of TEMPLATE_TABBED) {
+    it(`${t.name}: the skeleton draws the page's own tab set`, () => {
+      const loading = readFileSync(t.loading, 'utf8');
+      const name = /<PageTabsSkeleton set="(\w+)"/.exec(loading);
+      expect(name, `${t.loading} renders no <PageTabsSkeleton set="…">`).not.toBeNull();
+      const heads = readFileSync('components/layout/page-heads.tsx', 'utf8');
+      const registry = /PAGE_TAB_SETS = \{([\s\S]*?)\}/.exec(heads)![1];
+      const set = new RegExp(`\\b${name![1]}: (\\w+)`).exec(registry);
+      expect(set, `PAGE_TAB_SETS has no "${name![1]}"`).not.toBeNull();
+      expect(
+        readFileSync(t.source, 'utf8'),
+        `${t.source} does not draw its tabs from ${set![1]}`,
+      ).toMatch(new RegExp(`\\b${set![1]}\\b`));
+    });
+  }
+
+  // Untemplated pages keep the old tab rail until their step-6 PR.
+  const TABBED: { name: string; source: string; loading: string; tabsVar: RegExp }[] = [
     {
       name: 'group detail',
       source: 'components/features/groups/group-detail-view.tsx',
       loading: 'app/groups/[id]/loading.tsx',
       tabsVar: /const GROUP_TABS = \[([\s\S]*?)\] as const/,
-    },
-    {
-      name: 'resources/new',
-      source: 'components/features/resources/resource-add-form.tsx',
-      loading: 'app/resources/new/loading.tsx',
-      tabsVar: /export const INPUT_TABS = \[([\s\S]*?)\] as const/,
     },
   ];
 
@@ -97,11 +120,8 @@ describe('loading skeletons match their routes', () => {
       expect(block, `could not find the tab list in ${t.source}`).not.toBeNull();
       const tabs = [...block![1].matchAll(/value:/g)].length;
       const loading = readFileSync(t.loading, 'utf8');
-      const count = /<(?:TabsAside|PageTabsSkeleton)[^>]*count=\{(\d+)\}/.exec(loading);
-      expect(
-        count,
-        `${t.loading} renders no <TabsAside count={…}> or <PageTabsSkeleton count={…}>`,
-      ).not.toBeNull();
+      const count = /<TabsAside[^>]*count=\{(\d+)\}/.exec(loading);
+      expect(count, `${t.loading} renders no <TabsAside count={…}>`).not.toBeNull();
       expect(
         Number(count![1]),
         `${t.loading} draws ${count![1]} tab placeholders but ${t.source} renders ${tabs} tabs — ` +

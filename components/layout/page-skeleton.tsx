@@ -7,8 +7,12 @@ import {
   type BreadcrumbSection,
 } from '@/components/layout/app-breadcrumbs';
 import { BreadcrumbPlaceholder } from '@/components/layout/breadcrumbs';
+import { SkeletonText } from '@/components/layout/skeleton-text';
 import { DETAIL_CHROME, FORM_FOOTER, PAGE_CHROME } from '@/components/layout/page-chrome';
 import type { PageTemplate } from '@/components/layout/page-shell';
+
+export { PageTabsSkeleton } from '@/components/layout/page-tabs-skeleton';
+export { SkeletonText } from '@/components/layout/skeleton-text';
 
 export {
   FitList,
@@ -49,8 +53,11 @@ export function PageSkeleton({
   children?: ReactNode;
   /** Template pages: the same chrome as PageShell's, from page-chrome.ts. */
   template?: PageTemplate;
-  /** Template pages: the h1, known up front for a top page; a bar for a record's name. */
-  title?: string;
+  /**
+   * Template pages: the h1 as the page will show it. Words that wait on data (an item's name, its
+   * kind) are a SkeletonText; everything else is real text (docs/ui-standard.md › Đang tải).
+   */
+  title?: ReactNode;
   /** Template pages: a bar where the page shows its meta line (a count the skeleton cannot know), or its own shape. */
   meta?: boolean | ReactNode;
   /** Template pages: placeholders right of the title, as wide as the page's buttons. */
@@ -59,11 +66,11 @@ export function PageSkeleton({
   actionsOnPhone?: 'inline' | 'split';
   /** Template pages: placeholders at the end of the title's row (star). */
   pageIcons?: ReactNode;
-  /** Template pages: a nested page, with a parent trail above the title. */
-  trail?: boolean;
+  /** Template pages: a nested page's parent trail, as the page draws it (ParentCrumbs). */
+  trail?: ReactNode;
   tabs?: ReactNode;
-  /** As PageShell's `facts`: how many labelled values; draws the detail header instead. */
-  facts?: number;
+  /** As PageShell's `facts`: the labels, and a likely value for the bar's width. Draws the detail header. */
+  facts?: { label: string; value: string }[];
   /** With `facts`: the lines under the title. */
   subtitle?: ReactNode;
   width?: PageWidth;
@@ -73,28 +80,17 @@ export function PageSkeleton({
   className?: string;
 }) {
   if (template && facts) {
-    const titleBar = (
-      <h1 className={DETAIL_CHROME.title}>
-        {title ?? (
-          <span className="relative block" aria-hidden>
-            <span className="invisible">あ</span>
-            <Skeleton className="absolute inset-y-1 left-0 w-44" />
-          </span>
-        )}
-      </h1>
-    );
+    const titleBar = <h1 className={DETAIL_CHROME.title}>{title}</h1>;
     return (
       <div className={cn(PAGE_CHROME.page, className)} data-template={template}>
         <div className={DETAIL_CHROME.header}>
           <div className={DETAIL_CHROME.head}>
             <div className={DETAIL_CHROME.phoneTop}>
               <Skeleton className="size-9 rounded-sm" />
-              <div className={DETAIL_CHROME.phoneTrail}>
-                {trail && <Skeleton className="h-3 w-28" />}
-              </div>
+              <div className={DETAIL_CHROME.phoneTrail}>{trail}</div>
               {pageIcons && <div className={PAGE_CHROME.pageIcons}>{pageIcons}</div>}
             </div>
-            <div className={PAGE_CHROME.trail}>{trail && <Skeleton className="h-3 w-36" />}</div>
+            <div className={PAGE_CHROME.trail}>{trail}</div>
             <div className={DETAIL_CHROME.titleRow}>
               <div className={DETAIL_CHROME.titleBlock}>
                 {titleBar}
@@ -108,13 +104,11 @@ export function PageSkeleton({
               )}
             </div>
             <div className={DETAIL_CHROME.facts}>
-              {Array.from({ length: facts }, (_, i) => (
-                <div key={i} className={DETAIL_CHROME.fact}>
-                  <div className="flex h-4 items-center">
-                    <Skeleton className="h-3 w-12" />
-                  </div>
-                  <div className="flex h-5 items-center">
-                    <Skeleton className="h-3.5 w-14" />
+              {facts.map((f) => (
+                <div key={f.label} className={DETAIL_CHROME.fact}>
+                  <div className={DETAIL_CHROME.factLabel}>{f.label}</div>
+                  <div className={DETAIL_CHROME.factValue}>
+                    <SkeletonText text={f.value} />
                   </div>
                 </div>
               ))}
@@ -141,26 +135,14 @@ export function PageSkeleton({
       <div className={cn(PAGE_CHROME.page, className)} data-template={template}>
         <div className={PAGE_CHROME.header}>
           <div className={PAGE_CHROME.stack}>
-            <div className={PAGE_CHROME.trail}>{trail && <Skeleton className="h-3 w-36" />}</div>
+            <div className={PAGE_CHROME.trail}>{trail}</div>
             <div className={PAGE_CHROME.row}>
               <div className="flex shrink-0 items-center md:hidden">
                 <Skeleton className="size-9 rounded-sm" />
               </div>
               <div className={PAGE_CHROME.block}>
-                {trail && (
-                  <div className={PAGE_CHROME.phoneTrail}>
-                    <Skeleton className="h-3 w-28" />
-                  </div>
-                )}
-                <h1 className={PAGE_CHROME.title}>
-                  {title ?? (
-                    // One invisible line keeps the h1 at its own height; the bar sits inside it.
-                    <span className="relative block" aria-hidden>
-                      <span className="invisible">あ</span>
-                      <Skeleton className="absolute inset-y-0.5 left-0 w-40 md:inset-y-1" />
-                    </span>
-                  )}
-                </h1>
+                {trail && <div className={PAGE_CHROME.phoneTrail}>{trail}</div>}
+                <h1 className={PAGE_CHROME.title}>{title}</h1>
                 {meta && (
                   <div className={cn(PAGE_CHROME.meta, trail && 'max-md:hidden')}>{metaShape}</div>
                 )}
@@ -234,16 +216,6 @@ export function TabsAside({
 }
 
 /** Underline tabs on a template page: `count` words on the tabs row. */
-export function PageTabsSkeleton({ count, widths = [] }: { count: number; widths?: number[] }) {
-  return (
-    <div className="flex h-8 items-center gap-4">
-      {Array.from({ length: count }, (_, i) => (
-        <Skeleton key={i} className="h-4 rounded-sm" style={{ width: widths[i] ?? 64 }} />
-      ))}
-    </div>
-  );
-}
-
 /** The form template's footer, as tall as FormFooter with one button. */
 export function FormFooterSkeleton({ status = true }: { status?: boolean }) {
   return (

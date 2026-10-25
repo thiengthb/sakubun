@@ -8,6 +8,7 @@ import { E2E_DB_FILE, E2E_EMAIL, E2E_LOGIN, seedE2eAccount } from './fixtures';
 // to say about one thing) is the exception: its row holds the logo, the trail and the star, and the
 // title gets a line of its own under it (thien, item detail round 2).
 const TEMPLATE_PAGES = [
+  '/',
   '/settings',
   '/resources',
   '/resources/new?kind=grammar',

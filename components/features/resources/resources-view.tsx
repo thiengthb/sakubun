@@ -1,6 +1,6 @@
 'use client';
 
-import { BookText, FolderOpen, Languages } from 'lucide-react';
+import { BookText, Languages } from 'lucide-react';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { PageTabs } from '@/components/common/page-tabs';
 import { EmptyState } from '@/components/common/empty-state';
@@ -8,14 +8,9 @@ import { ResourceTable, type ResourceRow } from '@/components/features/resources
 import { PageShell } from '@/components/layout/page-shell';
 import { AddButton, ResourceAddButton } from '@/components/features/resources/resource-add-button';
 import { useSessionState } from '@/components/common/use-session-state';
+import { RESOURCE_TABS } from '@/components/layout/page-heads';
 import { GroupsView } from '@/components/features/groups/groups-view';
 import type { GroupSummary } from '@/lib/library/groups';
-
-const RESOURCE_TABS = [
-  { value: 'grammar', label: 'Ngữ pháp', icon: BookText },
-  { value: 'vocab', label: 'Từ vựng', icon: Languages },
-  { value: 'groups', label: 'Nhóm', icon: FolderOpen },
-] as const;
 
 export function ResourcesView({
   grammar,
@@ -32,7 +27,11 @@ export function ResourcesView({
   speechRate?: number;
   showFurigana?: boolean;
 }) {
-  const [tab, setTab] = useSessionState('resources.tab', 'grammar', 'tab');
+  const [tab, setTab] = useSessionState(
+    RESOURCE_TABS.storeKey,
+    RESOURCE_TABS.initial,
+    RESOURCE_TABS.urlKey,
+  );
   // List template: the page's one create action sits in the header and follows the open tab, so
   // neither the toolbar nor an empty state repeats it.
   const meta =
@@ -55,7 +54,7 @@ export function ResourcesView({
         title="Tài nguyên"
         meta={meta}
         actions={action}
-        tabs={<PageTabs items={RESOURCE_TABS} label="Chọn kho" />}
+        tabs={<PageTabs items={RESOURCE_TABS.items} label={RESOURCE_TABS.label} />}
       >
         <TabsContent value="grammar">
           {grammar.length === 0 ? (
