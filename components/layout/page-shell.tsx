@@ -8,6 +8,7 @@ import {
 import { MobileTopBar } from '@/components/layout/mobile-top-bar';
 import { FORM_FOOTER, PAGE_CHROME } from '@/components/layout/page-chrome';
 import { ScrollRestorer } from '@/components/layout/scroll-restorer';
+import { DetailHeader, type HeaderFact } from '@/components/layout/detail-header';
 
 /**
  * The four page templates of docs/ui-standard.md. A page that passes `template` gets the new header
@@ -43,6 +44,10 @@ interface PageShellProps {
   pageIcons?: ReactNode;
   /** Template pages: underline tabs under the header. */
   tabs?: ReactNode;
+  /** Template pages with a lot to say about one thing: the lines under the title (a meaning). */
+  subtitle?: ReactNode;
+  /** With `subtitle`: labelled values under it (level, state). Switches to the detail header. */
+  facts?: HeaderFact[];
   section?: BreadcrumbSection;
   action?: BreadcrumbAction;
   breadcrumb?: ReactNode;
@@ -60,6 +65,8 @@ export function PageShell({
   actionsOnPhone = 'inline',
   pageIcons,
   tabs,
+  subtitle,
+  facts,
   section,
   action,
   breadcrumb,
@@ -67,6 +74,23 @@ export function PageShell({
   width = 'full',
   className,
 }: PageShellProps) {
+  if (template && facts) {
+    return (
+      <div className={cn(PAGE_CHROME.page, className)} data-template={template}>
+        <ScrollRestorer />
+        <DetailHeader
+          breadcrumb={breadcrumb}
+          title={title}
+          subtitle={subtitle}
+          facts={facts}
+          actions={actions}
+          pageIcons={pageIcons}
+          tabs={tabs}
+        />
+        {children}
+      </div>
+    );
+  }
   if (template) {
     const split = actionsOnPhone === 'split';
     return (

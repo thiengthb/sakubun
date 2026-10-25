@@ -1,8 +1,10 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import { useTransition, type ReactNode } from 'react';
 import {
   BookOpenText,
+  Pause,
+  Play,
   ChartColumn,
   Brain,
   CalendarClock,
@@ -17,12 +19,14 @@ import { ParentCrumbs } from '@/components/layout/app-breadcrumbs';
 import { PageTabs } from '@/components/common/page-tabs';
 import { PageShell } from '@/components/layout/page-shell';
 import { CopyCommandButton } from '@/components/common/copy-command-button';
-import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { StateNotice } from '@/components/common/state-notice';
+import { setItemSuspendedAction } from '@/app/actions';
+import { toastResult } from '@/lib/core/action-toast';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { EnrichmentCard } from '@/components/features/resources/enrichment-card';
 import { InfoTooltip } from '@/components/common/info-tooltip';
-import { SectionTag } from '@/components/common/section-tag';
 import { SpokenLine } from '@/components/common/spoken-line';
 import { StarButton } from '@/components/common/star-button';
 import { ForgettingCurve } from '@/components/features/resources/item-forgetting-curve';
@@ -35,11 +39,11 @@ import { cn } from '@/lib/core/utils';
 import { STATE_LABELS } from '@/lib/srs/constants';
 import type { ItemStats } from '@/lib/insights/item-stats';
 
-const STATE_BADGE: Record<number, string> = {
-  0: 'border-info/60 text-info',
-  1: 'border-warn/60 text-warn',
-  2: 'border-accent-brand/60 text-accent-brand',
-  3: 'border-alert/60 text-alert',
+const STATE_TONE: Record<number, string> = {
+  0: 'text-info',
+  1: 'text-warn',
+  2: 'text-accent-brand',
+  3: 'text-alert',
 };
 
 function pct(r: number): string {
@@ -88,6 +92,7 @@ export function ItemAnalytics({
   showFurigana?: boolean;
 }) {
   const [tab, setTab] = useSessionState('item.tab', 'stats');
+  const [resuming, startResume] = useTransition();
   const { srs } = stats;
   const stateLabel = stats.suspended ? 'Tạm ngưng' : (STATE_LABELS[srs?.state ?? 0] ?? 'Mới');
   const scheduled = srs && srs.state !== 0 && !stats.suspended;
@@ -140,26 +145,33 @@ export function ItemAnalytics({
             }
           />
         }
-        meta={
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
-            {/* On a phone the meaning takes its own line and the badges the next, so the meta is
-                always two lines and the skeleton can match it. */}
-            <span className="text-sm text-foreground max-md:basis-full">{stats.meaningVi}</span>
-            <Badge variant="outline">{stats.level}</Badge>
-            <Badge
-              variant="outline"
-              className={cn(!stats.suspended && STATE_BADGE[srs?.state ?? 0])}
-            >
-              {stateLabel}
-            </Badge>
+        subtitle={
+          <>
+            <p>{stats.meaningVi}</p>
+            {/* Hán Việt is always upper case, in brackets on its own line under the meaning, as a
+                dictionary prints it (thien, item detail round 2). */}
             {stats.kind === 'vocab' && stats.hanviet && (
-              <span>
-                Âm Hán Việt:{' '}
-                <span className="font-medium text-foreground uppercase">{stats.hanviet}</span>
-              </span>
+              <p className="text-sm font-medium text-muted-foreground uppercase">
+                <span className="sr-only">Âm Hán Việt: </span>[{stats.hanviet}]
+              </p>
             )}
-          </div>
+          </>
         }
+        facts={[
+          { label: 'Cấp độ', value: stats.level },
+          {
+            label: 'Trạng thái',
+            value: stats.suspended ? (
+              <>
+                <Pause aria-hidden />
+                Tạm ngưng
+              </>
+            ) : (
+              stateLabel
+            ),
+            tone: stats.suspended ? 'text-muted-foreground' : STATE_TONE[srs?.state ?? 0],
+          },
+        ]}
         actions={
           <>
             <CopyCommandButton
@@ -178,7 +190,6 @@ export function ItemAnalytics({
             )}
           </>
         }
-        actionsOnPhone="split"
         pageIcons={<StarButton id={stats.itemId} starred={stats.starred} kind="item" />}
         tabs={
           <PageTabs
@@ -194,7 +205,32 @@ export function ItemAnalytics({
           />
         }
       >
-        <div className="@container min-w-0">
+        {stats.suspended && (
+          <StateNotice
+            icon={Pause}
+            title="Đang tạm ngưng"
+            action={
+              <Button
+                variant="outline"
+                disabled={resuming}
+                onClick={() =>
+                  startResume(async () => {
+                    const r = await setItemSuspendedAction(stats.itemId, false);
+                    toastResult(r, 'Đã cho học lại');
+                  })
+                }
+              >
+                <Play aria-hidden />
+                Học lại
+              </Button>
+            }
+          >
+            Không vào lịch ôn cho tới khi học lại.
+          </StateNotice>
+        )}
+        {/* A suspended item's numbers are faded and grey under the notice, so the page reads as
+            paused before any word is read. */}
+        <div className={cn('@container min-w-0', stats.suspended && 'opacity-55 saturate-0')}>
           <TabsContent value="stats" className="space-y-6 md:space-y-8">
             <section className="space-y-3">
               <h2 className="text-sm font-bold">Thông tin</h2>
@@ -302,13 +338,6 @@ export function ItemAnalytics({
           </TabsContent>
 
           <TabsContent value="detail" className="space-y-4">
-            {isVocab && stats.hanviet && (
-              <section className="space-y-1 text-sm">
-                <SectionTag>Âm Hán Việt</SectionTag>
-                <p className="font-medium uppercase">{stats.hanviet}</p>
-              </section>
-            )}
-
             <EnrichmentCard
               raw={stats.enrichment}
               kind={isVocab ? VOCAB_KIND : GRAMMAR_KIND}
@@ -317,7 +346,7 @@ export function ItemAnalytics({
               showFurigana={showFurigana}
               contrastLinks={stats.contrastLinks}
               storedExample={isVocab ? stats.notes : null}
-              persist
+              layout="sections"
             />
           </TabsContent>
         </div>

@@ -40,17 +40,20 @@ export function ReviewLog({
   if (reviews.length === 0) return <EmptyState icon={History} title="Chưa ôn lần nào" />;
   // thien loved the step-4 phone design (2026-10-24) and wants it at every width: one list,
   // months as dividers, one row per review with a rating dot. From @2xl the row's parts sit on
-  // one line: result, role and stability, the sentence, the time.
+  // one line: result, role and stability, the sentence, the time. On a phone the lines under the
+  // result start at the dot's edge, not after it (thien, round 2), so every line shares one margin.
   return (
     <div className={cn(LIST_CARD.base, 'overflow-hidden p-0')}>
       {byMonth(reviews).map(([month, rows]) => (
         <section key={month}>
-          <h3 className="bg-muted/70 px-3 py-1 text-xs font-bold text-muted-foreground">{month}</h3>
+          <h3 className="bg-muted/70 px-3 py-1 text-xs font-bold text-muted-foreground @2xl:px-5">
+            {month}
+          </h3>
           <ul className="divide-y divide-border">
             {rows.map((r) => (
               <li
                 key={r.id}
-                className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-1 px-3 py-2.5 @2xl:grid-cols-[minmax(9rem,auto)_9rem_minmax(0,1fr)_auto] @2xl:items-center"
+                className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-1 px-3 py-2.5 @2xl:grid-cols-[minmax(8rem,auto)_11rem_minmax(0,1fr)_auto] @2xl:items-center @2xl:gap-x-6 @2xl:px-5"
               >
                 <div className="flex min-w-0 flex-wrap items-center gap-2">
                   <span
@@ -70,11 +73,11 @@ export function ReviewLog({
                 <span className="text-xs text-muted-foreground tabular-nums @2xl:order-last">
                   {formatDueExact(new Date(r.reviewedAt))}
                 </span>
-                <div className="col-span-2 pl-4 text-xs text-muted-foreground tabular-nums @2xl:col-span-1 @2xl:pl-0">
+                <div className="col-span-2 text-xs text-muted-foreground tabular-nums @2xl:col-span-1 @2xl:whitespace-nowrap">
                   {r.role === 'SECONDARY' ? 'Vai phụ' : 'Vai chính'} · độ bền{' '}
                   {r.stability.toFixed(1)} ngày
                 </div>
-                <div className="col-span-2 min-w-0 pl-4 empty:hidden @2xl:col-span-1 @2xl:pl-0">
+                <div className="col-span-2 min-w-0 empty:hidden @2xl:col-span-1">
                   {r.sentenceText && (
                     <SpokenLine
                       text={stripEmoji(r.sentenceText)}

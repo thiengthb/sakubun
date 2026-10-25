@@ -29,6 +29,29 @@ export const PAGE_CHROME = {
   tabs: 'flex min-w-0 items-center gap-3 border-b border-border',
 } as const;
 
+// The detail header (docs/ui-standard.md › Đầu trang), for a page that has a lot to say about one
+// thing: a meaning, a level, a state. thien (item detail rounds 1 and 2, 2026-10-25) found the
+// 36px phone row too tight for that, so here the phone row holds only the logo, the trail and the
+// star, and the title gets a line of its own; the facts sit under it as labelled values.
+export const DETAIL_CHROME = {
+  header: 'space-y-4 md:space-y-6',
+  head: 'space-y-3 md:space-y-4',
+  /** Phone only: logo, trail, page icons. */
+  phoneTop: 'flex h-9 min-w-0 items-center gap-3 md:hidden',
+  phoneTrail: 'flex min-w-0 flex-1 items-center',
+  titleRow: 'flex items-start gap-4',
+  titleBlock: 'min-w-0 flex-1 space-y-2 md:space-y-3',
+  title: 'text-2xl leading-tight font-extrabold break-words md:text-3xl',
+  subtitle: 'space-y-1 text-base',
+  /** Laptop only: actions and page icons beside the title. */
+  side: 'flex shrink-0 items-center gap-2 max-md:hidden',
+  facts:
+    'grid grid-cols-2 gap-x-4 gap-y-2 max-md:rounded-sm max-md:bg-muted/70 max-md:px-3 max-md:py-2.5 md:flex md:gap-x-10',
+  fact: 'min-w-0 space-y-0.5',
+  factLabel: 'text-xs text-muted-foreground',
+  factValue: 'flex items-center gap-1 truncate text-sm font-bold [&>svg]:size-3.5',
+} as const;
+
 /** Form template footer: save state left, actions right; sticks to the bottom while the form scrolls. */
 export const FORM_FOOTER = {
   bar: 'sticky bottom-0 z-10 -mx-4 flex items-center gap-3 border-t border-border bg-background px-4 py-3 sm:mx-0 sm:px-0',

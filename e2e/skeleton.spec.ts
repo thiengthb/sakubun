@@ -19,7 +19,9 @@ const PAIRS: Pair[] = [
     skeleton: 'resources',
     items: true,
   },
-  { name: 'item detail', page: '/resources/sk0', skeleton: 'item' },
+  // The detail header's meaning wraps by its length, which the skeleton cannot know (as with the
+  // title): this item's meaning fits one line at 390px, the line the skeleton draws.
+  { name: 'item detail', page: '/resources/sk-d', skeleton: 'item' },
   { name: 'item edit', page: '/resources/sk0/edit', skeleton: 'item-edit' },
   { name: 'resources/new', page: '/resources/new?kind=grammar', skeleton: 'resources-new' },
   { name: 'history', page: '/history', skeleton: 'history' },
@@ -33,13 +35,21 @@ const PAIRS: Pair[] = [
 
 const MEASURE = () => {
   const de = document.documentElement;
-  const shell = document.querySelector('main .pt-6.pb-6, main [data-template]') as HTMLElement | null;
+  const shell = document.querySelector(
+    'main .pt-6.pb-6, main [data-template]',
+  ) as HTMLElement | null;
   if (!shell) return null;
   const row = shell.firstElementChild as HTMLElement | null;
   const box = (el: Element | null | undefined) => {
     if (!el) return null;
     const r = el.getBoundingClientRect();
-    return { x: Math.round(r.x), right: Math.round(r.right), y: Math.round(r.y), h: Math.round(r.height), w: Math.round(r.width) };
+    return {
+      x: Math.round(r.x),
+      right: Math.round(r.right),
+      y: Math.round(r.y),
+      h: Math.round(r.height),
+      w: Math.round(r.width),
+    };
   };
   const kids = row ? Array.from(row.children) : [];
   const aside = kids.length > 2 ? kids[kids.length - 1] : null;
@@ -70,13 +80,21 @@ test.beforeAll(async () => {
          captureReason, suspended, starred, createdAt)
        VALUES (?, 'GRAMMAR', ?, NULL, NULL, ?, 'N2', NULL, 'MCP', NULL, 0, 0, ?)`,
     );
+    item.run('sk-d', '〜ばかりに', 'chỉ vì', iso(now - 60_000));
     for (let n = 0; n < 40; n++)
-      item.run(`sk${n}`, `〜ばかりに${n}`, `chỉ vì ${n} (một nghĩa dài vừa phải để card cao như thật)`, iso(now - n * 1000));
+      item.run(
+        `sk${n}`,
+        `〜ばかりに${n}`,
+        `chỉ vì ${n} (một nghĩa dài vừa phải để card cao như thật)`,
+        iso(now - n * 1000),
+      );
     db.prepare(
       `INSERT INTO "Group" (id, name, kind, color, note, createdAt, updatedAt)
        VALUES ('grp-sk', 'Nhóm đo skeleton', 'grammar', NULL, 'ghi chú', ?, ?)`,
     ).run(iso(now), iso(now));
-    const mem = db.prepare(`INSERT INTO GroupMember (groupId, itemId, addedAt) VALUES ('grp-sk', ?, ?)`);
+    const mem = db.prepare(
+      `INSERT INTO GroupMember (groupId, itemId, addedAt) VALUES ('grp-sk', ?, ?)`,
+    );
     for (let n = 0; n < 20; n++) mem.run(`sk${n}`, iso(now));
   } finally {
     db.close();

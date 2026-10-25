@@ -20,13 +20,10 @@ export default function Loading() {
     <PageSkeleton
       template="detail"
       trail
-      meta={
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
-          <div className="flex h-5 items-center max-md:basis-full">
-            <Skeleton className="h-3.5 w-36" />
-          </div>
-          <Skeleton className="h-5 w-9 rounded-sm" />
-          <Skeleton className="h-5 w-16 rounded-sm" />
+      facts={2}
+      subtitle={
+        <div className="flex h-6 items-center">
+          <Skeleton className="h-4 w-44" />
         </div>
       }
       actions={
@@ -35,7 +32,6 @@ export default function Loading() {
           <Skeleton className={cn(BUTTON, 'md:w-32')} />
         </>
       }
-      actionsOnPhone="split"
       pageIcons={<Skeleton className="size-7 rounded-md" />}
       tabs={<PageTabsSkeleton count={2} widths={[104, 96]} />}
     >

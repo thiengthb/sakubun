@@ -220,7 +220,7 @@ test('the header row stays one line at 360px', async ({ page }) => {
   ).toEqual([]);
 });
 
-test('item detail: star on the title row; meaning, level and actions below it', async ({
+test('item detail: star on the top row; title, meaning, level and actions below it', async ({
   page,
 }) => {
   await page.setViewportSize(VIEWPORT);
@@ -232,10 +232,11 @@ test('item detail: star on the title row; meaning, level and actions below it', 
 
   await page.goto('/resources/g4', { waitUntil: 'networkidle' });
 
-  // docs/ui-standard.md › Đầu trang: a nested page's phone row is logo, trail over title, star.
-  // What does not fit the row (meaning, level, state, the two actions) goes below it.
+  // docs/ui-standard.md › Đầu trang: the detail header's phone row is logo, trail, star; the title
+  // has a line of its own under it, then the meaning, the labelled facts and the two actions.
   const header = page.locator('[data-template] header');
   const box = async (l: import('@playwright/test').Locator) => l.boundingBox();
+  const logo = await box(header.getByRole('button', { name: 'Mở menu' }));
   const title = await box(header.locator('h1'));
   const star = await box(page.getByRole('button', { name: /đánh dấu sao/i }));
   const level = await box(header.getByText('N3', { exact: true }).locator('visible=true'));
@@ -245,15 +246,19 @@ test('item detail: star on the title row; meaning, level and actions below it', 
     .boundingBox();
   const tabs = await box(page.getByRole('tab', { name: /Chỉ số/ }));
   expect(
-    title && star && level && actions && tabs,
-    'title, star, level badge, actions and tabs must all render',
+    logo && title && star && level && actions && tabs,
+    'logo, title, star, level, actions and tabs must all render',
   ).toBeTruthy();
 
   const mid = (b: { y: number; height: number }) => b.y + b.height / 2;
-  expect(Math.abs(mid(star!) - mid(title!)), 'the star sits on the title row').toBeLessThan(12);
-  const rowBottom = Math.max(title!.y + title!.height, star!.y + star!.height);
-  expect(level!.y, 'the level badge sits below the title row').toBeGreaterThanOrEqual(rowBottom);
-  expect(actions!.y, 'the actions sit below the meta line').toBeGreaterThan(level!.y);
+  expect(Math.abs(mid(star!) - mid(logo!)), 'the star sits on the logo row').toBeLessThan(4);
+  expect(title!.y, 'the title sits below the top row').toBeGreaterThanOrEqual(
+    logo!.y + logo!.height,
+  );
+  expect(level!.y, 'the level sits below the title').toBeGreaterThanOrEqual(
+    title!.y + title!.height,
+  );
+  expect(actions!.y, 'the actions sit below the facts').toBeGreaterThan(level!.y);
   expect(actions!.y).toBeLessThan(tabs!.y);
 });
 
