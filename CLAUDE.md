@@ -22,7 +22,7 @@ Kế hoạch hợp nhất (wordquiz + kaiwa vào đây): `nuc-infra/docs/researc
   (ngoại lệ: nhập lại bản sao lưu nguyên văn). `ReviewLog` chỉ append; xoá Item thì `itemId` thành null.
 - **Prisma 7 dùng driver adapter** (`@prisma/adapter-better-sqlite3`), client sinh ở `lib/generated/prisma` (không commit), CLI đọc `prisma.config.ts`.
 - **Test có DB dùng `createTestDb()` (`lib/db/test-db.ts`)**, không dùng `prisma db push`; dọn giữa các test bằng `resetLearningData()`.
-- **Một người dùng, ranh giới là đăng nhập**: dữ liệu học không có `userId`; chỉ đăng nhập bằng Google với đúng `ALLOWED_EMAIL`, đăng ký đóng sau tài khoản đầu tiên (`lib/auth/auth.ts`, `lib/auth/login-policy.ts`); email/mật khẩu chỉ là cửa cho test, tắt cứng ở production;
+- **Một người dùng, ranh giới là đăng nhập** (đang chuyển sang nhiều người, `docs/decisions/0006-per-user-learning-data.md`): 8 bảng học có `userId` nhưng còn cho phép null tới 7.1d, nên chưa mở đăng ký cho người thứ hai trước 7.1d; chỉ đăng nhập bằng Google với đúng `ALLOWED_EMAIL`, đăng ký đóng sau tài khoản đầu tiên (`lib/auth/auth.ts`, `lib/auth/login-policy.ts`); email/mật khẩu chỉ là cửa cho test, tắt cứng ở production;
   route MCP (`app/api/[transport]/route.ts`) bắt buộc token.
 - **Ngôn ngữ**: code/comment/commit tiếng Anh; chuỗi người học đọc trên UI tiếng Việt; không emoji.
 - **Luật frontend là test** trong `lib/design/`. Phá luật thì thêm vào allowlist trong test đó, kèm lý do.
@@ -53,3 +53,13 @@ Nhánh từ `main`, Conventional Commits, PR nhỏ một mục đích; CI chạy
 - Migration chỉ cộng thêm, hoặc có bước chuyển dữ liệu kèm test; sao lưu DB trên NUC trước khi deploy
   migration đụng dữ liệu học.
 - File này giữ ngắn: lệnh, gotchas, luật. README cho người đọc; `docs/decisions/` cho lịch sử quyết định.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

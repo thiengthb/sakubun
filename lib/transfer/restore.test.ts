@@ -218,4 +218,42 @@ describe('v2 turns survive a backup', () => {
       meaningVi: 'mèo',
     });
   });
+
+  it('system restore gives learning rows to the live account with the same email (7.1)', async () => {
+    await resetLearningData(prisma);
+    const live = await prisma.user.create({
+      data: { id: 'live-owner', name: 'thien', email: 'owner@example.com' },
+    });
+    const file = path.join(
+      mkdtempSync(path.join(os.tmpdir(), 'sakubun-sysbak-owner-')),
+      'backup.db',
+    );
+    applyMigrations(file);
+    const db = new Database(file);
+    db.prepare(
+      `INSERT INTO user (id, name, email, emailVerified, createdAt, updatedAt, role)
+       VALUES ('old-owner', 'thien', 'owner@example.com', 1, '2026-08-01T00:00:00.000+00:00',
+               '2026-08-01T00:00:00.000+00:00', 'admin')`,
+    ).run();
+    db.prepare(
+      `INSERT INTO Item (id, userId, kind, expression, meaningVi, level, source, createdAt)
+       VALUES ('itm-owned-1', 'old-owner', 'VOCAB', '犬', 'chó', 'N5', 'MCP', '2026-08-01T00:00:00.000+00:00')`,
+    ).run();
+    db.prepare(
+      `INSERT INTO ReviewLog (id, userId, itemId, rating, state, due, stability, difficulty)
+       VALUES ('log-owned-1', 'old-owner', 'itm-owned-1', 3, 2, '2026-08-20T00:00:00.000+00:00', 12.5, 5.5)`,
+    ).run();
+    db.close();
+
+    await I.importSystemBackup(file, { dryRun: false });
+
+    expect(await prisma.item.findUniqueOrThrow({ where: { id: 'itm-owned-1' } })).toMatchObject({
+      userId: live.id,
+    });
+    expect(
+      await prisma.reviewLog.findUniqueOrThrow({ where: { id: 'log-owned-1' } }),
+    ).toMatchObject({ userId: live.id });
+    expect(await prisma.user.count({ where: { id: 'old-owner' } })).toBe(0);
+    await prisma.user.delete({ where: { id: live.id } });
+  });
 });
