@@ -14,7 +14,7 @@ chỗ sai mới làm test đỏ, chỗ đã sửa cũng làm test đỏ cho tớ
 | Luật | Khoá bởi |
 | --- | --- |
 | Nút và ô cao 36px trên điện thoại, 28px từ 768px, tính theo mắt nhìn: gờ 2px của nút nổi nằm trong chiều cao đó (khung 34 hoặc 26px, chừa 2px bên dưới cho gờ). Ô nhập và nút cùng hàng trùng mép trên và mép dưới. Vùng chạm 44px trên màn cảm ứng; icon 16px. | `e2e/control-size.spec.ts`, thienui `icon-size-scale`, `button-size-by-prop` |
-| Bo 7px cho nút và ô (thien chọn 2026-10-25, so từ 4 tới 10px), 8px cho thẻ và hộp thoại. Chỉ dùng thang `rounded`, `-sm` tới `-2xl`, `-full`, hoặc giá trị tuỳ ý đọc token `--radius-*`. | `ui-standard` `radius-class`, test thang bo |
+| Bo 8px cho nút, ô, thẻ và hộp thoại (thien chọn 7px ngày 2026-10-25 khi so từ 4 tới 10px, rồi nâng lên 8px sau khi xem trên trang thật). Chỉ dùng thang `rounded`, `-sm` tới `-2xl`, `-full`, hoặc giá trị tuỳ ý đọc token `--radius-*`. | `ui-standard` `radius-class`, test thang bo |
 | Không nút, link, toggle hay ô nào bo tròn hẳn. `rounded-full` chỉ cho chấm, thanh tiến độ, ảnh đại diện. | `ui-standard` `no-round-controls` |
 
 ## Chữ
@@ -31,6 +31,7 @@ chỗ sai mới làm test đỏ, chỗ đã sửa cũng làm test đỏ cho tớ
 | Thứ bấm được thì nổi: bóng đáy 2px, lún xuống khi bấm. Ô gõ chữ phẳng, nền `--field` sáng hơn. | như trên |
 | Mục đang chọn (kiểu xem, lựa chọn trong cài đặt) có nền cam nhạt phủ tới mép và bóng đáy nhẹ, không viền cam đậm. Dùng `variant="choice"` hoặc `choiceChipClass()`. Trang đang mở ở sidebar dùng nền thẻ (trắng ở nền sáng) như thẻ người dùng, vì nền cam nhạt chìm vào nền sidebar. | như trên, ảnh |
 | Nút gợi ý tạo cái chưa có dùng `variant="dashed"`. | ảnh |
+| Menu, popover và danh sách chọn luôn nằm trọn trong màn hình, cách mỗi mép ít nhất 16px (lề trang), cả điện thoại lẫn laptop. Mặc định nằm trong `components/ui` (`FLOATING_GUTTER`); đừng đặt `collisionPadding` nhỏ hơn. | `e2e/menu-bounds.spec.ts` |
 | Các class trên chỉ nằm trong `components/ui`, `common`, `layout`. Trang và feature dùng component, không chép class. | `ui-standard` `control-language-in-components` |
 
 ## Nhãn nút

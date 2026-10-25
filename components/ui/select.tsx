@@ -4,6 +4,7 @@ import * as React from 'react';
 import { Select as SelectPrimitive } from 'radix-ui';
 
 import { cn } from '@/lib/core/utils';
+import { FLOATING_GUTTER } from '@/components/ui/popover';
 import { useFieldLabelId } from '@/components/common/field-label-context';
 import { ChevronDownIcon, CheckIcon, ChevronUpIcon } from 'lucide-react';
 
@@ -59,6 +60,7 @@ function SelectContent({
   children,
   position = 'item-aligned',
   align = 'center',
+  collisionPadding = FLOATING_GUTTER,
   ...props
 }: React.ComponentProps<typeof SelectPrimitive.Content>) {
   return (
@@ -74,6 +76,7 @@ function SelectContent({
         )}
         position={position}
         align={align}
+        collisionPadding={collisionPadding}
         {...props}
       >
         <SelectScrollUpButton />
