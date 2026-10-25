@@ -1,5 +1,6 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import { Slider } from '@/components/ui/slider';
 import {
   chipFor,
@@ -187,10 +188,13 @@ export function HistoryFilterPopover({
   filters,
   onPatch,
   onResetFilters,
+  children,
 }: {
   filters: Filters;
   onPatch: (patch: Partial<Filters>) => void;
   onResetFilters: () => void;
+  /** Rows after the filters: the list's sort. */
+  children?: ReactNode;
 }) {
   const activeCount = activeFilterCount(filters);
 
@@ -218,11 +222,12 @@ export function HistoryFilterPopover({
           />
         </div>
       </FilterRow>
+      {children}
     </FilterPopover>
   );
 }
 
-/** Whether a turn passes the popover's filters (the toolbar's search is the table's own). */
+/** Whether a turn passes the popover's filters (the toolbar's search is matched apart). */
 export function matchesFilters(s: HistoryRow, filters: Filters): boolean {
   if (filters.direction !== 'all' && s.direction !== filters.direction) return false;
   if (filters.result === 'pass' && (s.ratings.length === 0 || isFail(s))) return false;

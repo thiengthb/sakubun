@@ -1,6 +1,6 @@
 import { History } from 'lucide-react';
 import { EmptyState } from '@/components/common/empty-state';
-import { HistoryTable } from '@/components/features/history/history-table';
+import { HistoryList } from '@/components/features/history/history-list';
 import { PageShell } from '@/components/layout/page-shell';
 import { furiganaInApp, type FuriganaMode } from '@/lib/settings/schema';
 import type { HistoryRow } from '@/lib/app/history';
@@ -31,7 +31,7 @@ export function HistoryView({
           }
         />
       ) : (
-        <HistoryTable
+        <HistoryList
           sentences={sentences}
           voiceSpeaker={voiceSpeaker}
           speechRate={speechRate}

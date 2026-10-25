@@ -1,7 +1,18 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { Clock, GraduationCap, Info, Ruler, Timer } from 'lucide-react';
+import {
+  BookOpen,
+  CheckCheck,
+  Clock,
+  GraduationCap,
+  ListChecks,
+  MessageSquareText,
+  PenLine,
+  Ruler,
+  Timer,
+  type LucideIcon,
+} from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Explain } from '@/components/common/explain';
 import {
@@ -11,45 +22,55 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { FuriganaText } from '@/components/common/furigana-text';
-import { SpeakButton } from '@/components/common/speak-button';
 import { SpokenLine } from '@/components/common/spoken-line';
 import { StarButton } from '@/components/common/star-button';
 import { RelativeTime } from '@/components/common/relative-time';
 import { formatDateTimeVN, humanizeDuration, lengthBucket, ratingLabel } from '@/lib/core/format';
 import { hasFurigana } from '@/lib/japanese/furigana';
-import { scoreLabel } from '@/lib/insights/score-label';
+import { historyResult, type HistoryResult, type ResultTone } from '@/lib/history/result';
 import { stripEmoji } from '@/lib/core/text';
 import type { HistoryRow } from '@/lib/app/history';
 import type { ExerciseType } from '@/lib/session/exercise-types';
 import { turnLabels } from '@/lib/session/turn-labels';
 import { cn } from '@/lib/core/utils';
 
-const RATING_CLASS: Record<number, string> = {
-  1: 'border-alert/60 text-alert',
-  2: 'border-warn/60 text-warn',
-  3: 'border-ok/60 text-ok',
-  4: 'border-info/60 text-info',
+// One tone per result (lib/history/result.ts), drawn four ways: a word, a pill, a washed panel
+// and the detail's medal. The washes are the tone tokens IconTile uses, so light and dark both hold.
+// Literal strings so Tailwind sees every class.
+const TONE: Record<ResultTone, { text: string; pill: string; panel: string; medal: string }> = {
+  alert: {
+    text: 'text-alert',
+    pill: 'bg-alert-wash text-alert',
+    panel: 'border-alert/30 bg-alert-wash',
+    medal: 'border-alert/40 bg-alert-wash text-alert',
+  },
+  warn: {
+    text: 'text-warn',
+    pill: 'bg-warn-wash text-warn',
+    panel: 'border-warn/30 bg-warn-wash',
+    medal: 'border-warn/40 bg-warn-wash text-warn',
+  },
+  ok: {
+    text: 'text-ok',
+    pill: 'bg-ok-wash text-ok',
+    panel: 'border-ok/30 bg-ok-wash',
+    medal: 'border-ok/40 bg-ok-wash text-ok',
+  },
+  info: {
+    text: 'text-info',
+    pill: 'bg-info-wash text-info',
+    panel: 'border-info/30 bg-info-wash',
+    medal: 'border-info/40 bg-info-wash text-info',
+  },
+  muted: {
+    text: 'text-muted-foreground',
+    pill: 'bg-muted text-muted-foreground',
+    panel: 'border-border bg-card',
+    medal: 'border-border bg-muted text-muted-foreground',
+  },
 };
 
-export function scoreClass(score: number): string {
-  if (score < 50) return 'text-alert';
-  if (score < 70) return 'text-warn';
-  if (score < 90) return 'text-ok';
-  return 'text-info font-semibold';
-}
-
-// A v2 turn is graded 1-4 rather than scored 0-100, so its header shows the grade.
-export function resultLabel(s: HistoryRow): { text: string; className: string } | null {
-  if (s.rating !== null && s.status === 'GRADED') {
-    return { text: ratingLabel(s.rating), className: RATING_CLASS[s.rating] ?? '' };
-  }
-  const label = scoreLabel(s.status, s.score);
-  if (!label) return null;
-  return {
-    text: label.text,
-    className: label.muted ? 'text-muted-foreground' : scoreClass(s.score as number),
-  };
-}
+const RATING_TONE: Record<number, ResultTone> = { 1: 'alert', 2: 'warn', 3: 'ok', 4: 'info' };
 
 export const EXERCISE_TYPE_LABELS: Record<ExerciseType, string> = {
   TRANSLATION: 'Dịch câu',
@@ -109,25 +130,29 @@ function AnswerText({
   return useRuby ? <FuriganaText ruby={sentence.suggestedRuby!} /> : <>{sentence.suggested}</>;
 }
 
+// Level, length and time taken. The card keeps each to a word or two so the row stays one line on
+// a phone; the hover and the detail say the rest.
 function SentenceMeta({
   level,
   charCount,
   durationSec,
+  compact = false,
 }: {
   level: string | null;
   charCount: number;
   durationSec?: number | null;
+  compact?: boolean;
 }) {
   const bucket = lengthBucket(charCount);
   return (
-    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+    <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
       {level && (
         <Explain
           text={`Độ khó của lượt này — lấy theo cấp JLPT của mẫu ngữ pháp trọng tâm (${level}), không phải cấp của cả câu.`}
         >
           <span className="inline-flex items-center gap-1">
-            <GraduationCap className="size-3.5" aria-hidden />
-            Độ khó {level}
+            <GraduationCap className="size-4" aria-hidden />
+            {compact ? level : `Độ khó ${level}`}
           </span>
         </Explain>
       )}
@@ -135,14 +160,14 @@ function SentenceMeta({
         text={`Độ dài câu đề: ${charCount} ký tự, xếp vào nhóm "${bucket.label}". Cỡ câu bạn chọn trong Cài đặt quyết định nhóm này.`}
       >
         <span className="inline-flex items-center gap-1">
-          <Ruler className="size-3.5" aria-hidden />
-          {bucket.label} · {charCount} ký tự
+          <Ruler className="size-4" aria-hidden />
+          {compact ? `${charCount} ký tự` : `${bucket.label} · ${charCount} ký tự`}
         </span>
       </Explain>
       {durationSec != null && (
         <Explain text="Thời gian từ lúc đề hiện ra đến lúc bài được chấm. Trả lời càng lâu thì càng khó được chấm 4 Easy — app tự hạ xuống Good.">
           <span className="inline-flex items-center gap-1">
-            <Timer className="size-3.5" aria-hidden />
+            <Timer className="size-4" aria-hidden />
             {humanizeDuration(durationSec)}
           </span>
         </Explain>
@@ -151,50 +176,71 @@ function SentenceMeta({
   );
 }
 
-// The card is one button: it opens the turn's detail, which the list owns (one dialog for all).
-function SentenceCardShell({
-  header,
-  children,
-  onOpen,
-}: {
-  header: ReactNode;
-  children: ReactNode;
-  onOpen: () => void;
-}) {
+export function RatingChip({ expression, rating }: { expression: string; rating: number }) {
+  const label = ratingLabel(rating);
+  return (
+    <span
+      className={cn(
+        'inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-xs font-medium',
+        TONE[RATING_TONE[rating] ?? 'muted'].pill,
+      )}
+    >
+      <span lang="ja">{expression}</span>
+      <span className="font-bold">{label}</span>
+    </span>
+  );
+}
+
+// The detail's result, large and in its tone: the first thing the eye finds in the dialog.
+function ResultMedal({ result }: { result: HistoryResult }) {
+  // A score keeps its scale under the number ("/100"); a grade says which of four it is ("1/4").
+  const caption =
+    result.full === result.text ? null : result.full.endsWith('/100') ? '/100' : result.full;
   return (
     <div
-      role="button"
-      tabIndex={0}
-      aria-haspopup="dialog"
-      onClick={onOpen}
-      onKeyDown={(e) => {
-        if (e.target !== e.currentTarget) return;
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          onOpen();
-        }
-      }}
-      className="flex h-full min-w-0 cursor-pointer flex-col gap-2 text-left"
+      className={cn(
+        'flex h-14 min-w-14 shrink-0 flex-col items-center justify-center gap-1 rounded-lg border px-2',
+        TONE[result.tone].medal,
+      )}
     >
-      <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-        {header}
-      </div>
-      {children}
+      <span
+        className={cn(
+          'leading-none font-bold tabular-nums',
+          result.tone === 'muted' ? 'text-sm' : 'text-lg',
+        )}
+      >
+        {result.text}
+      </span>
+      {caption && <span className="text-xs leading-none font-semibold opacity-80">{caption}</span>}
     </div>
   );
 }
 
-export function RatingChip({ expression, rating }: { expression: string; rating: number }) {
-  const label = ratingLabel(rating);
+function SectionLabel({ icon: Icon, children }: { icon: LucideIcon; children: ReactNode }) {
   return (
-    <Badge
-      variant="outline"
-      className={cn('text-xs', RATING_CLASS[rating])}
-      title={label}
-      aria-label={`${expression} — ${label}`}
-    >
-      <span lang="ja">{expression}</span>
-    </Badge>
+    <p className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
+      <Icon className="size-4" aria-hidden />
+      {children}
+    </p>
+  );
+}
+
+function AnswerPanel({
+  tone,
+  icon,
+  label,
+  children,
+}: {
+  tone: ResultTone;
+  icon: LucideIcon;
+  label: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className={cn('min-w-0 space-y-1.5 rounded-lg border p-3', TONE[tone].panel)}>
+      <SectionLabel icon={icon}>{label}</SectionLabel>
+      <div className="min-w-0 break-words">{children}</div>
+    </div>
   );
 }
 
@@ -209,7 +255,7 @@ export function HistoryDetail({
   rate?: number;
   showFurigana?: boolean;
 }) {
-  const detailScore = resultLabel(sentence);
+  const result = historyResult(sentence);
   const grammar = sentence.ratings.filter((r) => r.role !== 'VOCAB');
   const vocab = sentence.ratings.filter((r) => r.role === 'VOCAB');
   const typeLabel = exerciseTypeLabel(sentence.exerciseType);
@@ -221,26 +267,21 @@ export function HistoryDetail({
   });
 
   return (
-    <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
-      <DialogHeader>
-        <DialogTitle className="flex flex-wrap items-center gap-2 text-base">
-          <Badge variant="secondary">{dirLabel(sentence.direction)}</Badge>
-          {typeLabel && <Badge variant="outline">{typeLabel}</Badge>}
-          {detailScore && (
-            <span className={cn('text-sm font-medium', detailScore.className)}>
-              {detailScore.text}
-            </span>
-          )}
-          <span className="mr-6 ml-auto text-xs font-normal text-muted-foreground">
-            {formatDateTimeVN(sentence.createdAt)}
-          </span>
-        </DialogTitle>
-        <DialogDescription className="sr-only">Chi tiết lượt dịch</DialogDescription>
+    <DialogContent className="max-h-[85vh] gap-5 overflow-y-auto sm:max-w-2xl">
+      <DialogHeader className="flex-row items-center gap-3 pr-8 text-left">
+        {result && <ResultMedal result={result} />}
+        <div className="min-w-0 flex-1 space-y-1.5">
+          <DialogTitle className="text-base font-bold">{typeLabel ?? 'Lượt dịch'}</DialogTitle>
+          <DialogDescription className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
+            <Badge variant="secondary">{dirLabel(sentence.direction)}</Badge>
+            <span>{formatDateTimeVN(sentence.createdAt)}</span>
+          </DialogDescription>
+        </div>
       </DialogHeader>
 
       <div className="space-y-4 text-sm">
-        <div className="space-y-1">
-          <div className="text-xs font-medium text-muted-foreground">{labels.prompt}</div>
+        <section className="space-y-2 rounded-lg bg-muted/60 p-3">
+          <SectionLabel icon={BookOpen}>{labels.prompt}</SectionLabel>
           {sentence.direction === 'JA_VI' ? (
             <SpokenLine
               text={sentence.sourceText}
@@ -253,112 +294,180 @@ export function HistoryDetail({
           ) : (
             <SourceLine sentence={sentence} showFurigana={showFurigana} />
           )}
-        </div>
+          <SentenceMeta
+            level={sentence.level}
+            charCount={sentence.charCount}
+            durationSec={durationSecOf(sentence)}
+          />
+        </section>
 
-        <SentenceMeta
-          level={sentence.level}
-          charCount={sentence.charCount}
-          durationSec={durationSecOf(sentence)}
-        />
-
-        <div className="space-y-2 border-t border-border/70 pt-3">
-          {sentence.direction === 'VI_JA' ? (
-            <div className="flex flex-wrap items-end gap-1.5">
-              <span className="text-muted-foreground">{labels.answer}:</span>
-              <SpokenLine
-                text={sentence.userAnswer}
-                showFurigana={showFurigana}
-                speaker={speaker}
-                rate={rate}
-                label="Nghe câu bạn viết"
-              />
-            </div>
-          ) : (
-            <p>
-              <span className="text-muted-foreground">{labels.answer}: </span>
-              {sentence.userAnswer}
-            </p>
-          )}
-          {sentence.suggested && (
-            <div className="flex flex-wrap items-end gap-1.5">
-              <span className="text-muted-foreground">{labels.reference}:</span>
+        <div className="@container">
+          <div className="grid grid-cols-1 gap-3 @lg:grid-cols-2">
+            <AnswerPanel tone={result?.tone ?? 'muted'} icon={PenLine} label={labels.answer}>
               {sentence.direction === 'VI_JA' ? (
                 <SpokenLine
-                  text={sentence.suggested}
-                  ruby={sentence.suggestedRuby}
+                  text={sentence.userAnswer}
                   showFurigana={showFurigana}
                   speaker={speaker}
                   rate={rate}
-                  label="Nghe đáp án"
+                  label="Nghe câu bạn viết"
                 />
               ) : (
-                <span className="min-w-0">
-                  <AnswerText sentence={sentence} showFurigana={showFurigana} />
-                </span>
+                <p>{sentence.userAnswer || '—'}</p>
               )}
-            </div>
-          )}
-          {sentence.feedback && (
-            <p className="text-muted-foreground">{stripEmoji(sentence.feedback)}</p>
-          )}
-        </div>
-
-        {(grammar.length > 0 || vocab.length > 0) && (
-          <div className="space-y-2 border-t border-border/70 pt-3">
-            {grammar.length > 0 && (
-              <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1.5">
-                <span className="text-muted-foreground">Ngữ pháp:</span>
-                {grammar.map((r, i) => (
-                  <RatingChip key={`g-${i}`} expression={r.expression} rating={r.rating} />
-                ))}
-              </div>
-            )}
-            {vocab.length > 0 && (
-              <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1.5">
-                <span className="text-muted-foreground">Từ vựng:</span>
-                {vocab.map((r, i) => (
-                  <RatingChip key={`v-${i}`} expression={r.expression} rating={r.rating} />
-                ))}
-              </div>
+            </AnswerPanel>
+            {sentence.suggested && (
+              <AnswerPanel tone="ok" icon={CheckCheck} label={labels.reference}>
+                {sentence.direction === 'VI_JA' ? (
+                  <SpokenLine
+                    text={sentence.suggested}
+                    ruby={sentence.suggestedRuby}
+                    showFurigana={showFurigana}
+                    speaker={speaker}
+                    rate={rate}
+                    label="Nghe đáp án"
+                  />
+                ) : (
+                  <p>
+                    <AnswerText sentence={sentence} showFurigana={showFurigana} />
+                  </p>
+                )}
+              </AnswerPanel>
             )}
           </div>
+        </div>
+
+        {sentence.feedback && (
+          <div className="flex gap-2.5 rounded-lg border border-info/30 bg-info-wash p-3">
+            <MessageSquareText className="mt-0.5 size-4 shrink-0 text-info" aria-hidden />
+            <div className="min-w-0 space-y-1">
+              <p className="text-xs font-semibold text-info">Nhận xét</p>
+              <p className="break-words">{stripEmoji(sentence.feedback)}</p>
+            </div>
+          </div>
+        )}
+
+        {(grammar.length > 0 || vocab.length > 0) && (
+          <section className="space-y-2">
+            <SectionLabel icon={ListChecks}>Mục được chấm</SectionLabel>
+            {[
+              { label: 'Ngữ pháp', list: grammar },
+              { label: 'Từ vựng', list: vocab },
+            ]
+              .filter((g) => g.list.length > 0)
+              .map((g) => (
+                <div key={g.label} className="flex flex-wrap items-center gap-1.5">
+                  <span className="w-16 shrink-0 text-xs text-muted-foreground">{g.label}</span>
+                  {g.list.map((r, i) => (
+                    <RatingChip key={i} expression={r.expression} rating={r.rating} />
+                  ))}
+                </div>
+              ))}
+          </section>
         )}
       </div>
     </DialogContent>
   );
 }
 
-function PendingCard({ sentence }: { sentence: HistoryRow }) {
+// The card's three rows, the same for every turn so every card is the same height (thien, Lịch sử
+// round 1): what kind of turn and when, the prompt, then its measures and its result.
+function CardRows({
+  sentence,
+  aside,
+  speaker,
+  rate,
+  showFurigana,
+  result,
+}: {
+  sentence: HistoryRow;
+  aside?: ReactNode;
+  speaker?: number;
+  rate?: number;
+  showFurigana: boolean;
+  result: ReactNode;
+}) {
+  const typeLabel = exerciseTypeLabel(sentence.exerciseType);
+  return (
+    <>
+      <div className="flex min-w-0 items-center gap-2 text-xs text-muted-foreground">
+        <Badge variant="secondary">{dirLabel(sentence.direction)}</Badge>
+        {typeLabel && (
+          <Badge variant="outline" className="min-w-0 truncate">
+            {typeLabel}
+          </Badge>
+        )}
+        <span className="ml-auto flex shrink-0 items-center gap-2">
+          <RelativeTime value={sentence.createdAt} />
+          {aside}
+        </span>
+      </div>
+      <div className="flex min-h-7 min-w-0 items-end">
+        {sentence.direction === 'JA_VI' ? (
+          <SpokenLine
+            text={sentence.sourceText}
+            ruby={sentence.sourceRuby}
+            showFurigana={showFurigana}
+            speaker={speaker}
+            rate={rate}
+            label="Nghe đề"
+            truncate
+          />
+        ) : (
+          <div className="min-w-0 flex-1">
+            <SourceLine sentence={sentence} truncate showFurigana={showFurigana} />
+          </div>
+        )}
+      </div>
+      <div className="mt-auto flex items-center gap-2">
+        <SentenceMeta
+          level={sentence.level}
+          charCount={sentence.charCount}
+          durationSec={durationSecOf(sentence)}
+          compact
+        />
+        <span className="ml-auto flex shrink-0">{result}</span>
+      </div>
+    </>
+  );
+}
+
+const PILL = 'inline-flex h-5 items-center gap-1 rounded-md px-2 text-xs font-bold tabular-nums';
+
+function ResultPill({ result }: { result: HistoryResult | null }) {
+  if (!result) return null;
+  const pill = <span className={cn(PILL, TONE[result.tone].pill)}>{result.text}</span>;
+  return result.full === result.text ? pill : <Explain text={result.full}>{pill}</Explain>;
+}
+
+// A turn waiting for its answer has nothing to open yet; how to answer it is one hover away.
+function PendingCard({ sentence, showFurigana }: { sentence: HistoryRow; showFurigana: boolean }) {
   return (
     <div className="flex h-full min-w-0 flex-col gap-2">
-      <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-        <Badge variant="secondary">{dirLabel(sentence.direction)}</Badge>
-        <span className="flex items-center gap-1 font-medium text-warn">
-          <Clock className="size-3.5" aria-hidden />
-          Đang chờ trả lời
-        </span>
-        <RelativeTime value={sentence.createdAt} className="ml-auto" />
-      </div>
-      <div className="flex items-end gap-2">
-        {sentence.direction === 'JA_VI' && (
-          <SpeakButton text={sentence.sourceText} label="Nghe đề" />
-        )}
-        <div className="min-w-0 flex-1">
-          <SourceLine sentence={sentence} truncate />
-        </div>
-      </div>
-      <div className="mt-auto flex items-start gap-1.5 pt-1 text-xs text-muted-foreground">
-        <Info className="mt-px size-3.5 shrink-0" aria-hidden />
-        <span>
-          Trả lời qua Claude Desktop hoặc ChatGPT để được chấm. Muốn bỏ qua thì bảo trợ lý MCP «bỏ
-          qua câu này».
-        </span>
-      </div>
+      <CardRows
+        sentence={sentence}
+        showFurigana={showFurigana}
+        result={
+          <Explain text="Trả lời qua Claude Desktop hoặc ChatGPT để được chấm. Muốn bỏ qua thì bảo trợ lý MCP «bỏ qua câu này».">
+            <button
+              type="button"
+              className={cn(
+                PILL,
+                TONE.warn.pill,
+                'cursor-help focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
+              )}
+            >
+              <Clock className="size-4" aria-hidden />
+              Đang chờ
+            </button>
+          </Explain>
+        }
+      />
     </div>
   );
 }
 
-/** One turn in the list's card layout (below 1024px); a click opens its detail. */
+/** One turn in Lịch sử's card list; a click opens its detail, which the list owns. */
 export function HistoryCard({
   sentence,
   speaker,
@@ -372,54 +481,42 @@ export function HistoryCard({
   showFurigana?: boolean;
   onOpen: () => void;
 }) {
-  if (sentence.status === 'PENDING') return <PendingCard sentence={sentence} />;
-  const score = resultLabel(sentence);
-  const typeLabel = exerciseTypeLabel(sentence.exerciseType);
-
+  if (sentence.status === 'PENDING') {
+    return <PendingCard sentence={sentence} showFurigana={showFurigana} />;
+  }
   return (
-    <SentenceCardShell
-      onOpen={onOpen}
-      header={
-        <>
-          <Badge variant="secondary">{dirLabel(sentence.direction)}</Badge>
-          {typeLabel && <Badge variant="outline">{typeLabel}</Badge>}
-          {score && <span className={cn('font-medium', score.className)}>{score.text}</span>}
-          {/* Time and star wrap as one, so a star never sits alone on a second line. */}
-          <span className="ml-auto flex shrink-0 items-center gap-2">
-            <RelativeTime value={sentence.createdAt} />
-            {/* Stars live on Sentence; a v2 turn has none yet. */}
-            {sentence.kind === 'sentence' && (
-              <StarButton
-                id={sentence.id}
-                starred={sentence.starred}
-                kind="sentence"
-                className="-my-1 size-6"
-              />
-            )}
-          </span>
-        </>
-      }
+    <div
+      role="button"
+      tabIndex={0}
+      aria-haspopup="dialog"
+      onClick={onOpen}
+      onKeyDown={(e) => {
+        if (e.target !== e.currentTarget) return;
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onOpen();
+        }
+      }}
+      className="flex h-full min-w-0 cursor-pointer flex-col gap-2 rounded-lg text-left focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
     >
-      {sentence.direction === 'JA_VI' ? (
-        <SpokenLine
-          text={sentence.sourceText}
-          ruby={sentence.sourceRuby}
-          showFurigana={showFurigana}
-          speaker={speaker}
-          rate={rate}
-          label="Nghe đề"
-          truncate
-        />
-      ) : (
-        <div className="min-w-0">
-          <SourceLine sentence={sentence} truncate showFurigana={showFurigana} />
-        </div>
-      )}
-      <SentenceMeta
-        level={sentence.level}
-        charCount={sentence.charCount}
-        durationSec={durationSecOf(sentence)}
+      <CardRows
+        sentence={sentence}
+        speaker={speaker}
+        rate={rate}
+        showFurigana={showFurigana}
+        result={<ResultPill result={historyResult(sentence)} />}
+        aside={
+          // Stars live on Sentence; a v2 turn has none yet.
+          sentence.kind === 'sentence' && (
+            <StarButton
+              id={sentence.id}
+              starred={sentence.starred}
+              kind="sentence"
+              className="-my-1 size-6"
+            />
+          )
+        }
       />
-    </SentenceCardShell>
+    </div>
   );
 }

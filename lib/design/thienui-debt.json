@@ -29,7 +29,6 @@
       "components/common/item-detail-dialog.tsx": 3,
       "components/common/speak-button.tsx": 2,
       "components/features/groups/group-cards.tsx": 1,
-      "components/features/history/history-cards.tsx": 5,
       "components/features/resources/item-analytics.tsx": 1,
       "components/features/resources/resource-add-form.tsx": 2,
       "components/features/settings/settings-data-tab.tsx": 1,

@@ -1,11 +1,11 @@
-import { PageSkeleton, TableSkeleton, ToolbarSkeleton } from '@/components/layout/page-skeleton';
+import { CardsSkeleton, PageSkeleton, ToolbarSkeleton } from '@/components/layout/page-skeleton';
 
-// The count is the only thing in the header that waits for data.
+// Cards on every width, like the page. The count is the only thing in the header that waits for data.
 export default function Loading() {
   return (
     <PageSkeleton template="list" title="Lịch sử" meta>
-      <ToolbarSkeleton filters={1} columnMenu />
-      <TableSkeleton cardHeight={108} />
+      <ToolbarSkeleton filters={1} />
+      <CardsSkeleton rowHeight={112} footer={false} />
     </PageSkeleton>
   );
 }

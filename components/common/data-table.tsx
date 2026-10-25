@@ -132,12 +132,6 @@ export interface DataTableProps<T> {
    * direct child of the list, so a sticky footer keeps sticking while the cards scroll.
    */
   footer?: ReactNode;
-  /**
-   * A click anywhere on a table row that is not on one of its own controls (a record whose whole
-   * row reads as one thing, like a history turn). Keyboard users reach the same action through a
-   * button in the row, so the row itself takes no focus.
-   */
-  onRowClick?: (row: T) => void;
   renderCard?: (row: T, index: number) => ReactNode;
   cardHref?: (row: T) => string;
   cardHrefLabel?: (row: T) => string;
@@ -171,7 +165,6 @@ export function DataTable<T>({
   bulkActions,
   onSelectionChange,
   footer,
-  onRowClick,
   renderCard,
   cardHref,
   cardHrefLabel,
@@ -574,11 +567,9 @@ export function DataTable<T>({
             // card view the same list is the wide layout too. Columns follow the list's own width
             // (a container query), so a laptop sidebar does not squeeze two cards into a phone's room.
             <div className={cn('@container', !cards && 'lg:hidden')}>
-              {/* grid-cols-1 is minmax(0, 1fr): an implicit `auto` track would grow to a card's
-                  longest unbroken line (a long Vietnamese prompt) and scroll the page sideways. */}
               <ul
                 data-slot="data-table-cards"
-                className="grid grid-cols-1 gap-2 @2xl:grid-cols-2 @2xl:gap-3 @5xl:grid-cols-3"
+                className="grid gap-2 @2xl:grid-cols-2 @2xl:gap-3 @5xl:grid-cols-3"
               >
                 {cardRows.map((row, i) => {
                   const selected = enableRowSelection && row.getIsSelected();
@@ -774,22 +765,7 @@ export function DataTable<T>({
               </TableHeader>
               <TableBody ref={bodyRef}>
                 {rows.map((row, i) => (
-                  <TableRow
-                    key={row.id}
-                    className={cn(
-                      'h-12',
-                      onRowClick && 'cursor-pointer',
-                      rowClassName?.(row.original),
-                    )}
-                    onClick={
-                      onRowClick &&
-                      ((e) => {
-                        const target = e.target as HTMLElement;
-                        if (target.closest('button, a, input, [role="checkbox"], label')) return;
-                        onRowClick(row.original);
-                      })
-                    }
-                  >
+                  <TableRow key={row.id} className={cn('h-12', rowClassName?.(row.original))}>
                     {enableRowSelection && (
                       <TableCell style={{ width: 44 }} className="px-2">
                         <Checkbox

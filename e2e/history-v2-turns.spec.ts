@@ -31,8 +31,8 @@ test('History shows a v2 turn with its grade beside an old sentence', async ({ p
   await page.waitForURL((u) => !u.pathname.startsWith('/login'), { timeout: 30_000 });
   await page.goto('/history', { waitUntil: 'networkidle' });
 
-  // From 1024px the list template is a table: one row per turn.
-  const cards = page.getByRole('row');
+  // Cards on every width (thien, Lịch sử round 1): one card per turn.
+  const cards = page.locator('[data-slot="history-cards"] > li');
   const turnCard = cards.filter({ hasText: '音楽を聞きながら勉強します' });
   const oldCard = cards.filter({ hasText: '古い文を読みました' });
   await expect(turnCard).toHaveCount(1);
@@ -44,13 +44,85 @@ test('History shows a v2 turn with its grade beside an old sentence', async ({ p
 
   await expect(turnCard.getByText('Good', { exact: true })).toBeVisible();
   await expect(turnCard.getByRole('button', { name: 'Đánh dấu sao', exact: true })).toHaveCount(0);
-  await expect(oldCard.getByText('80/100')).toBeVisible();
+  // A score is the bare number; its scale is one hover away.
+  await expect(oldCard.getByText('80', { exact: true })).toBeVisible();
+  await oldCard.getByText('80', { exact: true }).hover();
+  await expect(page.getByRole('tooltip').getByText('80/100')).toBeVisible();
   await expect(oldCard.getByRole('button', { name: 'Đánh dấu sao', exact: true })).toHaveCount(1);
 
   await turnCard.getByText('音楽を聞きながら勉強します').click();
   const dialog = page.getByRole('dialog');
   await expect(dialog.getByText('Tôi nghe nhạc và học.')).toBeVisible();
   await expect(dialog.getByText('Tôi vừa nghe nhạc vừa học.')).toBeVisible();
+  // The detail leads with the grade and which of four it is.
+  await expect(dialog.getByText('3/4', { exact: true })).toBeVisible();
+});
+
+test.describe('on a phone', () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test('every History card is the same height, a waiting one included', async ({ page }) => {
+    await seedE2eAccount();
+    const db = new Database(path.join(process.cwd(), E2E_DB_FILE));
+    for (const t of ['ReviewLog', 'Turn', 'Sentence', 'SrsState', 'Item'])
+      db.exec(`DELETE FROM "${t}"`);
+    const now = Date.now();
+    const insert = db.prepare(
+      `INSERT INTO Sentence (id, direction, exerciseType, sourceText, suggested, userAnswer, score,
+         createdAt, answeredAt, starred, status)
+       VALUES (?, ?, ?, ?, 'x', 'y', ?, ?, ?, 0, ?)`,
+    );
+    const at = (i: number) => new Date(now - i * 60_000).toISOString();
+    insert.run(
+      'p',
+      'JA_VI',
+      'TRANSLATION',
+      '音楽を聞きながら勉強します。',
+      null,
+      at(0),
+      null,
+      'PENDING',
+    );
+    insert.run(
+      'g',
+      'JA_VI',
+      'GUIDED_PRODUCTION',
+      '日本語が話せるようになりました。',
+      88,
+      at(1),
+      at(0),
+      'GRADED',
+    );
+    insert.run(
+      'v',
+      'VI_JA',
+      'TEACH_BACK',
+      'Dù bận, anh ấy vẫn giúp tôi.',
+      null,
+      at(2),
+      at(1),
+      'SKIPPED',
+    );
+    db.close();
+
+    await page.goto('/login');
+    await page.getByLabel('Email').fill(E2E_EMAIL);
+    await page.getByLabel('Mật khẩu').fill(E2E_LOGIN);
+    await page.getByRole('button', { name: 'Đăng nhập' }).click();
+    await page.waitForURL((u) => !u.pathname.startsWith('/login'), { timeout: 30_000 });
+    await page.goto('/history', { waitUntil: 'networkidle' });
+
+    const cards = page.locator('[data-slot="history-cards"] > li');
+    await expect(cards).toHaveCount(3);
+    const heights = await cards.evaluateAll((els) =>
+      els.map((e) => Math.round(e.getBoundingClientRect().height)),
+    );
+    expect(new Set(heights).size, `card heights ${heights.join(', ')}`).toBe(1);
+    // The waiting card keeps how to answer behind a hover, not as a paragraph.
+    await expect(page.getByText('Trả lời qua Claude Desktop')).toHaveCount(0);
+    await page.getByRole('button', { name: 'Đang chờ' }).hover();
+    await expect(page.getByRole('tooltip').getByText(/Trả lời qua Claude Desktop/)).toBeVisible();
+  });
 });
 
 test.describe('on a phone', () => {
@@ -86,7 +158,7 @@ test.describe('on a phone', () => {
     await page.waitForURL((u) => !u.pathname.startsWith('/login'), { timeout: 30_000 });
     await page.goto('/history', { waitUntil: 'networkidle' });
 
-    const cards = page.locator('[data-slot="data-table-cards"] > li');
+    const cards = page.locator('[data-slot="history-cards"] > li');
     await expect(cards).toHaveCount(20);
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
     await expect.poll(() => cards.count()).toBe(30);
