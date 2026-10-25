@@ -21,14 +21,7 @@ export function ThemeToggle() {
   return (
     <>
       <div className="flex items-center justify-between gap-2 rounded-md px-2 py-1 group-data-[collapsible=icon]:hidden">
-        <span className="flex items-center gap-2 text-sm">
-          {isDark ? (
-            <Moon className="size-4" aria-hidden />
-          ) : (
-            <Sun className="size-4" aria-hidden />
-          )}
-          Giao diện tối
-        </span>
+        <span className="text-sm font-bold">Giao diện tối</span>
         <Switch checked={isDark} onCheckedChange={toggle} aria-label="Bật/tắt giao diện tối" />
       </div>
       <Button
