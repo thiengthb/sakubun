@@ -3,16 +3,21 @@
 import { Slider } from '@/components/ui/slider';
 import {
   chipFor,
-  FilterChips,
   FilterPopover,
   FilterRow,
   SelectFilterRow,
   type FilterChip,
   type FilterOption,
 } from '@/components/common/filter-popover';
-import { SearchInput } from '@/components/common/search-input';
 import { EXERCISE_TYPE_LABELS, durationSecOf } from '@/components/features/history/history-cards';
-import { DATE_PRESETS, LENGTH_BUCKETS, withinDatePreset, type DatePreset } from '@/lib/core/format';
+import {
+  DATE_PRESETS,
+  LENGTH_BUCKETS,
+  lengthBucket,
+  withinDatePreset,
+  type DatePreset,
+  type LengthBucketKey,
+} from '@/lib/core/format';
 import { JLPT_LEVELS } from '@/lib/settings/schema';
 import type { HistoryRow } from '@/lib/app/history';
 
@@ -143,7 +148,7 @@ function activeFilterCount(f: Filters): number {
   return SELECT_FILTERS.filter((s) => f[s.key] !== 'all').length + (scoreNarrowed(f) ? 1 : 0);
 }
 
-function historyChips(f: Filters, onPatch: (patch: Partial<Filters>) => void): FilterChip[] {
+export function historyChips(f: Filters, onPatch: (patch: Partial<Filters>) => void): FilterChip[] {
   const chips = SELECT_FILTERS.map((s) =>
     chipFor(s.key, s.label, f[s.key], s.options, () =>
       onPatch({ [s.key]: 'all' } as Partial<Filters>),
@@ -178,7 +183,7 @@ export function inDurationBucket(s: HistoryRow, bucket: string): boolean {
   return true;
 }
 
-function HistoryFilterPopover({
+export function HistoryFilterPopover({
   filters,
   onPatch,
   onResetFilters,
@@ -217,37 +222,25 @@ function HistoryFilterPopover({
   );
 }
 
-export function HistoryFilters({
-  search,
-  onSearchChange,
-  filters,
-  onPatch,
-  onResetFilters,
-}: {
-  search: string;
-  onSearchChange: (value: string) => void;
-  filters: Filters;
-  onPatch: (patch: Partial<Filters>) => void;
-  onResetFilters: () => void;
-}) {
-  return (
-    <div className="space-y-3">
-      <div className="flex flex-row items-center gap-2 sm:gap-3">
-        <SearchInput
-          value={search}
-          onChange={(e) => onSearchChange(e.target.value)}
-          placeholder="Tìm trong đề / bài dịch…"
-          className="min-w-0 flex-1 sm:max-w-xs"
-        />
-        <div className="flex shrink-0 items-center gap-2 md:ml-auto">
-          <HistoryFilterPopover
-            filters={filters}
-            onPatch={onPatch}
-            onResetFilters={onResetFilters}
-          />
-        </div>
-      </div>
-      <FilterChips chips={historyChips(filters, onPatch)} onReset={onResetFilters} />
-    </div>
-  );
+/** Whether a turn passes the popover's filters (the toolbar's search is the table's own). */
+export function matchesFilters(s: HistoryRow, filters: Filters): boolean {
+  if (filters.direction !== 'all' && s.direction !== filters.direction) return false;
+  if (filters.result === 'pass' && (s.ratings.length === 0 || isFail(s))) return false;
+  if (filters.result === 'fail' && !isFail(s)) return false;
+  if (filters.type !== 'all' && s.exerciseType !== filters.type) return false;
+  if (filters.status !== 'all' && s.status !== filters.status) return false;
+  if (filters.level !== 'all' && s.level !== filters.level) return false;
+  if (
+    filters.length !== 'all' &&
+    lengthBucket(s.charCount).key !== (filters.length as LengthBucketKey)
+  )
+    return false;
+  if (filters.starred === 'yes' && !s.starred) return false;
+  if (filters.scoreMin > 0 || filters.scoreMax < 100) {
+    if (typeof s.score !== 'number') return false;
+    if (s.score < filters.scoreMin || s.score > filters.scoreMax) return false;
+  }
+  if (!inDurationBucket(s, filters.duration)) return false;
+  if (!inDatePreset(s, filters.datePreset)) return false;
+  return true;
 }

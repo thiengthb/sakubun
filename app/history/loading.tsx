@@ -1,14 +1,11 @@
-import {
-  CardGridSkeleton,
-  PageSkeleton,
-  ToolbarSkeleton,
-} from '@/components/layout/page-skeleton';
+import { PageSkeleton, TableSkeleton, ToolbarSkeleton } from '@/components/layout/page-skeleton';
 
+// The count is the only thing in the header that waits for data.
 export default function Loading() {
   return (
-    <PageSkeleton section="history">
-      <ToolbarSkeleton filters={3} />
-      <CardGridSkeleton rowHeight={120} columns="grid-cols-1 lg:grid-cols-2" />
+    <PageSkeleton template="list" title="Lịch sử" meta>
+      <ToolbarSkeleton filters={1} columnMenu />
+      <TableSkeleton cardHeight={108} />
     </PageSkeleton>
   );
 }

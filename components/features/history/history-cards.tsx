@@ -1,11 +1,10 @@
 'use client';
 
-import { type ReactNode, useEffect, useState } from 'react';
+import type { ReactNode } from 'react';
 import { Clock, GraduationCap, Info, Ruler, Timer } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Explain } from '@/components/common/explain';
 import {
-  Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
@@ -40,7 +39,7 @@ export function scoreClass(score: number): string {
 }
 
 // A v2 turn is graded 1-4 rather than scored 0-100, so its header shows the grade.
-function resultLabel(s: HistoryRow): { text: string; className: string } | null {
+export function resultLabel(s: HistoryRow): { text: string; className: string } | null {
   if (s.rating !== null && s.status === 'GRADED') {
     return { text: ratingLabel(s.rating), className: RATING_CLASS[s.rating] ?? '' };
   }
@@ -152,46 +151,36 @@ function SentenceMeta({
   );
 }
 
+// The card is one button: it opens the turn's detail, which the list owns (one dialog for all).
 function SentenceCardShell({
   header,
   children,
-  dialog,
-  autoOpen = false,
+  onOpen,
 }: {
   header: ReactNode;
   children: ReactNode;
-  dialog: (close: () => void) => ReactNode;
-  autoOpen?: boolean;
+  onOpen: () => void;
 }) {
-  const [open, setOpen] = useState(false);
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (autoOpen) setOpen(true);
-  }, [autoOpen]);
   return (
-    <li className="h-full">
-      <div
-        role="button"
-        tabIndex={0}
-        aria-haspopup="dialog"
-        onClick={() => setOpen(true)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            setOpen(true);
-          }
-        }}
-        className="flex h-full cursor-pointer flex-col gap-2 rounded-lg border border-border/70 p-4 text-left transition-colors hover:border-border hover:bg-muted/40"
-      >
-        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-          {header}
-        </div>
-        {children}
+    <div
+      role="button"
+      tabIndex={0}
+      aria-haspopup="dialog"
+      onClick={onOpen}
+      onKeyDown={(e) => {
+        if (e.target !== e.currentTarget) return;
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onOpen();
+        }
+      }}
+      className="flex h-full min-w-0 cursor-pointer flex-col gap-2 text-left"
+    >
+      <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+        {header}
       </div>
-      <Dialog open={open} onOpenChange={setOpen}>
-        {dialog(() => setOpen(false))}
-      </Dialog>
-    </li>
+      {children}
+    </div>
   );
 }
 
@@ -209,7 +198,7 @@ export function RatingChip({ expression, rating }: { expression: string; rating:
   );
 }
 
-function HistoryDetail({
+export function HistoryDetail({
   sentence,
   speaker,
   rate,
@@ -341,7 +330,7 @@ function HistoryDetail({
 
 function PendingCard({ sentence }: { sentence: HistoryRow }) {
   return (
-    <li className="flex h-full flex-col gap-2 rounded-lg border border-warn/40 bg-warn/5 p-4">
+    <div className="flex h-full min-w-0 flex-col gap-2">
       <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
         <Badge variant="secondary">{dirLabel(sentence.direction)}</Badge>
         <span className="flex items-center gap-1 font-medium text-warn">
@@ -365,22 +354,23 @@ function PendingCard({ sentence }: { sentence: HistoryRow }) {
           qua câu này».
         </span>
       </div>
-    </li>
+    </div>
   );
 }
 
+/** One turn in the list's card layout (below 1024px); a click opens its detail. */
 export function HistoryCard({
   sentence,
   speaker,
   rate,
   showFurigana = false,
-  autoOpen = false,
+  onOpen,
 }: {
   sentence: HistoryRow;
   speaker?: number;
   rate?: number;
   showFurigana?: boolean;
-  autoOpen?: boolean;
+  onOpen: () => void;
 }) {
   if (sentence.status === 'PENDING') return <PendingCard sentence={sentence} />;
   const score = resultLabel(sentence);
@@ -388,32 +378,27 @@ export function HistoryCard({
 
   return (
     <SentenceCardShell
-      autoOpen={autoOpen}
+      onOpen={onOpen}
       header={
         <>
           <Badge variant="secondary">{dirLabel(sentence.direction)}</Badge>
           {typeLabel && <Badge variant="outline">{typeLabel}</Badge>}
           {score && <span className={cn('font-medium', score.className)}>{score.text}</span>}
-          <RelativeTime value={sentence.createdAt} className="ml-auto" />
-          {/* Stars live on Sentence; a v2 turn has none yet. */}
-          {sentence.kind === 'sentence' && (
-            <StarButton
-              id={sentence.id}
-              starred={sentence.starred}
-              kind="sentence"
-              className="-my-1 size-6"
-            />
-          )}
+          {/* Time and star wrap as one, so a star never sits alone on a second line. */}
+          <span className="ml-auto flex shrink-0 items-center gap-2">
+            <RelativeTime value={sentence.createdAt} />
+            {/* Stars live on Sentence; a v2 turn has none yet. */}
+            {sentence.kind === 'sentence' && (
+              <StarButton
+                id={sentence.id}
+                starred={sentence.starred}
+                kind="sentence"
+                className="-my-1 size-6"
+              />
+            )}
+          </span>
         </>
       }
-      dialog={() => (
-        <HistoryDetail
-          sentence={sentence}
-          speaker={speaker}
-          rate={rate}
-          showFurigana={showFurigana}
-        />
-      )}
     >
       {sentence.direction === 'JA_VI' ? (
         <SpokenLine

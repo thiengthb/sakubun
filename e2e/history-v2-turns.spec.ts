@@ -31,7 +31,8 @@ test('History shows a v2 turn with its grade beside an old sentence', async ({ p
   await page.waitForURL((u) => !u.pathname.startsWith('/login'), { timeout: 30_000 });
   await page.goto('/history', { waitUntil: 'networkidle' });
 
-  const cards = page.getByRole('listitem');
+  // From 1024px the list template is a table: one row per turn.
+  const cards = page.getByRole('row');
   const turnCard = cards.filter({ hasText: '音楽を聞きながら勉強します' });
   const oldCard = cards.filter({ hasText: '古い文を読みました' });
   await expect(turnCard).toHaveCount(1);
@@ -50,4 +51,55 @@ test('History shows a v2 turn with its grade beside an old sentence', async ({ p
   const dialog = page.getByRole('dialog');
   await expect(dialog.getByText('Tôi nghe nhạc và học.')).toBeVisible();
   await expect(dialog.getByText('Tôi vừa nghe nhạc vừa học.')).toBeVisible();
+});
+
+test.describe('on a phone', () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test('History is a card list that loads more as it scrolls, and a card opens its detail', async ({
+    page,
+  }) => {
+    await seedE2eAccount();
+    const db = new Database(path.join(process.cwd(), E2E_DB_FILE));
+    for (const t of ['ReviewLog', 'Turn', 'Sentence', 'SrsState', 'Item'])
+      db.exec(`DELETE FROM "${t}"`);
+    const insert = db.prepare(
+      `INSERT INTO Sentence (id, direction, exerciseType, sourceText, suggested, userAnswer, score,
+         createdAt, starred, status)
+       VALUES (?, 'VI_JA', 'TRANSLATION', ?, '答え', 'こたえ', 70, ?, 0, 'GRADED')`,
+    );
+    const now = Date.now();
+    // One very long prompt: it must cut off inside its card, not widen the page.
+    insert.run(
+      'long',
+      'Mặc dù bản báo cáo này nhất định phải nộp trước cuộc họp tuần sau nhưng tôi mới viết được một nửa',
+      new Date(now + 1000).toISOString(),
+    );
+    for (let i = 0; i < 29; i++)
+      insert.run(`s${i}`, `Câu số ${i}`, new Date(now - i * 60_000).toISOString());
+    db.close();
+
+    await page.goto('/login');
+    await page.getByLabel('Email').fill(E2E_EMAIL);
+    await page.getByLabel('Mật khẩu').fill(E2E_LOGIN);
+    await page.getByRole('button', { name: 'Đăng nhập' }).click();
+    await page.waitForURL((u) => !u.pathname.startsWith('/login'), { timeout: 30_000 });
+    await page.goto('/history', { waitUntil: 'networkidle' });
+
+    const cards = page.locator('[data-slot="data-table-cards"] > li');
+    await expect(cards).toHaveCount(20);
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    await expect.poll(() => cards.count()).toBe(30);
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth),
+      'a long prompt never scrolls the page sideways',
+    ).toBeLessThanOrEqual(0);
+
+    await cards
+      .filter({ hasText: 'Câu số 3' })
+      .first()
+      .getByText('Câu số 3', { exact: true })
+      .click();
+    await expect(page.getByRole('dialog').getByText('こたえ')).toBeVisible();
+  });
 });

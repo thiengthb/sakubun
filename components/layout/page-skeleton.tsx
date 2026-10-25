@@ -17,7 +17,6 @@ export { SkeletonText } from '@/components/layout/skeleton-text';
 export {
   FitList,
   TableSkeleton,
-  CardGridSkeleton,
   CardsSkeleton,
   ListSkeleton,
   TabbedSkeleton,

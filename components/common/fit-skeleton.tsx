@@ -214,60 +214,6 @@ export function CardsSkeleton({
   );
 }
 
-export function CardGridSkeleton({
-  count = 6,
-  rowHeight = 120,
-  columns = 'sm:grid-cols-2 lg:grid-cols-3',
-  rowGap = 12,
-  auto = true,
-  footer = true,
-  min,
-  max,
-}: {
-  count?: number;
-  rowHeight?: number;
-  columns?: string;
-  rowGap?: number;
-  auto?: boolean;
-  footer?: boolean;
-  min?: number;
-  max?: number;
-}) {
-  return (
-    <div className="space-y-3">
-      <FitList
-        rowHeight={rowHeight}
-        rowGap={rowGap}
-        grid
-        auto={auto}
-        fallback={count}
-        min={min}
-        max={max}
-        className={cn('grid gap-3', columns)}
-        item={
-          <div
-            data-skeleton-row
-            className="flex flex-col gap-3 rounded-lg border p-4"
-            style={{ height: rowHeight }}
-          >
-            <div className="flex items-center gap-2">
-              <Skeleton className="h-5 w-16 rounded-full" />
-              <Skeleton className="h-5 w-12 rounded-full" />
-              <Skeleton className="ml-auto h-4 w-14" />
-              <Skeleton className="size-6 shrink-0 rounded-md" />
-            </div>
-            <div className="flex items-center gap-2">
-              <Skeleton className="size-6 shrink-0 rounded-full" />
-              <Skeleton className="h-4 min-w-0 flex-1" style={{ maxWidth: '70%' }} />
-            </div>
-          </div>
-        }
-      />
-      {footer && <PaginationFooterSkeleton />}
-    </div>
-  );
-}
-
 export function ListSkeleton({
   rows = 5,
   rowHeight = 64,
@@ -292,7 +238,11 @@ export function ListSkeleton({
       max={max}
       className="divide-y divide-border rounded-xl bg-card ring-1 ring-foreground/10"
       item={
-        <div data-skeleton-row className="flex items-center gap-2 px-4" style={{ height: rowHeight }}>
+        <div
+          data-skeleton-row
+          className="flex items-center gap-2 px-4"
+          style={{ height: rowHeight }}
+        >
           <div className="min-w-0 flex-1 space-y-1.5">
             <div className="flex items-center gap-2">
               <Skeleton className="size-6 shrink-0 rounded-full" />

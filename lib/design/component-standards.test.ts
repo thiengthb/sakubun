@@ -46,8 +46,7 @@ describe('component standards', () => {
     // places their author did not foresee. A component that hardcodes its own spacing with no way
     // in forces the next caller to wrap it in a div — which is how layout drifts.
     const ALLOW = new Set([
-      'components/common/use-paged-list.ts', // hooks, not components
-      'components/common/use-server-action.ts',
+      'components/common/use-server-action.ts', // hooks, not components
       'components/common/use-session-state.ts',
       'components/common/use-scroll-more.ts',
       'components/common/field-label-context.ts',

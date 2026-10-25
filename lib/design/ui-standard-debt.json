@@ -11,10 +11,8 @@
       "components/layout/scroll-to-top.tsx": 1
     },
     "page-template": {
-      "app/history/loading.tsx": 1,
       "app/review/loading.tsx": 1,
-      "app/review/page.tsx": 1,
-      "components/features/history/history-view.tsx": 1
+      "app/review/page.tsx": 1
     }
   }
 }
