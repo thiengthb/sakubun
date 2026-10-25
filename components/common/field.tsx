@@ -2,6 +2,7 @@ import { cloneElement, isValidElement, useId, type ReactElement, type ReactNode 
 import { FieldLabelContext } from '@/components/common/field-label-context';
 import { cn } from '@/lib/core/utils';
 import { InfoTooltip } from '@/components/common/info-tooltip';
+import { Button } from '@/components/ui/button';
 
 // A form field (docs/ui-standard.md › Form): a bold label, a red * when the field is required (the
 // form's RequiredNote explains the mark), and the error under the control once the form is sent.
@@ -107,5 +108,31 @@ export function FormActions({
       {note && <RequiredNote />}
       <div className="ml-auto flex gap-2 max-sm:w-full max-sm:[&>*]:flex-1">{children}</div>
     </div>
+  );
+}
+
+/**
+ * A form's send button. thien, 2026-10-25: it stays off until the form has something to send (a
+ * required field filled, a value changed), so an untouched form never answers a click with errors;
+ * errors under a field are kept for broken rules, such as a value over its limit.
+ */
+export function SubmitButton({
+  ready,
+  pending = false,
+  onClick,
+  className,
+  children,
+}: {
+  /** The form holds a new or changed value, every required field is filled and none is wrong. */
+  ready: boolean;
+  pending?: boolean;
+  onClick?: () => void;
+  className?: string;
+  children: ReactNode;
+}) {
+  return (
+    <Button type="submit" disabled={!ready || pending} onClick={onClick} className={className}>
+      {children}
+    </Button>
   );
 }

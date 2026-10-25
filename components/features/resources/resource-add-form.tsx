@@ -26,7 +26,9 @@ import {
 import { Input } from '@/components/ui/input';
 import { TabsContent } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
-import { Field, FormActions } from '@/components/common/field';
+import { Field, FormActions, SubmitButton } from '@/components/common/field';
+import { Card, CardContent } from '@/components/ui/card';
+import { ExcelGuide, ItemGuide, PasteGuide } from '@/components/features/resources/item-guide';
 import {
   EMPTY_DRAFT,
   ITEM_COPY,
@@ -47,12 +49,11 @@ const COPY: Record<
   grammar: {
     noun: 'mẫu',
     pastePlaceholder:
-      'Dán thẳng các dòng copy từ Excel Mazii (word ⇥ phonetic ⇥ mean ⇥ comment), hoặc mỗi dòng một mục:\n〜ばかりに: chỉ vì… (hậu quả xấu) N2\n〜わけにはいかない: không thể… (vì lý do tâm lý) N3',
+      '〜ばかりに: chỉ vì… (hậu quả xấu) N2\n〜わけにはいかない: không thể… (vì lý do tâm lý) N3',
   },
   vocab: {
     noun: 'từ',
-    pastePlaceholder:
-      'Dán thẳng các dòng copy từ Excel Mazii (word ⇥ phonetic ⇥ mean ⇥ comment), hoặc mỗi dòng một mục:\n図書館 (としょかん): thư viện N5\n勉強 (べんきょう): học N5',
+    pastePlaceholder: '図書館 (としょかん): thư viện N5\n勉強 (べんきょう): học N5',
   },
 };
 
@@ -60,20 +61,37 @@ export function ResourceAddPanels({ kind, onDone }: { kind: ResourceKind; onDone
   const copy = COPY[kind];
   return (
     <>
-      <TabsContent value="single">
-        <SingleTab kind={kind} copy={copy} onDone={onDone} />
+      <TabsContent value="single" className="flex flex-col gap-6 md:gap-8">
+        <FormCard>
+          <SingleTab kind={kind} copy={copy} onDone={onDone} />
+        </FormCard>
+        <ItemGuide kind={kind} />
       </TabsContent>
-      <TabsContent value="paste">
-        <PasteTab kind={kind} copy={copy} onDone={onDone} />
+      <TabsContent value="paste" className="flex flex-col gap-6 md:gap-8">
+        <FormCard>
+          <PasteTab kind={kind} copy={copy} onDone={onDone} />
+        </FormCard>
+        <PasteGuide kind={kind} />
       </TabsContent>
-      <TabsContent value="excel">
-        <ExcelTab kind={kind} copy={copy} onDone={onDone} />
+      <TabsContent value="excel" className="flex flex-col gap-6 md:gap-8">
+        <FormCard>
+          <ExcelTab kind={kind} copy={copy} onDone={onDone} />
+        </FormCard>
+        <ExcelGuide />
       </TabsContent>
     </>
   );
 }
 
 type TabCopy = (typeof COPY)[ResourceKind];
+
+function FormCard({ children }: { children: ReactNode }) {
+  return (
+    <Card>
+      <CardContent>{children}</CardContent>
+    </Card>
+  );
+}
 
 function SingleTab({
   kind,
@@ -84,12 +102,12 @@ function SingleTab({
   copy: TabCopy;
   onDone: () => void;
 }) {
-  const { draft, set, errors, check, reset } = useItemDraft(kind, EMPTY_DRAFT);
+  const { draft, set, errors, ready, reset } = useItemDraft(EMPTY_DRAFT);
   const [isPending, startTransition] = useTransition();
 
   const submit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!check(e.currentTarget, 'add')) return;
+    if (!ready) return;
     startTransition(async () => {
       const r = await addOneItemAction(
         {
@@ -115,9 +133,9 @@ function SingleTab({
         <Button type="button" variant="outline" disabled={isPending} onClick={onDone}>
           Huỷ
         </Button>
-        <Button type="submit" disabled={isPending}>
+        <SubmitButton ready={ready} pending={isPending}>
           {isPending ? 'Đang thêm…' : `Thêm ${copy.noun}`}
-        </Button>
+        </SubmitButton>
       </FormActions>
     </form>
   );
@@ -136,23 +154,18 @@ function BulkPanel({
   copy: TabCopy;
   parse: ParseResult;
   onDone: () => void;
-  /** The input control (textarea / file picker), given the error to show under it. */
-  children: (error: string | null) => ReactNode;
+  /** The input control: the textarea or the file picker. */
+  children: ReactNode;
 }) {
   const [defaultLevel, setDefaultLevel] = useState<JlptLevel>('N5');
   const [isPending, startTransition] = useTransition();
-  const [sent, setSent] = useState(false);
-
   const entries: ParsedEntry[] = parse.entries.map((e) => ({
     ...e,
     level: e.level ?? defaultLevel,
   }));
   const hasResult = parse.entries.length > 0 || parse.errors.length > 0;
 
-  const error = sent && entries.length === 0 ? `Chưa có ${copy.noun} hợp lệ nào để thêm` : null;
-
   const submit = () => {
-    setSent(true);
     if (entries.length === 0) return;
     startTransition(async () => {
       const r = await importItemsAction(entries, kind);
@@ -167,7 +180,7 @@ function BulkPanel({
 
   return (
     <div className="space-y-4">
-      {children(error)}
+      {children}
 
       {hasResult && (
         <>
@@ -264,13 +277,13 @@ function BulkPanel({
         <Button type="button" variant="outline" disabled={isPending} onClick={onDone}>
           Huỷ
         </Button>
-        <Button onClick={submit} disabled={isPending}>
+        <SubmitButton ready={entries.length > 0} pending={isPending} onClick={submit}>
           {isPending
             ? 'Đang xử lý…'
             : entries.length > 0
               ? `Thêm ${entries.length} ${copy.noun}`
               : `Thêm ${copy.noun}`}
-        </Button>
+        </SubmitButton>
       </FormActions>
     </div>
   );
@@ -290,28 +303,15 @@ function PasteTab({
 
   return (
     <BulkPanel kind={kind} copy={copy} parse={parse} onDone={onDone}>
-      {(error) => (
-        <Field
-          label="Danh sách"
-          required
-          error={error}
-          info={
-            <>
-              Nhận dạng: bảng (tab giữa các cột) hoặc <code>mục (cách đọc) : nghĩa N5</code>. Danh
-              sách lộn xộn? Nhờ Claude Desktop hoặc ChatGPT dọn hộ bằng prompt{' '}
-              <code>import_grammar</code>.
-            </>
-          }
-        >
-          <Textarea
-            id="paste-text"
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            rows={6}
-            placeholder={copy.pastePlaceholder}
-          />
-        </Field>
-      )}
+      <Field label="Danh sách" required>
+        <Textarea
+          id="paste-text"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          rows={6}
+          placeholder={copy.pastePlaceholder}
+        />
+      </Field>
     </BulkPanel>
   );
 }
@@ -350,45 +350,43 @@ function ExcelTab({
 
   return (
     <BulkPanel kind={kind} copy={copy} parse={fileResult?.result ?? EMPTY_PARSE} onDone={onDone}>
-      {(error) => (
-        <Field label="File Excel (.xlsx)" required error={error} info="File Excel tải từ Mazii.">
-          <div role="group" className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2">
-            <Input
-              type="file"
-              ref={fileInputRef}
-              id="excel-file"
-              accept=".xlsx"
-              wrapperClassName="hidden"
-              onChange={(e) => onFileChange(e.target.files?.[0])}
-            />
-            <Button
-              type="button"
-              variant="outline"
-              disabled={isReading}
-              onClick={() => fileInputRef.current?.click()}
-            >
-              <FileSpreadsheet aria-hidden />
-              {isReading ? 'Đang đọc…' : fileResult ? 'Chọn file khác' : 'Chọn file'}
-            </Button>
-            {fileResult ? (
-              <span className="flex min-w-0 items-center gap-1 text-sm">
-                <span className="min-w-0 truncate">{fileResult.name}</span>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  aria-label="Bỏ file"
-                  onClick={clearFile}
-                >
-                  <X aria-hidden />
-                </Button>
-              </span>
-            ) : (
-              <span className="text-sm text-muted-foreground">Chưa chọn file</span>
-            )}
-          </div>
-        </Field>
-      )}
+      <Field label="File Excel (.xlsx)" required>
+        <div role="group" className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2">
+          <Input
+            type="file"
+            ref={fileInputRef}
+            id="excel-file"
+            accept=".xlsx"
+            wrapperClassName="hidden"
+            onChange={(e) => onFileChange(e.target.files?.[0])}
+          />
+          <Button
+            type="button"
+            variant="outline"
+            disabled={isReading}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <FileSpreadsheet aria-hidden />
+            {isReading ? 'Đang đọc…' : fileResult ? 'Chọn file khác' : 'Chọn file'}
+          </Button>
+          {fileResult ? (
+            <span className="flex min-w-0 items-center gap-1 text-sm">
+              <span className="min-w-0 truncate">{fileResult.name}</span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label="Bỏ file"
+                onClick={clearFile}
+              >
+                <X aria-hidden />
+              </Button>
+            </span>
+          ) : (
+            <span className="text-sm text-muted-foreground">Chưa chọn file</span>
+          )}
+        </div>
+      </Field>
     </BulkPanel>
   );
 }

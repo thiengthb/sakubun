@@ -184,4 +184,27 @@ describe('component standards', () => {
         offenders.join('\n'),
     ).toEqual([]);
   });
+
+  it('an add or edit form sends through SubmitButton, which stays off until it is ready', () => {
+    // thien, 2026-10-25 (Thêm và Sửa tài nguyên round 1): an untouched form never answers a click
+    // with "Cần nhập ..." errors; its send button is off until something new or changed is there.
+    // SubmitButton (components/common/field.tsx) takes that state as a required `ready`, so a form
+    // ending in FormActions with its own submit button skips the rule.
+    const rawSubmit = (src: string) =>
+      /<FormActions\b/.test(src) && (/type="submit"/.test(src) || !/<SubmitButton\b/.test(src));
+    expect(rawSubmit('<FormActions><Button type="submit">Lưu</Button></FormActions>')).toBe(true);
+    expect(rawSubmit('<FormActions><Button onClick={send}>Lưu</Button></FormActions>')).toBe(true);
+    expect(
+      rawSubmit('<FormActions><SubmitButton ready={ready}>Lưu</SubmitButton></FormActions>'),
+    ).toBe(false);
+
+    const offenders = sources('components')
+      .filter((file) => rawSubmit(readFileSync(file, 'utf8')))
+      .map(rel);
+    expect(
+      offenders,
+      'These end in <FormActions> but send through their own button. Use <SubmitButton ready={...}>:\n' +
+        offenders.join('\n'),
+    ).toEqual([]);
+  });
 });

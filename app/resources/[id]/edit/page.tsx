@@ -4,6 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { PageShell } from '@/components/layout/page-shell';
 import { ParentCrumbs } from '@/components/layout/app-breadcrumbs';
 import { ItemEditForm } from '@/components/features/resources/item-edit-form';
+import { ItemGuide } from '@/components/features/resources/item-guide';
 import { getItemStats } from '@/lib/insights/item-stats';
 import { getSessionUserId } from '@/lib/auth/current-user';
 
@@ -38,6 +39,7 @@ export default async function ItemEditPage({ params }: { params: Promise<{ id: s
           />
         </CardContent>
       </Card>
+      <ItemGuide kind={stats.kind} editing />
     </PageShell>
   );
 }

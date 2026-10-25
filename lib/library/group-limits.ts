@@ -10,6 +10,16 @@ export function textLength(s: string): number {
   return Array.from(s.normalize('NFC')).length;
 }
 
+/**
+ * The error under a field over its limit. The label sits right above it, so it says only the limit
+ * and the count (thien, 2026-10-25: the main point, short but enough).
+ */
+export function tooLongError(s: string | null | undefined, max: number): string | null {
+  if (!s) return null;
+  const n = textLength(s.trim());
+  return n > max ? `Tối đa ${max} ký tự, đang có ${n}.` : null;
+}
+
 /** A short error naming the fix, or null when the text fits. */
 export function groupTextError(
   field: 'name' | 'note',

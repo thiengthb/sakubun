@@ -83,7 +83,7 @@ export function RowActions({
           )}
           {/* Editing is a page at every width (docs/ui-standard.md: no form in a dialog). */}
           <DropdownMenuItem asChild>
-            <Link href={`/resources/${item.itemId}/edit`}>
+            <Link href={`/resources/${item.itemId}/edit?kind=${kind}`}>
               <Pencil className="size-4" /> Sửa
             </Link>
           </DropdownMenuItem>

@@ -456,5 +456,7 @@ test('Thêm và Sửa mở trang riêng, không mở hộp thoại', async ({ pa
   await page.getByRole('button', { name: 'Tác vụ' }).first().click();
   await page.getByRole('menuitem', { name: 'Sửa' }).click();
   await page.waitForURL((u) => /^\/resources\/[^/]+\/edit$/.test(u.pathname), { timeout: 15_000 });
+  // The link names the kind, so the loading screen can say "Sửa ngữ pháp" before the item loads.
+  expect(new URL(page.url()).searchParams.get('kind')).toBe('grammar');
   await expect(page.getByRole('dialog')).toHaveCount(0);
 });

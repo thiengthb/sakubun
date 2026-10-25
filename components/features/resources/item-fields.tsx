@@ -11,8 +11,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { ITEM_LIMITS, itemTextError, type LimitedField } from '@/lib/library/item-limits';
-import { textLength } from '@/lib/library/group-limits';
+import { ITEM_LIMITS } from '@/lib/library/item-limits';
+import { textLength, tooLongError } from '@/lib/library/group-limits';
 import { JLPT_LEVELS } from '@/lib/settings/schema';
 
 export type ItemKind = 'grammar' | 'vocab';
@@ -23,8 +23,6 @@ export const ITEM_COPY: Record<
   ItemKind,
   {
     exprLabel: string;
-    /** The expression as the object of "Cần nhập …". */
-    exprNoun: string;
     exprPlaceholder: string;
     readingPlaceholder: string;
     meaningPlaceholder: string;
@@ -33,7 +31,6 @@ export const ITEM_COPY: Record<
 > = {
   grammar: {
     exprLabel: 'Mẫu ngữ pháp',
-    exprNoun: 'mẫu ngữ pháp',
     exprPlaceholder: '〜ばかりに',
     readingPlaceholder: '',
     meaningPlaceholder: 'chỉ vì… (dẫn đến hậu quả xấu)',
@@ -41,7 +38,6 @@ export const ITEM_COPY: Record<
   },
   vocab: {
     exprLabel: 'Từ (tiếng Nhật)',
-    exprNoun: 'từ',
     exprPlaceholder: '図書館',
     readingPlaceholder: 'としょかん',
     meaningPlaceholder: 'thư viện',
@@ -68,50 +64,30 @@ export const EMPTY_DRAFT: ItemDraft = {
 
 type ItemErrors = Record<'expression' | 'reading' | 'meaningVi', string | null>;
 
+const LIMITED = ['expression', 'reading', 'meaningVi'] as const;
+
 /**
- * The draft, its errors and the send check. Too long shows at once, while typing; empty only once
- * the form is sent. When `original` is given (editing), an old value longer than a limit is kept:
- * only a changed value is checked, as the server does.
+ * The draft, its errors and whether it can be sent. An error is a broken rule (a value over its
+ * limit), shown while typing; an empty required field is no error, the send button just stays off.
+ * An old value longer than a limit is kept when editing: only a changed value is checked, as the
+ * server does.
  */
-export function useItemDraft(kind: ItemKind, initial: ItemDraft, original?: ItemDraft) {
+export function useItemDraft(initial: ItemDraft) {
   const [draft, setDraft] = useState(initial);
-  const [sent, setSent] = useState(false);
   const set = (field: keyof ItemDraft, value: string) =>
     setDraft((d) => ({ ...d, [field]: value }));
 
-  const tooLong = (field: LimitedField & keyof ItemDraft) =>
-    original && draft[field].trim() === original[field].trim()
-      ? null
-      : itemTextError(field, draft[field]);
-  const errors: ItemErrors = {
-    expression:
-      tooLong('expression') ??
-      (sent && !draft.expression.trim() ? `Cần nhập ${ITEM_COPY[kind].exprNoun}` : null),
-    reading: tooLong('reading'),
-    meaningVi: tooLong('meaningVi') ?? (sent && !draft.meaningVi.trim() ? 'Cần nhập nghĩa' : null),
-  };
+  const same = (field: keyof ItemDraft) => draft[field].trim() === initial[field].trim();
+  const errors = Object.fromEntries(
+    LIMITED.map((f) => [f, same(f) ? null : tooLongError(draft[f], ITEM_LIMITS[f])]),
+  ) as ItemErrors;
+  const ready =
+    !(Object.keys(draft) as (keyof ItemDraft)[]).every(same) &&
+    !!draft.expression.trim() &&
+    !!draft.meaningVi.trim() &&
+    LIMITED.every((f) => !errors[f]);
 
-  /** Marks the form sent; when a field is wrong, focuses the first one and returns false. */
-  const check = (form: HTMLFormElement, idPrefix: string) => {
-    setSent(true);
-    const bad =
-      !draft.expression.trim() || errors.expression
-        ? 'expression'
-        : errors.reading
-          ? 'reading'
-          : !draft.meaningVi.trim() || errors.meaningVi
-            ? 'meaning'
-            : null;
-    if (bad) form.querySelector<HTMLElement>(`#${idPrefix}-${bad}`)?.focus();
-    return !bad;
-  };
-
-  const reset = () => {
-    setDraft(EMPTY_DRAFT);
-    setSent(false);
-  };
-
-  return { draft, set, errors, check, reset };
+  return { draft, set, errors, ready, reset: () => setDraft(EMPTY_DRAFT) };
 }
 
 export function ItemFields({
@@ -120,17 +96,14 @@ export function ItemFields({
   set,
   errors,
   idPrefix,
-  editing = false,
   autoFocus = false,
 }: {
   kind: ItemKind;
   draft: ItemDraft;
   set: (field: keyof ItemDraft, value: string) => void;
   errors: ItemErrors;
-  /** Ids are `<prefix>-expression`, `-reading`, `-meaning`: the send check focuses them. */
+  /** Ids are `<prefix>-expression`, `-reading`, `-meaning`. */
   idPrefix: string;
-  /** Editing an item already on the review schedule: says the schedule is kept. */
-  editing?: boolean;
   autoFocus?: boolean;
 }) {
   const copy = ITEM_COPY[kind];
@@ -141,7 +114,6 @@ export function ItemFields({
         required
         error={errors.expression}
         count={{ value: textLength(draft.expression.trim()), max: ITEM_LIMITS.expression }}
-        info={editing ? 'Sửa nội dung không đổi lịch ôn của mục này.' : undefined}
       >
         <Input
           id={`${idPrefix}-expression`}

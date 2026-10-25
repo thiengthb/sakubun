@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useServerAction } from '@/components/common/use-server-action';
 import { Button } from '@/components/ui/button';
-import { FormActions } from '@/components/common/field';
+import { FormActions, SubmitButton } from '@/components/common/field';
 import type { EditableItem } from '@/components/features/resources/row-actions';
 import {
   ItemFields,
@@ -31,7 +31,7 @@ export function ItemEditForm({
     level: item.level ?? '',
     notes: item.notes ?? '',
   };
-  const { draft, set, errors, check } = useItemDraft(kind, original, original);
+  const { draft, set, errors, ready } = useItemDraft(original);
   const { run, isPending } = useServerAction(updateItemAction, {
     success: 'Đã lưu',
     onSuccess:
@@ -44,7 +44,7 @@ export function ItemEditForm({
 
   const save = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!check(e.currentTarget, 'edit')) return;
+    if (!ready) return;
     run(item.itemId, {
       expression: draft.expression.trim(),
       reading: draft.reading.trim() || null,
@@ -56,7 +56,7 @@ export function ItemEditForm({
 
   return (
     <form onSubmit={save} noValidate className="@container space-y-4">
-      <ItemFields kind={kind} draft={draft} set={set} errors={errors} idPrefix="edit" editing />
+      <ItemFields kind={kind} draft={draft} set={set} errors={errors} idPrefix="edit" />
       <FormActions>
         {onDone ? (
           <Button type="button" variant="outline" onClick={onDone} disabled={isPending}>
@@ -67,9 +67,9 @@ export function ItemEditForm({
             <Link href={backHref}>Huỷ</Link>
           </Button>
         )}
-        <Button type="submit" disabled={isPending}>
+        <SubmitButton ready={ready} pending={isPending}>
           {isPending ? 'Đang lưu…' : 'Lưu'}
-        </Button>
+        </SubmitButton>
       </FormActions>
     </form>
   );
