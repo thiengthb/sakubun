@@ -6,7 +6,7 @@ export default function Loading() {
   return (
     <PageSkeleton template="list" title="Lịch sử" meta>
       <ToolbarSkeleton filters={1} />
-      <CardsSkeleton rowHeight={112} max={12} footer="lg" />
+      <CardsSkeleton rowHeight={112} footer="lg" />
     </PageSkeleton>
   );
 }

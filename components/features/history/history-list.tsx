@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { SearchX } from 'lucide-react';
 import { DataPagination } from '@/components/ui/data-pagination';
 import { Dialog } from '@/components/ui/dialog';
+import { PAGE_BOTTOM, useFitRows, usePinnedFooter } from '@/components/ui/use-fit-rows';
 import { EmptyState } from '@/components/common/empty-state';
 import { FilterChips, SelectFilterRow } from '@/components/common/filter-popover';
 import { LIST_CARD } from '@/components/common/list-card';
@@ -25,8 +26,10 @@ import { HISTORY_SORTS, matchesSearch, sortHistory, type HistorySort } from '@/l
 import { cn } from '@/lib/core/utils';
 import type { HistoryRow } from '@/lib/app/history';
 
-// A laptop page holds four rows of three cards; every size divides into rows of two and three.
+// Every size divides into rows of two and three. By default a page holds as many rows as the
+// window does (Tự động), as the tables do.
 const PAGE_SIZES = [12, 24, 48, 96];
+const CARD_HEIGHT = 112;
 
 /**
  * The translation timeline as cards on every width (thien, Lịch sử round 1): turns differ by
@@ -54,6 +57,7 @@ export function HistoryList({
   const [filters, setFilters] = useSessionState<Filters>('history.filters', DEFAULT_FILTERS, 'hf');
   const [sort, setSort] = useSessionState<HistorySort>('history.sort', 'recent', 'hs');
   const [pageSize, setPageSize] = useSessionState<number>('history.size', PAGE_SIZES[0], 'size');
+  const [autoFit, setAutoFit] = useSessionState<boolean>('history.autofit', true);
   const [pageIndex, setPageIndex] = useSessionState<number>('history.page', 0, 'page');
   // Any change to what the list holds starts it again at page 1.
   const narrow =
@@ -80,10 +84,26 @@ export function HistoryList({
     shown,
     JSON.stringify([q.trim(), filters, sort]),
   );
-  const pageCount = Math.max(1, Math.ceil(shown.length / pageSize));
+  // From 1024px the page fills the window with whole rows of cards and its footer rests at the
+  // window's bottom, as a table's does (thien, Tài nguyên 2026-10-24 and Lịch sử round 3).
+  const pagedRef = useRef<HTMLUListElement>(null);
+  const footerRef = useRef<HTMLDivElement>(null);
+  const spacerRef = useRef<HTMLDivElement>(null);
+  const fit = useFitRows({
+    topRef: pagedRef,
+    footerRef,
+    spacerRef,
+    rowHeight: CARD_HEIGHT,
+    rowGap: 12,
+    grid: true,
+    bottomGap: PAGE_BOTTOM,
+  });
+  usePinnedFooter({ footerRef, spacerRef, bottomGap: PAGE_BOTTOM });
+  const effectiveSize = autoFit && fit != null ? fit : pageSize;
+  const pageCount = Math.max(1, Math.ceil(shown.length / effectiveSize));
   const page = Math.min(pageIndex, pageCount - 1);
-  const start = page * pageSize;
-  const paged = shown.slice(start, start + pageSize);
+  const start = page * effectiveSize;
+  const paged = shown.slice(start, start + effectiveSize);
 
   // `?open=<id>` (a link from elsewhere) opens that turn once, then leaves the URL.
   const router = useRouter();
@@ -159,32 +179,46 @@ export function HistoryList({
             <ul data-slot="history-cards" data-layout="scroll" className={cn(GRID, 'lg:hidden')}>
               {items.map(card)}
             </ul>
-            <ul data-slot="history-cards" data-layout="pages" className={cn(GRID, 'max-lg:hidden')}>
+            <ul
+              ref={pagedRef}
+              data-slot="history-cards"
+              data-layout="pages"
+              className={cn(GRID, 'max-lg:hidden')}
+            >
               {paged.map(card)}
             </ul>
           </div>
           <ScrollMoreStatus ref={sentinelRef} hasMore={hasMore} className="lg:hidden" />
-          {/* One page needs no footer; the count is in the page header (thien, 2026-10-24). */}
-          {pageCount > 1 && (
-            <DataPagination
-              className="max-lg:hidden"
-              count={
-                <>
-                  {start + 1}–{start + paged.length} / {shown.length} lượt
-                  {shown.length !== sentences.length && ` (lọc từ ${sentences.length})`}
-                </>
-              }
-              page={page + 1}
-              pageCount={pageCount}
-              onPageChange={(p) => {
-                setPageIndex(p - 1);
-                window.scrollTo({ top: 0 });
-              }}
-              pageSize={pageSize}
-              pageSizeOptions={PAGE_SIZES}
-              onPageSizeChange={narrow(setPageSize)}
-            />
-          )}
+          <div ref={footerRef} className="max-lg:hidden">
+            <div ref={spacerRef} aria-hidden />
+            {/* One page needs no footer; the count is in the page header (thien, 2026-10-24). The
+                box stays so the fit and the pinned spacer keep measuring it. */}
+            {pageCount > 1 && (
+              <DataPagination
+                count={
+                  <>
+                    {start + 1}–{start + paged.length} / {shown.length} lượt
+                    {shown.length !== sentences.length && ` (lọc từ ${sentences.length})`}
+                  </>
+                }
+                page={page + 1}
+                pageCount={pageCount}
+                onPageChange={(p) => {
+                  setPageIndex(p - 1);
+                  window.scrollTo({ top: 0 });
+                }}
+                pageSize={effectiveSize}
+                pageSizeOptions={PAGE_SIZES}
+                onPageSizeChange={narrow((size: number) => {
+                  setAutoFit(false);
+                  setPageSize(size);
+                })}
+                autoFit={autoFit}
+                autoFitSize={fit ?? effectiveSize}
+                onAutoFit={narrow(() => setAutoFit(true))}
+              />
+            )}
+          </div>
         </>
       )}
 

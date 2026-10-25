@@ -81,9 +81,29 @@ test('from 1024px History comes in pages of cards, and a new search starts at pa
   await page.goto('/history', { waitUntil: 'networkidle' });
 
   const cards = page.locator('[data-slot="history-cards"][data-layout="pages"] > li');
+  const pages = page.getByRole('navigation', { name: 'Phân trang' });
+  // A page fills the window with whole rows of cards, and the pager rests 32px above its bottom.
+  await expect(pages).toBeVisible();
+  const fitted = await cards.count();
+  const perRow = await page
+    .locator('[data-slot="history-cards"][data-layout="pages"]')
+    .evaluate((ul) => getComputedStyle(ul).gridTemplateColumns.split(' ').length);
+  expect(fitted % perRow, `${fitted} cards make whole rows of ${perRow}`).toBe(0);
+  expect(fitted / perRow).toBeGreaterThanOrEqual(2);
+  const gap = await pages.evaluate((nav) => {
+    const box = nav.closest('div[class*="max-lg:hidden"]')!.getBoundingClientRect();
+    return window.innerHeight - box.bottom;
+  });
+  expect(
+    Math.abs(gap - 32),
+    `the pager sits ${gap}px above the window's bottom`,
+  ).toBeLessThanOrEqual(2);
+
+  // A chosen size replaces the fit.
+  await page.getByRole('combobox', { name: 'Số dòng' }).click();
+  await page.getByRole('option', { name: '12', exact: true }).click();
   await expect(cards).toHaveCount(12);
   await expect(page.getByText('1–12 / 30 lượt')).toBeVisible();
-  const pages = page.getByRole('navigation', { name: 'Phân trang' });
   await pages.getByRole('button', { name: 'Trang 3', exact: true }).click();
   await expect(cards).toHaveCount(6);
   await expect(cards.first()).toContainText('Câu số 24');
