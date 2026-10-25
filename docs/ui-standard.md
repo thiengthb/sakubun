@@ -64,20 +64,22 @@ chỗ sai mới làm test đỏ, chỗ đã sửa cũng làm test đỏ cho tớ
 | Form         | Thêm hoặc sửa: trang riêng, nút lưu ở chân form.                                  |
 | Bảng số liệu | Tổng quan và Phân tích: ô số, biểu đồ.                                            |
 
-| Luật                                                                                                                               | Khoá bởi                                              |
-| ---------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
-| Thêm và sửa là trang riêng. Hộp thoại chỉ để xác nhận hoặc sửa nhanh một ô: không chứa component form, tối đa một ô nhập.          | `ui-standard` `no-form-dialog`                        |
-| Mỗi trang dùng đúng một khuôn của PageShell (`template` và `title`); PageShell và PageSkeleton cùng lấy class từ `page-chrome.ts`. | `ui-standard` `page-template`, `e2e/skeleton.spec.ts` |
+| Luật                                                                                                                                                                                                                                                  | Khoá bởi                                                  |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
+| Thêm và sửa là trang riêng. Hộp thoại chỉ để xác nhận hoặc sửa nhanh một ô: không chứa component form, tối đa một ô nhập.                                                                                                                             | `ui-standard` `no-form-dialog`                            |
+| Mỗi trang dùng đúng một khuôn của PageShell (`template` và `title`); PageShell và PageSkeleton cùng lấy class từ `page-chrome.ts`.                                                                                                                    | `ui-standard` `page-template`, `e2e/skeleton.spec.ts`     |
+| Form thêm và sửa gửi qua `SubmitButton`: nút tắt cho tới khi có nội dung mới hoặc đã đổi và đủ ô bắt buộc. Ô trống không báo lỗi; lỗi dưới ô chỉ cho luật bị phạm, viết ngắn ("Tối đa 20 ký tự, đang có 25."). (thien, Thêm và Sửa tài nguyên vòng 1) | `component-standards` `SubmitButton`, `e2e/forms.spec.ts` |
+| Giải thích không nằm trong ô nhập: placeholder chỉ là ví dụ. Cách dùng các ô đặt ở phần Hướng dẫn (`FormGuide`) dưới thẻ form, gập sau nút "Hướng dẫn", mặc định ẩn.                                                                                  | thủ công                                                  |
 
 ### Đang tải
 
 Trang đang tải là trang thật chưa có dữ liệu, giống nhau ở mọi trang (thien, Phân tích vòng 1).
 
-| Luật                                                                                                                                                                                                                     | Khoá bởi                                              |
-| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------- |
-| Đầu trang viết bằng chữ thật mọi thứ trang biết trước: tiêu đề, đường dẫn, tên tab, nhãn ô số liệu. Chỉ chữ phải chờ dữ liệu (tên mục, mục là ngữ pháp hay từ vựng) mới là thanh xám (`SkeletonText`), rộng bằng chữ đó. | `ui-standard` `page-template`, `e2e/skeleton.spec.ts` |
-| Tab lấy từ cùng một `PageTabSet` (`components/layout/page-heads.tsx`) với trang, và gạch chân tab sẽ mở.                                                                                                                 | `skeleton-parity.test.ts`                             |
-| Phần thân giữ đúng chỗ: đầu trang cao bằng, thân bắt đầu cùng một dòng.                                                                                                                                                  | `e2e/skeleton.spec.ts`                                |
+| Luật                                                                                                                                                                                                                                                                                 | Khoá bởi                                              |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------- |
+| Đầu trang viết bằng chữ thật mọi thứ trang biết trước: tiêu đề, đường dẫn, tên tab, nhãn ô số liệu. Chỉ chữ phải chờ dữ liệu (tên mục) mới là thanh xám (`SkeletonText`), rộng bằng chữ đó. Loại mục đi theo đường dẫn (`?kind=`), nên tiêu đề viết thật: Sửa ngữ pháp, Sửa từ vựng. | `ui-standard` `page-template`, `e2e/skeleton.spec.ts` |
+| Tab lấy từ cùng một `PageTabSet` (`components/layout/page-heads.tsx`) với trang, và gạch chân tab sẽ mở.                                                                                                                                                                             | `skeleton-parity.test.ts`                             |
+| Phần thân giữ đúng chỗ: đầu trang cao bằng, thân bắt đầu cùng một dòng.                                                                                                                                                                                                              | `e2e/skeleton.spec.ts`                                |
 
 ## Bố cục
 

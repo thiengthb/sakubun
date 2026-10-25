@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react';
 import { toastResult } from '@/lib/core/action-toast';
 import { Button } from '@/components/ui/button';
-import { Field, FormActions } from '@/components/common/field';
+import { Field, FormActions, SubmitButton } from '@/components/common/field';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -11,8 +11,8 @@ import { GROUP_KIND_LABELS } from '@/lib/library/group-kinds';
 import {
   GROUP_NAME_MAX,
   GROUP_NOTE_MAX,
-  groupTextError,
   textLength,
+  tooLongError,
 } from '@/lib/library/group-limits';
 import { createGroupAction, updateGroupAction } from '@/app/actions';
 import { GROUP_KINDS, type GroupKind } from '@/lib/library/group-kinds';
@@ -33,21 +33,20 @@ export function GroupForm({
   const [note, setNote] = useState(group?.note ?? '');
   const [isPending, startTransition] = useTransition();
 
-  const [sent, setSent] = useState(false);
-  // Too long shows at once, while typing; empty only once the form is sent.
-  const nameError =
-    groupTextError('name', name) ?? (sent && !name.trim() ? 'Cần nhập tên nhóm' : null);
-  const noteError = groupTextError('note', note);
+  // An error is a broken rule (over the limit), shown while typing. An empty name is no error: the
+  // send button stays off until the name is there and something differs from what was saved.
+  const nameError = tooLongError(name, GROUP_NAME_MAX);
+  const noteError = tooLongError(note, GROUP_NOTE_MAX);
+  const changed =
+    !editing ||
+    name.trim() !== group.name.trim() ||
+    kind !== group.kind ||
+    note.trim() !== (group.note ?? '').trim();
+  const ready = changed && !!name.trim() && !nameError && !noteError;
 
   const submit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setSent(true);
-    if (!name.trim() || nameError || noteError) {
-      e.currentTarget
-        .querySelector<HTMLElement>(nameError || !name.trim() ? '#group-name' : '#group-note')
-        ?.focus();
-      return;
-    }
+    if (!ready) return;
     startTransition(async () => {
       const r = editing
         ? await updateGroupAction(group.id, { name: name.trim(), kind, note: note.trim() || null })
@@ -112,9 +111,9 @@ export function GroupForm({
         <Button type="button" variant="outline" onClick={onCancel} disabled={isPending}>
           Huỷ
         </Button>
-        <Button type="submit" disabled={isPending}>
+        <SubmitButton ready={ready} pending={isPending}>
           {editing ? 'Lưu' : 'Thêm nhóm'}
-        </Button>
+        </SubmitButton>
       </FormActions>
     </form>
   );

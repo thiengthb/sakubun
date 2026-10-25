@@ -22,7 +22,11 @@ const PAIRS: Pair[] = [
   // The detail header's meaning wraps by its length, which the skeleton cannot know (as with the
   // title): this item's meaning fits one line at 390px, the line the skeleton draws.
   { name: 'item detail', page: '/resources/sk-d', skeleton: 'item' },
-  { name: 'item edit', page: '/resources/sk0/edit', skeleton: 'item-edit' },
+  {
+    name: 'item edit',
+    page: '/resources/sk0/edit?kind=grammar',
+    skeleton: 'item-edit?kind=grammar',
+  },
   { name: 'resources/new', page: '/resources/new?kind=grammar', skeleton: 'resources-new' },
   { name: 'history', page: '/history', skeleton: 'history' },
   { name: 'review', page: '/review', skeleton: 'review' },

@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { GROUP_NAME_MAX, GROUP_NOTE_MAX, groupTextError, textLength } from './group-limits';
+import {
+  GROUP_NAME_MAX,
+  GROUP_NOTE_MAX,
+  groupTextError,
+  textLength,
+  tooLongError,
+} from './group-limits';
 
 describe('group text limits', () => {
   it('counts Vietnamese letters once, decomposed or not', () => {
@@ -24,5 +30,16 @@ describe('group text limits', () => {
 
   it('does not count the spaces around the text', () => {
     expect(groupTextError('name', `  ${'a'.repeat(GROUP_NAME_MAX)}  `)).toBeNull();
+  });
+});
+
+describe('tooLongError', () => {
+  it('says only the limit and the count, and nothing while the text fits', () => {
+    expect(tooLongError('a'.repeat(20), 20)).toBeNull();
+    expect(tooLongError('', 20)).toBeNull();
+    expect(tooLongError(null, 20)).toBeNull();
+    expect(tooLongError('図'.repeat(25), 20)).toBe('Tối đa 20 ký tự, đang có 25.');
+    // Counted after trimming, as the server does.
+    expect(tooLongError(`  ${'a'.repeat(20)}  `, 20)).toBeNull();
   });
 });

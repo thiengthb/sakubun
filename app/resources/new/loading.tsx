@@ -7,6 +7,8 @@ import {
   PageTabsSkeleton,
 } from '@/components/layout/page-skeleton';
 import { ParentCrumbs } from '@/components/layout/app-breadcrumbs';
+import { ITEM_FIELDS } from '@/components/features/resources/item-fields-skeleton';
+import { ItemGuide } from '@/components/features/resources/item-guide';
 
 // The kind is in the URL, so the loading screen names it as the page will.
 export default function Loading() {
@@ -18,7 +20,8 @@ export default function Loading() {
       title={kind === 'grammar' ? 'Thêm ngữ pháp' : 'Thêm từ vựng'}
       tabs={<PageTabsSkeleton set="input" />}
     >
-      <FormCardSkeleton fields={5} />
+      <FormCardSkeleton layout={ITEM_FIELDS} />
+      <ItemGuide kind={kind} />
     </PageSkeleton>
   );
 }

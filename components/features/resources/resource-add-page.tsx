@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Card, CardContent } from '@/components/ui/card';
 import { Tabs } from '@/components/ui/tabs';
 import { PageShell } from '@/components/layout/page-shell';
 import { ParentCrumbs } from '@/components/layout/app-breadcrumbs';
@@ -30,11 +29,7 @@ export function ResourceAddPage({ kind }: { kind: ResourceKind }) {
         title={kind === 'grammar' ? 'Thêm ngữ pháp' : 'Thêm từ vựng'}
         tabs={<PageTabs items={INPUT_TABS.items} label={INPUT_TABS.label} />}
       >
-        <Card>
-          <CardContent>
-            <ResourceAddPanels kind={kind} onDone={done} />
-          </CardContent>
-        </Card>
+        <ResourceAddPanels kind={kind} onDone={done} />
       </PageShell>
     </Tabs>
   );

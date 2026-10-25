@@ -30,7 +30,6 @@
       "components/common/speak-button.tsx": 2,
       "components/features/groups/group-cards.tsx": 1,
       "components/features/resources/item-analytics.tsx": 1,
-      "components/features/resources/resource-add-form.tsx": 2,
       "components/features/settings/settings-data-tab.tsx": 1,
       "components/layout/breadcrumbs.tsx": 1,
       "components/layout/scroll-to-top.tsx": 1,
@@ -38,7 +37,6 @@
       "components/ui/input.tsx": 1
     },
     "input-clear-affordance": {
-      "components/features/resources/resource-add-form.tsx": 1,
       "components/features/settings/settings-data-tab.tsx": 2,
       "components/ui/input.tsx": 1
     },
@@ -79,7 +77,6 @@
       "components/common/expanding-icon-button.tsx": 1,
       "components/common/item-detail-dialog.tsx": 1,
       "components/features/groups/groups-view.tsx": 1,
-      "components/features/resources/resource-add-form.tsx": 2,
       "components/features/resources/row-actions.tsx": 6,
       "components/features/settings/settings-data-tab.tsx": 1,
       "components/layout/scroll-to-top.tsx": 1,

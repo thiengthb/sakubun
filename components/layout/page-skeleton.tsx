@@ -231,28 +231,45 @@ export function FormFooterSkeleton({ status = true }: { status?: boolean }) {
   );
 }
 
+/** One field of a laid-out form: half a row from 672px, or the whole row; an input or a text area. */
+export type FieldSkeleton = { half?: boolean; area?: boolean; count?: boolean };
+
 export function FormCardSkeleton({
   fields = 4,
+  layout,
   footer = true,
   intro = false,
 }: {
   fields?: number;
+  /** The form's own grid (two columns from a 672px card), in place of `fields` stacked inputs. */
+  layout?: FieldSkeleton[];
   footer?: boolean;
   intro?: boolean;
 }) {
+  const rows = layout ?? Array.from({ length: fields }, () => ({}) as FieldSkeleton);
   return (
     <>
       {intro && <Skeleton className="h-5 w-full max-w-md max-md:h-9" />}
       <div className="flex flex-col gap-4 rounded-xl bg-card py-4 ring-1 ring-foreground/10">
-        {Array.from({ length: fields }, (_, i) => (
-          <div key={i} className="space-y-1.5 px-4">
-            {/* Field's label is a bold 14px line. */}
-            <div className="flex h-5 items-center">
-              <Skeleton className="h-3.5 w-28" />
-            </div>
-            <Skeleton className="h-9 w-full rounded-sm md:h-7" />
+        <div className={cn('px-4', layout && '@container')}>
+          <div className={cn('grid gap-4', layout && '@2xl:grid-cols-2')}>
+            {rows.map((f, i) => (
+              <div key={i} className={cn('space-y-1.5', !f.half && '@2xl:col-span-2')}>
+                {/* Field's label is a bold 14px line. */}
+                <div className="flex h-5 items-center">
+                  <Skeleton className="h-3.5 w-28" />
+                </div>
+                <Skeleton className={cn('w-full rounded-sm', f.area ? 'h-16' : 'h-9 md:h-7')} />
+                {/* The "0/20" counter under a limited field. */}
+                {f.count && (
+                  <div className="flex h-4 items-center justify-end">
+                    <Skeleton className="h-3 w-8" />
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
-        ))}
+        </div>
         {footer && (
           <div className="flex flex-wrap items-center gap-3 px-4 pt-2">
             <Skeleton className="h-3 w-32" />
