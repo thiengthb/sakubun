@@ -27,9 +27,9 @@ good and the learner wants it kept.
 
 - Grammar and vocabulary are equal items in one FSRS queue, each with its own daily new cap (defaults:
   5 grammar, 15 vocabulary). Items never studied are not due.
-- Two ways to practise on the same queue: quick review on the web (flip card, two buttons; cloze with
-  four choices built deterministically from example sentences, graded by the server), and translation
-  turns with Claude over MCP (rated 1-4).
+- Two ways to practise on the same queue: quick review on the web (flip card, two buttons, four since
+  0005; cloze with four choices built deterministically from example sentences, graded by the server),
+  and translation turns with Claude over MCP (rated 1-4).
 - Sentence settings are derived from the item, not filled in a form: FSRS state picks the direction
   (new or learning: Japanese to Vietnamese; stable: Vietnamese to Japanese), the JLPT level picks the
   length, one step easier while new. Overrides spoken in chat travel as a `hint` and are not saved.

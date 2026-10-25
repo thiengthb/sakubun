@@ -10,16 +10,30 @@ import { PageShell } from '@/components/layout/page-shell';
 import { EmptyState } from '@/components/common/empty-state';
 import { ReviewCard, type CardTts } from '@/components/common/review-card';
 import type { CardAnswer, QuickCard, QuickReview } from '@/lib/app/quick-review';
+import { isRemembered } from '@/lib/domain/quick-review';
 import type { ActionResult } from '@/lib/core/action-result';
 import { humanizeUntil } from '@/lib/core/format';
 import { cn } from '@/lib/core/utils';
+import type { RatingValue } from '@/lib/srs/srs';
 
 type Answer = (answer: CardAnswer) => Promise<ActionResult<unknown>>;
 
 interface Result {
   kind: QuickCard['kind'];
-  correct: boolean;
+  rating: RatingValue;
 }
+
+// "10 phút", "8 ngày": the wait on a grade button, without "nữa" and never "dưới 1 phút".
+const shortUntil = (due: Date) =>
+  humanizeUntil(due).replace(/ nữa$/, '').replace('dưới 1 phút', '1 phút');
+
+// The four FSRS buttons of a flip card (decision 0005), each with when the item comes back.
+const GRADES: { rating: RatingValue; label: string; tone?: string }[] = [
+  { rating: 1, label: 'Quên', tone: 'text-destructive' },
+  { rating: 2, label: 'Khó' },
+  { rating: 3, label: 'Nhớ' },
+  { rating: 4, label: 'Dễ', tone: 'text-ok' },
+];
 
 /** "Còn 4 thẻ: 1 ngữ pháp, 3 từ vựng", naming only the kinds left. */
 function leftLine(left: QuickCard[]): string {
@@ -32,38 +46,36 @@ function leftLine(left: QuickCard[]): string {
 }
 
 function Summary({ results, nextDueAt }: { results: Result[]; nextDueAt: Date | null }) {
-  const count = (kind: QuickCard['kind']) => {
+  const remembered = (of: Result[]) => of.filter((r) => isRemembered(r.rating)).length;
+  const byKind = (kind: QuickCard['kind'], label: string) => {
     const of = results.filter((r) => r.kind === kind);
-    return of.length === 0 ? null : `${of.filter((r) => r.correct).length}/${of.length} nhớ`;
+    return of.length === 0 ? [] : [[label, `${remembered(of)}/${of.length} nhớ`]];
   };
-  const again = results.filter((r) => !r.correct).length;
-  const rows = [
-    ['Ngữ pháp', count('GRAMMAR')],
-    ['Từ vựng', count('VOCAB')],
-    ['Gặp lại hôm nay', String(again)],
-  ].filter((row): row is [string, string] => row[1] !== null);
+  const count = (rating: RatingValue) => String(results.filter((r) => r.rating === rating).length);
+  const tiles = [
+    ...byKind('GRAMMAR', 'Ngữ pháp'),
+    ...byKind('VOCAB', 'Từ vựng'),
+    ['Khó', count(2)],
+    ['Quên', count(1)],
+  ];
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-6">
       <div className="space-y-1">
-        <p className="text-sm font-semibold text-accent-brand">Xong buổi ôn</p>
-        <p className="text-lg font-bold tabular-nums">
-          {results.length - again} trên {results.length} thẻ nhớ
+        <h2 className="text-lg font-bold">Xong buổi ôn</h2>
+        <p className="text-muted-foreground tabular-nums">
+          Nhớ {remembered(results)} trên {results.length} thẻ.
+          {nextDueAt && ` Thẻ tiếp theo đến hạn ${humanizeUntil(nextDueAt)}.`}
         </p>
-        {nextDueAt && (
-          <p className="text-muted-foreground">Thẻ tiếp theo đến hạn {humanizeUntil(nextDueAt)}.</p>
-        )}
       </div>
-      <Card className="py-0">
-        <dl className="divide-y px-4">
-          {rows.map(([label, value]) => (
-            <div key={label} className="flex justify-between py-3">
-              <dt>{label}</dt>
-              <dd className="font-semibold tabular-nums">{value}</dd>
-            </div>
-          ))}
-        </dl>
-      </Card>
-      <div className="rounded-lg bg-muted p-4">
+      <dl className="flex flex-wrap gap-3">
+        {tiles.map(([label, value]) => (
+          <Card key={label} size="sm" className="min-w-32 flex-1 gap-1 px-4">
+            <dt className="text-muted-foreground">{label}</dt>
+            <dd className="text-lg font-bold tabular-nums">{value}</dd>
+          </Card>
+        ))}
+      </dl>
+      <div className="space-y-1 rounded-lg bg-muted p-4">
         <p className="font-semibold">Còn sức? Dịch một câu với Claude</p>
         <p className="text-muted-foreground">
           Mở Claude, gõ “học”. Claude lấy đúng một mẫu đến hạn để bạn dịch.
@@ -103,7 +115,7 @@ export function QuickReviewView({
   const card = cards[index] as QuickCard | undefined;
   const done = index >= cards.length;
 
-  const send = (payload: CardAnswer, correct: boolean, advance: boolean) => {
+  const send = (payload: CardAnswer, rating: RatingValue, advance: boolean) => {
     if (!card || isPending) return;
     const kind = card.kind;
     startTransition(async () => {
@@ -117,7 +129,7 @@ export function QuickReviewView({
         return;
       }
       setUnsent(null);
-      setResults((r) => [...r, { kind, correct }]);
+      setResults((r) => [...r, { kind, rating }]);
       if (advance) next();
     });
   };
@@ -133,15 +145,15 @@ export function QuickReviewView({
   const pick = (choiceId: string) => {
     if (!card || card.mode !== 'cloze' || picked) return;
     setPicked(choiceId);
-    send({ itemId: card.itemId, mode: 'cloze', choiceId }, choiceId === card.itemId, false);
+    send({ itemId: card.itemId, mode: 'cloze', choiceId }, choiceId === card.itemId ? 3 : 1, false);
   };
   const resend = () => {
     if (!card || unsent?.mode !== 'cloze') return;
-    send(unsent, unsent.choiceId === card.itemId, false);
+    send(unsent, unsent.choiceId === card.itemId ? 3 : 1, false);
   };
-  const grade = (remembered: boolean) => {
+  const grade = (rating: RatingValue) => {
     if (!card) return;
-    send({ itemId: card.itemId, mode: 'flip', remembered }, remembered, true);
+    send({ itemId: card.itemId, mode: 'flip', rating }, rating, true);
   };
 
   const graded = card?.mode === 'cloze' && picked !== null && results.length > index;
@@ -155,14 +167,14 @@ export function QuickReviewView({
       if (card.mode === 'cloze' && !picked && /^[1-4]$/.test(e.key)) {
         const choice = card.choices[Number(e.key) - 1];
         if (choice) pick(choice.itemId);
-      } else if (showGrade && (e.key === '1' || e.key === '2')) {
-        grade(e.key === '2');
+      } else if (showGrade && /^[1-4]$/.test(e.key)) {
+        grade(Number(e.key) as RatingValue);
       } else if (e.key === 'Enter' || e.key === ' ') {
         if (showReveal) setRevealed(true);
         else if (graded) next();
         else if (unsent) resend();
         // A focused grade button handles its own Enter; otherwise Enter means "Nhớ".
-        else if (showGrade && !(e.target instanceof HTMLButtonElement)) grade(true);
+        else if (showGrade && !(e.target instanceof HTMLButtonElement)) grade(3);
         else return;
       } else return;
       e.preventDefault();
@@ -185,12 +197,7 @@ export function QuickReviewView({
 
   if (cards.length === 0) {
     return (
-      <PageShell
-        template="form"
-        title="Ôn nhanh"
-        meta="Không có thẻ đến hạn"
-        pageIcons={furigana}
-      >
+      <PageShell template="form" title="Ôn nhanh" meta="Không có thẻ đến hạn" pageIcons={furigana}>
         <EmptyState
           title={nextDueAt ? 'Hôm nay ôn xong rồi' : 'Kho chưa có mục nào'}
           description={
@@ -217,7 +224,7 @@ export function QuickReviewView({
       meta={<span className="tabular-nums">{leftLine(cards.slice(index))}</span>}
       pageIcons={furigana}
     >
-      <div ref={sessionRef} className="flex max-w-3xl flex-col gap-6">
+      <div ref={sessionRef} className="flex flex-col gap-6 md:gap-8">
         <div
           className="flex gap-1.5"
           role="img"
@@ -228,7 +235,8 @@ export function QuickReviewView({
               key={c.itemId}
               className={cn(
                 'h-2 flex-1 rounded-full bg-muted',
-                i < results.length && (results[i].correct ? 'bg-ok' : 'bg-destructive'),
+                i < results.length &&
+                  (isRemembered(results[i].rating) ? 'bg-ok' : 'bg-destructive'),
                 i === index && i >= results.length && 'bg-accent-brand',
               )}
             />
@@ -251,49 +259,43 @@ export function QuickReviewView({
           )}
         </div>
 
-        <div className="sticky bottom-0 flex gap-2 bg-background pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] max-sm:[&>*]:flex-1 sm:justify-end">
+        {/* Phone: the bar's buttons share the width; laptop: they keep their own size, at the right. */}
+        <div className="sticky bottom-0 flex gap-2 bg-background pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] max-sm:[&>*]:flex-1 sm:justify-end sm:[&>*]:min-w-32">
           {showReveal && (
-            <Button size="lg" className="flex-1" onClick={() => setRevealed(true)}>
+            <Button size="lg" onClick={() => setRevealed(true)}>
               Xem đáp án
             </Button>
           )}
           {showGrade && card && (
-            <>
-              <Button
-                size="lg"
-                variant="outline"
-                className="flex-1 text-destructive"
-                disabled={isPending}
-                aria-keyshortcuts="1"
-                onClick={() => grade(false)}
-              >
-                Chưa nhớ
-                <span className="text-xs opacity-75">hôm nay</span>
-              </Button>
-              <Button
-                size="lg"
-                className="flex-1"
-                disabled={isPending}
-                aria-keyshortcuts="2 Enter"
-                onClick={() => grade(true)}
-              >
-                Nhớ
-                <span className="text-xs opacity-75">{humanizeUntil(card.dueIfRight)}</span>
-              </Button>
-            </>
+            <div className="grid grid-cols-2 gap-2 sm:flex" role="group" aria-label="Chấm thẻ">
+              {GRADES.map(({ rating, label, tone }) => (
+                <Button
+                  key={rating}
+                  size="lg"
+                  variant={rating === 3 ? 'default' : 'outline'}
+                  className={cn('sm:min-w-32', tone)}
+                  disabled={isPending}
+                  aria-keyshortcuts={rating === 3 ? '3 Enter' : String(rating)}
+                  onClick={() => grade(rating)}
+                >
+                  {label}
+                  <span className="text-xs opacity-75">{shortUntil(card.dueBy[rating])}</span>
+                </Button>
+              ))}
+            </div>
           )}
           {card?.mode === 'cloze' && picked && unsent && (
-            <Button size="lg" className="flex-1" disabled={isPending} onClick={resend}>
+            <Button size="lg" disabled={isPending} onClick={resend}>
               Gửi lại
             </Button>
           )}
           {card?.mode === 'cloze' && picked && !unsent && (
-            <Button size="lg" className="flex-1" disabled={!graded} onClick={next}>
+            <Button size="lg" disabled={!graded} onClick={next}>
               Tiếp
             </Button>
           )}
           {done && (
-            <Button size="lg" className="flex-1" asChild>
+            <Button size="lg" asChild>
               <Link href="/">Về trang chính</Link>
             </Button>
           )}

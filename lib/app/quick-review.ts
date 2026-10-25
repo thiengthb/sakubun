@@ -4,7 +4,12 @@ import { recordReviews } from '@/lib/app/record-review';
 import { getQueue } from '@/lib/app/queue';
 import { answerSurface, buildCloze, type ClozeChoice, type ClozeExample } from '@/lib/domain/cloze';
 import { CARD_STATE } from '@/lib/domain/queue';
-import { ratingForAnswer, type QuickAnswer } from '@/lib/domain/quick-review';
+import {
+  isRemembered,
+  ratingForAnswer,
+  RATINGS,
+  type QuickAnswer,
+} from '@/lib/domain/quick-review';
 import { markSpan, type Segment } from '@/lib/domain/sentence';
 import { exampleFromNotes } from '@/lib/import/openjlpt';
 import { asItemKind, VOCAB_KIND, type ItemKind } from '@/lib/library/item-kinds';
@@ -17,7 +22,8 @@ import { rateOnce, type RatingValue, type SrsFields } from '@/lib/srs/srs';
 
 // Quick review on the web: the queue's cards dressed for the screen (an example sentence with the
 // item underlined, or a cloze once the item has been seen), and the one call that grades an answer.
-// Grading is the app's, not an AI's: a flip is remembered or not, a cloze choice is right or wrong.
+// Grading is the app's, not an AI's: a flip takes one of the four FSRS ratings, a cloze choice is
+// right or wrong.
 
 export interface QuickSentence {
   segments: Segment[];
@@ -36,8 +42,8 @@ interface QuickCardBase {
   structure: string | null;
   note: string | null;
   isNew: boolean;
-  // When the item comes back if answered right, for the label under the button.
-  dueIfRight: Date;
+  // When the item comes back for each rating, for the label on each flip button.
+  dueBy: Record<RatingValue, Date>;
 }
 
 export type QuickCard =
@@ -123,7 +129,9 @@ function baseCard(item: CardItem, srs: SrsFields, retention: number, now: Date):
     structure: card?.structure.join(' / ') || null,
     note: card?.pitfalls[0] ?? null,
     isNew: srs.state === CARD_STATE.NEW,
-    dueIfRight: rateOnce(srs, 3, { retention, now }).next.due,
+    dueBy: Object.fromEntries(
+      RATINGS.map((rating) => [rating, rateOnce(srs, rating, { retention, now }).next.due]),
+    ) as Record<RatingValue, Date>,
   };
 }
 
@@ -212,7 +220,7 @@ export async function getQuickReview(now: Date = new Date(), limit = 20): Promis
 }
 
 export type CardAnswer =
-  | { itemId: string; mode: 'flip'; remembered: boolean }
+  | { itemId: string; mode: 'flip'; rating: RatingValue }
   | { itemId: string; mode: 'cloze'; choiceId: string };
 
 export interface AnsweredCard {
@@ -238,10 +246,10 @@ export async function answerCard(
 
   const quick: QuickAnswer =
     answer.mode === 'flip'
-      ? { mode: 'flip', remembered: answer.remembered }
+      ? { mode: 'flip', rating: answer.rating }
       : { mode: 'cloze', correct: answer.choiceId === answer.itemId };
-  const correct = quick.mode === 'flip' ? quick.remembered : quick.correct;
   const rating = ratingForAnswer(quick);
+  const correct = isRemembered(rating);
   const { desiredRetention } = await getSettings();
   const [recorded] = await recordReviews([{ itemId: answer.itemId, srs, rating }], {
     retention: desiredRetention,
