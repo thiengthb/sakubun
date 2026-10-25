@@ -1,5 +1,6 @@
 import path from 'node:path';
 import Database from 'better-sqlite3';
+import ExcelJS from 'exceljs';
 import { expect, test, type Page } from '@playwright/test';
 import { E2E_DB_FILE, E2E_EMAIL, E2E_LOGIN, seedE2eAccount } from './fixtures';
 
@@ -11,11 +12,14 @@ test.beforeAll(async () => {
   await seedE2eAccount();
   const db = new Database(path.join(process.cwd(), E2E_DB_FILE));
   try {
-    db.prepare(
+    const insert = db.prepare(
       `INSERT OR REPLACE INTO Item (id, kind, expression, reading, hanviet, meaningVi, level, notes, source,
          captureReason, suspended, starred, createdAt)
-       VALUES ('form-item', 'GRAMMAR', '〜ばかりに', NULL, NULL, 'chỉ vì', 'N2', NULL, 'MCP', NULL, 0, 0, ?)`,
-    ).run(new Date().toISOString().replace('Z', '+00:00'));
+       VALUES (?, ?, ?, ?, NULL, ?, ?, NULL, 'MCP', NULL, 0, 0, ?)`,
+    );
+    const at = new Date().toISOString().replace('Z', '+00:00');
+    insert.run('form-item', 'GRAMMAR', '〜ばかりに', null, 'chỉ vì', 'N2', at);
+    insert.run('form-vocab', 'VOCAB', '図書館', 'としょかん', 'thư viện', null, at);
   } finally {
     db.close();
   }
@@ -75,6 +79,70 @@ test('edit an item: an emptied required field says so', async ({ page }) => {
   await page.getByRole('button', { name: 'Lưu', exact: true }).click();
   await expect(page.getByText('Cần nhập nghĩa')).toBeVisible();
   await expect(page).toHaveURL(/\/resources\/form-item\/edit$/);
+});
+
+// UI redo 6.7 (2026-10-25): adding and editing a word or a pattern is one set of fields, so the
+// form a learner fills is the form they fix: the same labels in the same order on both pages.
+async function fieldLabels(page: Page) {
+  return page
+    .locator('form')
+    .filter({ visible: true })
+    .first()
+    .locator('[aria-labelledby]')
+    .evaluateAll((els) =>
+      els.map((el) => {
+        const label = document.getElementById(el.getAttribute('aria-labelledby')!);
+        return label?.firstChild?.textContent?.trim() ?? '';
+      }),
+    );
+}
+
+for (const { kind, id } of [
+  { kind: 'grammar', id: 'form-item' },
+  { kind: 'vocab', id: 'form-vocab' },
+]) {
+  test(`${kind}: the add and edit forms show the same fields in the same order`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await login(page);
+    await page.goto(`/resources/new?kind=${kind}`, { waitUntil: 'networkidle' });
+    const add = await fieldLabels(page);
+    expect(add).toContain('Cấp JLPT');
+    expect(add).toContain('Ghi chú');
+    await page.goto(`/resources/${id}/edit`, { waitUntil: 'networkidle' });
+    expect(await fieldLabels(page)).toEqual(add);
+    await expect(page.getByRole('link', { name: 'Huỷ', exact: true })).toBeVisible();
+  });
+}
+
+test('excel tab: a Vietnamese file picker that names the file once', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await login(page);
+  await page.goto('/resources/new?kind=grammar', { waitUntil: 'networkidle' });
+  await page.getByRole('tab', { name: 'Nhập Excel' }).filter({ visible: true }).first().click();
+
+  // No browser-drawn "Choose File / No file chosen": the control is ours, in Vietnamese.
+  await expect(page.locator('#excel-file')).toBeHidden();
+  await expect(page.getByRole('button', { name: 'Chọn file' })).toBeVisible();
+  await expect(page.getByText('Chưa chọn file')).toBeVisible();
+
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet('Mazii');
+  ws.addRow(['word', 'phonetic', 'mean', 'comment']);
+  ws.addRow(['〜ばかりに', '', 'chỉ vì… (hậu quả xấu)', 'N2']);
+  await page.locator('#excel-file').setInputFiles({
+    name: 'mazii.xlsx',
+    mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    buffer: Buffer.from(await wb.xlsx.writeBuffer()),
+  });
+  await expect(page.getByRole('button', { name: 'Chọn file khác' })).toBeVisible();
+  await expect(
+    page.locator('form, [role=tabpanel]').getByText('mazii.xlsx', { exact: true }),
+  ).toHaveCount(1);
+
+  await page.getByRole('button', { name: 'Bỏ file' }).click();
+  await expect(page.getByText('Chưa chọn file')).toBeVisible();
 });
 
 test('new group: the name is required', async ({ page }) => {

@@ -1,5 +1,6 @@
 import { FormCardSkeleton, PageSkeleton, SkeletonText } from '@/components/layout/page-skeleton';
 import { ParentCrumbs } from '@/components/layout/app-breadcrumbs';
+import { ITEM_FIELDS } from '@/components/features/resources/item-fields-skeleton';
 
 // The page names the item's kind ("Sửa ngữ pháp"), which only the loaded item knows.
 export default function Loading() {
@@ -13,7 +14,7 @@ export default function Loading() {
         </>
       }
     >
-      <FormCardSkeleton fields={5} />
+      <FormCardSkeleton layout={ITEM_FIELDS} />
     </PageSkeleton>
   );
 }
