@@ -34,6 +34,9 @@ export function PageSkeleton({
   title,
   meta,
   actions,
+  actionsOnPhone = 'inline',
+  pageIcons,
+  trail = false,
   tabs,
   width = 'full',
   section,
@@ -44,12 +47,18 @@ export function PageSkeleton({
   children?: ReactNode;
   /** Template pages: the same chrome as PageShell's, from page-chrome.ts. */
   template?: PageTemplate;
-  /** Template pages: the h1, known up front for a top page. */
+  /** Template pages: the h1, known up front for a top page; a bar for a record's name. */
   title?: string;
-  /** Template pages: a bar where the page shows its meta line (a count the skeleton cannot know). */
-  meta?: boolean;
+  /** Template pages: a bar where the page shows its meta line (a count the skeleton cannot know), or its own shape. */
+  meta?: boolean | ReactNode;
   /** Template pages: placeholders right of the title, as wide as the page's buttons. */
   actions?: ReactNode;
+  /** As PageShell's: 'split' puts the actions on a row of their own on a phone. */
+  actionsOnPhone?: 'inline' | 'split';
+  /** Template pages: placeholders at the end of the title's row (star). */
+  pageIcons?: ReactNode;
+  /** Template pages: a nested page, with a parent trail above the title. */
+  trail?: boolean;
   tabs?: ReactNode;
   width?: PageWidth;
   section?: BreadcrumbSection;
@@ -58,28 +67,51 @@ export function PageSkeleton({
   className?: string;
 }) {
   if (template) {
+    const split = actionsOnPhone === 'split';
+    const metaShape =
+      meta === true ? (
+        <div className="flex h-4 items-center">
+          <Skeleton className="h-3 w-20" />
+        </div>
+      ) : (
+        meta
+      );
     return (
       <div className={cn(PAGE_CHROME.page, className)} data-template={template}>
         <div className={PAGE_CHROME.header}>
           <div className={PAGE_CHROME.stack}>
-            <div className={PAGE_CHROME.trail} />
+            <div className={PAGE_CHROME.trail}>{trail && <Skeleton className="h-3 w-36" />}</div>
             <div className={PAGE_CHROME.row}>
               <div className="flex shrink-0 items-center md:hidden">
                 <Skeleton className="size-9 rounded-sm" />
               </div>
               <div className={PAGE_CHROME.block}>
-                <h1 className={PAGE_CHROME.title}>{title}</h1>
-                {meta && (
-                  <div className={PAGE_CHROME.meta}>
-                    <div className="flex h-4 items-center">
-                      <Skeleton className="h-3 w-20" />
-                    </div>
+                {trail && (
+                  <div className={PAGE_CHROME.phoneTrail}>
+                    <Skeleton className="h-3 w-28" />
                   </div>
                 )}
+                <h1 className={PAGE_CHROME.title}>
+                  {title ?? (
+                    // One invisible line keeps the h1 at its own height; the bar sits inside it.
+                    <span className="relative block" aria-hidden>
+                      <span className="invisible">あ</span>
+                      <Skeleton className="absolute inset-y-0.5 left-0 w-40 md:inset-y-1" />
+                    </span>
+                  )}
+                </h1>
+                {meta && (
+                  <div className={cn(PAGE_CHROME.meta, trail && 'max-md:hidden')}>{metaShape}</div>
+                )}
               </div>
-              {actions && <div className={PAGE_CHROME.actions}>{actions}</div>}
+              {actions && (
+                <div className={cn(PAGE_CHROME.actions, split && 'max-md:hidden')}>{actions}</div>
+              )}
+              {pageIcons && <div className={PAGE_CHROME.pageIcons}>{pageIcons}</div>}
             </div>
           </div>
+          {trail && meta && <div className={PAGE_CHROME.phoneMeta}>{metaShape}</div>}
+          {actions && split && <div className={PAGE_CHROME.phoneActions}>{actions}</div>}
           {tabs && <div className={PAGE_CHROME.tabs}>{tabs}</div>}
         </div>
         {children}
@@ -182,14 +214,20 @@ export function FormCardSkeleton({
       <div className="flex flex-col gap-4 rounded-xl bg-card py-4 ring-1 ring-foreground/10">
         {Array.from({ length: fields }, (_, i) => (
           <div key={i} className="space-y-1.5 px-4">
-            <Skeleton className="h-4 w-28" />
+            {/* Field's label is a bold 14px line. */}
+            <div className="flex h-5 items-center">
+              <Skeleton className="h-3.5 w-28" />
+            </div>
             <Skeleton className="h-9 w-full rounded-sm md:h-7" />
           </div>
         ))}
         {footer && (
-          <div className="flex items-center justify-end gap-2 px-4">
-            <Skeleton className="h-9 w-20 rounded-sm md:h-7" />
-            <Skeleton className="h-9 w-24 rounded-sm md:h-7" />
+          <div className="flex flex-wrap items-center gap-3 px-4 pt-2">
+            <Skeleton className="h-3 w-32" />
+            <div className="ml-auto flex gap-2 max-sm:w-full max-sm:[&>*]:flex-1">
+              <Skeleton className="h-9 w-20 rounded-sm md:h-7" />
+              <Skeleton className="h-9 w-24 rounded-sm md:h-7" />
+            </div>
           </div>
         )}
       </div>

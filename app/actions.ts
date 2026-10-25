@@ -27,6 +27,7 @@ import {
   removeItemsFromGroup,
   updateGroup,
 } from '@/lib/library/groups';
+import { GROUP_NAME_MAX, GROUP_NOTE_MAX, groupTextError } from '@/lib/library/group-limits';
 import { type ActionResult, cleanIds, err, ok, parseInput } from '@/lib/core/action-result';
 
 function revalidateResources(): void {
@@ -95,11 +96,7 @@ export async function importItemsAction(
   );
   if (!parsed.ok) return parsed;
 
-  const r = await addItems(
-    parsed.data,
-    'MAZII',
-    resolveKind(kindParsed.data),
-  );
+  const r = await addItems(parsed.data, 'MAZII', resolveKind(kindParsed.data));
   revalidateResources();
   return ok({ created: r.created, skipped: r.skipped });
 }
@@ -121,11 +118,7 @@ export async function addOneItemAction(
   if (!kindParsed.ok) return kindParsed;
   const parsed = parseInput(addOneItemSchema, input);
   if (!parsed.ok) return parsed;
-  const r = await addItems(
-    [parsed.data],
-    'WEB',
-    resolveKind(kindParsed.data),
-  );
+  const r = await addItems([parsed.data], 'WEB', resolveKind(kindParsed.data));
   if (r.created === 0) return err(r.skipped[0]?.reason ?? 'Đã có trong kho');
   revalidateResources();
   return ok({ created: r.created });
@@ -243,16 +236,27 @@ export async function getStreakAction(): Promise<ActionResult<{ current: number 
   return ok({ current });
 }
 
+const groupName = z
+  .string()
+  .trim()
+  .min(1, 'Tên nhóm không được trống')
+  .refine((s) => !groupTextError('name', s), {
+    message: `Tên nhóm tối đa ${GROUP_NAME_MAX} ký tự.`,
+  });
+const groupNote = z.string().refine((s) => !groupTextError('note', s), {
+  message: `Ghi chú tối đa ${GROUP_NOTE_MAX} ký tự.`,
+});
+
 const createGroupSchema = z.object({
-  name: z.string().trim().min(1, 'Tên nhóm không được trống'),
+  name: groupName,
   kind: z.enum(GROUP_KINDS).optional(),
-  note: z.string().optional(),
+  note: groupNote.optional(),
 });
 
 const updateGroupSchema = z.object({
-  name: z.string().trim().min(1, 'Tên nhóm không được trống').optional(),
+  name: groupName.optional(),
   kind: z.enum(GROUP_KINDS).optional(),
-  note: z.string().nullable().optional(),
+  note: groupNote.nullable().optional(),
 });
 
 export async function createGroupAction(input: unknown): Promise<ActionResult<{ id: string }>> {

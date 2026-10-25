@@ -92,6 +92,10 @@ describe('invariant #9 — Japanese content renders through SpokenLine', () => {
       ],
       ['components/features/resources/item-edit-dialog.tsx', 'editing surface'],
       [
+        'app/resources/[id]/edit/page.tsx',
+        'edit page header names the item being edited; the editing surface, not study content',
+      ],
+      [
         'components/features/resources/row-actions.tsx',
         'delete-confirmation prose («X» sẽ bị xóa…) — a warning sentence, not study content',
       ],

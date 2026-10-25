@@ -238,7 +238,12 @@ export const UI_RULES: UiRule[] = [
       'old breadcrumb header goes away page by page in step 6.',
     check: ({ src }) =>
       elements(src, ['PageShell', 'PageSkeleton'])
-        .filter((el) => !/\btemplate=/.test(el.open) || !/\btitle=/.test(el.open))
+        // A skeleton cannot know a title it has not loaded (an edit page names its item), so it
+        // only needs the template; it draws a bar where the title goes.
+        .filter(
+          (el) =>
+            !/\btemplate=/.test(el.open) || (el.name === 'PageShell' && !/\btitle=/.test(el.open)),
+        )
         .map((el) => ({
           line: lineAt(src, el.index),
           excerpt: `<${el.name}> without template and title`,

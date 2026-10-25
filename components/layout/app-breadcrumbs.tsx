@@ -94,6 +94,26 @@ const ACTION_CRUMBS = {
 export type BreadcrumbSection = keyof typeof CRUMBS;
 export type BreadcrumbAction = keyof typeof ACTION_CRUMBS;
 
+const PARENT: Partial<Record<BreadcrumbSection, BreadcrumbSection>> = {
+  grammar: 'resources',
+  vocab: 'resources',
+  groups: 'resources',
+};
+
+/** A template page's trail above its h1: parents only, the page itself is the h1. */
+export function ParentCrumbs({
+  section,
+  self = false,
+}: {
+  section: BreadcrumbSection;
+  /** Include `section` itself: a detail or action page under it. */
+  self?: boolean;
+}) {
+  const up = PARENT[section];
+  const items: Crumb[] = [...(up ? [CRUMBS[up]] : []), ...(self ? [CRUMBS[section]] : [])];
+  return <Breadcrumbs items={items} parentsOnly />;
+}
+
 export function AppBreadcrumbs({
   section,
   detail,

@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs } from '@/components/ui/tabs';
 import { PageShell } from '@/components/layout/page-shell';
-import { TabSelect } from '@/components/common/tab-select';
+import { ParentCrumbs } from '@/components/layout/app-breadcrumbs';
+import { PageTabs } from '@/components/common/page-tabs';
 import {
   INPUT_TABS,
   ResourceAddPanels,
@@ -17,19 +18,17 @@ export function ResourceAddPage({ kind }: { kind: ResourceKind }) {
   const [tab, setTab] = useState<string>('single');
 
   const done = () => {
-    router.push('/resources');
+    router.push(`/resources?tab=${kind}`);
     router.refresh();
   };
 
   return (
     <Tabs value={tab} onValueChange={setTab}>
       <PageShell
-        section={kind}
-        action="add"
-        width="form"
-        headerAside={
-          <TabSelect items={INPUT_TABS} value={tab} onValueChange={setTab} label="Cách nhập" />
-        }
+        template="form"
+        breadcrumb={<ParentCrumbs section={kind} self />}
+        title={kind === 'grammar' ? 'Thêm ngữ pháp' : 'Thêm từ vựng'}
+        tabs={<PageTabs items={INPUT_TABS} label="Cách nhập" />}
       >
         <Card>
           <CardContent>

@@ -47,6 +47,21 @@ describe('create / list', () => {
   });
 });
 
+describe('length limits (thien, 2026-10-25)', () => {
+  it('a name over 40 characters or a note over 80 is refused, on create and on update', async () => {
+    await expect(G.createGroup({ name: 'a'.repeat(41) })).rejects.toThrow(
+      'Tên nhóm tối đa 40 ký tự',
+    );
+    await expect(G.createGroup({ name: 'ok', note: 'b'.repeat(81) })).rejects.toThrow(
+      'Ghi chú tối đa 80 ký tự',
+    );
+    const g = await G.createGroup({ name: 'a'.repeat(40), note: 'b'.repeat(80) });
+    await expect(G.updateGroup(g.id, { name: 'c'.repeat(41) })).rejects.toThrow('Tên nhóm');
+    await expect(G.updateGroup(g.id, { note: 'd'.repeat(81) })).rejects.toThrow('Ghi chú');
+    expect(await G.listGroups()).toHaveLength(1);
+  });
+});
+
 describe('kind guard', () => {
   it('nhóm grammar KHÔNG nhận từ vựng', async () => {
     const g = await G.createGroup({ name: 'chỉ ngữ pháp', kind: 'grammar' });
@@ -185,7 +200,10 @@ describe('listItems({ withGroupIds })', () => {
     await G.addItemsToGroup(a.id, [grammarId, vocabId]);
     await G.addItemsToGroup(b.id, [grammarId]);
 
-    const rows = (await listItems({ withGroupIds: true })) as { itemId: string; groupIds: string[] }[];
+    const rows = (await listItems({ withGroupIds: true })) as {
+      itemId: string;
+      groupIds: string[];
+    }[];
     const row = rows.find((r) => r.itemId === grammarId);
     expect(row?.groupIds?.sort()).toEqual([a.id, b.id].sort());
 

@@ -12,14 +12,24 @@ export interface Crumb {
   description: string;
 }
 
-export function Breadcrumbs({ items, className }: { items: Crumb[]; className?: string }) {
+export function Breadcrumbs({
+  items,
+  className,
+  parentsOnly = false,
+}: {
+  items: Crumb[];
+  className?: string;
+  /** Every crumb is a parent link: a template page names itself with its h1. */
+  parentsOnly?: boolean;
+}) {
   if (items.length === 0) return null;
-  const compress = items.length > 2;
+  const compress = !parentsOnly && items.length > 2;
   return (
-    <nav aria-label="Breadcrumb" className={className}>
-      <ol className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-sm text-muted-foreground">
+    <nav aria-label="Breadcrumb" className={className} data-parents={parentsOnly || undefined}>
+      <ol className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-sm text-muted-foreground in-data-parents:text-xs">
         {items.map((item, i) => {
-          const last = i === items.length - 1;
+          const last = !parentsOnly && i === items.length - 1;
+          const end = i === items.length - 1;
           const Icon = item.icon;
           const inner = (
             <span
@@ -57,7 +67,7 @@ export function Breadcrumbs({ items, className }: { items: Crumb[]; className?: 
                   <span aria-current={last ? 'page' : undefined}>{inner}</span>
                 )}
               </Explain>
-              {!last && (
+              {!end && (
                 <ChevronRight className="size-3.5 shrink-0 text-muted-foreground/50" aria-hidden />
               )}
             </li>

@@ -1,8 +1,7 @@
 'use client';
 
 import { type ReactNode, useMemo, useRef, useState, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
-import { FileSpreadsheet, X } from 'lucide-react';
+import { ClipboardPaste, FileSpreadsheet, TextCursorInput, X } from 'lucide-react';
 import { toastResult } from '@/lib/core/action-toast';
 import { addOneItemAction, importItemsAction, parseExcelAction } from '@/app/actions';
 import { parseImportText, type ParsedEntry, type ParseResult } from '@/lib/transfer/parse';
@@ -24,12 +23,10 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Tabs, TabsContent } from '@/components/ui/tabs';
-import { TabSelect } from '@/components/common/tab-select';
+import { TabsContent } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
-import { Field } from '@/components/common/field';
+import { Field, FormActions } from '@/components/common/field';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 
 export type ResourceKind = 'grammar' | 'vocab';
 
@@ -76,9 +73,9 @@ const COPY: Record<
 };
 
 export const INPUT_TABS = [
-  { value: 'single', label: 'Theo trường' },
-  { value: 'paste', label: 'Dán danh sách' },
-  { value: 'excel', label: 'Nhập Excel' },
+  { value: 'single', label: 'Theo trường', icon: TextCursorInput },
+  { value: 'paste', label: 'Dán danh sách', icon: ClipboardPaste },
+  { value: 'excel', label: 'Nhập Excel', icon: FileSpreadsheet },
 ] as const;
 
 export function ResourceAddPanels({ kind, onDone }: { kind: ResourceKind; onDone: () => void }) {
@@ -95,24 +92,6 @@ export function ResourceAddPanels({ kind, onDone }: { kind: ResourceKind; onDone
         <ExcelTab kind={kind} copy={copy} onDone={onDone} />
       </TabsContent>
     </>
-  );
-}
-
-export function ResourceAddForm({ kind, onDone }: { kind: ResourceKind; onDone?: () => void }) {
-  const router = useRouter();
-  const [tab, setTab] = useState<string>('single');
-  const close =
-    onDone ??
-    (() => {
-      router.push('/resources');
-      router.refresh();
-    });
-
-  return (
-    <Tabs value={tab} onValueChange={setTab} className="gap-4">
-      <TabSelect items={INPUT_TABS} value={tab} onValueChange={setTab} label="Cách nhập" />
-      <ResourceAddPanels kind={kind} onDone={close} />
-    </Tabs>
   );
 }
 
@@ -134,11 +113,22 @@ function SingleTab({
   const [notes, setNotes] = useState('');
   const [isPending, startTransition] = useTransition();
 
-  const canSubmit = expression.trim() !== '' && meaningVi.trim() !== '';
+  // Errors show once the form is sent, and clear as each field is filled.
+  const [sent, setSent] = useState(false);
+  const errors = {
+    expression: sent && !expression.trim() ? `Cần nhập ${copy.exprLabel.toLowerCase()}` : null,
+    meaningVi: sent && !meaningVi.trim() ? 'Cần nhập nghĩa' : null,
+  };
 
-  const submit = (e: React.FormEvent) => {
+  const submit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!canSubmit) return;
+    setSent(true);
+    if (!expression.trim() || !meaningVi.trim()) {
+      e.currentTarget
+        .querySelector<HTMLElement>(!expression.trim() ? '#add-expression' : '#add-meaning')
+        ?.focus();
+      return;
+    }
     startTransition(async () => {
       const r = await addOneItemAction(
         {
@@ -156,25 +146,26 @@ function SingleTab({
         setMeaningVi('');
         setLevel('');
         setNotes('');
+        setSent(false);
         onDone();
       }
     });
   };
 
   return (
-    <form onSubmit={submit} className="space-y-4">
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Field label={copy.exprLabel}>
+    <form onSubmit={submit} noValidate className="@container space-y-4">
+      <div className="grid gap-4 @2xl:grid-cols-2">
+        <Field label={copy.exprLabel} required error={errors.expression}>
           <Input
+            id="add-expression"
             value={expression}
             onChange={(e) => setExpression(e.target.value)}
             lang="ja"
             placeholder={copy.exprPlaceholder}
             autoFocus
-            required
           />
         </Field>
-        <Field label="Cách đọc (kana)" hint="Không bắt buộc">
+        <Field label="Cách đọc (kana)">
           <Input
             value={reading}
             onChange={(e) => setReading(e.target.value)}
@@ -182,15 +173,20 @@ function SingleTab({
             placeholder={copy.readingPlaceholder}
           />
         </Field>
-        <Field label="Nghĩa (tiếng Việt)" className="sm:col-span-2">
+        <Field
+          label="Nghĩa (tiếng Việt)"
+          required
+          error={errors.meaningVi}
+          className="@2xl:col-span-2"
+        >
           <Input
+            id="add-meaning"
             value={meaningVi}
             onChange={(e) => setMeaningVi(e.target.value)}
             placeholder={copy.meaningPlaceholder}
-            required
           />
         </Field>
-        <Field label="Cấp độ" hint="Không bắt buộc">
+        <Field label="Cấp độ">
           <Select value={level} onValueChange={setLevel}>
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Không rõ" />
@@ -204,7 +200,7 @@ function SingleTab({
             </SelectContent>
           </Select>
         </Field>
-        <Field label="Ghi chú" hint="Không bắt buộc" className="sm:col-span-2">
+        <Field label="Ghi chú" className="@2xl:col-span-2">
           <Textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
@@ -213,14 +209,14 @@ function SingleTab({
           />
         </Field>
       </div>
-      <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
+      <FormActions>
         <Button type="button" variant="outline" disabled={isPending} onClick={onDone}>
           Huỷ
         </Button>
-        <Button type="submit" disabled={isPending || !canSubmit}>
+        <Button type="submit" disabled={isPending}>
           {isPending ? 'Đang thêm…' : `Thêm ${copy.noun}`}
         </Button>
-      </div>
+      </FormActions>
     </form>
   );
 }
@@ -238,10 +234,12 @@ function BulkPanel({
   copy: TabCopy;
   parse: ParseResult;
   onDone: () => void;
-  children: ReactNode; // the input control (textarea / file picker)
+  /** The input control (textarea / file picker), given the error to show under it. */
+  children: (error: string | null) => ReactNode;
 }) {
   const [defaultLevel, setDefaultLevel] = useState<JlptLevel>('N5');
   const [isPending, startTransition] = useTransition();
+  const [sent, setSent] = useState(false);
 
   const entries: ParsedEntry[] = parse.entries.map((e) => ({
     ...e,
@@ -249,7 +247,11 @@ function BulkPanel({
   }));
   const hasResult = parse.entries.length > 0 || parse.errors.length > 0;
 
+  const error = sent && entries.length === 0 ? `Chưa có ${copy.noun} hợp lệ nào để thêm` : null;
+
   const submit = () => {
+    setSent(true);
+    if (entries.length === 0) return;
     startTransition(async () => {
       const r = await importItemsAction(entries, kind);
       const ok = toastResult(
@@ -263,7 +265,7 @@ function BulkPanel({
 
   return (
     <div className="space-y-4">
-      {children}
+      {children(error)}
 
       {hasResult && (
         <>
@@ -277,9 +279,9 @@ function BulkPanel({
               </Badge>
             )}
             <div className="flex w-full items-center justify-between gap-2 sm:ml-auto sm:w-auto sm:justify-start">
-              <Label htmlFor="bulk-default-level" className="text-xs text-muted-foreground">
+              <label htmlFor="bulk-default-level" className="text-sm font-bold">
                 Cấp độ mặc định
-              </Label>
+              </label>
               <Select value={defaultLevel} onValueChange={(v) => setDefaultLevel(v as JlptLevel)}>
                 <SelectTrigger id="bulk-default-level" className="h-8 w-20">
                   <SelectValue />
@@ -356,14 +358,18 @@ function BulkPanel({
         </>
       )}
 
-      <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
+      <FormActions>
         <Button type="button" variant="outline" disabled={isPending} onClick={onDone}>
           Huỷ
         </Button>
-        <Button onClick={submit} disabled={isPending || entries.length === 0}>
-          {isPending ? 'Đang xử lý…' : `Thêm ${entries.length} ${copy.noun} vào kho`}
+        <Button onClick={submit} disabled={isPending}>
+          {isPending
+            ? 'Đang xử lý…'
+            : entries.length > 0
+              ? `Thêm ${entries.length} ${copy.noun}`
+              : `Thêm ${copy.noun}`}
         </Button>
-      </div>
+      </FormActions>
     </div>
   );
 }
@@ -382,20 +388,28 @@ function PasteTab({
 
   return (
     <BulkPanel kind={kind} copy={copy} parse={parse} onDone={onDone}>
-      <div className="space-y-2">
-        <Label htmlFor="paste-text">Dán danh sách</Label>
-        <Textarea
-          id="paste-text"
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          rows={6}
-          placeholder={copy.pastePlaceholder}
-        />
-        <p className="text-xs text-muted-foreground">
-          Nhận dạng: bảng (tab giữa các cột) hoặc <code>mục (cách đọc) : nghĩa N5</code>. Danh sách
-          lộn xộn? Nhờ Claude Desktop hoặc ChatGPT dọn hộ bằng prompt <code>import_grammar</code>.
-        </p>
-      </div>
+      {(error) => (
+        <Field
+          label="Danh sách"
+          required
+          error={error}
+          info={
+            <>
+              Nhận dạng: bảng (tab giữa các cột) hoặc <code>mục (cách đọc) : nghĩa N5</code>. Danh
+              sách lộn xộn? Nhờ Claude Desktop hoặc ChatGPT dọn hộ bằng prompt{' '}
+              <code>import_grammar</code>.
+            </>
+          }
+        >
+          <Textarea
+            id="paste-text"
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            rows={6}
+            placeholder={copy.pastePlaceholder}
+          />
+        </Field>
+      )}
     </BulkPanel>
   );
 }
@@ -434,29 +448,36 @@ function ExcelTab({
 
   return (
     <BulkPanel kind={kind} copy={copy} parse={fileResult?.result ?? EMPTY_PARSE} onDone={onDone}>
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="min-w-0 space-y-1">
-          <Label htmlFor="excel-file">File Excel tải từ Mazii (.xlsx)</Label>
-          <input
-            ref={fileInputRef}
-            id="excel-file"
-            type="file"
-            accept=".xlsx"
-            disabled={isReading}
-            className="block text-sm file:mr-3 file:rounded-md file:border file:border-border/70 file:bg-secondary file:px-3 file:py-1.5 file:text-sm file:text-foreground hover:file:bg-secondary/60"
-            onChange={(e) => onFileChange(e.target.files?.[0])}
-          />
+      {(error) => (
+        <div className="flex flex-wrap items-center gap-3">
+          <Field
+            label="File Excel (.xlsx)"
+            required
+            error={error}
+            info="File Excel tải từ Mazii."
+            className="min-w-0"
+          >
+            <input
+              ref={fileInputRef}
+              id="excel-file"
+              type="file"
+              accept=".xlsx"
+              disabled={isReading}
+              className="block text-sm file:mr-3 file:rounded-md file:border file:border-border/70 file:bg-secondary file:px-3 file:py-1.5 file:text-sm file:text-foreground hover:file:bg-secondary/60"
+              onChange={(e) => onFileChange(e.target.files?.[0])}
+            />
+          </Field>
+          {fileResult && (
+            <Badge variant="secondary" className="min-w-0 gap-1">
+              <FileSpreadsheet className="size-3.5 shrink-0" aria-hidden />
+              <span className="min-w-0 truncate">{fileResult.name}</span>
+              <button type="button" aria-label="Bỏ file" onClick={clearFile}>
+                <X className="size-3.5 shrink-0" aria-hidden />
+              </button>
+            </Badge>
+          )}
         </div>
-        {fileResult && (
-          <Badge variant="secondary" className="min-w-0 gap-1">
-            <FileSpreadsheet className="size-3.5 shrink-0" aria-hidden />
-            <span className="min-w-0 truncate">{fileResult.name}</span>
-            <button type="button" aria-label="Bỏ file" onClick={clearFile}>
-              <X className="size-3.5 shrink-0" aria-hidden />
-            </button>
-          </Badge>
-        )}
-      </div>
+      )}
     </BulkPanel>
   );
 }

@@ -3,10 +3,9 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { toast } from 'sonner';
 import { useServerAction } from '@/components/common/use-server-action';
 import { Button } from '@/components/ui/button';
-import { Field } from '@/components/common/field';
+import { Field, FormActions } from '@/components/common/field';
 import { Input } from '@/components/ui/input';
 import {
   Select,
@@ -49,9 +48,20 @@ export function ItemEditForm({
   const notesLabel = kind === 'grammar' ? 'Cấu trúc / ghi chú' : 'Ví dụ';
   const exprLabel = kind === 'grammar' ? 'Mẫu ngữ pháp' : 'Từ';
 
-  const save = () => {
+  // Errors show once the form is sent, and clear as each field is filled.
+  const [sent, setSent] = useState(false);
+  const errors = {
+    expression: sent && !expression.trim() ? `Cần nhập ${exprLabel.toLowerCase()}` : null,
+    meaningVi: sent && !meaningVi.trim() ? 'Cần nhập nghĩa' : null,
+  };
+
+  const save = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setSent(true);
     if (!expression.trim() || !meaningVi.trim()) {
-      toast.error('Từ / mẫu và nghĩa không được trống');
+      e.currentTarget
+        .querySelector<HTMLElement>(!expression.trim() ? '#edit-expression' : '#edit-meaning')
+        ?.focus();
       return;
     }
     run(item.itemId, {
@@ -64,19 +74,26 @@ export function ItemEditForm({
   };
 
   return (
-    <div className="space-y-6">
+    <form onSubmit={save} noValidate className="@container space-y-6">
       <Field
         label={exprLabel}
+        required
+        error={errors.expression}
         info={
           kind === 'grammar'
             ? 'Mẫu ngữ pháp (tiếng Nhật). Sửa nội dung KHÔNG ảnh hưởng lịch ôn (FSRS).'
             : 'Từ (tiếng Nhật). Sửa nội dung KHÔNG ảnh hưởng lịch ôn (FSRS).'
         }
       >
-        <Input lang="ja" value={expression} onChange={(e) => setExpression(e.target.value)} />
+        <Input
+          id="edit-expression"
+          lang="ja"
+          value={expression}
+          onChange={(e) => setExpression(e.target.value)}
+        />
       </Field>
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-4 @2xl:grid-cols-2">
         <Field label="Cách đọc">
           <Input
             lang="ja"
@@ -103,8 +120,8 @@ export function ItemEditForm({
         )}
       </div>
 
-      <Field label="Nghĩa (tiếng Việt)">
-        <Input value={meaningVi} onChange={(e) => setMeaningVi(e.target.value)} />
+      <Field label="Nghĩa (tiếng Việt)" required error={errors.meaningVi}>
+        <Input id="edit-meaning" value={meaningVi} onChange={(e) => setMeaningVi(e.target.value)} />
       </Field>
 
       <Field
@@ -116,9 +133,9 @@ export function ItemEditForm({
         <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={4} />
       </Field>
 
-      <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+      <FormActions>
         {onDone ? (
-          <Button variant="outline" onClick={onDone} disabled={isPending}>
+          <Button type="button" variant="outline" onClick={onDone} disabled={isPending}>
             Hủy
           </Button>
         ) : (
@@ -126,10 +143,10 @@ export function ItemEditForm({
             <Link href={backHref}>Hủy</Link>
           </Button>
         )}
-        <Button onClick={save} disabled={isPending}>
+        <Button type="submit" disabled={isPending}>
           Lưu
         </Button>
-      </div>
-    </div>
+      </FormActions>
+    </form>
   );
 }

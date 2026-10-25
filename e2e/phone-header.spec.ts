@@ -1,12 +1,30 @@
+import path from 'node:path';
+import Database from 'better-sqlite3';
 import { expect, test } from '@playwright/test';
-import { E2E_EMAIL, E2E_LOGIN, seedE2eAccount } from './fixtures';
+import { E2E_DB_FILE, E2E_EMAIL, E2E_LOGIN, seedE2eAccount } from './fixtures';
 
 // docs/ui-standard.md › Đầu trang: on a phone the menu logo, the title block and the page's actions
 // share ONE 36px row. Each step-6 page PR adds its page here.
-const TEMPLATE_PAGES = ['/settings'];
+const TEMPLATE_PAGES = [
+  '/settings',
+  '/resources',
+  '/resources/new?kind=grammar',
+  '/resources/ph-item/edit',
+  '/groups/new',
+];
 
 test.beforeAll(async () => {
   await seedE2eAccount();
+  const db = new Database(path.join(process.cwd(), E2E_DB_FILE));
+  try {
+    db.prepare(
+      `INSERT OR REPLACE INTO Item (id, kind, expression, reading, hanviet, meaningVi, level, notes, source,
+         captureReason, suspended, starred, createdAt)
+       VALUES ('ph-item', 'GRAMMAR', '〜ばかりに', NULL, NULL, 'chỉ vì', 'N2', NULL, 'MCP', NULL, 0, 0, ?)`,
+    ).run(new Date().toISOString().replace('Z', '+00:00'));
+  } finally {
+    db.close();
+  }
 });
 
 test('template pages keep logo, title and actions on one row at 390px', async ({ page }) => {
@@ -35,7 +53,10 @@ test('template pages keep logo, title and actions on one row at 390px', async ({
           height: Math.round(r.height),
         };
       };
-      const actions = [...rowEl.querySelectorAll(':scope > div:not(:first-child) button')].map(mid);
+      // A page with actionsOnPhone="split" hides the row's copy of its actions on a phone.
+      const actions = [...rowEl.querySelectorAll(':scope > div:not(:first-child) button')]
+        .filter((el) => el.getBoundingClientRect().height > 0)
+        .map(mid);
       return { row: mid(rowEl), logo: mid(logo), h1: mid(h1), actions };
     });
     if (!row) {

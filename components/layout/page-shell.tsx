@@ -37,6 +37,8 @@ interface PageShellProps {
   meta?: ReactNode;
   /** Template pages: right of the title, one primary action and at most two secondary. */
   actions?: ReactNode;
+  /** Phone: 'inline' keeps the actions on the title's row; 'split' gives them a row of their own. */
+  actionsOnPhone?: 'inline' | 'split';
   /** Template pages: end of the title's row, icon toggles about the page itself (star). */
   pageIcons?: ReactNode;
   /** Template pages: underline tabs under the header. */
@@ -55,6 +57,7 @@ export function PageShell({
   title,
   meta,
   actions,
+  actionsOnPhone = 'inline',
   pageIcons,
   tabs,
   section,
@@ -65,6 +68,7 @@ export function PageShell({
   className,
 }: PageShellProps) {
   if (template) {
+    const split = actionsOnPhone === 'split';
     return (
       <div className={cn(PAGE_CHROME.page, className)} data-template={template}>
         <ScrollRestorer />
@@ -76,12 +80,18 @@ export function PageShell({
               <div className={PAGE_CHROME.block}>
                 {breadcrumb && <div className={PAGE_CHROME.phoneTrail}>{breadcrumb}</div>}
                 <h1 className={PAGE_CHROME.title}>{title}</h1>
-                {meta && <div className={PAGE_CHROME.meta}>{meta}</div>}
+                {meta && (
+                  <div className={cn(PAGE_CHROME.meta, breadcrumb && 'max-md:hidden')}>{meta}</div>
+                )}
               </div>
-              {actions && <div className={PAGE_CHROME.actions}>{actions}</div>}
+              {actions && (
+                <div className={cn(PAGE_CHROME.actions, split && 'max-md:hidden')}>{actions}</div>
+              )}
               {pageIcons && <div className={PAGE_CHROME.pageIcons}>{pageIcons}</div>}
             </div>
           </div>
+          {breadcrumb && meta && <div className={PAGE_CHROME.phoneMeta}>{meta}</div>}
+          {actions && split && <div className={PAGE_CHROME.phoneActions}>{actions}</div>}
           {tabs && <div className={PAGE_CHROME.tabs}>{tabs}</div>}
         </header>
         {children}
