@@ -71,13 +71,6 @@ export function ForgettingCurve({
           hạn ~{pct(retention)}
         </span>
       </div>
-      <p className="text-xs text-muted-foreground">
-        Đường cong quên: khả năng nhớ tụt dần từ 100% (ngay sau khi ôn). App hẹn ôn lại khi rơi về
-        mức mong muốn (~{pct(retention)}).{' '}
-        {showNow && currentR != null && (
-          <span className="text-foreground">Hiện tại: còn nhớ ~{pct(currentR)}.</span>
-        )}
-      </p>
     </div>
   );
 }

@@ -3,8 +3,7 @@
   "debt": {
     "create-label": {
       "components/features/groups/group-actions.tsx": 10,
-      "components/features/groups/group-item-picker.tsx": 1,
-      "components/features/resources/item-groups.tsx": 1
+      "components/features/groups/group-item-picker.tsx": 1
     },
     "icon-only-plain": {
       "components/common/filter-popover.tsx": 1,

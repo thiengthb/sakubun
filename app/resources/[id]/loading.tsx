@@ -39,30 +39,28 @@ export default function Loading() {
       pageIcons={<Skeleton className="size-7 rounded-md" />}
       tabs={<PageTabsSkeleton count={2} widths={[104, 96]} />}
     >
-      <div className="@container grid gap-6 md:gap-8">
-        <div className="space-y-6 md:space-y-8">
-          <SectionSkeleton heading={64}>
-            <div className="grid grid-cols-2 gap-2 @2xl:grid-cols-4 @2xl:gap-3">
-              {Array.from({ length: 8 }, (_, i) => (
-                <Skeleton key={i} className="h-20 rounded-sm" />
-              ))}
-            </div>
-          </SectionSkeleton>
-          <SectionSkeleton heading={40}>
-            <Skeleton className={cn(BUTTON, 'w-20')} />
-          </SectionSkeleton>
-        </div>
+      <div className="@container min-w-0">
         <TabbedSkeleton
           storeKey="item.tab"
           initial="stats"
           shapes={{
             stats: (
               <div className="space-y-6 md:space-y-8">
+                <SectionSkeleton heading={64}>
+                  <div className="grid grid-cols-2 gap-2 @2xl:grid-cols-4 @2xl:gap-3">
+                    {Array.from({ length: 8 }, (_, i) => (
+                      <Skeleton key={i} className="h-20 rounded-sm" />
+                    ))}
+                  </div>
+                </SectionSkeleton>
+                <SectionSkeleton heading={40}>
+                  <Skeleton className={cn(BUTTON, 'w-20')} />
+                </SectionSkeleton>
                 <SectionSkeleton heading={112}>
-                  <Skeleton className="h-64 rounded-xl" />
+                  <Skeleton className="h-48 rounded-xl" />
                 </SectionSkeleton>
                 <SectionSkeleton heading={96}>
-                  <Skeleton className="h-48 rounded-xl" />
+                  <Skeleton className="h-64 rounded-xl" />
                 </SectionSkeleton>
               </div>
             ),

@@ -155,7 +155,7 @@ export function ItemAnalytics({
             {stats.kind === 'vocab' && stats.hanviet && (
               <span>
                 Âm Hán Việt:{' '}
-                <span className="font-medium text-foreground capitalize">{stats.hanviet}</span>
+                <span className="font-medium text-foreground uppercase">{stats.hanviet}</span>
               </span>
             )}
           </div>
@@ -194,8 +194,8 @@ export function ItemAnalytics({
           />
         }
       >
-        <div className="@container grid gap-6 md:gap-8">
-          <div className="space-y-6 md:space-y-8">
+        <div className="@container min-w-0">
+          <TabsContent value="stats" className="space-y-6 md:space-y-8">
             <section className="space-y-3">
               <h2 className="text-sm font-bold">Thông tin</h2>
               <dl className="grid auto-rows-fr grid-cols-2 gap-2 @2xl:grid-cols-4 @2xl:gap-3">
@@ -266,64 +266,60 @@ export function ItemAnalytics({
               <section className="space-y-3">
                 <h2 className="text-sm font-bold">Nhóm</h2>
                 {/* The slot is a server element: as a sibling in a static list React's dev check
-                    sees it unkeyed, so it gets a box of its own. */}
+                      sees it unkeyed, so it gets a box of its own. */}
                 <div>{groupsSlot}</div>
               </section>
             )}
-          </div>
-          <div className="@container min-w-0 space-y-6 md:space-y-8">
-            <TabsContent value="stats" className="space-y-6 md:space-y-8">
-              {stats.forgettingCurve.length > 0 && dueDate && lastReview && (
-                <section className="space-y-3">
-                  <h2 className="text-sm font-bold">Đường cong quên</h2>
-                  <Card className="p-4">
-                    <ForgettingCurve
-                      points={stats.forgettingCurve}
-                      nowDay={nowDay}
-                      dueDay={dueDay}
-                      retention={stats.retention}
-                      currentR={stats.retrievability}
-                    />
-                  </Card>
-                </section>
-              )}
-
+            {stats.forgettingCurve.length > 0 && dueDate && lastReview && (
               <section className="space-y-3">
-                <h2 className="text-sm font-bold">
-                  Lịch sử ôn{' '}
-                  <span className="text-xs font-normal text-muted-foreground">
-                    ({stats.reviewCount} lần)
-                  </span>
-                </h2>
-                <ReviewLog
-                  reviews={stats.reviews}
-                  voiceSpeaker={voiceSpeaker}
-                  speechRate={speechRate}
-                  showFurigana={showFurigana}
-                />
+                <h2 className="text-sm font-bold">Đường cong quên</h2>
+                <Card className="p-4">
+                  <ForgettingCurve
+                    points={stats.forgettingCurve}
+                    nowDay={nowDay}
+                    dueDay={dueDay}
+                    retention={stats.retention}
+                    currentR={stats.retrievability}
+                  />
+                </Card>
               </section>
-            </TabsContent>
+            )}
 
-            <TabsContent value="detail" className="space-y-4">
-              {isVocab && stats.hanviet && (
-                <section className="space-y-1 text-sm">
-                  <SectionTag>Âm Hán Việt</SectionTag>
-                  <p className="font-medium capitalize">{stats.hanviet}</p>
-                </section>
-              )}
-
-              <EnrichmentCard
-                raw={stats.enrichment}
-                kind={isVocab ? VOCAB_KIND : GRAMMAR_KIND}
+            <section className="space-y-3">
+              <h2 className="text-sm font-bold">
+                Lịch sử ôn{' '}
+                <span className="text-xs font-normal text-muted-foreground">
+                  ({stats.reviewCount} lần)
+                </span>
+              </h2>
+              <ReviewLog
+                reviews={stats.reviews}
                 voiceSpeaker={voiceSpeaker}
                 speechRate={speechRate}
                 showFurigana={showFurigana}
-                contrastLinks={stats.contrastLinks}
-                storedExample={isVocab ? stats.notes : null}
-                persist
               />
-            </TabsContent>
-          </div>
+            </section>
+          </TabsContent>
+
+          <TabsContent value="detail" className="space-y-4">
+            {isVocab && stats.hanviet && (
+              <section className="space-y-1 text-sm">
+                <SectionTag>Âm Hán Việt</SectionTag>
+                <p className="font-medium uppercase">{stats.hanviet}</p>
+              </section>
+            )}
+
+            <EnrichmentCard
+              raw={stats.enrichment}
+              kind={isVocab ? VOCAB_KIND : GRAMMAR_KIND}
+              voiceSpeaker={voiceSpeaker}
+              speechRate={speechRate}
+              showFurigana={showFurigana}
+              contrastLinks={stats.contrastLinks}
+              storedExample={isVocab ? stats.notes : null}
+              persist
+            />
+          </TabsContent>
         </div>
       </PageShell>
     </Tabs>
