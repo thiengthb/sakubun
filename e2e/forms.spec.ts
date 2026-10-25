@@ -69,8 +69,16 @@ test('add grammar: required marks, send off until filled, full width', async ({ 
   const header = await page.locator('[data-template] header').boundingBox();
   expect(card!.width, 'form width').toBeGreaterThan(header!.width - 64);
 
-  // The explanations sit under the card, not inside the inputs.
-  await expect(page.getByRole('region', { name: 'Hướng dẫn' })).toBeVisible();
+  // The explanations sit under the card, not inside the inputs, folded behind a toggle button.
+  const guide = page.getByRole('region', { name: 'Hướng dẫn' });
+  const toggle = guide.getByRole('button', { name: 'Hướng dẫn' });
+  await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+  await expect(guide.getByText('Cách đọc (kana)')).toBeHidden();
+  await toggle.click();
+  await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+  await expect(guide.getByText('Cách đọc (kana)')).toBeVisible();
+  await toggle.click();
+  await expect(guide.getByText('Cách đọc (kana)')).toBeHidden();
 
   // The paste tab's button waits for a line it can add.
   await page.getByRole('tab', { name: 'Dán danh sách' }).click();
