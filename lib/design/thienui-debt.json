@@ -2,7 +2,6 @@
   "$doc": "Violations of the thienui design rules that existed when the rules arrived in sakubun (2026-10-24). rule id -> file -> count. Only ever shrinks: thienui-guards.test.ts fails on anything new, and on anything fixed until this file is lowered. It is paid off by moving to thienui components (roadmap 6.x), not by editing it.",
   "debt": {
     "button-size-by-prop": {
-      "components/features/review/quick-review-view.tsx": 6,
       "components/layout/scroll-to-top.tsx": 1,
       "components/layout/sidebar-user.tsx": 1,
       "components/layout/theme-toggle.tsx": 1,
@@ -51,7 +50,6 @@
       "components/common/filter-popover.tsx": 1,
       "components/common/fit-skeleton.tsx": 1,
       "components/common/item-detail-dialog.tsx": 1,
-      "components/common/review-card.tsx": 2,
       "components/features/history/history-cards.tsx": 1,
       "components/features/resources/item-forgetting-curve.tsx": 1,
       "components/layout/auth-nav.tsx": 1,

@@ -9,10 +9,6 @@
     "no-round-controls": {
       "components/common/info-tooltip.tsx": 1,
       "components/layout/scroll-to-top.tsx": 1
-    },
-    "page-template": {
-      "app/review/loading.tsx": 1,
-      "app/review/page.tsx": 1
     }
   }
 }

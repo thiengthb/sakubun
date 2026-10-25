@@ -166,3 +166,31 @@ export function usePinnedFooter({
     };
   }, [footerRef, spacerRef, bottomGap]);
 }
+
+/**
+ * Grows `ref` until its bottom meets the page's bottom padding when its content is shorter than the
+ * window, so a bar at its end (a review session's answer buttons) rests on the window bottom. Its
+ * top does not depend on its height, so measuring never feeds back into itself.
+ */
+export function useFillWindow(ref: RefObject<HTMLElement | null>) {
+  useEffect(() => {
+    let raf = 0;
+    const fill = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        const el = ref.current;
+        if (!el) return;
+        const page = el.closest<HTMLElement>('[data-template]');
+        const pad = page ? parseFloat(getComputedStyle(page).paddingBottom) : PAGE_BOTTOM;
+        const top = el.getBoundingClientRect().top + window.scrollY;
+        el.style.minHeight = `${Math.max(0, Math.floor(window.innerHeight - pad - top))}px`;
+      });
+    };
+    fill();
+    window.addEventListener('resize', fill);
+    return () => {
+      window.removeEventListener('resize', fill);
+      cancelAnimationFrame(raf);
+    };
+  }, [ref]);
+}
