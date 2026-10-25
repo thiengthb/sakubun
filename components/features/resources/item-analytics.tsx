@@ -130,7 +130,6 @@ export function ItemAnalytics({
             speaker={voiceSpeaker}
             rate={speechRate}
             label={stats.kind === 'grammar' ? 'Nghe mẫu' : 'Nghe từ'}
-            align="start"
             title
             className="font-extrabold"
             aside={

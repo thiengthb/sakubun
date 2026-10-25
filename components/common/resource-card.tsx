@@ -48,7 +48,6 @@ export function ResourceCard({
             speaker={voiceSpeaker}
             rate={speechRate}
             label="Nghe mẫu"
-            align="start"
           />
           {extra}
         </div>

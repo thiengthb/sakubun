@@ -134,7 +134,7 @@ export function PageSkeleton({
       <div className={cn(PAGE_CHROME.page, className)} data-template={template}>
         <div className={PAGE_CHROME.header}>
           <div className={PAGE_CHROME.stack}>
-            <div className={PAGE_CHROME.trail}>{trail}</div>
+            {trail && <div className={PAGE_CHROME.trail}>{trail}</div>}
             <div className={PAGE_CHROME.row}>
               <div className="flex shrink-0 items-center md:hidden">
                 <Skeleton className="size-9 rounded-sm" />

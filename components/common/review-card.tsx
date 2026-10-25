@@ -1,5 +1,6 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import { SpeakButton } from '@/components/common/speak-button';
 import { SpokenLine } from '@/components/common/spoken-line';
 import type { QuickCard } from '@/lib/app/quick-review';
@@ -69,6 +70,30 @@ export function Sentence({
   );
 }
 
+/** Tapping anywhere on the question plays it: a pointer shortcut to the speak button inside, which
+ * stays the control for keyboard and screen reader. */
+function TapToHear({
+  active,
+  className,
+  children,
+}: {
+  active: boolean;
+  className?: string;
+  children: ReactNode;
+}) {
+  return (
+    <div
+      className={cn(active && 'cursor-pointer', className)}
+      onClick={(e) => {
+        if (!active || (e.target as HTMLElement).closest('button')) return;
+        e.currentTarget.querySelector<HTMLButtonElement>('button')?.click();
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
 export function spokenText(segments: Segment[], fill: string): string {
   return segments.map((s) => (s.mark === 'blank' ? fill : s.text)).join('');
 }
@@ -109,42 +134,46 @@ export function ReviewCard({
       </div>
 
       {segments ? (
-        <div className="flex items-start gap-2">
+        // The sentence plays when tapped; its button sits left, centred on the first line. A cloze
+        // stays silent until answered, since the sentence read aloud would give the answer away.
+        <TapToHear
+          active={card.mode === 'flip' || answered}
+          className="flex items-start gap-2 text-2xl leading-loose sm:text-3xl"
+        >
+          {(card.mode === 'flip' || answered) && (
+            <span className="flex h-lh shrink-0 items-center">
+              <SpeakButton
+                text={spokenText(segments, card.expression)}
+                label="Nghe câu"
+                speaker={tts.voiceSpeaker}
+                rate={tts.speechRate}
+              />
+            </span>
+          )}
           <Sentence
             segments={segments}
             fill={card.mode === 'cloze' && answered ? card.expression : null}
             showFurigana={showFurigana}
           />
-          {answered && (
-            <SpeakButton
-              text={spokenText(segments, card.expression)}
-              label="Nghe câu"
-              speaker={tts.voiceSpeaker}
-              rate={tts.speechRate}
-              className="mt-2 shrink-0"
-            />
-          )}
-        </div>
+        </TapToHear>
       ) : (
-        // No example sentence yet: the item alone, where the sentence would stand. Only the answer
-        // below is a card.
-        <SpokenLine
-          text={card.expression}
-          ruby={ruby}
-          showFurigana={showFurigana}
-          speaker={tts.voiceSpeaker}
-          rate={tts.speechRate}
-          label="Nghe"
-          className="text-2xl leading-loose font-semibold sm:text-3xl"
-        />
+        // No example sentence yet: the item alone in the middle of the free space, unframed; only
+        // the answer below is a card.
+        <TapToHear active className="flex justify-center py-8 md:py-16">
+          <SpokenLine
+            text={card.expression}
+            ruby={ruby}
+            showFurigana={showFurigana}
+            speaker={tts.voiceSpeaker}
+            rate={tts.speechRate}
+            label="Nghe"
+            className="text-2xl leading-loose font-semibold sm:text-3xl"
+          />
+        </TapToHear>
       )}
 
       {card.mode === 'cloze' && (
-        <div
-          className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"
-          role="group"
-          aria-label="Chọn đáp án"
-        >
+        <div className="grid gap-3 sm:grid-cols-2" role="group" aria-label="Chọn đáp án">
           {card.choices.map((choice, i) => {
             const isAnswer = choice.itemId === card.itemId;
             const isPicked = choice.itemId === picked;
@@ -183,7 +212,7 @@ export function ReviewCard({
 
       {answered && (
         <div className="space-y-3 rounded-lg border-2 border-border bg-card p-5 shadow-lift-card motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2">
-          <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
+          <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
             <SpokenLine
               text={heading}
               speakText={card.reading ?? card.expression}
@@ -195,8 +224,8 @@ export function ReviewCard({
               className="text-2xl font-bold"
             />
             {card.hanviet && (
-              <span className="rounded-md border px-1.5 py-0.5 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-                {card.hanviet}
+              <span className="text-base font-semibold text-muted-foreground uppercase">
+                <span className="sr-only">Âm Hán Việt: </span>[{card.hanviet}]
               </span>
             )}
           </div>

@@ -120,7 +120,7 @@ export function ItemDetailDialog({
           {kind === 'vocab' && item.hanviet && (
             <section className="space-y-1">
               <SectionTag>Âm Hán Việt</SectionTag>
-              <p className="font-medium uppercase">{item.hanviet}</p>
+              <p className="font-medium uppercase">[{item.hanviet}]</p>
             </section>
           )}
 

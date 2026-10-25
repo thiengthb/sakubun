@@ -45,6 +45,45 @@ function leftLine(left: QuickCard[]): string {
   return `Còn ${left.length} thẻ: ${grammar} ngữ pháp, ${vocab} từ vựng`;
 }
 
+// Laptop: the keys for what can be done now, under the card. A phone has no keyboard.
+function KeyHints({
+  card,
+  picked,
+  revealed,
+}: {
+  card: QuickCard;
+  picked: string | null;
+  revealed: boolean;
+}) {
+  const keys: [string, string][] =
+    card.mode === 'cloze'
+      ? picked
+        ? [['Enter', 'thẻ tiếp']]
+        : [['1 2 3 4', 'chọn đáp án theo số trên thẻ']]
+      : revealed
+        ? [
+            ['1', 'Quên'],
+            ['2', 'Khó'],
+            ['3', 'Nhớ'],
+            ['4', 'Dễ'],
+            ['Enter', 'Nhớ'],
+          ]
+        : [['Space', 'xem đáp án']];
+  return (
+    <p className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground max-md:hidden md:mt-8">
+      <span>Phím tắt</span>
+      {keys.map(([key, what]) => (
+        <span key={key + what} className="flex items-center gap-1.5">
+          <kbd className="rounded-sm border border-border bg-card px-1.5 py-0.5 font-sans font-semibold text-foreground">
+            {key}
+          </kbd>
+          {what}
+        </span>
+      ))}
+    </p>
+  );
+}
+
 function Summary({ results, nextDueAt }: { results: Result[]; nextDueAt: Date | null }) {
   const remembered = (of: Result[]) => of.filter((r) => isRemembered(r.rating)).length;
   const byKind = (kind: QuickCard['kind'], label: string) => {
@@ -257,6 +296,7 @@ export function QuickReviewView({
               onPick={pick}
             />
           )}
+          {card && !done && <KeyHints card={card} picked={picked} revealed={revealed} />}
         </div>
 
         {/* Phone: the bar's buttons share the width; laptop: they keep their own size, at the right. */}
@@ -267,7 +307,13 @@ export function QuickReviewView({
             </Button>
           )}
           {showGrade && card && (
-            <div className="grid grid-cols-2 gap-2 sm:flex" role="group" aria-label="Chấm thẻ">
+            // Phone: two columns, the misses (Quên, Khó) on the left and the hits (Nhớ, Dễ) on the
+            // right, so a thumb finds each side without reading.
+            <div
+              className="grid grid-flow-col grid-cols-2 grid-rows-2 gap-2 sm:flex"
+              role="group"
+              aria-label="Chấm thẻ"
+            >
               {GRADES.map(({ rating, label, tone }) => (
                 <Button
                   key={rating}
