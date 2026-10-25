@@ -14,14 +14,15 @@ chỗ sai mới làm test đỏ, chỗ đã sửa cũng làm test đỏ cho tớ
 | Luật | Khoá bởi |
 | --- | --- |
 | Nút và ô cao 36px trên điện thoại, 28px từ 768px, tính theo mắt nhìn: gờ 2px của nút nổi nằm trong chiều cao đó (khung 34 hoặc 26px, chừa 2px bên dưới cho gờ). Ô nhập và nút cùng hàng trùng mép trên và mép dưới. Vùng chạm 44px trên màn cảm ứng; icon 16px. | `e2e/control-size.spec.ts`, thienui `icon-size-scale`, `button-size-by-prop` |
-| Bo 8px cho nút, ô, thẻ và hộp thoại (thien chọn 7px ngày 2026-10-25 khi so từ 4 tới 10px, rồi nâng lên 8px sau khi xem trên trang thật). Chỉ dùng thang `rounded`, `-sm` tới `-2xl`, `-full`, hoặc giá trị tuỳ ý đọc token `--radius-*`. | `ui-standard` `radius-class`, test thang bo |
+| Bo 8px cho nút, ô, thẻ và hộp thoại (thien chọn 7px ngày 2026-10-25 khi so từ 4 tới 10px, rồi nâng lên 8px sau khi xem trên trang thật). Hộp nhỏ từ 20px trở xuống (ô đánh dấu) bo 4px (`rounded-xs`), vì 8px trên hộp 16px thành hình tròn. Chỉ dùng thang `rounded`, `-xs` tới `-2xl`, `-full`, hoặc giá trị tuỳ ý đọc token `--radius-*`. | `ui-standard` `radius-class`, test thang bo |
 | Không nút, link, toggle hay ô nào bo tròn hẳn. `rounded-full` chỉ cho chấm, thanh tiến độ, ảnh đại diện. | `ui-standard` `no-round-controls` |
 
 ## Chữ
 
 | Luật | Khoá bởi |
 | --- | --- |
-| Tiêu đề trang 18px điện thoại, 24px laptop, đậm 800; tiêu đề phần 14px đậm 700; nội dung 14px; meta 12px. | `type-scale.test.ts`, ảnh |
+| Tiêu đề trang 18px điện thoại, 24px laptop, đậm 700 (`font-extrabold`); tiêu đề phần 14px đậm 600 (`font-bold`); nội dung 14px; meta 12px. | `type-scale.test.ts`, test token đậm, `e2e/font-weight.spec.ts` |
+| Một luật đậm cho cả trang (thien, 2026-10-25): chữ đậm nhất 700, đậm 600; nút, chip, badge, mục menu, tab, ô chọn và sidebar đậm 500, lấy từ component, trang không tự làm đậm; icon nét 1.5 (`LucideProvider` trong `app/layout.tsx`), không tự đặt `strokeWidth`. | `ui-standard` `control-weight`, `e2e/font-weight.spec.ts` |
 
 ## Nút và ô
 

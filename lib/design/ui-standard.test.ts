@@ -54,6 +54,7 @@ describe('ui standard: each check goes red on a bad sample', () => {
     expect(check('radius-class', '<div className="rounded-3xl" />')).toHaveLength(1);
     // Built from parts so the thienui no-arbitrary-scale-values guard does not read the sample.
     const bare = ['rounded-[', '12px]'].join('');
+    expect(check('radius-class', '<span className="rounded-xs" />')).toEqual([]);
     expect(check('radius-class', `<div className="${bare}" />`)).toHaveLength(1);
     expect(
       check(
@@ -68,6 +69,16 @@ describe('ui standard: each check goes red on a bad sample', () => {
       check('no-round-controls', '<Button\n  className={cn("size-9 rounded-full")}\n>x</Button>'),
     ).toHaveLength(1);
     expect(check('no-round-controls', '<span className="rounded-full" />')).toEqual([]);
+  });
+
+  it('control-weight', () => {
+    expect(check('control-weight', '<Button className="font-bold">Lưu</Button>')).toHaveLength(1);
+    expect(
+      check('control-weight', '<Badge variant="outline" className="h-6 font-semibold">N2</Badge>'),
+    ).toHaveLength(1);
+    expect(check('control-weight', '<Button>Lưu</Button><span className="font-bold" />')).toEqual(
+      [],
+    );
   });
 
   it('control-language-in-components', () => {
@@ -144,6 +155,13 @@ describe('ui standard: the codebase', () => {
     const radius = (name: string) => new RegExp(`--radius-${name}:\\s*([^;]+);`).exec(css)?.[1];
     expect(['sm', 'md', 'lg'].map(radius)).toEqual(['0.5rem', '0.5rem', '0.5rem']);
     expect(['xl', '2xl'].map(radius)).toEqual(['0.5rem', '0.5rem']);
+  });
+
+  it('bold is 600 and extra bold 700', () => {
+    // thien, item detail round 2 (2026-10-25): 700 and 800 read heavy beside body text.
+    const css = readFileSync('app/globals.css', 'utf8');
+    const weight = (name: string) => new RegExp(`--font-weight-${name}:\\s*([^;]+);`).exec(css)?.[1];
+    expect(['bold', 'extrabold'].map(weight)).toEqual(['600', '700']);
   });
 
   it('no break beyond the recorded debt', () => {

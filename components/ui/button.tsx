@@ -14,9 +14,9 @@ const buttonVariants = cva(
       variant: {
         // Raised: a 2px lift that the press takes away.
         default:
-          'bg-primary font-bold text-primary-foreground shadow-lift-primary hover:bg-primary/90 active:not-aria-[haspopup]:translate-y-0.5 active:not-aria-[haspopup]:shadow-none',
+          'bg-primary text-primary-foreground shadow-lift-primary hover:bg-primary/90 active:not-aria-[haspopup]:translate-y-0.5 active:not-aria-[haspopup]:shadow-none',
         outline:
-          'border-control-edge bg-card font-bold shadow-lift hover:bg-muted hover:text-foreground active:not-aria-[haspopup]:translate-y-0.5 active:not-aria-[haspopup]:shadow-none aria-expanded:bg-muted aria-expanded:text-foreground',
+          'border-control-edge bg-card shadow-lift hover:bg-muted hover:text-foreground active:not-aria-[haspopup]:translate-y-0.5 active:not-aria-[haspopup]:shadow-none aria-expanded:bg-muted aria-expanded:text-foreground',
         // A suggestion to create the first of something: flat, dashed edge.
         dashed:
           'border-dashed border-control-edge text-muted-foreground hover:border-primary hover:text-accent-brand',
@@ -25,7 +25,7 @@ const buttonVariants = cva(
         ghost:
           'hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:hover:bg-muted/50',
         destructive:
-          'bg-destructive font-bold text-destructive-foreground shadow-lift-destructive hover:bg-destructive/90 focus-visible:ring-destructive/20 active:not-aria-[haspopup]:translate-y-0.5 active:not-aria-[haspopup]:shadow-none dark:focus-visible:ring-destructive/40',
+          'bg-destructive text-destructive-foreground shadow-lift-destructive hover:bg-destructive/90 focus-visible:ring-destructive/20 active:not-aria-[haspopup]:translate-y-0.5 active:not-aria-[haspopup]:shadow-none dark:focus-visible:ring-destructive/40',
         link: 'text-primary underline-offset-4 hover:underline',
       },
       size: {
