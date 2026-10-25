@@ -69,8 +69,8 @@ test('edit an item: an emptied required field says so', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await login(page);
   await page.goto('/resources/form-item/edit', { waitUntil: 'networkidle' });
-  // thien, 2026-10-25: the title names the item beside the action, in brackets.
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Sửa ngữ pháp (〜ばかりに)');
+  // thien, 2026-10-25: the title is the action alone; the form shows what is being edited.
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Sửa ngữ pháp');
   await field(page, 'Nghĩa (tiếng Việt)').fill('');
   await page.getByRole('button', { name: 'Lưu', exact: true }).click();
   await expect(page.getByText('Cần nhập nghĩa')).toBeVisible();
@@ -84,4 +84,21 @@ test('new group: the name is required', async ({ page }) => {
   await page.getByRole('button', { name: 'Thêm nhóm' }).click();
   await expect(page.getByText('Cần nhập tên nhóm')).toBeVisible();
   await expect(field(page, 'Tên nhóm')).toBeFocused();
+});
+
+test('new group: a name over 40 characters says so while typing and is not sent', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await login(page);
+  await page.goto('/groups/new', { waitUntil: 'networkidle' });
+  const name = field(page, 'Tên nhóm');
+  await name.fill('Nhóm luyện thi');
+  await expect(page.getByText('14/40')).toBeVisible();
+  await name.fill('a'.repeat(41));
+  await expect(page.getByText('Tên nhóm tối đa 40 ký tự, đang có 41.')).toBeVisible();
+  await expect(name).toHaveAttribute('aria-invalid', 'true');
+  await page.getByRole('button', { name: 'Thêm nhóm' }).click();
+  await expect(page).toHaveURL(/\/groups\/new$/);
+  await expect(name).toBeFocused();
 });

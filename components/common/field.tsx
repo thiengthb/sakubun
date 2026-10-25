@@ -11,6 +11,7 @@ export function Field({
   info,
   required = false,
   error,
+  count,
   className,
   children,
 }: {
@@ -20,6 +21,8 @@ export function Field({
   required?: boolean;
   /** Shown under the control in place of the hint; marks the control invalid. */
   error?: string | null;
+  /** A length limit: "12/40" at the end of the hint row, red once over. */
+  count?: { value: number; max: number };
   className?: string;
   children: ReactNode;
 }) {
@@ -51,12 +54,26 @@ export function Field({
         )}
       </span>
       <FieldLabelContext.Provider value={labelId}>{labelled}</FieldLabelContext.Provider>
-      {error ? (
-        <span id={errorId} className="text-xs font-semibold text-destructive">
-          {error}
-        </span>
-      ) : (
-        hint && <span className="text-xs text-muted-foreground">{hint}</span>
+      {(error || hint || count) && (
+        <div className="flex items-start gap-3">
+          {error ? (
+            <span id={errorId} className="text-xs font-semibold text-destructive">
+              {error}
+            </span>
+          ) : (
+            hint && <span className="text-xs text-muted-foreground">{hint}</span>
+          )}
+          {count && (
+            <span
+              className={cn(
+                'ml-auto text-xs text-muted-foreground tabular-nums',
+                count.value > count.max && 'font-semibold text-destructive',
+              )}
+            >
+              {count.value}/{count.max}
+            </span>
+          )}
+        </div>
       )}
     </div>
   );

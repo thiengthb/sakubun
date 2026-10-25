@@ -2,7 +2,6 @@
 
 import { useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
-import { TitleSubject } from '@/components/common/title-subject';
 import { PageShell } from '@/components/layout/page-shell';
 import { ParentCrumbs } from '@/components/layout/app-breadcrumbs';
 import { GroupForm } from '@/components/features/groups/group-form';
@@ -20,7 +19,7 @@ export function GroupFormPage({ group }: { group?: GroupSummary }) {
     <PageShell
       template="form"
       breadcrumb={<ParentCrumbs section="groups" self />}
-      title={group ? <TitleSubject subject={group.name}>Sửa nhóm</TitleSubject> : 'Thêm nhóm'}
+      title={group ? 'Sửa nhóm' : 'Thêm nhóm'}
     >
       <Card>
         <CardContent>

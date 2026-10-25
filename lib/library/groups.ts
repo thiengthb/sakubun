@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/db/db';
 import { GRAMMAR_KIND, VOCAB_KIND } from '@/lib/library/item-kinds';
 import { cleanText, cleanTextOrNull } from '@/lib/core/text';
+import { groupTextError } from '@/lib/library/group-limits';
 import type { GroupKind } from '@/lib/library/group-kinds';
 
 export { GROUP_KINDS, isGroupKind, type GroupKind } from '@/lib/library/group-kinds';
@@ -156,7 +157,9 @@ export async function listAddableItems(groupId: string): Promise<GroupMemberItem
   }));
 }
 
-export async function getItemGroupPicker(itemId: string): Promise<{ member: GroupSummary[]; addable: GroupSummary[] } | null> {
+export async function getItemGroupPicker(
+  itemId: string,
+): Promise<{ member: GroupSummary[]; addable: GroupSummary[] } | null> {
   const item = await prisma.item.findFirst({
     where: { id: itemId },
     select: { kind: true },
@@ -207,9 +210,15 @@ export async function previewGroupMembers(
   return { fit, mismatched, notFound };
 }
 
+function assertGroupText(name: string | undefined, note: string | null | undefined) {
+  const problem = groupTextError('name', name) ?? groupTextError('note', note);
+  if (problem) throw new Error(problem);
+}
+
 export async function createGroup(input: CreateGroupInput): Promise<GroupSummary> {
   const name = cleanText(input.name);
   if (!name) throw new Error('Group name is required.');
+  assertGroupText(name, input.note);
   const kind: GroupKind = input.kind ?? 'mixed';
   const g = await prisma.group.create({
     data: {
@@ -231,16 +240,15 @@ export async function createGroup(input: CreateGroupInput): Promise<GroupSummary
   };
 }
 
-export async function updateGroup(
-  groupId: string,
-  patch: UpdateGroupPatch,
-): Promise<boolean> {
+export async function updateGroup(groupId: string, patch: UpdateGroupPatch): Promise<boolean> {
   const data: Record<string, unknown> = {};
   if (patch.name !== undefined) {
     const name = cleanText(patch.name);
     if (!name) throw new Error('Group name is required.');
+    assertGroupText(name, undefined);
     data.name = name;
   }
+  if (patch.note) assertGroupText(undefined, patch.note);
   if (patch.kind !== undefined) data.kind = patch.kind;
   if (patch.color !== undefined) data.color = cleanTextOrNull(patch.color);
   if (patch.note !== undefined) data.note = cleanTextOrNull(patch.note);

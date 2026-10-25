@@ -8,6 +8,12 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { GROUP_KIND_LABELS } from '@/lib/library/group-kinds';
+import {
+  GROUP_NAME_MAX,
+  GROUP_NOTE_MAX,
+  groupTextError,
+  textLength,
+} from '@/lib/library/group-limits';
 import { createGroupAction, updateGroupAction } from '@/app/actions';
 import { GROUP_KINDS, type GroupKind } from '@/lib/library/group-kinds';
 import type { GroupSummary } from '@/lib/library/groups';
@@ -27,15 +33,19 @@ export function GroupForm({
   const [note, setNote] = useState(group?.note ?? '');
   const [isPending, startTransition] = useTransition();
 
-  // The error shows once the form is sent, and clears as the name is filled.
   const [sent, setSent] = useState(false);
-  const nameError = sent && !name.trim() ? 'Cần nhập tên nhóm' : null;
+  // Too long shows at once, while typing; empty only once the form is sent.
+  const nameError =
+    groupTextError('name', name) ?? (sent && !name.trim() ? 'Cần nhập tên nhóm' : null);
+  const noteError = groupTextError('note', note);
 
   const submit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setSent(true);
-    if (!name.trim()) {
-      e.currentTarget.querySelector<HTMLElement>('#group-name')?.focus();
+    if (!name.trim() || nameError || noteError) {
+      e.currentTarget
+        .querySelector<HTMLElement>(nameError || !name.trim() ? '#group-name' : '#group-note')
+        ?.focus();
       return;
     }
     startTransition(async () => {
@@ -48,7 +58,12 @@ export function GroupForm({
 
   return (
     <form onSubmit={submit} noValidate className="space-y-6">
-      <Field label="Tên nhóm" required error={nameError}>
+      <Field
+        label="Tên nhóm"
+        required
+        error={nameError}
+        count={{ value: textLength(name.trim()), max: GROUP_NAME_MAX }}
+      >
         <Input
           id="group-name"
           value={name}
@@ -79,8 +94,13 @@ export function GroupForm({
         </ToggleGroup>
       </Field>
 
-      <Field label="Ghi chú">
+      <Field
+        label="Ghi chú"
+        error={noteError}
+        count={{ value: textLength(note.trim()), max: GROUP_NOTE_MAX }}
+      >
         <Textarea
+          id="group-note"
           value={note}
           onChange={(e) => setNote(e.target.value)}
           rows={2}
