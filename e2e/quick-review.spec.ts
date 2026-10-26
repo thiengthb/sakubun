@@ -1,7 +1,7 @@
 import path from 'node:path';
 import Database from 'better-sqlite3';
 import { expect, test, type Page } from '@playwright/test';
-import { E2E_DB_FILE, E2E_EMAIL, E2E_LOGIN, seedE2eAccount } from './fixtures';
+import { E2E_DB_FILE, E2E_EMAIL, E2E_LOGIN, ownSeedRows, seedE2eAccount } from './fixtures';
 
 const DAY = 86_400_000;
 const iso = (ms: number) => new Date(ms).toISOString().replace('Z', '+00:00');
@@ -66,6 +66,7 @@ function seed() {
       srs.run(`s${id}`, id, iso(now), 0, 0, 0, 0, 0, null);
     });
   } finally {
+    ownSeedRows(db);
     db.close();
   }
 }

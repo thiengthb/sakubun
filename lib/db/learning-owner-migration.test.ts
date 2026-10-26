@@ -10,6 +10,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 const MIGRATIONS_DIR = path.resolve(import.meta.dirname, '..', '..', 'prisma', 'migrations');
 const OWNER = '20261025230000_learning_owner';
+const BACKFILL = '20261026050000_learning_owner_backfill';
 const TABLES = [
   'Item',
   'SrsState',
@@ -159,5 +160,29 @@ describe('learning owner migration', () => {
     db.prepare(`DELETE FROM user WHERE id = 'thien'`).run();
 
     for (const table of TABLES) expect(rowsOf(db, table), table).toEqual([]);
+  });
+
+  it('the 7.1b backfill owns rows written after the first migration, and keeps one settings row', () => {
+    db = dbBeforeOwner();
+    addUser(db, 'thien', 'admin', '2026-08-01T00:00:00.000+00:00');
+    db.prepare(
+      `INSERT INTO Settings (data, updatedAt) VALUES ('{"a":1}', '2026-10-04T00:00:00.000+00:00')`,
+    ).run();
+    db.exec(sql(OWNER));
+    // Written by the release between the two migrations, which did not set userId yet.
+    seedLearning(db);
+    const before = Object.fromEntries(TABLES.map((t) => [t, rowsOf(db, t)]));
+
+    db.exec(sql(BACKFILL));
+
+    for (const table of TABLES.filter((t) => t !== 'Settings')) {
+      expect(rowsOf(db, table), table).toEqual(
+        before[table].map((row) => ({ ...row, userId: 'thien' })),
+      );
+    }
+    expect(db.prepare('SELECT data, userId FROM Settings ORDER BY id').all()).toEqual([
+      { data: '{"a":1}', userId: 'thien' },
+      { data: '{"sessionGoal":20}', userId: null },
+    ]);
   });
 });

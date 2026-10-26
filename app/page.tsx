@@ -36,7 +36,7 @@ import { ContentGapChip } from '@/components/features/resources/content-gap-noti
 import { RetentionCard } from '@/components/features/dashboard/retention-gauge';
 import { ERROR_TAG_LABELS } from '@/lib/session/error-tags';
 import { getDashboard } from '@/lib/insights/dashboard';
-import { getSessionUserId } from '@/lib/auth/current-user';
+import { getUserDb } from '@/lib/auth/current-user';
 
 export const metadata: Metadata = {
   title: 'Phân tích — sakubun',
@@ -46,8 +46,8 @@ export const metadata: Metadata = {
 export const dynamic = 'force-dynamic';
 
 export default async function HomePage() {
-  await getSessionUserId();
-  const data = await getDashboard();
+  const db = await getUserDb();
+  const data = await getDashboard(db);
   const { weak } = data;
   const totalItems = data.grammarTotal;
   const hasWeakData =

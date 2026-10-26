@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/db/db';
+import type { UserDb } from '@/lib/db/user-db';
 import { GRAMMAR_KIND, VOCAB_KIND } from '@/lib/library/item-kinds';
 import { cleanText, cleanTextOrNull } from '@/lib/core/text';
 import { groupTextError } from '@/lib/library/group-limits';
@@ -69,8 +69,8 @@ export interface UpdateGroupPatch {
   note?: string | null;
 }
 
-export async function listGroups(): Promise<GroupSummary[]> {
-  const rows = await prisma.group.findMany({
+export async function listGroups(db: UserDb): Promise<GroupSummary[]> {
+  const rows = await db.group.findMany({
     include: { _count: { select: { members: true } } },
     orderBy: { createdAt: 'desc' },
   });
@@ -86,8 +86,8 @@ export async function listGroups(): Promise<GroupSummary[]> {
   }));
 }
 
-export async function getGroup(groupId: string): Promise<GroupDetail | null> {
-  const g = await prisma.group.findFirst({
+export async function getGroup(db: UserDb, groupId: string): Promise<GroupDetail | null> {
+  const g = await db.group.findFirst({
     where: { id: groupId },
     include: {
       _count: { select: { members: true } },
@@ -152,8 +152,11 @@ export async function getGroup(groupId: string): Promise<GroupDetail | null> {
   };
 }
 
-export async function listAddableItems(groupId: string): Promise<GroupMemberItem[] | null> {
-  const group = await prisma.group.findFirst({
+export async function listAddableItems(
+  db: UserDb,
+  groupId: string,
+): Promise<GroupMemberItem[] | null> {
+  const group = await db.group.findFirst({
     where: { id: groupId },
     select: { kind: true },
   });
@@ -166,7 +169,7 @@ export async function listAddableItems(groupId: string): Promise<GroupMemberItem
         ? [VOCAB_ITEM_KIND]
         : [GRAMMAR_ITEM_KIND];
 
-  const items = await prisma.item.findMany({
+  const items = await db.item.findMany({
     where: { kind: { in: kinds }, groups: { none: { groupId } } },
     select: {
       id: true,
@@ -200,9 +203,10 @@ export async function listAddableItems(groupId: string): Promise<GroupMemberItem
 }
 
 export async function getItemGroupPicker(
+  db: UserDb,
   itemId: string,
 ): Promise<{ member: GroupSummary[]; addable: GroupSummary[] } | null> {
-  const item = await prisma.item.findFirst({
+  const item = await db.item.findFirst({
     where: { id: itemId },
     select: { kind: true },
   });
@@ -210,8 +214,8 @@ export async function getItemGroupPicker(
   const itemGroupKind: GroupKind = item.kind === VOCAB_ITEM_KIND ? 'vocab' : 'grammar';
 
   const [all, memberRows] = await Promise.all([
-    listGroups(),
-    prisma.groupMember.findMany({ where: { itemId }, select: { groupId: true } }),
+    listGroups(db),
+    db.groupMember.findMany({ where: { itemId }, select: { groupId: true } }),
   ]);
   const memberSet = new Set(memberRows.map((m) => m.groupId));
 
@@ -224,13 +228,14 @@ export async function getItemGroupPicker(
 }
 
 export async function previewGroupMembers(
+  db: UserDb,
   kind: GroupKind,
   itemIds: string[],
 ): Promise<{ fit: GroupMemberItem[]; mismatched: GroupMemberItem[]; notFound: string[] }> {
   const ids = [...new Set(itemIds)];
   if (ids.length === 0) return { fit: [], mismatched: [], notFound: [] };
 
-  const items = await prisma.item.findMany({
+  const items = await db.item.findMany({
     where: { id: { in: ids } },
     select: { id: true, expression: true, reading: true, meaningVi: true, kind: true },
   });
@@ -257,12 +262,12 @@ function assertGroupText(name: string | undefined, note: string | null | undefin
   if (problem) throw new Error(problem);
 }
 
-export async function createGroup(input: CreateGroupInput): Promise<GroupSummary> {
+export async function createGroup(db: UserDb, input: CreateGroupInput): Promise<GroupSummary> {
   const name = cleanText(input.name);
   if (!name) throw new Error('Group name is required.');
   assertGroupText(name, input.note);
   const kind: GroupKind = input.kind ?? 'mixed';
-  const g = await prisma.group.create({
+  const g = await db.group.create({
     data: {
       name,
       kind,
@@ -282,7 +287,11 @@ export async function createGroup(input: CreateGroupInput): Promise<GroupSummary
   };
 }
 
-export async function updateGroup(groupId: string, patch: UpdateGroupPatch): Promise<boolean> {
+export async function updateGroup(
+  db: UserDb,
+  groupId: string,
+  patch: UpdateGroupPatch,
+): Promise<boolean> {
   const data: Record<string, unknown> = {};
   if (patch.name !== undefined) {
     const name = cleanText(patch.name);
@@ -296,30 +305,31 @@ export async function updateGroup(groupId: string, patch: UpdateGroupPatch): Pro
   if (patch.note !== undefined) data.note = cleanTextOrNull(patch.note);
   if (Object.keys(data).length === 0) return true;
 
-  const res = await prisma.group.updateMany({ where: { id: groupId }, data });
+  const res = await db.group.updateMany({ where: { id: groupId }, data });
   return res.count > 0;
 }
 
-export async function deleteGroup(groupId: string): Promise<boolean> {
-  const res = await prisma.group.deleteMany({ where: { id: groupId } });
+export async function deleteGroup(db: UserDb, groupId: string): Promise<boolean> {
+  const res = await db.group.deleteMany({ where: { id: groupId } });
   return res.count > 0;
 }
 
 export async function addItemsToGroup(
+  db: UserDb,
   groupId: string,
   itemIds: string[],
 ): Promise<{ added: number }> {
   const ids = [...new Set(itemIds)];
   if (ids.length === 0) return { added: 0 };
 
-  const group = await prisma.group.findFirst({
+  const group = await db.group.findFirst({
     where: { id: groupId },
     select: { kind: true },
   });
   if (!group) throw new Error('Group not found.');
   const groupKind = group.kind as GroupKind;
 
-  const items = await prisma.item.findMany({
+  const items = await db.item.findMany({
     where: { id: { in: ids } },
     select: { id: true, kind: true },
   });
@@ -334,7 +344,7 @@ export async function addItemsToGroup(
     );
   }
 
-  const existing = await prisma.groupMember.findMany({
+  const existing = await db.groupMember.findMany({
     where: { groupId, itemId: { in: items.map((i) => i.id) } },
     select: { itemId: true },
   });
@@ -342,19 +352,20 @@ export async function addItemsToGroup(
   const toCreate = items.filter((i) => !alreadyIn.has(i.id));
   if (toCreate.length === 0) return { added: 0 };
 
-  const res = await prisma.groupMember.createMany({
+  const res = await db.groupMember.createMany({
     data: toCreate.map((i) => ({ groupId, itemId: i.id })),
   });
   return { added: res.count };
 }
 
 export async function removeItemsFromGroup(
+  db: UserDb,
   groupId: string,
   itemIds: string[],
 ): Promise<{ removed: number }> {
   const ids = [...new Set(itemIds)];
   if (ids.length === 0) return { removed: 0 };
-  const res = await prisma.groupMember.deleteMany({
+  const res = await db.groupMember.deleteMany({
     where: { groupId, itemId: { in: ids } },
   });
   return { removed: res.count };

@@ -1,5 +1,6 @@
 import { beforeAll, describe, expect, it } from 'vitest';
-import { createTestDb, resetLearningData } from '@/lib/db/test-db';
+import type { UserDb } from '@/lib/db/user-db';
+import { createTestUser, createTestDb, resetLearningData } from '@/lib/db/test-db';
 import type { RatingValue } from '@/lib/srs/srs';
 
 // Characterization tests from the core rewrite (docs/roadmap.md, PR 0.2): the FSRS outcome of a review
@@ -14,6 +15,7 @@ type Db = typeof import('@/lib/db/db');
 let P: Practice;
 let R: RecordModule;
 let prisma: Db['prisma'];
+let db: UserDb;
 
 // After any real clock reading in CI, so items created "now" by addItems are already in the past.
 const NOW = new Date('2030-01-15T03:00:00.000Z');
@@ -25,11 +27,12 @@ async function reset(): Promise<void> {
 
 async function seed(expressions: string[], kind: 'GRAMMAR' | 'VOCAB' = 'GRAMMAR', level = 'N5') {
   await P.addItems(
+    db,
     expressions.map((expression) => ({ expression, meaningVi: 'nghĩa', level })),
     'MCP',
     kind,
   );
-  const rows = await P.listItems({ kind });
+  const rows = await P.listItems(db, { kind });
   return expressions.map((e) => {
     const row = rows.find((r) => r.expression === e);
     if (!row) throw new Error(`seed failed: ${e}`);
@@ -38,13 +41,13 @@ async function seed(expressions: string[], kind: 'GRAMMAR' | 'VOCAB' = 'GRAMMAR'
 }
 
 async function review(itemId: string, rating: RatingValue, at: Date) {
-  const srs = await prisma.srsState.findUniqueOrThrow({ where: { itemId } });
-  const { desiredRetention } = await P.getSettings();
-  return R.recordReviews([{ itemId, srs, rating }], { retention: desiredRetention, now: at });
+  const srs = await db.srsState.findUniqueOrThrow({ where: { itemId } });
+  const { desiredRetention } = await P.getSettings(db);
+  return R.recordReviews(db, [{ itemId, srs, rating }], { retention: desiredRetention, now: at });
 }
 
 async function srsOf(itemId: string) {
-  const row = await prisma.srsState.findUniqueOrThrow({ where: { itemId } });
+  const row = await db.srsState.findUniqueOrThrow({ where: { itemId } });
   return {
     state: row.state,
     reps: row.reps,
@@ -57,6 +60,7 @@ beforeAll(async () => {
   P = await import('@/lib/library/practice');
   R = await import('@/lib/app/record-review');
   ({ prisma } = await import('@/lib/db/db'));
+  db = (await import('@/lib/db/user-db')).userDb(await createTestUser(prisma, 'learner'));
 });
 
 describe('FSRS outcome of one review (must survive the rewrite unchanged)', () => {
@@ -102,7 +106,7 @@ describe('FSRS outcome of one review (must survive the rewrite unchanged)', () =
     await reset();
     const [id] = await seed(['pattern_growth']);
     await review(id, 3, NOW);
-    const first = await prisma.srsState.findUniqueOrThrow({ where: { itemId: id } });
+    const first = await db.srsState.findUniqueOrThrow({ where: { itemId: id } });
     await review(id, 3, first.due);
     const second = await srsOf(id);
     expect(second).toMatchInlineSnapshot(`
@@ -119,7 +123,7 @@ describe('FSRS outcome of one review (must survive the rewrite unchanged)', () =
     await reset();
     const [id] = await seed(['pattern_lapse']);
     await review(id, 4, NOW);
-    const first = await prisma.srsState.findUniqueOrThrow({ where: { itemId: id } });
+    const first = await db.srsState.findUniqueOrThrow({ where: { itemId: id } });
     await review(id, 1, first.due);
     expect(await srsOf(id)).toMatchInlineSnapshot(`
       {
@@ -137,12 +141,12 @@ describe('ReviewLog is append-only', () => {
     await reset();
     const [id] = await seed(['pattern_log']);
     await review(id, 3, NOW);
-    const first = await prisma.srsState.findUniqueOrThrow({ where: { itemId: id } });
+    const first = await db.srsState.findUniqueOrThrow({ where: { itemId: id } });
     await review(id, 3, first.due);
-    expect(await prisma.reviewLog.count({ where: { itemId: id } })).toBe(2);
+    expect(await db.reviewLog.count({ where: { itemId: id } })).toBe(2);
 
-    await P.deleteItem(id);
-    const logs = await prisma.reviewLog.findMany({});
+    await P.deleteItem(db, id);
+    const logs = await db.reviewLog.findMany({});
     expect(logs).toHaveLength(2);
     expect(logs.every((l) => l.itemId === null)).toBe(true);
   });

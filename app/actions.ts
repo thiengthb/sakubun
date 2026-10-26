@@ -18,7 +18,7 @@ import {
 } from '@/lib/library/practice';
 import { getStreak } from '@/lib/insights/streak';
 import { JLPT_LEVELS, settingsPatchSchema, type Settings } from '@/lib/settings/schema';
-import { getSessionUserId } from '@/lib/auth/current-user';
+import { getSessionUserId, getUserDb } from '@/lib/auth/current-user';
 import {
   GROUP_KINDS,
   addItemsToGroup,
@@ -36,10 +36,10 @@ function revalidateResources(): void {
 }
 
 export async function saveSettingsAction(patch: unknown): Promise<ActionResult<Settings>> {
-  await getSessionUserId();
+  const db = await getUserDb();
   const parsed = parseInput(settingsPatchSchema, patch);
   if (!parsed.ok) return parsed;
-  const settings = await saveSettings(parsed.data);
+  const settings = await saveSettings(db, parsed.data);
   return ok(settings);
 }
 
@@ -86,7 +86,7 @@ export async function importItemsAction(
   entries: unknown,
   kind?: ResourceKind,
 ): Promise<ActionResult<ImportSummary>> {
-  await getSessionUserId();
+  const db = await getUserDb();
   const kindParsed = parseInput(resourceKindSchema, kind, 'Loại tài nguyên không hợp lệ');
   if (!kindParsed.ok) return kindParsed;
   const parsed = parseInput(
@@ -96,7 +96,7 @@ export async function importItemsAction(
   );
   if (!parsed.ok) return parsed;
 
-  const r = await addItems(parsed.data, 'MAZII', resolveKind(kindParsed.data));
+  const r = await addItems(db, parsed.data, 'MAZII', resolveKind(kindParsed.data));
   revalidateResources();
   return ok({ created: r.created, skipped: r.skipped });
 }
@@ -113,12 +113,12 @@ export async function addOneItemAction(
   input: unknown,
   kind?: ResourceKind,
 ): Promise<ActionResult<{ created: number }>> {
-  await getSessionUserId();
+  const db = await getUserDb();
   const kindParsed = parseInput(resourceKindSchema, kind, 'Loại tài nguyên không hợp lệ');
   if (!kindParsed.ok) return kindParsed;
   const parsed = parseInput(addOneItemSchema, input);
   if (!parsed.ok) return parsed;
-  const r = await addItems([parsed.data], 'WEB', resolveKind(kindParsed.data));
+  const r = await addItems(db, [parsed.data], 'WEB', resolveKind(kindParsed.data));
   if (r.created === 0) return err(r.skipped[0]?.reason ?? 'Đã có trong kho');
   revalidateResources();
   return ok({ created: r.created });
@@ -128,9 +128,9 @@ export async function setItemSuspendedAction(
   itemId: string,
   suspended: boolean,
 ): Promise<ActionResult> {
-  await getSessionUserId();
+  const db = await getUserDb();
   if (!itemId) return err('Thiếu itemId');
-  await setItemSuspended(itemId, suspended);
+  await setItemSuspended(db, itemId, suspended);
   revalidateResources();
   return ok(undefined);
 }
@@ -139,12 +139,12 @@ export async function setItemsSuspendedAction(
   ids: string[],
   suspended: boolean,
 ): Promise<ActionResult<{ affected: number }>> {
-  await getSessionUserId();
+  const db = await getUserDb();
   const clean = cleanIds(ids);
   if (clean.length === 0) return err('Chưa chọn mục nào');
   let affected: number;
   try {
-    ({ affected } = await setItemsSuspended(clean, suspended));
+    ({ affected } = await setItemsSuspended(db, clean, suspended));
   } catch (e) {
     return err(e instanceof Error ? e.message : 'Không cập nhật được');
   }
@@ -156,9 +156,9 @@ export async function setItemStarredAction(
   itemId: string,
   starred: boolean,
 ): Promise<ActionResult> {
-  await getSessionUserId();
+  const db = await getUserDb();
   if (!itemId) return err('Thiếu itemId');
-  await setItemStarred(itemId, starred);
+  await setItemStarred(db, itemId, starred);
   revalidatePath('/resources');
   revalidatePath(`/resources/${itemId}`);
   return ok(undefined);
@@ -168,9 +168,9 @@ export async function setSentenceStarredAction(
   sentenceId: string,
   starred: boolean,
 ): Promise<ActionResult> {
-  await getSessionUserId();
+  const db = await getUserDb();
   if (!sentenceId) return err('Thiếu sentenceId');
-  await setSentenceStarred(sentenceId, starred);
+  await setSentenceStarred(db, sentenceId, starred);
   revalidatePath('/history');
   return ok(undefined);
 }
@@ -184,12 +184,12 @@ const updateItemSchema = z.object({
 });
 
 export async function updateItemAction(itemId: string, input: unknown): Promise<ActionResult> {
-  await getSessionUserId();
+  const db = await getUserDb();
   if (!itemId) return err('Thiếu itemId');
   const parsed = parseInput(updateItemSchema, input);
   if (!parsed.ok) return parsed;
   try {
-    await updateItem(itemId, {
+    await updateItem(db, itemId, {
       ...parsed.data,
       reading: parsed.data.reading?.trim() || null,
       notes: parsed.data.notes?.trim() || null,
@@ -205,10 +205,10 @@ export async function updateItemAction(itemId: string, input: unknown): Promise<
 }
 
 export async function deleteItemAction(itemId: string): Promise<ActionResult> {
-  await getSessionUserId();
+  const db = await getUserDb();
   if (!itemId) return err('Thiếu itemId');
   try {
-    await deleteItem(itemId);
+    await deleteItem(db, itemId);
   } catch (e) {
     return err(e instanceof Error ? e.message : 'Không xóa được');
   }
@@ -217,12 +217,12 @@ export async function deleteItemAction(itemId: string): Promise<ActionResult> {
 }
 
 export async function deleteItemsAction(ids: string[]): Promise<ActionResult<{ deleted: number }>> {
-  await getSessionUserId();
+  const db = await getUserDb();
   const clean = cleanIds(ids);
   if (clean.length === 0) return err('Chưa chọn mục nào');
   let deleted: number;
   try {
-    ({ deleted } = await deleteItems(clean));
+    ({ deleted } = await deleteItems(db, clean));
   } catch (e) {
     return err(e instanceof Error ? e.message : 'Không xóa được');
   }
@@ -231,8 +231,8 @@ export async function deleteItemsAction(ids: string[]): Promise<ActionResult<{ d
 }
 
 export async function getStreakAction(): Promise<ActionResult<{ current: number }>> {
-  await getSessionUserId();
-  const { current } = await getStreak();
+  const db = await getUserDb();
+  const { current } = await getStreak(db);
   return ok({ current });
 }
 
@@ -260,11 +260,11 @@ const updateGroupSchema = z.object({
 });
 
 export async function createGroupAction(input: unknown): Promise<ActionResult<{ id: string }>> {
-  await getSessionUserId();
+  const db = await getUserDb();
   const parsed = parseInput(createGroupSchema, input);
   if (!parsed.ok) return parsed;
   try {
-    const g = await createGroup(parsed.data);
+    const g = await createGroup(db, parsed.data);
     revalidatePath('/resources');
     return ok({ id: g.id });
   } catch (e) {
@@ -273,12 +273,12 @@ export async function createGroupAction(input: unknown): Promise<ActionResult<{ 
 }
 
 export async function updateGroupAction(groupId: string, input: unknown): Promise<ActionResult> {
-  await getSessionUserId();
+  const db = await getUserDb();
   if (!groupId) return err('Thiếu groupId');
   const parsed = parseInput(updateGroupSchema, input);
   if (!parsed.ok) return parsed;
   try {
-    const updated = await updateGroup(groupId, parsed.data);
+    const updated = await updateGroup(db, groupId, parsed.data);
     if (!updated) return err('Không tìm thấy nhóm');
   } catch (e) {
     return err(e instanceof Error ? e.message : 'Không lưu được');
@@ -289,10 +289,10 @@ export async function updateGroupAction(groupId: string, input: unknown): Promis
 }
 
 export async function deleteGroupAction(groupId: string): Promise<ActionResult> {
-  await getSessionUserId();
+  const db = await getUserDb();
   if (!groupId) return err('Thiếu groupId');
   try {
-    const deleted = await deleteGroup(groupId);
+    const deleted = await deleteGroup(db, groupId);
     if (!deleted) return err('Không tìm thấy nhóm');
   } catch (e) {
     return err(e instanceof Error ? e.message : 'Không xóa được');
@@ -305,12 +305,12 @@ export async function addItemsToGroupAction(
   groupId: string,
   itemIds: string[],
 ): Promise<ActionResult<{ added: number }>> {
-  await getSessionUserId();
+  const db = await getUserDb();
   if (!groupId) return err('Thiếu groupId');
   const clean = cleanIds(itemIds);
   if (clean.length === 0) return err('Chưa chọn mục nào');
   try {
-    const res = await addItemsToGroup(groupId, clean);
+    const res = await addItemsToGroup(db, groupId, clean);
     revalidatePath('/resources');
     revalidatePath(`/groups/${groupId}`);
     return ok(res);
@@ -323,12 +323,12 @@ export async function removeItemsFromGroupAction(
   groupId: string,
   itemIds: string[],
 ): Promise<ActionResult<{ removed: number }>> {
-  await getSessionUserId();
+  const db = await getUserDb();
   if (!groupId) return err('Thiếu groupId');
   const clean = cleanIds(itemIds);
   if (clean.length === 0) return err('Chưa chọn mục nào');
   try {
-    const res = await removeItemsFromGroup(groupId, clean);
+    const res = await removeItemsFromGroup(db, groupId, clean);
     revalidatePath('/resources');
     revalidatePath(`/groups/${groupId}`);
     return ok(res);

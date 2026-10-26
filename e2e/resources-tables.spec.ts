@@ -2,7 +2,7 @@ import path from 'node:path';
 import Database from 'better-sqlite3';
 import { expect, test, type Page } from '@playwright/test';
 import { CURRENT_ENRICHMENT_VERSION } from '@/lib/library/enrichment';
-import { E2E_DB_FILE, E2E_EMAIL, E2E_LOGIN, seedE2eAccount } from './fixtures';
+import { E2E_DB_FILE, E2E_EMAIL, E2E_LOGIN, ownSeedRows, seedE2eAccount } from './fixtures';
 
 const iso = (ms: number) => new Date(ms).toISOString().replace('Z', '+00:00');
 
@@ -177,6 +177,7 @@ async function seed() {
      VALUES ('s1', 'VI_JA', NULL, 'TRANSLATION', 'Tôi vừa mới đến.', NULL, '来たばかりです。',
        '来たばかりです。', NULL, NULL, 90, NULL, 'GRADED', 0, ?, ?)`,
   ).run(iso(now), iso(now + 1000));
+  ownSeedRows(db);
   db.close();
 }
 

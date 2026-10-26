@@ -1,5 +1,6 @@
 import { headers } from 'next/headers';
 import { auth } from '@/lib/auth/auth';
+import { userDb } from '@/lib/db/user-db';
 import { exportVocabApkg } from '@/lib/transfer/export';
 
 export const dynamic = 'force-dynamic';
@@ -12,7 +13,7 @@ export async function GET() {
   }
 
   try {
-    const { count, bytes } = await exportVocabApkg();
+    const { count, bytes } = await exportVocabApkg(userDb(session.user.id));
     const day = new Date().toISOString().slice(0, 10);
 
     return new Response(bytes as BodyInit, {

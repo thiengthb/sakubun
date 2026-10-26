@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/db/db';
+import type { UserDb } from '@/lib/db/user-db';
 import type { Prisma } from '@/lib/generated/prisma/client';
 import { serializeErrorDetail, type Confusion } from '@/lib/session/error-tags';
 import type { ItemRole } from '@/lib/srs/select';
@@ -29,6 +29,7 @@ export interface RecordedReview {
 }
 
 export async function recordReviews(
+  db: UserDb,
   reviews: readonly ReviewInput[],
   options: {
     retention: number;
@@ -48,8 +49,8 @@ export async function recordReviews(
   for (const review of reviews) {
     const { next, log } = rateOnce(review.srs, review.rating, { retention, now });
     writes.push(
-      prisma.srsState.update({ where: { itemId: review.itemId }, data: { ...next } }),
-      prisma.reviewLog.create({
+      db.srsState.update({ where: { itemId: review.itemId }, data: { ...next } }),
+      db.reviewLog.create({
         data: {
           itemId: review.itemId,
           rating: log.rating,
@@ -70,6 +71,6 @@ export async function recordReviews(
     recorded.push({ itemId: review.itemId, rating: review.rating, next });
   }
 
-  await prisma.$transaction(writes);
+  await db.$transaction(writes);
   return recorded;
 }

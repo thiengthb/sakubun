@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/db/db';
+import type { UserDb } from '@/lib/db/user-db';
 import { parseEnrichment } from '@/lib/library/enrichment';
 import { parseErrorTags, type ErrorTag } from '@/lib/session/error-tags';
 import { GRAMMAR_KIND } from '@/lib/library/item-kinds';
@@ -62,10 +62,11 @@ export interface ItemStats {
 }
 
 export async function getItemStats(
+  db: UserDb,
   itemId: string,
   now: Date = new Date(),
 ): Promise<ItemStats | null> {
-  const item = await prisma.item.findUnique({
+  const item = await db.item.findUnique({
     where: { id: itemId },
     include: {
       srs: true,
@@ -77,7 +78,7 @@ export async function getItemStats(
   });
   if (!item) return null;
 
-  const { desiredRetention } = await getSettings();
+  const { desiredRetention } = await getSettings(db);
 
   const srsFields: SrsFields | null = item.srs
     ? {
@@ -108,7 +109,7 @@ export async function getItemStats(
     sentenceRuby: r.sentence?.sourceRuby ?? null,
   }));
 
-  const contrastLinks = await resolveContrastLinks(item.enrichment, item.id, item.kind);
+  const contrastLinks = await resolveContrastLinks(db, item.enrichment, item.id, item.kind);
 
   return {
     itemId: item.id,
@@ -152,6 +153,7 @@ export async function getItemStats(
 }
 
 async function resolveContrastLinks(
+  db: UserDb,
   enrichment: string | null,
   selfId: string,
   kind: string,
@@ -164,7 +166,7 @@ async function resolveContrastLinks(
   ];
   if (wanted.length === 0) return [];
 
-  const rows = await prisma.item.findMany({
+  const rows = await db.item.findMany({
     where: { kind, expression: { in: wanted }, id: { not: selfId } },
     select: { id: true, expression: true },
   });

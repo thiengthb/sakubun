@@ -1,5 +1,6 @@
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { createTestDb } from '@/lib/db/test-db';
+import type { UserDb } from '@/lib/db/user-db';
+import { createTestUser, createTestDb } from '@/lib/db/test-db';
 import { buildImport, exampleFromNotes, spellHanviet, type OjSource } from '@/lib/import/openjlpt';
 
 createTestDb('sakubun-openjlpt-');
@@ -109,18 +110,20 @@ describe('buildImport', () => {
 describe('nạp qua importer tài khoản có sẵn', () => {
   type Db = typeof import('@/lib/db/db');
   let prisma: Db['prisma'];
+  let db: UserDb;
   beforeAll(async () => {
     ({ prisma } = await import('@/lib/db/db'));
+    db = (await import('@/lib/db/user-db')).userDb(await createTestUser(prisma, 'learner'));
   });
   beforeEach(async () => {
-    await prisma.srsState.deleteMany({});
-    await prisma.item.deleteMany({});
+    await db.srsState.deleteMany({});
+    await db.item.deleteMany({});
   });
 
   it('dry-run không ghi; nạp thật tạo mục + lịch; mục người học đã có không bị đè', async () => {
     const { importAccountData } = await import('@/lib/transfer/import');
     const { parseAccountBackup } = await import('@/lib/transfer/schema');
-    await prisma.item.create({
+    await db.item.create({
       data: { kind: 'VOCAB', expression: 'あらゆる', meaningVi: 'nghĩa của tôi', source: 'MANUAL' },
     });
     const built = buildImport(SRC, VI, HV, NOW);
@@ -128,15 +131,15 @@ describe('nạp qua importer tài khoản có sẵn', () => {
     expect(parsed.ok).toBe(true);
     if (!parsed.ok) return;
 
-    await importAccountData(parsed.data, { dryRun: true });
-    expect(await prisma.item.count()).toBe(1);
+    await importAccountData(db, parsed.data, { dryRun: true });
+    expect(await db.item.count()).toBe(1);
 
-    await importAccountData(parsed.data, { dryRun: false });
-    expect(await prisma.item.count()).toBe(built.items.length); // 3 new + the learner's own あらゆる
-    expect((await prisma.item.findFirst({ where: { expression: 'あらゆる' } }))?.meaningVi).toBe(
+    await importAccountData(db, parsed.data, { dryRun: false });
+    expect(await db.item.count()).toBe(built.items.length); // 3 new + the learner's own あらゆる
+    expect((await db.item.findFirst({ where: { expression: 'あらゆる' } }))?.meaningVi).toBe(
       'nghĩa của tôi',
     );
-    const kakunin = await prisma.item.findFirst({
+    const kakunin = await db.item.findFirst({
       where: { expression: '確認' },
       include: { srs: true },
     });

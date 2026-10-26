@@ -1,7 +1,24 @@
 import type { createMcpHandler } from 'mcp-handler';
 import { ZodError } from 'zod';
+import { userDb, type UserDb } from '@/lib/db/user-db';
 
 export type McpServer = Parameters<Parameters<typeof createMcpHandler>[0]>[0];
+
+// What the MCP SDK hands a tool beside its arguments; the route puts the caller's userId in
+// `authInfo.extra` (app/api/[transport]/route.ts).
+export interface ToolExtra {
+  authInfo?: { extra?: Record<string, unknown> };
+}
+
+// The learner a tool call acts for (roadmap 7.1). No userId means the call was not authenticated
+// the way the route does it, so it fails instead of reading anyone's data.
+export function learnerDb(extra: ToolExtra | undefined): UserDb {
+  const userId = extra?.authInfo?.extra?.userId;
+  if (typeof userId !== 'string' || userId === '') {
+    throw new Error('This MCP call has no signed-in learner. Reconnect the app to Sakubun.');
+  }
+  return userDb(userId);
+}
 
 export function ok(data: unknown) {
   return { content: [{ type: 'text' as const, text: JSON.stringify(data) }] };

@@ -12,7 +12,7 @@ import {
   type StagedTurn,
 } from '@/lib/app/turn';
 import { CARD_STATE } from '@/lib/domain/queue';
-import { guard, mcpError, type McpServer } from '@/lib/mcp/tool-kit';
+import { guard, learnerDb, mcpError, type McpServer, type ToolExtra } from '@/lib/mcp/tool-kit';
 import { ERROR_TAGS } from '@/lib/session/error-tags';
 import { JLPT_LEVELS } from '@/lib/settings/schema';
 
@@ -127,10 +127,15 @@ export function registerV2Tools(server: McpServer) {
         .optional()
         .describe("Learner's wish for this turn, e.g. longer, travel topic"),
     },
-    guard('next_turn', async ({ itemId, hint }: { itemId?: string; hint?: string }) => {
-      const now = new Date();
-      return fromResult(await nextTurn({ itemId, hint }, now), (d) => renderNextTurn(d, now));
-    }),
+    guard(
+      'next_turn',
+      async ({ itemId, hint }: { itemId?: string; hint?: string }, extra: ToolExtra) => {
+        const now = new Date();
+        return fromResult(await nextTurn(learnerDb(extra), { itemId, hint }, now), (d) =>
+          renderNextTurn(d, now),
+        );
+      },
+    ),
   );
 
   server.tool(
@@ -148,8 +153,8 @@ export function registerV2Tools(server: McpServer) {
         .optional()
         .describe('Words in ja that use the item, if its form is irregular'),
     },
-    guard('stage_turn', async (args: Parameters<typeof stageTurn>[0]) =>
-      fromResult(await stageTurn(args), renderStaged),
+    guard('stage_turn', async (args: Parameters<typeof stageTurn>[1], extra: ToolExtra) =>
+      fromResult(await stageTurn(learnerDb(extra), args), renderStaged),
     ),
   );
 
@@ -164,9 +169,9 @@ export function registerV2Tools(server: McpServer) {
       errorTags: z.array(z.enum(ERROR_TAGS)).optional().describe('Required for 1-2'),
       feedback: z.string().optional(),
     },
-    guard('grade_turn', async (args: Parameters<typeof gradeTurn>[0]) => {
+    guard('grade_turn', async (args: Parameters<typeof gradeTurn>[1], extra: ToolExtra) => {
       const now = new Date();
-      return fromResult(await gradeTurn(args, now), (d) => renderGraded(d, now));
+      return fromResult(await gradeTurn(learnerDb(extra), args, now), (d) => renderGraded(d, now));
     }),
   );
 
@@ -174,8 +179,8 @@ export function registerV2Tools(server: McpServer) {
     'skip_turn',
     'Drop the turn without grading.',
     { turnId: z.string() },
-    guard('skip_turn', async ({ turnId }: { turnId: string }) =>
-      fromResult(await skipTurn(turnId), () =>
+    guard('skip_turn', async ({ turnId }: { turnId: string }, extra: ToolExtra) =>
+      fromResult(await skipTurn(learnerDb(extra), turnId), () =>
         text(['skipped, schedule unchanged.', 'next: call next_turn.']),
       ),
     ),
@@ -185,8 +190,10 @@ export function registerV2Tools(server: McpServer) {
     'lookup',
     "Find a grammar pattern or word in the learner's library.",
     { query: z.string().min(1), kind: KIND.optional() },
-    guard('lookup', async ({ query, kind }: { query: string; kind?: 'GRAMMAR' | 'VOCAB' }) =>
-      renderFound(query, await findItems(query, kind)),
+    guard(
+      'lookup',
+      async ({ query, kind }: { query: string; kind?: 'GRAMMAR' | 'VOCAB' }, extra: ToolExtra) =>
+        renderFound(query, await findItems(learnerDb(extra), query, kind)),
     ),
   );
 
@@ -209,14 +216,17 @@ export function registerV2Tools(server: McpServer) {
     },
     guard(
       'add_items',
-      async ({
-        kind,
-        items,
-      }: {
-        kind: 'GRAMMAR' | 'VOCAB';
-        items: { expression: string; meaningVi: string; reading?: string; level?: string }[];
-      }) => {
-        const result = await addLibraryItems(kind, items);
+      async (
+        {
+          kind,
+          items,
+        }: {
+          kind: 'GRAMMAR' | 'VOCAB';
+          items: { expression: string; meaningVi: string; reading?: string; level?: string }[];
+        },
+        extra: ToolExtra,
+      ) => {
+        const result = await addLibraryItems(learnerDb(extra), kind, items);
         return text([
           `added ${result.added}`,
           result.skipped.length > 0
@@ -232,9 +242,9 @@ export function registerV2Tools(server: McpServer) {
     'status',
     'What is due and what is left today.',
     {},
-    guard('status', async () => {
+    guard('status', async (_args: Record<string, never>, extra: ToolExtra) => {
       const now = new Date();
-      return renderStatus(await getStatus(now), now);
+      return renderStatus(await getStatus(learnerDb(extra), now), now);
     }),
   );
 }

@@ -1,5 +1,6 @@
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { createTestDb, resetLearningData } from '@/lib/db/test-db';
+import type { UserDb } from '@/lib/db/user-db';
+import { createTestUser, createTestDb, resetLearningData } from '@/lib/db/test-db';
 import type { recordReviews as RecordReviews } from '@/lib/app/record-review';
 
 createTestDb('sakubun-app-queue-');
@@ -10,6 +11,7 @@ type Db = typeof import('@/lib/db/db');
 let P: Practice;
 let Q: App;
 let prisma: Db['prisma'];
+let db: UserDb;
 let recordReviews: typeof RecordReviews;
 
 // After any real clock reading in CI, so items created "now" by addItems are already in the past.
@@ -19,11 +21,12 @@ const MINUTE = 60_000;
 async function seed(kind: 'GRAMMAR' | 'VOCAB', count: number, level = 'N5'): Promise<string[]> {
   const expressions = Array.from({ length: count }, (_, i) => `${kind}_${level}_${i}`);
   await P.addItems(
+    db,
     expressions.map((expression) => ({ expression, meaningVi: 'nghĩa', level })),
     'MCP',
     kind,
   );
-  const rows = await prisma.item.findMany({
+  const rows = await db.item.findMany({
     where: { kind },
     select: { id: true, expression: true },
   });
@@ -31,8 +34,8 @@ async function seed(kind: 'GRAMMAR' | 'VOCAB', count: number, level = 'N5'): Pro
 }
 
 async function review(itemId: string, rating: 1 | 2 | 3 | 4, at: Date): Promise<void> {
-  const srs = await prisma.srsState.findUniqueOrThrow({ where: { itemId } });
-  await recordReviews([{ itemId, srs, rating }], { retention: 0.9, now: at });
+  const srs = await db.srsState.findUniqueOrThrow({ where: { itemId } });
+  await recordReviews(db, [{ itemId, srs, rating }], { retention: 0.9, now: at });
 }
 
 beforeAll(async () => {
@@ -40,6 +43,7 @@ beforeAll(async () => {
   Q = await import('@/lib/app/queue');
   ({ recordReviews } = await import('@/lib/app/record-review'));
   ({ prisma } = await import('@/lib/db/db'));
+  db = (await import('@/lib/db/user-db')).userDb(await createTestUser(prisma, 'learner'));
 });
 
 beforeEach(async () => {
@@ -48,31 +52,31 @@ beforeEach(async () => {
 
 describe('getQueue', () => {
   it('introduces new vocabulary under its own daily cap, not as due', async () => {
-    await P.saveSettings({ dailyNewVocab: 4 });
+    await P.saveSettings(db, { dailyNewVocab: 4 });
     await seed('VOCAB', 9);
-    const queue = await Q.getQueue(NOW);
+    const queue = await Q.getQueue(db, NOW);
     expect(queue.cards).toHaveLength(4);
     expect(queue.cards.every((c) => c.kind === 'VOCAB' && c.state === 0)).toBe(true);
   });
 
   it('caps new grammar by dailyNewGrammar and serves both kinds together', async () => {
-    await P.saveSettings({ dailyNewGrammar: 2 });
+    await P.saveSettings(db, { dailyNewGrammar: 2 });
     await seed('GRAMMAR', 4);
     await seed('VOCAB', 3);
-    const queue = await Q.getQueue(NOW);
+    const queue = await Q.getQueue(db, NOW);
     expect(queue.cards.filter((c) => c.kind === 'GRAMMAR')).toHaveLength(2);
     expect(queue.cards.filter((c) => c.kind === 'VOCAB')).toHaveLength(3);
     expect(queue.cards[0]).toMatchObject({ meaningVi: 'nghĩa', level: 'N5' });
   });
 
   it('counts what was introduced today, per kind', async () => {
-    await P.saveSettings({ dailyNewGrammar: 2 });
+    await P.saveSettings(db, { dailyNewGrammar: 2 });
     const grammar = await seed('GRAMMAR', 3);
     const vocab = await seed('VOCAB', 1);
     await review(grammar[0], 3, NOW);
     await review(vocab[0], 3, NOW);
 
-    const queue = await Q.getQueue(new Date(NOW.getTime() + MINUTE));
+    const queue = await Q.getQueue(db, new Date(NOW.getTime() + MINUTE));
     expect(queue.today).toEqual({ newGrammar: 1, newVocab: 1, reviews: 0 });
     expect(queue.cards.filter((c) => c.kind === 'GRAMMAR' && c.state === 0)).toHaveLength(1);
   });
@@ -82,56 +86,56 @@ describe('getQueue', () => {
     await seed('GRAMMAR', 1);
     await review(due, 1, NOW);
     await review(suspended, 1, NOW);
-    await P.setItemSuspended(suspended, true);
+    await P.setItemSuspended(db, suspended, true);
 
     const later = new Date(NOW.getTime() + 30 * MINUTE);
-    const queue = await Q.getQueue(later);
+    const queue = await Q.getQueue(db, later);
     expect(queue.cards[0].id).toBe(due);
     expect(queue.cards.map((c) => c.id)).not.toContain(suspended);
   });
 
   it('a backlog of overdue reviews never hides a card that is mid-step', async () => {
-    await P.saveSettings({ maxReviewsPerDay: 500 });
+    await P.saveSettings(db, { maxReviewsPerDay: 500 });
     const backlog = await seed('VOCAB', 301);
     const [learning] = await seed('GRAMMAR', 1);
-    await prisma.srsState.updateMany({
+    await db.srsState.updateMany({
       where: { itemId: { in: backlog } },
       data: { state: 2, due: new Date(NOW.getTime() - 86_400_000), reps: 3 },
     });
-    await prisma.srsState.update({
+    await db.srsState.update({
       where: { itemId: learning },
       data: { state: 1, due: new Date(NOW.getTime() - MINUTE), reps: 1 },
     });
 
-    const queue = await Q.getQueue(NOW);
+    const queue = await Q.getQueue(db, NOW);
     expect(queue.cards[0].id).toBe(learning);
     expect(queue.cards.filter((c) => c.state === 2)).toHaveLength(301);
   });
 
   it('fetches reviews only up to what is left of the daily allowance', async () => {
-    await P.saveSettings({ maxReviewsPerDay: 10 });
+    await P.saveSettings(db, { maxReviewsPerDay: 10 });
     const backlog = await seed('VOCAB', 12);
-    await prisma.srsState.updateMany({
+    await db.srsState.updateMany({
       where: { itemId: { in: backlog } },
       data: { state: 2, due: new Date(NOW.getTime() - 86_400_000), reps: 3 },
     });
-    const queue = await Q.getQueue(NOW);
+    const queue = await Q.getQueue(db, NOW);
     expect(queue.cards.filter((c) => c.state === 2)).toHaveLength(10);
   });
 
   it('keeps new vocabulary at or below the learner level, ignoring the old hidden ceiling', async () => {
-    await P.saveSettings({ grammarLevels: ['N4'], vocabCeiling: 'N1' });
+    await P.saveSettings(db, { grammarLevels: ['N4'], vocabCeiling: 'N1' });
     await seed('VOCAB', 1, 'N5');
     await seed('VOCAB', 1, 'N4');
     await seed('VOCAB', 1, 'N2');
-    const queue = await Q.getQueue(NOW);
+    const queue = await Q.getQueue(db, NOW);
     expect(queue.cards.map((c) => c.level).sort()).toEqual(['N4', 'N5']);
   });
 
   it('tells when the next item comes back once nothing is left', async () => {
     const [id] = await seed('GRAMMAR', 1);
     await review(id, 3, NOW);
-    const queue = await Q.getQueue(new Date(NOW.getTime() + MINUTE));
+    const queue = await Q.getQueue(db, new Date(NOW.getTime() + MINUTE));
     expect(queue.cards).toEqual([]);
     expect(queue.nextDueAt).not.toBeNull();
   });

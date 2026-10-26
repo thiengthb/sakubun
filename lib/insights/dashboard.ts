@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/db/db';
+import type { UserDb } from '@/lib/db/user-db';
 import { getSettings } from '@/lib/library/practice';
 import { GRAMMAR_KIND } from '@/lib/library/item-kinds';
 import { STUDY_DAYS, buildDashboard, type Dashboard } from '@/lib/insights/dashboard-model';
@@ -7,11 +7,11 @@ import { studyStreak } from '@/lib/insights/streak';
 const DAY_MS = 86_400_000;
 
 /** The one read behind the Phân tích page (roadmap 5.3); the numbers come from dashboard-model.ts. */
-export async function getDashboard(now: Date = new Date()): Promise<Dashboard> {
-  const settings = await getSettings();
+export async function getDashboard(db: UserDb, now: Date = new Date()): Promise<Dashboard> {
+  const settings = await getSettings(db);
   const since = new Date(now.getTime() - STUDY_DAYS * DAY_MS);
   const [logs, sentences, items, cards, streak] = await Promise.all([
-    prisma.reviewLog.findMany({
+    db.reviewLog.findMany({
       where: { reviewedAt: { gte: since } },
       select: {
         reviewedAt: true,
@@ -22,7 +22,7 @@ export async function getDashboard(now: Date = new Date()): Promise<Dashboard> {
         item: { select: { expression: true } },
       },
     }),
-    prisma.sentence.findMany({
+    db.sentence.findMany({
       where: { status: 'GRADED', answeredAt: { gte: since } },
       select: {
         createdAt: true,
@@ -32,7 +32,7 @@ export async function getDashboard(now: Date = new Date()): Promise<Dashboard> {
         reviews: { select: { role: true, item: { select: { level: true } } } },
       },
     }),
-    prisma.item.findMany({
+    db.item.findMany({
       select: {
         id: true,
         kind: true,
@@ -44,8 +44,8 @@ export async function getDashboard(now: Date = new Date()): Promise<Dashboard> {
       },
     }),
     // Only grammar cards are scored for completeness; vocab enrichment is never read here.
-    prisma.item.findMany({ where: { kind: GRAMMAR_KIND }, select: { id: true, enrichment: true } }),
-    studyStreak(settings.dayCutoffHour, now),
+    db.item.findMany({ where: { kind: GRAMMAR_KIND }, select: { id: true, enrichment: true } }),
+    studyStreak(db, settings.dayCutoffHour, now),
   ]);
   const enrichment = new Map(cards.map((c) => [c.id, c.enrichment]));
 

@@ -1,5 +1,6 @@
 import { headers } from 'next/headers';
 import { auth } from '@/lib/auth/auth';
+import { userDb } from '@/lib/db/user-db';
 import { importAccountData } from '@/lib/transfer/import';
 import { parseAccountBackup } from '@/lib/transfer/schema';
 
@@ -27,7 +28,7 @@ export async function POST(req: Request) {
   }
 
   try {
-    const result = await importAccountData(parsed.data, { dryRun });
+    const result = await importAccountData(userDb(session.user.id), parsed.data, { dryRun });
     return Response.json({ ok: true, ...result });
   } catch (err) {
     console.error('[import/mine] sync failed', err);

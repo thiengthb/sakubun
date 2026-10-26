@@ -1,7 +1,7 @@
 import path from 'node:path';
 import Database from 'better-sqlite3';
 import { expect, test, type Page } from '@playwright/test';
-import { E2E_DB_FILE, E2E_EMAIL, E2E_LOGIN, seedE2eAccount } from './fixtures';
+import { E2E_DB_FILE, E2E_EMAIL, E2E_LOGIN, ownSeedRows, seedE2eAccount } from './fixtures';
 
 // docs/ui-standard.md › Nút và ô: a menu or popover opens fully inside the screen and keeps the
 // page's 16px gutter from every edge (thien, 2026-10-25). Before the shared default, the item's
@@ -30,6 +30,7 @@ test.beforeAll(async () => {
       iso(now),
     );
   } finally {
+    ownSeedRows(db);
     db.close();
   }
 });

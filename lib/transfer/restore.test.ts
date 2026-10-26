@@ -3,7 +3,8 @@ import os from 'node:os';
 import path from 'node:path';
 import Database from 'better-sqlite3';
 import { beforeAll, describe, expect, it } from 'vitest';
-import { applyMigrations, createTestDb, resetLearningData } from '@/lib/db/test-db';
+import type { UserDb } from '@/lib/db/user-db';
+import { applyMigrations, createTestDb, createTestUser, resetLearningData } from '@/lib/db/test-db';
 
 createTestDb('sakubun-import-restore-');
 
@@ -14,11 +15,13 @@ type Db = typeof import('@/lib/db/db');
 let I: Import;
 let S: Schema;
 let prisma: Db['prisma'];
+let learner: UserDb;
 
 beforeAll(async () => {
   I = await import('@/lib/transfer/import');
   S = await import('@/lib/transfer/schema');
   ({ prisma } = await import('@/lib/db/db'));
+  learner = (await import('@/lib/db/user-db')).userDb(await createTestUser(prisma, 'learner'));
 });
 
 function backupWithOneItem() {
@@ -60,14 +63,14 @@ describe('importAccountData — restore một bản sao lưu', () => {
   it('ghi được item + SrsState vào DB', async () => {
     await resetLearningData(prisma);
 
-    const res = await I.importAccountData(backupWithOneItem(), { dryRun: false });
+    const res = await I.importAccountData(learner, backupWithOneItem(), { dryRun: false });
 
     expect(res.dryRun).toBe(false);
-    const item = await prisma.item.findFirst({ where: { id: 'itm-restore-1' } });
+    const item = await learner.item.findFirst({ where: { id: 'itm-restore-1' } });
     expect(item, 'item trong bản sao lưu phải nằm lại trong DB').not.toBeNull();
     expect(item!.expression).toBe('RESTORE〜つつある');
 
-    const srs = await prisma.srsState.findFirst({ where: { itemId: 'itm-restore-1' } });
+    const srs = await learner.srsState.findFirst({ where: { itemId: 'itm-restore-1' } });
     expect(srs, 'SrsState phải được restore cùng item').not.toBeNull();
     expect(srs!.reps).toBe(3);
     expect(srs!.lapses).toBe(1);
@@ -108,23 +111,23 @@ describe('importAccountData — restore một bản sao lưu', () => {
     expect(parsed.ok, 'file cũ phải PARSE được, không bị từ chối').toBe(true);
     if (!parsed.ok) return;
 
-    await I.importAccountData(parsed.data, { dryRun: false });
+    await I.importAccountData(learner, parsed.data, { dryRun: false });
 
-    const item = await prisma.item.findFirst({ where: { id: 'itm-legacy-1' } });
+    const item = await learner.item.findFirst({ where: { id: 'itm-legacy-1' } });
     expect(item, 'item của bản sao lưu cũ phải vào được DB').not.toBeNull();
-    const sentence = await prisma.sentence.findFirst({ where: { id: 'sen-legacy-1' } });
+    const sentence = await learner.sentence.findFirst({ where: { id: 'sen-legacy-1' } });
     expect(sentence, 'câu của bản sao lưu cũ phải vào được DB').not.toBeNull();
     expect(sentence!.userAnswer).toBe('Không thể không đi.');
   });
 
   it('dryRun KHÔNG ghi gì', async () => {
-    await prisma.srsState.deleteMany({});
-    await prisma.item.deleteMany({});
+    await learner.srsState.deleteMany({});
+    await learner.item.deleteMany({});
 
-    const res = await I.importAccountData(backupWithOneItem(), { dryRun: true });
+    const res = await I.importAccountData(learner, backupWithOneItem(), { dryRun: true });
 
     expect(res.dryRun).toBe(true);
-    expect(await prisma.item.count({ where: {} }), 'dryRun phải là đọc-thuần').toBe(0);
+    expect(await learner.item.count({ where: {} }), 'dryRun phải là đọc-thuần').toBe(0);
   });
 });
 
@@ -160,12 +163,12 @@ describe('v2 turns survive a backup', () => {
     const parsed = S.parseAccountBackup({ ...base, turns: [TURN], reviewLogs: [TURN_LOG] });
     if (!parsed.ok) throw new Error(parsed.error);
 
-    const res = await I.importAccountData(parsed.data, { dryRun: false });
+    const res = await I.importAccountData(learner, parsed.data, { dryRun: false });
 
     expect(res.tables.find((t) => t.table === 'Lượt dịch')).toMatchObject({ create: 1 });
-    const turn = await prisma.turn.findUniqueOrThrow({ where: { id: TURN.id } });
+    const turn = await learner.turn.findUniqueOrThrow({ where: { id: TURN.id } });
     expect(turn).toMatchObject({ itemId: 'itm-restore-1', status: 'graded', rating: 3 });
-    const log = await prisma.reviewLog.findUniqueOrThrow({ where: { id: TURN_LOG.id } });
+    const log = await learner.reviewLog.findUniqueOrThrow({ where: { id: TURN_LOG.id } });
     expect(log).toMatchObject({ turnId: TURN.id, channel: 'mcp' });
   });
 

@@ -2,7 +2,9 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { createTestDb, resetLearningData } from '@/lib/db/test-db';
+import type { UserDb } from '@/lib/db/user-db';
+import { signInTransport } from '@/lib/mcp/test-auth';
+import { createTestUser, createTestDb, resetLearningData } from '@/lib/db/test-db';
 import type { McpProfile } from '@/lib/mcp/profiles';
 import { estimateTokens } from '@/lib/mcp/token-estimate';
 
@@ -35,6 +37,7 @@ const V2_SENTENCES: Record<string, { ja: string; vi: string }> = {
 
 type Db = typeof import('@/lib/db/db');
 let prisma: Db['prisma'];
+let db: UserDb;
 const clients: Client[] = [];
 
 async function connect(profile: McpProfile): Promise<Client> {
@@ -42,6 +45,7 @@ async function connect(profile: McpProfile): Promise<Client> {
   const server = new McpServer({ name: 'sakubun-mcp', version: '0.1.0' });
   registerAll(server, profile);
   const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
+  signInTransport(clientSide, 'learner');
   await server.connect(serverSide);
   const client = new Client({ name: 'token-budget', version: '0.0.0' });
   await client.connect(clientSide);
@@ -64,9 +68,11 @@ const report: string[] = [];
 
 beforeAll(async () => {
   ({ prisma } = await import('@/lib/db/db'));
+  db = (await import('@/lib/db/user-db')).userDb(await createTestUser(prisma, 'learner'));
   await resetLearningData(prisma);
   const P = await import('@/lib/library/practice');
   await P.addItems(
+    db,
     [
       { expression: '〜ばかりに', meaningVi: 'chỉ vì... (dẫn đến kết quả xấu)', level: 'N2' },
       { expression: '〜ながら', meaningVi: 'vừa... vừa...', level: 'N5' },
@@ -76,6 +82,7 @@ beforeAll(async () => {
     'GRAMMAR',
   );
   await P.addItems(
+    db,
     [
       { expression: '約束', reading: 'やくそく', meaningVi: 'hứa; lời hứa', level: 'N4' },
       { expression: '急ぐ', reading: 'いそぐ', meaningVi: 'vội, khẩn trương', level: 'N4' },
@@ -121,7 +128,7 @@ describe('MCP v2 token targets', () => {
       return text;
     };
 
-    const items = await prisma.item.findMany({ select: { id: true, expression: true } });
+    const items = await db.item.findMany({ select: { id: true, expression: true } });
     for (let turn = 0; turn < 10; turn++) {
       const item = items[turn % items.length];
       await call('next_turn', { itemId: item.id, hint: turn === 0 ? 'chủ đề du lịch' : undefined });

@@ -1,7 +1,7 @@
 import path from 'node:path';
 import Database from 'better-sqlite3';
 import { expect, test, type Page } from '@playwright/test';
-import { E2E_DB_FILE, E2E_EMAIL, E2E_LOGIN, seedE2eAccount } from './fixtures';
+import { E2E_DB_FILE, E2E_EMAIL, E2E_LOGIN, ownSeedRows, seedE2eAccount } from './fixtures';
 
 test.setTimeout(120_000);
 
@@ -28,6 +28,7 @@ test('TTS treo thì nút tự thoát khỏi trạng thái đang phát, không qu
     'Mẹ đang nấu ăn.',
     new Date().toISOString(),
   );
+  ownSeedRows(db);
   db.close();
 
   await page.route('**/api/tts**', () => {

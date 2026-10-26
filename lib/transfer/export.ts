@@ -1,9 +1,9 @@
-import { prisma } from '@/lib/db/db';
+import type { UserDb } from '@/lib/db/user-db';
 import { buildApkg, type VocabItem } from '@/lib/transfer/anki-apkg';
 import { VOCAB_KIND } from '@/lib/library/practice';
 
-export async function exportVocabApkg() {
-  const items = await prisma.item.findMany({
+export async function exportVocabApkg(db: UserDb) {
+  const items = await db.item.findMany({
     where: { kind: VOCAB_KIND },
     select: {
       id: true,
@@ -28,17 +28,17 @@ export async function exportVocabApkg() {
   return { count: vocab.length, bytes: buildApkg(vocab) };
 }
 
-export async function exportUserData() {
+export async function exportUserData(db: UserDb) {
   const [items, srsStates, reviewLogs, sentences, turns, settings, groups, groupMembers] =
     await Promise.all([
-      prisma.item.findMany({}),
-      prisma.srsState.findMany({}),
-      prisma.reviewLog.findMany({}),
-      prisma.sentence.findMany({}),
-      prisma.turn.findMany({}),
-      prisma.settings.findFirst({}),
-      prisma.group.findMany({}),
-      prisma.groupMember.findMany({}),
+      db.item.findMany({}),
+      db.srsState.findMany({}),
+      db.reviewLog.findMany({}),
+      db.sentence.findMany({}),
+      db.turn.findMany({}),
+      db.settings.findFirst({}),
+      db.group.findMany({}),
+      db.groupMember.findMany({}),
     ]);
 
   return {

@@ -1,7 +1,7 @@
 import path from 'node:path';
 import Database from 'better-sqlite3';
 import { expect, test } from '@playwright/test';
-import { E2E_DB_FILE, E2E_EMAIL, E2E_LOGIN, seedE2eAccount } from './fixtures';
+import { E2E_DB_FILE, E2E_EMAIL, E2E_LOGIN, ownSeedRows, seedE2eAccount } from './fixtures';
 
 interface Pair {
   name: string;
@@ -118,6 +118,7 @@ test.beforeAll(async () => {
     );
     for (let n = 0; n < 20; n++) mem.run(`sk${n}`, iso(now));
   } finally {
+    ownSeedRows(db);
     db.close();
   }
 });

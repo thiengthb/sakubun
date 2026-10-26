@@ -5,18 +5,18 @@ import { ItemGroups } from '@/components/features/resources/item-groups';
 import { getItemStats } from '@/lib/insights/item-stats';
 import { getItemGroupPicker } from '@/lib/library/groups';
 import { getSettings } from '@/lib/library/practice';
-import { getSessionUserId } from '@/lib/auth/current-user';
+import { getUserDb } from '@/lib/auth/current-user';
 import { furiganaInApp } from '@/lib/settings/schema';
 
 export const dynamic = 'force-dynamic';
 
 export default async function ItemDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  await getSessionUserId();
+  const db = await getUserDb();
   const [stats, settings, picker] = await Promise.all([
-    getItemStats(id),
-    getSettings(),
-    getItemGroupPicker(id),
+    getItemStats(db, id),
+    getSettings(db),
+    getItemGroupPicker(db, id),
   ]);
   if (!stats) notFound();
 

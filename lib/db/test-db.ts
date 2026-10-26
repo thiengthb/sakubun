@@ -56,3 +56,13 @@ export async function resetLearningData(prisma: PrismaClient): Promise<void> {
     await (prisma[table] as { deleteMany: (args: object) => Promise<unknown> }).deleteMany({});
   }
 }
+
+// A learner account for suites that read or write through `userDb` (roadmap 7.1).
+export async function createTestUser(prisma: PrismaClient, id: string): Promise<string> {
+  await prisma.user.upsert({
+    where: { id },
+    create: { id, name: id, email: `${id}@example.test` },
+    update: {},
+  });
+  return id;
+}

@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/db/db';
+import type { UserDb } from '@/lib/db/user-db';
 import { err, ok, type ActionResult } from '@/lib/core/action-result';
 import { recordReviews } from '@/lib/app/record-review';
 import { getQueue } from '@/lib/app/queue';
@@ -137,10 +137,14 @@ function baseCard(item: CardItem, srs: SrsFields, retention: number, now: Date):
 
 // The same card for browsing chosen items (a group), in the given order: always a flip card, and
 // nothing is graded, so the FSRS schedule is left alone.
-export async function getItemCards(ids: string[], now: Date = new Date()): Promise<QuickCard[]> {
+export async function getItemCards(
+  db: UserDb,
+  ids: string[],
+  now: Date = new Date(),
+): Promise<QuickCard[]> {
   const [settings, items] = await Promise.all([
-    getSettings(),
-    prisma.item.findMany({ where: { id: { in: ids } }, include: { srs: true } }),
+    getSettings(db),
+    db.item.findMany({ where: { id: { in: ids } }, include: { srs: true } }),
   ]);
   const byId = new Map(items.map((i) => [i.id, i]));
   return ids.flatMap((id) => {
@@ -156,16 +160,20 @@ export async function getItemCards(ids: string[], now: Date = new Date()): Promi
   });
 }
 
-export async function getQuickReview(now: Date = new Date(), limit = 20): Promise<QuickReview> {
-  const settings = await getSettings();
-  const queue = await getQueue(now, limit);
+export async function getQuickReview(
+  db: UserDb,
+  now: Date = new Date(),
+  limit = 20,
+): Promise<QuickReview> {
+  const settings = await getSettings(db);
+  const queue = await getQueue(db, now, limit);
   const ids = queue.cards.map((c) => c.id);
   const [items, states] = await Promise.all([
-    prisma.item.findMany({
+    db.item.findMany({
       where: { id: { in: ids } },
       select: { id: true, hanviet: true, enrichment: true, notes: true },
     }),
-    prisma.srsState.findMany({ where: { itemId: { in: ids } } }),
+    db.srsState.findMany({ where: { itemId: { in: ids } } }),
   ]);
   const itemById = new Map(items.map((i) => [i.id, i]));
   const srsById = new Map(states.map((s) => [s.itemId, s]));
@@ -175,7 +183,7 @@ export async function getQuickReview(now: Date = new Date(), limit = 20): Promis
     await Promise.all(
       kinds.map(async (kind) => {
         const levels = neighbours(queue.cards.filter((c) => c.kind === kind).map((c) => c.level));
-        const rows = await prisma.item.findMany({
+        const rows = await db.item.findMany({
           where: { kind, suspended: false, level: { in: levels } },
           select: { id: true, kind: true, expression: true, reading: true, level: true },
           orderBy: { id: 'asc' },
@@ -230,10 +238,11 @@ export interface AnsweredCard {
 }
 
 export async function answerCard(
+  db: UserDb,
   answer: CardAnswer,
   now: Date = new Date(),
 ): Promise<ActionResult<AnsweredCard>> {
-  const srs = await prisma.srsState.findFirst({
+  const srs = await db.srsState.findFirst({
     where: { itemId: answer.itemId },
     include: { item: { select: { suspended: true } } },
   });
@@ -250,8 +259,8 @@ export async function answerCard(
       : { mode: 'cloze', correct: answer.choiceId === answer.itemId };
   const rating = ratingForAnswer(quick);
   const correct = isRemembered(rating);
-  const { desiredRetention } = await getSettings();
-  const [recorded] = await recordReviews([{ itemId: answer.itemId, srs, rating }], {
+  const { desiredRetention } = await getSettings(db);
+  const [recorded] = await recordReviews(db, [{ itemId: answer.itemId, srs, rating }], {
     retention: desiredRetention,
     now,
     channel: 'web',

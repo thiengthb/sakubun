@@ -1,7 +1,7 @@
 import path from 'node:path';
 import Database from 'better-sqlite3';
 import { expect, test, type Page } from '@playwright/test';
-import { E2E_DB_FILE, E2E_EMAIL, E2E_LOGIN, seedE2eAccount } from './fixtures';
+import { E2E_DB_FILE, E2E_EMAIL, E2E_LOGIN, ownSeedRows, seedE2eAccount } from './fixtures';
 
 async function login(page: Page) {
   await page.goto('/login');
@@ -65,6 +65,7 @@ test('mỗi kiểu luyện được gọi đúng tên trên thẻ lịch sử', 
       new Date(Date.now() - i * 60_000).toISOString(),
     ),
   );
+  ownSeedRows(db);
   db.close();
 
   await login(page);
