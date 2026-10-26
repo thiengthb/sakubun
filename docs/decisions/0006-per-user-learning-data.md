@@ -12,7 +12,7 @@ anyone else can log in, every learning row needs an owner, and no query may read
 learner's rows.
 
 An Item is not shared content: it carries the learner's own state (suspended, starred, notes, and
-the explanation card their Claude filled in). Plan: https://claude.ai/artifact/8dhCRanXdgsiDFTJBbUHdf
+the explanation card their Claude filled in). Plan: `docs/plans/2026-10-25-phase7-1-per-user-data.md`
 
 ## Decision
 

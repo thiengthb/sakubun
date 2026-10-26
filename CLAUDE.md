@@ -34,6 +34,19 @@ Kế hoạch hợp nhất (wordquiz + kaiwa vào đây): `nuc-infra/docs/researc
 
 Nhánh từ `main`, Conventional Commits, PR nhỏ một mục đích; CI chạy `npm run verify`.
 
+## Bắt đầu và kết thúc phiên
+
+thien chuyển giữa nhiều tài khoản Claude; phiên sau không thấy bộ nhớ, artifact hay hội thoại của phiên trước. Mọi thứ
+phiên sau cần phải nằm trong repo.
+
+- **Bắt đầu**: đọc `docs/STATUS.md`, xem PR đang mở (`gh api repos/thiengthb/sakubun/pulls`). Gắn thêm repo
+  `thiengthb/nuc-infra` nếu cần luật chung. Bước đã có người giữ trong STATUS thì không làm lại; hỏi thien trước.
+- **Nhận một bước**: ghi bước, nhánh và phiên vào bảng "Đang làm" của `docs/STATUS.md` trong commit đầu tiên của nhánh.
+- **Nhánh** đặt theo bước: `feat/7.1d-user-id-required`, `docs/<slug>`; mỗi bước một nhánh mới, không dùng lại nhánh cũ.
+- **Kế hoạch** thien duyệt (kể cả bản trong artifact) chép vào `docs/plans/YYYY-MM-DD-<slug>.md` trước khi code.
+- **Kết thúc / bàn giao**: trong PR, cập nhật `docs/STATUS.md` (trạng thái, việc chờ thien, việc tiếp theo, việc treo)
+  và cột Status trong `docs/roadmap.md`.
+
 ## Cách làm việc giữa người và AI
 
 - **Người quyết cái gì và vì sao** (mục tiêu, hành vi học, schema, xoá dữ liệu); **AI làm và chứng minh nó chạy**
