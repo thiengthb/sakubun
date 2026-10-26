@@ -30,15 +30,16 @@ under 300.
 
 ## Phase 7: more than one learner
 
-Approved by thien on 2026-10-25. Plan: https://claude.ai/artifact/8dhCRanXdgsiDFTJBbUHdf. Decision:
-`docs/decisions/0006-per-user-learning-data.md`.
+Approved by thien on 2026-10-25. Plan: `docs/plans/2026-10-25-phase7-1-per-user-data.md` (copied from
+artifact 8dhCRanXdgsiDFTJBbUHdf, which only its own Claude account can open). Decision:
+`docs/decisions/0006-per-user-learning-data.md`. Who is on which step now: `docs/STATUS.md`.
 
-| # | PR | Done when | Risk |
-| --- | --- | --- | --- |
-| 7.1a | Nullable `userId` on the eight learning tables, existing rows given to the first account | Migration test on a seeded DB: every row owned, no other value changed | high |
-| 7.1b | `userDb(userId)` client; `lib/app` and MCP tools read and write through it | Guard tests green | high |
-| 7.1c | Every other read and write through `userDb` | Two-user leak test: B never sees an id of A | high |
-| 7.1d | `userId` required (backfill first), Item unique per user, bare client throws on learning tables, raw SQL scan | Bare-client test throws on each table | high |
-| 7.2 | Sign-up that thien approves (Google), admin page, MCP tool stats and database backup admin only, then 4.2 | A second account learns without seeing the first | high |
-| 7.3 | Hướng dẫn page (removed 2026-08-14) rewritten for today's app | thien approves the screenshots | high |
-| 7.4 | Each new or changed page in the new UI, one PR per page | thien approves before and after screenshots | high |
+| # | PR | Done when | Risk | Status |
+| --- | --- | --- | --- | --- |
+| 7.1a | Nullable `userId` on the eight learning tables, existing rows given to the first account | Migration test on a seeded DB: every row owned, no other value changed | high | Done 2026-10-26 (#130) |
+| 7.1b | `userDb(userId)` client; `lib/app` and MCP tools read and write through it | Guard tests green | high | In PR #131 (with 7.1c) |
+| 7.1c | Every other read and write through `userDb` | Two-user leak test: B never sees an id of A | high | In PR #131 (with 7.1b) |
+| 7.1d | `userId` required (backfill first), Item unique per user, bare client throws on learning tables, raw SQL scan | Bare-client test throws on each table | high | Todo |
+| 7.2 | Sign-up that thien approves (Google), admin page, MCP tool stats and database backup admin only, then 4.2 | A second account learns without seeing the first | high | Todo |
+| 7.3 | Hướng dẫn page (removed 2026-08-14) rewritten for today's app | thien approves the screenshots | high | Todo |
+| 7.4 | Each new or changed page in the new UI, one PR per page | thien approves before and after screenshots | high | Todo |
