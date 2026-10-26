@@ -9,6 +9,9 @@ datasource db {
 
 model Item {
   id            String    @id @default(cuid())
+  // Owner (roadmap 7.1). Nullable while code moves to per-user queries; 7.1d makes it required.
+  userId        String?
+  user          User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
   kind          String
   expression    String
   reading       String?
@@ -37,10 +40,14 @@ model Item {
   @@unique([kind, expression])
 
   @@index([kind])
+  @@index([userId])
 }
 
 model SrsState {
   id            String    @id @default(cuid())
+  // Owner (roadmap 7.1). Nullable while code moves to per-user queries; 7.1d makes it required.
+  userId        String?
+  user          User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
   itemId        String    @unique
   item          Item      @relation(fields: [itemId], references: [id], onDelete: Cascade)
   due           DateTime  @default(now())
@@ -56,10 +63,14 @@ model SrsState {
   @@index([due])
 
   @@index([state])
+  @@index([userId, due])
 }
 
 model ReviewLog {
   id          String    @id @default(cuid())
+  // Owner (roadmap 7.1). Nullable while code moves to per-user queries; 7.1d makes it required.
+  userId      String?
+  user        User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   itemId      String?
   item        Item?     @relation(fields: [itemId], references: [id], onDelete: SetNull)
@@ -85,10 +96,14 @@ model ReviewLog {
   @@index([itemId, reviewedAt])
 
   @@index([rating, reviewedAt])
+  @@index([userId, reviewedAt])
 }
 
 model Sentence {
   id            String    @id @default(cuid())
+  // Owner (roadmap 7.1). Nullable while code moves to per-user queries; 7.1d makes it required.
+  userId        String?
+  user          User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
   direction     String
   context       String?
   exerciseType  String    @default("TRANSLATION")
@@ -114,6 +129,7 @@ model Sentence {
   reviews ReviewLog[]
 
   @@index([createdAt])
+  @@index([userId, createdAt])
 }
 
 // One v2 translation turn with Claude: exactly one target item. `status` moves
@@ -121,6 +137,9 @@ model Sentence {
 // Sentence so History keeps showing them.
 model Turn {
   id        String    @id @default(cuid())
+  // Owner (roadmap 7.1). Nullable while code moves to per-user queries; 7.1d makes it required.
+  userId    String?
+  user      User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
   itemId    String?
   item      Item?     @relation(fields: [itemId], references: [id], onDelete: SetNull)
   // 'JA_VI': the learner reads `ja` and writes Vietnamese; 'VI_JA': reads `vi`, writes Japanese.
@@ -142,10 +161,14 @@ model Turn {
 
   @@index([createdAt])
   @@index([status, createdAt])
+  @@index([userId, createdAt])
 }
 
 model Settings {
   id        Int      @id @default(autoincrement())
+  // One row per learner (roadmap 7.1). Nullable until 7.1d, like the other learning tables.
+  userId    String?  @unique
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
   data      String
   updatedAt DateTime @updatedAt
 }
@@ -170,6 +193,15 @@ model User {
   oauthRefreshTokens OauthRefreshToken[]
   oauthAccessTokens  OauthAccessToken[]
   oauthConsents      OauthConsent[]
+  // Learning data (roadmap 7.1)
+  items        Item[]
+  srsStates    SrsState[]
+  reviewLogs   ReviewLog[]
+  sentences    Sentence[]
+  turns        Turn[]
+  groups       Group[]
+  groupMembers GroupMember[]
+  settings     Settings?
 
   @@unique([email])
   @@map("user")
@@ -443,6 +475,9 @@ model McpToolCall {
 
 model Group {
   id        String   @id @default(cuid())
+  // Owner (roadmap 7.1). Nullable while code moves to per-user queries; 7.1d makes it required.
+  userId    String?
+  user      User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
   name      String
 
   kind      String   @default("mixed")
@@ -452,6 +487,7 @@ model Group {
   updatedAt DateTime @updatedAt
 
   members GroupMember[]
+  @@index([userId])
 }
 
 model GroupMember {
@@ -459,8 +495,12 @@ model GroupMember {
   group   Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
   itemId  String
   item    Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  // Owner (roadmap 7.1). Nullable while code moves to per-user queries; 7.1d makes it required.
+  userId  String?
+  user    User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
   addedAt DateTime @default(now())
 
   @@id([groupId, itemId])
   @@index([itemId])
+  @@index([userId])
 }
