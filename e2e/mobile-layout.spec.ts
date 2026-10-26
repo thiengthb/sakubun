@@ -1,7 +1,7 @@
 import path from 'node:path';
 import Database from 'better-sqlite3';
 import { expect, test } from '@playwright/test';
-import { E2E_DB_FILE, E2E_EMAIL, E2E_LOGIN, ownSeedRows, seedE2eAccount } from './fixtures';
+import { E2E_DB_FILE, E2E_EMAIL, E2E_LOGIN, E2E_OWNER, seedE2eAccount } from './fixtures';
 
 const VIEWPORT = { width: 390, height: 844 };
 
@@ -52,18 +52,18 @@ test.beforeAll(async () => {
       db.exec(`DELETE FROM "${t}"`);
 
     const item = db.prepare(
-      `INSERT INTO Item (id, kind, expression, reading, hanviet, meaningVi, level, notes, source,
+      `INSERT INTO Item (userId, id, kind, expression, reading, hanviet, meaningVi, level, notes, source,
                          captureReason, suspended, starred, createdAt)
-       VALUES (?, ?, ?, ?, ?, ?, ?, NULL, 'MCP', ?, 0, ?, ?)`,
+       VALUES (${E2E_OWNER}, ?, ?, ?, ?, ?, ?, ?, NULL, 'MCP', ?, 0, ?, ?)`,
     );
     const srs = db.prepare(
-      `INSERT INTO SrsState (id, itemId, due, stability, difficulty, scheduledDays, learningSteps,
+      `INSERT INTO SrsState (userId, id, itemId, due, stability, difficulty, scheduledDays, learningSteps,
                              reps, lapses, state, lastReview)
-       VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?)`,
+       VALUES (${E2E_OWNER}, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?)`,
     );
     const log = db.prepare(
-      `INSERT INTO ReviewLog (id, itemId, rating, state, role, due, stability, difficulty, reviewedAt)
-       VALUES (?, ?, ?, ?, 'TARGET', ?, ?, ?, ?)`,
+      `INSERT INTO ReviewLog (userId, id, itemId, rating, state, role, due, stability, difficulty, reviewedAt)
+       VALUES (${E2E_OWNER}, ?, ?, ?, ?, 'TARGET', ?, ?, ?, ?)`,
     );
 
     const DAY = 86_400_000;
@@ -108,11 +108,11 @@ test.beforeAll(async () => {
         );
     });
     db.prepare(
-      `INSERT INTO "Group" (id, name, kind, color, note, createdAt, updatedAt)
-       VALUES ('grp-e2e', 'Mẫu N2 hay sai khi viết mail công việc', 'grammar', NULL, 'ghi chú nhóm', ?, ?)`,
+      `INSERT INTO "Group" (userId, id, name, kind, color, note, createdAt, updatedAt)
+       VALUES (${E2E_OWNER}, 'grp-e2e', 'Mẫu N2 hay sai khi viết mail công việc', 'grammar', NULL, 'ghi chú nhóm', ?, ?)`,
     ).run(iso(now), iso(now));
     db.prepare(
-      `INSERT INTO GroupMember (groupId, itemId, addedAt) VALUES ('grp-e2e', 'g0', ?)`,
+      `INSERT INTO GroupMember (userId, groupId, itemId, addedAt) VALUES (${E2E_OWNER}, 'grp-e2e', 'g0', ?)`,
     ).run(iso(now));
 
     VOCAB.forEach(([expression, reading, hanviet, meaningVi, level, reason], n) => {
@@ -154,7 +154,6 @@ test.beforeAll(async () => {
         );
     });
   } finally {
-    ownSeedRows(db);
     db.close();
   }
 });

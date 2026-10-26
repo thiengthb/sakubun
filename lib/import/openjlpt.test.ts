@@ -124,7 +124,7 @@ describe('nạp qua importer tài khoản có sẵn', () => {
     const { importAccountData } = await import('@/lib/transfer/import');
     const { parseAccountBackup } = await import('@/lib/transfer/schema');
     await db.item.create({
-      data: { kind: 'VOCAB', expression: 'あらゆる', meaningVi: 'nghĩa của tôi', source: 'MANUAL' },
+      data: { userId: db.$ownerId(), kind: 'VOCAB', expression: 'あらゆる', meaningVi: 'nghĩa của tôi', source: 'MANUAL' },
     });
     const built = buildImport(SRC, VI, HV, NOW);
     const parsed = parseAccountBackup({ items: built.items, srsStates: built.srsStates });

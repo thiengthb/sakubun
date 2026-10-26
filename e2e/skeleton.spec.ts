@@ -1,7 +1,7 @@
 import path from 'node:path';
 import Database from 'better-sqlite3';
 import { expect, test } from '@playwright/test';
-import { E2E_DB_FILE, E2E_EMAIL, E2E_LOGIN, ownSeedRows, seedE2eAccount } from './fixtures';
+import { E2E_DB_FILE, E2E_EMAIL, E2E_LOGIN, E2E_OWNER, seedE2eAccount } from './fixtures';
 
 interface Pair {
   name: string;
@@ -97,9 +97,9 @@ test.beforeAll(async () => {
     for (const t of ['GroupMember', 'Group', 'ReviewLog', 'SrsState', 'Sentence', 'Item'])
       db.exec(`DELETE FROM "${t}"`);
     const item = db.prepare(
-      `INSERT INTO Item (id, kind, expression, reading, hanviet, meaningVi, level, notes, source,
+      `INSERT INTO Item (userId, id, kind, expression, reading, hanviet, meaningVi, level, notes, source,
          captureReason, suspended, starred, createdAt)
-       VALUES (?, 'GRAMMAR', ?, NULL, NULL, ?, 'N2', NULL, 'MCP', NULL, 0, 0, ?)`,
+       VALUES (${E2E_OWNER}, ?, 'GRAMMAR', ?, NULL, NULL, ?, 'N2', NULL, 'MCP', NULL, 0, 0, ?)`,
     );
     item.run('sk-d', '〜ばかりに', 'chỉ vì', iso(now - 60_000));
     for (let n = 0; n < 40; n++)
@@ -110,15 +110,14 @@ test.beforeAll(async () => {
         iso(now - n * 1000),
       );
     db.prepare(
-      `INSERT INTO "Group" (id, name, kind, color, note, createdAt, updatedAt)
-       VALUES ('grp-sk', 'Nhóm đo skeleton', 'grammar', NULL, 'ghi chú', ?, ?)`,
+      `INSERT INTO "Group" (userId, id, name, kind, color, note, createdAt, updatedAt)
+       VALUES (${E2E_OWNER}, 'grp-sk', 'Nhóm đo skeleton', 'grammar', NULL, 'ghi chú', ?, ?)`,
     ).run(iso(now), iso(now));
     const mem = db.prepare(
-      `INSERT INTO GroupMember (groupId, itemId, addedAt) VALUES ('grp-sk', ?, ?)`,
+      `INSERT INTO GroupMember (userId, groupId, itemId, addedAt) VALUES (${E2E_OWNER}, 'grp-sk', ?, ?)`,
     );
     for (let n = 0; n < 20; n++) mem.run(`sk${n}`, iso(now));
   } finally {
-    ownSeedRows(db);
     db.close();
   }
 });

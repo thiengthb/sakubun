@@ -1,7 +1,7 @@
 import path from 'node:path';
 import Database from 'better-sqlite3';
 import { expect, test, type Page } from '@playwright/test';
-import { E2E_DB_FILE, E2E_EMAIL, E2E_LOGIN, ownSeedRows, seedE2eAccount } from './fixtures';
+import { E2E_DB_FILE, E2E_EMAIL, E2E_LOGIN, E2E_OWNER, seedE2eAccount } from './fixtures';
 
 const iso = (ms: number) => new Date(ms).toISOString().replace('Z', '+00:00');
 
@@ -15,14 +15,14 @@ function seed() {
     for (const t of ['GroupMember', 'Group', 'ReviewLog', 'SrsState', 'Sentence', 'Item'])
       db.exec(`DELETE FROM "${t}"`);
     const item = db.prepare(
-      `INSERT INTO Item (id, kind, expression, reading, hanviet, meaningVi, level, notes, source,
+      `INSERT INTO Item (userId, id, kind, expression, reading, hanviet, meaningVi, level, notes, source,
          captureReason, suspended, starred, createdAt, enrichment)
-       VALUES (?, 'VOCAB', ?, ?, NULL, ?, 'N2', NULL, 'MCP', NULL, 0, 0, ?, ?)`,
+       VALUES (${E2E_OWNER}, ?, 'VOCAB', ?, ?, NULL, ?, 'N2', NULL, 'MCP', NULL, 0, 0, ?, ?)`,
     );
     const srs = db.prepare(
-      `INSERT INTO SrsState (id, itemId, due, stability, difficulty, scheduledDays, learningSteps,
+      `INSERT INTO SrsState (userId, id, itemId, due, stability, difficulty, scheduledDays, learningSteps,
          reps, lapses, state, lastReview)
-       VALUES (?, ?, ?, 0, 0, 0, 0, 0, 0, 0, NULL)`,
+       VALUES (${E2E_OWNER}, ?, ?, ?, 0, 0, 0, 0, 0, 0, 0, NULL)`,
     );
     const rows: [string, string, string, string, string | null][] = [
       [
@@ -40,15 +40,14 @@ function seed() {
       srs.run(`s${id}`, id, iso(now));
     });
     db.prepare(
-      `INSERT INTO "Group" (id, name, kind, color, note, createdAt, updatedAt)
-       VALUES ('grpC', 'Nhóm thẻ', 'vocab', NULL, NULL, ?, ?)`,
+      `INSERT INTO "Group" (userId, id, name, kind, color, note, createdAt, updatedAt)
+       VALUES (${E2E_OWNER}, 'grpC', 'Nhóm thẻ', 'vocab', NULL, NULL, ?, ?)`,
     ).run(iso(now), iso(now));
     const member = db.prepare(
-      `INSERT INTO GroupMember (groupId, itemId, addedAt) VALUES ('grpC', ?, ?)`,
+      `INSERT INTO GroupMember (userId, groupId, itemId, addedAt) VALUES (${E2E_OWNER}, 'grpC', ?, ?)`,
     );
     for (const [id] of rows) member.run(id, iso(now));
   } finally {
-    ownSeedRows(db);
     db.close();
   }
 }
@@ -60,9 +59,9 @@ function seedLong() {
   const now = Date.now();
   try {
     const item = db.prepare(
-      `INSERT INTO Item (id, kind, expression, reading, hanviet, meaningVi, level, notes, source,
+      `INSERT INTO Item (userId, id, kind, expression, reading, hanviet, meaningVi, level, notes, source,
          captureReason, suspended, starred, createdAt)
-       VALUES (?, 'VOCAB', ?, NULL, NULL, ?, 'N1', NULL, 'MCP', NULL, 0, 0, ?)`,
+       VALUES (${E2E_OWNER}, ?, 'VOCAB', ?, NULL, NULL, ?, 'N1', NULL, 'MCP', NULL, 0, 0, ?)`,
     );
     item.run(
       'long',
@@ -70,12 +69,11 @@ function seedLong() {
       'Dù có... hay không thì cũng...',
       iso(now),
     );
-    db.prepare(`INSERT INTO GroupMember (groupId, itemId, addedAt) VALUES ('grpC', 'long', ?)`).run(
-      iso(now),
-    );
+    db.prepare(
+      `INSERT INTO GroupMember (userId, groupId, itemId, addedAt) VALUES (${E2E_OWNER}, 'grpC', 'long', ?)`,
+    ).run(iso(now));
     for (let i = 0; i < 25; i++) item.run(`o${i}`, `語彙${i}`, `nghĩa ${i}`, iso(now - i));
   } finally {
-    ownSeedRows(db);
     db.close();
   }
 }

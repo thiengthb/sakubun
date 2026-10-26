@@ -179,7 +179,7 @@ export async function stageTurn(
   const [, turn] = await db.$transaction([
     db.turn.updateMany({ where: { status: 'staged' }, data: { status: 'skipped' } }),
     db.turn.create({
-      data: { itemId: item.id, direction, ...draft, createdAt: now },
+      data: { userId: db.$ownerId(), itemId: item.id, direction, ...draft, createdAt: now },
     }),
   ]);
   return ok({ turnId: turn.id, direction, show: direction === 'JA_VI' ? draft.ja : draft.vi });

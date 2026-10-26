@@ -15,12 +15,13 @@ type Db = typeof import('@/lib/db/db');
 let I: Import;
 let S: Schema;
 let prisma: Db['prisma'];
+let unguardedPrisma: Db['unguardedPrisma'];
 let learner: UserDb;
 
 beforeAll(async () => {
   I = await import('@/lib/transfer/import');
   S = await import('@/lib/transfer/schema');
-  ({ prisma } = await import('@/lib/db/db'));
+  ({ prisma, unguardedPrisma } = await import('@/lib/db/db'));
   learner = (await import('@/lib/db/user-db')).userDb(await createTestUser(prisma, 'learner'));
 });
 
@@ -175,7 +176,8 @@ describe('v2 turns survive a backup', () => {
   it('system restore copies Turn before ReviewLog, so the link passes the foreign key check', async () => {
     await resetLearningData(prisma);
     const file = path.join(mkdtempSync(path.join(os.tmpdir(), 'sakubun-sysbak-')), 'backup.db');
-    applyMigrations(file);
+    // Made before 7.1a: no owner on any row, so the restore gives them to the live account.
+    applyMigrations(file, { before: '20261025230000_learning_owner' });
     const db = new Database(file);
     db.prepare(
       `INSERT INTO Item (id, kind, expression, meaningVi, level, source, createdAt)
@@ -193,9 +195,11 @@ describe('v2 turns survive a backup', () => {
     const res = await I.importSystemBackup(file, { dryRun: false });
 
     expect(res.tables.find((t) => t.table === 'Turn')).toMatchObject({ create: 1 });
-    const log = await prisma.reviewLog.findUniqueOrThrow({ where: { id: TURN_LOG.id } });
+    const log = await unguardedPrisma.reviewLog.findUniqueOrThrow({ where: { id: TURN_LOG.id } });
     expect(log).toMatchObject({ turnId: TURN.id, channel: 'mcp' });
-    expect(await prisma.turn.count()).toBe(1);
+    expect(await unguardedPrisma.turn.count()).toBe(1);
+    expect(log.userId).toBe('learner');
+    expect(await learner.item.count()).toBe(1);
   });
 
   it('restores a backup made before the v1 tables were dropped, skipping what no longer exists', async () => {
@@ -216,7 +220,9 @@ describe('v2 turns survive a backup', () => {
     const res = await I.importSystemBackup(file, { dryRun: false });
 
     expect(res.tables.map((t) => t.table)).not.toContain('LearnerNote');
-    expect(await prisma.item.findUniqueOrThrow({ where: { id: 'itm-old-1' } })).toMatchObject({
+    expect(
+      await unguardedPrisma.item.findUniqueOrThrow({ where: { id: 'itm-old-1' } }),
+    ).toMatchObject({
       expression: '猫',
       meaningVi: 'mèo',
     });
@@ -250,11 +256,13 @@ describe('v2 turns survive a backup', () => {
 
     await I.importSystemBackup(file, { dryRun: false });
 
-    expect(await prisma.item.findUniqueOrThrow({ where: { id: 'itm-owned-1' } })).toMatchObject({
+    expect(
+      await unguardedPrisma.item.findUniqueOrThrow({ where: { id: 'itm-owned-1' } }),
+    ).toMatchObject({
       userId: live.id,
     });
     expect(
-      await prisma.reviewLog.findUniqueOrThrow({ where: { id: 'log-owned-1' } }),
+      await unguardedPrisma.reviewLog.findUniqueOrThrow({ where: { id: 'log-owned-1' } }),
     ).toMatchObject({ userId: live.id });
     expect(await prisma.user.count({ where: { id: 'old-owner' } })).toBe(0);
     await prisma.user.delete({ where: { id: live.id } });

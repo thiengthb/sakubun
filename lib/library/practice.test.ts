@@ -130,7 +130,13 @@ describe('item length limits (lib/library/item-limits.ts)', () => {
   it('edits an old long item without forcing it short, and refuses a new long value', async () => {
     await resetData();
     const old = await db.item.create({
-      data: { kind: 'GRAMMAR', expression: '〜ばかりに', meaningVi: 'y'.repeat(90), source: 'MCP' },
+      data: {
+        userId: db.$ownerId(),
+        kind: 'GRAMMAR',
+        expression: '〜ばかりに',
+        meaningVi: 'y'.repeat(90),
+        source: 'MCP',
+      },
     });
     await P.updateItem(db, old.id, {
       expression: '〜ばかりに',
@@ -209,7 +215,7 @@ describe('P2025 của Prisma mang theo tên model (hợp đồng cho thông đi�
   it('update một hàng không tồn tại → code P2025 + meta.modelName', async () => {
     await resetData();
 
-    const caught = await prisma.item
+    const caught = await db.item
       .update({ where: { id: 'khong-ton-tai' }, data: { meaningVi: 'x' } })
       .then(
         () => null,

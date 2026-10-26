@@ -10,18 +10,15 @@ Cập nhật lần cuối: 2026-10-26 (7.1b+c merge, nhận 7.1d).
 
 | Bước | Nhánh / PR | Giữ bởi | Trạng thái |
 | --- | --- | --- | --- |
-| 7.1d | `feat/7.1d-user-id-required` | phiên `session_01FokVawKvZGmPLu9XkUuTAp` (từ 2026-10-26) | Đang code |
+| 7.1d | `feat/7.1d-user-id-required`, #133 | phiên `session_01FokVawKvZGmPLu9XkUuTAp` (từ 2026-10-26) | Xong code, chờ thien |
 
 ## Chờ thien
 
-- Không có.
+- #133 (7.1d): sao lưu DB trên NUC rồi merge (`risk:high`, migration dựng lại 8 bảng học).
 
 ## Tiếp theo
 
-1. 7.1d (đang làm): `userId` bắt buộc (backfill trước), Item unique theo (userId, kind, expression), client trần
-   ném lỗi trên 8 bảng học, test quét raw SQL. Kế hoạch: `docs/plans/2026-10-25-phase7-1-per-user-data.md`.
-   Sao lưu NUC trước khi deploy.
-2. 7.2: đăng ký thien duyệt, trang quản trị, rồi 4.2. Không mở đăng ký trước khi 7.1d merge.
+1. 7.2, sau khi #133 merge: đăng ký thien duyệt, trang quản trị, rồi 4.2. Không mở đăng ký trước khi 7.1d merge.
 
 ## Việc nhỏ còn treo
 
@@ -33,3 +30,5 @@ Cập nhật lần cuối: 2026-10-26 (7.1b+c merge, nhận 7.1d).
 - Khôi phục bản sao lưu toàn hệ thống so email phân biệt hoa thường (`lib/transfer/import.ts`), nên có thể tạo
   một tài khoản trùng. Cần sửa trước khi 7.2 mở đăng ký.
 - Chữ "Xóa" và "Xoá" dùng lẫn lộn trong UI; chọn một cách viết (repo đang dùng "Xoá" trong tài liệu).
+- Cho 7.2: Item OpenJLPT có id cố định giữa các bản dựng và `lib/import/hanviet-fill.ts` tìm theo id. Khi chép
+  kho OpenJLPT cho người thứ hai, id phải mới, nên phần điền Hán Việt phải tìm theo (userId, kind, expression).

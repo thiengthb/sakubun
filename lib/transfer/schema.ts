@@ -246,16 +246,28 @@ export function buildTableMergeSql(opts: {
   cols: readonly string[];
   userCols: readonly string[];
   backupWhere?: string;
+  // SQL for the owner of a learning row the backup has none for (made before roadmap 7.1a): the
+  // column is required since 7.1d.
+  ownerFallback?: string;
 }): string {
   const userSet = new Set(opts.userCols);
-  const colList = opts.cols.map(qid).join(', ');
-  const selList = opts.cols
-    .map((c) =>
-      userSet.has(c)
-        ? `COALESCE((SELECT new_id FROM uidmap WHERE old_id = b.${qid(c)}), b.${qid(c)})`
-        : `b.${qid(c)}`,
-    )
-    .join(', ');
+  const cols = [...opts.cols];
+  const sel = cols.map((c) =>
+    userSet.has(c)
+      ? `COALESCE((SELECT new_id FROM uidmap WHERE old_id = b.${qid(c)}), b.${qid(c)})`
+      : `b.${qid(c)}`,
+  );
+  if (opts.ownerFallback) {
+    const at = cols.indexOf('userId');
+    if (at === -1) {
+      cols.push('userId');
+      sel.push(opts.ownerFallback);
+    } else {
+      sel[at] = `COALESCE(${sel[at]}, ${opts.ownerFallback})`;
+    }
+  }
+  const colList = cols.map(qid).join(', ');
+  const selList = sel.join(', ');
   const where = opts.backupWhere ? ` WHERE ${opts.backupWhere}` : '';
   return (
     `INSERT OR IGNORE INTO main.${qid(opts.table)} (${colList}) ` +

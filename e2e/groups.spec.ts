@@ -1,7 +1,7 @@
 import path from 'node:path';
 import Database from 'better-sqlite3';
 import { expect, test } from '@playwright/test';
-import { E2E_DB_FILE, E2E_EMAIL, E2E_LOGIN, ownSeedRows, seedE2eAccount } from './fixtures';
+import { E2E_DB_FILE, E2E_EMAIL, E2E_LOGIN, E2E_OWNER, seedE2eAccount } from './fixtures';
 
 test('bulk add/remove to group, and the item-detail membership chips', async ({ page }) => {
   await seedE2eAccount();
@@ -11,22 +11,21 @@ test('bulk add/remove to group, and the item-detail membership chips', async ({ 
   for (const t of ['GroupMember', 'Group', 'ReviewLog', 'SrsState', 'Sentence', 'Item'])
     db.exec(`DELETE FROM "${t}"`);
   const item = db.prepare(
-    `INSERT INTO Item (id, kind, expression, reading, hanviet, meaningVi, level, notes, source,
+    `INSERT INTO Item (userId, id, kind, expression, reading, hanviet, meaningVi, level, notes, source,
        captureReason, suspended, starred, createdAt)
-     VALUES (?, ?, ?, NULL, NULL, ?, 'N2', NULL, 'MCP', NULL, 0, 0, ?)`,
+     VALUES (${E2E_OWNER}, ?, ?, ?, NULL, NULL, ?, 'N2', NULL, 'MCP', NULL, 0, 0, ?)`,
   );
   item.run('g0', 'GRAMMAR', '〜ばかりに', 'chỉ vì', iso(now));
   item.run('g1', 'GRAMMAR', '〜ざるを得ない', 'buộc phải', iso(now - 1000));
   item.run('v0', 'VOCAB', '把握', 'nắm bắt', iso(now - 2000));
   db.prepare(
-    `INSERT INTO "Group" (id, name, kind, color, note, createdAt, updatedAt)
-     VALUES (?, ?, ?, NULL, NULL, ?, ?)`,
+    `INSERT INTO "Group" (userId, id, name, kind, color, note, createdAt, updatedAt)
+     VALUES (${E2E_OWNER}, ?, ?, ?, NULL, NULL, ?, ?)`,
   ).run('grp1', 'Nhóm N2', 'grammar', iso(now), iso(now));
   db.prepare(
-    `INSERT INTO "Group" (id, name, kind, color, note, createdAt, updatedAt)
-     VALUES (?, ?, ?, NULL, NULL, ?, ?)`,
+    `INSERT INTO "Group" (userId, id, name, kind, color, note, createdAt, updatedAt)
+     VALUES (${E2E_OWNER}, ?, ?, ?, NULL, NULL, ?, ?)`,
   ).run('grp2', 'Chỉ từ vựng', 'vocab', iso(now), iso(now));
-  ownSeedRows(db);
   db.close();
 
   const errors: string[] = [];

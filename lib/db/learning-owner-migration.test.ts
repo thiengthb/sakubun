@@ -11,6 +11,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 const MIGRATIONS_DIR = path.resolve(import.meta.dirname, '..', '..', 'prisma', 'migrations');
 const OWNER = '20261025230000_learning_owner';
 const BACKFILL = '20261026050000_learning_owner_backfill';
+const REQUIRED = '20261026190000_learning_owner_required';
 const TABLES = [
   'Item',
   'SrsState',
@@ -184,5 +185,77 @@ describe('learning owner migration', () => {
       { data: '{"a":1}', userId: 'thien' },
       { data: '{"sessionGoal":20}', userId: null },
     ]);
+  });
+});
+
+// Roadmap 7.1d: owners become required and an Item is unique per learner. The table rebuild must
+// copy every row unchanged, own the ones still without an owner, and never drop a learning row.
+describe('learning owner required migration', () => {
+  function dbBeforeRequired(): Database.Database {
+    const d = dbBeforeOwner();
+    for (const name of migrations.filter((n) => n >= OWNER && n < REQUIRED)) d.exec(sql(name));
+    return d;
+  }
+
+  it('copies every row unchanged and owns the ones written without an owner', () => {
+    db = dbBeforeRequired();
+    addUser(db, 'thien', 'admin', '2026-08-01T00:00:00.000+00:00');
+    // Rows with no owner, as a restore of a pre-7.1a backup left them.
+    seedLearning(db);
+    const before = Object.fromEntries(TABLES.map((t) => [t, rowsOf(db, t)]));
+
+    db.exec(sql(REQUIRED));
+
+    for (const table of TABLES) {
+      expect(rowsOf(db, table), table).toEqual(
+        before[table].map((row) => ({ ...row, userId: 'thien' })),
+      );
+    }
+    expect(db.pragma('foreign_key_check')).toEqual([]);
+    for (const table of TABLES) {
+      const col = (db.pragma(`table_info("${table}")`) as { name: string; notnull: number }[]).find(
+        (c) => c.name === 'userId',
+      );
+      expect(col?.notnull, table).toBe(1);
+    }
+  });
+
+  it('drops only settings rows no learner can read', () => {
+    db = dbBeforeRequired();
+    addUser(db, 'thien', 'admin', '2026-08-01T00:00:00.000+00:00');
+    db.prepare(
+      `INSERT INTO Settings (userId, data, updatedAt) VALUES ('thien', '{"a":1}', '2026-10-04T00:00:00.000+00:00')`,
+    ).run();
+    db.prepare(
+      `INSERT INTO Settings (data, updatedAt) VALUES ('{"b":2}', '2026-10-05T00:00:00.000+00:00')`,
+    ).run();
+
+    db.exec(sql(REQUIRED));
+
+    expect(db.prepare('SELECT data, userId FROM Settings').all()).toEqual([
+      { data: '{"a":1}', userId: 'thien' },
+    ]);
+  });
+
+  it('lets two learners hold the same item, but not one learner twice', () => {
+    db = dbBeforeRequired();
+    addUser(db, 'thien', 'admin', '2026-08-01T00:00:00.000+00:00');
+    addUser(db, 'kai', null, '2026-09-01T00:00:00.000+00:00');
+    db.exec(sql(REQUIRED));
+    const add = db.prepare(
+      `INSERT INTO Item (id, userId, kind, expression, meaningVi) VALUES (?, ?, 'VOCAB', '猫', 'mèo')`,
+    );
+
+    add.run('a', 'thien');
+    add.run('b', 'kai');
+
+    expect(() => add.run('c', 'thien')).toThrow(/UNIQUE/);
+  });
+
+  it('fails rather than drop learning rows when there is no account to own them', () => {
+    db = dbBeforeRequired();
+    seedLearning(db);
+
+    expect(() => db.exec(sql(REQUIRED))).toThrow(/NOT NULL/);
   });
 });

@@ -30,6 +30,7 @@ async function item(
 ) {
   await db.item.create({
     data: {
+      userId: db.$ownerId(),
       kind,
       expression,
       meaningVi: 'x',

@@ -31,7 +31,7 @@ export async function saveSettings(db: UserDb, patch: SettingsPatch): Promise<Se
   const data = JSON.stringify(merged);
   const existing = await db.settings.findFirst({ orderBy: { id: 'asc' } });
   if (existing) await db.settings.update({ where: { id: existing.id }, data: { data } });
-  else await db.settings.create({ data: { data } });
+  else await db.settings.create({ data: { userId: db.$ownerId(), data } });
   return merged;
 }
 
@@ -120,6 +120,7 @@ export async function addItems(
     creates.push(
       db.item.create({
         data: {
+          userId: db.$ownerId(),
           kind,
           expression,
           reading,

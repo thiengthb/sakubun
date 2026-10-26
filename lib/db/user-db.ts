@@ -1,5 +1,5 @@
 import { Prisma } from '@/lib/generated/prisma/client';
-import { prisma } from '@/lib/db/db';
+import { unguardedPrisma } from '@/lib/db/db';
 import { isLearningModel, scopeArgs } from '@/lib/db/learner-scope';
 
 // A Prisma client bound to one learner (roadmap 7.1). Every query on a learning table carries
@@ -25,7 +25,7 @@ function learnerScope(userId: string) {
 
 export function userDb(userId: string) {
   if (!userId) throw new Error('userDb needs a userId.');
-  return prisma.$extends(learnerScope(userId));
+  return unguardedPrisma.$extends(learnerScope(userId));
 }
 
 export type UserDb = ReturnType<typeof userDb>;

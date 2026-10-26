@@ -22,10 +22,10 @@ beforeAll(async () => {
 beforeEach(async () => {
   await resetLearningData(prisma);
   const g = await db.item.create({
-    data: { kind: 'GRAMMAR', expression: '〜ばかりに', meaningVi: 'chỉ vì ~', level: 'N2' },
+    data: { userId: db.$ownerId(), kind: 'GRAMMAR', expression: '〜ばかりに', meaningVi: 'chỉ vì ~', level: 'N2' },
   });
   const v = await db.item.create({
-    data: { kind: 'VOCAB', expression: '把握', meaningVi: 'nắm bắt', level: 'N2' },
+    data: { userId: db.$ownerId(), kind: 'VOCAB', expression: '把握', meaningVi: 'nắm bắt', level: 'N2' },
   });
   grammarId = g.id;
   vocabId = v.id;
@@ -170,7 +170,7 @@ describe('update', () => {
     await G.updateGroup(db, g.id, { kind: 'grammar' });
     expect((await G.getGroup(db, g.id))?.memberCount).toBe(2);
     const another = await db.item.create({
-      data: { kind: 'VOCAB', expression: '曖昧', meaningVi: 'mơ hồ', level: 'N2' },
+      data: { userId: db.$ownerId(), kind: 'VOCAB', expression: '曖昧', meaningVi: 'mơ hồ', level: 'N2' },
     });
     await expect(G.addItemsToGroup(db, g.id, [another.id])).rejects.toThrow(/does not accept/i);
   });
@@ -249,6 +249,7 @@ describe('pickers', () => {
   it('listAddableItems lists the whole library, not the first 500', async () => {
     await db.item.createMany({
       data: Array.from({ length: 600 }, (_, i) => ({
+        userId: db.$ownerId(),
         kind: 'VOCAB',
         expression: `語${i}`,
         meaningVi: `nghĩa ${i}`,
