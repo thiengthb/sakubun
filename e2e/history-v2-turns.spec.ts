@@ -1,7 +1,7 @@
 import path from 'node:path';
 import Database from 'better-sqlite3';
 import { expect, test } from '@playwright/test';
-import { E2E_DB_FILE, E2E_EMAIL, E2E_LOGIN, seedE2eAccount } from './fixtures';
+import { E2E_DB_FILE, E2E_EMAIL, E2E_LOGIN, ownSeedRows, seedE2eAccount } from './fixtures';
 
 // History lists v2 turns beside old sentences: the turn shows its 1-4 grade instead of a 0-100
 // score, opens to the same detail dialog, and carries no star (stars live on Sentence).
@@ -22,6 +22,7 @@ test('History shows a v2 turn with its grade beside an old sentence', async ({ p
      VALUES ('t-new', NULL, 'JA_VI', '音楽を聞きながら勉強します。', 'Tôi vừa nghe nhạc vừa học.',
              'graded', 'Tôi nghe nhạc và học.', 3, 'Đúng ý.', ?, ?)`,
   ).run(new Date(now - 60_000).toISOString(), new Date(now - 30_000).toISOString());
+  ownSeedRows(db);
   db.close();
 
   await page.goto('/login');
@@ -71,6 +72,7 @@ test('from 1024px History comes in pages of cards, and a new search starts at pa
   const now = Date.now();
   for (let i = 0; i < 30; i++)
     insert.run(`s${i}`, `Câu số ${i}`, new Date(now - i * 60_000).toISOString());
+  ownSeedRows(db);
   db.close();
 
   await page.goto('/login');
@@ -164,6 +166,7 @@ test.describe('on a phone', () => {
       at(1),
       'SKIPPED',
     );
+    ownSeedRows(db);
     db.close();
 
     await page.goto('/login');
@@ -210,6 +213,7 @@ test.describe('on a phone', () => {
     );
     for (let i = 0; i < 29; i++)
       insert.run(`s${i}`, `Câu số ${i}`, new Date(now - i * 60_000).toISOString());
+    ownSeedRows(db);
     db.close();
 
     await page.goto('/login');

@@ -2,15 +2,17 @@ import { SettingsForm } from '@/components/features/settings/settings-form';
 import { prisma } from '@/lib/db/db';
 import { getSettings } from '@/lib/library/practice';
 import { getSessionUserId } from '@/lib/auth/current-user';
+import { userDb } from '@/lib/db/user-db';
 import { readToolUsage } from '@/lib/mcp/usage';
 
 export const dynamic = 'force-dynamic';
 
 export default async function SettingsPage() {
   const userId = await getSessionUserId();
+  const db = userDb(userId);
 
   const [settings, user, keys, credential, lastSession, mcpUsage] = await Promise.all([
-    getSettings(),
+    getSettings(db),
     prisma.user.findUnique({
       where: { id: userId },
       select: { name: true, email: true, image: true, createdAt: true },

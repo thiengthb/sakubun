@@ -1,7 +1,7 @@
 import path from 'node:path';
 import Database from 'better-sqlite3';
 import { expect, test, type Page } from '@playwright/test';
-import { E2E_DB_FILE, E2E_EMAIL, E2E_LOGIN, seedE2eAccount } from './fixtures';
+import { E2E_DB_FILE, E2E_EMAIL, E2E_LOGIN, ownSeedRows, seedE2eAccount } from './fixtures';
 
 // docs/ui-standard.md › Bố cục: below 1024px a list is cards that load more as you scroll, with no
 // pagination; from 1024px it is a table with pages.
@@ -37,6 +37,7 @@ function seed() {
         iso(now - i * 60_000),
       );
   } finally {
+    ownSeedRows(db);
     db.close();
   }
 }

@@ -1,5 +1,6 @@
 import { headers } from 'next/headers';
 import { auth } from '@/lib/auth/auth';
+import { userDb } from '@/lib/db/user-db';
 import { exportUserData } from '@/lib/transfer/export';
 
 export const dynamic = 'force-dynamic';
@@ -12,7 +13,7 @@ export async function GET() {
   }
 
   try {
-    const data = await exportUserData();
+    const data = await exportUserData(userDb(session.user.id));
     const day = new Date().toISOString().slice(0, 10);
     const body = JSON.stringify(data, null, 2);
 

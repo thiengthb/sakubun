@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/db/db';
+import type { UserDb } from '@/lib/db/user-db';
 import { listSentences, type SentenceHistoryRow } from '@/lib/library/practice';
 import { MAX_LISTED_ITEMS } from '@/lib/library/item-limits';
 
@@ -71,10 +71,10 @@ export function turnToRow(turn: TurnHistorySource): HistoryRow {
 
 // The page lists every turn (the same ceiling as Tài nguyên): a cap below the real count would
 // make the header's count and the search quietly wrong.
-export async function listHistory(limit = MAX_LISTED_ITEMS): Promise<HistoryRow[]> {
+export async function listHistory(db: UserDb, limit = MAX_LISTED_ITEMS): Promise<HistoryRow[]> {
   const [sentences, turns] = await Promise.all([
-    listSentences(limit),
-    prisma.turn.findMany({
+    listSentences(db, limit),
+    db.turn.findMany({
       orderBy: { createdAt: 'desc' },
       take: limit,
       include: { item: { select: { expression: true, level: true } } },

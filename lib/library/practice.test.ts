@@ -1,5 +1,6 @@
 import { beforeAll, describe, expect, it } from 'vitest';
-import { createTestDb, resetLearningData } from '@/lib/db/test-db';
+import type { UserDb } from '@/lib/db/user-db';
+import { createTestUser, createTestDb, resetLearningData } from '@/lib/db/test-db';
 import type { ReviewInput } from '@/lib/app/record-review';
 import { CURRENT_ENRICHMENT_VERSION } from '@/lib/library/enrichment';
 import type { RatingValue } from '@/lib/srs/srs';
@@ -12,6 +13,7 @@ type Db = typeof import('@/lib/db/db');
 let P: Practice;
 let R: RecordModule;
 let prisma: Db['prisma'];
+let db: UserDb;
 
 async function resetData(): Promise<void> {
   await resetLearningData(prisma);
@@ -19,13 +21,13 @@ async function resetData(): Promise<void> {
 
 async function setCards(cards: { itemId: string; enrichmentJson: string }[]): Promise<void> {
   for (const { itemId, enrichmentJson } of cards) {
-    await prisma.item.update({ where: { id: itemId }, data: { enrichment: enrichmentJson } });
+    await db.item.update({ where: { id: itemId }, data: { enrichment: enrichmentJson } });
   }
 }
 
 async function addOneItem(expression: string, kind = 'GRAMMAR'): Promise<string> {
-  await P.addItems([{ expression, meaningVi: 'nghĩa' }], 'MCP', kind);
-  const row = (await P.listItems({ kind })).find((i) => i.expression === expression);
+  await P.addItems(db, [{ expression, meaningVi: 'nghĩa' }], 'MCP', kind);
+  const row = (await P.listItems(db, { kind })).find((i) => i.expression === expression);
   if (!row) throw new Error(`seed failed: ${expression}`);
   return row.itemId;
 }
@@ -36,14 +38,15 @@ async function studyOnce(
   now = new Date(),
   mistakes: Pick<ReviewInput, 'errorTags' | 'errorDetail'> = {},
 ) {
-  const srs = await prisma.srsState.findUniqueOrThrow({ where: { itemId } });
-  return R.recordReviews([{ itemId, srs, rating, ...mistakes }], { retention: 0.9, now });
+  const srs = await db.srsState.findUniqueOrThrow({ where: { itemId } });
+  return R.recordReviews(db, [{ itemId, srs, rating, ...mistakes }], { retention: 0.9, now });
 }
 
 beforeAll(async () => {
   P = await import('@/lib/library/practice');
   R = await import('@/lib/app/record-review');
   ({ prisma } = await import('@/lib/db/db'));
+  db = (await import('@/lib/db/user-db')).userDb(await createTestUser(prisma, 'learner'));
 });
 
 describe('errorDetail — the confusion pair behind the tag (additive, no backfill)', () => {
@@ -56,7 +59,7 @@ describe('errorDetail — the confusion pair behind the tag (additive, no backfi
     });
     await studyOnce(itemId, 3);
 
-    const logs = await prisma.reviewLog.findMany({
+    const logs = await db.reviewLog.findMany({
       where: { itemId },
       orderBy: { rating: 'asc' },
     });
@@ -71,14 +74,14 @@ describe('errorDetail — the confusion pair behind the tag (additive, no backfi
 describe('addItems — dedup', () => {
   it('skips a duplicate expression on re-add (idempotent), keeping one row', async () => {
     await resetData();
-    const first = await P.addItems([{ expression: 'DUP', meaningVi: 'a' }]);
+    const first = await P.addItems(db, [{ expression: 'DUP', meaningVi: 'a' }]);
     expect(first.created).toBe(1);
 
-    const second = await P.addItems([{ expression: 'DUP', meaningVi: 'b' }]);
+    const second = await P.addItems(db, [{ expression: 'DUP', meaningVi: 'b' }]);
     expect(second.created).toBe(0);
     expect(second.skipped.map((s) => s.expression)).toContain('DUP');
 
-    const rows = await prisma.item.count({ where: { kind: 'GRAMMAR' } });
+    const rows = await db.item.count({ where: { kind: 'GRAMMAR' } });
     expect(rows).toBe(1);
   });
 
@@ -88,16 +91,16 @@ describe('addItems — dedup', () => {
     // cleanText with length > 0 and became scheduled grammar items the learner was then asked to
     // translate.
     for (const junk of ['（　）', '「」', '…', '〜', '   ']) {
-      const res = await P.addItems([{ expression: junk, meaningVi: 'rác' }]);
+      const res = await P.addItems(db, [{ expression: junk, meaningVi: 'rác' }]);
       expect(res.created, `"${junk}" must not enter the library`).toBe(0);
       expect(res.skipped).toHaveLength(1);
     }
-    expect(await prisma.item.count({ where: { kind: 'GRAMMAR' } })).toBe(0);
+    expect(await db.item.count({ where: { kind: 'GRAMMAR' } })).toBe(0);
   });
 
   it('still accepts a real pattern that merely STARTS with 〜', async () => {
     await resetData();
-    const res = await P.addItems([{ expression: '〜ばかりに', meaningVi: 'chỉ vì' }]);
+    const res = await P.addItems(db, [{ expression: '〜ばかりに', meaningVi: 'chỉ vì' }]);
     expect(res.created).toBe(1);
   });
 });
@@ -106,6 +109,7 @@ describe('item length limits (lib/library/item-limits.ts)', () => {
   it('skips an entry over a limit with the fix, and stores Hán Việt in upper case', async () => {
     await resetData();
     const res = await P.addItems(
+      db,
       [
         { expression: '〜にもかかわらず、それでもなお〜しようとする', meaningVi: 'mặc dù' },
         { expression: '〜ものの', meaningVi: 'x'.repeat(61) },
@@ -119,37 +123,35 @@ describe('item length limits (lib/library/item-limits.ts)', () => {
       expect.stringMatching(/^Từ \/ mẫu tối đa 20 ký tự/),
       expect.stringMatching(/^Nghĩa tối đa 60 ký tự/),
     ]);
-    const row = await prisma.item.findFirstOrThrow({ where: { expression: '配慮' } });
+    const row = await db.item.findFirstOrThrow({ where: { expression: '配慮' } });
     expect(row.hanviet).toBe('PHỐI LỰ');
   });
 
   it('edits an old long item without forcing it short, and refuses a new long value', async () => {
     await resetData();
-    const old = await prisma.item.create({
+    const old = await db.item.create({
       data: { kind: 'GRAMMAR', expression: '〜ばかりに', meaningVi: 'y'.repeat(90), source: 'MCP' },
     });
-    await P.updateItem(old.id, {
+    await P.updateItem(db, old.id, {
       expression: '〜ばかりに',
       meaningVi: 'y'.repeat(90),
       level: 'N2',
     });
-    expect((await prisma.item.findUniqueOrThrow({ where: { id: old.id } })).level).toBe('N2');
-    await expect(P.updateItem(old.id, { meaningVi: 'z'.repeat(61) })).rejects.toThrow(
+    expect((await db.item.findUniqueOrThrow({ where: { id: old.id } })).level).toBe('N2');
+    await expect(P.updateItem(db, old.id, { meaningVi: 'z'.repeat(61) })).rejects.toThrow(
       /^Nghĩa tối đa 60 ký tự, đang có 61/,
     );
-    await expect(P.updateItem(old.id, { hanviet: 'phối lự' })).resolves.toBeTruthy();
-    expect((await prisma.item.findUniqueOrThrow({ where: { id: old.id } })).hanviet).toBe(
-      'PHỐI LỰ',
-    );
+    await expect(P.updateItem(db, old.id, { hanviet: 'phối lự' })).resolves.toBeTruthy();
+    expect((await db.item.findUniqueOrThrow({ where: { id: old.id } })).hanviet).toBe('PHỐI LỰ');
   });
 });
 
 describe('saveSettings direction', () => {
   it('get_settings reports the direction the web set, and an MCP patch of `direction` moves both', async () => {
     await resetData();
-    expect((await P.saveSettings({ directionMode: 'VI_JA' })).direction).toBe('VI_JA');
-    expect((await P.getSettings()).direction).toBe('VI_JA');
-    const viaMcp = await P.saveSettings({ direction: 'ALTERNATING' });
+    expect((await P.saveSettings(db, { directionMode: 'VI_JA' })).direction).toBe('VI_JA');
+    expect((await P.getSettings(db)).direction).toBe('VI_JA');
+    const viaMcp = await P.saveSettings(db, { direction: 'ALTERNATING' });
     expect(viaMcp).toMatchObject({ direction: 'ALTERNATING', directionMode: 'auto' });
   });
 });
@@ -179,14 +181,14 @@ describe('listItems quality filter — the sweep needs a target list', () => {
     ]);
 
     const ids = async (quality: string) =>
-      (await P.listItems({ quality: quality as never })).map((i) => i.itemId).sort();
+      (await P.listItems(db, { quality: quality as never })).map((i) => i.itemId).sort();
 
     expect(await ids('missing')).toEqual([bare]);
     expect(await ids('broken')).toEqual([broken]);
     expect(await ids('thin')).toEqual([thin]);
     expect(await ids('ok')).toEqual([ok]);
     expect(await ids('needs-work')).toEqual([bare, broken, thin].sort());
-    expect((await P.listItems({ enriched: true })).length).toBe(3);
+    expect((await P.listItems(db, { enriched: true })).length).toBe(3);
   });
 
   it('applies the limit AFTER scoring, so it never filters just one page', async () => {
@@ -198,7 +200,7 @@ describe('listItems quality filter — the sweep needs a target list', () => {
     await addOneItem('P_gap1');
     await addOneItem('P_gap2');
 
-    const found = await P.listItems({ quality: 'missing', limit: 2 });
+    const found = await P.listItems(db, { quality: 'missing', limit: 2 });
     expect(found.map((i) => i.expression).sort()).toEqual(['P_gap1', 'P_gap2']);
   });
 });

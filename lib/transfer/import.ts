@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/db/db';
+import type { UserDb } from '@/lib/db/user-db';
 import {
   buildTableMergeSql,
   itemKey,
@@ -110,21 +111,22 @@ function turnData(row: BackupTurn) {
 }
 
 export async function importAccountData(
+  db: UserDb,
   backup: AccountBackup,
   { dryRun }: { dryRun: boolean },
 ): Promise<ImportResult> {
   const [items, srsStates, reviewLogs, sentences, turns, settings, groups, groupMembers] =
     await Promise.all([
-      prisma.item.findMany({
+      db.item.findMany({
         select: { id: true, kind: true, expression: true },
       }),
-      prisma.srsState.findMany({ select: { itemId: true } }),
-      prisma.reviewLog.findMany({ select: { id: true } }),
-      prisma.sentence.findMany({ select: { id: true } }),
-      prisma.turn.findMany({ select: { id: true } }),
-      prisma.settings.findFirst({ select: { id: true } }),
-      prisma.group.findMany({ select: { id: true } }),
-      prisma.groupMember.findMany({ select: { groupId: true, itemId: true } }),
+      db.srsState.findMany({ select: { itemId: true } }),
+      db.reviewLog.findMany({ select: { id: true } }),
+      db.sentence.findMany({ select: { id: true } }),
+      db.turn.findMany({ select: { id: true } }),
+      db.settings.findFirst({ select: { id: true } }),
+      db.group.findMany({ select: { id: true } }),
+      db.groupMember.findMany({ select: { groupId: true, itemId: true } }),
     ]);
 
   const existingItemIds = new Set(items.map((i) => i.id));
@@ -226,7 +228,7 @@ export async function importAccountData(
     backup.groupMembers.map((m) => [memberKey(m.groupId, m.itemId), m] as const),
   );
 
-  await prisma.$transaction(
+  await db.$transaction(
     async (tx) => {
       if (itemPlan.create.length > 0) {
         await tx.item.createMany({
@@ -353,7 +355,8 @@ export async function importAccountData(
 
       if (backup.settings) {
         const row = await tx.settings.findFirst({ orderBy: { id: 'asc' } });
-        if (row) await tx.settings.update({ where: { id: row.id }, data: { data: backup.settings.data } });
+        if (row)
+          await tx.settings.update({ where: { id: row.id }, data: { data: backup.settings.data } });
         else await tx.settings.create({ data: { data: backup.settings.data } });
       }
     },

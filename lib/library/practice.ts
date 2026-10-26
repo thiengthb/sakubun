@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/db/db';
+import type { UserDb } from '@/lib/db/user-db';
 import type { Prisma } from '@/lib/generated/prisma/client';
 import {
   cleanText,
@@ -20,18 +20,18 @@ import {
   type SettingsPatch,
 } from '@/lib/settings/schema';
 
-export async function getSettings(): Promise<Settings> {
-  const row = await prisma.settings.findFirst({ orderBy: { id: 'asc' } });
+export async function getSettings(db: UserDb): Promise<Settings> {
+  const row = await db.settings.findFirst({ orderBy: { id: 'asc' } });
   return parseStoredSettings(row?.data);
 }
 
-export async function saveSettings(patch: SettingsPatch): Promise<Settings> {
+export async function saveSettings(db: UserDb, patch: SettingsPatch): Promise<Settings> {
   const validated = settingsPatchSchema.parse(migrateSettingsInput(patch));
-  const merged = syncDirection({ ...(await getSettings()), ...validated });
+  const merged = syncDirection({ ...(await getSettings(db)), ...validated });
   const data = JSON.stringify(merged);
-  const existing = await prisma.settings.findFirst({ orderBy: { id: 'asc' } });
-  if (existing) await prisma.settings.update({ where: { id: existing.id }, data: { data } });
-  else await prisma.settings.create({ data: { data } });
+  const existing = await db.settings.findFirst({ orderBy: { id: 'asc' } });
+  if (existing) await db.settings.update({ where: { id: existing.id }, data: { data } });
+  else await db.settings.create({ data: { data } });
   return merged;
 }
 
@@ -56,6 +56,7 @@ export interface AddItemsResult {
 export { GRAMMAR_KIND, VOCAB_KIND };
 
 export async function addItems(
+  db: UserDb,
   entries: ItemInput[],
   source = 'MCP',
   kind: string = GRAMMAR_KIND,
@@ -103,7 +104,7 @@ export async function addItems(
     candidates.push({ expression, meaningVi, entry });
   }
 
-  const existingRows = await prisma.item.findMany({
+  const existingRows = await db.item.findMany({
     where: { kind, expression: { in: candidates.map((c) => c.expression) } },
     select: { expression: true },
   });
@@ -117,7 +118,7 @@ export async function addItems(
     }
     const reading = hasKanji(expression) ? cleanTextOrNull(entry.reading) : null;
     creates.push(
-      prisma.item.create({
+      db.item.create({
         data: {
           kind,
           expression,
@@ -129,13 +130,13 @@ export async function addItems(
           tags: entry.tags?.length ? JSON.stringify(entry.tags) : null,
           captureReason: entry.captureReason ?? null,
           source,
-          srs: { create: { ...newSrsFields() } },
+          srs: { create: { ...newSrsFields(), userId: db.$ownerId() } },
         },
       }),
     );
   }
 
-  if (creates.length > 0) await prisma.$transaction(creates);
+  if (creates.length > 0) await db.$transaction(creates);
   result.created = creates.length;
   return result;
 }
@@ -143,11 +144,12 @@ export async function addItems(
 const PENDING_MAX_AGE_MS = 60 * 60 * 1000; // 1 hour
 
 async function autoSkipStalePending(
+  db: UserDb,
   now: Date = new Date(),
   maxAgeMs: number = PENDING_MAX_AGE_MS,
 ): Promise<{ autoSkipped: number }> {
   const cutoff = new Date(now.getTime() - maxAgeMs);
-  const result = await prisma.sentence.updateMany({
+  const result = await db.sentence.updateMany({
     where: { status: 'PENDING', createdAt: { lt: cutoff } },
     data: { userAnswer: '(quá hạn — tự bỏ qua)', status: 'SKIPPED' },
   });
@@ -166,8 +168,8 @@ export interface ListItemsFilter {
   limit?: number;
 }
 
-export async function listItems(filter: ListItemsFilter = {}) {
-  const items = await prisma.item.findMany({
+export async function listItems(db: UserDb, filter: ListItemsFilter = {}) {
+  const items = await db.item.findMany({
     where: {
       kind: filter.kind ?? GRAMMAR_KIND,
       level: filter.level,
@@ -231,9 +233,13 @@ export async function listItems(filter: ListItemsFilter = {}) {
 
 const QUALITY_SCAN_CAP = 500;
 
-export async function listSentences(limit = 1000, status?: 'PENDING' | 'GRADED' | 'SKIPPED') {
-  await autoSkipStalePending();
-  const sentences = await prisma.sentence.findMany({
+export async function listSentences(
+  db: UserDb,
+  limit = 1000,
+  status?: 'PENDING' | 'GRADED' | 'SKIPPED',
+) {
+  await autoSkipStalePending(db);
+  const sentences = await db.sentence.findMany({
     where: status ? { status } : undefined,
     orderBy: { createdAt: 'desc' },
     take: limit,
@@ -279,30 +285,31 @@ export async function listSentences(limit = 1000, status?: 'PENDING' | 'GRADED' 
 
 export type SentenceHistoryRow = Awaited<ReturnType<typeof listSentences>>[number];
 
-export async function setItemSuspended(itemId: string, suspended: boolean) {
-  await prisma.item.update({ where: { id: itemId }, data: { suspended } });
+export async function setItemSuspended(db: UserDb, itemId: string, suspended: boolean) {
+  await db.item.update({ where: { id: itemId }, data: { suspended } });
   return { itemId, suspended };
 }
 
 export async function setItemsSuspended(
+  db: UserDb,
   ids: string[],
   suspended: boolean,
 ): Promise<{ affected: number }> {
   if (ids.length === 0) return { affected: 0 };
-  const res = await prisma.item.updateMany({
+  const res = await db.item.updateMany({
     where: { id: { in: ids } },
     data: { suspended },
   });
   return { affected: res.count };
 }
 
-export async function setItemStarred(itemId: string, starred: boolean) {
-  await prisma.item.update({ where: { id: itemId }, data: { starred } });
+export async function setItemStarred(db: UserDb, itemId: string, starred: boolean) {
+  await db.item.update({ where: { id: itemId }, data: { starred } });
   return { itemId, starred };
 }
 
-export async function setSentenceStarred(sentenceId: string, starred: boolean) {
-  await prisma.sentence.update({ where: { id: sentenceId }, data: { starred } });
+export async function setSentenceStarred(db: UserDb, sentenceId: string, starred: boolean) {
+  await db.sentence.update({ where: { id: sentenceId }, data: { starred } });
   return { sentenceId, starred };
 }
 
@@ -315,8 +322,8 @@ export interface UpdateItemInput {
   level?: string;
 }
 
-export async function updateItem(itemId: string, input: UpdateItemInput) {
-  const before = await prisma.item.findUniqueOrThrow({
+export async function updateItem(db: UserDb, itemId: string, input: UpdateItemInput) {
+  const before = await db.item.findUniqueOrThrow({
     where: { id: itemId },
     select: { expression: true, meaningVi: true, reading: true, hanviet: true },
   });
@@ -329,17 +336,17 @@ export async function updateItem(itemId: string, input: UpdateItemInput) {
   if (input.meaningVi !== undefined) data.meaningVi = cleanText(input.meaningVi);
   if (input.notes !== undefined) data.notes = cleanTextOrNull(input.notes);
   if (input.level !== undefined) data.level = input.level;
-  await prisma.item.update({ where: { id: itemId }, data });
+  await db.item.update({ where: { id: itemId }, data });
   return { itemId };
 }
 
-export async function deleteItem(itemId: string) {
-  await prisma.item.delete({ where: { id: itemId } });
+export async function deleteItem(db: UserDb, itemId: string) {
+  await db.item.delete({ where: { id: itemId } });
   return { itemId };
 }
 
-export async function deleteItems(ids: string[]): Promise<{ deleted: number }> {
+export async function deleteItems(db: UserDb, ids: string[]): Promise<{ deleted: number }> {
   if (ids.length === 0) return { deleted: 0 };
-  const res = await prisma.item.deleteMany({ where: { id: { in: ids } } });
+  const res = await db.item.deleteMany({ where: { id: { in: ids } } });
   return { deleted: res.count };
 }

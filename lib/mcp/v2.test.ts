@@ -2,7 +2,9 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { createTestDb, resetLearningData } from '@/lib/db/test-db';
+import type { UserDb } from '@/lib/db/user-db';
+import { signInTransport } from '@/lib/mcp/test-auth';
+import { createTestUser, createTestDb, resetLearningData } from '@/lib/db/test-db';
 
 // The v2 tools over the real MCP protocol (an in-memory client reads exactly what Claude reads):
 // one whole turn, the errors a model hits, and the library and status tools.
@@ -11,6 +13,7 @@ createTestDb('sakubun-mcp-v2-');
 
 type Db = typeof import('@/lib/db/db');
 let prisma: Db['prisma'];
+let db: UserDb;
 let client: Client;
 
 async function call(name: string, args: Record<string, unknown> = {}) {
@@ -29,10 +32,12 @@ function field(text: string, key: string): string {
 
 beforeAll(async () => {
   ({ prisma } = await import('@/lib/db/db'));
+  db = (await import('@/lib/db/user-db')).userDb(await createTestUser(prisma, 'learner'));
   const { registerAll } = await import('@/lib/mcp/server');
   const server = new McpServer({ name: 'sakubun-mcp', version: '0.1.0' });
   registerAll(server, 'v2');
   const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
+  signInTransport(clientSide, 'learner');
   await server.connect(serverSide);
   client = new Client({ name: 'v2-test', version: '0.0.0' });
   await client.connect(clientSide);
@@ -45,8 +50,9 @@ afterAll(async () => {
 beforeEach(async () => {
   await resetLearningData(prisma);
   const P = await import('@/lib/library/practice');
-  await P.saveSettings({ grammarLevels: ['N2'], dailyNewGrammar: 2, dailyNewVocab: 0 });
+  await P.saveSettings(db, { grammarLevels: ['N2'], dailyNewGrammar: 2, dailyNewVocab: 0 });
   await P.addItems(
+    db,
     [{ expression: '〜ばかりに', meaningVi: 'chỉ vì... (kết quả xấu)', level: 'N2' }],
     'MCP',
     'GRAMMAR',
@@ -110,7 +116,7 @@ describe('MCP v2', () => {
     expect(graded.isError).toBe(false);
     expect(graded.text).toMatch(/^graded 3 \(Good\) · next review in /);
     expect(graded.text).toMatch(/next: .*next_turn/);
-    expect(await prisma.reviewLog.count({ where: { channel: 'mcp' } })).toBe(1);
+    expect(await db.reviewLog.count({ where: { channel: 'mcp' } })).toBe(1);
   });
 
   it('returns a rule break as a tool error naming the fix, and writes nothing', async () => {
@@ -125,7 +131,7 @@ describe('MCP v2', () => {
       isError: true,
       text: 'ja does not use 〜ばかりに. Rewrite it around 〜ばかりに, or pass uses: the exact words in ja that use it.',
     });
-    expect(await prisma.turn.count()).toBe(0);
+    expect(await db.turn.count()).toBe(0);
 
     const graded = await call('grade_turn', { turnId: 'nope', answer: 'x', rating: 3 });
     expect(graded).toEqual({
@@ -147,12 +153,12 @@ describe('MCP v2', () => {
       isError: false,
       text: 'skipped, schedule unchanged.\nnext: call next_turn.',
     });
-    expect(await prisma.reviewLog.count()).toBe(0);
+    expect(await db.reviewLog.count()).toBe(0);
   });
 
   it('says when nothing is left today', async () => {
     const P = await import('@/lib/library/practice');
-    await P.saveSettings({ dailyNewGrammar: 0 });
+    await P.saveSettings(db, { dailyNewGrammar: 0 });
     const next = await call('next_turn');
     expect(next.isError).toBe(false);
     expect(next.text).toMatch(/^Nothing to study now\./);

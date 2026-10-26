@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/db/db';
+import type { UserDb } from '@/lib/db/user-db';
 import type { Prisma } from '@/lib/generated/prisma/client';
 import { err, ok, type ActionResult } from '@/lib/core/action-result';
 import { getQueue } from '@/lib/app/queue';
@@ -86,27 +86,29 @@ function cleanHint(hint: string | null | undefined): string | null {
 }
 
 async function findItem(
+  db: UserDb,
   itemId: string,
 ): Promise<ActionResult<ItemRow & { srs: NonNullable<ItemRow['srs']> }>> {
-  const item = await prisma.item.findUnique({ where: { id: itemId }, select: ITEM_WITH_SRS });
+  const item = await db.item.findUnique({ where: { id: itemId }, select: ITEM_WITH_SRS });
   if (!item || !item.srs) return err('Unknown itemId. Call next_turn, or lookup to find the item.');
   if (item.suspended) return err('This item is suspended. Call next_turn for another one.');
   return ok({ ...item, srs: item.srs });
 }
 
 export async function nextTurn(
+  db: UserDb,
   input: { itemId?: string | null; hint?: string | null },
   now: Date = new Date(),
 ): Promise<ActionResult<NextTurn>> {
-  const settings = await getSettings();
+  const settings = await getSettings(db);
   let itemId = input.itemId?.trim() || null;
   if (!itemId) {
-    const queue = await getQueue(now, 1);
+    const queue = await getQueue(db, now, 1);
     const first = queue.cards[0];
     if (!first) return ok({ done: true, nextDueAt: queue.nextDueAt, today: queue.today });
     itemId = first.id;
   }
-  const found = await findItem(itemId);
+  const found = await findItem(db, itemId);
   if (!found.ok) return found;
   const item = found.data;
   return ok({
@@ -145,13 +147,14 @@ export interface StagedTurn {
 }
 
 export async function stageTurn(
+  db: UserDb,
   input: StageTurnInput,
   now: Date = new Date(),
 ): Promise<ActionResult<StagedTurn>> {
-  const found = await findItem(input.itemId);
+  const found = await findItem(db, input.itemId);
   if (!found.ok) return found;
   const item = found.data;
-  const spec = specFor(item, await getSettings());
+  const spec = specFor(item, await getSettings(db));
   const hint = cleanHint(input.hint);
   if (input.direction && input.direction !== spec.direction && !hint) {
     return err(
@@ -173,9 +176,9 @@ export async function stageTurn(
 
   const direction = input.direction ?? spec.direction;
   // A turn left staged was never answered: a new one replaces it rather than piling up.
-  const [, turn] = await prisma.$transaction([
-    prisma.turn.updateMany({ where: { status: 'staged' }, data: { status: 'skipped' } }),
-    prisma.turn.create({
+  const [, turn] = await db.$transaction([
+    db.turn.updateMany({ where: { status: 'staged' }, data: { status: 'skipped' } }),
+    db.turn.create({
       data: { itemId: item.id, direction, ...draft, createdAt: now },
     }),
   ]);
@@ -210,18 +213,19 @@ function isRecordNotFound(e: unknown): boolean {
   return typeof e === 'object' && e !== null && 'code' in e && e.code === 'P2025';
 }
 
-async function findTurn(turnId: string) {
-  return prisma.turn.findUnique({
+async function findTurn(db: UserDb, turnId: string) {
+  return db.turn.findUnique({
     where: { id: turnId },
     select: { id: true, status: true, item: { select: { id: true, srs: true } } },
   });
 }
 
 export async function gradeTurn(
+  db: UserDb,
   input: GradeTurnInput,
   now: Date = new Date(),
 ): Promise<ActionResult<GradedTurn>> {
-  const turn = await findTurn(input.turnId);
+  const turn = await findTurn(db, input.turnId);
   if (!turn) return err('Unknown turnId. Call next_turn, then stage_turn.');
   const parsed = parseRating(input.rating);
   if (!parsed.ok) return parsed;
@@ -242,17 +246,18 @@ export async function gradeTurn(
 
   const hinted = input.hinted === true;
   const rating = finalRating(parsed.data, hinted);
-  const { desiredRetention } = await getSettings();
+  const { desiredRetention } = await getSettings(db);
   // The turn row is updated only while still staged, in the same transaction as the review: of two
   // grades sent at once, the second fails as a whole and writes nothing.
   const recordedOrGone = await recordReviews(
+    db,
     [{ itemId: turn.item.id, srs: turn.item.srs, rating, turnId: turn.id, errorTags: tags.data }],
     {
       retention: desiredRetention,
       now,
       channel: 'mcp',
       alsoWrite: [
-        prisma.turn.update({
+        db.turn.update({
           where: { id: turn.id, status: 'staged' },
           data: {
             status: moved.data,
@@ -275,12 +280,12 @@ export async function gradeTurn(
   return ok({ rating, lowered: rating !== parsed.data, nextDue: recorded.next.due });
 }
 
-export async function skipTurn(turnId: string): Promise<ActionResult<undefined>> {
-  const turn = await findTurn(turnId);
+export async function skipTurn(db: UserDb, turnId: string): Promise<ActionResult<undefined>> {
+  const turn = await findTurn(db, turnId);
   if (!turn) return err('Unknown turnId. Call next_turn for a new turn.');
   const moved = nextTurnStatus(turn.status as 'staged', { type: 'skip' });
   if (!moved.ok) return moved;
-  const { count } = await prisma.turn.updateMany({
+  const { count } = await db.turn.updateMany({
     where: { id: turn.id, status: 'staged' },
     data: { status: moved.data },
   });

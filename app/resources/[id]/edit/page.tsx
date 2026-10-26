@@ -6,15 +6,15 @@ import { ParentCrumbs } from '@/components/layout/app-breadcrumbs';
 import { ItemEditForm } from '@/components/features/resources/item-edit-form';
 import { ItemGuide } from '@/components/features/resources/item-guide';
 import { getItemStats } from '@/lib/insights/item-stats';
-import { getSessionUserId } from '@/lib/auth/current-user';
+import { getUserDb } from '@/lib/auth/current-user';
 
 export const metadata: Metadata = { title: 'Sửa mục — sakubun' };
 export const dynamic = 'force-dynamic';
 
 export default async function ItemEditPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  await getSessionUserId();
-  const stats = await getItemStats(id);
+  const db = await getUserDb();
+  const stats = await getItemStats(db, id);
   if (!stats) notFound();
 
   return (

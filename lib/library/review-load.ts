@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/db/db';
+import type { UserDb } from '@/lib/db/user-db';
 import { GRAMMAR_KIND, VOCAB_KIND } from '@/lib/library/item-kinds';
 import { getSettings } from '@/lib/library/practice';
 import { studyDayKey } from '@/lib/srs/streak';
@@ -21,21 +21,25 @@ export interface ReviewLoad {
 const DAY = 86_400_000;
 
 // Counts only, for scheduling study time (e.g. a calendar assistant). No item content, no learner model.
-export async function getReviewLoad(days: number, now: Date = new Date()): Promise<ReviewLoad> {
-  const settings = await getSettings();
+export async function getReviewLoad(
+  db: UserDb,
+  days: number,
+  now: Date = new Date(),
+): Promise<ReviewLoad> {
+  const settings = await getSettings(db);
   const cutoff = settings.dayCutoffHour;
   const start = studyDayStart(now, cutoff);
   const end = new Date(start.getTime() + days * DAY);
 
   const [due, newGrammarRemaining, reviewedToday] = await Promise.all([
-    prisma.srsState.findMany({
+    db.srsState.findMany({
       where: { reps: { gt: 0 }, due: { lt: end }, item: { suspended: false } },
       select: { due: true, item: { select: { kind: true } } },
     }),
-    prisma.srsState.count({
+    db.srsState.count({
       where: { state: 0, item: { suspended: false, kind: GRAMMAR_KIND } },
     }),
-    prisma.reviewLog.count({ where: { reviewedAt: { gte: start } } }),
+    db.reviewLog.count({ where: { reviewedAt: { gte: start } } }),
   ]);
 
   const out: ReviewLoadDay[] = Array.from({ length: days }, (_, i) => ({

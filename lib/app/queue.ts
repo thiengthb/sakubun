@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/db/db';
+import type { UserDb } from '@/lib/db/user-db';
 import {
   CARD_STATE,
   planQueue,
@@ -61,8 +61,12 @@ function toCard(row: Row): QueueCard {
   };
 }
 
-export async function studiedToday(settings: Settings, now: Date): Promise<StudiedToday> {
-  const logs = await prisma.reviewLog.findMany({
+export async function studiedToday(
+  db: UserDb,
+  settings: Settings,
+  now: Date,
+): Promise<StudiedToday> {
+  const logs = await db.reviewLog.findMany({
     where: { reviewedAt: { gte: studyDayStart(now, settings.dayCutoffHour) } },
     select: { state: true, item: { select: { kind: true } } },
   });
@@ -81,9 +85,9 @@ function levelsUpTo(ceiling: string): string[] {
   return JLPT_LEVELS.slice(0, JLPT_LEVELS.indexOf(ceiling as (typeof JLPT_LEVELS)[number]) + 1);
 }
 
-export async function getQueue(now: Date = new Date(), limit?: number): Promise<Queue> {
-  const settings = await getSettings();
-  const today = await studiedToday(settings, now);
+export async function getQueue(db: UserDb, now: Date = new Date(), limit?: number): Promise<Queue> {
+  const settings = await getSettings(db);
+  const today = await studiedToday(db, settings, now);
   const caps = {
     newGrammar: settings.dailyNewGrammar,
     newVocab: settings.dailyNewVocab,
@@ -95,7 +99,7 @@ export async function getQueue(now: Date = new Date(), limit?: number): Promise<
   // Learning steps are fetched whole and reviews only up to today's allowance, so a backlog of
   // overdue reviews can never push a card that is mid-step out of the fetch.
   const [learning, reviews, newGrammar, newVocab, ahead] = await Promise.all([
-    prisma.srsState.findMany({
+    db.srsState.findMany({
       where: {
         state: { in: [CARD_STATE.LEARNING, CARD_STATE.RELEARNING] },
         due: { lte: now },
@@ -104,13 +108,13 @@ export async function getQueue(now: Date = new Date(), limit?: number): Promise<
       orderBy: { due: 'asc' },
       select,
     }),
-    prisma.srsState.findMany({
+    db.srsState.findMany({
       where: { state: CARD_STATE.REVIEW, due: { lte: now }, item: live },
       orderBy: { due: 'asc' },
       take: Math.max(0, caps.maxReviews - today.reviews),
       select,
     }),
-    prisma.srsState.findMany({
+    db.srsState.findMany({
       where: {
         state: 0,
         item: { ...live, kind: GRAMMAR_KIND, level: { in: settings.grammarLevels } },
@@ -119,7 +123,7 @@ export async function getQueue(now: Date = new Date(), limit?: number): Promise<
       take: Math.max(0, caps.newGrammar - today.newGrammar),
       select,
     }),
-    prisma.srsState.findMany({
+    db.srsState.findMany({
       where: {
         state: 0,
         item: {
@@ -133,7 +137,7 @@ export async function getQueue(now: Date = new Date(), limit?: number): Promise<
       take: Math.max(0, caps.newVocab - today.newVocab),
       select,
     }),
-    prisma.srsState.findFirst({
+    db.srsState.findFirst({
       where: { state: { not: 0 }, due: { gt: now }, item: live },
       orderBy: { due: 'asc' },
       select,

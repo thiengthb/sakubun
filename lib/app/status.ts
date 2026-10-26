@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/db/db';
+import type { UserDb } from '@/lib/db/user-db';
 import { getQueue } from '@/lib/app/queue';
 import type { StudiedToday } from '@/lib/domain/queue';
 import { getSettings } from '@/lib/library/practice';
@@ -19,11 +19,11 @@ export interface StudyStatus {
   nextDueAt: Date | null;
 }
 
-export async function getStatus(now: Date = new Date()): Promise<StudyStatus> {
+export async function getStatus(db: UserDb, now: Date = new Date()): Promise<StudyStatus> {
   const [{ dayCutoffHour }, queue, logs] = await Promise.all([
-    getSettings(),
-    getQueue(now),
-    prisma.reviewLog.findMany({
+    getSettings(db),
+    getQueue(db, now),
+    db.reviewLog.findMany({
       where: { reviewedAt: { gte: new Date(now.getTime() - STREAK_WINDOW_DAYS * DAY_MS) } },
       select: { reviewedAt: true },
     }),

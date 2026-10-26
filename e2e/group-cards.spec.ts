@@ -1,7 +1,7 @@
 import path from 'node:path';
 import Database from 'better-sqlite3';
 import { expect, test, type Page } from '@playwright/test';
-import { E2E_DB_FILE, E2E_EMAIL, E2E_LOGIN, seedE2eAccount } from './fixtures';
+import { E2E_DB_FILE, E2E_EMAIL, E2E_LOGIN, ownSeedRows, seedE2eAccount } from './fixtures';
 
 const iso = (ms: number) => new Date(ms).toISOString().replace('Z', '+00:00');
 
@@ -48,6 +48,7 @@ function seed() {
     );
     for (const [id] of rows) member.run(id, iso(now));
   } finally {
+    ownSeedRows(db);
     db.close();
   }
 }
@@ -74,6 +75,7 @@ function seedLong() {
     );
     for (let i = 0; i < 25; i++) item.run(`o${i}`, `語彙${i}`, `nghĩa ${i}`, iso(now - i));
   } finally {
+    ownSeedRows(db);
     db.close();
   }
 }

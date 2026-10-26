@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/db/db';
+import type { UserDb } from '@/lib/db/user-db';
 import { sameExpression, stripDecoration } from '@/lib/core/normalize';
 import { asItemKind, GRAMMAR_KIND, VOCAB_KIND, type ItemKind } from '@/lib/library/item-kinds';
 import { addItems, type ItemInput } from '@/lib/library/practice';
@@ -21,10 +21,10 @@ export interface FoundItem {
   suspended: boolean;
 }
 
-export async function findItems(query: string, kind?: ItemKind): Promise<FoundItem[]> {
+export async function findItems(db: UserDb, query: string, kind?: ItemKind): Promise<FoundItem[]> {
   const needle = stripDecoration(query.normalize('NFKC'));
   if (!needle) return [];
-  const rows = await prisma.item.findMany({
+  const rows = await db.item.findMany({
     where: {
       ...(kind ? { kind } : {}),
       OR: [
@@ -67,7 +67,11 @@ export interface AddedItems {
   skipped: { expression: string; reason: string }[];
 }
 
-export async function addLibraryItems(kind: ItemKind, entries: ItemInput[]): Promise<AddedItems> {
-  const result = await addItems(entries, 'MCP', kind === 'VOCAB' ? VOCAB_KIND : GRAMMAR_KIND);
+export async function addLibraryItems(
+  db: UserDb,
+  kind: ItemKind,
+  entries: ItemInput[],
+): Promise<AddedItems> {
+  const result = await addItems(db, entries, 'MCP', kind === 'VOCAB' ? VOCAB_KIND : GRAMMAR_KIND);
   return { added: result.created, skipped: result.skipped };
 }

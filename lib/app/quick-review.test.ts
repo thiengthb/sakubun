@@ -1,5 +1,6 @@
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { createTestDb, resetLearningData } from '@/lib/db/test-db';
+import type { UserDb } from '@/lib/db/user-db';
+import { createTestUser, createTestDb, resetLearningData } from '@/lib/db/test-db';
 
 createTestDb('sakubun-app-quick-');
 
@@ -9,6 +10,7 @@ type Db = typeof import('@/lib/db/db');
 let P: Practice;
 let Q: Quick;
 let prisma: Db['prisma'];
+let db: UserDb;
 
 const NOW = new Date('2030-01-15T03:00:00.000Z');
 const DAY = 86_400_000;
@@ -29,16 +31,17 @@ async function seed(
   kind: 'GRAMMAR' | 'VOCAB' = 'VOCAB',
 ): Promise<Record<string, string>> {
   await P.addItems(
+    db,
     rows.map((r) => ({ meaningVi: 'nghĩa', level: 'N5', ...r })),
     'MCP',
     kind,
   );
-  const found = await prisma.item.findMany({ select: { id: true, expression: true } });
+  const found = await db.item.findMany({ select: { id: true, expression: true } });
   return Object.fromEntries(found.map((r) => [r.expression, r.id]));
 }
 
 async function makeSeen(itemId: string): Promise<void> {
-  await prisma.srsState.update({
+  await db.srsState.update({
     where: { itemId },
     data: {
       state: 2,
@@ -56,6 +59,7 @@ beforeAll(async () => {
   P = await import('@/lib/library/practice');
   Q = await import('@/lib/app/quick-review');
   ({ prisma } = await import('@/lib/db/db'));
+  db = (await import('@/lib/db/user-db')).userDb(await createTestUser(prisma, 'learner'));
 });
 
 beforeEach(async () => {
@@ -65,9 +69,9 @@ beforeEach(async () => {
 describe('getQuickReview', () => {
   it('meets a new item on a flip card, its example sentence underlining it', async () => {
     const ids = await seed([{ expression: '約束' }]);
-    await prisma.item.update({ where: { id: ids['約束'] }, data: { enrichment: ENRICHMENT } });
+    await db.item.update({ where: { id: ids['約束'] }, data: { enrichment: ENRICHMENT } });
 
-    const [card] = (await Q.getQuickReview(NOW)).cards;
+    const [card] = (await Q.getQuickReview(db, NOW)).cards;
     expect(card).toMatchObject({
       mode: 'flip',
       isNew: true,
@@ -93,10 +97,10 @@ describe('getQuickReview', () => {
       { expression: '練習' },
       { expression: '連絡' },
     ]);
-    await prisma.item.update({ where: { id: ids['約束'] }, data: { enrichment: ENRICHMENT } });
+    await db.item.update({ where: { id: ids['約束'] }, data: { enrichment: ENRICHMENT } });
     await makeSeen(ids['約束']);
 
-    const card = (await Q.getQuickReview(NOW)).cards.find((c) => c.itemId === ids['約束'])!;
+    const card = (await Q.getQuickReview(db, NOW)).cards.find((c) => c.itemId === ids['約束'])!;
     expect(card.mode).toBe('cloze');
     if (card.mode !== 'cloze') return;
     expect(card.choices.map((c) => c.itemId).sort()).toEqual(Object.values(ids).sort());
@@ -116,7 +120,7 @@ describe('getQuickReview', () => {
     ]);
     await makeSeen(ids['急ぐ']);
 
-    const card = (await Q.getQuickReview(NOW)).cards.find((c) => c.itemId === ids['急ぐ'])!;
+    const card = (await Q.getQuickReview(db, NOW)).cards.find((c) => c.itemId === ids['急ぐ'])!;
     expect(card.mode).toBe('flip');
     // The conjugated form is still found and underlined; OpenJLPT gives no Vietnamese translation.
     expect(card.sentence?.segments).toContainEqual({ text: '急', mark: 'target' });
@@ -131,9 +135,9 @@ describe('getQuickReview', () => {
       { expression: '連絡' },
       { expression: '相談' },
     ]);
-    await prisma.item.update({ where: { id: ids['約束'] }, data: { enrichment: ENRICHMENT } });
+    await db.item.update({ where: { id: ids['約束'] }, data: { enrichment: ENRICHMENT } });
     await makeSeen(ids['約束']);
-    expect(await Q.getQuickReview(NOW)).toEqual(await Q.getQuickReview(NOW));
+    expect(await Q.getQuickReview(db, NOW)).toEqual(await Q.getQuickReview(db, NOW));
   });
 });
 
@@ -142,21 +146,21 @@ describe('answerCard', () => {
     const ids = await seed([{ expression: '約束' }]);
     const itemId = ids['約束'];
 
-    const first = await Q.answerCard({ itemId, mode: 'flip', rating: 3 }, NOW);
+    const first = await Q.answerCard(db, { itemId, mode: 'flip', rating: 3 }, NOW);
     expect(first).toMatchObject({ ok: true, data: { rating: 3, correct: true } });
-    const again = await Q.answerCard({ itemId, mode: 'flip', rating: 3 }, NOW);
+    const again = await Q.answerCard(db, { itemId, mode: 'flip', rating: 3 }, NOW);
     expect(again.ok).toBe(false);
 
-    expect(await prisma.reviewLog.count({ where: { itemId } })).toBe(1);
-    expect((await prisma.srsState.findUniqueOrThrow({ where: { itemId } })).reps).toBe(1);
+    expect(await db.reviewLog.count({ where: { itemId } })).toBe(1);
+    expect((await db.srsState.findUniqueOrThrow({ where: { itemId } })).reps).toBe(1);
   });
 
   it('records Hard as it was pressed, not counted as remembered', async () => {
     const ids = await seed([{ expression: '約束' }]);
     const itemId = ids['約束'];
-    const hard = await Q.answerCard({ itemId, mode: 'flip', rating: 2 }, NOW);
+    const hard = await Q.answerCard(db, { itemId, mode: 'flip', rating: 2 }, NOW);
     expect(hard).toMatchObject({ ok: true, data: { rating: 2, correct: false } });
-    expect(await prisma.reviewLog.findFirstOrThrow({ where: { itemId } })).toMatchObject({
+    expect(await db.reviewLog.findFirstOrThrow({ where: { itemId } })).toMatchObject({
       rating: 2,
     });
   });
@@ -166,30 +170,31 @@ describe('answerCard', () => {
     await makeSeen(ids['約束']);
 
     const wrong = await Q.answerCard(
+      db,
       { itemId: ids['約束'], mode: 'cloze', choiceId: ids['準備'] },
       NOW,
     );
     expect(wrong).toMatchObject({ ok: true, data: { rating: 1, correct: false } });
-    const log = await prisma.reviewLog.findFirstOrThrow({ where: { itemId: ids['約束'] } });
+    const log = await db.reviewLog.findFirstOrThrow({ where: { itemId: ids['約束'] } });
     expect(log).toMatchObject({ rating: 1, state: 2, channel: 'web', turnId: null });
   });
 
   it('refuses a suspended item and writes nothing', async () => {
     const ids = await seed([{ expression: '約束' }]);
-    await P.setItemSuspended(ids['約束'], true);
-    const result = await Q.answerCard({ itemId: ids['約束'], mode: 'flip', rating: 3 }, NOW);
+    await P.setItemSuspended(db, ids['約束'], true);
+    const result = await Q.answerCard(db, { itemId: ids['約束'], mode: 'flip', rating: 3 }, NOW);
     expect(result.ok).toBe(false);
-    expect(await prisma.reviewLog.count()).toBe(0);
+    expect(await db.reviewLog.count()).toBe(0);
   });
 });
 
 describe('getItemCards', () => {
   it('shows chosen items as flip cards in the given order, seen or not, and grades nothing', async () => {
     const ids = await seed([{ expression: '約束' }, { expression: '準備' }]);
-    await prisma.item.update({ where: { id: ids['約束'] }, data: { enrichment: ENRICHMENT } });
+    await db.item.update({ where: { id: ids['約束'] }, data: { enrichment: ENRICHMENT } });
     await makeSeen(ids['約束']);
 
-    const cards = await Q.getItemCards([ids['準備'], 'missing', ids['約束']], NOW);
+    const cards = await Q.getItemCards(db, [ids['準備'], 'missing', ids['約束']], NOW);
     expect(cards.map((c) => [c.itemId, c.mode, c.isNew])).toEqual([
       [ids['準備'], 'flip', true],
       [ids['約束'], 'flip', false],
@@ -199,6 +204,6 @@ describe('getItemCards', () => {
       reading: 'やくそく',
       mark: 'target',
     });
-    expect(await prisma.reviewLog.count()).toBe(0);
+    expect(await db.reviewLog.count()).toBe(0);
   });
 });

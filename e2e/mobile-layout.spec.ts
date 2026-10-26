@@ -1,7 +1,7 @@
 import path from 'node:path';
 import Database from 'better-sqlite3';
 import { expect, test } from '@playwright/test';
-import { E2E_DB_FILE, E2E_EMAIL, E2E_LOGIN, seedE2eAccount } from './fixtures';
+import { E2E_DB_FILE, E2E_EMAIL, E2E_LOGIN, ownSeedRows, seedE2eAccount } from './fixtures';
 
 const VIEWPORT = { width: 390, height: 844 };
 
@@ -154,6 +154,7 @@ test.beforeAll(async () => {
         );
     });
   } finally {
+    ownSeedRows(db);
     db.close();
   }
 });

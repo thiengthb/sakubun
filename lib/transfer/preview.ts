@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/db/db';
+import type { UserDb } from '@/lib/db/user-db';
 import { normalizeExpression } from '@/lib/core/normalize';
 import { GRAMMAR_KIND, VOCAB_KIND } from '@/lib/library/practice';
 
@@ -37,10 +37,11 @@ export interface ImportPreview {
 }
 
 export async function previewImport(
+  db: UserDb,
   candidates: readonly ImportCandidate[],
 ): Promise<ImportPreview> {
-  const mine = await prisma.item.findMany({
-        select: { id: true, kind: true, expression: true, suspended: true },
+  const mine = await db.item.findMany({
+    select: { id: true, kind: true, expression: true, suspended: true },
   });
 
   const byKey = new Map<string, (typeof mine)[number]>();

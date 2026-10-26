@@ -1,5 +1,6 @@
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { createTestDb, resetLearningData } from '@/lib/db/test-db';
+import type { UserDb } from '@/lib/db/user-db';
+import { createTestUser, createTestDb, resetLearningData } from '@/lib/db/test-db';
 import type { TurnHistorySource } from '@/lib/app/history';
 
 createTestDb('sakubun-app-history-');
@@ -8,6 +9,7 @@ type History = typeof import('@/lib/app/history');
 type Db = typeof import('@/lib/db/db');
 let H: History;
 let prisma: Db['prisma'];
+let db: UserDb;
 
 const TURN: TurnHistorySource = {
   id: 't1',
@@ -27,6 +29,7 @@ const TURN: TurnHistorySource = {
 beforeAll(async () => {
   H = await import('@/lib/app/history');
   ({ prisma } = await import('@/lib/db/db'));
+  db = (await import('@/lib/db/user-db')).userDb(await createTestUser(prisma, 'learner'));
 });
 
 beforeEach(async () => {
@@ -67,7 +70,7 @@ describe('turnToRow', () => {
 
 describe('listHistory', () => {
   it('lists old sentences and new turns in one timeline, newest first', async () => {
-    await prisma.sentence.create({
+    await db.sentence.create({
       data: {
         id: 's-old',
         direction: 'JA_VI',
@@ -77,7 +80,7 @@ describe('listHistory', () => {
         createdAt: new Date('2030-01-14T00:00:00.000Z'),
       },
     });
-    await prisma.turn.create({
+    await db.turn.create({
       data: {
         id: 't-new',
         direction: 'JA_VI',
@@ -89,7 +92,7 @@ describe('listHistory', () => {
       },
     });
 
-    const rows = await H.listHistory();
+    const rows = await H.listHistory(db);
     expect(rows.map((r) => [r.id, r.kind])).toEqual([
       ['t-new', 'turn'],
       ['s-old', 'sentence'],
@@ -98,7 +101,7 @@ describe('listHistory', () => {
   });
 
   it('lists more than the old 1000-row cap', async () => {
-    await prisma.turn.createMany({
+    await db.turn.createMany({
       data: Array.from({ length: 1001 }, (_, i) => ({
         id: `t${i}`,
         direction: 'JA_VI',
@@ -108,6 +111,6 @@ describe('listHistory', () => {
         rating: 3,
       })),
     });
-    expect(await H.listHistory()).toHaveLength(1001);
+    expect(await H.listHistory(db)).toHaveLength(1001);
   });
 });

@@ -1,7 +1,7 @@
 import path from 'node:path';
 import Database from 'better-sqlite3';
 import { expect, test } from '@playwright/test';
-import { E2E_DB_FILE, E2E_EMAIL, E2E_LOGIN, seedE2eAccount } from './fixtures';
+import { E2E_DB_FILE, E2E_EMAIL, E2E_LOGIN, ownSeedRows, seedE2eAccount } from './fixtures';
 
 test('bulk add/remove to group, and the item-detail membership chips', async ({ page }) => {
   await seedE2eAccount();
@@ -26,6 +26,7 @@ test('bulk add/remove to group, and the item-detail membership chips', async ({ 
     `INSERT INTO "Group" (id, name, kind, color, note, createdAt, updatedAt)
      VALUES (?, ?, ?, NULL, NULL, ?, ?)`,
   ).run('grp2', 'Chỉ từ vựng', 'vocab', iso(now), iso(now));
+  ownSeedRows(db);
   db.close();
 
   const errors: string[] = [];
