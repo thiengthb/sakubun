@@ -4,8 +4,11 @@ import { LIST_CARD } from '@/components/common/list-card';
 import { plainJapanese, type ScriptLine } from '@/lib/kaiwa/parse';
 import { cn } from '@/lib/core/utils';
 
-// One line of a script: the speaker's label, the Japanese with its play button (furigana from the
-// script's own `漢字[よみ]`), and the Vietnamese under it. The first speaker sits on the left and the
+// A script line with the furigana to show: worked out on save, or the author's own (K4).
+export type RubyLine = ScriptLine & { ruby: string };
+
+// One line of a script: the speaker's label, the Japanese with its play button and furigana, and
+// the Vietnamese under it. The first speaker sits on the left and the
 // second is indented, so a dialogue reads as turns; monologue lines span the width.
 export function KaiwaLine({
   line,
@@ -15,7 +18,7 @@ export function KaiwaLine({
   voiceSpeaker,
   speechRate,
 }: {
-  line: ScriptLine;
+  line: RubyLine;
   side: number | null;
   showMeaning: boolean;
   showFurigana: boolean;
@@ -40,7 +43,7 @@ export function KaiwaLine({
       <div className="min-w-0 flex-1 space-y-1">
         <SpokenLine
           text={plain}
-          ruby={line.japanese}
+          ruby={line.ruby}
           showFurigana={showFurigana}
           speaker={voiceSpeaker}
           rate={speechRate}

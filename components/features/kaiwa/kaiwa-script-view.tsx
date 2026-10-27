@@ -14,7 +14,7 @@ import { useServerAction } from '@/components/common/use-server-action';
 import { KaiwaLine } from '@/components/features/kaiwa/kaiwa-line';
 import { editScriptCommand } from '@/components/features/kaiwa/kaiwa-commands';
 import { deleteScriptAction } from '@/app/kaiwa/actions';
-import type { ScriptLine } from '@/lib/kaiwa/parse';
+import type { RubyLine } from '@/components/features/kaiwa/kaiwa-line';
 
 // One script (phase 8, K3): its lines as cards, each with its speaker, the Japanese to listen to and
 // the Vietnamese, which the learner can hide to test themselves. Changes go through Claude
@@ -27,7 +27,7 @@ export function KaiwaScriptView({
   showFurigana,
 }: {
   script: { id: string; title: string; updatedAt: Date };
-  lines: ScriptLine[];
+  lines: RubyLine[];
   voiceSpeaker?: number;
   speechRate?: number;
   showFurigana: boolean;
