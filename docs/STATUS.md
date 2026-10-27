@@ -32,3 +32,5 @@ Cập nhật lần cuối: 2026-10-26 (7.1b+c merge, nhận 7.1d).
 - Chữ "Xóa" và "Xoá" dùng lẫn lộn trong UI; chọn một cách viết (repo đang dùng "Xoá" trong tài liệu).
 - Cho 7.2: Item OpenJLPT có id cố định giữa các bản dựng và `lib/import/hanviet-fill.ts` tìm theo id. Khi chép
   kho OpenJLPT cho người thứ hai, id phải mới, nên phần điền Hán Việt phải tìm theo (userId, kind, expression).
+- CI và build image chạy trên runner tự host `tnt-laptop-wsl` ở laptop của thien (từ 2026-10-27, #134,
+  `docs/ci-runner.md`). Job nằm ở "Queued" là laptop đang tắt hoặc WSL đã ngủ.
