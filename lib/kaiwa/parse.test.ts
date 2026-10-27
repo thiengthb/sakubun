@@ -4,6 +4,7 @@ import {
   describeProblems,
   normalizeBody,
   parseScript,
+  plainJapanese,
   SCRIPT_LIMITS,
   speakerLabel,
 } from '@/lib/kaiwa/parse';
@@ -126,6 +127,12 @@ describe('describeProblems', () => {
     expect(text.split('\n')).toHaveLength(6);
     expect(text).toMatch(/^Dòng 1: /);
     expect(text).toContain('Và 2 lỗi khác.');
+  });
+});
+
+describe('plainJapanese', () => {
+  it('drops the readings, so speech and copy get plain Japanese', () => {
+    expect(plainJapanese('料理[りょうり]を注文[ちゅうもん]します。')).toBe('料理を注文します。');
   });
 });
 

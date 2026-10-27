@@ -11,6 +11,8 @@ import GroupLoading from '@/app/groups/[id]/loading';
 import GroupAddItemsLoading from '@/app/groups/[id]/add/loading';
 import GroupEditLoading from '@/app/groups/[id]/edit/loading';
 import GroupNewLoading from '@/app/groups/new/loading';
+import KaiwaLoading from '@/app/kaiwa/loading';
+import KaiwaScriptLoading from '@/app/kaiwa/[id]/loading';
 
 const SKELETONS: Record<string, () => React.ReactElement> = {
   dashboard: DashboardLoading,
@@ -25,6 +27,8 @@ const SKELETONS: Record<string, () => React.ReactElement> = {
   'group-new': GroupNewLoading,
   'group-edit': GroupEditLoading,
   'group-add': GroupAddItemsLoading,
+  kaiwa: KaiwaLoading,
+  'kaiwa-script': KaiwaScriptLoading,
 };
 
 export default async function DevSkeletonPage({ params }: { params: Promise<{ route: string }> }) {

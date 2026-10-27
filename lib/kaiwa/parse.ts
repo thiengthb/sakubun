@@ -157,3 +157,10 @@ export function normalizeBody(body: string): string {
     .join('\n')
     .trim();
 }
+
+// What text-to-speech reads and a copy takes: the Japanese without its `[よみ]` readings.
+export function plainJapanese(japanese: string): string {
+  return parseFurigana(japanese)
+    .map((s) => s.text)
+    .join('');
+}

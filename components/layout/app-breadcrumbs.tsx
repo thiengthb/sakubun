@@ -9,6 +9,7 @@ import {
   Languages,
   Layers,
   Library,
+  MessagesSquare,
   Pencil,
   Plus,
   Settings,
@@ -30,6 +31,13 @@ const CRUMBS = {
     icon: Layers,
     description:
       'Thẻ ôn trên web: mục mới gặp trong một câu ví dụ, mục đã học điền vào chỗ trống. App tự chấm, không cần Claude.',
+  },
+  kaiwa: {
+    label: 'Hội thoại',
+    href: '/kaiwa',
+    icon: MessagesSquare,
+    description:
+      'Kịch bản hội thoại Kaiwa: soạn cùng Claude qua MCP, xem từng câu với nghĩa tiếng Việt và nghe đọc.',
   },
   resources: {
     label: 'Tài nguyên',

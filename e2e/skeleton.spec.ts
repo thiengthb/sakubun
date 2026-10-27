@@ -35,6 +35,8 @@ const PAIRS: Pair[] = [
   { name: 'group new', page: '/groups/new', skeleton: 'group-new' },
   { name: 'group edit', page: '/groups/grp-sk/edit', skeleton: 'group-edit' },
   { name: 'group add', page: '/groups/grp-sk/add', skeleton: 'group-add' },
+  { name: 'kaiwa', page: '/kaiwa', skeleton: 'kaiwa' },
+  { name: 'kaiwa script', page: '/kaiwa/kw-sk', skeleton: 'kaiwa-script' },
 ];
 
 const MEASURE = () => {
@@ -94,7 +96,7 @@ test.beforeAll(async () => {
   const iso = (ms: number) => new Date(ms).toISOString().replace('Z', '+00:00');
   const now = Date.now();
   try {
-    for (const t of ['GroupMember', 'Group', 'ReviewLog', 'SrsState', 'Sentence', 'Item'])
+    for (const t of ['GroupMember', 'Group', 'ReviewLog', 'SrsState', 'Sentence', 'Item', 'Script'])
       db.exec(`DELETE FROM "${t}"`);
     const item = db.prepare(
       `INSERT INTO Item (userId, id, kind, expression, reading, hanviet, meaningVi, level, notes, source,
@@ -117,6 +119,13 @@ test.beforeAll(async () => {
       `INSERT INTO GroupMember (userId, groupId, itemId, addedAt) VALUES (${E2E_OWNER}, 'grp-sk', ?, ?)`,
     );
     for (let n = 0; n < 20; n++) mem.run(`sk${n}`, iso(now));
+    const lines = Array.from({ length: 8 }, (_, n) =>
+      n % 2 ? `B: そうですね。 | Đúng vậy.` : `A: 今日は暑いですね。 | Hôm nay nóng nhỉ.`,
+    );
+    db.prepare(
+      `INSERT INTO Script (userId, id, title, body, version, createdAt, updatedAt)
+       VALUES (${E2E_OWNER}, 'kw-sk', 'Ở nhà hàng', ?, 1, ?, ?)`,
+    ).run(lines.join('\n'), iso(now), iso(now));
   } finally {
     db.close();
   }
