@@ -1,7 +1,7 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import { History, Layers, LayoutDashboard, Library, Settings } from 'lucide-react';
+import { History, Layers, LayoutDashboard, Library, MessagesSquare, Settings } from 'lucide-react';
 import { AppLogo } from '@/components/layout/app-logo';
 import { AppSidebar, type AppSidebarGroup } from '@/components/layout/app-sidebar';
 import { EdgeNavRail } from '@/components/layout/edge-nav-rail';
@@ -19,6 +19,7 @@ const CHROMELESS = ['/login', '/consent', '/privacy', '/terms'];
 const NAV_ITEMS = [
   { href: '/', label: 'Phân tích', icon: LayoutDashboard, exact: true },
   { href: '/review', label: 'Ôn nhanh', icon: Layers },
+  { href: '/kaiwa', label: 'Hội thoại', icon: MessagesSquare },
   { href: '/resources', label: 'Tài nguyên', icon: Library },
   { href: '/history', label: 'Lịch sử', icon: History },
   { href: '/settings', label: 'Cài đặt', icon: Settings },

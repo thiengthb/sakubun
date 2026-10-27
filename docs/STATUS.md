@@ -8,13 +8,17 @@ Cập nhật lần cuối: 2026-10-27 (kế hoạch Kaiwa canvas chờ duyệt).
 
 ## Đang làm
 
-| Bước | Nhánh / PR | Giữ bởi | Trạng thái |
-| --- | --- | --- | --- |
-| 8 K2 MCP `kaiwa_save`, `kaiwa_get`, `kaiwa_list`, prompt `kaiwa` | `feat/8-k2-kaiwa-mcp` (#152) | Claude (phiên của thien, 2026-10-27) | PR mở, chờ thien merge; đường dẫn xem kịch bản chỉ mở được khi có K3 |
+| Bước                                                                     | Nhánh / PR                                         | Giữ bởi                              | Trạng thái                        |
+| ------------------------------------------------------------------------ | -------------------------------------------------- | ------------------------------------ | --------------------------------- |
+| 8 K3 trang Hội thoại `/kaiwa`, `/kaiwa/[id]`                             | `feat/8-k3-kaiwa-pages` (#153)                     | Claude (phiên của thien, 2026-10-27) | PR mở, kèm ảnh 1440 và 390        |
+| 8 K4 furigana tự động lúc lưu (kuromoji)                                 | `feat/8-k4-auto-furigana` (xếp trên K3)            | Claude (phiên của thien, 2026-10-27) | PR mở; thêm cột `Script.analysis` |
+| 8 K3b thẻ hội thoại kiểu tin nhắn, chọn vai "Tôi là" (thien, 2026-10-27) | `feat/8-k3b-kaiwa-chat-layout` (xếp trên K4)       | Claude (phiên của thien, 2026-10-27) | PR mở, kèm ảnh 1440 và 390        |
+| 8 K3c sửa và tạo kịch bản trên web (thien, 2026-10-27)                   | `feat/8-k3c-kaiwa-web-editor` (#156, xếp trên K3b) | Claude (phiên của thien, 2026-10-27) | PR mở, kèm ảnh                    |
+| 8 K5 rê chuột xem nghĩa theo từ, "Thêm vào kho"                          | `feat/8-k5-word-lookup` (xếp trên K3c)             | Claude (phiên của thien, 2026-10-27) | PR mở, kèm ảnh                    |
 
 ## Chờ thien
 
-- Merge K2 (#152, MCP Kaiwa, risk:high), rồi thử trong claude.ai: nhờ Claude soạn một đoạn hội thoại ngắn trên canvas rồi lưu.
+- Merge K3 (#153, trang Hội thoại, risk:high) sau khi xem ảnh, rồi thử trong claude.ai: nhờ Claude soạn một đoạn hội thoại ngắn trên canvas, lưu, mở đường dẫn nó trả về.
 - Muốn trần khác 50 tài khoản thì đặt `MAX_ACCOUNTS` trên NUC.
 - Sau khi bản 7.3 lên NUC: mở Cài đặt > Hướng dẫn, kiểm địa chỉ MCP là `https://sakubun.thientnse.site/api/mcp`.
 - Gỡ runner `tnt-laptop-wsl` khỏi repo nếu còn (Settings > Actions > Runners).

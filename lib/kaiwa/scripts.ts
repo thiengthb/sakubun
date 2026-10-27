@@ -1,6 +1,8 @@
 import type { UserDb } from '@/lib/db/user-db';
 import { err, ok, type ActionResult } from '@/lib/core/action-result';
-import { checkScript, describeProblems, normalizeBody } from '@/lib/kaiwa/parse';
+import { analyzeLines, type Tokenize } from '@/lib/kaiwa/furigana';
+import { checkScript, describeProblems, normalizeBody, parseScript } from '@/lib/kaiwa/parse';
+import { japaneseTokenizer } from '@/lib/kaiwa/tokenizer';
 
 // A learner's Kaiwa scripts (phase 8, K1). Every write goes through saveScript, so the web page and
 // the AI over MCP (K2) get the same format check and the same guard against overwriting newer work.
@@ -16,6 +18,7 @@ export interface ScriptSummary {
 
 export interface ScriptRecord extends ScriptSummary {
   body: string;
+  analysis: string | null;
   createdAt: Date;
 }
 
@@ -37,21 +40,34 @@ export async function getScript(db: UserDb, id: string): Promise<ScriptRecord | 
   return db.script.findFirst({ where: { id } });
 }
 
+// Furigana and words for the page, worked out once here. A tokenizer that fails to load does not
+// stop the save: the page then shows the author's own furigana only.
+async function analyze(body: string, tokenizer: () => Promise<Tokenize>): Promise<string | null> {
+  try {
+    return JSON.stringify(analyzeLines(parseScript(body), await tokenizer()));
+  } catch (error) {
+    console.error('[kaiwa] furigana analysis failed', error);
+    return null;
+  }
+}
+
 export async function saveScript(
   db: UserDb,
   input: SaveScriptInput,
+  tokenizer: () => Promise<Tokenize> = japaneseTokenizer,
 ): Promise<ActionResult<ScriptSummary>> {
   const title = input.title.trim();
   const body = normalizeBody(input.body);
   const problems = checkScript(title, body);
   if (problems.length > 0) return err(describeProblems(problems));
+  const analysis = await analyze(body, tokenizer);
 
   if (input.id === undefined) {
     if ((await db.script.count()) >= MAX_SCRIPTS) {
       return err(`Đã có ${MAX_SCRIPTS} kịch bản. Xoá bớt kịch bản cũ rồi lưu lại.`);
     }
     const created = await db.script.create({
-      data: { userId: db.$ownerId(), title, body },
+      data: { userId: db.$ownerId(), title, body, analysis },
       select: SUMMARY,
     });
     return ok(created);
@@ -63,7 +79,7 @@ export async function saveScript(
   // Compare and bump in one statement: two writers holding the same version cannot both win.
   const { count } = await db.script.updateMany({
     where: { id: input.id, version: input.version },
-    data: { title, body, version: { increment: 1 } },
+    data: { title, body, analysis, version: { increment: 1 } },
   });
   const current = await db.script.findFirst({ where: { id: input.id }, select: SUMMARY });
   if (!current) return err('Không tìm thấy kịch bản này. Có thể nó đã bị xoá.');

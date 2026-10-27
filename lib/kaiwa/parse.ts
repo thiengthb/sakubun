@@ -80,23 +80,32 @@ export interface ScriptProblem {
 const SHOWN_PROBLEMS = 5;
 
 // What a save refuses, each with one way to fix it. A script is saved whole or not at all, so the
-// learner (or their AI) never ends up with half a script.
+// learner (or their AI) never ends up with half a script. The web form shows the title's and the
+// body's problems under their own fields.
 export function checkScript(title: string, body: string): ScriptProblem[] {
-  const problems: ScriptProblem[] = [];
+  return [...checkTitle(title), ...checkBody(body)];
+}
+
+export function checkTitle(title: string): ScriptProblem[] {
   const name = title.trim();
-  if (!name) problems.push({ row: null, message: 'Thiếu tiêu đề. Đặt một tiêu đề ngắn.' });
+  if (!name) return [{ row: null, message: 'Thiếu tiêu đề. Đặt một tiêu đề ngắn.' }];
   if (name.length > SCRIPT_LIMITS.title) {
-    problems.push({
-      row: null,
-      message: `Tiêu đề dài quá ${SCRIPT_LIMITS.title} ký tự. Rút ngắn tiêu đề.`,
-    });
+    return [
+      { row: null, message: `Tiêu đề dài quá ${SCRIPT_LIMITS.title} ký tự. Rút ngắn tiêu đề.` },
+    ];
   }
+  return [];
+}
+
+export function checkBody(body: string): ScriptProblem[] {
+  const problems: ScriptProblem[] = [];
   if (body.length > SCRIPT_LIMITS.body) {
-    problems.push({
-      row: null,
-      message: `Kịch bản dài quá ${SCRIPT_LIMITS.body} ký tự. Tách thành nhiều kịch bản.`,
-    });
-    return problems;
+    return [
+      {
+        row: null,
+        message: `Kịch bản dài quá ${SCRIPT_LIMITS.body} ký tự. Tách thành nhiều kịch bản.`,
+      },
+    ];
   }
 
   const lines = parseScript(body);
@@ -156,4 +165,11 @@ export function normalizeBody(body: string): string {
     .map((row) => row.trimEnd())
     .join('\n')
     .trim();
+}
+
+// What text-to-speech reads and a copy takes: the Japanese without its `[よみ]` readings.
+export function plainJapanese(japanese: string): string {
+  return parseFurigana(japanese)
+    .map((s) => s.text)
+    .join('');
 }
