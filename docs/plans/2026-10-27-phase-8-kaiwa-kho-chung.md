@@ -29,6 +29,8 @@ Kho chung là kho ngữ pháp và từ vựng chung của cả hệ thống, nh�
   phá.
 - Người học tự tạo được mẫu kết hợp dài hơn hay từ mà kho chưa có; giữ riêng, hoặc công khai lên kho chung cho
   người khác **mang về**, và người mang về có thể **sửa thành bản mới** rồi chia sẻ lại.
+- Đơn vị chia sẻ chính là **nhóm** (tính năng Nhóm đang có): người học gom các mục liên quan thành nhóm, công khai
+  nhóm, người sau chép cả nhóm về học luôn, không cần qua bộ lọc (thien trả lời câu hỏi 1, 2026-10-27).
 
 ### Bản cũ đã làm thế nào, và đổi gì
 
@@ -48,11 +50,14 @@ kho của mọi người bằng SQL tay (chỉ cột nội dung), "lấy về" c
 
 ### Dữ liệu (một migration cộng thêm, K1 và L1 tách nhau)
 
-- `LibraryEntry`: `id`, `type` (`GRAMMAR`, `VOCAB`, sau này `SCRIPT`), nội dung (`expression`, `reading`,
+- `LibraryEntry`: `id`, `type` (`GRAMMAR`, `VOCAB`, `GROUP`, sau này `SCRIPT`), nội dung (`expression`, `reading`,
   `hanviet`, `meaningVi`, `level`, `notes`, `enrichment` cho ngữ pháp; `body` cho kịch bản), `authorId` (null =
   OpenJLPT), `basedOnId` (mục gốc nếu là bản sửa lại), `sourceItemId` (mục trong kho người viết), `status`
   (`public`, `hidden` khi tác giả gỡ hoặc quản trị ẩn), `takeCount`, `createdAt`, `updatedAt`.
+  Nhóm dùng `name` và `notes`.
+- `LibraryGroupMember` (groupEntryId, itemEntryId, thứ tự): nhóm công khai gồm những mục kho chung nào.
 - `LibraryLike` (entryId, userId) duy nhất theo cặp.
+- `Group.libraryEntryId` (null được): nhóm này chép từ nhóm kho chung nào.
 - `Item.libraryEntryId` (null được): mục này lấy từ mục kho chung nào. Dùng để biết "đã có", hiện nguồn, và sau này
   báo "bản gốc vừa cập nhật".
 - Bảng `LibraryEntry` không phải bảng học, nên đọc bằng client chung; tạo, sửa, gỡ đi qua một module
@@ -64,7 +69,7 @@ kho của mọi người bằng SQL tay (chỉ cột nội dung), "lấy về" c
    mọi mục mới), `libraryEntryId` trỏ về mục gốc, `takeCount` tăng một. Không chép sao, tạm dừng, ghi chú riêng, lịch
    sử ôn của ai.
 2. **Đã có**: kho mỗi người đã duy nhất theo (loại, biểu thức). Lấy một mục trùng thì không tạo thêm, báo "đã có
-   trong kho". Lấy cả bộ đang lọc thì bỏ qua mục đã có và báo số đã thêm.
+   trong kho". Lấy một nhóm thì bỏ qua mục đã có (vẫn thêm vào nhóm) và báo số đã thêm.
 3. **Tạo mới** (kể cả mẫu kết hợp dài): như thêm mục hôm nay, mặc định riêng tư. Thêm kiểm độ dài từng trường.
 4. **Công khai** chỉ từ web, người học bấm. AI qua MCP **không** công khai được (tool không có lối đó). Mỗi mục kho
    riêng có nhiều nhất một bản công khai đang mở.
@@ -73,11 +78,17 @@ kho của mọi người bằng SQL tay (chỉ cột nội dung), "lấy về" c
 6. **Gỡ**: tác giả gỡ thì mục ẩn khỏi kho chung; người đã lấy vẫn giữ bản của họ, chỉ mất liên kết cập nhật.
 7. **Cùng một biểu thức nhiều bản**: được phép, như Quizlet. Kết quả gộp theo biểu thức, bản OpenJLPT đứng đầu
    nhãn "gốc", rồi xếp theo lượt lấy và lượt thích.
-8. **Quản trị**: ẩn hoặc hiện lại một mục, xem mục của một tài khoản trong `/admin/[id]`. Tài khoản bị chặn thì mục
+8. **Nhóm**: công khai một nhóm thì mỗi mục trong nhóm cũng có bản trên kho chung. Mục tự viết thành bản mới; mục
+   đã lấy về mà không sửa thì trỏ tới bản đang có, không nhân bản; mục lấy về đã sửa thành bản "dựa trên". Lấy một
+   nhóm về = tạo nhóm mới trong kho mình cùng tên và ghi chú, lấy về các mục chưa có, mục đã có thì chỉ thêm vào
+   nhóm. Cập nhật và gỡ nhóm theo luật 4 và 6. Mục riêng tư không bao giờ lọt ra ngoài qua nhóm: chỉ mục trong nhóm
+   được công khai, và người học thấy danh sách trước khi bấm.
+9. **Quản trị**: ẩn hoặc hiện lại một mục, xem mục của một tài khoản trong `/admin/[id]`. Tài khoản bị chặn thì mục
    của họ ẩn theo. Xoá tài khoản thì mục của họ: câu hỏi 2.
-9. **Tài khoản mới bắt đầu trống**: bỏ việc chép OpenJLPT lúc đăng ký (7.2b). Trang Phân tích của người trống chỉ
-   tới Kho chung ("Lấy bộ N5 ngữ pháp") và Hướng dẫn. Kho của tài khoản đang có giữ nguyên, không đụng.
-10. **AI cùng khám phá**: MCP thêm `library_search` (tìm trong kho chung) và `library_take` (lấy về khi người học
+10. **Tài khoản mới bắt đầu trống**: bỏ việc chép OpenJLPT lúc đăng ký (7.2b). OpenJLPT lên kho chung thành các nhóm
+   có sẵn theo cấp và loại ("N5 ngữ pháp", "N5 từ vựng"…). Trang Phân tích của người trống chỉ tới Kho chung và
+   Hướng dẫn. Kho của tài khoản đang có giữ nguyên, không đụng.
+11. **AI cùng khám phá**: MCP thêm `library_search` (tìm trong kho chung) và `library_take` (lấy về khi người học
     đồng ý), `lookup` báo khi kho riêng không có nhưng kho chung có. `add_items` vẫn là lối tạo mục riêng. Giữ trong
     ngân sách token của `token-budget.test.ts`.
 
@@ -85,9 +96,9 @@ kho của mọi người bằng SQL tay (chỉ cột nội dung), "lấy về" c
 
 | PR | Nội dung | Rủi ro |
 | --- | --- | --- |
-| L1 | Bảng `LibraryEntry`, `LibraryLike`, cột `Item.libraryEntryId` (migration cộng thêm), nạp OpenJLPT vào kho chung, module `lib/library/` (tìm, lấy về, đã có) + test | high (schema) |
-| L2 | Trang **Kho chung** `/library`: tìm, lọc loại/cấp độ, gộp theo biểu thức, lấy một mục, lấy cả bộ đang lọc. e2e + ảnh | high |
-| L3 | Công khai, cập nhật bản chia sẻ, gỡ, bản sửa lại "dựa trên", thích | high |
+| L1 | Bảng `LibraryEntry`, `LibraryGroupMember`, `LibraryLike`, cột `libraryEntryId` trên `Item` và `Group` (migration cộng thêm), nạp OpenJLPT vào kho chung thành mục và nhóm, module `lib/library/` (tìm, lấy mục, lấy nhóm, đã có) + test | high (schema) |
+| L2 | Trang **Kho chung** `/library`: danh sách nhóm, mở nhóm xem mục, lấy cả nhóm; tìm từng mục, lấy một mục. e2e + ảnh | high |
+| L3 | Công khai mục và nhóm, cập nhật bản chia sẻ, gỡ, bản sửa lại "dựa trên", thích | high |
 | L4 | Tài khoản mới bắt đầu trống, trang Phân tích và Hướng dẫn trỏ tới Kho chung; ghi `docs/decisions/0008-shared-library.md` | high (đổi quyết định 7.2) |
 | L5 | MCP `library_search`, `library_take`, `lookup` chỉ sang kho chung | high |
 | L6 | Quản trị ẩn/hiện mục, mục ẩn theo tài khoản bị chặn | high |
@@ -148,10 +159,11 @@ Mã nằm ở OneDrive laptop (`Tài liệu/ChatGPT/japanese-script-canvas`), **
 
 ## Câu hỏi cho thien
 
-1. Kho chung theo từng mục (lọc rồi "lấy cả bộ đang lọc"), hay cần thêm **bộ** do người học tự gom (như set của
-   Quizlet: "50 mẫu N3 hay gặp") ngay đợt này? Đề xuất: mục trước, bộ tự gom làm sau L3.
+1. Đã trả lời 2026-10-27: chia sẻ theo **nhóm** (Nhóm đang có), xem luật 8.
 2. Xoá một tài khoản thì các mục họ đã công khai: ẩn theo (đề xuất, người đã lấy vẫn giữ bản của họ), hay giữ lại
    trên kho chung với tên "người dùng đã xoá"?
 3. Bạn nói tính năng hiện "còn vài chỗ hơi off": là những chỗ nào (ví dụ thêm từ, tra `lookup`, hạn mức ngày)?
    Mình đưa vào danh sách lỗi làm cùng 7.4.
-4. kaiwa-canvas cũ còn chạy trên NUC (`kaiwa.thientnse.site`) không, có kịch bản nào đáng nhập (K8)?
+4. kaiwa-canvas cũ: `kaiwa.thientnse.site` đã không còn chạy (kiểm từ laptop 2026-10-27, mọi đường dẫn trả 404).
+   Kịch bản nếu còn nằm trong Docker volume `canvas-data` trên NUC (`scripts.json`). thien xem giúp có kịch bản nào
+   đáng nhập không; không có thì bỏ K8.
