@@ -4,21 +4,17 @@ Trang này trả lời ba câu cho bất kỳ phiên Claude nào (kể cả từ
 việc tiếp theo là gì**. Cập nhật nó **trong cùng PR** với việc làm, và khi nhận một bước mới (xem
 "Bắt đầu phiên" trong `CLAUDE.md`). Lộ trình đầy đủ: `docs/roadmap.md`. Kế hoạch đã duyệt: `docs/plans/`.
 
-Cập nhật lần cuối: 2026-10-27 (kế hoạch Kaiwa canvas chờ duyệt).
+Cập nhật lần cuối: 2026-10-27 (Kaiwa sơ bộ K1–K5 đã lên `main` qua #156).
 
 ## Đang làm
 
-| Bước                                                                     | Nhánh / PR                                         | Giữ bởi                              | Trạng thái                        |
-| ------------------------------------------------------------------------ | -------------------------------------------------- | ------------------------------------ | --------------------------------- |
-| 8 K3 trang Hội thoại `/kaiwa`, `/kaiwa/[id]`                             | `feat/8-k3-kaiwa-pages` (#153)                     | Claude (phiên của thien, 2026-10-27) | PR mở, kèm ảnh 1440 và 390        |
-| 8 K4 furigana tự động lúc lưu (kuromoji)                                 | `feat/8-k4-auto-furigana` (xếp trên K3)            | Claude (phiên của thien, 2026-10-27) | PR mở; thêm cột `Script.analysis` |
-| 8 K3b thẻ hội thoại kiểu tin nhắn, chọn vai "Tôi là" (thien, 2026-10-27) | `feat/8-k3b-kaiwa-chat-layout` (xếp trên K4)       | Claude (phiên của thien, 2026-10-27) | PR mở, kèm ảnh 1440 và 390        |
-| 8 K3c sửa và tạo kịch bản trên web (thien, 2026-10-27)                   | `feat/8-k3c-kaiwa-web-editor` (#156, xếp trên K3b) | Claude (phiên của thien, 2026-10-27) | PR mở, kèm ảnh                    |
-| 8 K5 rê chuột xem nghĩa theo từ, "Thêm vào kho"                          | `feat/8-k5-word-lookup` (xếp trên K3c)             | Claude (phiên của thien, 2026-10-27) | PR mở, kèm ảnh                    |
+| Bước                                                                   | Nhánh / PR | Giữ bởi                              | Trạng thái              |
+| ---------------------------------------------------------------------- | ---------- | ------------------------------------ | ----------------------- |
+| 8 L1 kho chung: `LibraryEntry`, nhóm, lượt thích, nạp OpenJLPT, lấy về | chưa mở    | Claude (phiên của thien, 2026-10-27) | đọc lại kế hoạch phần A |
 
 ## Chờ thien
 
-- Merge K3 (#153, trang Hội thoại, risk:high) sau khi xem ảnh, rồi thử trong claude.ai: nhờ Claude soạn một đoạn hội thoại ngắn trên canvas, lưu, mở đường dẫn nó trả về.
+- Đưa bản có Kaiwa (#156, thêm bảng `Script` và cột `Script.analysis`) lên NUC: sao lưu DB trước. Rồi thử trong claude.ai: nhờ Claude soạn một đoạn hội thoại ngắn trên canvas, lưu, mở đường dẫn nó trả về; trên web thử chọn vai "Tôi là", rê chuột xem nghĩa, Thêm và Sửa.
 - Muốn trần khác 50 tài khoản thì đặt `MAX_ACCOUNTS` trên NUC.
 - Sau khi bản 7.3 lên NUC: mở Cài đặt > Hướng dẫn, kiểm địa chỉ MCP là `https://sakubun.thientnse.site/api/mcp`.
 - Gỡ runner `tnt-laptop-wsl` khỏi repo nếu còn (Settings > Actions > Runners).
@@ -32,6 +28,9 @@ Cập nhật lần cuối: 2026-10-27 (kế hoạch Kaiwa canvas chờ duyệt).
    Phân tích cho người chưa kết nối AI và chưa ôn (#148). Luồng claude.ai đã thử thật bằng tài khoản thứ hai.
 3. Phase 8 duyệt 2026-10-27 (#150, `docs/plans/2026-10-27-phase-8-kaiwa-kho-chung.md`): Kaiwa sơ bộ K1–K5 trước
    (AI soạn và lưu kịch bản qua MCP), rồi kho chung L1–L6, Ôn nhanh (C) và 7.4 cùng các lỗi bên dưới, rồi K6–K9.
+4. Kaiwa sơ bộ xong 2026-10-27: K1 #151, K2 #152, rồi K3, K4, K3b (thẻ kiểu tin nhắn, vai "Tôi là" bên trái),
+   K3c (sửa và tạo trên web) và K5 (rê chuột xem nghĩa) cùng lên `main` qua #156 (#153–#155, #157 merge vào nhánh
+   xếp chồng). Giao diện Kaiwa còn thô, làm đẹp trong 7.4. Tiếp theo: L1.
 
 ## Việc nhỏ còn treo
 
