@@ -4,22 +4,23 @@ Trang này trả lời ba câu cho bất kỳ phiên Claude nào (kể cả từ
 việc tiếp theo là gì**. Cập nhật nó **trong cùng PR** với việc làm, và khi nhận một bước mới (xem
 "Bắt đầu phiên" trong `CLAUDE.md`). Lộ trình đầy đủ: `docs/roadmap.md`. Kế hoạch đã duyệt: `docs/plans/`.
 
-Cập nhật lần cuối: 2026-10-26 (7.1b+c merge, nhận 7.1d).
+Cập nhật lần cuối: 2026-10-27 (7.1d merge, 7.1 xong).
 
 ## Đang làm
 
 | Bước | Nhánh / PR | Giữ bởi | Trạng thái |
 | --- | --- | --- | --- |
-| 7.1d | `feat/7.1d-user-id-required`, #133 | phiên `session_01FokVawKvZGmPLu9XkUuTAp` (từ 2026-10-26) | Xong code, chờ thien |
+| (trống) | | | Chưa ai nhận 7.2 |
 
 ## Chờ thien
 
 - Gỡ runner `tnt-laptop-wsl` khỏi repo nếu còn (Settings > Actions > Runners).
-- #133 (7.1d): sao lưu DB trên NUC rồi merge (`risk:high`, migration dựng lại 8 bảng học).
+- Kiểm app sau khi bản 7.1d lên NUC (sao lưu trước đó: `~/backups/sakubun-before-7.1d-20261027T030406Z.db`).
 
 ## Tiếp theo
 
-1. 7.2, sau khi #133 merge: đăng ký thien duyệt, trang quản trị, rồi 4.2. Không mở đăng ký trước khi 7.1d merge.
+1. 7.2: đăng ký thien duyệt, trang quản trị, rồi 4.2. Việc lớn: viết kế hoạch ngắn, thien duyệt, chép vào
+   `docs/plans/` rồi mới code. Sửa trước: so email không phân biệt hoa thường khi khôi phục (việc treo bên dưới).
 
 ## Việc nhỏ còn treo
 
