@@ -22,7 +22,7 @@ Kế hoạch hợp nhất (wordquiz + kaiwa vào đây): `nuc-infra/docs/researc
   (ngoại lệ: nhập lại bản sao lưu nguyên văn). `ReviewLog` chỉ append; xoá Item thì `itemId` thành null.
 - **Prisma 7 dùng driver adapter** (`@prisma/adapter-better-sqlite3`), client sinh ở `lib/generated/prisma` (không commit), CLI đọc `prisma.config.ts`.
 - **Test có DB dùng `createTestDb()` (`lib/db/test-db.ts`)**, không dùng `prisma db push`; dọn giữa các test bằng `resetLearningData()`.
-- **Nhiều người học, mỗi người một kho** (`docs/decisions/0006-per-user-learning-data.md`, `0007-open-sign-up.md`): 8 bảng học có `userId` bắt buộc; mọi truy vấn trên chúng đi qua `userDb(userId)` (`lib/db/user-db.ts`), client chung `prisma` ném lỗi trên các bảng đó, SQL viết tay chỉ được ở chỗ `lib/db/raw-access.test.ts` cho phép; tạo dòng thì ghi `userId: db.$ownerId()` (kiểu Prisma bắt buộc);
+- **Nhiều người học, mỗi người một kho** (`docs/decisions/0006-per-user-learning-data.md`, `0007-open-sign-up.md`): 9 bảng học (kể cả `Script` của Kaiwa) có `userId` bắt buộc; mọi truy vấn trên chúng đi qua `userDb(userId)` (`lib/db/user-db.ts`), client chung `prisma` ném lỗi trên các bảng đó, SQL viết tay chỉ được ở chỗ `lib/db/raw-access.test.ts` cho phép; tạo dòng thì ghi `userId: db.$ownerId()` (kiểu Prisma bắt buộc);
   ai cũng đăng ký bằng Google được (tới `MAX_ACCOUNTS`), người mới nhận kho OpenJLPT (`lib/import/starter-deck.ts`); quyền vào cửa nào cũng hỏi `accountAccess()` (`lib/auth/access.ts`): `ALLOWED_EMAIL` là quản trị, bị chặn thì không vào đâu được; email/mật khẩu chỉ là cửa cho test, tắt cứng ở production;
   route MCP (`app/api/[transport]/route.ts`) bắt buộc token.
 - **Ngôn ngữ**: code/comment/commit tiếng Anh; chuỗi người học đọc trên UI tiếng Việt; không emoji.

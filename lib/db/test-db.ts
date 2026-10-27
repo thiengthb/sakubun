@@ -48,6 +48,7 @@ const LEARNING_TABLES = [
   'Group',
   'Item',
   'Settings',
+  'Script',
 ] as const;
 
 // One reset for every suite that owns a throwaway DB. Deliberately clears the WHOLE learning graph

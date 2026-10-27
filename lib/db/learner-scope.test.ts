@@ -58,9 +58,10 @@ describe('scopeArgs', () => {
     expect(() => scopeArgs('Item', 'findRaw', {}, 'u1')).toThrow(/not scoped/);
   });
 
-  it('knows exactly the eight learning tables', () => {
-    expect(LEARNING_MODELS).toHaveLength(8);
+  it('knows exactly the nine learning tables', () => {
+    expect(LEARNING_MODELS).toHaveLength(9);
     expect(isLearningModel('Item')).toBe(true);
+    expect(isLearningModel('Script')).toBe(true);
     expect(isLearningModel('McpToolCall')).toBe(false);
     expect(isLearningModel('User')).toBe(false);
     expect(isLearningModel(undefined)).toBe(false);

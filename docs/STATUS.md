@@ -10,10 +10,11 @@ Cập nhật lần cuối: 2026-10-27 (kế hoạch Kaiwa canvas chờ duyệt).
 
 | Bước | Nhánh / PR | Giữ bởi | Trạng thái |
 | --- | --- | --- | --- |
-| 8 K1 bảng `Script` và parser | `feat/8-k1-script-table` | Claude (phiên của thien, 2026-10-27) | Bắt đầu sau khi #150 merge |
+| 8 K1 bảng `Script` và parser | `feat/8-k1-script-table` | Claude (phiên của thien, 2026-10-27) | PR mở, chờ thien merge (risk:high, schema) |
 
 ## Chờ thien
 
+- Merge K1 (bảng `Script`, risk:high). Migration chỉ thêm bảng mới, không đụng dữ liệu học đang có.
 - Muốn trần khác 50 tài khoản thì đặt `MAX_ACCOUNTS` trên NUC.
 - Sau khi bản 7.3 lên NUC: mở Cài đặt > Hướng dẫn, kiểm địa chỉ MCP là `https://sakubun.thientnse.site/api/mcp`.
 - Gỡ runner `tnt-laptop-wsl` khỏi repo nếu còn (Settings > Actions > Runners).
