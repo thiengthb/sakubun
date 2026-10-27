@@ -106,14 +106,16 @@ describe('MCP v2 token targets', () => {
     expect(tokens).toBeLessThanOrEqual(V2_TARGET.toolDefinitions);
   });
 
-  it('protocol (the hoc prompt)', async () => {
+  it.each(['hoc', 'kaiwa'])('protocol (the %s prompt)', async (name) => {
     const client = await connect('v2');
-    const prompt = await client.getPrompt({ name: 'hoc' });
+    const prompt = await client.getPrompt({ name });
     const text = prompt.messages
       .map((m) => (m.content.type === 'text' ? m.content.text : ''))
       .join('\n');
     const tokens = estimateTokens(text);
-    report.push(`  v2 prompt "hoc":         ${text.length} chars, ~${tokens} tokens`);
+    report.push(
+      `  v2 prompt "${name}":${' '.repeat(14 - name.length)}${text.length} chars, ~${tokens} tokens`,
+    );
     expect(tokens).toBeLessThanOrEqual(V2_TARGET.protocol);
   });
 
@@ -148,6 +150,9 @@ describe('MCP v2 token targets', () => {
     await call('lookup', { query: 'ながら' });
     await call('status');
     await call('next_turn');
+    // kaiwa_get is left out: it returns the script itself, as long as the learner made it.
+    await call('kaiwa_save', { title: 'Ở ga', body: 'A: 駅はどこですか。 | Nhà ga ở đâu?' });
+    await call('kaiwa_list');
 
     const largest = Math.max(...sizes.values());
     report.push(

@@ -16,7 +16,15 @@ export const MCP_CATALOG: CatalogEntry[] = [
   { name: 'lookup', kind: 'tool', summary: 'Tìm mẫu hoặc từ trong kho của bạn' },
   { name: 'add_items', kind: 'tool', summary: 'Thêm mẫu hoặc từ khi bạn đồng ý' },
   { name: 'status', kind: 'tool', summary: 'Đến hạn bao nhiêu, hôm nay còn lại bao nhiêu' },
+  { name: 'kaiwa_list', kind: 'tool', summary: 'Liệt kê kịch bản Kaiwa của bạn' },
+  { name: 'kaiwa_get', kind: 'tool', summary: 'Đọc một kịch bản Kaiwa trước khi sửa' },
+  {
+    name: 'kaiwa_save',
+    kind: 'tool',
+    summary: 'Lưu kịch bản Kaiwa khi bạn đồng ý; server kiểm định dạng',
+  },
   { name: 'hoc', kind: 'prompt', summary: 'Học theo lịch ôn, dịch từng câu với Claude' },
+  { name: 'kaiwa', kind: 'prompt', summary: 'Soạn kịch bản hội thoại cùng AI rồi lưu vào Sakubun' },
   // Profile `planner` only: a calendar bot reads load counts, nothing else.
   { name: 'ping', kind: 'tool', summary: 'Kiểm tra kết nối MCP còn sống (profile planner)' },
   {

@@ -15,10 +15,10 @@ import {
 import { userDb } from '@/lib/db/user-db';
 import { loadStarterDeck, seedStarterDeck } from '@/lib/import/starter-deck';
 import { isAllowedRedirectUri } from '@/lib/auth/oauth-redirects';
+import { APP_URL } from '@/lib/core/app-url';
 
-// The OAuth provider needs a fixed base URL (it is the token issuer), so an unset BETTER_AUTH_URL falls
-// back to the dev server instead of being derived from each request.
-const BASE_URL = process.env.BETTER_AUTH_URL || 'http://localhost:3789';
+// The OAuth provider needs a fixed base URL: it is the token issuer.
+const BASE_URL = APP_URL;
 
 // The MCP endpoint as claude.ai and ChatGPT see it; OAuth tokens are issued for this audience only.
 export const MCP_RESOURCE = new URL('/api/mcp', BASE_URL).href;

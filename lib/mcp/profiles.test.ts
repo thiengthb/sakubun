@@ -15,10 +15,11 @@ function registered(profile: McpProfile) {
 }
 
 describe('MCP profiles', () => {
-  it('v2 chỉ có bảy tool mới và một prompt hoc', () => {
+  it('v2 có bảy tool học, ba tool Kaiwa và hai prompt hoc, kaiwa', () => {
     const { tools, prompts } = registered('v2');
     expect(tools.sort()).toEqual([...V2_TOOLS].sort());
-    expect(prompts).toEqual(['hoc']);
+    expect(tools).toHaveLength(10);
+    expect(prompts).toEqual(['hoc', 'kaiwa']);
   });
 
   it('planner chỉ có ping + get_review_load (đọc số liệu, không nội dung), không prompt', () => {

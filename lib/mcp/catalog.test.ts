@@ -2,6 +2,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { MCP_CATALOG } from '@/lib/mcp/catalog';
+import { KAIWA_PROMPT } from '@/lib/mcp/kaiwa-prompt';
 import { HOC_PROMPT } from '@/lib/mcp/v2-prompt';
 
 const TOOLS_DIR = 'lib/mcp/tools';
@@ -12,12 +13,12 @@ const SOURCES = readdirSync(TOOLS_DIR)
 // Tools are still found by scanning source: each register*Tools() calls server.tool('name', …)
 // inline, so the names exist only as literals. Prompts are a declared table, so they are read
 // directly — comparing data to data instead of trusting a regex to keep matching the call shape.
-// v2-prompt.ts is pure data with no side effects, unlike server.ts (which builds the handler on
+// v2-prompt.ts and kaiwa-prompt.ts are pure data with no side effects, unlike server.ts (which builds the handler on
 // import and would drag the database in).
 function registered(): Record<'tool' | 'prompt', Set<string>> {
   const found = {
     tool: new Set<string>(),
-    prompt: new Set([HOC_PROMPT.name]),
+    prompt: new Set([HOC_PROMPT.name, KAIWA_PROMPT.name]),
   };
   for (const file of SOURCES) {
     const src = readFileSync(file, 'utf8');
@@ -31,8 +32,8 @@ describe('MCP_CATALOG matches the server registrations', () => {
   const catalog = new Map(MCP_CATALOG.map((e) => [e.name, e.kind]));
 
   it('finds registrations to compare against (guards the regex itself)', () => {
-    expect(reg.tool.size).toBe(9);
-    expect(reg.prompt.size).toBe(1);
+    expect(reg.tool.size).toBe(12);
+    expect(reg.prompt.size).toBe(2);
   });
 
   it('every catalog entry is really registered, under the kind it claims', () => {
