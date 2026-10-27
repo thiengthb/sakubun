@@ -10,7 +10,7 @@ Cập nhật lần cuối: 2026-10-27 (nhận 7.3, kế hoạch đã duyệt).
 
 | Bước | Nhánh / PR | Giữ bởi | Trạng thái |
 | --- | --- | --- | --- |
-| 7.3 Hướng dẫn | `docs/7.3-guide-plan` (kế hoạch), rồi `feat/7.3a-guide-tab` | Claude (phiên của thien, 2026-10-27) | Kế hoạch đã duyệt; đang thử connector claude.ai |
+| 7.3 Hướng dẫn | `docs/7.3-guide-plan` (kế hoạch), rồi `feat/7.3a-guide-tab` | Claude (phiên của thien, 2026-10-27) | 7.3a tab Hướng dẫn trong PR, chờ thien duyệt ảnh; còn thử luyện bằng tài khoản thứ hai |
 
 ## Chờ thien
 
@@ -28,6 +28,11 @@ Cập nhật lần cuối: 2026-10-27 (nhận 7.3, kế hoạch đã duyệt).
 
 ## Việc nhỏ còn treo
 
+- Trang đồng ý OAuth ("Cho phép truy cập Sakubun?") không ghi đang cấp quyền cho tài khoản nào; trình duyệt đang
+  đăng nhập sakubun bằng tài khoản khác thì connector âm thầm nối sai tài khoản (thử thật 2026-10-27). Nên hiện email
+  trên trang đó (đụng OAuth, risk:high).
+- Lượt thử 2026-10-27: Claude đọc kết quả `status` thành "18 mục đến hạn, 100 lượt ôn" trong khi đó là hạn mức ngày
+  (tài khoản mới có 0 đến hạn). Cần làm chữ của `status` rõ hơn giữa "đến hạn" và "hạn mức".
 - e2e `critical-path` chờ "Chưa có gì để học" nhưng fail khi chạy chung DB với spec khác đã thêm dữ liệu.
 - Kế hoạch phase 6 (UI redo, các bước 6.x như PR #128 "6.9") chưa có trong repo; chỉ còn dấu vết trong
   commit và PR. Nếu còn bước 6.x chưa làm, chép kế hoạch vào `docs/plans/`.

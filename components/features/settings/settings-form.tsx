@@ -11,6 +11,7 @@ import { SETTINGS_TABS } from '@/components/layout/page-heads';
 import { PracticeTab } from '@/components/features/settings/settings-practice-tab';
 import { DataTab } from '@/components/features/settings/settings-data-tab';
 import { AccountTab } from '@/components/features/settings/settings-account-tab';
+import { GuideTab } from '@/components/features/settings/settings-guide-tab';
 import type { McpKeyRow } from '@/components/features/settings/settings-account-tab';
 import type { ConnectedAppRow } from '@/components/features/settings/connected-apps-section';
 import type { ToolUsageReport } from '@/lib/mcp/usage';
@@ -32,6 +33,7 @@ interface SettingsFormProps {
     mcpUsage: ToolUsageReport | null;
   };
   isAdmin: boolean;
+  mcpUrl: string;
 }
 
 const SAVEABLE_TABS = new Set(['practice']);
@@ -45,7 +47,7 @@ const RETIRED_TABS: Record<string, string> = {
   sensory: 'practice',
 };
 
-export function SettingsForm({ initial, account, isAdmin }: SettingsFormProps) {
+export function SettingsForm({ initial, account, isAdmin, mcpUrl }: SettingsFormProps) {
   const [settings, setSettings] = useState<Settings>(initial);
   const [storedTab, setTab] = useSessionState(
     SETTINGS_TABS.storeKey,
@@ -83,6 +85,7 @@ export function SettingsForm({ initial, account, isAdmin }: SettingsFormProps) {
         <PracticeTab settings={settings} set={set} setSettings={setSettings} />
         <DataTab isAdmin={isAdmin} />
         <AccountTab {...account} isAdmin={isAdmin} />
+        <GuideTab mcpUrl={mcpUrl} openTab={setTab} />
         {SAVEABLE_TABS.has(tab) && (
           <FormFooter status={dirty ? 'Có thay đổi chưa lưu' : 'Mọi thay đổi đã được lưu'}>
             <Button type="button" disabled={isSaving || !dirty} onClick={onSave}>
