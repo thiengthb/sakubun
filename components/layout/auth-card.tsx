@@ -1,6 +1,7 @@
 'use client';
 
 import { type ReactNode } from 'react';
+import Link from 'next/link';
 import { Loader2 } from 'lucide-react';
 import { AppLogo } from '@/components/layout/app-logo';
 import { Button } from '@/components/ui/button';
@@ -36,6 +37,14 @@ export function AuthCard({
           </CardHeader>
           {children}
         </Card>
+        <p className="flex justify-center gap-4 text-xs text-muted-foreground">
+          <Link href="/privacy" className="underline underline-offset-4">
+            Chính sách bảo mật
+          </Link>
+          <Link href="/terms" className="underline underline-offset-4">
+            Điều khoản sử dụng
+          </Link>
+        </p>
       </div>
     </main>
   );

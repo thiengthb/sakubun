@@ -10,12 +10,15 @@ Cập nhật lần cuối: 2026-10-27 (7.2 xong).
 
 | Bước | Nhánh / PR | Giữ bởi | Trạng thái |
 | --- | --- | --- | --- |
-| (trống) | | | |
+| Trang `/privacy`, `/terms` (để công bố app OAuth Google) | `feat/privacy-terms` | phiên `session_01FokVawKvZGmPLu9XkUuTAp` (từ 2026-10-27) | PR mở, chờ thien duyệt nội dung và merge (risk:high) |
 
 ## Chờ thien
 
-- Đăng ký đã mở (#141). Trước khi người lạ đăng nhập được: chuyển app OAuth Google sang "In production"
-  (Google Cloud Console > OAuth consent screen); nếu muốn trần khác 50 tài khoản thì đặt `MAX_ACCOUNTS` trên NUC.
+- Đăng ký đã mở (#141), nhưng app OAuth Google (project `sakubun-511118`) còn "Testing". Google khoá nút Publish
+  tới khi Branding có trang chủ, link chính sách bảo mật, điều khoản và tên miền uỷ quyền. Sau khi PR trang
+  `/privacy`, `/terms` merge và lên NUC: điền `https://sakubun.thientnse.site`, `/privacy`, `/terms`, tên miền
+  `thientnse.site`, rồi Publish app (không tải logo để khỏi phải xác minh). Muốn trần khác 50 tài khoản thì đặt
+  `MAX_ACCOUNTS` trên NUC.
 - Gỡ runner `tnt-laptop-wsl` khỏi repo nếu còn (Settings > Actions > Runners).
 - Kiểm app sau khi bản 7.1d lên NUC (sao lưu trước đó: `~/backups/sakubun-before-7.1d-20261027T030406Z.db`).
 
