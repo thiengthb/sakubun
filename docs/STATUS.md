@@ -10,7 +10,8 @@ Cập nhật lần cuối: 2026-10-27 (kế hoạch Kaiwa canvas chờ duyệt).
 
 | Bước | Nhánh / PR | Giữ bởi | Trạng thái |
 | --- | --- | --- | --- |
-| 8 K1 bảng `Script` và parser | `feat/8-k1-script-table` | Claude (phiên của thien, 2026-10-27) | PR mở, chờ thien merge (risk:high, schema) |
+| 8 K1 bảng `Script` và parser | `feat/8-k1-script-table` (#151) | Claude (phiên của thien, 2026-10-27) | PR mở, chờ thien merge (risk:high, schema) |
+| 8 K2 MCP `kaiwa_save`, `kaiwa_get`, `kaiwa_list`, prompt `kaiwa` | `feat/8-k2-kaiwa-mcp` (xếp trên K1) | Claude (phiên của thien, 2026-10-27) | PR mở; đường dẫn xem kịch bản chỉ mở được khi có K3 |
 
 ## Chờ thien
 

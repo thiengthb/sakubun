@@ -60,12 +60,15 @@ beforeEach(async () => {
 });
 
 describe('MCP v2', () => {
-  it('lists exactly the seven tools and the hoc prompt', async () => {
+  it('lists exactly the seven study tools, the three Kaiwa tools and two prompts', async () => {
     const { tools } = await client.listTools();
     expect(tools.map((t) => t.name).sort()).toEqual(
       [
         'add_items',
         'grade_turn',
+        'kaiwa_get',
+        'kaiwa_list',
+        'kaiwa_save',
         'lookup',
         'next_turn',
         'skip_turn',
@@ -74,7 +77,7 @@ describe('MCP v2', () => {
       ].sort(),
     );
     const { prompts } = await client.listPrompts();
-    expect(prompts.map((p) => p.name)).toEqual(['hoc']);
+    expect(prompts.map((p) => p.name)).toEqual(['hoc', 'kaiwa']);
   });
 
   it('tells Claude that a right answer is a 3 and Easy needs an instant, flawless one', async () => {
