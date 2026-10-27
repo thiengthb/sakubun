@@ -56,16 +56,16 @@ K6-K9.
 | --- | --- | --- | --- | --- |
 | K1 | `Script` table, script parser, `lib/kaiwa/` save with format check | tests pass | high | Done 2026-10-27 (#151) |
 | K2 | MCP `kaiwa_save`, `kaiwa_get`, `kaiwa_list`, prompt `kaiwa` | tried for real in claude.ai | high | Merged 2026-10-27 (#152), try in claude.ai pending |
-| K3 | Hội thoại pages `/kaiwa`, `/kaiwa/[id]`: view, listen, hide meanings, delete (editing stays with the AI) | e2e + screenshots | high | In review |
-| K4 | Automatic furigana and tokens on save (kuromoji; own reading alignment instead of kuroshiro) | tests, Docker image builds | high (column) | In review |
-| K3b | Script page as a chat: learner picks their part (left), others right, speaker-less lines as the scene | e2e + screenshots | medium | In review |
-| K3c | Edit and create scripts on the web, same check and version guard as MCP | e2e | medium | In review |
-| K5 | Hover a word for its Vietnamese meaning, "Thêm vào kho" | e2e + screenshots | high | In review |
+| K3 | Hội thoại pages `/kaiwa`, `/kaiwa/[id]`: view, listen, hide meanings, delete (editing stays with the AI) | e2e + screenshots | high | Done 2026-10-27 (#153, on main via #156) |
+| K4 | Automatic furigana and tokens on save (kuromoji; own reading alignment instead of kuroshiro) | tests, Docker image builds | high (column) | Done 2026-10-27 (#154, on main via #156) |
+| K3b | Script page as a chat: learner picks their part (left), others right, speaker-less lines as the scene | e2e + screenshots | medium | Done 2026-10-27 (#155, on main via #156) |
+| K3c | Edit and create scripts on the web, same check and version guard as MCP | e2e | medium | Done 2026-10-27 (#156) |
+| K5 | Hover a word for its Vietnamese meaning, "Thêm vào kho" | e2e + screenshots | high | Done 2026-10-27 (#157, on main via #156) |
 | K6 | Karaoke, whole-script playback, voice per speaker, server audio cache | screenshots | medium | Todo |
 | K7 | Publish scripts to kho chung | e2e | high | Todo |
 | K8 | MCP role-play from a script | tried in claude.ai | high | Todo |
 | K9 | Import the 5 old kaiwa-canvas scripts for thien | thien sees them | high | Todo |
-| L1 | `LibraryEntry`, groups, likes, OpenJLPT seed, `lib/library/` take | tests pass | high | Todo |
+| L1 | `LibraryEntry`, groups, likes, OpenJLPT seed, `lib/library/` take | tests pass | high | In progress |
 | L2 | Kho chung page: groups and single items, take | e2e + screenshots | high | Todo |
 | L3 | Publish items and groups, update, unpublish, based-on copies, likes | e2e | high | Todo |
 | L4 | New accounts start empty, point to kho chung; decision 0008 | e2e | high | Todo |
