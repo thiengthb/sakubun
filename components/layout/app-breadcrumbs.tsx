@@ -12,6 +12,7 @@ import {
   Pencil,
   Plus,
   Settings,
+  Users,
 } from 'lucide-react';
 import { Breadcrumbs, type Crumb } from '@/components/layout/breadcrumbs';
 
@@ -69,6 +70,12 @@ const CRUMBS = {
     icon: Settings,
     description:
       'Tuỳ chỉnh nội dung, nhịp học, nghe & nói; dữ liệu; tài khoản và token MCP. Client MCP đọc các cài đặt học này mỗi khi soạn câu.',
+  },
+  admin: {
+    label: 'Quản trị',
+    href: '/admin',
+    icon: Users,
+    description: 'Mọi tài khoản: xem số liệu học, chặn hoặc xoá.',
   },
 } satisfies Record<string, Crumb>;
 

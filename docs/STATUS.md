@@ -10,16 +10,17 @@ Cập nhật lần cuối: 2026-10-27 (kế hoạch 7.2 duyệt, nhận 7.2a).
 
 | Bước | Nhánh / PR | Giữ bởi | Trạng thái |
 | --- | --- | --- | --- |
-| 7.2b | `feat/7.2b-starter-deck` | phiên `session_01FokVawKvZGmPLu9XkUuTAp` (từ 2026-10-27) | PR mở, `risk:low`, AI merge khi CI xanh |
+| 7.2c | `feat/7.2c-admin-page`, #140 | phiên `session_01FokVawKvZGmPLu9XkUuTAp` (từ 2026-10-27) | Chờ thien duyệt ảnh và merge |
 
 ## Chờ thien
 
+- Duyệt ảnh trang `/admin` (1440, 390, hộp thoại xoá) trong #140 rồi merge.
 - Gỡ runner `tnt-laptop-wsl` khỏi repo nếu còn (Settings > Actions > Runners).
 - Kiểm app sau khi bản 7.1d lên NUC (sao lưu trước đó: `~/backups/sakubun-before-7.1d-20261027T030406Z.db`).
 
 ## Tiếp theo
 
-1. 7.2a xong (#138). 7.2b đến 7.2e theo `docs/plans/2026-10-27-phase7-2-sign-up.md` (mở đăng ký không cần duyệt, thien chặn
+1. 7.2a xong (#138), 7.2b xong (#139). 7.2c đến 7.2e theo `docs/plans/2026-10-27-phase7-2-sign-up.md` (mở đăng ký không cần duyệt, thien chặn
    được). 7.2d mở cửa cuối cùng.
 
 ## Việc nhỏ còn treo

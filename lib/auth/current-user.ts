@@ -1,5 +1,5 @@
 import { headers } from 'next/headers';
-import { redirect } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { auth } from '@/lib/auth/auth';
 import { accountAccess, refuseAccess, type AccountAccess } from '@/lib/auth/access';
 import { userDb, type UserDb } from '@/lib/db/user-db';
@@ -28,4 +28,12 @@ export async function getUserDb(): Promise<UserDb> {
 export async function routeUserId(need: 'learner' | 'admin'): Promise<string | Response> {
   const s = await getSessionAccess();
   return refuseAccess(s?.access ?? 'none', need) ?? s!.userId;
+}
+
+// Admin pages and actions: anyone else sees a page that does not exist.
+export async function getAdminUserId(): Promise<string> {
+  const s = await getSessionAccess();
+  if (!s || s.access === 'none') redirect('/login');
+  if (s.access !== 'admin') notFound();
+  return s.userId;
 }
