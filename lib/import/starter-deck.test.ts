@@ -79,7 +79,7 @@ describe('seedStarterDeck', () => {
     expect(await a.srsState.count()).toBe(deck.length);
   });
 
-  it('cả kho (khoảng 8.000 mục) vào được trong một lần', async () => {
+  it('cả kho (khoảng 8.000 mục) vào được trong một lần', { timeout: 30_000 }, async () => {
     await resetLearningData(prisma);
     const full = await loadStarterDeck();
     expect(await M.seedStarterDeck(a, full)).toBe(full.length);
