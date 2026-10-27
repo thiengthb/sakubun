@@ -11,8 +11,8 @@ concurrency:
 
 jobs:
   verify:
-    # Self-hosted on thien's machine (docs/ci-runner.md): hosted runners blocked by billing, 2026-10-27.
-    runs-on: [self-hosted, linux, x64]
+    # Hosted only: the repo is public, so never a self-hosted runner (docs/ci-runner.md).
+    runs-on: ubuntu-latest
     env:
       DATABASE_URL: file:/tmp/ci.db
       BETTER_AUTH_SECRET: ci-only-not-a-secret-0123456789abcdef
