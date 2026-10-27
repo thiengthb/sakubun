@@ -12,8 +12,8 @@ export default defineConfig({
     environment: 'node',
     include: ['lib/**/*.test.ts'],
     globals: false,
-    // The self-hosted CI runner (docs/ci-runner.md) is a laptop under WSL: the suites that build a
-    // SQLite database from every migration take 5-13 s there, against well under 5 s locally.
+    // The suites that build a SQLite database from every migration took 5-13 s on a slow CI machine
+    // (docs/ci-runner.md), against well under 5 s locally.
     testTimeout: process.env.CI ? 30_000 : 5_000,
   },
 });
