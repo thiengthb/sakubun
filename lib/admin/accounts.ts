@@ -1,5 +1,5 @@
-// The admin page's reads and writes on accounts (roadmap 7.2c). Learning numbers are read through
-// each account's own userDb, so the guard on learning tables still holds.
+// The admin pages' reads and writes on accounts (roadmap 7.2c). Learning data is read through each
+// account's own userDb, so the guard on learning tables still holds.
 import { prisma } from '@/lib/db/db';
 import { userDb } from '@/lib/db/user-db';
 import { accountAccess, type AccountAccess } from '@/lib/auth/access';
@@ -12,43 +12,70 @@ export type AccountRow = {
   createdAt: Date;
   access: AccountAccess;
   banned: boolean;
-  items: number;
   lastReviewAt: Date | null;
 };
 
+export type AccountDetail = AccountRow & { lastSignInAt: Date | null };
+
+const ACCOUNT_SELECT = {
+  id: true,
+  name: true,
+  email: true,
+  image: true,
+  createdAt: true,
+  role: true,
+  banned: true,
+} as const;
+
+type UserRow = {
+  id: string;
+  name: string;
+  email: string;
+  image: string | null;
+  createdAt: Date;
+  role: string | null;
+  banned: boolean | null;
+};
+
+async function toRow(u: UserRow): Promise<AccountRow> {
+  const last = await userDb(u.id).reviewLog.findFirst({
+    orderBy: { reviewedAt: 'desc' },
+    select: { reviewedAt: true },
+  });
+  return {
+    id: u.id,
+    name: u.name,
+    email: u.email,
+    image: u.image,
+    createdAt: u.createdAt,
+    access: accountAccess({ ...u, banned: false }),
+    banned: !!u.banned,
+    lastReviewAt: last?.reviewedAt ?? null,
+  };
+}
+
 export async function listAccounts(): Promise<AccountRow[]> {
   const users = await prisma.user.findMany({
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      image: true,
-      createdAt: true,
-      role: true,
-      banned: true,
-    },
+    select: ACCOUNT_SELECT,
     orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
   });
-  return Promise.all(
-    users.map(async (u) => {
-      const db = userDb(u.id);
-      const [items, last] = await Promise.all([
-        db.item.count(),
-        db.reviewLog.findFirst({ orderBy: { reviewedAt: 'desc' }, select: { reviewedAt: true } }),
-      ]);
-      return {
-        id: u.id,
-        name: u.name,
-        email: u.email,
-        image: u.image,
-        createdAt: u.createdAt,
-        access: accountAccess({ ...u, banned: false }),
-        banned: !!u.banned,
-        items,
-        lastReviewAt: last?.reviewedAt ?? null,
-      };
+  return Promise.all(users.map(toRow));
+}
+
+// One account for its page. The last sign-in is the newest open session; banning ends every
+// session, so a banned account usually shows none.
+export async function getAccount(id: string): Promise<AccountDetail | null> {
+  const u = await prisma.user.findUnique({ where: { id }, select: ACCOUNT_SELECT });
+  if (!u) return null;
+  const [row, session] = await Promise.all([
+    toRow(u),
+    prisma.session.findFirst({
+      where: { userId: id },
+      orderBy: { createdAt: 'desc' },
+      select: { createdAt: true },
     }),
-  );
+  ]);
+  return { ...row, lastSignInAt: session?.createdAt ?? null };
 }
 
 export async function findModerationTarget(id: string) {

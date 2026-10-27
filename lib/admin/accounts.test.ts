@@ -39,20 +39,30 @@ async function learnerWithOneReview(id: string) {
 }
 
 describe('admin accounts', () => {
-  it('liệt kê mọi tài khoản với số mục và lần ôn cuối của riêng họ', async () => {
+  it('liệt kê mọi tài khoản với lần ôn cuối của riêng họ', async () => {
     await resetLearningData(prisma);
     await learnerWithOneReview('acc-a');
     await createTestUser(prisma, 'acc-empty');
 
     const rows = await A.listAccounts();
     const a = rows.find((r) => r.id === 'acc-a');
-    expect(a).toMatchObject({ items: 1, access: 'learner', banned: false });
+    expect(a).toMatchObject({ access: 'learner', banned: false });
     expect(a?.lastReviewAt?.toISOString()).toBe('2026-10-27T01:00:00.000Z');
     expect(rows.find((r) => r.id === 'acc-empty')).toMatchObject({
-      items: 0,
       lastReviewAt: null,
       access: 'none',
     });
+  });
+
+  it('một tài khoản: lần ôn cuối và lần đăng nhập gần nhất; id lạ thì null', async () => {
+    await resetLearningData(prisma);
+    await learnerWithOneReview('acc-one');
+
+    const one = await A.getAccount('acc-one');
+    expect(one).toMatchObject({ id: 'acc-one', access: 'learner', banned: false });
+    expect(one?.lastReviewAt?.toISOString()).toBe('2026-10-27T01:00:00.000Z');
+    expect(one?.lastSignInAt).toBeInstanceOf(Date);
+    expect(await A.getAccount('no-such-account')).toBeNull();
   });
 
   it('chặn thì phiên đang mở bị xoá, dữ liệu học còn nguyên; bỏ chặn thì vào lại được', async () => {
