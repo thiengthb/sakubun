@@ -4,13 +4,13 @@ Trang này trả lời ba câu cho bất kỳ phiên Claude nào (kể cả từ
 việc tiếp theo là gì**. Cập nhật nó **trong cùng PR** với việc làm, và khi nhận một bước mới (xem
 "Bắt đầu phiên" trong `CLAUDE.md`). Lộ trình đầy đủ: `docs/roadmap.md`. Kế hoạch đã duyệt: `docs/plans/`.
 
-Cập nhật lần cuối: 2026-10-27 (7.1d merge, 7.1 xong).
+Cập nhật lần cuối: 2026-10-27 (kế hoạch 7.2 duyệt, nhận 7.2a).
 
 ## Đang làm
 
 | Bước | Nhánh / PR | Giữ bởi | Trạng thái |
 | --- | --- | --- | --- |
-| (trống) | | | Chưa ai nhận 7.2 |
+| 7.2a | `feat/7.2a-admin-only-gates` | phiên `session_01FokVawKvZGmPLu9XkUuTAp` (từ 2026-10-27) | Đang code |
 
 ## Chờ thien
 
@@ -19,8 +19,8 @@ Cập nhật lần cuối: 2026-10-27 (7.1d merge, 7.1 xong).
 
 ## Tiếp theo
 
-1. 7.2: đăng ký thien duyệt, trang quản trị, rồi 4.2. Việc lớn: viết kế hoạch ngắn, thien duyệt, chép vào
-   `docs/plans/` rồi mới code. Sửa trước: so email không phân biệt hoa thường khi khôi phục (việc treo bên dưới).
+1. 7.2a đến 7.2e theo `docs/plans/2026-10-27-phase7-2-sign-up.md` (mở đăng ký không cần duyệt, thien chặn
+   được). 7.2d mở cửa cuối cùng.
 
 ## Việc nhỏ còn treo
 
