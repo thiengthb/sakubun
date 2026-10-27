@@ -43,3 +43,30 @@ artifact 8dhCRanXdgsiDFTJBbUHdf, which only its own Claude account can open). De
 | 7.2 | Open sign-up with Google (thien can ban; changed 2026-10-27, plan `docs/plans/2026-10-27-phase7-2-sign-up.md`), admin page, MCP tool stats and database backup admin only, then 4.2 | A second account learns without seeing the first | high | Done 2026-10-27 (#138, #139, #140, #141, #142) |
 | 7.3 | Hướng dẫn page (removed 2026-08-14) rewritten for today's app (plan `docs/plans/2026-10-27-phase7-3-guide.md`) | thien approves the screenshots | high | Done 2026-10-27 (#146, #147, #148) |
 | 7.4 | Each new or changed page in the new UI, one PR per page | thien approves before and after screenshots | high | Todo |
+
+## Phase 8: Kaiwa canvas and shared library
+
+Asked for by thien on 2026-10-27, ahead of 7.4: Kaiwa canvas early, then the shared library (kho chung: a
+community library of grammar and vocab seeded from OpenJLPT; new accounts start empty and take or publish items)
+together with the UI redo and small bugs. Plan: `docs/plans/2026-10-27-phase-8-kaiwa-kho-chung.md` (approved
+2026-10-27, #150). Order: K1-K5 (rough Kaiwa) first, then L1-L6, the quick review rework (C) and 7.4 together, then
+K6-K9.
+
+| # | PR | Done when | Risk | Status |
+| --- | --- | --- | --- | --- |
+| K1 | `Script` table, script parser, `lib/kaiwa/` save with format check | tests pass | high | Todo |
+| K2 | MCP `kaiwa_save`, `kaiwa_get`, `kaiwa_list`, prompt `kaiwa` | tried for real in claude.ai | high | Todo |
+| K3 | Hội thoại pages `/kaiwa`, `/kaiwa/[id]`: view, listen, light edit | e2e + screenshots | high | Todo |
+| K4 | Automatic furigana and tokens on save (kuromoji, kuroshiro) | tests, Docker image builds | medium | Todo |
+| K5 | Hover a word for its Vietnamese meaning, "Thêm vào kho" | e2e + screenshots | high | Todo |
+| K6 | Karaoke, whole-script playback, voice per speaker, server audio cache | screenshots | medium | Todo |
+| K7 | Publish scripts to kho chung | e2e | high | Todo |
+| K8 | MCP role-play from a script | tried in claude.ai | high | Todo |
+| K9 | Import the 5 old kaiwa-canvas scripts for thien | thien sees them | high | Todo |
+| L1 | `LibraryEntry`, groups, likes, OpenJLPT seed, `lib/library/` take | tests pass | high | Todo |
+| L2 | Kho chung page: groups and single items, take | e2e + screenshots | high | Todo |
+| L3 | Publish items and groups, update, unpublish, based-on copies, likes | e2e | high | Todo |
+| L4 | New accounts start empty, point to kho chung; decision 0008 | e2e | high | Todo |
+| L5 | MCP `library_search`, `library_take` | tried in claude.ai | high | Todo |
+| L6 | Admin hide/show entries, banned or deleted accounts | tests | high | Todo |
+| C | Quick review rework (Vietnamese example translations, grammar leads with examples), own plan first | thien approves the plan and screenshots | high | Todo |
