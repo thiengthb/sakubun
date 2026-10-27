@@ -17,6 +17,11 @@ import {
 const V2_TOOLS = [
   'add_items',
   'grade_turn',
+  'kaiwa_get',
+  'kaiwa_list',
+  'kaiwa_save',
+  'library_search',
+  'library_take',
   'lookup',
   'next_turn',
   'skip_turn',
@@ -89,6 +94,7 @@ test('mặc định là bộ v2, tên cũ full cũng về v2, tutor đã bỏ, p
   const prompts = await rpc(request, 'prompts/list', {});
   expect((prompts.result as { prompts: { name: string }[] }).prompts.map((p) => p.name)).toEqual([
     'hoc',
+    'kaiwa',
   ]);
 
   const full = `${MCP_URL}?profile=full`;

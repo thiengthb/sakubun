@@ -19,7 +19,20 @@ test('MCP v2: one whole turn through the v2 profile', async ({ request }) => {
   const listed = await rpc(request, 'tools/list', {}, V2_URL);
   const names = ((listed.result as { tools: { name: string }[] }).tools ?? []).map((t) => t.name);
   expect(names.sort()).toEqual(
-    ['add_items', 'grade_turn', 'lookup', 'next_turn', 'skip_turn', 'stage_turn', 'status'].sort(),
+    [
+      'add_items',
+      'grade_turn',
+      'kaiwa_get',
+      'kaiwa_list',
+      'kaiwa_save',
+      'library_search',
+      'library_take',
+      'lookup',
+      'next_turn',
+      'skip_turn',
+      'stage_turn',
+      'status',
+    ].sort(),
   );
 
   const added = await callTool(
