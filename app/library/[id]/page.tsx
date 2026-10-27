@@ -5,6 +5,7 @@ import { prisma } from '@/lib/db/db';
 import { getSettings } from '@/lib/library/practice';
 import { ensureOpenJlptLibrary } from '@/lib/library/seed';
 import { getGroupEntry } from '@/lib/library/shared';
+import { likedEntries } from '@/lib/library/likes';
 import { ownedItems } from '@/lib/library/take';
 import { furiganaInApp } from '@/lib/settings/schema';
 
@@ -20,7 +21,10 @@ export default async function LibraryGroupPage({ params }: { params: Promise<{ i
     db.group.findFirst({ where: { libraryEntryId: id }, select: { id: true } }),
   ]);
   if (!group) notFound();
-  const owned = await ownedItems(db, group.entries);
+  const [owned, liked] = await Promise.all([
+    ownedItems(db, group.entries),
+    likedEntries(db, [group.id, ...group.entries.map((e) => e.id)]),
+  ]);
 
   return (
     <LibraryGroupView
@@ -31,9 +35,16 @@ export default async function LibraryGroupPage({ params }: { params: Promise<{ i
         notes: group.notes,
         origin: group.origin,
         takeCount: group.takeCount,
+        likes: group._count.likes,
+        liked: liked.has(group.id),
         myGroupId: mine?.id ?? null,
       }}
-      entries={group.entries.map((e) => ({ ...e, itemId: owned.get(e.id) ?? null }))}
+      entries={group.entries.map(({ _count, ...e }) => ({
+        ...e,
+        likes: _count.likes,
+        liked: liked.has(e.id),
+        itemId: owned.get(e.id) ?? null,
+      }))}
       voiceSpeaker={settings.voiceSpeaker}
       speechRate={settings.speechRate}
       showFurigana={furiganaInApp(settings.furiganaMode)}

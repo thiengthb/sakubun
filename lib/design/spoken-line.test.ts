@@ -92,6 +92,10 @@ describe('invariant #9 — Japanese content renders through SpokenLine', () => {
       ],
       ['components/features/resources/item-edit-dialog.tsx', 'editing surface'],
       [
+        'components/common/share-to-library.tsx',
+        'the list of what a group share will publish, inside its confirm dialog, not study content',
+      ],
+      [
         'app/resources/[id]/edit/page.tsx',
         'edit page header names the item being edited; the editing surface, not study content',
       ],

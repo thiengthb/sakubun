@@ -110,3 +110,88 @@ test('Kho chung: take one entry, then the whole group', async ({ page }) => {
   await expect(page.getByText('Xem chi tiết 〜てみるテスト').first()).toBeAttached();
   await expect(page.getByText('Xem chi tiết 試験語').first()).toBeAttached();
 });
+
+// Phase 8, L3: the learner shares an item of their own and a group from their pages, likes an
+// entry on Kho chung, then takes the item down.
+test('share an item and a group, like it, take it down', async ({ page }) => {
+  test.setTimeout(120_000);
+  const db = new Database(path.join(process.cwd(), E2E_DB_FILE));
+  const now = new Date().toISOString();
+  try {
+    db.pragma('foreign_keys = ON');
+    db.exec(`DELETE FROM LibraryEntry WHERE authorId = ${E2E_OWNER}`);
+    db.exec(`DELETE FROM Item WHERE userId = ${E2E_OWNER} AND id = 'lib-own-1'`);
+    db.exec(`DELETE FROM "Group" WHERE userId = ${E2E_OWNER} AND id = 'lib-own-g'`);
+    db.prepare(
+      `INSERT INTO Item (id, userId, kind, expression, reading, meaningVi, level, notes, source, createdAt)
+       VALUES ('lib-own-1', ${E2E_OWNER}, 'VOCAB', '自作語', 'じさくご', 'từ tự viết (e2e)', 'N3',
+         'ghi chú riêng', 'MANUAL', ?)`,
+    ).run(now);
+    db.prepare(
+      `INSERT INTO SrsState (id, itemId, userId, due) VALUES ('lib-own-srs', 'lib-own-1', ${E2E_OWNER}, ?)`,
+    ).run(now);
+    db.prepare(
+      `INSERT INTO "Group" (id, userId, name, kind, note, createdAt, updatedAt)
+       VALUES ('lib-own-g', ${E2E_OWNER}, 'Nhóm chia sẻ e2e', 'vocab', 'Một từ tự viết.', ?, ?)`,
+    ).run(now, now);
+    db.prepare(
+      `INSERT INTO GroupMember (userId, groupId, itemId, addedAt) VALUES (${E2E_OWNER}, 'lib-own-g', 'lib-own-1', ?)`,
+    ).run(now);
+  } finally {
+    db.close();
+  }
+
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await signIn(page);
+  const shots = process.env.SCREENSHOT_DIR;
+  const dialog = page.getByRole('dialog');
+
+  // The item: what goes public, then Công khai.
+  await page.goto('/resources/lib-own-1');
+  await page.getByRole('button', { name: 'Chia sẻ', exact: true }).click();
+  await expect(dialog).toContainText('Ghi chú, sao và lịch sử ôn vẫn là của riêng bạn');
+  if (shots)
+    for (const width of [1440, 390]) {
+      await page.setViewportSize({ width, height: width === 390 ? 844 : 900 });
+      await page.screenshot({ path: path.join(shots, `share-item-${width}.png`) });
+    }
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await dialog.getByRole('button', { name: 'Công khai' }).click();
+  await expect(page.getByText('Đã công khai lên Kho chung')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('button', { name: 'Đang chia sẻ' })).toBeVisible();
+
+  // On Kho chung, without the private note; liked, and the like survives a reload.
+  await page.goto('/library?tab=items&q=自作語');
+  const card = page.locator('[data-slot="library-entry"]');
+  await expect(card).toHaveCount(1);
+  await expect(card).toContainText('Cộng đồng');
+  await expect(card).not.toContainText('ghi chú riêng');
+  await card.getByRole('button', { name: 'Thích 自作語' }).click();
+  await expect(card.getByRole('button', { name: 'Bỏ thích 自作語' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  await page.waitForTimeout(500);
+  await page.reload();
+  await expect(card.getByRole('button', { name: 'Bỏ thích 自作語' })).toContainText('1');
+
+  // The group: the preview says the item is already shared as it is.
+  await page.goto('/groups/lib-own-g');
+  await page.getByRole('button', { name: 'Chia sẻ', exact: true }).click();
+  await expect(dialog).toContainText('Nhóm và 1 mục dưới đây sẽ lên Kho chung');
+  await expect(dialog.getByRole('listitem')).toContainText(['自作語Đã chia sẻ']);
+  if (shots) await page.screenshot({ path: path.join(shots, 'share-group-1440.png') });
+  await dialog.getByRole('button', { name: 'Công khai' }).click();
+  await expect(page.getByText('Đã công khai nhóm và 1 mục')).toBeVisible();
+  await page.goto('/library');
+  await expect(page.getByRole('link', { name: 'Mở Nhóm chia sẻ e2e' })).toBeVisible();
+
+  // Taken down: gone from search.
+  await page.goto('/resources/lib-own-1');
+  await page.getByRole('button', { name: 'Đang chia sẻ' }).click();
+  await dialog.getByRole('button', { name: 'Gỡ khỏi Kho chung' }).click();
+  await expect(page.getByText('Đã gỡ khỏi Kho chung')).toBeVisible();
+  await page.goto('/library?tab=items&q=自作語');
+  await expect(page.getByText('Không có mục nào khớp')).toBeVisible();
+});

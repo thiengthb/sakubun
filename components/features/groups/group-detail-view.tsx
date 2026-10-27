@@ -13,9 +13,11 @@ import { AddButton } from '@/components/common/add-button';
 import { GroupEditButton } from '@/components/features/groups/group-actions';
 import { GroupCards } from '@/components/features/groups/group-cards';
 import { GroupKindBadge } from '@/components/common/group-kind-badge';
+import { GroupShareButton } from '@/components/common/share-to-library';
 import { GroupItemTable } from '@/components/features/groups/group-item-table';
 import { GROUP_KIND_LABELS } from '@/lib/library/group-kinds';
 import type { GroupDetail } from '@/lib/library/groups';
+import type { GroupShareStatus } from '@/lib/library/publish';
 import type { QuickCard } from '@/lib/app/quick-review';
 
 // List template: the group's name is the h1, its kind, size and note the meta; Thêm opens the
@@ -24,12 +26,14 @@ import type { QuickCard } from '@/lib/app/quick-review';
 export function GroupDetailView({
   group,
   cards,
+  share,
   voiceSpeaker,
   speechRate,
   showFurigana = false,
 }: {
   group: GroupDetail;
   cards: QuickCard[];
+  share: GroupShareStatus | null;
   voiceSpeaker?: number;
   speechRate?: number;
   showFurigana?: boolean;
@@ -68,6 +72,7 @@ export function GroupDetailView({
               />
             )}
             <GroupEditButton group={group} />
+            {share && <GroupShareButton groupId={group.id} status={share} />}
             <AddButton href={`/groups/${group.id}/add`} />
           </>
         }

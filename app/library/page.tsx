@@ -6,6 +6,7 @@ import { GRAMMAR_KIND, VOCAB_KIND } from '@/lib/library/item-kinds';
 import { getSettings } from '@/lib/library/practice';
 import { ensureOpenJlptLibrary } from '@/lib/library/seed';
 import { listGroupEntries, searchEntries } from '@/lib/library/shared';
+import { likedEntries } from '@/lib/library/likes';
 import { ownedItems } from '@/lib/library/take';
 import { furiganaInApp, JLPT_LEVELS } from '@/lib/settings/schema';
 
@@ -33,8 +34,12 @@ export default async function LibraryPage({
     searchEntries(prisma, { text: q, type, level }),
     getSettings(db),
   ]);
-  const [owned, takenGroups] = await Promise.all([
+  const [owned, liked, takenGroups] = await Promise.all([
     ownedItems(db, entries),
+    likedEntries(
+      db,
+      [...entries, ...groups].map((e) => e.id),
+    ),
     db.group.findMany({
       where: { libraryEntryId: { in: groups.map((g) => g.id) } },
       select: { id: true, libraryEntryId: true },
@@ -44,8 +49,17 @@ export default async function LibraryPage({
 
   return (
     <LibraryView
-      groups={groups.map((g) => ({ ...g, myGroupId: myGroup.get(g.id) ?? null }))}
-      entries={entries.map((e) => ({ ...e, itemId: owned.get(e.id) ?? null }))}
+      groups={groups.map((g) => ({
+        ...g,
+        liked: liked.has(g.id),
+        myGroupId: myGroup.get(g.id) ?? null,
+      }))}
+      entries={entries.map(({ _count, ...e }) => ({
+        ...e,
+        likes: _count.likes,
+        liked: liked.has(e.id),
+        itemId: owned.get(e.id) ?? null,
+      }))}
       search={{ q, type: type ?? 'all', level: level ?? 'all' }}
       voiceSpeaker={settings.voiceSpeaker}
       speechRate={settings.speechRate}

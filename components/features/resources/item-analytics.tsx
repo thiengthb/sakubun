@@ -80,12 +80,15 @@ function Fact({
 export function ItemAnalytics({
   stats,
   groupsSlot,
+  shareSlot,
   voiceSpeaker,
   speechRate,
   showFurigana = false,
 }: {
   stats: ItemStats;
   groupsSlot?: ReactNode;
+  /** "Chia sẻ" to the shared library, the last header action (phase 8, L3). */
+  shareSlot?: ReactNode;
   voiceSpeaker?: number;
   speechRate?: number;
   showFurigana?: boolean;
@@ -187,6 +190,7 @@ export function ItemAnalytics({
                 icon={Sparkles}
               />
             )}
+            {shareSlot}
           </>
         }
         pageIcons={<StarButton id={stats.itemId} starred={stats.starred} kind="item" />}

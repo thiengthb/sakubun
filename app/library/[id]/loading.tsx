@@ -10,6 +10,7 @@ export default function Loading() {
       trail={<ParentCrumbs section="library" self />}
       title={<SkeletonText text="N5 · Ngữ pháp" />}
       meta
+      pageIcons={<Skeleton className="h-9 w-14 rounded-sm md:h-7" />}
       actions={<Skeleton className="h-9 w-32 rounded-sm md:h-7" />}
     >
       <CardsSkeleton rowHeight={96} footer={false} />
