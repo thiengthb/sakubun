@@ -195,3 +195,61 @@ test('share an item and a group, like it, take it down', async ({ page }) => {
   await page.goto('/library?tab=items&q=自作語');
   await expect(page.getByText('Không có mục nào khớp')).toBeVisible();
 });
+
+// Phase 8, L6: the admin (the e2e account is ALLOWED_EMAIL) hides another learner's entry from Kho
+// chung, shows it again from that account's page; a ban hides it until it is lifted.
+test('the admin hides and shows an entry; a ban hides it too', async ({ page }) => {
+  test.setTimeout(120_000);
+  const db = new Database(path.join(process.cwd(), E2E_DB_FILE));
+  const now = new Date().toISOString();
+  const ban = (banned: boolean) =>
+    db.prepare(`UPDATE user SET banned = ? WHERE id = 'lib-other'`).run(banned ? 1 : 0);
+  db.pragma('foreign_keys = ON');
+  db.exec(`DELETE FROM user WHERE id = 'lib-other'`);
+  db.prepare(
+    `INSERT INTO user (id, name, email, emailVerified, createdAt, updatedAt, role, banned)
+     VALUES ('lib-other', 'Người khác', 'lib-other@example.test', 1, ?, ?, 'user', 0)`,
+  ).run(now, now);
+  db.prepare(
+    `INSERT INTO LibraryEntry (id, type, expression, meaningVi, level, origin, authorId, status,
+       takeCount, createdAt, updatedAt)
+     VALUES ('lib-other-1', 'VOCAB', '他人語', 'từ của người khác (e2e)', 'N4', 'LEARNER', 'lib-other',
+       'public', 0, ?, ?)`,
+  ).run(now, now);
+
+  try {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await signIn(page);
+    const search = () => page.goto('/library?tab=items&q=他人語');
+    const card = page.locator('[data-slot="library-entry"]');
+
+    await search();
+    await expect(card).toHaveCount(1);
+    await card.getByRole('button', { name: 'Ẩn 他人語' }).click();
+    await expect(page.getByText('Đã ẩn khỏi Kho chung')).toBeVisible();
+    await search();
+    await expect(page.getByText('Không có mục nào khớp')).toBeVisible();
+
+    await page.goto('/admin/lib-other');
+    const share = page.locator('[data-slot="account-share"]');
+    await expect(share).toContainText('Quản trị đã ẩn');
+    if (process.env.SCREENSHOT_DIR)
+      await page.screenshot({
+        path: path.join(process.env.SCREENSHOT_DIR, 'admin-shares-1440.png'),
+        fullPage: true,
+      });
+    await share.getByRole('button', { name: 'Hiện lại 他人語' }).click();
+    await expect(page.getByText('Đã hiện lại trên Kho chung')).toBeVisible();
+    await expect(share).toContainText('Đang hiện');
+
+    ban(true);
+    await search();
+    await expect(page.getByText('Không có mục nào khớp')).toBeVisible();
+    ban(false);
+    await search();
+    await expect(card).toHaveCount(1);
+  } finally {
+    db.exec(`DELETE FROM user WHERE id = 'lib-other'`);
+    db.close();
+  }
+});

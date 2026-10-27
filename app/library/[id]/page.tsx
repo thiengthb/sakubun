@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import { LibraryGroupView } from '@/components/features/library/library-group-view';
-import { getUserDb } from '@/lib/auth/current-user';
+import { getSessionAccess, getUserDb } from '@/lib/auth/current-user';
 import { prisma } from '@/lib/db/db';
 import { getSettings } from '@/lib/library/practice';
 import { ensureOpenJlptLibrary } from '@/lib/library/seed';
@@ -14,6 +14,7 @@ export const dynamic = 'force-dynamic';
 export default async function LibraryGroupPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const db = await getUserDb();
+  const admin = (await getSessionAccess())?.access === 'admin';
   await ensureOpenJlptLibrary();
   const [group, settings, mine] = await Promise.all([
     getGroupEntry(prisma, id),
@@ -45,6 +46,7 @@ export default async function LibraryGroupPage({ params }: { params: Promise<{ i
         liked: liked.has(e.id),
         itemId: owned.get(e.id) ?? null,
       }))}
+      admin={admin}
       voiceSpeaker={settings.voiceSpeaker}
       speechRate={settings.speechRate}
       showFurigana={furiganaInApp(settings.furiganaMode)}

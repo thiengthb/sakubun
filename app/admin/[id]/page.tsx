@@ -11,6 +11,7 @@ import { LibraryTile } from '@/components/features/dashboard/library-tile';
 import { RetentionCard } from '@/components/features/dashboard/retention-gauge';
 import { StreakCard } from '@/components/features/dashboard/streak-card';
 import { AccountActions } from '@/components/features/admin/account-actions';
+import { AccountShares } from '@/components/features/admin/account-shares';
 import { EmptyState } from '@/components/common/empty-state';
 import { RelativeTime } from '@/components/common/relative-time';
 import { ParentCrumbs } from '@/components/layout/app-breadcrumbs';
@@ -20,6 +21,8 @@ import { getAdminUserId } from '@/lib/auth/current-user';
 import { formatDateVN } from '@/lib/core/format';
 import { userDb } from '@/lib/db/user-db';
 import { getDashboard } from '@/lib/insights/dashboard';
+import { prisma } from '@/lib/db/db';
+import { listAuthorEntries } from '@/lib/library/moderation';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,7 +33,10 @@ export default async function AdminAccountPage({ params }: { params: Promise<{ i
   const { id } = await params;
   const account = await getAccount(id);
   if (!account) notFound();
-  const data = await getDashboard(userDb(id));
+  const [data, shares] = await Promise.all([
+    getDashboard(userDb(id)),
+    listAuthorEntries(prisma, id),
+  ]);
 
   const status = account.banned ? 'Bị chặn' : account.access === 'admin' ? 'Quản trị' : 'Người học';
   const grammar = data.grammarTotal;
@@ -43,7 +49,11 @@ export default async function AdminAccountPage({ params }: { params: Promise<{ i
       title={account.name || account.email}
       subtitle={account.email}
       facts={[
-        { label: 'Trạng thái', value: status, tone: account.banned ? 'text-destructive' : undefined },
+        {
+          label: 'Trạng thái',
+          value: status,
+          tone: account.banned ? 'text-destructive' : undefined,
+        },
         { label: 'Tạo', value: formatDateVN(account.createdAt) },
         {
           label: 'Ôn gần nhất',
@@ -51,7 +61,11 @@ export default async function AdminAccountPage({ params }: { params: Promise<{ i
         },
         {
           label: 'Đăng nhập',
-          value: account.lastSignInAt ? <RelativeTime value={account.lastSignInAt} /> : 'Không có phiên',
+          value: account.lastSignInAt ? (
+            <RelativeTime value={account.lastSignInAt} />
+          ) : (
+            'Không có phiên'
+          ),
         },
       ]}
       // The menu sits at the end of the title row, beside the trail on a phone, like the star does.
@@ -123,6 +137,9 @@ export default async function AdminAccountPage({ params }: { params: Promise<{ i
             <Heatmap data={data.activity} max={data.activityMax} />
           </ChartCard>
         </div>
+      )}
+      {shares.length > 0 && (
+        <AccountShares shares={shares.map(({ _count, ...s }) => ({ ...s, likes: _count.likes }))} />
       )}
     </PageShell>
   );
