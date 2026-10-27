@@ -2,9 +2,8 @@ import { randomUUID } from 'node:crypto';
 import { readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { headers } from 'next/headers';
 import Database from 'better-sqlite3';
-import { auth } from '@/lib/auth/auth';
+import { routeUserId } from '@/lib/auth/current-user';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -15,10 +14,8 @@ function dbPath(): string {
 }
 
 export async function GET() {
-  const session = await auth.api.getSession({ headers: await headers() });
-  if (!session?.user || session.user.banned) {
-    return Response.json({ ok: false, error: 'Cần đăng nhập.' }, { status: 401 });
-  }
+  const caller = await routeUserId('admin');
+  if (caller instanceof Response) return caller;
 
   const out = join(tmpdir(), `sakubun-snapshot-${randomUUID()}.db`);
 

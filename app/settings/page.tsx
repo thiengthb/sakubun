@@ -1,7 +1,7 @@
 import { SettingsForm } from '@/components/features/settings/settings-form';
 import { prisma } from '@/lib/db/db';
 import { getSettings } from '@/lib/library/practice';
-import { getSessionUserId } from '@/lib/auth/current-user';
+import { getSessionAccess, getSessionUserId } from '@/lib/auth/current-user';
 import { userDb } from '@/lib/db/user-db';
 import { readToolUsage } from '@/lib/mcp/usage';
 
@@ -9,6 +9,7 @@ export const dynamic = 'force-dynamic';
 
 export default async function SettingsPage() {
   const userId = await getSessionUserId();
+  const isAdmin = (await getSessionAccess())?.access === 'admin';
   const db = userDb(userId);
 
   const [settings, user, keys, credential, lastSession, mcpUsage] = await Promise.all([
@@ -28,12 +29,13 @@ export default async function SettingsPage() {
       orderBy: { createdAt: 'desc' },
       select: { createdAt: true },
     }),
-    readToolUsage(),
+    isAdmin ? readToolUsage() : null,
   ]);
 
   return (
     <SettingsForm
       initial={settings}
+      isAdmin={isAdmin}
       account={{
         name: user?.name ?? '',
         email: user?.email ?? '',

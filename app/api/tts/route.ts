@@ -1,3 +1,5 @@
+import { routeUserId } from '@/lib/auth/current-user';
+
 const ENGINE = process.env.VOICEVOX_URL ?? 'http://voicevox:50021';
 const DEFAULT_SPEAKER = Number(process.env.VOICEVOX_SPEAKER ?? '2');
 const MAX_CHARS = 200; // a reference sentence is short; cap so one call can't tie up the CPU engine
@@ -6,6 +8,10 @@ const TIMEOUT_MS = 15_000;
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: Request) {
+  // Only for signed-in learners: the engine is a CPU on the NUC (roadmap 7.2a).
+  const caller = await routeUserId('learner');
+  if (caller instanceof Response) return caller;
+
   const url = new URL(req.url);
   const text = url.searchParams.get('text')?.trim().slice(0, MAX_CHARS);
   if (!text) return new Response('missing text', { status: 400 });

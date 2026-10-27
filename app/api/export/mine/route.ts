@@ -1,5 +1,4 @@
-import { headers } from 'next/headers';
-import { auth } from '@/lib/auth/auth';
+import { routeUserId } from '@/lib/auth/current-user';
 import { userDb } from '@/lib/db/user-db';
 import { exportUserData } from '@/lib/transfer/export';
 
@@ -7,13 +6,11 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 export async function GET() {
-  const session = await auth.api.getSession({ headers: await headers() });
-  if (!session?.user || session.user.banned) {
-    return Response.json({ ok: false, error: 'Cần đăng nhập.' }, { status: 401 });
-  }
+  const userId = await routeUserId('learner');
+  if (userId instanceof Response) return userId;
 
   try {
-    const data = await exportUserData(userDb(session.user.id));
+    const data = await exportUserData(userDb(userId));
     const day = new Date().toISOString().slice(0, 10);
     const body = JSON.stringify(data, null, 2);
 

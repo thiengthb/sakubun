@@ -267,4 +267,35 @@ describe('v2 turns survive a backup', () => {
     expect(await prisma.user.count({ where: { id: 'old-owner' } })).toBe(0);
     await prisma.user.delete({ where: { id: live.id } });
   });
+
+  it('matches the backup account by email whatever its case, so no second account appears', async () => {
+    await resetLearningData(prisma);
+    const live = await prisma.user.create({
+      data: { id: 'live-owner', name: 'thien', email: 'owner@example.com' },
+    });
+    const file = path.join(
+      mkdtempSync(path.join(os.tmpdir(), 'sakubun-sysbak-case-')),
+      'backup.db',
+    );
+    applyMigrations(file);
+    const db = new Database(file);
+    db.prepare(
+      `INSERT INTO user (id, name, email, emailVerified, createdAt, updatedAt, role)
+       VALUES ('old-owner', 'thien', 'Owner@Example.com', 1, '2026-08-01T00:00:00.000+00:00',
+               '2026-08-01T00:00:00.000+00:00', 'admin')`,
+    ).run();
+    db.prepare(
+      `INSERT INTO Item (id, userId, kind, expression, meaningVi, level, source, createdAt)
+       VALUES ('itm-case-1', 'old-owner', 'VOCAB', '鳥', 'chim', 'N5', 'MCP', '2026-08-01T00:00:00.000+00:00')`,
+    ).run();
+    db.close();
+
+    await I.importSystemBackup(file, { dryRun: false });
+
+    expect(await prisma.user.count({ where: { id: 'old-owner' } })).toBe(0);
+    expect(
+      await unguardedPrisma.item.findUniqueOrThrow({ where: { id: 'itm-case-1' } }),
+    ).toMatchObject({ userId: live.id });
+    await prisma.user.delete({ where: { id: live.id } });
+  });
 });
