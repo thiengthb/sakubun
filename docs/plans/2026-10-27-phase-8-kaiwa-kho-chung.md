@@ -29,8 +29,9 @@ Kho chung là kho ngữ pháp và từ vựng chung của cả hệ thống, nh�
   phá.
 - Người học tự tạo được mẫu kết hợp dài hơn hay từ mà kho chưa có; giữ riêng, hoặc công khai lên kho chung cho
   người khác **mang về**, và người mang về có thể **sửa thành bản mới** rồi chia sẻ lại.
-- Đơn vị chia sẻ chính là **nhóm** (tính năng Nhóm đang có): người học gom các mục liên quan thành nhóm, công khai
-  nhóm, người sau chép cả nhóm về học luôn, không cần qua bộ lọc (thien trả lời câu hỏi 1, 2026-10-27).
+- Hai cách lấy (thien, 2026-10-27): lấy **từng mục** riêng lẻ (mẫu hay từ không cần liên quan nhau), hoặc lấy cả
+  một **nhóm** (tính năng Nhóm đang có) mà người khác đã gom các mục liên quan rồi công khai, chép về học luôn,
+  không cần qua bộ lọc.
 
 ### Bản cũ đã làm thế nào, và đổi gì
 
