@@ -30,6 +30,11 @@ model Item {
   enrichment    String?
   enrichedAt    DateTime?
 
+  // The shared-library entry this item was taken from (phase 8, L1); null for the learner's own.
+  // A plain column, no foreign key: adding one would make SQLite rebuild the whole table, and
+  // library entries are hidden, never deleted.
+  libraryEntryId String?
+
   createdAt DateTime @default(now())
 
   srs     SrsState?
@@ -202,6 +207,8 @@ model User {
   groupMembers GroupMember[]
   settings     Settings?
   scripts      Script[]
+  libraryEntries LibraryEntry[]
+  libraryLikes   LibraryLike[]
 
   @@unique([email])
   @@map("user")
@@ -486,6 +493,9 @@ model Group {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // The shared-library group this group was taken from (phase 8, L1), as on Item: no foreign key.
+  libraryEntryId String?
+
   members GroupMember[]
   @@index([userId])
 }
@@ -522,4 +532,71 @@ model Script {
   updatedAt DateTime @updatedAt
 
   @@index([userId, updatedAt])
+}
+
+// The shared library (kho chung, phase 8 L1, docs/plans/2026-10-27-phase-8-kaiwa-kho-chung.md): a
+// snapshot of a grammar pattern, a word or a group that anyone can read and take a copy of. Not a
+// learning table (no owner scope): taking copies it into the learner's own Item and Group rows, with
+// a fresh schedule. Every write goes through lib/library/shared.ts.
+model LibraryEntry {
+  id         String   @id @default(cuid())
+  // GRAMMAR, VOCAB or GROUP (SCRIPT later, K7).
+  type       String
+  // A grammar pattern or a word.
+  expression String?
+  reading    String?
+  hanviet    String?
+  meaningVi  String?
+  level      String?
+  notes      String?
+  enrichment String?
+  // A group: its name and kind (grammar, vocab, mixed); its note is in `notes`.
+  name       String?
+  groupKind  String?
+  // OPENJLPT (the seed, no author) or LEARNER. A learner entry whose author is gone stays LEARNER.
+  origin     String
+  authorId   String?
+  author     User?    @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  // A seeded entry's stable key ("openjlpt:VOCAB:店"), so seeding again adds only what is missing.
+  sourceKey  String?  @unique
+  // The entry this one was remixed from, and the author's own item or group it was published from.
+  basedOnId  String?
+  basedOn    LibraryEntry?  @relation("BasedOn", fields: [basedOnId], references: [id], onDelete: SetNull)
+  remixes    LibraryEntry[] @relation("BasedOn")
+  sourceId   String?
+  // public, or hidden (unpublished by its author, or hidden by an admin).
+  status     String   @default("public")
+  takeCount  Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  members    LibraryGroupMember[] @relation("GroupEntry")
+  inGroups   LibraryGroupMember[] @relation("MemberEntry")
+  likes      LibraryLike[]
+
+  @@index([type, status, expression])
+  @@index([authorId])
+}
+
+// The entries of a shared group, in order.
+model LibraryGroupMember {
+  groupEntryId String
+  group        LibraryEntry @relation("GroupEntry", fields: [groupEntryId], references: [id], onDelete: Cascade)
+  itemEntryId  String
+  item         LibraryEntry @relation("MemberEntry", fields: [itemEntryId], references: [id], onDelete: Cascade)
+  position     Int
+
+  @@id([groupEntryId, itemEntryId])
+  @@index([itemEntryId])
+}
+
+model LibraryLike {
+  entryId   String
+  entry     LibraryEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime     @default(now())
+
+  @@id([entryId, userId])
+  @@index([userId])
 }
