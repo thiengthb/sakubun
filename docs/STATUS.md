@@ -4,17 +4,17 @@ Trang này trả lời ba câu cho bất kỳ phiên Claude nào (kể cả từ
 việc tiếp theo là gì**. Cập nhật nó **trong cùng PR** với việc làm, và khi nhận một bước mới (xem
 "Bắt đầu phiên" trong `CLAUDE.md`). Lộ trình đầy đủ: `docs/roadmap.md`. Kế hoạch đã duyệt: `docs/plans/`.
 
-Cập nhật lần cuối: 2026-10-27 (nhận 7.3, kế hoạch chờ duyệt).
+Cập nhật lần cuối: 2026-10-27 (nhận 7.3, kế hoạch đã duyệt).
 
 ## Đang làm
 
 | Bước | Nhánh / PR | Giữ bởi | Trạng thái |
 | --- | --- | --- | --- |
-| 7.3 Hướng dẫn: kế hoạch | `docs/7.3-guide-plan` | Claude (phiên của thien, 2026-10-27) | Chờ thien duyệt `docs/plans/2026-10-27-phase7-3-guide.md` |
+| 7.3 Hướng dẫn | `docs/7.3-guide-plan` (kế hoạch), rồi `feat/7.3a-guide-tab` | Claude (phiên của thien, 2026-10-27) | Kế hoạch đã duyệt; đang thử connector claude.ai |
 
 ## Chờ thien
 
-- Duyệt kế hoạch 7.3 (`docs/plans/2026-10-27-phase7-3-guide.md`). Đăng nhập bằng tài khoản Google thứ hai đã chạy
+- Đăng nhập bằng tài khoản Google thứ hai đã chạy
   (thien thử 2026-10-27); muốn trần khác 50 tài khoản thì đặt `MAX_ACCOUNTS` trên NUC.
 - Gỡ runner `tnt-laptop-wsl` khỏi repo nếu còn (Settings > Actions > Runners).
 - Kiểm app sau khi bản 7.1d lên NUC (sao lưu trước đó: `~/backups/sakubun-before-7.1d-20261027T030406Z.db`).
@@ -23,7 +23,7 @@ Cập nhật lần cuối: 2026-10-27 (nhận 7.3, kế hoạch chờ duyệt).
 
 1. Phase 7.2 xong: quyền theo vai trò (#138), kho OpenJLPT cho người mới (#139), `/admin` và trang từng tài khoản
    (#140), mở đăng ký (#141), Ứng dụng đã kết nối với thu hồi ngay (#142).
-2. thien chọn 7.3 (viết lại trang Hướng dẫn) trước 7.4. Sau khi kế hoạch được duyệt: 7.3a trang `/guide`,
+2. thien chọn 7.3 (viết lại trang Hướng dẫn) trước 7.4. Sau khi kế hoạch được duyệt: 7.3a tab Hướng dẫn trong Cài đặt,
    7.3b thẻ "Kết nối Claude" trên Phân tích.
 
 ## Việc nhỏ còn treo
