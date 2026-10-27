@@ -14,7 +14,7 @@ Cập nhật lần cuối: 2026-10-26 (7.1b+c merge, nhận 7.1d).
 
 ## Chờ thien
 
-- Chuyển repo sang public, gỡ runner `tnt-laptop-wsl` (Settings > Actions > Runners), merge #135.
+- Gỡ runner `tnt-laptop-wsl` khỏi repo nếu còn (Settings > Actions > Runners).
 - #133 (7.1d): sao lưu DB trên NUC rồi merge (`risk:high`, migration dựng lại 8 bảng học).
 
 ## Tiếp theo
@@ -33,5 +33,5 @@ Cập nhật lần cuối: 2026-10-26 (7.1b+c merge, nhận 7.1d).
 - Chữ "Xóa" và "Xoá" dùng lẫn lộn trong UI; chọn một cách viết (repo đang dùng "Xoá" trong tài liệu).
 - Cho 7.2: Item OpenJLPT có id cố định giữa các bản dựng và `lib/import/hanviet-fill.ts` tìm theo id. Khi chép
   kho OpenJLPT cho người thứ hai, id phải mới, nên phần điền Hán Việt phải tìm theo (userId, kind, expression).
-- CI về lại runner của GitHub khi repo public (#135, `docs/ci-runner.md`). Không dùng runner tự host khi
+- Repo public từ 2026-10-27; CI về lại runner của GitHub (#135, `docs/ci-runner.md`). Không dùng runner tự host khi
   repo public; runner `tnt-laptop-wsl` trên laptop đã dừng.
