@@ -11,6 +11,7 @@ Cập nhật lần cuối: 2026-10-27 (kế hoạch Kaiwa canvas chờ duyệt).
 | Bước | Nhánh / PR | Giữ bởi | Trạng thái |
 | --- | --- | --- | --- |
 | 8 K3 trang Hội thoại `/kaiwa`, `/kaiwa/[id]` | `feat/8-k3-kaiwa-pages` (#153) | Claude (phiên của thien, 2026-10-27) | PR mở, kèm ảnh 1440 và 390 |
+| 8 K4 furigana tự động lúc lưu (kuromoji) | `feat/8-k4-auto-furigana` (xếp trên K3) | Claude (phiên của thien, 2026-10-27) | PR mở; thêm cột `Script.analysis` |
 
 ## Chờ thien
 

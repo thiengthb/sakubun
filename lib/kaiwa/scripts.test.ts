@@ -82,6 +82,28 @@ describe('saveScript', () => {
   });
 });
 
+describe('furigana on save', () => {
+  it('stores the readings kuromoji gives, for the page to show', async () => {
+    const saved = await S.saveScript(mine, {
+      title: 'T',
+      body: 'A: 日本語を勉強します。 | Tôi học tiếng Nhật.\nB: 静かだった。',
+    });
+    if (!saved.ok) throw new Error(saved.error);
+    const analysis = JSON.parse((await S.getScript(mine, saved.data.id))?.analysis ?? 'null');
+    expect(analysis.lines.map((l: { ruby: string }) => l.ruby)).toEqual([
+      '日本語[にほんご]を勉強[べんきょう]します。',
+      '静[しず]かだった。',
+    ]);
+  });
+
+  it('still saves when the tokenizer cannot load, without readings', async () => {
+    const broken = () => Promise.reject(new Error('no dictionary'));
+    const saved = await S.saveScript(mine, { title: 'T', body: BODY }, broken);
+    expect(saved.ok).toBe(true);
+    if (saved.ok) expect((await S.getScript(mine, saved.data.id))?.analysis).toBeNull();
+  });
+});
+
 describe('one learner cannot reach another learner’s scripts', () => {
   it('hides them from list and get, and refuses to replace or delete them', async () => {
     const script = await created(theirs);

@@ -515,6 +515,8 @@ model Script {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   title     String
   body      String
+  // Furigana and words worked out on save (lib/kaiwa/furigana.ts, JSON); null when that failed.
+  analysis  String?
   version   Int      @default(1)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
