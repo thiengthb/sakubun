@@ -6,7 +6,7 @@ import { ConsentForm } from './consent-form';
 
 export const dynamic = 'force-dynamic';
 
-// The OAuth consent step: claude.ai or ChatGPT asked for access to /api/mcp and thien is signed in.
+// The OAuth consent step: claude.ai or ChatGPT asked for access to /api/mcp and a learner is signed in.
 // better-auth signs the authorize query; a forged or expired one gets no buttons.
 export default async function ConsentPage({
   searchParams,

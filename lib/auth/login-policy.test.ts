@@ -49,6 +49,19 @@ describe('isPasswordLoginEnabled', () => {
   });
 });
 
+describe('maxAccounts', () => {
+  it('mặc định 50, đọc MAX_ACCOUNTS khi là số nguyên dương', () => {
+    vi.stubEnv('MAX_ACCOUNTS', '');
+    expect(P.maxAccounts()).toBe(50);
+    vi.stubEnv('MAX_ACCOUNTS', '3');
+    expect(P.maxAccounts()).toBe(3);
+    for (const bad of ['0', '-2', '2.5', 'abc']) {
+      vi.stubEnv('MAX_ACCOUNTS', bad);
+      expect(P.maxAccounts()).toBe(50);
+    }
+  });
+});
+
 describe('cổng ở tầng auth (hook tạo user và tạo phiên)', () => {
   // Password login is the test door into the same hooks Google sign-in goes through.
   beforeEach(async () => {
@@ -59,25 +72,33 @@ describe('cổng ở tầng auth (hook tạo user và tạo phiên)', () => {
     await prisma.user.deleteMany({});
   });
 
-  it('từ chối email lạ ngay cả khi DB còn trống', { timeout: 30_000 }, async () => {
+  it('ai cũng đăng ký được: email lạ thành người học và nhận kho OpenJLPT riêng', { timeout: 60_000 }, async () => {
     const { auth } = await import('@/lib/auth/auth');
-    await expect(
-      auth.api.signUpEmail({
-        body: { name: 'Người lạ', email: 'stranger@example.test', password: 'mat-khau-du-dai-456' },
-      }),
-    ).rejects.toThrow();
-    expect(await prisma.user.count()).toBe(0);
+    const { userDb } = await import('@/lib/db/user-db');
+    const res = await auth.api.signUpEmail({
+      body: { name: 'Người lạ', email: 'stranger@example.test', password: 'mat-khau-du-dai-456' },
+    });
+    const user = await prisma.user.findUniqueOrThrow({ where: { id: res.user.id } });
+    expect(user.role).toBe('user');
+    expect(await userDb(user.id).item.count({ where: { source: 'OPENJLPT' } })).toBeGreaterThan(7000);
   });
 
-  it('cho tạo đúng tài khoản được phép, rồi đóng đăng ký', { timeout: 30_000 }, async () => {
+  it('ALLOWED_EMAIL thành quản trị và không nhận thêm kho', { timeout: 30_000 }, async () => {
     const { auth } = await import('@/lib/auth/auth');
-    const first = await auth.api.signUpEmail({
+    const { userDb } = await import('@/lib/db/user-db');
+    const res = await auth.api.signUpEmail({
       body: { name: 'Thiên', email: OWNER, password: 'mat-khau-du-dai-123' },
     });
-    expect(first.user.email).toBe(OWNER);
-    expect((await prisma.user.findFirst())?.role).toBe('admin');
+    expect((await prisma.user.findUniqueOrThrow({ where: { id: res.user.id } })).role).toBe('admin');
+    expect(await userDb(res.user.id).item.count()).toBe(0);
+  });
 
-    vi.stubEnv('ALLOWED_EMAIL', 'second@example.test');
+  it('đóng đăng ký khi đã đủ MAX_ACCOUNTS', { timeout: 30_000 }, async () => {
+    const { auth } = await import('@/lib/auth/auth');
+    vi.stubEnv('MAX_ACCOUNTS', '1');
+    await auth.api.signUpEmail({
+      body: { name: 'Thiên', email: OWNER, password: 'mat-khau-du-dai-123' },
+    });
     await expect(
       auth.api.signUpEmail({
         body: { name: 'B', email: 'second@example.test', password: 'mat-khau-du-dai-456' },
@@ -86,14 +107,14 @@ describe('cổng ở tầng auth (hook tạo user và tạo phiên)', () => {
     expect(await prisma.user.count()).toBe(1);
   });
 
-  it('không cấp phiên cho tài khoản có sẵn trong DB nhưng không phải ALLOWED_EMAIL', { timeout: 30_000 }, async () => {
+  it('tài khoản bị chặn không được cấp phiên', { timeout: 30_000 }, async () => {
     const { auth } = await import('@/lib/auth/auth');
     await auth.api.signUpEmail({
       body: { name: 'Thiên', email: OWNER, password: 'mat-khau-du-dai-123' },
     });
+    await prisma.user.update({ where: { email: OWNER }, data: { banned: true } });
     const before = await prisma.session.count();
 
-    vi.stubEnv('ALLOWED_EMAIL', 'someone-else@example.test');
     await expect(
       auth.api.signInEmail({ body: { email: OWNER, password: 'mat-khau-du-dai-123' } }),
     ).rejects.toThrow();

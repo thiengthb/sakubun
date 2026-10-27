@@ -1,6 +1,5 @@
 import { verifyJwsAccessToken } from 'better-auth/oauth2';
 import { auth, AUTH_ISSUER, MCP_RESOURCE } from '@/lib/auth/auth';
-import { isAllowedEmail } from '@/lib/auth/login-policy';
 import { accountAccess } from '@/lib/auth/access';
 import { prisma } from '@/lib/db/db';
 
@@ -16,12 +15,11 @@ export function oauthSubject(claims: Record<string, unknown>): string | null {
   return typeof claims.sub === 'string' && claims.sub !== '' ? claims.sub : null;
 }
 
-// A refresh-minted token stops working as soon as its account loses access, or ALLOWED_EMAIL no longer
-// names it (the second lock stays until sign-up opens, roadmap 7.2d).
+// A refresh-minted token stops working as soon as its account loses access (banned from /admin).
 export function oauthAccountAllowed(
   user: { banned: boolean | null; email: string; role?: string | null } | null,
 ): boolean {
-  return accountAccess(user) !== 'none' && isAllowedEmail(user?.email);
+  return accountAccess(user) !== 'none';
 }
 
 const jwksCacheKey = {};
