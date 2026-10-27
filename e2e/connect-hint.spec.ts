@@ -18,6 +18,11 @@ test('Phân tích points a new learner at the guide until an AI app is connected
   d.exec(`DELETE FROM oauthConsent WHERE userId = ${E2E_OWNER}`);
   d.exec(`DELETE FROM mcp_key WHERE userId = ${E2E_OWNER}`);
   d.exec(`DELETE FROM ReviewLog WHERE userId = ${E2E_OWNER}`);
+  // Phân tích shows its empty state, not the dashboard, until there is a grammar item.
+  d.prepare(
+    `INSERT OR IGNORE INTO Item (id, userId, kind, expression, meaningVi, level, source, createdAt)
+     VALUES ('hint-item', ${E2E_OWNER}, 'GRAMMAR', '〜ている', 'đang', 'N5', 'OPENJLPT', ?)`,
+  ).run(new Date().toISOString());
   d.close();
 
   await page.goto('/login');
@@ -52,5 +57,12 @@ test('Phân tích points a new learner at the guide until an AI app is connected
   ).run(new Date().toISOString());
   d2.close();
   await page.goto('/', { waitUntil: 'networkidle' });
+  await expect(page.getByRole('region', { name: 'Tổng quan' })).toBeVisible();
   await expect(page.getByText('Kết nối Claude để bắt đầu luyện')).toHaveCount(0);
+
+  // Leave the shared e2e DB as other specs expect it: no items, no token.
+  const d3 = db();
+  d3.exec(`DELETE FROM Item WHERE id = 'hint-item'`);
+  d3.exec(`DELETE FROM mcp_key WHERE id = 'hint-key'`);
+  d3.close();
 });
