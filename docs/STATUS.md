@@ -26,7 +26,7 @@ Cập nhật lần cuối: 2026-10-27 (kế hoạch Kaiwa canvas chờ duyệt).
    (#140), mở đăng ký (#141), Ứng dụng đã kết nối với thu hồi ngay (#142).
 2. Phase 7.3 xong 2026-10-27: kế hoạch (#146), tab Hướng dẫn trong Cài đặt (#147), thẻ "Kết nối Claude" trên
    Phân tích cho người chưa kết nối AI và chưa ôn (#148). Luồng claude.ai đã thử thật bằng tài khoản thứ hai.
-3. thien chọn (2026-10-27): làm **Kaiwa canvas** và **kho chung** trước (phase 8), có bản Kaiwa sơ bộ (K1–K3) rồi
+3. thien chọn (2026-10-27): làm **Kaiwa canvas** và **kho chung** trước (phase 8), có bản Kaiwa sơ bộ (K1–K5, AI soạn và lưu qua MCP) rồi
    mới làm 7.4 (UI mới) và các lỗi bên dưới cùng lúc với các trang mới.
 
 ## Việc nhỏ còn treo

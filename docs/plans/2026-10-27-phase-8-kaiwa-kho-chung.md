@@ -13,10 +13,11 @@ viết muốn; không đưa thì chỉ người viết thấy.
 
 ## Thứ tự
 
-1. **Kaiwa sơ bộ** (K1–K3): soạn, xem, nghe, furigana tự động. thien muốn có sớm.
+1. **Kaiwa sơ bộ** (K1–K5): AI soạn và lưu kịch bản qua MCP, web xem và nghe, furigana tự động, rê chuột xem
+   nghĩa. thien muốn có sớm.
 2. **Kho chung** (L1–L6), **Ôn nhanh** (phần C) và **7.4 sửa UI + lỗi trong STATUS** làm xen nhau: trang mới (Kho
    chung, Hội thoại) và Ôn nhanh làm thẳng theo UI mới.
-3. Phần Kaiwa còn lại (K4–K8) xen vào theo thứ tự thien chọn. K6 (đưa kịch bản lên kho chung) cần L1 xong trước.
+3. Phần Kaiwa còn lại (K6–K9) xen vào theo thứ tự thien chọn. K7 (đưa kịch bản lên kho chung) cần L1 xong trước.
 
 ## Phần A. Kho chung
 
@@ -116,28 +117,50 @@ Mã nằm ở OneDrive laptop (`Tài liệu/ChatGPT/japanese-script-canvas`), **
 | Phần | Bản cũ làm thế nào | Trong sakubun |
 | --- | --- | --- |
 | Định dạng kịch bản | Mỗi dòng `A: 日本語 \| tiếng Việt`; nhãn người nói 1–2 chữ Latin; dòng không nhãn là độc thoại; furigana tay `料理[りょうり]`; còn đọc được kiểu markdown cũ `**C:** …` + `**Tiếng Việt:** …` | Giữ nguyên định dạng, chép parser thành hàm thuần có test. Furigana tay trùng đúng cú pháp `parseFurigana` sakubun đang có |
-| Soạn | CodeMirror 6, hai khung (bản thảo / xem), nút "Prompt cho AI" chép lời nhờ AI viết kịch bản | Bản sơ bộ dùng ô soạn thường (chữ đơn cách); CodeMirror để tới đợt sửa UI. Giữ nút "Prompt cho AI" |
+| Soạn | CodeMirror 6, hai khung (bản thảo / xem), nút "Prompt cho AI" chép lời nhờ AI viết kịch bản, rồi người học **chép tay** kết quả về (điểm yếu cũ) | **Soạn cùng AI qua MCP** (dưới): AI soạn trên canvas của nó, lưu thẳng vào sakubun. Web chỉ sửa nhẹ (ô soạn thường); CodeMirror để tới đợt sửa UI |
 | Furigana tự động | Server dùng kuroshiro + kuromoji, mỗi dòng gọi một lần lúc xem | Tính một lần **lúc lưu**, lưu kèm kịch bản; dòng đã có `[..]` thì giữ của người soạn |
 | Rê chuột tra nghĩa | kuromoji tách từ; nghĩa từ JMdict tiếng Anh + Google Translate (endpoint không chính thức) | Tách từ lúc lưu. Nghĩa **tiếng Việt**: mục của người học trước, rồi kho chung (OpenJLPT có sẵn nghĩa Việt). Không gọi Google. Nút "Thêm vào kho" lấy mục kho chung về, hoặc tạo mục riêng |
 | Nghe | `/api/tts` VOICEVOX, 22 giọng, client nhớ 24 đoạn, tải trước 8 dòng, dự phòng giọng trình duyệt | Dùng `/api/tts` sakubun đang có. Thêm **cache file âm thanh trên server**, chọn giọng theo từng người nói |
 | Karaoke | Chữ và furigana sáng dần theo tiến độ âm thanh; nghe cả bài | Giữ |
 | Từng dòng | Ẩn/hiện, chép, phát; nghĩa Việt hiện khi rê/chạm; phím mũi tên, Enter để phát | Giữ |
-| Thư viện kịch bản | Tạo, đổi tên, công khai/riêng, xoá; chủ = email | Bảng `Script` theo từng người học (như 7.1). Công khai = đưa lên kho chung (K6) |
+| Thư viện kịch bản | Tạo, đổi tên, công khai/riêng, xoá; chủ = email | Bảng `Script` theo từng người học (như 7.1). Công khai = đưa lên kho chung (K7) |
 | Đồng biên tập realtime (Yjs), ai đang xem, đăng nhập Google riêng | Có | **Bỏ**, như kế hoạch hợp nhất đã chốt |
-| Lưu trữ | `scripts.json` + LevelDB của Yjs | SQLite của sakubun. 5 kịch bản cũ trong bản lưu NUC nhập một lần (K8) |
+| Lưu trữ | `scripts.json` + LevelDB của Yjs | SQLite của sakubun. 5 kịch bản cũ trong bản lưu NUC nhập một lần (K9) |
+
+### Soạn cùng AI qua MCP (thien, 2026-10-27)
+
+Thay vì sửa trực tiếp trên web, thien soạn với Claude (hoặc AI khác) trên canvas của AI: AI viết, hai bên sửa và
+xem tới khi ổn, rồi AI gọi MCP lưu kịch bản vào sakubun. Người học không phải chép dán nữa. Web là nơi xem, nghe,
+rê chuột tra nghĩa và sửa nhẹ.
+
+Cơ chế (server ép, có test):
+
+1. `kaiwa_save` nhận tiêu đề và nội dung theo đúng định dạng kịch bản. Server chạy parser; sai định dạng thì trả lỗi
+   ngắn chỉ dòng sai và một cách sửa, không lưu nửa vời. Lưu được thì trả đường dẫn `/kaiwa/[id]` để người học mở.
+2. AI chỉ lưu khi người học đồng ý (lời dặn của tool, như `add_items`). Mỗi kịch bản mới mặc định riêng tư; AI
+   không đưa lên kho chung được.
+3. Sửa kịch bản đã có: `kaiwa_get` trả nội dung kèm số phiên bản; `kaiwa_save` với id phải gửi lại số đó. Kịch bản
+   đã bị sửa trên web sau lần AI đọc thì từ chối, báo "đọc lại rồi sửa", để không ghi đè việc của người học.
+4. `kaiwa_list` liệt kê tiêu đề, không trả cả nội dung (giữ trong ngân sách token của `token-budget.test.ts`).
+5. Prompt `kaiwa` mô tả định dạng và cách làm việc: soạn trên canvas, hỏi người học, chỉ lưu khi được đồng ý.
+6. Giới hạn: độ dài tiêu đề, số dòng, độ dài mỗi dòng.
 
 ### Các PR
 
 | PR | Nội dung | Rủi ro |
 | --- | --- | --- |
-| K1 | Bảng `Script` (migration cộng thêm, `userId` bắt buộc, qua `userDb`), parser thuần chép từ bản cũ + test | high (schema) |
-| K2 | Trang **Hội thoại** `/kaiwa` (thanh bên): danh sách kịch bản, tạo/đổi tên/xoá; `/kaiwa/[id]` hai khung soạn và xem, thẻ từng dòng với furigana tay, nghĩa Việt của dòng, ẩn/hiện, phát qua `/api/tts`, nút "Prompt cho AI". e2e + ảnh | high |
-| K3 | Furigana và tách từ tự động lúc lưu (kuromoji + kuroshiro trên server; ảnh Docker kèm từ điển kuromoji) | medium |
-| K4 | Rê chuột tra nghĩa theo từ: kho riêng rồi kho chung; "Thêm vào kho" | high |
-| K5 | Karaoke, nghe cả bài, giọng theo người nói, cache file âm thanh trên server | medium |
-| K6 | Đưa kịch bản lên kho chung (loại `SCRIPT`), lấy kịch bản về để sửa | high |
-| K7 | MCP: một tool liệt kê, đọc, lưu kịch bản và nhập vai theo kịch bản | high |
-| K8 | Nhập 5 kịch bản cũ từ bản lưu NUC trên laptop vào kho của thien | high (dữ liệu) |
+| K1 | Bảng `Script` (migration cộng thêm, `userId` bắt buộc, qua `userDb`, có số phiên bản), parser thuần chép từ bản cũ, module `lib/kaiwa/` lưu có kiểm định dạng + test | high (schema) |
+| K2 | MCP `kaiwa_save`, `kaiwa_get`, `kaiwa_list` và prompt `kaiwa` (cơ chế trên), thử thật với claude.ai | high |
+| K3 | Trang **Hội thoại** `/kaiwa` (thanh bên): danh sách, đổi tên, xoá; `/kaiwa/[id]` thẻ từng dòng với furigana, nghĩa Việt của dòng, ẩn/hiện, phát qua `/api/tts`, sửa nhẹ. e2e + ảnh | high |
+| K4 | Furigana và tách từ tự động lúc lưu (kuromoji + kuroshiro trên server; ảnh Docker kèm từ điển kuromoji) | medium |
+| K5 | Rê chuột xem nghĩa theo từ: kho riêng rồi OpenJLPT (sau L1 là kho chung); "Thêm vào kho" | high |
+| K6 | Karaoke, nghe cả bài, giọng theo người nói, cache file âm thanh trên server | medium |
+| K7 | Đưa kịch bản lên kho chung (loại `SCRIPT`), lấy kịch bản về để sửa | high |
+| K8 | MCP nhập vai theo kịch bản (AI đóng một vai, người học đóng vai kia) | high |
+| K9 | Nhập 5 kịch bản cũ từ bản lưu NUC trên laptop vào kho của thien | high (dữ liệu) |
+
+kaiwa-canvas là bản làm vội: công nghệ và tính năng chép sang có chọn lọc và chỉnh lại cho hợp sakubun (tính một lần
+lúc lưu thay vì mỗi lần xem, nghĩa tiếng Việt thay vì Google, có test), không chép nguyên.
 
 ## Phần C. Ôn nhanh cần cải thiện sâu
 
@@ -192,5 +215,5 @@ code, vì đổi hành vi học):
    cuối trên laptop (`C:\Users\trann\nuc-final-backup-2026-10-09\kaiwa-canvas_canvas-data.tar.gz`, xem
    `nuc-infra/runbooks/01-reinstall-os.md`) có `scripts/scripts.json` với 5 kịch bản (kaiwa 5, Giới thiệu bản thân,
    Phỏng vấn, Con đường tới trường, Ngày hôm qua; tổng khoảng 50 dòng) và thư mục `yjs/` có thể giữ bản sửa mới hơn
-   (scripts.json cập nhật lần cuối 10-06). K8 lấy bản mới nhất (đọc `yjs/` bằng `y-leveldb` nếu mới hơn), nhập vào
+   (scripts.json cập nhật lần cuối 10-06). K9 lấy bản mới nhất (đọc `yjs/` bằng `y-leveldb` nếu mới hơn), nhập vào
    kho của thien. File gốc có email nên không commit; chỉ nhập nội dung.
