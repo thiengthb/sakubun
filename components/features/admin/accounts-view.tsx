@@ -10,6 +10,7 @@ import { EmptyState } from '@/components/common/empty-state';
 import { LIST_CARD } from '@/components/common/list-card';
 import { RelativeTime } from '@/components/common/relative-time';
 import { PageShell } from '@/components/layout/page-shell';
+import { UserAvatar } from '@/components/layout/user-avatar';
 import { deleteAccountAction, setBannedAction } from '@/app/admin/actions';
 import { toastResult } from '@/lib/core/action-toast';
 import { formatDateVN } from '@/lib/core/format';
@@ -19,6 +20,7 @@ export type AccountCardRow = {
   id: string;
   name: string;
   email: string;
+  image: string | null;
   createdAt: string;
   access: 'admin' | 'learner' | 'none';
   banned: boolean;
@@ -29,9 +31,87 @@ export type AccountCardRow = {
 const GRID = 'grid grid-cols-1 gap-2 @2xl:grid-cols-2 @2xl:gap-3 @5xl:grid-cols-3';
 
 function StatusBadge({ row }: { row: AccountCardRow }) {
-  if (row.banned) return <Badge variant="destructive">Bị chặn</Badge>;
-  if (row.access === 'admin') return <Badge variant="secondary">Quản trị</Badge>;
-  return <Badge variant="outline">Người học</Badge>;
+  if (row.banned)
+    return (
+      <Badge variant="destructive" className="px-1.5 py-0 text-xs">
+        Bị chặn
+      </Badge>
+    );
+  return (
+    <Badge variant="outline" className="px-1.5 py-0 text-xs">
+      {row.access === 'admin' ? 'Quản trị' : 'Người học'}
+    </Badge>
+  );
+}
+
+// One account, in the shape of the other list cards (ResourceCard): who on top with the actions at
+// the end of that row, then one quiet line of facts.
+function AccountCard({
+  row,
+  pending,
+  onBan,
+  onDelete,
+}: {
+  row: AccountCardRow;
+  pending: boolean;
+  onBan: () => void;
+  onDelete: () => void;
+}) {
+  return (
+    <li className={cn(LIST_CARD.base, 'space-y-2')}>
+      <div className="flex items-start gap-3">
+        <UserAvatar
+          name={row.name || row.email}
+          image={row.image}
+          className={cn('size-9', row.banned && 'opacity-60')}
+        />
+        <div className={cn('min-w-0 flex-1', row.banned && 'opacity-60')}>
+          <p className="truncate font-medium">{row.name || row.email}</p>
+          <p className="truncate text-sm text-muted-foreground">{row.email}</p>
+        </div>
+        {row.access !== 'admin' && (
+          <div className="flex shrink-0 items-center gap-0.5">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-muted-foreground"
+              aria-label={`${row.banned ? 'Bỏ chặn' : 'Chặn'} ${row.email}`}
+              onClick={onBan}
+              disabled={pending}
+            >
+              {row.banned ? <ShieldCheck aria-hidden /> : <Ban aria-hidden />}
+              {row.banned ? 'Bỏ chặn' : 'Chặn'}
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-muted-foreground hover:text-destructive"
+              aria-label={`Xoá tài khoản ${row.email}`}
+              title="Xoá tài khoản"
+              onClick={onDelete}
+              disabled={pending}
+            >
+              <Trash2 aria-hidden />
+            </Button>
+          </div>
+        )}
+      </div>
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+        <StatusBadge row={row} />
+        <span className="whitespace-nowrap">{row.items} mục</span>
+        <span className="whitespace-nowrap">
+          {row.lastReviewAt ? (
+            <>
+              Ôn <RelativeTime value={row.lastReviewAt} />
+            </>
+          ) : (
+            'Chưa ôn'
+          )}
+        </span>
+        <span className="whitespace-nowrap">Tạo {formatDateVN(row.createdAt)}</span>
+      </div>
+    </li>
+  );
 }
 
 /**
@@ -71,50 +151,13 @@ export function AccountsView({ accounts }: { accounts: AccountCardRow[] }) {
         <div className="@container">
           <ul className={GRID}>
             {accounts.map((row) => (
-              <li key={row.id} className={cn(LIST_CARD.base, 'flex flex-col gap-2')}>
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <p className="truncate font-medium">{row.name || row.email}</p>
-                    <p className="truncate text-sm text-muted-foreground">{row.email}</p>
-                  </div>
-                  <StatusBadge row={row} />
-                </div>
-                <dl className="grid grid-cols-3 gap-2 text-sm">
-                  <div>
-                    <dt className="text-xs text-muted-foreground">Tạo ngày</dt>
-                    <dd>{formatDateVN(row.createdAt)}</dd>
-                  </div>
-                  <div>
-                    <dt className="text-xs text-muted-foreground">Ôn lần cuối</dt>
-                    <dd>
-                      {row.lastReviewAt ? <RelativeTime value={row.lastReviewAt} /> : 'Chưa ôn'}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="text-xs text-muted-foreground">Số mục</dt>
-                    <dd className="tabular-nums">{row.items}</dd>
-                  </div>
-                </dl>
-                {row.access !== 'admin' && (
-                  <div className="flex justify-end gap-2">
-                    <Button variant="outline" onClick={() => setBanTarget(row)} disabled={pending}>
-                      {row.banned ? <ShieldCheck aria-hidden /> : <Ban aria-hidden />}
-                      {row.banned ? 'Bỏ chặn' : 'Chặn'}
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="text-muted-foreground hover:text-destructive"
-                      aria-label={`Xoá tài khoản ${row.email}`}
-                      title="Xoá tài khoản"
-                      onClick={() => setDeleteTarget(row)}
-                      disabled={pending}
-                    >
-                      <Trash2 aria-hidden />
-                    </Button>
-                  </div>
-                )}
-              </li>
+              <AccountCard
+                key={row.id}
+                row={row}
+                pending={pending}
+                onBan={() => setBanTarget(row)}
+                onDelete={() => setDeleteTarget(row)}
+              />
             ))}
           </ul>
         </div>

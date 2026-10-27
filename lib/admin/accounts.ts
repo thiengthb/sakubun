@@ -8,6 +8,7 @@ export type AccountRow = {
   id: string;
   name: string;
   email: string;
+  image: string | null;
   createdAt: Date;
   access: AccountAccess;
   banned: boolean;
@@ -17,7 +18,15 @@ export type AccountRow = {
 
 export async function listAccounts(): Promise<AccountRow[]> {
   const users = await prisma.user.findMany({
-    select: { id: true, name: true, email: true, createdAt: true, role: true, banned: true },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      image: true,
+      createdAt: true,
+      role: true,
+      banned: true,
+    },
     orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
   });
   return Promise.all(
@@ -31,6 +40,7 @@ export async function listAccounts(): Promise<AccountRow[]> {
         id: u.id,
         name: u.name,
         email: u.email,
+        image: u.image,
         createdAt: u.createdAt,
         access: accountAccess({ ...u, banned: false }),
         banned: !!u.banned,
