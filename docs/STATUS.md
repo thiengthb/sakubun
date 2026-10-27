@@ -10,7 +10,7 @@ Cập nhật lần cuối: 2026-10-27 (nhận 7.3, kế hoạch đã duyệt).
 
 | Bước | Nhánh / PR | Giữ bởi | Trạng thái |
 | --- | --- | --- | --- |
-| 7.3 Hướng dẫn | `docs/7.3-guide-plan` (kế hoạch), rồi `feat/7.3a-guide-tab` | Claude (phiên của thien, 2026-10-27) | Kế hoạch đã duyệt; đang thử connector claude.ai |
+| 7.3 Hướng dẫn | `docs/7.3-guide-plan` (kế hoạch), rồi `feat/7.3a-guide-tab` | Claude (phiên của thien, 2026-10-27) | 7.3a tab Hướng dẫn trong PR, chờ thien duyệt ảnh; còn thử luyện bằng tài khoản thứ hai |
 
 ## Chờ thien
 

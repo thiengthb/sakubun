@@ -5,6 +5,7 @@ import { getSessionAccess, getSessionUserId } from '@/lib/auth/current-user';
 import { userDb } from '@/lib/db/user-db';
 import { readToolUsage } from '@/lib/mcp/usage';
 import { listConnectedApps } from '@/lib/auth/connected-apps';
+import { MCP_RESOURCE } from '@/lib/auth/auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -38,6 +39,7 @@ export default async function SettingsPage() {
     <SettingsForm
       initial={settings}
       isAdmin={isAdmin}
+      mcpUrl={MCP_RESOURCE}
       account={{
         name: user?.name ?? '',
         email: user?.email ?? '',
