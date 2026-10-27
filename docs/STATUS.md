@@ -10,7 +10,7 @@ Cập nhật lần cuối: 2026-10-27 (7.2 xong).
 
 | Bước | Nhánh / PR | Giữ bởi | Trạng thái |
 | --- | --- | --- | --- |
-| Trang `/privacy`, `/terms` (để công bố app OAuth Google) | `feat/privacy-terms` | phiên `session_01FokVawKvZGmPLu9XkUuTAp` (từ 2026-10-27) | PR mở, chờ thien duyệt nội dung và merge (risk:high) |
+| Trang `/privacy`, `/terms` (để công bố app OAuth Google) | `feat/privacy-terms` | phiên `session_01FokVawKvZGmPLu9XkUuTAp` (từ 2026-10-27) | #144, chờ thien duyệt nội dung và merge (risk:high) |
 
 ## Chờ thien
 
