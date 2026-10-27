@@ -42,10 +42,12 @@ Vài điểm cần biết:
 - **Migration chạy lúc container khởi động** (`prisma migrate deploy`), trước khi server lên.
 - **`BETTER_AUTH_URL` phải là URL trình duyệt thật sự dùng.** Sai giá trị này thì cookie phiên không
   được chấp nhận và bạn không đăng nhập được.
-- **Chỉ đăng nhập bằng Google, và chỉ một tài khoản.** Cần đủ `GOOGLE_CLIENT_ID`,
-  `GOOGLE_CLIENT_SECRET` và `ALLOWED_EMAIL`; thiếu biến nào là không ai vào được. Lần đăng nhập
-  đầu tiên bằng đúng Gmail đó tạo tài khoản (admin); email khác bị từ chối cả lúc tạo tài khoản lẫn
-  lúc cấp phiên. Redirect URI của OAuth client: `<BETTER_AUTH_URL>/api/auth/callback/google`.
+- **Đăng nhập bằng Google; ai cũng tạo được tài khoản** (từ 2026-10-27, `docs/decisions/0007-open-sign-up.md`).
+  Cần `GOOGLE_CLIENT_ID` và `GOOGLE_CLIENT_SECRET`. `ALLOWED_EMAIL` là tài khoản quản trị: thấy trang
+  `/admin` (chặn, bỏ chặn, xoá tài khoản), sao lưu và khôi phục toàn bộ DB, thống kê MCP. Người mới nhận một
+  kho OpenJLPT riêng lúc đăng ký. Tối đa `MAX_ACCOUNTS` tài khoản (mặc định 50). Ứng dụng OAuth trên Google
+  Cloud phải ở chế độ "In production", nếu không chỉ test users đăng nhập được. Redirect URI của OAuth
+  client: `<BETTER_AUTH_URL>/api/auth/callback/google`.
 - **VOICEVOX** (TTS tiếng Nhật) chạy như service thứ hai, không mở ra host — chỉ app gọi qua mạng
   nội bộ của compose. Nếu nó chết thì client tự rơi về giọng Web Speech của trình duyệt.
 
@@ -70,7 +72,7 @@ cho bot xếp lịch); token có scope `planner` không với tới profile nào
 ### claude.ai và app Claude trên điện thoại (OAuth)
 
 Thêm connector tuỳ chỉnh trên claude.ai với địa chỉ `https://<tên miền>/api/mcp`, không cần token. claude.ai
-mở trang đăng nhập của sakubun (Google, đúng `ALLOWED_EMAIL`), rồi trang **Cho phép truy cập sakubun?**.
+mở trang đăng nhập của sakubun (Google), rồi trang **Cho phép truy cập sakubun?**.
 Sau đó connector dùng được trên web, Claude Desktop và app điện thoại. Server chỉ trả quyền về callback
 của claude.ai, ChatGPT và Claude Code (`lib/auth/oauth-redirects.ts`). Chi tiết: `docs/decisions/0002-mcp-oauth.md`.
 Các ứng dụng đã cho phép hiện ở **Cài đặt > Tài khoản > Ứng dụng đã kết nối**; thu hồi thì ứng dụng mất quyền ngay ở

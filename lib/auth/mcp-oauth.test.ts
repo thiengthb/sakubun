@@ -30,17 +30,17 @@ describe('oauthClientId', () => {
 describe('oauthAccountAllowed', () => {
   afterEach(() => vi.unstubAllEnvs());
 
-  it('chỉ cho tài khoản đúng ALLOWED_EMAIL và không bị khoá', () => {
+  it('cho mọi tài khoản còn quyền vào app, chặn tài khoản bị khoá hoặc không rõ vai trò', () => {
     vi.stubEnv('ALLOWED_EMAIL', 'owner@example.test');
     expect(oauthAccountAllowed({ banned: false, email: 'Owner@example.test' })).toBe(true);
-    expect(oauthAccountAllowed({ banned: null, email: 'owner@example.test' })).toBe(true);
+    expect(oauthAccountAllowed({ banned: null, email: 'b@example.test', role: 'user' })).toBe(true);
+    expect(oauthAccountAllowed({ banned: true, email: 'b@example.test', role: 'user' })).toBe(
+      false,
+    );
     expect(oauthAccountAllowed({ banned: true, email: 'owner@example.test' })).toBe(false);
-    expect(oauthAccountAllowed({ banned: false, email: 'old@example.test' })).toBe(false);
+    expect(oauthAccountAllowed({ banned: false, email: 'old@example.test', role: null })).toBe(
+      false,
+    );
     expect(oauthAccountAllowed(null)).toBe(false);
-  });
-
-  it('đóng hết khi chưa đặt ALLOWED_EMAIL', () => {
-    vi.stubEnv('ALLOWED_EMAIL', '');
-    expect(oauthAccountAllowed({ banned: false, email: 'owner@example.test' })).toBe(false);
   });
 });
