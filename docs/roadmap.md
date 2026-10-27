@@ -48,9 +48,25 @@ artifact 8dhCRanXdgsiDFTJBbUHdf, which only its own Claude account can open). De
 
 Asked for by thien on 2026-10-27, ahead of 7.4: Kaiwa canvas early, then the shared library (kho chung: a
 community library of grammar and vocab seeded from OpenJLPT; new accounts start empty and take or publish items)
-together with the UI redo and small bugs. Plan: `docs/plans/2026-10-27-phase-8-kaiwa-kho-chung.md` (in review).
-PR rows K1-K9 and L1-L6 are listed in the plan and added here once approved.
+together with the UI redo and small bugs. Plan: `docs/plans/2026-10-27-phase-8-kaiwa-kho-chung.md` (approved
+2026-10-27, #150). Order: K1-K5 (rough Kaiwa) first, then L1-L6, the quick review rework (C) and 7.4 together, then
+K6-K9.
 
 | # | PR | Done when | Risk | Status |
 | --- | --- | --- | --- | --- |
-| 8 | Kaiwa canvas (script editor, furigana, lookup, VOICEVOX) and the shared library (take, publish, fork, AI search) | thien approves the plan, then screenshots per PR | high | Plan in review |
+| K1 | `Script` table, script parser, `lib/kaiwa/` save with format check | tests pass | high | Todo |
+| K2 | MCP `kaiwa_save`, `kaiwa_get`, `kaiwa_list`, prompt `kaiwa` | tried for real in claude.ai | high | Todo |
+| K3 | Hội thoại pages `/kaiwa`, `/kaiwa/[id]`: view, listen, light edit | e2e + screenshots | high | Todo |
+| K4 | Automatic furigana and tokens on save (kuromoji, kuroshiro) | tests, Docker image builds | medium | Todo |
+| K5 | Hover a word for its Vietnamese meaning, "Thêm vào kho" | e2e + screenshots | high | Todo |
+| K6 | Karaoke, whole-script playback, voice per speaker, server audio cache | screenshots | medium | Todo |
+| K7 | Publish scripts to kho chung | e2e | high | Todo |
+| K8 | MCP role-play from a script | tried in claude.ai | high | Todo |
+| K9 | Import the 5 old kaiwa-canvas scripts for thien | thien sees them | high | Todo |
+| L1 | `LibraryEntry`, groups, likes, OpenJLPT seed, `lib/library/` take | tests pass | high | Todo |
+| L2 | Kho chung page: groups and single items, take | e2e + screenshots | high | Todo |
+| L3 | Publish items and groups, update, unpublish, based-on copies, likes | e2e | high | Todo |
+| L4 | New accounts start empty, point to kho chung; decision 0008 | e2e | high | Todo |
+| L5 | MCP `library_search`, `library_take` | tried in claude.ai | high | Todo |
+| L6 | Admin hide/show entries, banned or deleted accounts | tests | high | Todo |
+| C | Quick review rework (Vietnamese example translations, grammar leads with examples), own plan first | thien approves the plan and screenshots | high | Todo |

@@ -1,6 +1,6 @@
 # Kế hoạch phase 8: Kaiwa canvas và kho chung
 
-- Ngày: 2026-10-27. Duyệt: chờ thien.
+- Ngày: 2026-10-27. Duyệt: thien, 2026-10-27 ("ok mình duyệt kế hoạch").
 - Yêu cầu của thien (2026-10-27): làm **Kaiwa canvas** và **kho chung** trước 7.4 và các lỗi nhỏ; muốn Kaiwa có mặt
   sớm. Có bản Kaiwa sơ bộ thì sửa UI (7.4) và lỗi cùng lúc với các trang mới. Làm kĩ cơ chế, vì hiện tính năng
   "chưa kiểm soát kĩ, còn vài chỗ hơi off".
