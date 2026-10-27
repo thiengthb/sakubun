@@ -4,18 +4,18 @@ Trang này trả lời ba câu cho bất kỳ phiên Claude nào (kể cả từ
 việc tiếp theo là gì**. Cập nhật nó **trong cùng PR** với việc làm, và khi nhận một bước mới (xem
 "Bắt đầu phiên" trong `CLAUDE.md`). Lộ trình đầy đủ: `docs/roadmap.md`. Kế hoạch đã duyệt: `docs/plans/`.
 
-Cập nhật lần cuối: 2026-10-27 (7.3 xong).
+Cập nhật lần cuối: 2026-10-27 (kế hoạch Kaiwa canvas chờ duyệt).
 
 ## Đang làm
 
 | Bước | Nhánh / PR | Giữ bởi | Trạng thái |
 | --- | --- | --- | --- |
-| (trống) | | | |
+| 8 Kaiwa canvas + kho chung: kế hoạch | `docs/kaiwa-plan` | Claude (phiên của thien, 2026-10-27) | Chờ thien duyệt `docs/plans/2026-10-27-kaiwa-canvas.md` |
 
 ## Chờ thien
 
-- Chọn bước kế: 7.4 (từng trang trong UI mới) hoặc một việc treo bên dưới. Muốn trần khác 50 tài khoản thì đặt
-  `MAX_ACCOUNTS` trên NUC.
+- Duyệt kế hoạch phase 8 (Kaiwa canvas, kho chung) và trả lời ba câu cuối file. Muốn trần khác 50 tài khoản thì
+  đặt `MAX_ACCOUNTS` trên NUC.
 - Sau khi bản 7.3 lên NUC: mở Cài đặt > Hướng dẫn, kiểm địa chỉ MCP là `https://sakubun.thientnse.site/api/mcp`.
 - Gỡ runner `tnt-laptop-wsl` khỏi repo nếu còn (Settings > Actions > Runners).
 - Kiểm app sau khi bản 7.1d lên NUC (sao lưu trước đó: `~/backups/sakubun-before-7.1d-20261027T030406Z.db`).
@@ -26,7 +26,8 @@ Cập nhật lần cuối: 2026-10-27 (7.3 xong).
    (#140), mở đăng ký (#141), Ứng dụng đã kết nối với thu hồi ngay (#142).
 2. Phase 7.3 xong 2026-10-27: kế hoạch (#146), tab Hướng dẫn trong Cài đặt (#147), thẻ "Kết nối Claude" trên
    Phân tích cho người chưa kết nối AI và chưa ôn (#148). Luồng claude.ai đã thử thật bằng tài khoản thứ hai.
-3. Bước kế theo lộ trình: 7.4 (từng trang mới trong UI mới, mỗi trang một PR); hỏi thien trước khi nhận.
+3. thien chọn (2026-10-27): làm **Kaiwa canvas** và **kho chung** trước (phase 8), có bản Kaiwa sơ bộ (K1–K3) rồi
+   mới làm 7.4 (UI mới) và các lỗi bên dưới cùng lúc với các trang mới.
 
 ## Việc nhỏ còn treo
 

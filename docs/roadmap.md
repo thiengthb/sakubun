@@ -43,3 +43,13 @@ artifact 8dhCRanXdgsiDFTJBbUHdf, which only its own Claude account can open). De
 | 7.2 | Open sign-up with Google (thien can ban; changed 2026-10-27, plan `docs/plans/2026-10-27-phase7-2-sign-up.md`), admin page, MCP tool stats and database backup admin only, then 4.2 | A second account learns without seeing the first | high | Done 2026-10-27 (#138, #139, #140, #141, #142) |
 | 7.3 | Hướng dẫn page (removed 2026-08-14) rewritten for today's app (plan `docs/plans/2026-10-27-phase7-3-guide.md`) | thien approves the screenshots | high | Done 2026-10-27 (#146, #147, #148) |
 | 7.4 | Each new or changed page in the new UI, one PR per page | thien approves before and after screenshots | high | Todo |
+
+## Phase 8: Kaiwa canvas and shared library
+
+Asked for by thien on 2026-10-27, ahead of 7.4: Kaiwa canvas early, then the UI redo and small bugs together with
+the new pages. Plan: `docs/plans/2026-10-27-kaiwa-canvas.md` (in review). PR rows K1-K8 are listed in the plan and
+added here once approved.
+
+| # | PR | Done when | Risk | Status |
+| --- | --- | --- | --- | --- |
+| 8 | Kaiwa canvas (script editor, furigana, lookup, VOICEVOX) and a shared library | thien approves the plan, then screenshots per PR | high | Plan in review |
