@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/db/db';
 import { getSessionUserId } from '@/lib/auth/current-user';
 import { createMcpKey } from '@/lib/auth/mcp-key';
+import { revokeConnectedApp } from '@/lib/auth/connected-apps';
 import { type ActionResult, err, ok } from '@/lib/core/action-result';
 
 export async function createMcpKeyAction(name: string): Promise<ActionResult<{ token: string }>> {
@@ -20,6 +21,15 @@ export async function revokeMcpKeyAction(id: string): Promise<ActionResult> {
   if (!id) return err('Thiếu id token');
   const userId = await getSessionUserId();
   await prisma.mcpKey.deleteMany({ where: { id, userId } });
+  revalidatePath('/settings');
+  return ok(undefined);
+}
+
+export async function revokeConnectedAppAction(clientId: string): Promise<ActionResult> {
+  if (!clientId) return err('Thiếu ứng dụng cần thu hồi');
+  const userId = await getSessionUserId();
+  if (!(await revokeConnectedApp(userId, clientId)))
+    return err('Ứng dụng này không còn kết nối. Tải lại trang để xem danh sách mới.');
   revalidatePath('/settings');
   return ok(undefined);
 }

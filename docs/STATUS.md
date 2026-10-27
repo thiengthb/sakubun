@@ -10,11 +10,11 @@ Cập nhật lần cuối: 2026-10-27 (kế hoạch 7.2 duyệt, nhận 7.2a).
 
 | Bước | Nhánh / PR | Giữ bởi | Trạng thái |
 | --- | --- | --- | --- |
-| 7.2c | `feat/7.2c-admin-page`, #140 | phiên `session_01FokVawKvZGmPLu9XkUuTAp` (từ 2026-10-27) | Chờ thien duyệt ảnh và merge |
+| 7.2e | `feat/7.2e-connected-apps` | phiên `session_01FokVawKvZGmPLu9XkUuTAp` (từ 2026-10-27) | PR mở, chờ thien duyệt ảnh và merge (risk:high) |
 
 ## Chờ thien
 
-- Duyệt ảnh trang `/admin` (1440, 390, hộp thoại xoá) trong #140 rồi merge.
+- Duyệt ảnh mục "Ứng dụng đã kết nối" trong Cài đặt (7.2e) rồi merge.
 - Gỡ runner `tnt-laptop-wsl` khỏi repo nếu còn (Settings > Actions > Runners).
 - Kiểm app sau khi bản 7.1d lên NUC (sao lưu trước đó: `~/backups/sakubun-before-7.1d-20261027T030406Z.db`).
 
