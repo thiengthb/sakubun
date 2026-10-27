@@ -15,11 +15,11 @@ Cập nhật lần cuối: 2026-10-27 (Kaiwa sơ bộ K1–K5 đã lên `main` q
 | 8 L3 công khai mục và nhóm, gỡ, "dựa trên", thích                          | L3a `feat/8-l3a-library-publish` (lib + test, xếp trên L2), L3b `feat/8-l3b-library-publish-ui` (nút Chia sẻ, Thích) | Claude (phiên của thien, 2026-10-27) | hai PR mở; tiếp theo L4                   |
 | 8 L4 tài khoản mới bắt đầu trống, Phân tích và Hướng dẫn trỏ tới Kho chung | `feat/8-l4-empty-start` (xếp trên L3b)                                                                               | Claude (phiên của thien, 2026-10-27) | PR mở; tiếp theo L5                       |
 | 8 L5 MCP `library_search`, `library_take`, `lookup` chỉ sang Kho chung     | `feat/8-l5-library-mcp` (xếp trên L4)                                                                                | Claude (phiên của thien, 2026-10-27) | PR mở; tiếp theo L6                       |
-| 8 L6 quản trị ẩn/hiện mục, mục ẩn theo tài khoản bị chặn hoặc đã xoá       | L6a `feat/8-l6-library-moderation` (#166), L6b `feat/8-l6b-library-moderation-ui` (nút Ẩn/Hiện)                      | Claude (phiên của thien, 2026-10-27) | hai PR mở; Kho chung L1–L6 xong phần code |
+| 8 L6 quản trị ẩn/hiện mục, mục ẩn theo tài khoản bị chặn hoặc đã xoá       | L6a `feat/8-l6-library-moderation` (#166), L6b `feat/8-l6b-library-moderation-ui` (#167)                    | Claude (phiên của thien, 2026-10-27) | hai PR mở; Kho chung L1–L6 xong phần code |
 
 ## Chờ thien
 
-- Merge chuỗi Kho chung theo thứ tự #159 → #160 → #161 → #162 → #163 → #164 → #165 → #166 → L6b; trước mỗi lần
+- Merge chuỗi Kho chung theo thứ tự #159 → #160 → #161 → #162 → #163 → #164 → #165 → #166 → #167; trước mỗi lần
   merge đổi base của PR sang `main`. #159 thêm bảng mới (migration chỉ cộng thêm): sao lưu DB NUC trước khi đưa lên.
   Rồi thử `library_search` và `library_take` trong claude.ai (L5).
 - Đưa bản có Kaiwa (#156, thêm bảng `Script` và cột `Script.analysis`) lên NUC: sao lưu DB trước. Rồi thử trong claude.ai: nhờ Claude soạn một đoạn hội thoại ngắn trên canvas, lưu, mở đường dẫn nó trả về; trên web thử chọn vai "Tôi là", rê chuột xem nghĩa, Thêm và Sửa.
@@ -38,8 +38,9 @@ Cập nhật lần cuối: 2026-10-27 (Kaiwa sơ bộ K1–K5 đã lên `main` q
    (AI soạn và lưu kịch bản qua MCP), rồi kho chung L1–L6, Ôn nhanh (C) và 7.4 cùng các lỗi bên dưới, rồi K6–K9.
 4. Kaiwa sơ bộ xong 2026-10-27: K1 #151, K2 #152, rồi K3, K4, K3b (thẻ kiểu tin nhắn, vai "Tôi là" bên trái),
    K3c (sửa và tạo trên web) và K5 (rê chuột xem nghĩa) cùng lên `main` qua #156 (#153–#155, #157 merge vào nhánh
-   xếp chồng). Giao diện Kaiwa còn thô, làm đẹp trong 7.4. 5. Kho chung L1–L6 xong phần code 2026-10-27, mở thành chuỗi PR xếp chồng: L1a #159, L1b #160, L2 #161, L3a #162,
-   L3b #163, L4 #164, L5 #165, L6a #166, L6b. Tiếp theo: Ôn nhanh (C) cần kế hoạch riêng, rồi 7.4, rồi K6–K9.
+   xếp chồng). Giao diện Kaiwa còn thô, làm đẹp trong 7.4.
+5. Kho chung L1–L6 xong phần code 2026-10-27, mở thành chuỗi PR xếp chồng: L1a #159, L1b #160, L2 #161, L3a #162,
+   L3b #163, L4 #164, L5 #165, L6a #166, L6b #167. Tiếp theo: Ôn nhanh (C) cần kế hoạch riêng, rồi 7.4, rồi K6–K9.
 
 ## Việc nhỏ còn treo
 

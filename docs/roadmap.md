@@ -70,5 +70,5 @@ K6-K9.
 | L3 | Publish items and groups, update, unpublish, based-on copies, likes | e2e | high | In review (#162, #163) |
 | L4 | New accounts start empty, point to kho chung; decision 0008 | e2e | high | In review (#164) |
 | L5 | MCP `library_search`, `library_take` | tried in claude.ai | high | In review (#165); thien tries it in claude.ai |
-| L6 | Admin hide/show entries, banned or deleted accounts | tests | high | In review (#166, L6b) |
+| L6 | Admin hide/show entries, banned or deleted accounts | tests | high | In review (#166, #167) |
 | C | Quick review rework (Vietnamese example translations, grammar leads with examples), own plan first | thien approves the plan and screenshots | high | Todo |
