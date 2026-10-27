@@ -1,5 +1,5 @@
 // Which tools each MCP client sees (roadmap 3.2). `v2` is the default: the seven server-led tools, the
-// three Kaiwa tools (phase 8) and the `hoc` and `kaiwa` prompts, for Claude Desktop and ChatGPT. `planner` is for a scheduling
+// three Kaiwa tools and the two Kho chung tools (phase 8) and the `hoc` and `kaiwa` prompts, for Claude Desktop and ChatGPT. `planner` is for a scheduling
 // assistant (e.g. a calendar bot): load COUNTS only, read-only, no item content. A key whose scope is
 // `planner` can never reach any other profile (app/api/[transport]/route.ts).
 export const V2_TOOLS = [
@@ -13,6 +13,8 @@ export const V2_TOOLS = [
   'kaiwa_list',
   'kaiwa_get',
   'kaiwa_save',
+  'library_search',
+  'library_take',
 ] as const;
 
 export const PLANNER_TOOLS = ['ping', 'get_review_load'] as const;

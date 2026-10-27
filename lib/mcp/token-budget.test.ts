@@ -90,6 +90,26 @@ beforeAll(async () => {
     'MCP',
     'VOCAB',
   );
+  // A small Kho chung (phase 8), so library_search is measured without seeding all of OpenJLPT.
+  await (
+    await import('@/lib/library/shared')
+  ).seedOpenJlpt(
+    prisma,
+    ['〜ながら', '〜ために', '〜ばかり'].map((expression) => ({
+      id: `GRAMMAR-${expression}`,
+      kind: 'GRAMMAR',
+      expression,
+      reading: null,
+      hanviet: null,
+      meaningVi: `nghĩa của ${expression}`,
+      level: 'N5',
+      notes: '',
+      tags: '[]',
+      source: 'OPENJLPT' as const,
+      suspended: false,
+      starred: false,
+    })),
+  );
 });
 
 afterAll(async () => {
@@ -153,6 +173,8 @@ describe('MCP v2 token targets', () => {
     // kaiwa_get is left out: it returns the script itself, as long as the learner made it.
     await call('kaiwa_save', { title: 'Ở ga', body: 'A: 駅はどこですか。 | Nhà ga ở đâu?' });
     await call('kaiwa_list');
+    await call('library_search', { query: 'N5' });
+    await call('lookup', { query: 'ために' });
 
     const largest = Math.max(...sizes.values());
     report.push(
