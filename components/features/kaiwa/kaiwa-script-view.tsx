@@ -12,13 +12,16 @@ import { EmptyState } from '@/components/common/empty-state';
 import { RelativeTime } from '@/components/common/relative-time';
 import { useServerAction } from '@/components/common/use-server-action';
 import { KaiwaLine } from '@/components/features/kaiwa/kaiwa-line';
+import { useLocalState } from '@/components/common/use-session-state';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { chooseMe, layoutTurns, scriptSpeakers } from '@/lib/kaiwa/layout';
 import { editScriptCommand } from '@/components/features/kaiwa/kaiwa-commands';
 import { deleteScriptAction } from '@/app/kaiwa/actions';
 import type { RubyLine } from '@/components/features/kaiwa/kaiwa-line';
 
-// One script (phase 8, K3): its lines as cards, each with its speaker, the Japanese to listen to and
-// the Vietnamese, which the learner can hide to test themselves. Changes go through Claude
-// ("Sửa với AI"), so the page has no editor yet.
+// One script (phase 8, K3): its lines as a chat seen from the part the learner picks ("Tôi là"),
+// each with the Japanese to listen to and the Vietnamese, which the learner can hide to test
+// themselves. Changes go through Claude ("Sửa với AI"), so the page has no editor yet.
 export function KaiwaScriptView({
   script,
   lines,
@@ -39,7 +42,11 @@ export function KaiwaScriptView({
     success: 'Đã xoá kịch bản',
     onSuccess: () => router.push('/kaiwa'),
   });
-  const speakers = [...new Set(lines.map((l) => l.speaker).filter((s) => s !== null))];
+  const speakers = scriptSpeakers(lines);
+  // Remembered per script on this device, so the learner comes back to the same part.
+  const [stored, setStored] = useLocalState<string | null>(`kaiwa-me:${script.id}`, null);
+  const me = chooseMe(speakers, stored);
+  const turns = layoutTurns(lines, me);
 
   return (
     <PageShell
@@ -74,19 +81,39 @@ export function KaiwaScriptView({
       {lines.length === 0 ? (
         <EmptyState icon={MessagesSquare} title="Kịch bản này chưa có câu nào" />
       ) : (
-        <ol className="space-y-2">
-          {lines.map((line) => (
-            <KaiwaLine
-              key={line.row}
-              line={line}
-              side={line.speaker === null ? null : speakers.indexOf(line.speaker) % 2}
-              showMeaning={showMeaning}
-              showFurigana={showFurigana}
-              voiceSpeaker={voiceSpeaker}
-              speechRate={speechRate}
-            />
-          ))}
-        </ol>
+        <div className="max-w-3xl space-y-4">
+          {speakers.length > 1 && (
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-sm text-muted-foreground">Tôi là</span>
+              <ToggleGroup
+                type="single"
+                variant="choice"
+                aria-label="Tôi là"
+                value={me ?? ''}
+                onValueChange={(value) => value && setStored(value)}
+                className="flex-wrap"
+              >
+                {speakers.map((speaker) => (
+                  <ToggleGroupItem key={speaker} value={speaker} className="px-3">
+                    {speaker}
+                  </ToggleGroupItem>
+                ))}
+              </ToggleGroup>
+            </div>
+          )}
+          <ol className="space-y-3">
+            {turns.map((turn) => (
+              <KaiwaLine
+                key={turn.line.row}
+                turn={turn}
+                showMeaning={showMeaning}
+                showFurigana={showFurigana}
+                voiceSpeaker={voiceSpeaker}
+                speechRate={speechRate}
+              />
+            ))}
+          </ol>
+        </div>
       )}
       <ConfirmDialog
         open={confirming}
