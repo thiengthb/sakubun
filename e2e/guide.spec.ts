@@ -30,7 +30,7 @@ test('Hướng dẫn tab: connector address, start phrase, links to other tabs',
       await page.screenshot({ path: path.join(shots, `guide-${width}.png`), fullPage: true });
     }
 
-  await tab.getByRole('button', { name: 'Luyện tập' }).click();
+  await tab.getByRole('button', { name: 'Luyện tập' }).first().click();
   await expect(page).not.toHaveURL(/tab=guide/);
   await expect(page.getByRole('tabpanel')).toContainText('Mẫu mới');
 });

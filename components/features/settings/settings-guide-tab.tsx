@@ -101,13 +101,14 @@ export function GuideTab({
         <GuideRow icon={Plug} title="1. Kết nối Claude" wide>
           <p>
             Trên claude.ai, mở Customize &gt; Connectors, bấm + Add &gt; Add custom connector. Điền
-            Name là sakubun, MCP server URL là địa chỉ này, rồi bấm Continue:
+            Name là sakubun, MCP server URL là địa chỉ này, bấm Continue rồi Connect:
           </p>
           <CopyField value={mcpUrl} label="Chép địa chỉ MCP" />
           <p>
-            Claude mở trang đăng nhập của sakubun: chọn đúng tài khoản Google bạn dùng ở đây, rồi
-            bấm Cho phép. Không cần token. Kết nối xong thì dùng được trên claude.ai, Claude Desktop
-            và app Claude trên điện thoại.
+            Claude mở trang &quot;Cho phép truy cập Sakubun?&quot;, bấm Cho phép là xong, không cần
+            token. Trang này cấp quyền cho tài khoản sakubun đang đăng nhập trong trình duyệt, nên
+            nếu trình duyệt đang mở sakubun bằng tài khoản khác thì đăng xuất trước. Kết nối xong
+            thì dùng được trên claude.ai, Claude Desktop và app Claude trên điện thoại.
           </p>
         </GuideRow>
         <GuideRow icon={MessageSquareText} title="2. Bắt đầu luyện" wide>
@@ -117,9 +118,12 @@ export function GuideTab({
             Hoặc chọn sẵn lời dặn cho Claude: nút + &gt; Connectors &gt; Add from sakubun &gt; Hoc.
           </p>
           <p>
-            Claude đưa một câu tiếng Việt dùng mẫu ngữ pháp đến hạn. Bạn dịch sang tiếng Nhật,
-            Claude chấm và nhận xét, sakubun xếp lịch ôn lần sau. Muốn đổi chủ đề hay câu dài hơn
-            thì cứ nói với Claude.
+            Claude đưa một câu dùng mục đến hạn, tiếng Nhật hoặc tiếng Việt theo Hướng dịch ở tab{' '}
+            <TabLink tab="practice" openTab={openTab}>
+              Luyện tập
+            </TabLink>
+            . Bạn dịch, Claude chấm và nhận xét, sakubun xếp lịch ôn lần sau. Muốn đổi chủ đề hay
+            câu dài hơn thì cứ nói với Claude; gõ &quot;dừng&quot; để nghỉ.
           </p>
         </GuideRow>
         <GuideRow icon={CalendarClock} title="3. Hạn mức mỗi ngày" wide>
