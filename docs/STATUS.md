@@ -11,9 +11,11 @@ Cập nhật lần cuối: 2026-10-27 (kế hoạch 7.2 duyệt, nhận 7.2a).
 | Bước | Nhánh / PR | Giữ bởi | Trạng thái |
 | --- | --- | --- | --- |
 | 7.2a | `feat/7.2a-admin-only-gates`, PR mở | phiên `session_01FokVawKvZGmPLu9XkUuTAp` (từ 2026-10-27) | Chờ thien merge |
+| 7.2c | `feat/7.2c-admin-page` | phiên `session_01FokVawKvZGmPLu9XkUuTAp` (từ 2026-10-27) | Chờ thien duyệt ảnh và merge (sau #138) |
 
 ## Chờ thien
 
+- Duyệt ảnh trang `/admin` (1440, 390, hộp thoại xoá) trong PR 7.2c rồi merge, sau 7.2a.
 - Merge PR 7.2a (`risk:high`, auth). Không có migration, không cần sao lưu.
 - Gỡ runner `tnt-laptop-wsl` khỏi repo nếu còn (Settings > Actions > Runners).
 - Kiểm app sau khi bản 7.1d lên NUC (sao lưu trước đó: `~/backups/sakubun-before-7.1d-20261027T030406Z.db`).

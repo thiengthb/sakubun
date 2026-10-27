@@ -80,7 +80,7 @@ export function SettingsForm({ initial, account, isAdmin }: SettingsFormProps) {
       >
         <PracticeTab settings={settings} set={set} setSettings={setSettings} />
         <DataTab isAdmin={isAdmin} />
-        <AccountTab {...account} />
+        <AccountTab {...account} isAdmin={isAdmin} />
         {SAVEABLE_TABS.has(tab) && (
           <FormFooter status={dirty ? 'Có thay đổi chưa lưu' : 'Mọi thay đổi đã được lưu'}>
             <Button type="button" disabled={isSaving || !dirty} onClick={onSave}>

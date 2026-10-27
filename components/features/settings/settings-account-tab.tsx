@@ -12,8 +12,10 @@ import {
   Pencil,
   Plus,
   Trash2,
+  Users,
   X,
 } from 'lucide-react';
+import Link from 'next/link';
 import { toast } from 'sonner';
 import { authClient } from '@/lib/auth/auth-client';
 import { createMcpKeyAction, revokeMcpKeyAction } from '@/app/settings/actions';
@@ -87,6 +89,7 @@ export function AccountTab({
   lastLoginAt,
   keys,
   mcpUsage,
+  isAdmin,
 }: {
   name: string;
   email: string;
@@ -97,6 +100,7 @@ export function AccountTab({
   keys: McpKeyRow[];
   // Whole-app tool statistics: admin only (roadmap 7.2), null for a learner.
   mcpUsage: ToolUsageReport | null;
+  isAdmin: boolean;
 }) {
   const router = useRouter();
 
@@ -288,6 +292,18 @@ export function AccountTab({
               <span className="text-muted-foreground">Google</span>
             )}
           </SettingRow>
+          {isAdmin && (
+            <SettingRow
+              icon={Users}
+              label="Quản trị"
+              info="Mọi tài khoản đã đăng ký: chặn, bỏ chặn hoặc xoá."
+              className="col-span-full"
+            >
+              <Button asChild variant="outline">
+                <Link href="/admin">Mở</Link>
+              </Button>
+            </SettingRow>
+          )}
           {hasPassword && passwordOpen && (
             <form
               onSubmit={onChangePassword}
