@@ -2,7 +2,7 @@ import path from 'node:path';
 import Database from 'better-sqlite3';
 import ExcelJS from 'exceljs';
 import { expect, test, type Page } from '@playwright/test';
-import { E2E_DB_FILE, E2E_EMAIL, E2E_LOGIN, ownSeedRows, seedE2eAccount } from './fixtures';
+import { E2E_DB_FILE, E2E_EMAIL, E2E_LOGIN, E2E_OWNER, seedE2eAccount } from './fixtures';
 
 // docs/ui-standard.md › Form (thien, 2026-10-24): a required field has a red * beside its label and
 // the form says what the mark means; sending the form with a required field empty puts the error
@@ -13,15 +13,14 @@ test.beforeAll(async () => {
   const db = new Database(path.join(process.cwd(), E2E_DB_FILE));
   try {
     const insert = db.prepare(
-      `INSERT OR REPLACE INTO Item (id, kind, expression, reading, hanviet, meaningVi, level, notes, source,
+      `INSERT OR REPLACE INTO Item (userId, id, kind, expression, reading, hanviet, meaningVi, level, notes, source,
          captureReason, suspended, starred, createdAt)
-       VALUES (?, ?, ?, ?, NULL, ?, ?, NULL, 'MCP', NULL, 0, 0, ?)`,
+       VALUES (${E2E_OWNER}, ?, ?, ?, ?, NULL, ?, ?, NULL, 'MCP', NULL, 0, 0, ?)`,
     );
     const at = new Date().toISOString().replace('Z', '+00:00');
     insert.run('form-item', 'GRAMMAR', '〜ばかりに', null, 'chỉ vì', 'N2', at);
     insert.run('form-vocab', 'VOCAB', '図書館', 'としょかん', 'thư viện', null, at);
   } finally {
-    ownSeedRows(db);
     db.close();
   }
 });

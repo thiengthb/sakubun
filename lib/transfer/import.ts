@@ -115,6 +115,7 @@ export async function importAccountData(
   backup: AccountBackup,
   { dryRun }: { dryRun: boolean },
 ): Promise<ImportResult> {
+  const userId = db.$ownerId();
   const [items, srsStates, reviewLogs, sentences, turns, settings, groups, groupMembers] =
     await Promise.all([
       db.item.findMany({
@@ -234,7 +235,7 @@ export async function importAccountData(
         await tx.item.createMany({
           data: itemPlan.create.map((id) => {
             const row = itemsById.get(id) as BackupItem;
-            return { id, createdAt: row.createdAt, ...itemData(row) };
+            return { id, userId, createdAt: row.createdAt, ...itemData(row) };
           }),
         });
       }
@@ -251,6 +252,7 @@ export async function importAccountData(
             const row = sentencesById.get(id) as BackupSentence;
             return {
               id,
+              userId,
               createdAt: row.createdAt,
               answeredAt: row.answeredAt ?? null,
               ...sentenceData(row),
@@ -274,6 +276,7 @@ export async function importAccountData(
             const row = turnsById.get(id) as BackupTurn;
             return {
               id,
+              userId,
               itemId: linkedItem(row.itemId),
               createdAt: row.createdAt,
               ...turnData(row),
@@ -293,7 +296,7 @@ export async function importAccountData(
         await tx.srsState.createMany({
           data: srsPlan.create.map((itemId) => {
             const row = srsByItemId.get(itemId) as BackupSrsState;
-            return { id: row.id, itemId, ...srsData(row) };
+            return { id: row.id, userId, itemId, ...srsData(row) };
           }),
         });
       }
@@ -313,6 +316,7 @@ export async function importAccountData(
             const linkedTurn = row.turnId && turnIdsAfter.has(row.turnId) ? row.turnId : null;
             return {
               id,
+              userId,
               itemId: linkedItem(row.itemId),
               sentenceId: linkedSentence,
               turnId: linkedTurn,
@@ -334,7 +338,7 @@ export async function importAccountData(
         await tx.group.createMany({
           data: groupPlan.create.map((id) => {
             const row = groupsById.get(id) as BackupGroup;
-            return { id, createdAt: row.createdAt, ...groupData(row) };
+            return { id, userId, createdAt: row.createdAt, ...groupData(row) };
           }),
         });
       }
@@ -348,7 +352,7 @@ export async function importAccountData(
         await tx.groupMember.createMany({
           data: memberPlan.create.map((key) => {
             const row = membersByKey.get(key) as BackupGroupMember;
-            return { groupId: row.groupId, itemId: row.itemId, addedAt: row.addedAt };
+            return { groupId: row.groupId, itemId: row.itemId, userId, addedAt: row.addedAt };
           }),
         });
       }
@@ -357,7 +361,7 @@ export async function importAccountData(
         const row = await tx.settings.findFirst({ orderBy: { id: 'asc' } });
         if (row)
           await tx.settings.update({ where: { id: row.id }, data: { data: backup.settings.data } });
-        else await tx.settings.create({ data: { data: backup.settings.data } });
+        else await tx.settings.create({ data: { userId, data: backup.settings.data } });
       }
     },
     { timeout: 120_000, maxWait: 30_000 },
@@ -390,6 +394,21 @@ const SYSTEM_TABLES: SystemTable[] = [
     backupWhere: 'NOT EXISTS (SELECT 1 FROM main."Settings")',
   },
 ];
+
+// The learning tables of roadmap 7.1. A backup made before 7.1a has no owner on their rows; they go
+// to the first account, the same rule as the 7.1 migrations.
+const LEARNING_TABLES = new Set([
+  'Item',
+  'Sentence',
+  'Turn',
+  'SrsState',
+  'ReviewLog',
+  'Group',
+  'GroupMember',
+  'Settings',
+]);
+const FIRST_ACCOUNT =
+  '(SELECT "id" FROM main."user" ORDER BY ("role" = \'admin\') DESC, "createdAt", "id" LIMIT 1)';
 
 const NEW_EMAIL_ONLY = 'b."email" NOT IN (SELECT "email" FROM main."user")';
 
@@ -503,7 +522,13 @@ export async function importSystemBackup(
         for (const { spec, cols, userCols, backupWhere } of plans) {
           if (cols.length === 0) continue;
           await tx.$executeRawUnsafe(
-            buildTableMergeSql({ table: spec.name, cols, userCols, backupWhere }),
+            buildTableMergeSql({
+              table: spec.name,
+              cols,
+              userCols,
+              backupWhere,
+              ownerFallback: LEARNING_TABLES.has(spec.name) ? FIRST_ACCOUNT : undefined,
+            }),
           );
         }
 

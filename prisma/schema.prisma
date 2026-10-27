@@ -9,9 +9,9 @@ datasource db {
 
 model Item {
   id            String    @id @default(cuid())
-  // Owner (roadmap 7.1). Nullable while code moves to per-user queries; 7.1d makes it required.
-  userId        String?
-  user          User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Owner (roadmap 7.1, docs/decisions/0006). Every query goes through userDb(userId).
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   kind          String
   expression    String
   reading       String?
@@ -37,17 +37,16 @@ model Item {
   groups  GroupMember[]
   turns   Turn[]
 
-  @@unique([kind, expression])
+  @@unique([userId, kind, expression])
 
   @@index([kind])
-  @@index([userId])
 }
 
 model SrsState {
   id            String    @id @default(cuid())
-  // Owner (roadmap 7.1). Nullable while code moves to per-user queries; 7.1d makes it required.
-  userId        String?
-  user          User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Owner (roadmap 7.1, docs/decisions/0006). Every query goes through userDb(userId).
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   itemId        String    @unique
   item          Item      @relation(fields: [itemId], references: [id], onDelete: Cascade)
   due           DateTime  @default(now())
@@ -68,9 +67,9 @@ model SrsState {
 
 model ReviewLog {
   id          String    @id @default(cuid())
-  // Owner (roadmap 7.1). Nullable while code moves to per-user queries; 7.1d makes it required.
-  userId      String?
-  user        User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Owner (roadmap 7.1, docs/decisions/0006). Every query goes through userDb(userId).
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   itemId      String?
   item        Item?     @relation(fields: [itemId], references: [id], onDelete: SetNull)
@@ -101,9 +100,9 @@ model ReviewLog {
 
 model Sentence {
   id            String    @id @default(cuid())
-  // Owner (roadmap 7.1). Nullable while code moves to per-user queries; 7.1d makes it required.
-  userId        String?
-  user          User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Owner (roadmap 7.1, docs/decisions/0006). Every query goes through userDb(userId).
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   direction     String
   context       String?
   exerciseType  String    @default("TRANSLATION")
@@ -137,9 +136,9 @@ model Sentence {
 // Sentence so History keeps showing them.
 model Turn {
   id        String    @id @default(cuid())
-  // Owner (roadmap 7.1). Nullable while code moves to per-user queries; 7.1d makes it required.
-  userId    String?
-  user      User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Owner (roadmap 7.1, docs/decisions/0006). Every query goes through userDb(userId).
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   itemId    String?
   item      Item?     @relation(fields: [itemId], references: [id], onDelete: SetNull)
   // 'JA_VI': the learner reads `ja` and writes Vietnamese; 'VI_JA': reads `vi`, writes Japanese.
@@ -166,9 +165,9 @@ model Turn {
 
 model Settings {
   id        Int      @id @default(autoincrement())
-  // One row per learner (roadmap 7.1). Nullable until 7.1d, like the other learning tables.
-  userId    String?  @unique
-  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // One row per learner (roadmap 7.1, docs/decisions/0006).
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   data      String
   updatedAt DateTime @updatedAt
 }
@@ -475,9 +474,9 @@ model McpToolCall {
 
 model Group {
   id        String   @id @default(cuid())
-  // Owner (roadmap 7.1). Nullable while code moves to per-user queries; 7.1d makes it required.
-  userId    String?
-  user      User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Owner (roadmap 7.1, docs/decisions/0006). Every query goes through userDb(userId).
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   name      String
 
   kind      String   @default("mixed")
@@ -495,9 +494,9 @@ model GroupMember {
   group   Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
   itemId  String
   item    Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
-  // Owner (roadmap 7.1). Nullable while code moves to per-user queries; 7.1d makes it required.
-  userId  String?
-  user    User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Owner (roadmap 7.1, docs/decisions/0006). Every query goes through userDb(userId).
+  userId  String
+  user    User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   addedAt DateTime @default(now())
 
   @@id([groupId, itemId])

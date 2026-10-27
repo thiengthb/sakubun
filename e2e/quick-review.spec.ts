@@ -1,7 +1,7 @@
 import path from 'node:path';
 import Database from 'better-sqlite3';
 import { expect, test, type Page } from '@playwright/test';
-import { E2E_DB_FILE, E2E_EMAIL, E2E_LOGIN, ownSeedRows, seedE2eAccount } from './fixtures';
+import { E2E_DB_FILE, E2E_EMAIL, E2E_LOGIN, E2E_OWNER, seedE2eAccount } from './fixtures';
 
 const DAY = 86_400_000;
 const iso = (ms: number) => new Date(ms).toISOString().replace('Z', '+00:00');
@@ -25,14 +25,14 @@ function seed() {
     ])
       db.exec(`DELETE FROM "${t}"`);
     const item = db.prepare(
-      `INSERT INTO Item (id, kind, expression, reading, hanviet, meaningVi, level, notes, source,
+      `INSERT INTO Item (userId, id, kind, expression, reading, hanviet, meaningVi, level, notes, source,
          captureReason, suspended, starred, createdAt, enrichment)
-       VALUES (?, 'VOCAB', ?, ?, NULL, ?, 'N5', NULL, 'MCP', NULL, 0, 0, ?, ?)`,
+       VALUES (${E2E_OWNER}, ?, 'VOCAB', ?, ?, NULL, ?, 'N5', NULL, 'MCP', NULL, 0, 0, ?, ?)`,
     );
     const srs = db.prepare(
-      `INSERT INTO SrsState (id, itemId, due, stability, difficulty, scheduledDays, learningSteps,
+      `INSERT INTO SrsState (userId, id, itemId, due, stability, difficulty, scheduledDays, learningSteps,
          reps, lapses, state, lastReview)
-       VALUES (?, ?, ?, ?, ?, ?, 0, ?, 0, ?, ?)`,
+       VALUES (${E2E_OWNER}, ?, ?, ?, ?, ?, ?, 0, ?, 0, ?, ?)`,
     );
     item.run(
       'q1',
@@ -66,7 +66,6 @@ function seed() {
       srs.run(`s${id}`, id, iso(now), 0, 0, 0, 0, 0, null);
     });
   } finally {
-    ownSeedRows(db);
     db.close();
   }
 }

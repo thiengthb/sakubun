@@ -1,7 +1,7 @@
 import path from 'node:path';
 import Database from 'better-sqlite3';
 import { expect, test, type Page } from '@playwright/test';
-import { E2E_DB_FILE, E2E_EMAIL, E2E_LOGIN, ownSeedRows, seedE2eAccount } from './fixtures';
+import { E2E_DB_FILE, E2E_EMAIL, E2E_LOGIN, E2E_OWNER, seedE2eAccount } from './fixtures';
 
 // docs/ui-standard.md › Bố cục: below 1024px a list is cards that load more as you scroll, with no
 // pagination; from 1024px it is a table with pages.
@@ -17,14 +17,14 @@ function seed() {
     for (const t of ['GroupMember', 'Group', 'ReviewLog', 'SrsState', 'Turn', 'Sentence', 'Item'])
       db.exec(`DELETE FROM "${t}"`);
     const item = db.prepare(
-      `INSERT INTO Item (id, kind, expression, reading, hanviet, meaningVi, level, source, suspended, starred, createdAt)
-       VALUES (?, 'GRAMMAR', ?, NULL, NULL, ?, 'N3', 'MCP', 0, 0, ?)`,
+      `INSERT INTO Item (userId, id, kind, expression, reading, hanviet, meaningVi, level, source, suspended, starred, createdAt)
+       VALUES (${E2E_OWNER}, ?, 'GRAMMAR', ?, NULL, NULL, ?, 'N3', 'MCP', 0, 0, ?)`,
     );
     for (let i = 0; i < TOTAL; i++)
       item.run(`g${i}`, `〜パターン${i + 1}`, `nghĩa ${i + 1}`, iso(now - i * 60_000));
     const group = db.prepare(
-      `INSERT INTO "Group" (id, name, kind, color, note, createdAt, updatedAt)
-       VALUES (?, ?, 'grammar', NULL, ?, ?, ?)`,
+      `INSERT INTO "Group" (userId, id, name, kind, color, note, createdAt, updatedAt)
+       VALUES (${E2E_OWNER}, ?, ?, 'grammar', NULL, ?, ?, ?)`,
     );
     for (let i = 0; i < GROUPS; i++)
       group.run(
@@ -37,7 +37,6 @@ function seed() {
         iso(now - i * 60_000),
       );
   } finally {
-    ownSeedRows(db);
     db.close();
   }
 }

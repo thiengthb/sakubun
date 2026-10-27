@@ -72,6 +72,7 @@ describe('listHistory', () => {
   it('lists old sentences and new turns in one timeline, newest first', async () => {
     await db.sentence.create({
       data: {
+        userId: db.$ownerId(),
         id: 's-old',
         direction: 'JA_VI',
         sourceText: '古い文です。',
@@ -82,6 +83,7 @@ describe('listHistory', () => {
     });
     await db.turn.create({
       data: {
+        userId: db.$ownerId(),
         id: 't-new',
         direction: 'JA_VI',
         ja: TURN.ja,
@@ -103,6 +105,7 @@ describe('listHistory', () => {
   it('lists more than the old 1000-row cap', async () => {
     await db.turn.createMany({
       data: Array.from({ length: 1001 }, (_, i) => ({
+        userId: db.$ownerId(),
         id: `t${i}`,
         direction: 'JA_VI',
         ja: TURN.ja,

@@ -2,7 +2,7 @@ import path from 'node:path';
 import Database from 'better-sqlite3';
 import { expect, test, type Page } from '@playwright/test';
 import { CURRENT_ENRICHMENT_VERSION } from '@/lib/library/enrichment';
-import { E2E_DB_FILE, E2E_EMAIL, E2E_LOGIN, ownSeedRows, seedE2eAccount } from './fixtures';
+import { E2E_DB_FILE, E2E_EMAIL, E2E_LOGIN, E2E_OWNER, seedE2eAccount } from './fixtures';
 
 const iso = (ms: number) => new Date(ms).toISOString().replace('Z', '+00:00');
 
@@ -39,9 +39,9 @@ async function seed() {
     db.exec(`DELETE FROM "${t}"`);
 
   const item = db.prepare(
-    `INSERT INTO Item (id, kind, expression, reading, hanviet, meaningVi, level, notes, source,
+    `INSERT INTO Item (userId, id, kind, expression, reading, hanviet, meaningVi, level, notes, source,
        captureReason, suspended, starred, enrichment, createdAt)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'MCP', ?, ?, ?, ?, ?)`,
+     VALUES (${E2E_OWNER}, ?, ?, ?, ?, ?, ?, ?, ?, 'MCP', ?, ?, ?, ?, ?)`,
   );
   item.run(
     'g1',
@@ -165,19 +165,18 @@ async function seed() {
   );
 
   const group = db.prepare(
-    `INSERT INTO "Group" (id, name, kind, color, note, createdAt, updatedAt) VALUES (?, ?, ?, NULL, NULL, ?, ?)`,
+    `INSERT INTO "Group" (userId, id, name, kind, color, note, createdAt, updatedAt) VALUES (${E2E_OWNER}, ?, ?, ?, NULL, NULL, ?, ?)`,
   );
   group.run('gr-gram', 'Nhóm ngữ pháp', 'grammar', iso(now), iso(now));
   group.run('gr-vocab', 'Nhóm từ vựng', 'vocab', iso(now), iso(now));
 
   db.prepare(
-    `INSERT INTO Sentence (id, direction, context, exerciseType, sourceText, sourceRuby, userAnswer,
+    `INSERT INTO Sentence (userId, id, direction, context, exerciseType, sourceText, sourceRuby, userAnswer,
        suggested, suggestedRuby, feedback, score, stagedItems, status, starred,
        createdAt, answeredAt)
-     VALUES ('s1', 'VI_JA', NULL, 'TRANSLATION', 'Tôi vừa mới đến.', NULL, '来たばかりです。',
+     VALUES (${E2E_OWNER}, 's1', 'VI_JA', NULL, 'TRANSLATION', 'Tôi vừa mới đến.', NULL, '来たばかりです。',
        '来たばかりです。', NULL, NULL, 90, NULL, 'GRADED', 0, ?, ?)`,
   ).run(iso(now), iso(now + 1000));
-  ownSeedRows(db);
   db.close();
 }
 

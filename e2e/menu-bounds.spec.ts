@@ -1,7 +1,7 @@
 import path from 'node:path';
 import Database from 'better-sqlite3';
 import { expect, test, type Page } from '@playwright/test';
-import { E2E_DB_FILE, E2E_EMAIL, E2E_LOGIN, ownSeedRows, seedE2eAccount } from './fixtures';
+import { E2E_DB_FILE, E2E_EMAIL, E2E_LOGIN, E2E_OWNER, seedE2eAccount } from './fixtures';
 
 // docs/ui-standard.md › Nút và ô: a menu or popover opens fully inside the screen and keeps the
 // page's 16px gutter from every edge (thien, 2026-10-25). Before the shared default, the item's
@@ -17,20 +17,19 @@ test.beforeAll(async () => {
     for (const t of ['GroupMember', 'Group', 'ReviewLog', 'SrsState', 'Sentence', 'Item'])
       db.exec(`DELETE FROM "${t}"`);
     db.prepare(
-      `INSERT INTO Item (id, kind, expression, reading, hanviet, meaningVi, level, notes, source,
+      `INSERT INTO Item (userId, id, kind, expression, reading, hanviet, meaningVi, level, notes, source,
          captureReason, suspended, starred, createdAt)
-       VALUES ('mb0', 'GRAMMAR', '〜ばかりに', NULL, NULL, 'chỉ vì', 'N2', NULL, 'MCP', NULL, 0, 0, ?)`,
+       VALUES (${E2E_OWNER}, 'mb0', 'GRAMMAR', '〜ばかりに', NULL, NULL, 'chỉ vì', 'N2', NULL, 'MCP', NULL, 0, 0, ?)`,
     ).run(iso(now));
     const group = db.prepare(
-      `INSERT INTO "Group" (id, name, kind, color, note, createdAt, updatedAt) VALUES (?, ?, 'grammar', NULL, NULL, ?, ?)`,
+      `INSERT INTO "Group" (userId, id, name, kind, color, note, createdAt, updatedAt) VALUES (${E2E_OWNER}, ?, ?, 'grammar', NULL, NULL, ?, ?)`,
     );
     group.run('mbA', 'Ngữ pháp N2', iso(now), iso(now));
     group.run('mbB', 'Ôn thi tháng 12 có một cái tên khá dài', iso(now), iso(now));
-    db.prepare(`INSERT INTO GroupMember (groupId, itemId, addedAt) VALUES ('mbA', 'mb0', ?)`).run(
-      iso(now),
-    );
+    db.prepare(
+      `INSERT INTO GroupMember (userId, groupId, itemId, addedAt) VALUES (${E2E_OWNER}, 'mbA', 'mb0', ?)`,
+    ).run(iso(now));
   } finally {
-    ownSeedRows(db);
     db.close();
   }
 });

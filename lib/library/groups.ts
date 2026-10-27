@@ -269,6 +269,7 @@ export async function createGroup(db: UserDb, input: CreateGroupInput): Promise<
   const kind: GroupKind = input.kind ?? 'mixed';
   const g = await db.group.create({
     data: {
+      userId: db.$ownerId(),
       name,
       kind,
       color: cleanTextOrNull(input.color ?? null),
@@ -353,7 +354,7 @@ export async function addItemsToGroup(
   if (toCreate.length === 0) return { added: 0 };
 
   const res = await db.groupMember.createMany({
-    data: toCreate.map((i) => ({ groupId, itemId: i.id })),
+    data: toCreate.map((i) => ({ groupId, itemId: i.id, userId: db.$ownerId() })),
   });
   return { added: res.count };
 }

@@ -10,6 +10,7 @@ createTestDb('sakubun-isolation-');
 
 type Db = typeof import('@/lib/db/db');
 let prisma: Db['prisma'];
+let unguardedPrisma: Db['unguardedPrisma'];
 let a: UserDb;
 let b: UserDb;
 
@@ -33,7 +34,7 @@ let T: Turn;
 let Q: Quick;
 
 beforeAll(async () => {
-  ({ prisma } = await import('@/lib/db/db'));
+  ({ prisma, unguardedPrisma } = await import('@/lib/db/db'));
   const { userDb } = await import('@/lib/db/user-db');
   a = userDb(await createTestUser(prisma, 'learner-a'));
   b = userDb(await createTestUser(prisma, 'learner-b'));
@@ -106,7 +107,9 @@ describe('two learners', () => {
       'settings',
     ] as const) {
       const rows = await (
-        prisma[model] as unknown as { findMany: () => Promise<{ userId: string | null }[]> }
+        unguardedPrisma[model] as unknown as {
+          findMany: () => Promise<{ userId: string | null }[]>;
+        }
       ).findMany();
       const owners = new Set(rows.map((r) => r.userId));
       expect([...owners].sort(), model).toEqual(

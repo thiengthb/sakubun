@@ -7,6 +7,7 @@ type UserDbModule = typeof import('@/lib/db/user-db');
 type Db = typeof import('@/lib/db/db');
 let U: UserDbModule;
 let prisma: Db['prisma'];
+let unguardedPrisma: Db['unguardedPrisma'];
 
 const SRS = {
   due: new Date('2030-01-15T00:00:00.000Z'),
@@ -21,7 +22,7 @@ const SRS = {
 
 beforeAll(async () => {
   U = await import('@/lib/db/user-db');
-  ({ prisma } = await import('@/lib/db/db'));
+  ({ prisma, unguardedPrisma } = await import('@/lib/db/db'));
   await createTestUser(prisma, 'learner-a');
   await createTestUser(prisma, 'learner-b');
 });
@@ -34,6 +35,7 @@ async function seedItem(userId: string, expression: string) {
   const db = U.userDb(userId);
   return db.item.create({
     data: {
+      userId: db.$ownerId(),
       kind: 'VOCAB',
       expression,
       meaningVi: 'nghĩa',
@@ -46,20 +48,29 @@ describe('userDb', () => {
   it('writes the owner on create, createMany and upsert', async () => {
     const a = U.userDb('learner-a');
     const item = await seedItem('learner-a', '猫');
-    await a.group.createMany({ data: [{ name: 'Một' }, { name: 'Hai' }] });
-    await a.settings.upsert({ where: { userId: 'learner-a' }, create: { data: '{}' }, update: {} });
+    // No userId in the data: the scope writes it. The generated types require it, hence `as never`.
+    await a.group.createMany({ data: [{ name: 'Một' }, { name: 'Hai' }] as never });
+    await a.settings.upsert({
+      where: { userId: 'learner-a' },
+      create: { data: '{}' } as never,
+      update: {},
+    });
 
-    expect(await prisma.item.findUniqueOrThrow({ where: { id: item.id } })).toMatchObject({
+    expect(await unguardedPrisma.item.findUniqueOrThrow({ where: { id: item.id } })).toMatchObject({
       userId: 'learner-a',
     });
-    expect(await prisma.srsState.findUniqueOrThrow({ where: { itemId: item.id } })).toMatchObject({
+    expect(
+      await unguardedPrisma.srsState.findUniqueOrThrow({ where: { itemId: item.id } }),
+    ).toMatchObject({
       userId: 'learner-a',
     });
-    expect(await prisma.group.findMany({ select: { userId: true } })).toEqual([
+    expect(await unguardedPrisma.group.findMany({ select: { userId: true } })).toEqual([
       { userId: 'learner-a' },
       { userId: 'learner-a' },
     ]);
-    expect(await prisma.settings.findFirstOrThrow()).toMatchObject({ userId: 'learner-a' });
+    expect(await unguardedPrisma.settings.findFirstOrThrow()).toMatchObject({
+      userId: 'learner-a',
+    });
   });
 
   it("never reads another learner's rows", async () => {
@@ -91,7 +102,9 @@ describe('userDb', () => {
     expect((await b.item.updateMany({ data: { starred: true } })).count).toBe(0);
     expect((await b.item.deleteMany({})).count).toBe(0);
 
-    expect(await prisma.item.findUniqueOrThrow({ where: { id: theirs.id } })).toMatchObject({
+    expect(
+      await unguardedPrisma.item.findUniqueOrThrow({ where: { id: theirs.id } }),
+    ).toMatchObject({
       meaningVi: 'nghĩa',
       starred: false,
     });
@@ -114,7 +127,9 @@ describe('userDb', () => {
     const b = U.userDb('learner-b');
 
     const seen = await b.$transaction(async (tx) => {
-      await tx.item.create({ data: { kind: 'VOCAB', expression: '鳥', meaningVi: 'chim' } });
+      await tx.item.create({
+        data: { kind: 'VOCAB', expression: '鳥', meaningVi: 'chim' } as never,
+      });
       return tx.item.findMany({ select: { expression: true, userId: true } });
     });
 

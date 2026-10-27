@@ -60,7 +60,7 @@ describe('recordReviews', () => {
     const itemId = await seedOne('把握');
     const srs = await db.srsState.findUniqueOrThrow({ where: { itemId } });
     const turn = await db.turn.create({
-      data: { itemId, direction: 'JA_VI', ja: '状況を把握する', vi: 'nắm bắt tình hình' },
+      data: { userId: db.$ownerId(), itemId, direction: 'JA_VI', ja: '状況を把握する', vi: 'nắm bắt tình hình' },
     });
 
     await R.recordReviews(db, [{ itemId, srs, rating: 2, turnId: turn.id }], {

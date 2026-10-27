@@ -33,8 +33,11 @@ describe('hanvietFillSql', () => {
   it('trên DB thật: điền ô trống, sửa âm máy ghi, không đè âm người học đã sửa, bỏ qua mục tự thêm', () => {
     const url = createTestDb('hanviet-fill-');
     const db = new Database(url.replace(/^file:/, ''));
+    db.prepare(
+      `INSERT INTO "user" ("id", "name", "email", "updatedAt") VALUES ('learner', 'learner', 'l@example.test', 0)`,
+    ).run();
     const insert = db.prepare(
-      `INSERT INTO "Item" ("id", "kind", "expression", "hanviet", "meaningVi", "source") VALUES (?, 'VOCAB', ?, ?, 'x', ?)`,
+      `INSERT INTO "Item" ("id", "userId", "kind", "expression", "hanviet", "meaningVi", "source") VALUES (?, 'learner', 'VOCAB', ?, ?, 'x', ?)`,
     );
     insert.run('empty', '気分', null, 'OPENJLPT');
     insert.run('edited', '年', 'NIÊN (sửa)', 'OPENJLPT');

@@ -1,7 +1,7 @@
 import path from 'node:path';
 import Database from 'better-sqlite3';
 import { expect, test, type Page } from '@playwright/test';
-import { E2E_DB_FILE, E2E_EMAIL, E2E_LOGIN, ownSeedRows, seedE2eAccount } from './fixtures';
+import { E2E_DB_FILE, E2E_EMAIL, E2E_LOGIN, E2E_OWNER, seedE2eAccount } from './fixtures';
 
 async function login(page: Page) {
   await page.goto('/login');
@@ -16,9 +16,9 @@ test('mỗi kiểu luyện được gọi đúng tên trên thẻ lịch sử', 
   const db = new Database(path.join(process.cwd(), E2E_DB_FILE));
   for (const t of ['ReviewLog', 'Sentence', 'SrsState', 'Item']) db.exec(`DELETE FROM "${t}"`);
   const insert = db.prepare(
-    `INSERT INTO Sentence (id, direction, exerciseType, sourceText, sourceRuby, suggested,
+    `INSERT INTO Sentence (userId, id, direction, exerciseType, sourceText, sourceRuby, suggested,
        suggestedRuby, userAnswer, feedback, score, context, createdAt, starred, status)
-     VALUES (?, ?, ?, ?, NULL, ?, NULL, ?, NULL, ?, ?, ?, 0, 'GRADED')`,
+     VALUES (${E2E_OWNER}, ?, ?, ?, ?, NULL, ?, NULL, ?, NULL, ?, ?, ?, 0, 'GRADED')`,
   );
   const rows = [
     [
@@ -65,7 +65,6 @@ test('mỗi kiểu luyện được gọi đúng tên trên thẻ lịch sử', 
       new Date(Date.now() - i * 60_000).toISOString(),
     ),
   );
-  ownSeedRows(db);
   db.close();
 
   await login(page);

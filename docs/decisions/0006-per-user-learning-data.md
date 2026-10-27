@@ -35,7 +35,7 @@ the explanation card their Claude filled in). Plan: `docs/plans/2026-10-25-phase
 - Deleting an account deletes its learning rows, review history included. `ReviewLog` stays
   append-only for a living account.
 - A backup restore remaps `userId` like any other column that points at `user`
-  (`lib/transfer/import.ts`). Rows from a backup made before 7.1a arrive with no owner, and 7.1d
-  assigns them.
+  (`lib/transfer/import.ts`). Rows from a backup made before 7.1a have no owner; since 7.1d the
+  system restore gives them to the first account (admin, else the oldest), the rule the migrations use.
 - 7.1a and 7.1d are two migrations that touch learning data, so the NUC database is backed up
   before each one is deployed.

@@ -1,7 +1,7 @@
 import path from 'node:path';
 import Database from 'better-sqlite3';
 import { expect, test } from '@playwright/test';
-import { E2E_DB_FILE, E2E_EMAIL, E2E_LOGIN, ownSeedRows, seedE2eAccount } from './fixtures';
+import { E2E_DB_FILE, E2E_EMAIL, E2E_LOGIN, E2E_OWNER, seedE2eAccount } from './fixtures';
 
 const STORED = '毎朝コーヒーを飲みます。';
 const CARD_EXAMPLE = 'お茶を飲みました。';
@@ -29,12 +29,11 @@ test.beforeAll(async () => {
   try {
     db.prepare('DELETE FROM Item WHERE id = ?').run(ID);
     db.prepare(
-      `INSERT INTO Item (id, kind, expression, reading, hanviet, meaningVi, level, notes, source,
+      `INSERT INTO Item (userId, id, kind, expression, reading, hanviet, meaningVi, level, notes, source,
                          captureReason, suspended, starred, createdAt, enrichment)
-       VALUES (?, 'VOCAB', '飲む', 'のむ', 'ẩm', 'uống', 'N5', ?, 'MCP', NULL, 0, 0, ?, ?)`,
+       VALUES (${E2E_OWNER}, ?, 'VOCAB', '飲む', 'のむ', 'ẩm', 'uống', 'N5', ?, 'MCP', NULL, 0, 0, ?, ?)`,
     ).run(ID, STORED, new Date().toISOString().replace('Z', '+00:00'), CARD);
   } finally {
-    ownSeedRows(db);
     db.close();
   }
 });

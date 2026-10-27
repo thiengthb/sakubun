@@ -21,6 +21,7 @@ async function addItem(
 ): Promise<string> {
   const row = await db.item.create({
     data: {
+      userId: db.$ownerId(),
       kind: over.kind ?? 'GRAMMAR',
       expression,
       meaningVi: 'nghĩa',

@@ -2,7 +2,9 @@ import { mkdtempSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import Database from 'better-sqlite3';
-import type { PrismaClient } from '@/lib/generated/prisma/client';
+
+// Type only: importing lib/db/db for real would open the database before createTestDb sets its URL.
+type SharedClient = typeof import('@/lib/db/db').prisma;
 
 const PROJECT_ROOT = path.resolve(import.meta.dirname, '..', '..');
 const MIGRATIONS_DIR = path.join(PROJECT_ROOT, 'prisma', 'migrations');
@@ -38,27 +40,31 @@ export function applyMigrations(dbFile: string, { before }: { before?: string } 
 // Child rows first: ReviewLog/Turn/Sentence/SrsState/GroupMember all point at Item or Group, so
 // clearing Item before them would trip the foreign keys SQLite does enforce here.
 const LEARNING_TABLES = [
-  'reviewLog',
-  'turn',
-  'sentence',
-  'srsState',
-  'groupMember',
-  'group',
-  'item',
-  'settings',
-] as const satisfies readonly (keyof PrismaClient)[];
+  'ReviewLog',
+  'Turn',
+  'Sentence',
+  'SrsState',
+  'GroupMember',
+  'Group',
+  'Item',
+  'Settings',
+] as const;
 
 // One reset for every suite that owns a throwaway DB. Deliberately clears the WHOLE learning graph
 // rather than the subset a given suite happens to write: a suite that seeds through lib/practice
 // touches tables it never names, and a partial reset leaks those rows into the next test.
-export async function resetLearningData(prisma: PrismaClient): Promise<void> {
-  for (const table of LEARNING_TABLES) {
-    await (prisma[table] as { deleteMany: (args: object) => Promise<unknown> }).deleteMany({});
-  }
+// Raw SQL, because the shared client refuses learning tables (roadmap 7.1d).
+export async function resetLearningData(
+  prisma: Pick<SharedClient, '$executeRawUnsafe'>,
+): Promise<void> {
+  for (const table of LEARNING_TABLES) await prisma.$executeRawUnsafe(`DELETE FROM "${table}"`);
 }
 
 // A learner account for suites that read or write through `userDb` (roadmap 7.1).
-export async function createTestUser(prisma: PrismaClient, id: string): Promise<string> {
+export async function createTestUser(
+  prisma: Pick<SharedClient, 'user'>,
+  id: string,
+): Promise<string> {
   await prisma.user.upsert({
     where: { id },
     create: { id, name: id, email: `${id}@example.test` },

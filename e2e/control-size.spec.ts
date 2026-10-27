@@ -114,7 +114,10 @@ for (const [width, px] of [
           let node = el.parentElement;
           for (let i = 0; node && i < 4; i++, node = node.parentElement) {
             const s = getComputedStyle(node);
-            if ((s.display.includes('flex') && s.flexDirection === 'row') || s.display.includes('grid'))
+            if (
+              (s.display.includes('flex') && s.flexDirection === 'row') ||
+              s.display.includes('grid')
+            )
               return node;
           }
           return null;

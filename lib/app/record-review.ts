@@ -52,6 +52,7 @@ export async function recordReviews(
       db.srsState.update({ where: { itemId: review.itemId }, data: { ...next } }),
       db.reviewLog.create({
         data: {
+          userId: db.$ownerId(),
           itemId: review.itemId,
           rating: log.rating,
           state: log.state,

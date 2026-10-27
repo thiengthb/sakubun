@@ -38,7 +38,7 @@ const WHERE_OPS = new Set([
 ]);
 // Creates: the owner is written into every row.
 const CREATE_OPS = new Set(['create', 'createMany', 'createManyAndReturn']);
-// Updates may not hand a row to someone else.
+// Updates may not hand a row to someone else, and creates may not write it for someone else.
 const UPDATE_OPS = new Set(['update', 'updateMany', 'updateManyAndReturn']);
 
 type Args = Record<string, unknown>;
@@ -65,8 +65,10 @@ export function scopeArgs(model: string, operation: string, args: unknown, userI
   if (UPDATE_OPS.has(operation)) assertKeepsOwner(next.data, userId, model);
   if (operation === 'upsert') {
     assertKeepsOwner(next.update, userId, model);
+    assertKeepsOwner(next.create, userId, model);
     next.create = owned(next.create, userId);
   } else if (CREATE_OPS.has(operation)) {
+    assertKeepsOwner(next.data, userId, model);
     next.data = Array.isArray(next.data)
       ? next.data.map((row) => owned(row, userId))
       : owned(next.data, userId);
