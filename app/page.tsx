@@ -8,6 +8,7 @@ import {
   GraduationCap,
   Inbox,
   Layers,
+  Plug,
   Target,
 } from 'lucide-react';
 import {
@@ -21,6 +22,7 @@ import {
 import { PageShell } from '@/components/layout/page-shell';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/common/empty-state';
+import { StateNotice } from '@/components/common/state-notice';
 import { AnalyticsTabs } from '@/components/features/dashboard/analytics-tabs';
 import { DailyProgress } from '@/components/features/dashboard/daily-progress';
 import { LiveRefresh } from '@/components/layout/live-refresh';
@@ -37,6 +39,8 @@ import { RetentionCard } from '@/components/features/dashboard/retention-gauge';
 import { ERROR_TAG_LABELS } from '@/lib/session/error-tags';
 import { getDashboard } from '@/lib/insights/dashboard';
 import { getUserDb } from '@/lib/auth/current-user';
+import { hasAiConnection } from '@/lib/auth/connected-apps';
+import { showConnectHint } from '@/lib/insights/connect-hint';
 
 export const metadata: Metadata = {
   title: 'Phân tích — sakubun',
@@ -47,7 +51,26 @@ export const dynamic = 'force-dynamic';
 
 export default async function HomePage() {
   const db = await getUserDb();
-  const data = await getDashboard(db);
+  const [data, connected, firstReview] = await Promise.all([
+    getDashboard(db),
+    hasAiConnection(db.$ownerId()),
+    db.reviewLog.findFirst({ select: { id: true } }),
+  ]);
+  const connectHint = showConnectHint({ connected, reviewed: firstReview !== null }) && (
+    <StateNotice
+      icon={Plug}
+      title="Kết nối Claude để bắt đầu luyện"
+      action={
+        <Button asChild variant="outline" size="sm" className="shrink-0">
+          <Link href="/settings?tab=guide">
+            Xem hướng dẫn <ArrowRight aria-hidden />
+          </Link>
+        </Button>
+      }
+    >
+      Claude hoặc ChatGPT soạn câu và chấm bài; sakubun giữ kho và lịch ôn.
+    </StateNotice>
+  );
   const { weak } = data;
   const totalItems = data.grammarTotal;
   const hasWeakData =
@@ -131,6 +154,7 @@ export default async function HomePage() {
 
   const progress = (
     <>
+      {connectHint}
       <section aria-label="Tổng quan" className="grid grid-cols-2 gap-3 xl:grid-cols-4">
         <StatTile
           icon={CalendarClock}

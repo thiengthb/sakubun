@@ -72,7 +72,11 @@ describe('connected apps', () => {
 
     const apps = await A.listConnectedApps('lan');
     expect(apps.map((a) => a.name)).toEqual(['Claude', 'Ứng dụng không tên']);
-    expect(apps[0]).toMatchObject({ clientId: 'claude', uri: 'https://claude.ai', connectedAt: T0 });
+    expect(apps[0]).toMatchObject({
+      clientId: 'claude',
+      uri: 'https://claude.ai',
+      connectedAt: T0,
+    });
     expect(apps[0].lastUsedAt?.toISOString()).toBe('2026-10-20T01:00:00.000Z');
     expect(await A.listConnectedApps('nobody')).toEqual([]);
   });
@@ -101,5 +105,20 @@ describe('connected apps', () => {
     await connect('minh', 'claude', T0);
     expect(await A.revokeConnectedApp('lan', 'claude')).toBe(false);
     expect(await A.hasConsent('minh', 'claude')).toBe(true);
+  });
+
+  it('có kết nối AI khi có đồng ý OAuth hoặc token MCP đầy đủ, không tính token planner', async () => {
+    expect(await A.hasAiConnection('lan')).toBe(false);
+
+    await prisma.mcpKey.create({
+      data: { userId: 'lan', name: 'hermes', tokenHash: 'h-planner', scope: 'planner' },
+    });
+    expect(await A.hasAiConnection('lan')).toBe(false);
+
+    await prisma.mcpKey.create({ data: { userId: 'lan', name: 'desktop', tokenHash: 'h-full' } });
+    expect(await A.hasAiConnection('lan')).toBe(true);
+
+    await connect('minh', 'claude', T0);
+    expect(await A.hasAiConnection('minh')).toBe(true);
   });
 });
