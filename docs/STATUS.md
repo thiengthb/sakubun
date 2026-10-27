@@ -10,11 +10,11 @@ Cập nhật lần cuối: 2026-10-27 (kế hoạch Kaiwa canvas chờ duyệt).
 
 | Bước | Nhánh / PR | Giữ bởi | Trạng thái |
 | --- | --- | --- | --- |
-| 8 Kaiwa canvas + kho chung: kế hoạch | `docs/kaiwa-plan` | Claude (phiên của thien, 2026-10-27) | Chờ thien duyệt `docs/plans/2026-10-27-kaiwa-canvas.md` |
+| 8 Kaiwa canvas + kho chung: kế hoạch | `docs/kaiwa-plan` | Claude (phiên của thien, 2026-10-27) | Chờ thien duyệt `docs/plans/2026-10-27-phase-8-kaiwa-kho-chung.md` |
 
 ## Chờ thien
 
-- Duyệt kế hoạch phase 8 (Kaiwa canvas, kho chung) và trả lời ba câu cuối file. Muốn trần khác 50 tài khoản thì
+- Duyệt kế hoạch phase 8 (Kaiwa canvas, kho chung) và trả lời bốn câu cuối file. Muốn trần khác 50 tài khoản thì
   đặt `MAX_ACCOUNTS` trên NUC.
 - Sau khi bản 7.3 lên NUC: mở Cài đặt > Hướng dẫn, kiểm địa chỉ MCP là `https://sakubun.thientnse.site/api/mcp`.
 - Gỡ runner `tnt-laptop-wsl` khỏi repo nếu còn (Settings > Actions > Runners).

@@ -46,10 +46,11 @@ artifact 8dhCRanXdgsiDFTJBbUHdf, which only its own Claude account can open). De
 
 ## Phase 8: Kaiwa canvas and shared library
 
-Asked for by thien on 2026-10-27, ahead of 7.4: Kaiwa canvas early, then the UI redo and small bugs together with
-the new pages. Plan: `docs/plans/2026-10-27-kaiwa-canvas.md` (in review). PR rows K1-K8 are listed in the plan and
-added here once approved.
+Asked for by thien on 2026-10-27, ahead of 7.4: Kaiwa canvas early, then the shared library (kho chung: a
+community library of grammar and vocab seeded from OpenJLPT; new accounts start empty and take or publish items)
+together with the UI redo and small bugs. Plan: `docs/plans/2026-10-27-phase-8-kaiwa-kho-chung.md` (in review).
+PR rows K1-K8 and L1-L6 are listed in the plan and added here once approved.
 
 | # | PR | Done when | Risk | Status |
 | --- | --- | --- | --- | --- |
-| 8 | Kaiwa canvas (script editor, furigana, lookup, VOICEVOX) and a shared library | thien approves the plan, then screenshots per PR | high | Plan in review |
+| 8 | Kaiwa canvas (script editor, furigana, lookup, VOICEVOX) and the shared library (take, publish, fork, AI search) | thien approves the plan, then screenshots per PR | high | Plan in review |
