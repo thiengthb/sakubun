@@ -46,6 +46,19 @@ export async function listConnectedApps(userId: string): Promise<ConnectedApp[]>
   return [...byClient.values()];
 }
 
+/**
+ * Whether any AI app can reach this learner's data: an OAuth consent (claude.ai, ChatGPT) or a pasted
+ * full MCP token (Claude Desktop). Phân tích points a learner with neither at the guide (roadmap 7.3b).
+ */
+export async function hasAiConnection(userId: string): Promise<boolean> {
+  const [consents, keys] = await Promise.all([
+    prisma.oauthConsent.count({ where: { userId } }),
+    // A planner token only reads review counts for a scheduling bot; it cannot tutor.
+    prisma.mcpKey.count({ where: { userId, scope: 'full' } }),
+  ]);
+  return consents + keys > 0;
+}
+
 /** Whether this learner still lets this app in: what /api/mcp checks on each OAuth call. */
 export async function hasConsent(userId: string, clientId: string): Promise<boolean> {
   return (await prisma.oauthConsent.count({ where: { userId, clientId } })) > 0;

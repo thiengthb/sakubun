@@ -34,20 +34,23 @@ function read<T>(storeKey: string, initial: T, urlKey?: string, area: Area = 'se
   } catch {
     return initial;
   }
+  // A ?tab= in the address wins over the stored value: a link such as /settings?tab=guide must land
+  // on that tab even if the learner left another one open earlier. setValue keeps both in step.
+  const fromUrl = urlKey ? new URLSearchParams(window.location.search).get(urlKey) : null;
+  const key = fromUrl != null ? `url:${fromUrl}` : raw;
   const hit = cache.get(storeKey);
-  if (hit && hit.raw === raw) return hit.value as T;
+  if (hit && hit.raw === key) return hit.value as T;
   let value = initial;
-  if (raw != null) {
+  if (fromUrl != null) {
+    value = deserialize(fromUrl, initial);
+  } else if (raw != null) {
     try {
       value = JSON.parse(raw) as T;
     } catch {
       value = initial;
     }
-  } else if (urlKey) {
-    const p = new URLSearchParams(window.location.search).get(urlKey);
-    if (p != null) value = deserialize(p, initial);
   }
-  cache.set(storeKey, { raw, value });
+  cache.set(storeKey, { raw: key, value });
   return value;
 }
 
