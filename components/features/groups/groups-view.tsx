@@ -16,7 +16,7 @@ import {
   type FilterOption,
 } from '@/components/common/filter-popover';
 import { GroupEditAction } from '@/components/features/groups/group-actions';
-import { GroupKindBadge } from '@/components/features/groups/group-kind-badge';
+import { GroupKindBadge } from '@/components/common/group-kind-badge';
 import { GROUP_KIND_LABELS } from '@/lib/library/group-kinds';
 import { SearchInput } from '@/components/common/search-input';
 import { SearchToolbar } from '@/components/common/search-toolbar';

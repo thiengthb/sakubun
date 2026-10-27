@@ -4,6 +4,7 @@ import {
   BookText,
   ChartColumn,
   FolderOpen,
+  Globe,
   History,
   LayoutDashboard,
   Languages,
@@ -64,6 +65,13 @@ const CRUMBS = {
     icon: FolderOpen,
     description:
       'Bộ sưu tập tự đặt tên — gom mẫu ngữ pháp và từ vựng theo chủ đề để luyện tập trung.',
+  },
+  library: {
+    label: 'Kho chung',
+    href: '/library',
+    icon: Globe,
+    description:
+      'Ngữ pháp và từ vựng chung của mọi người, khởi đầu từ OpenJLPT: lấy từng mục hoặc cả một nhóm về kho của bạn, kèm lịch ôn mới.',
   },
   history: {
     label: 'Lịch sử',
