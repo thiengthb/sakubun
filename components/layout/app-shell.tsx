@@ -1,7 +1,15 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import { History, Layers, LayoutDashboard, Library, MessagesSquare, Settings } from 'lucide-react';
+import {
+  Globe,
+  History,
+  Layers,
+  LayoutDashboard,
+  Library,
+  MessagesSquare,
+  Settings,
+} from 'lucide-react';
 import { AppLogo } from '@/components/layout/app-logo';
 import { AppSidebar, type AppSidebarGroup } from '@/components/layout/app-sidebar';
 import { EdgeNavRail } from '@/components/layout/edge-nav-rail';
@@ -21,6 +29,7 @@ const NAV_ITEMS = [
   { href: '/review', label: 'Ôn nhanh', icon: Layers },
   { href: '/kaiwa', label: 'Hội thoại', icon: MessagesSquare },
   { href: '/resources', label: 'Tài nguyên', icon: Library },
+  { href: '/library', label: 'Kho chung', icon: Globe },
   { href: '/history', label: 'Lịch sử', icon: History },
   { href: '/settings', label: 'Cài đặt', icon: Settings },
 ];
