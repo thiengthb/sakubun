@@ -46,6 +46,8 @@ export interface ItemInput {
   notes?: string;
   tags?: string[];
   captureReason?: VocabCaptureReason;
+  // The shared-library entry it is taken from (phase 8, L1b).
+  libraryEntryId?: string;
 }
 
 export interface AddItemsResult {
@@ -130,6 +132,7 @@ export async function addItems(
           notes: cleanTextOrNull(entry.notes),
           tags: entry.tags?.length ? JSON.stringify(entry.tags) : null,
           captureReason: entry.captureReason ?? null,
+          libraryEntryId: entry.libraryEntryId ?? null,
           source,
           srs: { create: { ...newSrsFields(), userId: db.$ownerId() } },
         },

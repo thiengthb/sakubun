@@ -61,6 +61,17 @@ describe('parseAccountBackup', () => {
     expect(res.data.groupMembers[0].groupId).toBe('g1');
     expect(res.data.groupMembers[0].addedAt).toBeInstanceOf(Date);
   });
+
+  it('keeps where an item or a group was taken from in the shared library (phase 8, L1b)', () => {
+    const res = parseAccountBackup({
+      items: [
+        { id: 'i1', kind: 'VOCAB', expression: '店', meaningVi: 'cửa hàng', libraryEntryId: 'le1' },
+      ],
+      groups: [{ id: 'g1', name: 'N5 · Từ vựng', libraryEntryId: 'le2' }],
+    });
+    expect(res.ok && res.data.items[0].libraryEntryId).toBe('le1');
+    expect(res.ok && res.data.groups[0].libraryEntryId).toBe('le2');
+  });
 });
 
 describe('planById (upsert)', () => {

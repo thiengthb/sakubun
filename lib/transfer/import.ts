@@ -49,6 +49,7 @@ function itemData(row: BackupItem) {
     starred: row.starred,
     enrichment: row.enrichment ?? null,
     enrichedAt: row.enrichedAt ?? null,
+    libraryEntryId: row.libraryEntryId ?? null,
   };
 }
 
@@ -72,6 +73,7 @@ function groupData(row: BackupGroup) {
     kind: row.kind,
     color: row.color ?? null,
     note: row.note ?? null,
+    libraryEntryId: row.libraryEntryId ?? null,
   };
 }
 
