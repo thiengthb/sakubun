@@ -10,11 +10,11 @@ Cập nhật lần cuối: 2026-10-27 (7.2c xong, 7.2d mở PR).
 
 | Bước | Nhánh / PR | Giữ bởi | Trạng thái |
 | --- | --- | --- | --- |
-| 7.2d | `feat/7.2d-open-sign-up` | phiên `session_01FokVawKvZGmPLu9XkUuTAp` (từ 2026-10-27) | PR mở, chờ thien merge (risk:high) |
+| 7.2d | `feat/7.2d-open-sign-up` | phiên `session_01FokVawKvZGmPLu9XkUuTAp` (từ 2026-10-27) | #141, chờ thien merge (risk:high) |
 
 ## Chờ thien
 
-- Merge PR 7.2d (mở đăng ký). Trước khi người lạ đăng nhập được: chuyển app OAuth Google sang "In production"
+- Merge #141 (7.2d, mở đăng ký). Trước khi người lạ đăng nhập được: chuyển app OAuth Google sang "In production"
   (Google Cloud Console > OAuth consent screen); nếu muốn trần khác 50 tài khoản thì đặt `MAX_ACCOUNTS` trên NUC.
 - Gỡ runner `tnt-laptop-wsl` khỏi repo nếu còn (Settings > Actions > Runners).
 - Kiểm app sau khi bản 7.1d lên NUC (sao lưu trước đó: `~/backups/sakubun-before-7.1d-20261027T030406Z.db`).
