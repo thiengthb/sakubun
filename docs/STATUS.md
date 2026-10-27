@@ -4,21 +4,19 @@ Trang này trả lời ba câu cho bất kỳ phiên Claude nào (kể cả từ
 việc tiếp theo là gì**. Cập nhật nó **trong cùng PR** với việc làm, và khi nhận một bước mới (xem
 "Bắt đầu phiên" trong `CLAUDE.md`). Lộ trình đầy đủ: `docs/roadmap.md`. Kế hoạch đã duyệt: `docs/plans/`.
 
-Cập nhật lần cuối: 2026-10-27 (7.2 xong).
+Cập nhật lần cuối: 2026-10-27 (app OAuth Google đã In production).
 
 ## Đang làm
 
 | Bước | Nhánh / PR | Giữ bởi | Trạng thái |
 | --- | --- | --- | --- |
-| Trang `/privacy`, `/terms` (để công bố app OAuth Google) | `feat/privacy-terms` | phiên `session_01FokVawKvZGmPLu9XkUuTAp` (từ 2026-10-27) | #144, chờ thien duyệt nội dung và merge (risk:high) |
+| (trống) | | | |
 
 ## Chờ thien
 
-- Đăng ký đã mở (#141), nhưng app OAuth Google (project `sakubun-511118`) còn "Testing". Google khoá nút Publish
-  tới khi Branding có trang chủ, link chính sách bảo mật, điều khoản và tên miền uỷ quyền. Sau khi PR trang
-  `/privacy`, `/terms` merge và lên NUC: điền `https://sakubun.thientnse.site`, `/privacy`, `/terms`, tên miền
-  `thientnse.site`, rồi Publish app (không tải logo để khỏi phải xác minh). Muốn trần khác 50 tài khoản thì đặt
-  `MAX_ACCOUNTS` trên NUC.
+- Thử đăng nhập bằng một tài khoản Google khác. App OAuth Google (project `sakubun-511118`) đã "In production"
+  từ 2026-10-27, Branding trỏ `https://sakubun.thientnse.site`, `/privacy`, `/terms` (#144). Muốn trần khác 50 tài khoản
+  thì đặt `MAX_ACCOUNTS` trên NUC.
 - Gỡ runner `tnt-laptop-wsl` khỏi repo nếu còn (Settings > Actions > Runners).
 - Kiểm app sau khi bản 7.1d lên NUC (sao lưu trước đó: `~/backups/sakubun-before-7.1d-20261027T030406Z.db`).
 
