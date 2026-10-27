@@ -1,11 +1,17 @@
 import { SpokenLine } from '@/components/common/spoken-line';
 import { LIST_CARD } from '@/components/common/list-card';
+import { KaiwaWord } from '@/components/features/kaiwa/kaiwa-word';
 import type { Turn } from '@/lib/kaiwa/layout';
+import type { WordMeaning } from '@/lib/kaiwa/lookup';
 import { plainJapanese, type ScriptLine } from '@/lib/kaiwa/parse';
 import { cn } from '@/lib/core/utils';
 
-// A script line with the furigana to show: worked out on save, or the author's own (K4).
-export type RubyLine = ScriptLine & { ruby: string };
+// A script line with the furigana to show (worked out on save, or the author's own, K4) and its
+// words: runs of its characters, each with the key of its meaning when one is known (K5).
+export type RubyLine = ScriptLine & {
+  ruby: string;
+  words: { length: number; key: string | null }[] | null;
+};
 
 // The speaker's mark, by tone (lib/kaiwa/layout.ts): the learner in the brand colour, the others
 // in neutral shades that stay apart in light and dark.
@@ -21,12 +27,14 @@ const MARK_TONES = [
 // monologue as plain cards. The speaker's mark shows on the first line of each run.
 export function KaiwaLine({
   turn,
+  meanings,
   showMeaning,
   showFurigana,
   voiceSpeaker,
   speechRate,
 }: {
   turn: Turn<RubyLine>;
+  meanings: Record<string, WordMeaning>;
   showMeaning: boolean;
   showFurigana: boolean;
   voiceSpeaker?: number;
@@ -41,6 +49,13 @@ export function KaiwaLine({
       speaker={voiceSpeaker}
       rate={speechRate}
       label="Nghe câu"
+      groups={line.words?.map((word) => {
+        const meaning = word.key ? meanings[word.key] : undefined;
+        return {
+          length: word.length,
+          wrap: meaning && ((run) => <KaiwaWord meaning={meaning}>{run}</KaiwaWord>),
+        };
+      })}
     />
   );
   const meaning = line.translation && showMeaning && (

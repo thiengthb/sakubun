@@ -12,6 +12,17 @@ const BODY = [
   'A: こちらへどうぞ。 | Mời đi lối này.',
 ].join('\n');
 // What a save stores (K4): the author's furigana where they wrote it, readings worked out elsewhere.
+// The scene line carries its words (K5), as the tokenizer gives them.
+const SCENE_TOKENS = [
+  { surface: '店', reading: 'みせ', pos: '名詞' },
+  { surface: 'の', pos: '助詞' },
+  { surface: '中', reading: 'なか', pos: '名詞' },
+  { surface: 'は', pos: '助詞' },
+  { surface: '静か', reading: 'しずか', pos: '名詞' },
+  { surface: 'だっ', base: 'だ', pos: '助動詞' },
+  { surface: 'た', pos: '助動詞' },
+  { surface: '。', pos: '記号' },
+];
 const ANALYSIS = JSON.stringify({
   v: 1,
   lines: [
@@ -19,7 +30,7 @@ const ANALYSIS = JSON.stringify({
     'いらっしゃいませ。何名様[なんめいさま]ですか。',
     '二人[ふたり]です。',
     'こちらへどうぞ。',
-  ].map((ruby) => ({ ruby, tokens: [] })),
+  ].map((ruby, i) => ({ ruby, tokens: i === 0 ? SCENE_TOKENS : [] })),
 });
 
 function db() {
@@ -38,6 +49,13 @@ test('Hội thoại lists a saved script and its page reads it line by line', as
   await seedE2eAccount();
   const d = db();
   d.exec(`DELETE FROM Script WHERE userId = ${E2E_OWNER}`);
+  // 店 is the learner's own word; 静か only OpenJLPT's.
+  d.pragma('foreign_keys = ON');
+  d.exec(`DELETE FROM Item WHERE userId = ${E2E_OWNER} AND expression IN ('店', '静か')`);
+  d.prepare(
+    `INSERT INTO Item (id, userId, kind, expression, reading, meaningVi, level, source, createdAt)
+     VALUES ('kw-mise', ${E2E_OWNER}, 'VOCAB', '店', 'みせ', 'cửa hàng (kho riêng)', 'N5', 'MANUAL', ?)`,
+  ).run(new Date().toISOString());
   d.prepare(
     `INSERT INTO Script (id, userId, title, body, analysis, version, createdAt, updatedAt)
      VALUES ('kw-e2e', ${E2E_OWNER}, 'Ở nhà hàng', ?, ?, 1, ?, ?)`,
@@ -69,7 +87,27 @@ test('Hội thoại lists a saved script and its page reads it line by line', as
     (await lines.nth(i).locator('span[role="img"]').boundingBox())!.x;
   expect(await leftOf(1)).toBeLessThan(await leftOf(2));
 
+  // K5: resting the mouse on a word shows its meaning, the learner's own first.
+  const words = lines.first().locator('[data-slot="kaiwa-word"]');
+  // A word's text includes its furigana.
+  await expect(words).toHaveText(['店みせ', '中なか', '静しずか']);
+  await words.nth(0).hover();
+  const popover = page.locator('[data-slot="popover-content"]');
+  await expect(popover).toContainText('cửa hàng (kho riêng)');
+  await expect(popover.getByRole('link', { name: 'Đã có trong kho của bạn' })).toBeVisible();
+  await page.mouse.move(0, 0);
+  await expect(popover).toHaveCount(0);
+  await words.nth(2).hover();
+  await expect(popover).toContainText('yên tĩnh');
+  await popover.getByRole('button', { name: 'Thêm vào kho' }).click();
+  await expect(page.getByText('Đã thêm 静か vào kho')).toBeVisible();
+  await expect(popover.getByRole('link', { name: 'Đã có trong kho của bạn' })).toBeVisible();
   const shots = process.env.SCREENSHOT_DIR;
+  if (shots) {
+    await page.screenshot({ path: path.join(shots, 'kaiwa-word-1440.png') });
+  }
+  await page.mouse.move(0, 0);
+
   if (shots)
     for (const width of [1440, 390]) {
       await page.setViewportSize({ width, height: width === 390 ? 844 : 900 });
