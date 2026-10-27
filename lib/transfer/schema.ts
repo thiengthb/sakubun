@@ -18,6 +18,7 @@ const itemSchema = z.object({
   starred: z.boolean().default(false),
   enrichment: z.string().nullish(),
   enrichedAt: z.coerce.date().nullish(),
+  libraryEntryId: z.string().nullish(),
   createdAt: z.coerce.date().optional(),
 });
 
@@ -99,6 +100,7 @@ const groupSchema = z.object({
   kind: z.string().default('mixed'),
   color: z.string().nullish(),
   note: z.string().nullish(),
+  libraryEntryId: z.string().nullish(),
   createdAt: z.coerce.date().optional(),
   updatedAt: z.coerce.date().optional(),
 });

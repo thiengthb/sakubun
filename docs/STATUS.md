@@ -8,9 +8,9 @@ Cập nhật lần cuối: 2026-10-27 (Kaiwa sơ bộ K1–K5 đã lên `main` q
 
 ## Đang làm
 
-| Bước                                                                   | Nhánh / PR                                        | Giữ bởi                              | Trạng thái                    |
-| ---------------------------------------------------------------------- | ------------------------------------------------- | ------------------------------------ | ----------------------------- |
-| 8 L1 kho chung: `LibraryEntry`, nhóm, lượt thích, nạp OpenJLPT, lấy về | `feat/8-l1-library-entries` (L1a: bảng, nạp, đọc) | Claude (phiên của thien, 2026-10-27) | PR mở; L1b (lấy về) tiếp theo |
+| Bước                                                                   | Nhánh / PR                                                                           | Giữ bởi                              | Trạng thái              |
+| ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------ | ------------------------------------ | ----------------------- |
+| 8 L1 kho chung: `LibraryEntry`, nhóm, lượt thích, nạp OpenJLPT, lấy về | L1a `feat/8-l1-library-entries` (#159), L1b `feat/8-l1b-library-take` (xếp trên L1a) | Claude (phiên của thien, 2026-10-27) | hai PR mở; tiếp theo L2 |
 
 ## Chờ thien
 

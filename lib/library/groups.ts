@@ -60,6 +60,8 @@ export interface CreateGroupInput {
   kind?: GroupKind;
   color?: string | null;
   note?: string | null;
+  // The shared-library group it is taken from (phase 8, L1b).
+  libraryEntryId?: string;
 }
 
 export interface UpdateGroupPatch {
@@ -274,6 +276,7 @@ export async function createGroup(db: UserDb, input: CreateGroupInput): Promise<
       kind,
       color: cleanTextOrNull(input.color ?? null),
       note: cleanTextOrNull(input.note ?? null),
+      libraryEntryId: input.libraryEntryId ?? null,
     },
   });
   return {
