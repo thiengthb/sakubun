@@ -11,6 +11,7 @@ Cập nhật lần cuối: 2026-10-27 (kế hoạch 7.2 duyệt, nhận 7.2a).
 | Bước | Nhánh / PR | Giữ bởi | Trạng thái |
 | --- | --- | --- | --- |
 | 7.2a | `feat/7.2a-admin-only-gates` | phiên `session_01FokVawKvZGmPLu9XkUuTAp` (từ 2026-10-27) | Đang code |
+| 7.2b | `feat/7.2b-starter-deck` | phiên `session_01FokVawKvZGmPLu9XkUuTAp` (từ 2026-10-27) | PR mở, `risk:low`, AI merge khi CI xanh |
 
 ## Chờ thien
 
@@ -32,7 +33,5 @@ Cập nhật lần cuối: 2026-10-27 (kế hoạch 7.2 duyệt, nhận 7.2a).
 - Khôi phục bản sao lưu toàn hệ thống so email phân biệt hoa thường (`lib/transfer/import.ts`), nên có thể tạo
   một tài khoản trùng. Cần sửa trước khi 7.2 mở đăng ký.
 - Chữ "Xóa" và "Xoá" dùng lẫn lộn trong UI; chọn một cách viết (repo đang dùng "Xoá" trong tài liệu).
-- Cho 7.2: Item OpenJLPT có id cố định giữa các bản dựng và `lib/import/hanviet-fill.ts` tìm theo id. Khi chép
-  kho OpenJLPT cho người thứ hai, id phải mới, nên phần điền Hán Việt phải tìm theo (userId, kind, expression).
 - Repo public từ 2026-10-27; CI về lại runner của GitHub (#135, `docs/ci-runner.md`). Không dùng runner tự host khi
   repo public; runner `tnt-laptop-wsl` trên laptop đã dừng.

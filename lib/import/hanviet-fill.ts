@@ -1,9 +1,11 @@
 // Hán Việt readings confirmed or corrected after the OpenJLPT words were imported, as SQL for a data
-// migration. Item ids are stable across builds, so the imported rows are found by id. A row is changed
-// only while it still holds what the earlier build wrote there (no reading, or the old spelling): a
-// reading the learner typed in, or an item they deleted, is left alone. A reading is never removed.
+// migration. Every learner has their own copy of the deck under their own ids (roadmap 7.2), so a row
+// is found by what it is: an OpenJLPT word with that expression. Ids only pair the two builds here. A
+// row is changed only while it still holds what the earlier build wrote there (no reading, or the old
+// spelling): a reading the learner typed in, or an item they deleted, is left alone. A reading is never
+// removed.
 
-type Row = { id: string; kind: string; hanviet: string | null };
+type Row = { id: string; kind: string; expression: string; hanviet: string | null };
 
 const quote = (s: string) => `'${s.replace(/'/g, "''")}'`;
 
@@ -14,7 +16,8 @@ export function hanvietFillSql(before: Row[], after: Row[]): string {
     .map((r) => {
       const old = had.get(r.id);
       return (
-        `UPDATE "Item" SET "hanviet" = ${quote(r.hanviet!)} WHERE "id" = ${quote(r.id)}` +
+        `UPDATE "Item" SET "hanviet" = ${quote(r.hanviet!)} WHERE "kind" = 'VOCAB'` +
+        ` AND "expression" = ${quote(r.expression)}` +
         ` AND "source" = 'OPENJLPT' AND "hanviet" ${old ? `= ${quote(old)}` : 'IS NULL'};`
       );
     })
