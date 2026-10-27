@@ -4,17 +4,16 @@ Trang này trả lời ba câu cho bất kỳ phiên Claude nào (kể cả từ
 việc tiếp theo là gì**. Cập nhật nó **trong cùng PR** với việc làm, và khi nhận một bước mới (xem
 "Bắt đầu phiên" trong `CLAUDE.md`). Lộ trình đầy đủ: `docs/roadmap.md`. Kế hoạch đã duyệt: `docs/plans/`.
 
-Cập nhật lần cuối: 2026-10-27 (7.2d xong, 7.2e mở PR).
+Cập nhật lần cuối: 2026-10-27 (7.2 xong).
 
 ## Đang làm
 
 | Bước | Nhánh / PR | Giữ bởi | Trạng thái |
 | --- | --- | --- | --- |
-| 7.2e | `feat/7.2e-connected-apps` | phiên `session_01FokVawKvZGmPLu9XkUuTAp` (từ 2026-10-27) | #142, chờ thien duyệt ảnh và merge (risk:high) |
+| (trống) | | | |
 
 ## Chờ thien
 
-- Duyệt ảnh mục "Ứng dụng đã kết nối" trong Cài đặt (7.2e, #142) rồi merge.
 - Đăng ký đã mở (#141). Trước khi người lạ đăng nhập được: chuyển app OAuth Google sang "In production"
   (Google Cloud Console > OAuth consent screen); nếu muốn trần khác 50 tài khoản thì đặt `MAX_ACCOUNTS` trên NUC.
 - Gỡ runner `tnt-laptop-wsl` khỏi repo nếu còn (Settings > Actions > Runners).
@@ -22,8 +21,10 @@ Cập nhật lần cuối: 2026-10-27 (7.2d xong, 7.2e mở PR).
 
 ## Tiếp theo
 
-1. 7.2a xong (#138), 7.2b xong (#139), 7.2c xong (#140: `/admin` và trang từng tài khoản), 7.2d xong (#141, mở đăng ký).
-   Còn 7.2e theo `docs/plans/2026-10-27-phase7-2-sign-up.md`: Ứng dụng đã kết nối trong Cài đặt (4.2).
+1. Phase 7.2 xong: quyền theo vai trò (#138), kho OpenJLPT cho người mới (#139), `/admin` và trang từng tài khoản
+   (#140), mở đăng ký (#141), Ứng dụng đã kết nối với thu hồi ngay (#142).
+2. Bước kế theo lộ trình: 7.3 (viết lại trang Hướng dẫn) và 7.4 (từng trang mới trong UI mới). Cả hai cần thien
+   duyệt ảnh; hỏi thien trước khi nhận.
 
 ## Việc nhỏ còn treo
 
