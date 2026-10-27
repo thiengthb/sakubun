@@ -14,8 +14,8 @@ viết muốn; không đưa thì chỉ người viết thấy.
 ## Thứ tự
 
 1. **Kaiwa sơ bộ** (K1–K3): soạn, xem, nghe, furigana tự động. thien muốn có sớm.
-2. **Kho chung** (L1–L6) và **7.4 sửa UI + lỗi trong STATUS** làm xen nhau: trang mới (Kho chung, Hội thoại) làm
-   thẳng theo UI mới.
+2. **Kho chung** (L1–L6), **Ôn nhanh** (phần C) và **7.4 sửa UI + lỗi trong STATUS** làm xen nhau: trang mới (Kho
+   chung, Hội thoại) và Ôn nhanh làm thẳng theo UI mới.
 3. Phần Kaiwa còn lại (K4–K8) xen vào theo thứ tự thien chọn. K6 (đưa kịch bản lên kho chung) cần L1 xong trước.
 
 ## Phần A. Kho chung
@@ -84,7 +84,9 @@ kho của mọi người bằng SQL tay (chỉ cột nội dung), "lấy về" c
    nhóm. Cập nhật và gỡ nhóm theo luật 4 và 6. Mục riêng tư không bao giờ lọt ra ngoài qua nhóm: chỉ mục trong nhóm
    được công khai, và người học thấy danh sách trước khi bấm.
 9. **Quản trị**: ẩn hoặc hiện lại một mục, xem mục của một tài khoản trong `/admin/[id]`. Tài khoản bị chặn thì mục
-   của họ ẩn theo. Xoá tài khoản thì mục của họ: câu hỏi 2.
+   của họ ẩn theo. **Xoá tài khoản** (thien 2026-10-27, theo đề xuất): mục và nhóm họ công khai ẩn khỏi kho chung,
+   tên tác giả bỏ; người đã lấy giữ bản của họ. Mục đó nằm trong nhóm công khai của người khác thì vẫn hiện trong nhóm
+   ấy, tác giả ghi "người dùng đã xoá", vì người gom nhóm đã chọn nó.
 10. **Tài khoản mới bắt đầu trống**: bỏ việc chép OpenJLPT lúc đăng ký (7.2b). OpenJLPT lên kho chung thành các nhóm
    có sẵn theo cấp và loại ("N5 ngữ pháp", "N5 từ vựng"…). Trang Phân tích của người trống chỉ tới Kho chung và
    Hướng dẫn. Kho của tài khoản đang có giữ nguyên, không đụng.
@@ -136,6 +138,27 @@ Mã nằm ở OneDrive laptop (`Tài liệu/ChatGPT/japanese-script-canvas`), **
 | K7 | MCP: một tool liệt kê, đọc, lưu kịch bản và nhập vai theo kịch bản | high |
 | K8 | Nhập kịch bản cũ từ `scripts.json` của kaiwa-canvas (nếu thien còn file trên NUC) | high (dữ liệu) |
 
+## Phần C. Ôn nhanh cần cải thiện sâu
+
+thien (2026-10-27): đáp án chưa có phần dịch; thẻ ngữ pháp nên là câu ví dụ để người học thấy dùng trong trường hợp
+nào. Đọc mã hôm nay (`lib/app/quick-review.ts`):
+
+- Câu ví dụ lấy từ thẻ giải thích (do AI viết, có tiếng Việt) hoặc câu OpenJLPT trong ghi chú. Câu OpenJLPT chỉ có
+  tiếng Anh, và ôn nhanh bỏ cả tiếng Anh, nên phần lớn thẻ **không có dịch**: chỉ mục đã có thẻ giải thích mới có.
+- Mỗi mục OpenJLPT chỉ có **một** câu ví dụ, nên thẻ điền chỗ trống lặp đúng một câu mỗi lần.
+- Mục mới là thẻ lật; mục ngữ pháp không có câu khớp thì mặt trước chỉ còn mẫu `〜は`, không có ngữ cảnh.
+
+Hướng đề xuất (kế hoạch chi tiết riêng `docs/plans/…-quick-review.md`, kèm ảnh trước và sau, thien duyệt trước khi
+code, vì đổi hành vi học):
+
+1. Thêm **dịch tiếng Việt** cho câu ví dụ OpenJLPT thành dữ liệu tĩnh trong repo (như `vi.json` hôm nay), soạn một
+   lần, có người xem lại. Web vẫn không tự sinh câu.
+2. Thẻ ngữ pháp **luôn bắt đầu bằng câu ví dụ** (gạch chân mẫu, hoặc điền chỗ trống khi đã gặp), đáp án hiện nghĩa,
+   cấu trúc, câu dịch và furigana.
+3. Nhiều câu ví dụ mỗi mục, xoay vòng theo ngày: lấy từ thẻ giải thích, và cho AI của người học thêm câu qua MCP khi
+   người học muốn (bộ tool MCP hôm nay chưa có lối ghi thẻ giải thích, cần thêm một tool).
+4. Mục không có câu nào thì nói rõ trên thẻ và chỉ cách nhờ Claude viết thẻ giải thích.
+
 ## Giữ luật của sakubun
 
 - Web không tự soạn câu, không tự chấm. Tách từ, furigana, tra nghĩa, phát âm, tìm kho chung là công cụ cố định.
@@ -159,11 +182,11 @@ Mã nằm ở OneDrive laptop (`Tài liệu/ChatGPT/japanese-script-canvas`), **
 
 ## Câu hỏi cho thien
 
-1. Đã trả lời 2026-10-27: chia sẻ theo **nhóm** (Nhóm đang có), xem luật 8.
-2. Xoá một tài khoản thì các mục họ đã công khai: ẩn theo (đề xuất, người đã lấy vẫn giữ bản của họ), hay giữ lại
-   trên kho chung với tên "người dùng đã xoá"?
-3. Bạn nói tính năng hiện "còn vài chỗ hơi off": là những chỗ nào (ví dụ thêm từ, tra `lookup`, hạn mức ngày)?
-   Mình đưa vào danh sách lỗi làm cùng 7.4.
-4. kaiwa-canvas cũ: `kaiwa.thientnse.site` đã không còn chạy (kiểm từ laptop 2026-10-27, mọi đường dẫn trả 404).
-   Kịch bản nếu còn nằm trong Docker volume `canvas-data` trên NUC (`scripts.json`). thien xem giúp có kịch bản nào
-   đáng nhập không; không có thì bỏ K8.
+Đã trả lời hết (2026-10-27):
+
+1. Chia sẻ theo **nhóm** (Nhóm đang có), xem luật 8.
+2. Xoá tài khoản: theo đề xuất, xem luật 9.
+3. Chỗ "hơi off": Ôn nhanh, xem phần C.
+4. kaiwa-canvas cũ đã down (kiểm từ laptop 2026-10-27, mọi đường dẫn trả 404), có thể mất dữ liệu. NUC đã cài lại;
+   bản lưu cuối trên laptop (`nuc-infra/runbooks/01-reinstall-os.md`) có volume kaiwa. Có kịch bản thì K8 nhập,
+   không có thì bỏ K8.
