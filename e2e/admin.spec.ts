@@ -14,8 +14,9 @@ function seedLearners() {
   const db = new Database(path.join(process.cwd(), E2E_DB_FILE));
   const iso = (ms: number) => new Date(ms).toISOString().replace('Z', '+00:00');
   const now = Date.now();
+  // Other specs sign up accounts too; this page counts every account.
+  db.prepare('DELETE FROM user WHERE email != ?').run(E2E_EMAIL);
   for (const [i, u] of LEARNERS.entries()) {
-    db.prepare('DELETE FROM user WHERE id = ?').run(u.id);
     db.prepare(
       `INSERT INTO user (id, name, email, emailVerified, createdAt, updatedAt, role, banned)
        VALUES (?, ?, ?, 1, ?, ?, 'user', ?)`,

@@ -18,7 +18,7 @@ export function LoginForm({
   error: string | null;
 }) {
   return (
-    <AuthCard title="Đăng nhập" description="Chỉ tài khoản Google đã được chỉ định mới vào được.">
+    <AuthCard title="Đăng nhập" description="Đăng nhập hoặc tạo tài khoản bằng Google.">
       <CardContent className="space-y-4">
         {error && (
           <p role="alert" className="rounded-sm bg-alert-wash px-3 py-2 text-sm text-destructive">
@@ -29,8 +29,7 @@ export function LoginForm({
           <GoogleSignInButton label="Đăng nhập với Google" />
         ) : (
           <p className="rounded-sm bg-muted px-3 py-2 text-sm text-muted-foreground">
-            Server chưa cấu hình đăng nhập Google (GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET,
-            ALLOWED_EMAIL).
+            Server chưa cấu hình đăng nhập Google (GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET).
           </p>
         )}
         {passwordLogin && <TestPasswordForm />}
