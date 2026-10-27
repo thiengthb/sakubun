@@ -28,6 +28,7 @@ xoá tài khoản. Sao lưu toàn bộ DB, khôi phục và thống kê công c�
 | Thẻ "Dùng MCP" trong Cài đặt (`readToolUsage`) | ai cũng thấy | chỉ quản trị |
 | Khôi phục: so email (`reconcileUsersByEmail`) | phân biệt hoa thường, có thể tạo tài khoản trùng | so không phân biệt hoa thường |
 | `lib/import/hanviet-fill.ts` | tìm Item theo id cố định của OpenJLPT | tìm theo (userId, kind, expression) |
+| `GET /api/tts` | không cần đăng nhập: ai trên mạng cũng dùng được VOICEVOX trên NUC | cần một tài khoản không bị chặn |
 
 ## Vai trò
 
@@ -74,8 +75,8 @@ hồi nhận 401 ở lần refresh tiếp theo (điều kiện "Done when" của
 
 | PR | Nội dung | Rủi ro | Ai merge |
 | --- | --- | --- | --- |
-| 7.2a | Bịt lỗ hổng: backup, khôi phục, thống kê MCP chỉ quản trị; so email không phân biệt hoa thường; `hanviet-fill` theo (userId, kind, expression); `accountAccess()` + test, mọi cửa vào gọi nó | cao | anh |
-| 7.2b | `seedStarterDeck(db)` dựng kho OpenJLPT cho một người, id mới, chạy lại an toàn; test với hai người (chưa nối vào app) | thấp | AI |
+| 7.2a | Bịt lỗ hổng: backup, khôi phục, thống kê MCP chỉ quản trị; so email không phân biệt hoa thường; TTS cần đăng nhập; `accountAccess()` + test, mọi cửa vào gọi nó | cao | anh |
+| 7.2b | `seedStarterDeck(db)` dựng kho OpenJLPT cho một người, id mới, chạy lại an toàn; `hanviet-fill` theo (kind, expression) thay vì id; test với hai người (chưa nối vào app) | thấp | AI |
 | 7.2c | Trang `/admin`: danh sách, chặn, bỏ chặn, xoá | cao | anh |
 | 7.2d | Mở đăng ký: `role = user`, dựng kho khi tạo tài khoản, `MAX_ACCOUNTS`. Sửa CLAUDE.md và quyết định 0006 | cao | anh |
 | 7.2e | Ứng dụng đã kết nối trong Cài đặt (4.2) | cao | anh |

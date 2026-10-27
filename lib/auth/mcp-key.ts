@@ -1,4 +1,5 @@
 import { createHash, randomBytes } from 'node:crypto';
+import { accountAccess } from '@/lib/auth/access';
 import { prisma } from '@/lib/db/db';
 
 function hashToken(token: string): string {
@@ -27,9 +28,14 @@ export async function verifyMcpKey(
   if (!token) return null;
   const key = await prisma.mcpKey.findUnique({
     where: { tokenHash: hashToken(token) },
-    select: { id: true, userId: true, scope: true, user: { select: { banned: true } } },
+    select: {
+      id: true,
+      userId: true,
+      scope: true,
+      user: { select: { banned: true, role: true, email: true } },
+    },
   });
-  if (!key || key.user.banned) return null;
+  if (!key || accountAccess(key.user) === 'none') return null;
   await prisma.mcpKey.update({ where: { id: key.id }, data: { lastUsedAt: new Date() } });
   return { userId: key.userId, scope: key.scope === 'planner' ? 'planner' : 'full' };
 }
