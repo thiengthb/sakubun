@@ -2,6 +2,7 @@ import { verifyJwsAccessToken } from 'better-auth/oauth2';
 import { auth, AUTH_ISSUER, MCP_RESOURCE } from '@/lib/auth/auth';
 import { accountAccess } from '@/lib/auth/access';
 import { prisma } from '@/lib/db/db';
+import { hasConsent } from '@/lib/auth/connected-apps';
 
 // OAuth access tokens on /api/mcp (roadmap 4.1). better-auth signs them as JWTs bound to MCP_RESOURCE;
 // they are checked locally against the provider's own keys, then the account must still be allowed.
@@ -13,6 +14,12 @@ import { prisma } from '@/lib/db/db';
 export function oauthSubject(claims: Record<string, unknown>): string | null {
   if (claims.cnf !== undefined) return null;
   return typeof claims.sub === 'string' && claims.sub !== '' ? claims.sub : null;
+}
+
+// The app a token was issued to. better-auth writes it as both client_id and azp.
+export function oauthClientId(claims: Record<string, unknown>): string | null {
+  const id = claims.client_id ?? claims.azp;
+  return typeof id === 'string' && id !== '' ? id : null;
 }
 
 // A refresh-minted token stops working as soon as its account loses access (banned from /admin).
@@ -42,10 +49,13 @@ export async function verifyMcpOAuthToken(token: string): Promise<{ userId: stri
     return null;
   }
   const userId = oauthSubject(claims);
-  if (!userId) return null;
+  const clientId = oauthClientId(claims);
+  if (!userId || !clientId) return null;
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: { banned: true, email: true, role: true },
   });
-  return oauthAccountAllowed(user) ? { userId } : null;
+  if (!oauthAccountAllowed(user)) return null;
+  // Revoked in Cài đặt > Ứng dụng đã kết nối: the app is out now, not when its token expires.
+  return (await hasConsent(userId, clientId)) ? { userId } : null;
 }

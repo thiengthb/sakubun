@@ -37,6 +37,10 @@ import { SettingsSection } from '@/components/features/settings/settings-section
 import { SettingRow } from '@/components/features/settings/setting-row';
 import { IconTile } from '@/components/common/icon-tile';
 import { McpUsageCard } from '@/components/features/settings/mcp-usage-card';
+import {
+  ConnectedAppsSection,
+  type ConnectedAppRow,
+} from '@/components/features/settings/connected-apps-section';
 import { ConfirmDialog } from '@/components/common/confirm-dialog';
 import { CopyCommandButton } from '@/components/common/copy-command-button';
 import { APP_TIME_ZONE, formatDateTimeVN, formatDateVN } from '@/lib/core/format';
@@ -88,6 +92,7 @@ export function AccountTab({
   joinedAt,
   lastLoginAt,
   keys,
+  apps,
   mcpUsage,
   isAdmin,
 }: {
@@ -98,6 +103,7 @@ export function AccountTab({
   joinedAt: string | null;
   lastLoginAt: string | null;
   keys: McpKeyRow[];
+  apps: ConnectedAppRow[];
   // Whole-app tool statistics: admin only (roadmap 7.2), null for a learner.
   mcpUsage: ToolUsageReport | null;
   isAdmin: boolean;
@@ -382,6 +388,8 @@ export function AccountTab({
             ))
           )}
         </SettingsSection>
+
+        <ConnectedAppsSection apps={apps} />
 
         {mcpUsage && <McpUsageCard usage={mcpUsage} />}
       </SettingsTab>

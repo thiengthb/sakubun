@@ -1,6 +1,8 @@
 import { createHash, randomBytes } from 'node:crypto';
+import path from 'node:path';
+import Database from 'better-sqlite3';
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
-import { E2E_BASE_URL, E2E_EMAIL, E2E_LOGIN } from './fixtures';
+import { E2E_BASE_URL, E2E_DB_FILE, E2E_EMAIL, E2E_LOGIN } from './fixtures';
 import { MCP_URL, parseRpc, seedMcpAccount } from './mcp-client';
 
 // The OAuth provider behind /api/mcp (roadmap 4.1), driven the way claude.ai drives it: register a
@@ -181,6 +183,48 @@ test('claude.ai kết nối được: đăng nhập, đồng ý, gọi /api/mcp,
   });
   expect(second.refresh_token, 'refresh token phải xoay vòng').not.toBe(first.refresh_token);
   expect(await toolNames(request, second.access_token)).toContain('next_turn');
+});
+
+// Roadmap 4.2: the learner takes an app back in Cài đặt; its token stops at once and cannot refresh.
+test('thu hồi ứng dụng trong Cài đặt: token đang có hết hiệu lực ngay, refresh bị từ chối', async ({
+  page,
+  request,
+}) => {
+  await seedMcpAccount();
+  // Earlier tests connected apps named Claude too; this one counts on being the only one.
+  const db = new Database(path.join(process.cwd(), E2E_DB_FILE));
+  db.exec('DELETE FROM oauthConsent');
+  db.close();
+  const { clientId, tokens } = await connect(page, request);
+  expect(await toolNames(request, tokens.access_token)).toContain('next_turn');
+
+  await page.goto('/settings?tab=account', { waitUntil: 'networkidle' });
+  const section = page
+    .getByRole('heading', { name: 'Ứng dụng đã kết nối', exact: true })
+    .locator('xpath=ancestor::section[1]');
+  await expect(section.getByText('Claude', { exact: true })).toBeVisible();
+  const shots = process.env.SCREENSHOT_DIR;
+  if (shots)
+    for (const width of [1440, 390]) {
+      await page.setViewportSize({ width, height: width === 390 ? 844 : 900 });
+      await section.scrollIntoViewIfNeeded();
+      await page.screenshot({ path: `${shots}/connected-apps-${width}.png` });
+    }
+
+  await section.getByRole('button', { name: 'Thu hồi quyền của Claude' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Thu hồi' }).click();
+  await expect(section.getByText('Chưa có ứng dụng nào.')).toBeVisible();
+
+  expect((await mcp(request, tokens.access_token, 'initialize')).status()).toBe(401);
+  const refresh = await request.post('/api/auth/oauth2/token', {
+    form: {
+      grant_type: 'refresh_token',
+      refresh_token: tokens.refresh_token!,
+      client_id: clientId,
+      resource: MCP_URL,
+    },
+  });
+  expect(refresh.ok()).toBe(false);
 });
 
 // The MCP spec makes clients send `resource` (RFC 8707); claude.ai and ChatGPT do. Without it the

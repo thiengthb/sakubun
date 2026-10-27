@@ -12,6 +12,7 @@ import { PracticeTab } from '@/components/features/settings/settings-practice-ta
 import { DataTab } from '@/components/features/settings/settings-data-tab';
 import { AccountTab } from '@/components/features/settings/settings-account-tab';
 import type { McpKeyRow } from '@/components/features/settings/settings-account-tab';
+import type { ConnectedAppRow } from '@/components/features/settings/connected-apps-section';
 import type { ToolUsageReport } from '@/lib/mcp/usage';
 import { useSessionState } from '@/components/common/use-session-state';
 import { saveSettingsAction } from '@/app/actions';
@@ -27,6 +28,7 @@ interface SettingsFormProps {
     joinedAt: string | null;
     lastLoginAt: string | null;
     keys: McpKeyRow[];
+    apps: ConnectedAppRow[];
     mcpUsage: ToolUsageReport | null;
   };
   isAdmin: boolean;

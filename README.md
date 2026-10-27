@@ -75,6 +75,8 @@ Thêm connector tuỳ chỉnh trên claude.ai với địa chỉ `https://<tên 
 mở trang đăng nhập của sakubun (Google), rồi trang **Cho phép truy cập sakubun?**.
 Sau đó connector dùng được trên web, Claude Desktop và app điện thoại. Server chỉ trả quyền về callback
 của claude.ai, ChatGPT và Claude Code (`lib/auth/oauth-redirects.ts`). Chi tiết: `docs/decisions/0002-mcp-oauth.md`.
+Các ứng dụng đã cho phép hiện ở **Cài đặt > Tài khoản > Ứng dụng đã kết nối**; thu hồi thì ứng dụng mất quyền ngay ở
+lần gọi kế tiếp, vì `/api/mcp` kiểm sự đồng ý trên mỗi lần gọi, không chờ token hết hạn (`lib/auth/connected-apps.ts`).
 
 ### Claude Desktop
 

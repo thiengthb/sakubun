@@ -19,7 +19,7 @@ follow `nuc-infra/AGENTS.md`.
 | 3.1 | `Turn` table (migrated from `Sentence`) + seven v2 tools in a `v2` profile, beside the old ones | MCP v2 e2e green | medium |
 | 3.2 | `v2` becomes default; remove old tools, prompts and `render.ts`; enforce token budget (#92, #94) | Done 2026-10-23: old tools, prompts and `render.ts` removed; budget enforced by `lib/mcp/token-budget.test.ts` | medium |
 | 4.1 | OAuth on `/api/mcp` with better-auth, `ALLOWED_EMAIL` only (#95, #96, #97) | Done 2026-10-24: connector added on claude.ai works on the web and in the Claude phone app | high |
-| 4.2 | Connected apps in Settings: list OAuth clients, revoke one (deferred from 4.1 by thien) | Revoked app gets 401 on its next refresh | high |
+| 4.2 | Connected apps in Settings: list OAuth clients, revoke one (deferred from 4.1 by thien) | Revoked app gets 401 on its next refresh (7.2e: and on its next call, consent is checked per call) | high |
 | 5.1 | Remove `coach`, `dossier`, `calibration`, `learner-notes`, the rest of `practice.ts` (#100, #101) | Done 2026-10-24: no old imports left; `practice.ts` keeps only live settings, item and stats reads (stats move in 5.3) | low |
 | 5.2 | Migration dropping unused tables and columns (after backup) (#104) | Done 2026-10-24: `LearnerNote`, `LearnerAbility`, `CalibrationProposal`, `Item.challenge*`, `Sentence.extraPatterns` dropped; `McpToolCall` kept for the Settings "Dùng MCP" card; migration tested on a seeded DB copy | high |
 | 5.3 | Dashboard from one stats source | Done 2026-10-25: `getDashboard` (`lib/insights/dashboard.ts`) reads once and `dashboard-model.ts` counts every number; old `getStats`, `getWeakReport`, `getAnalytics`, `getStudyStats` removed; dashboard e2e green | low |
@@ -40,6 +40,6 @@ artifact 8dhCRanXdgsiDFTJBbUHdf, which only its own Claude account can open). De
 | 7.1b | `userDb(userId)` client; `lib/app` and MCP tools read and write through it | Guard tests green | high | Done 2026-10-26 (#131, with 7.1c) |
 | 7.1c | Every other read and write through `userDb` | Two-user leak test: B never sees an id of A | high | Done 2026-10-26 (#131, with 7.1b) |
 | 7.1d | `userId` required (backfill first), Item unique per user, bare client throws on learning tables, raw SQL scan | Bare-client test throws on each table | high | Done 2026-10-27 (#133) |
-| 7.2 | Open sign-up with Google (thien can ban; changed 2026-10-27, plan `docs/plans/2026-10-27-phase7-2-sign-up.md`), admin page, MCP tool stats and database backup admin only, then 4.2 | A second account learns without seeing the first | high | In progress (a-c done) |
+| 7.2 | Open sign-up with Google (thien can ban; changed 2026-10-27, plan `docs/plans/2026-10-27-phase7-2-sign-up.md`), admin page, MCP tool stats and database backup admin only, then 4.2 | A second account learns without seeing the first | high | In progress (a-d done, 7.2e in #142) |
 | 7.3 | Hướng dẫn page (removed 2026-08-14) rewritten for today's app | thien approves the screenshots | high | Todo |
 | 7.4 | Each new or changed page in the new UI, one PR per page | thien approves before and after screenshots | high | Todo |
