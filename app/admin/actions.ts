@@ -17,7 +17,7 @@ export async function setBannedAction(id: string, banned: boolean): Promise<Acti
   const t = await target(id);
   if (!t.ok) return t;
   await setBanned(t.data.id, banned === true);
-  revalidatePath('/admin');
+  revalidatePath('/admin', 'layout');
   return ok(undefined);
 }
 
@@ -27,6 +27,6 @@ export async function deleteAccountAction(id: string, typedEmail: string): Promi
   if (!deleteConfirmed(t.data.email, String(typedEmail ?? '')))
     return err('Gõ đúng email của tài khoản để xác nhận xoá.');
   await deleteAccount(t.data.id);
-  revalidatePath('/admin');
+  revalidatePath('/admin', 'layout');
   return ok(undefined);
 }

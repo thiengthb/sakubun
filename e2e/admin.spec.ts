@@ -44,37 +44,55 @@ async function login(page: Page) {
 
 const card = (page: Page, email: string) => page.getByRole('listitem').filter({ hasText: email });
 
-test('admin page: list, ban, unban and delete a learner', async ({ page }) => {
+async function fromMenu(page: Page, email: string, item: string) {
+  await page.getByRole('button', { name: `Tác vụ cho ${email}` }).click();
+  await page.getByRole('menuitem', { name: item }).click();
+}
+
+test('admin page: list, account page, ban, unban and delete a learner', async ({ page }) => {
   await seedE2eAccount();
   seedLearners();
   await login(page);
+  const shots = process.env.SCREENSHOT_DIR;
+  const snap = async (name: string) => {
+    if (!shots) return;
+    for (const width of [1440, 390]) {
+      await page.setViewportSize({ width, height: width === 390 ? 844 : 900 });
+      await page.screenshot({ path: path.join(shots, `${name}-${width}.png`), fullPage: true });
+    }
+    await page.setViewportSize({ width: 1440, height: 900 });
+  };
 
   await page.goto('/admin', { waitUntil: 'networkidle' });
   await expect(page.getByRole('heading', { name: 'Quản trị' })).toBeVisible();
   await expect(page.getByText('4 tài khoản')).toBeVisible();
   await expect(card(page, E2E_EMAIL).getByRole('button')).toHaveCount(0);
   await expect(card(page, 'quan@example.test').getByText('Bị chặn')).toBeVisible();
+  await snap('admin');
 
-  const shots = process.env.SCREENSHOT_DIR;
-  if (shots) {
-    for (const width of [1440, 390]) {
-      await page.setViewportSize({ width, height: width === 390 ? 844 : 900 });
-      await page.screenshot({ path: path.join(shots, `admin-${width}.png`), fullPage: true });
-    }
-    await page.setViewportSize({ width: 1440, height: 900 });
-  }
+  // The card opens the account page: the facts that left the card, and the learner's own numbers.
+  await page.getByRole('link', { name: 'Mở tài khoản lan@example.test' }).click();
+  await page.waitForURL('**/admin/adm-lan');
+  await expect(page.getByRole('heading', { name: 'Lan', exact: true })).toBeVisible();
+  await expect(page.getByText('Người học', { exact: true })).toBeVisible();
+  await expect(page.getByText('Đến hạn', { exact: true })).toBeVisible();
+  await expect(page.getByText('1 năm', { exact: true })).toBeVisible();
+  await snap('admin-account');
 
-  await card(page, 'lan@example.test').getByRole('button', { name: 'Chặn' }).click();
+  await fromMenu(page, 'lan@example.test', 'Chặn');
   await page.getByRole('dialog').getByRole('button', { name: 'Chặn' }).click();
-  await expect(card(page, 'lan@example.test').getByText('Bị chặn')).toBeVisible();
+  await expect(page.getByText('Bị chặn', { exact: true })).toBeVisible();
 
-  await card(page, 'quan@example.test').getByRole('button', { name: 'Bỏ chặn' }).click();
+  await page.goto('/admin/adm-quan', { waitUntil: 'networkidle' });
+  await expect(page.getByText('Chưa có mục nào')).toBeVisible();
+
+  await page.goto('/admin', { waitUntil: 'networkidle' });
+  await expect(card(page, 'lan@example.test').getByText('Bị chặn')).toBeVisible();
+  await fromMenu(page, 'quan@example.test', 'Bỏ chặn');
   await page.getByRole('dialog').getByRole('button', { name: 'Bỏ chặn' }).click();
   await expect(card(page, 'quan@example.test').getByText('Người học')).toBeVisible();
 
-  await card(page, 'minh@example.test')
-    .getByRole('button', { name: /Xoá tài khoản/ })
-    .click();
+  await fromMenu(page, 'minh@example.test', 'Xoá tài khoản');
   const dialog = page.getByRole('dialog');
   if (shots) await dialog.screenshot({ path: path.join(shots, 'admin-delete-dialog.png') });
   await dialog.getByRole('button', { name: 'Xoá' }).click();

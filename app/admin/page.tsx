@@ -10,8 +10,12 @@ export default async function AdminPage() {
   return (
     <AccountsView
       accounts={accounts.map((a) => ({
-        ...a,
-        createdAt: a.createdAt.toISOString(),
+        id: a.id,
+        name: a.name,
+        email: a.email,
+        image: a.image,
+        access: a.access,
+        banned: a.banned,
         lastReviewAt: a.lastReviewAt?.toISOString() ?? null,
       }))}
     />
