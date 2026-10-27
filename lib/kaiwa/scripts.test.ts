@@ -98,6 +98,11 @@ describe('listScripts and deleteScript', () => {
   it('lists newest first without bodies, and deletes', async () => {
     const first = await created();
     const second = await created();
+    // Two saves can land in the same millisecond; date the untouched one a minute back.
+    await mine.script.update({
+      where: { id: second.id },
+      data: { updatedAt: new Date(Date.now() - 60_000) },
+    });
     await S.saveScript(mine, { id: first.id, version: 1, title: 'Sửa', body: BODY });
     const list = await S.listScripts(mine);
     expect(list.map((s) => s.id)).toEqual([first.id, second.id]);

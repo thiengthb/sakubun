@@ -39,7 +39,12 @@ describe('parseScript', () => {
         translation: 'Vâng ạ, có vấn đề gì ạ?',
         row: 1,
       },
-      { speaker: 'B', japanese: '玉ねぎが入っています。', translation: 'Trong món vẫn có hành ạ.', row: 4 },
+      {
+        speaker: 'B',
+        japanese: '玉ねぎが入っています。',
+        translation: 'Trong món vẫn có hành ạ.',
+        row: 4,
+      },
     ]);
   });
 
@@ -61,7 +66,9 @@ describe('parseScript', () => {
   });
 
   it('keeps manual furigana in the Japanese for the view to read', () => {
-    expect(parseScript('A: 料理[りょうり]です。 | Là món ăn.')[0].japanese).toBe('料理[りょうり]です。');
+    expect(parseScript('A: 料理[りょうり]です。 | Là món ăn.')[0].japanese).toBe(
+      '料理[りょうり]です。',
+    );
   });
 });
 
@@ -88,7 +95,10 @@ describe('checkScript', () => {
   });
 
   it('points at a row with no Japanese, such as a heading an AI added', () => {
-    const problems = checkScript('Hội thoại', '# Hội thoại ở ga\nA: 駅はどこですか。 | Nhà ga ở đâu?');
+    const problems = checkScript(
+      'Hội thoại',
+      '# Hội thoại ở ga\nA: 駅はどこですか。 | Nhà ga ở đâu?',
+    );
     expect(problems).toHaveLength(1);
     expect(problems[0].row).toBe(1);
   });
