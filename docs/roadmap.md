@@ -56,7 +56,7 @@ K6-K9.
 | --- | --- | --- | --- | --- |
 | K1 | `Script` table, script parser, `lib/kaiwa/` save with format check | tests pass | high | Done 2026-10-27 (#151) |
 | K2 | MCP `kaiwa_save`, `kaiwa_get`, `kaiwa_list`, prompt `kaiwa` | tried for real in claude.ai | high | In review |
-| K3 | Hội thoại pages `/kaiwa`, `/kaiwa/[id]`: view, listen, light edit | e2e + screenshots | high | Todo |
+| K3 | Hội thoại pages `/kaiwa`, `/kaiwa/[id]`: view, listen, hide meanings, delete (editing stays with the AI) | e2e + screenshots | high | In review |
 | K4 | Automatic furigana and tokens on save (kuromoji, kuroshiro) | tests, Docker image builds | medium | Todo |
 | K5 | Hover a word for its Vietnamese meaning, "Thêm vào kho" | e2e + screenshots | high | Todo |
 | K6 | Karaoke, whole-script playback, voice per speaker, server audio cache | screenshots | medium | Todo |

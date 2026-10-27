@@ -11,6 +11,7 @@ Cập nhật lần cuối: 2026-10-27 (kế hoạch Kaiwa canvas chờ duyệt).
 | Bước | Nhánh / PR | Giữ bởi | Trạng thái |
 | --- | --- | --- | --- |
 | 8 K2 MCP `kaiwa_save`, `kaiwa_get`, `kaiwa_list`, prompt `kaiwa` | `feat/8-k2-kaiwa-mcp` (#152) | Claude (phiên của thien, 2026-10-27) | PR mở, chờ thien merge; đường dẫn xem kịch bản chỉ mở được khi có K3 |
+| 8 K3 trang Hội thoại `/kaiwa`, `/kaiwa/[id]` | `feat/8-k3-kaiwa-pages` (xếp trên K2) | Claude (phiên của thien, 2026-10-27) | PR mở, kèm ảnh 1440 và 390 |
 
 ## Chờ thien
 
