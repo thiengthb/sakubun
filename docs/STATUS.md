@@ -10,7 +10,7 @@ Cập nhật lần cuối: 2026-10-27 (kế hoạch 7.2 duyệt, nhận 7.2a).
 
 | Bước | Nhánh / PR | Giữ bởi | Trạng thái |
 | --- | --- | --- | --- |
-| 7.2e | `feat/7.2e-connected-apps` | phiên `session_01FokVawKvZGmPLu9XkUuTAp` (từ 2026-10-27) | PR mở, chờ thien duyệt ảnh và merge (risk:high) |
+| 7.2e | `feat/7.2e-connected-apps` | phiên `session_01FokVawKvZGmPLu9XkUuTAp` (từ 2026-10-27) | #142, chờ thien duyệt ảnh và merge (risk:high) |
 
 ## Chờ thien
 
