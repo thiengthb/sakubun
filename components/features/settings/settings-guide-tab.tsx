@@ -3,12 +3,14 @@ import Link from 'next/link';
 import {
   Bot,
   CalendarClock,
+  Globe,
   History,
   KeyRound,
   Layers,
   LayoutDashboard,
   Library,
   MessageSquareText,
+  MessagesSquare,
   Plug,
   type LucideIcon,
 } from 'lucide-react';
@@ -111,7 +113,17 @@ export function GuideTab({
             thì dùng được trên claude.ai, Claude Desktop và app Claude trên điện thoại.
           </p>
         </GuideRow>
-        <GuideRow icon={MessageSquareText} title="2. Bắt đầu luyện" wide>
+        <GuideRow icon={Globe} title="2. Lấy mẫu từ Kho chung" wide>
+          <p>
+            Kho của tài khoản mới để trống. Mở{' '}
+            <Link href="/library" className="text-foreground underline underline-offset-4">
+              Kho chung
+            </Link>
+            , lấy cả một bộ như N5 · Ngữ pháp hoặc tìm từng mục rồi bấm Lấy. Mục lấy về là của riêng
+            bạn, với lịch ôn mới. Claude cũng thêm được mục mới khi bạn luyện.
+          </p>
+        </GuideRow>
+        <GuideRow icon={MessageSquareText} title="3. Bắt đầu luyện" wide>
           <p>Mở một chat mới, kiểm sakubun đang bật trong nút + &gt; Connectors, rồi gõ:</p>
           <CopyField value={START_PHRASE} label="Chép câu bắt đầu" />
           <p>
@@ -126,7 +138,7 @@ export function GuideTab({
             câu dài hơn thì cứ nói với Claude; gõ &quot;dừng&quot; để nghỉ.
           </p>
         </GuideRow>
-        <GuideRow icon={CalendarClock} title="3. Hạn mức mỗi ngày" wide>
+        <GuideRow icon={CalendarClock} title="4. Hạn mức mỗi ngày" wide>
           <p>
             Số mẫu mới, từ mới và lượt ôn tối đa mỗi ngày chỉnh ở tab{' '}
             <TabLink tab="practice" openTab={openTab}>
@@ -162,10 +174,19 @@ export function GuideTab({
         <GuideRow icon={Layers} title="Ôn nhanh">
           <p>Ôn bằng thẻ ngay trên web, không cần AI. Lượt ôn tính vào cùng lịch.</p>
         </GuideRow>
-        <GuideRow icon={Library} title="Tài nguyên">
+        <GuideRow icon={MessagesSquare} title="Hội thoại">
           <p>
-            Kho ngữ pháp, từ vựng và nhóm. Tài khoản mới có sẵn mẫu ngữ pháp OpenJLPT từ N5 tới N1;
-            từ vựng thêm dần khi luyện.
+            Kịch bản hội thoại Claude soạn cùng bạn: nghe từng câu, chọn vai của mình, rê chuột lên
+            một từ để xem nghĩa.
+          </p>
+        </GuideRow>
+        <GuideRow icon={Library} title="Tài nguyên">
+          <p>Kho ngữ pháp, từ vựng và nhóm của riêng bạn, cùng lịch ôn của từng mục.</p>
+        </GuideRow>
+        <GuideRow icon={Globe} title="Kho chung">
+          <p>
+            Ngữ pháp và từ vựng mọi người cùng dùng, khởi đầu từ OpenJLPT. Lấy về một mục hay cả
+            nhóm; bấm Chia sẻ ở trang một mục hay một nhóm của bạn để đưa nó lên cho người khác.
           </p>
         </GuideRow>
         <GuideRow icon={History} title="Lịch sử">

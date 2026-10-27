@@ -12,8 +12,6 @@ import {
   isPasswordLoginEnabled,
   maxAccounts,
 } from '@/lib/auth/login-policy';
-import { userDb } from '@/lib/db/user-db';
-import { loadStarterDeck, seedStarterDeck } from '@/lib/import/starter-deck';
 import { isAllowedRedirectUri } from '@/lib/auth/oauth-redirects';
 import { APP_URL } from '@/lib/core/app-url';
 
@@ -39,20 +37,6 @@ async function assertRegistrationOpen(): Promise<void> {
   }
   if (count >= maxAccounts()) {
     throw new APIError('FORBIDDEN', { message: 'sakubun đã đủ người dùng.' });
-  }
-}
-
-// A new learner starts with their own OpenJLPT deck (roadmap 7.2). Without it the account is useless,
-// so a failure takes the account back out and the next sign-in tries again from scratch.
-async function giveStarterDeck(userId: string): Promise<void> {
-  try {
-    await seedStarterDeck(userDb(userId), await loadStarterDeck());
-  } catch (e) {
-    console.error('[auth] starter deck failed', e);
-    await prisma.user.delete({ where: { id: userId } }).catch(() => {});
-    throw new APIError('INTERNAL_SERVER_ERROR', {
-      message: 'Không tạo được tài khoản. Thử lại sau.',
-    });
   }
 }
 
@@ -93,8 +77,7 @@ export const auth = betterAuth({
             where: { id: user.id },
             data: { role: admin ? 'admin' : 'user' },
           });
-          // The admin keeps the deck they already have (or imports it); learners get theirs now.
-          if (!admin) await giveStarterDeck(user.id);
+          // A new learner starts empty and takes from Kho chung (phase 8, L4; decision 0008).
         },
       },
     },

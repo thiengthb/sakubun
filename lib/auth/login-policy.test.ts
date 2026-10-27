@@ -72,7 +72,7 @@ describe('cổng ở tầng auth (hook tạo user và tạo phiên)', () => {
     await prisma.user.deleteMany({});
   });
 
-  it('ai cũng đăng ký được: email lạ thành người học và nhận kho OpenJLPT riêng', { timeout: 60_000 }, async () => {
+  it('ai cũng đăng ký được: email lạ thành người học, kho bắt đầu trống (L4)', { timeout: 60_000 }, async () => {
     const { auth } = await import('@/lib/auth/auth');
     const { userDb } = await import('@/lib/db/user-db');
     const res = await auth.api.signUpEmail({
@@ -80,7 +80,7 @@ describe('cổng ở tầng auth (hook tạo user và tạo phiên)', () => {
     });
     const user = await prisma.user.findUniqueOrThrow({ where: { id: res.user.id } });
     expect(user.role).toBe('user');
-    expect(await userDb(user.id).item.count({ where: { source: 'OPENJLPT' } })).toBeGreaterThan(7000);
+    expect(await userDb(user.id).item.count()).toBe(0);
   });
 
   it('ALLOWED_EMAIL thành quản trị và không nhận thêm kho', { timeout: 30_000 }, async () => {

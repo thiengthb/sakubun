@@ -3,11 +3,12 @@ import Database from 'better-sqlite3';
 import { expect, test } from '@playwright/test';
 import { E2E_BASE_URL, E2E_DB_FILE, E2E_EMAIL, E2E_OWNER, seedE2eAccount } from './fixtures';
 
-// Roadmap 7.2d: a stranger signs up, gets their own OpenJLPT deck, and sees nothing of the admin's.
+// Roadmap 7.2d: a stranger signs up and sees nothing of the admin's. Since phase 8 (L4) their library
+// starts empty, and Phân tích offers OpenJLPT's N5 grammar from Kho chung in one click.
 const EMAIL = 'newcomer@example.test';
 const PASSWORD = ['newcomer', 'login', '12345'].join('-');
 
-test('a second account signs up, learns from its own deck and cannot reach admin pages', async ({
+test('a second account signs up, starts from Kho chung and cannot reach admin pages', async ({
   page,
 }) => {
   test.setTimeout(120_000);
@@ -32,7 +33,7 @@ test('a second account signs up, learns from its own deck and cannot reach admin
     )
     .get(EMAIL) as { role: string; items: number };
   expect(row.role).toBe('user');
-  expect(row.items).toBeGreaterThan(7000);
+  expect(row.items).toBe(0);
   expect(ownerItems()).toBe(before);
   db.close();
 
@@ -41,6 +42,14 @@ test('a second account signs up, learns from its own deck and cannot reach admin
   await page.getByLabel('Mật khẩu').fill(PASSWORD);
   await page.getByRole('button', { name: 'Đăng nhập' }).click();
   await page.waitForURL((u) => !u.pathname.startsWith('/login'), { timeout: 30_000 });
+
+  await page.goto('/');
+  await expect(page.getByText('Kho của bạn còn trống')).toBeVisible();
+  if (process.env.SCREENSHOT_DIR)
+    await page.screenshot({ path: path.join(process.env.SCREENSHOT_DIR, 'empty-start-1440.png') });
+  await page.getByRole('button', { name: 'Lấy bộ N5 · Ngữ pháp' }).click();
+  await expect(page.getByText(/^Đã lấy \d+ mẫu về kho$/)).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByText('Kho của bạn còn trống')).toHaveCount(0);
 
   // loading.tsx streams the shell first, so the status stays 200; the page swaps to not-found.
   await page.goto('/admin');
