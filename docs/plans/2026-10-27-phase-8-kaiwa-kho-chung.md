@@ -123,7 +123,7 @@ Mã nằm ở OneDrive laptop (`Tài liệu/ChatGPT/japanese-script-canvas`), **
 | Từng dòng | Ẩn/hiện, chép, phát; nghĩa Việt hiện khi rê/chạm; phím mũi tên, Enter để phát | Giữ |
 | Thư viện kịch bản | Tạo, đổi tên, công khai/riêng, xoá; chủ = email | Bảng `Script` theo từng người học (như 7.1). Công khai = đưa lên kho chung (K6) |
 | Đồng biên tập realtime (Yjs), ai đang xem, đăng nhập Google riêng | Có | **Bỏ**, như kế hoạch hợp nhất đã chốt |
-| Lưu trữ | `scripts.json` + LevelDB của Yjs | SQLite của sakubun. Kịch bản cũ trên NUC (nếu còn) nhập một lần (K8) |
+| Lưu trữ | `scripts.json` + LevelDB của Yjs | SQLite của sakubun. 5 kịch bản cũ trong bản lưu NUC nhập một lần (K8) |
 
 ### Các PR
 
@@ -136,7 +136,7 @@ Mã nằm ở OneDrive laptop (`Tài liệu/ChatGPT/japanese-script-canvas`), **
 | K5 | Karaoke, nghe cả bài, giọng theo người nói, cache file âm thanh trên server | medium |
 | K6 | Đưa kịch bản lên kho chung (loại `SCRIPT`), lấy kịch bản về để sửa | high |
 | K7 | MCP: một tool liệt kê, đọc, lưu kịch bản và nhập vai theo kịch bản | high |
-| K8 | Nhập kịch bản cũ từ `scripts.json` của kaiwa-canvas (nếu thien còn file trên NUC) | high (dữ liệu) |
+| K8 | Nhập 5 kịch bản cũ từ bản lưu NUC trên laptop vào kho của thien | high (dữ liệu) |
 
 ## Phần C. Ôn nhanh cần cải thiện sâu
 
@@ -187,6 +187,9 @@ code, vì đổi hành vi học):
 1. Chia sẻ theo **nhóm** (Nhóm đang có), xem luật 8.
 2. Xoá tài khoản: theo đề xuất, xem luật 9.
 3. Chỗ "hơi off": Ôn nhanh, xem phần C.
-4. kaiwa-canvas cũ đã down (kiểm từ laptop 2026-10-27, mọi đường dẫn trả 404), có thể mất dữ liệu. NUC đã cài lại;
-   bản lưu cuối trên laptop (`nuc-infra/runbooks/01-reinstall-os.md`) có volume kaiwa. Có kịch bản thì K8 nhập,
-   không có thì bỏ K8.
+4. kaiwa-canvas cũ đã down (kiểm từ laptop 2026-10-27, mọi đường dẫn trả 404), có thể mất dữ liệu. Dữ liệu **còn**: bản lưu
+   cuối trên laptop (`C:\Users\trann\nuc-final-backup-2026-10-09\kaiwa-canvas_canvas-data.tar.gz`, xem
+   `nuc-infra/runbooks/01-reinstall-os.md`) có `scripts/scripts.json` với 5 kịch bản (kaiwa 5, Giới thiệu bản thân,
+   Phỏng vấn, Con đường tới trường, Ngày hôm qua; tổng khoảng 50 dòng) và thư mục `yjs/` có thể giữ bản sửa mới hơn
+   (scripts.json cập nhật lần cuối 10-06). K8 lấy bản mới nhất (đọc `yjs/` bằng `y-leveldb` nếu mới hơn), nhập vào
+   kho của thien. File gốc có email nên không commit; chỉ nhập nội dung.
