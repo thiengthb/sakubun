@@ -8,10 +8,12 @@ Cập nhật lần cuối: 2026-10-27 (kế hoạch Kaiwa canvas chờ duyệt).
 
 ## Đang làm
 
-| Bước | Nhánh / PR | Giữ bởi | Trạng thái |
-| --- | --- | --- | --- |
-| 8 K3 trang Hội thoại `/kaiwa`, `/kaiwa/[id]` | `feat/8-k3-kaiwa-pages` (#153) | Claude (phiên của thien, 2026-10-27) | PR mở, kèm ảnh 1440 và 390 |
-| 8 K4 furigana tự động lúc lưu (kuromoji) | `feat/8-k4-auto-furigana` (xếp trên K3) | Claude (phiên của thien, 2026-10-27) | PR mở; thêm cột `Script.analysis` |
+| Bước                                                                     | Nhánh / PR                                   | Giữ bởi                              | Trạng thái                        |
+| ------------------------------------------------------------------------ | -------------------------------------------- | ------------------------------------ | --------------------------------- |
+| 8 K3 trang Hội thoại `/kaiwa`, `/kaiwa/[id]`                             | `feat/8-k3-kaiwa-pages` (#153)               | Claude (phiên của thien, 2026-10-27) | PR mở, kèm ảnh 1440 và 390        |
+| 8 K4 furigana tự động lúc lưu (kuromoji)                                 | `feat/8-k4-auto-furigana` (xếp trên K3)      | Claude (phiên của thien, 2026-10-27) | PR mở; thêm cột `Script.analysis` |
+| 8 K3b thẻ hội thoại kiểu tin nhắn, chọn vai "Tôi là" (thien, 2026-10-27) | `feat/8-k3b-kaiwa-chat-layout` (xếp trên K4) | Claude (phiên của thien, 2026-10-27) | PR mở, kèm ảnh 1440 và 390        |
+| 8 K3c sửa và tạo kịch bản trên web (thien, 2026-10-27)                   | chưa mở                                      | Claude (phiên của thien, 2026-10-27) | làm sau K3b                       |
 
 ## Chờ thien
 

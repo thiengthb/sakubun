@@ -3,22 +3,22 @@ import Database from 'better-sqlite3';
 import { expect, test } from '@playwright/test';
 import { E2E_DB_FILE, E2E_EMAIL, E2E_LOGIN, E2E_OWNER, seedE2eAccount } from './fixtures';
 
-// Phase 8, K3 and K4: a script Claude saved over MCP shows on Hội thoại; its page reads it line by line,
-// hides the Vietnamese on request, and deletes it after a confirm.
+// Phase 8, K3 and K4: a script Claude saved over MCP shows on Hội thoại; its page reads it as a chat
+// from the part the learner picks, hides the Vietnamese on request, and deletes it after a confirm.
 const BODY = [
+  '店の中は静かだった。 | Trong quán yên tĩnh.',
   'A: いらっしゃいませ。何名様[なんめいさま]ですか。 | Xin mời vào. Quý khách đi mấy người ạ?',
   'B: 二人[ふたり]です。 | Hai người.',
   'A: こちらへどうぞ。 | Mời đi lối này.',
-  '店の中は静かだった。 | Trong quán yên tĩnh.',
 ].join('\n');
 // What a save stores (K4): the author's furigana where they wrote it, readings worked out elsewhere.
 const ANALYSIS = JSON.stringify({
   v: 1,
   lines: [
+    '店[みせ]の中[なか]は静[しず]かだった。',
     'いらっしゃいませ。何名様[なんめいさま]ですか。',
     '二人[ふたり]です。',
     'こちらへどうぞ。',
-    '店[みせ]の中[なか]は静[しず]かだった。',
   ].map((ruby) => ({ ruby, tokens: [] })),
 });
 
@@ -50,13 +50,20 @@ test('Hội thoại lists a saved script and its page reads it line by line', as
 
   const lines = page.locator('[data-slot="kaiwa-line"]');
   await expect(lines).toHaveCount(4);
-  await expect(lines.first().getByLabel('Người nói A')).toBeVisible();
-  await expect(lines.nth(3).getByLabel(/Người nói/)).toHaveCount(0);
+  await expect(lines.nth(1).getByLabel('Người nói A')).toBeVisible();
+  await expect(lines.first().getByLabel(/Người nói/)).toHaveCount(0);
   await expect(page.getByText('Hai người.')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Nghe câu' })).toHaveCount(4);
-  // Furigana: the author's on line 2, the saved readings on line 4.
-  await expect(lines.nth(1).locator('rt')).toHaveText(['ふたり']);
-  await expect(lines.nth(3).locator('rt')).toHaveText(['みせ', 'なか', 'しず']);
+  // Furigana: the saved readings on line 1, the author's on line 3.
+  await expect(lines.first().locator('rt')).toHaveText(['みせ', 'なか', 'しず']);
+  await expect(lines.nth(2).locator('rt')).toHaveText(['ふたり']);
+  // The learner is A by default: A on the left, B on the right, the speaker-less line is the scene.
+  await expect(lines.first()).toHaveAttribute('data-kind', 'scene');
+  await expect(lines.nth(1)).toHaveAttribute('data-side', 'mine');
+  await expect(lines.nth(2)).toHaveAttribute('data-side', 'theirs');
+  const leftOf = async (i: number) =>
+    (await lines.nth(i).locator('span[role="img"]').boundingBox())!.x;
+  expect(await leftOf(1)).toBeLessThan(await leftOf(2));
 
   const shots = process.env.SCREENSHOT_DIR;
   if (shots)
@@ -67,6 +74,15 @@ test('Hội thoại lists a saved script and its page reads it line by line', as
         fullPage: true,
       });
     }
+
+  // Taking B's part turns the chat around, and the choice survives a reload.
+  await page.getByRole('radio', { name: 'B' }).click();
+  await expect(lines.nth(1)).toHaveAttribute('data-side', 'theirs');
+  await expect(lines.nth(2)).toHaveAttribute('data-side', 'mine');
+  expect(await leftOf(2)).toBeLessThan(await leftOf(1));
+  await page.reload();
+  await expect(lines.nth(2)).toHaveAttribute('data-side', 'mine');
+  await page.getByRole('radio', { name: 'A' }).click();
 
   await page.getByRole('button', { name: 'Ẩn nghĩa' }).click();
   await expect(page.getByText('Hai người.')).toHaveCount(0);
