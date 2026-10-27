@@ -1,7 +1,7 @@
 // Which rows a query may touch, for one learner (roadmap 7.1, docs/decisions/0006). Pure: no
 // Prisma client here, so the rules are tested without a database. `userDb` applies them.
 
-// The eight tables that hold one learner's data, by Prisma model name.
+// The tables that hold one learner's data, by Prisma model name.
 export const LEARNING_MODELS = [
   'Item',
   'SrsState',
@@ -11,6 +11,7 @@ export const LEARNING_MODELS = [
   'Group',
   'GroupMember',
   'Settings',
+  'Script',
 ] as const;
 
 const LEARNING = new Set<string>(LEARNING_MODELS);

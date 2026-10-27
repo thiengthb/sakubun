@@ -201,6 +201,7 @@ model User {
   groups       Group[]
   groupMembers GroupMember[]
   settings     Settings?
+  scripts      Script[]
 
   @@unique([email])
   @@map("user")
@@ -502,4 +503,21 @@ model GroupMember {
   @@id([groupId, itemId])
   @@index([itemId])
   @@index([userId])
+}
+
+// A Kaiwa script (phase 8, docs/plans/2026-10-27-phase-8-kaiwa-kho-chung.md): the raw text in the
+// script format (`A: 日本語 | tiếng Việt`), parsed by lib/kaiwa/parse.ts. `version` goes up on every
+// save, so a writer that read an older version is refused instead of overwriting newer work.
+model Script {
+  id        String   @id @default(cuid())
+  // Owner (roadmap 7.1, docs/decisions/0006). Every query goes through userDb(userId).
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  body      String
+  version   Int      @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, updatedAt])
 }

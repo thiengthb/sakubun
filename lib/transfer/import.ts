@@ -388,6 +388,7 @@ const SYSTEM_TABLES: SystemTable[] = [
   { name: 'ReviewLog', conflict: ['id'] },
   { name: 'Group', conflict: ['id'] },
   { name: 'GroupMember', conflict: ['groupId', 'itemId'] },
+  { name: 'Script', conflict: ['id'] },
   {
     name: 'Settings',
     conflict: ['id'],
@@ -406,6 +407,7 @@ const LEARNING_TABLES = new Set([
   'Group',
   'GroupMember',
   'Settings',
+  'Script',
 ]);
 const FIRST_ACCOUNT =
   '(SELECT "id" FROM main."user" ORDER BY ("role" = \'admin\') DESC, "createdAt", "id" LIMIT 1)';
