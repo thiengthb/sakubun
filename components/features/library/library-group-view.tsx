@@ -74,25 +74,29 @@ export function LibraryGroupView({
         <LikeButton entryId={group.id} liked={group.liked} likes={group.likes} name={group.name} />
       }
       actions={
-        <>
-          {admin && <RemoveEntryButton entryId={group.id} name={group.name} />}
-          {group.myGroupId ? (
-            <Button variant="outline" asChild>
-              <Link href={`/groups/${group.myGroupId}`}>
-                <FolderOpen aria-hidden />
-                Nhóm của bạn
-              </Link>
-            </Button>
-          ) : (
-            <Button onClick={() => take.run(group.id)} disabled={take.isPending}>
-              <Download aria-hidden />
-              Lấy cả nhóm
-            </Button>
-          )}
-        </>
+        group.myGroupId ? (
+          <Button variant="outline" asChild>
+            <Link href={`/groups/${group.myGroupId}`}>
+              <FolderOpen aria-hidden />
+              Nhóm của bạn
+            </Link>
+          </Button>
+        ) : (
+          <Button onClick={() => take.run(group.id)} disabled={take.isPending}>
+            <Download aria-hidden />
+            Lấy cả nhóm
+          </Button>
+        )
       }
     >
       <div className="space-y-4">
+        {/* Kept out of the header so the phone header stays one row, as its skeleton draws it. */}
+        {admin && (
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <span>Quản trị</span>
+            <RemoveEntryButton entryId={group.id} name={group.name} />
+          </div>
+        )}
         {group.notes && <p className="text-muted-foreground">{group.notes}</p>}
         {entries.length === 0 ? (
           <EmptyState icon={FolderOpen} title="Nhóm này chưa có mục nào" />
