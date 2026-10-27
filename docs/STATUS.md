@@ -4,16 +4,17 @@ Trang này trả lời ba câu cho bất kỳ phiên Claude nào (kể cả từ
 việc tiếp theo là gì**. Cập nhật nó **trong cùng PR** với việc làm, và khi nhận một bước mới (xem
 "Bắt đầu phiên" trong `CLAUDE.md`). Lộ trình đầy đủ: `docs/roadmap.md`. Kế hoạch đã duyệt: `docs/plans/`.
 
-Cập nhật lần cuối: 2026-10-27 (7.1d merge, 7.1 xong).
+Cập nhật lần cuối: 2026-10-27 (7.1 xong, nhận 7.2).
 
 ## Đang làm
 
 | Bước | Nhánh / PR | Giữ bởi | Trạng thái |
 | --- | --- | --- | --- |
-| (trống) | | | Chưa ai nhận 7.2 |
+| 7.2 (kế hoạch) | `docs/7.2-plan` | phiên `session_01FokVawKvZGmPLu9XkUuTAp` (từ 2026-10-27) | Kế hoạch chờ thien duyệt |
 
 ## Chờ thien
 
+- Duyệt kế hoạch 7.2 (`docs/plans/2026-10-27-phase7-2-sign-up.md`), trả lời ba câu ở cuối file.
 - Gỡ runner `tnt-laptop-wsl` khỏi repo nếu còn (Settings > Actions > Runners).
 - Kiểm app sau khi bản 7.1d lên NUC (sao lưu trước đó: `~/backups/sakubun-before-7.1d-20261027T030406Z.db`).
 
