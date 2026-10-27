@@ -2,8 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { headers } from 'next/headers';
-import { auth } from '@/lib/auth/auth';
+import { routeUserId } from '@/lib/auth/current-user';
 import { importSystemBackup } from '@/lib/transfer/import';
 
 export const dynamic = 'force-dynamic';
@@ -12,10 +11,8 @@ export const runtime = 'nodejs';
 const SQLITE_MAGIC = 'SQLite format 3';
 
 export async function POST(req: Request) {
-  const session = await auth.api.getSession({ headers: await headers() });
-  if (!session?.user || session.user.banned) {
-    return Response.json({ ok: false, error: 'Cần đăng nhập.' }, { status: 401 });
-  }
+  const caller = await routeUserId('admin');
+  if (caller instanceof Response) return caller;
 
   const dryRun = new URL(req.url).searchParams.get('dryRun') === '1';
   const tmp = join(tmpdir(), `sakubun-import-${randomUUID()}.db`);

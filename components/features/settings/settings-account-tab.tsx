@@ -95,7 +95,8 @@ export function AccountTab({
   joinedAt: string | null;
   lastLoginAt: string | null;
   keys: McpKeyRow[];
-  mcpUsage: ToolUsageReport;
+  // Whole-app tool statistics: admin only (roadmap 7.2), null for a learner.
+  mcpUsage: ToolUsageReport | null;
 }) {
   const router = useRouter();
 
@@ -366,7 +367,7 @@ export function AccountTab({
           )}
         </SettingsSection>
 
-        <McpUsageCard usage={mcpUsage} />
+        {mcpUsage && <McpUsageCard usage={mcpUsage} />}
       </SettingsTab>
 
       <Dialog open={newToken !== null} onOpenChange={(o) => !o && setNewToken(null)}>

@@ -410,10 +410,10 @@ const LEARNING_TABLES = new Set([
 const FIRST_ACCOUNT =
   '(SELECT "id" FROM main."user" ORDER BY ("role" = \'admin\') DESC, "createdAt", "id" LIMIT 1)';
 
-const NEW_EMAIL_ONLY = 'b."email" NOT IN (SELECT "email" FROM main."user")';
-
 const q = (id: string) => `"${id.replace(/"/g, '""')}"`;
 const sqlStr = (v: string) => `'${v.replace(/'/g, "''")}'`;
+const newUsersOnly = (ids: ReadonlySet<string>) =>
+  ids.size === 0 ? '0' : `b."id" IN (${[...ids].map(sqlStr).join(', ')})`;
 
 async function columnsOf(schema: string, table: string): Promise<string[]> {
   const rows = await prisma.$queryRawUnsafe<{ name: string }[]>(
@@ -495,7 +495,10 @@ export async function importSystemBackup(
         (c) => liveCols.has(c) && !(spec.exclude ?? []).includes(c),
       );
       const userCols = (await userColsOf(spec.name)).filter((c) => cols.includes(c));
-      const backupWhere = spec.name === 'user' ? NEW_EMAIL_ONLY : spec.backupWhere;
+      // Only the accounts reconcileUsersByEmail found no live match for, so an email that differs only in
+      // case (Thien@ vs thien@) merges into the live account instead of becoming a second one.
+      const backupWhere =
+        spec.name === 'user' ? newUsersOnly(recon.insertUserIds) : spec.backupWhere;
       plans.push({ spec, cols, userCols, backupWhere });
 
       const userSet = new Set(userCols);

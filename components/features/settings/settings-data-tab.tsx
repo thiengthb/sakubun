@@ -80,7 +80,8 @@ async function postImport(kind: ImportKind, file: File, dryRun: boolean): Promis
   return json as ImportResult;
 }
 
-export function DataTab() {
+// The whole-database section (backup, merge, restore) is admin only (roadmap 7.2).
+export function DataTab({ isAdmin }: { isAdmin: boolean }) {
   const router = useRouter();
   const [busy, setBusy] = useState<'learning' | 'anki' | 'full' | 'sync' | null>(null);
   const [preview, setPreview] = useState<{
@@ -245,86 +246,88 @@ export function DataTab() {
         </SettingRow>
       </SettingsSection>
 
-      <SettingsSection
-        title="Toàn bộ dữ liệu"
-        info="Bản sao đầy đủ duy nhất, có cả tài khoản, token MCP và ghi chú gia sư."
-      >
-        <SettingRow
-          icon={Database}
-          label="Sao lưu .db"
-          info="Ảnh chụp SQLite đã kiểm tra toàn vẹn. Tệp nằm cùng ổ với Docker: chép tiếp sang ổ khác hoặc cloud."
+      {isAdmin && (
+        <SettingsSection
+          title="Toàn bộ dữ liệu"
+          info="Bản sao đầy đủ duy nhất, có cả tài khoản, token MCP và ghi chú gia sư."
         >
-          <Button variant="outline" onClick={backupFull} disabled={busy !== null}>
-            <Database aria-hidden />
-            {busy === 'full' ? 'Đang tạo…' : 'Tải'}
-          </Button>
-        </SettingRow>
-        <SettingRow
-          icon={Upload}
-          label="Nạp .db"
-          info="Chỉ thêm bản ghi còn thiếu, giữ nguyên cái đã có. Tệp mang theo cả tài khoản trong đó: sao lưu trước, xem kỹ bảng thay đổi rồi mới xác nhận."
-        >
-          <Button
-            variant="outline"
-            onClick={() => fullInput.current?.click()}
-            disabled={busy !== null}
+          <SettingRow
+            icon={Database}
+            label="Sao lưu .db"
+            info="Ảnh chụp SQLite đã kiểm tra toàn vẹn. Tệp nằm cùng ổ với Docker: chép tiếp sang ổ khác hoặc cloud."
           >
-            {busy === 'sync' ? (
-              <Loader2 className="animate-spin" aria-hidden />
-            ) : (
-              <Upload aria-hidden />
-            )}
-            Chọn tệp
-          </Button>
-          <input
-            ref={fullInput}
-            type="file"
-            accept=".db,application/vnd.sqlite3,application/octet-stream"
-            className="hidden"
-            onChange={(e) => {
-              void pickForSync('full', e.target.files?.[0] ?? null);
-              e.target.value = '';
-            }}
-          />
-        </SettingRow>
-        <SettingRow
-          icon={HardDriveDownload}
-          label="Khôi phục"
-          info="Thay hẳn cơ sở dữ liệu bằng một bản sao lưu, mất mọi thay đổi sau bản đó. Phải làm từ ngoài container. Muốn thử một bản sao lưu còn dùng được: Nạp .db rồi Hủy ở bước xem trước."
-          className="col-span-full"
-        >
-          <Button
-            variant="outline"
-            aria-expanded={restoreOpen}
-            aria-controls={restoreId}
-            onClick={() => setRestoreOpen((o) => !o)}
+            <Button variant="outline" onClick={backupFull} disabled={busy !== null}>
+              <Database aria-hidden />
+              {busy === 'full' ? 'Đang tạo…' : 'Tải'}
+            </Button>
+          </SettingRow>
+          <SettingRow
+            icon={Upload}
+            label="Nạp .db"
+            info="Chỉ thêm bản ghi còn thiếu, giữ nguyên cái đã có. Tệp mang theo cả tài khoản trong đó: sao lưu trước, xem kỹ bảng thay đổi rồi mới xác nhận."
           >
-            <ChevronDown
-              aria-hidden
-              className={cn('transition-transform', restoreOpen && 'rotate-180')}
+            <Button
+              variant="outline"
+              onClick={() => fullInput.current?.click()}
+              disabled={busy !== null}
+            >
+              {busy === 'sync' ? (
+                <Loader2 className="animate-spin" aria-hidden />
+              ) : (
+                <Upload aria-hidden />
+              )}
+              Chọn tệp
+            </Button>
+            <input
+              ref={fullInput}
+              type="file"
+              accept=".db,application/vnd.sqlite3,application/octet-stream"
+              className="hidden"
+              onChange={(e) => {
+                void pickForSync('full', e.target.files?.[0] ?? null);
+                e.target.value = '';
+              }}
             />
-            Lệnh
-          </Button>
-        </SettingRow>
-        <div id={restoreId} hidden={!restoreOpen} className="col-span-full space-y-2 px-4 pb-4">
-          <p className="text-xs text-muted-foreground">
-            Chạy ở thư mục có <code className="text-foreground">docker-compose.yml</code>:
-          </p>
-          <div className="relative">
-            <pre className="overflow-x-auto rounded-sm bg-muted p-3 text-xs">
-              <code>{RESTORE_COMMANDS}</code>
-            </pre>
-            <CopyCommandButton
-              command={RESTORE_COMMANDS}
-              label="Chép lệnh"
-              size="icon-sm"
-              showCopiedText={false}
-              toastDescription="none"
-              className="absolute top-2 right-2"
-            />
+          </SettingRow>
+          <SettingRow
+            icon={HardDriveDownload}
+            label="Khôi phục"
+            info="Thay hẳn cơ sở dữ liệu bằng một bản sao lưu, mất mọi thay đổi sau bản đó. Phải làm từ ngoài container. Muốn thử một bản sao lưu còn dùng được: Nạp .db rồi Hủy ở bước xem trước."
+            className="col-span-full"
+          >
+            <Button
+              variant="outline"
+              aria-expanded={restoreOpen}
+              aria-controls={restoreId}
+              onClick={() => setRestoreOpen((o) => !o)}
+            >
+              <ChevronDown
+                aria-hidden
+                className={cn('transition-transform', restoreOpen && 'rotate-180')}
+              />
+              Lệnh
+            </Button>
+          </SettingRow>
+          <div id={restoreId} hidden={!restoreOpen} className="col-span-full space-y-2 px-4 pb-4">
+            <p className="text-xs text-muted-foreground">
+              Chạy ở thư mục có <code className="text-foreground">docker-compose.yml</code>:
+            </p>
+            <div className="relative">
+              <pre className="overflow-x-auto rounded-sm bg-muted p-3 text-xs">
+                <code>{RESTORE_COMMANDS}</code>
+              </pre>
+              <CopyCommandButton
+                command={RESTORE_COMMANDS}
+                label="Chép lệnh"
+                size="icon-sm"
+                showCopiedText={false}
+                toastDescription="none"
+                className="absolute top-2 right-2"
+              />
+            </div>
           </div>
-        </div>
-      </SettingsSection>
+        </SettingsSection>
+      )}
 
       <Dialog
         open={preview !== null}

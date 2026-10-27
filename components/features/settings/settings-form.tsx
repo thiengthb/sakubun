@@ -27,8 +27,9 @@ interface SettingsFormProps {
     joinedAt: string | null;
     lastLoginAt: string | null;
     keys: McpKeyRow[];
-    mcpUsage: ToolUsageReport;
+    mcpUsage: ToolUsageReport | null;
   };
+  isAdmin: boolean;
 }
 
 const SAVEABLE_TABS = new Set(['practice']);
@@ -42,7 +43,7 @@ const RETIRED_TABS: Record<string, string> = {
   sensory: 'practice',
 };
 
-export function SettingsForm({ initial, account }: SettingsFormProps) {
+export function SettingsForm({ initial, account, isAdmin }: SettingsFormProps) {
   const [settings, setSettings] = useState<Settings>(initial);
   const [storedTab, setTab] = useSessionState(
     SETTINGS_TABS.storeKey,
@@ -78,7 +79,7 @@ export function SettingsForm({ initial, account }: SettingsFormProps) {
         tabs={<PageTabs items={SETTINGS_TABS.items} label={SETTINGS_TABS.label} />}
       >
         <PracticeTab settings={settings} set={set} setSettings={setSettings} />
-        <DataTab />
+        <DataTab isAdmin={isAdmin} />
         <AccountTab {...account} />
         {SAVEABLE_TABS.has(tab) && (
           <FormFooter status={dirty ? 'Có thay đổi chưa lưu' : 'Mọi thay đổi đã được lưu'}>

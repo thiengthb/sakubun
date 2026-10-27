@@ -1,6 +1,7 @@
 import { verifyJwsAccessToken } from 'better-auth/oauth2';
 import { auth, AUTH_ISSUER, MCP_RESOURCE } from '@/lib/auth/auth';
 import { isAllowedEmail } from '@/lib/auth/login-policy';
+import { accountAccess } from '@/lib/auth/access';
 import { prisma } from '@/lib/db/db';
 
 // OAuth access tokens on /api/mcp (roadmap 4.1). better-auth signs them as JWTs bound to MCP_RESOURCE;
@@ -15,11 +16,12 @@ export function oauthSubject(claims: Record<string, unknown>): string | null {
   return typeof claims.sub === 'string' && claims.sub !== '' ? claims.sub : null;
 }
 
-// A refresh-minted token stops working as soon as ALLOWED_EMAIL no longer names its account.
+// A refresh-minted token stops working as soon as its account loses access, or ALLOWED_EMAIL no longer
+// names it (the second lock stays until sign-up opens, roadmap 7.2d).
 export function oauthAccountAllowed(
-  user: { banned: boolean | null; email: string } | null,
+  user: { banned: boolean | null; email: string; role?: string | null } | null,
 ): boolean {
-  return !!user && !user.banned && isAllowedEmail(user.email);
+  return accountAccess(user) !== 'none' && isAllowedEmail(user?.email);
 }
 
 const jwksCacheKey = {};
@@ -45,7 +47,7 @@ export async function verifyMcpOAuthToken(token: string): Promise<{ userId: stri
   if (!userId) return null;
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { banned: true, email: true },
+    select: { banned: true, email: true, role: true },
   });
   return oauthAccountAllowed(user) ? { userId } : null;
 }
