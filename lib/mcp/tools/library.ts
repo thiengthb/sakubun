@@ -7,8 +7,8 @@ import {
   GROUP_TYPE,
   listGroupEntries,
   OPENJLPT_ORIGIN,
-  PUBLIC,
   searchEntries,
+  VISIBLE,
 } from '@/lib/library/shared';
 import { ownedItems, takeEntry, takeGroup } from '@/lib/library/take';
 import { guard, learnerDb, mcpError, type McpServer, type ToolExtra } from '@/lib/mcp/tool-kit';
@@ -93,7 +93,7 @@ export function registerLibraryTools(server: McpServer): void {
     guard('library_take', async ({ entryId }: { entryId: string }, extra: ToolExtra) => {
       const db = learnerDb(extra);
       const entry = await prisma.libraryEntry.findFirst({
-        where: { id: entryId, status: PUBLIC },
+        where: { id: entryId, ...VISIBLE },
         select: { type: true, name: true, expression: true },
       });
       if (!entry) return mcpError('Unknown entryId. Call library_search for a current one.');

@@ -3,6 +3,7 @@
 import { prisma } from '@/lib/db/db';
 import { userDb } from '@/lib/db/user-db';
 import { accountAccess, type AccountAccess } from '@/lib/auth/access';
+import { orphanAuthorEntries } from '@/lib/library/moderation';
 
 export type AccountRow = {
   id: string;
@@ -100,7 +101,11 @@ export async function setBanned(id: string, banned: boolean): Promise<void> {
 }
 
 // Deletes the account and, through the foreign keys, everything it owns: learning data, review
-// history, sessions, MCP keys and OAuth grants (decision 0006).
+// history, sessions, MCP keys and OAuth grants (decision 0006). What it shared on Kho chung leaves
+// it first, kept only inside other learners' groups (decision 0008, plan rule 9).
 export async function deleteAccount(id: string): Promise<void> {
-  await prisma.user.delete({ where: { id } });
+  await prisma.$transaction(async (tx) => {
+    await orphanAuthorEntries(tx, id);
+    await tx.user.delete({ where: { id } });
+  });
 }

@@ -1,6 +1,6 @@
 import type { UserDb } from '@/lib/db/user-db';
 import { err, ok, type ActionResult } from '@/lib/core/action-result';
-import { PUBLIC } from '@/lib/library/shared';
+import { VISIBLE } from '@/lib/library/shared';
 
 // "Thích" on the shared library (phase 8, L3; plan rule 7): one like per learner and entry, which
 // ranks entries after OpenJLPT's originals and the take count.
@@ -11,7 +11,7 @@ export async function setLike(
   liked: boolean,
 ): Promise<ActionResult<{ liked: boolean; likes: number }>> {
   const entry = await db.libraryEntry.findFirst({
-    where: { id: entryId, status: PUBLIC },
+    where: { id: entryId, ...VISIBLE },
     select: { id: true },
   });
   if (!entry) return err('Mục này không còn trên kho chung.');

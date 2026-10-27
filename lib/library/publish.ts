@@ -1,13 +1,20 @@
 import type { UserDb } from '@/lib/db/user-db';
 import { err, ok, type ActionResult } from '@/lib/core/action-result';
 import { GRAMMAR_KIND, VOCAB_KIND } from '@/lib/library/item-kinds';
-import { GROUP_TYPE, LEARNER_ORIGIN, PUBLIC, type LibraryClient } from '@/lib/library/shared';
+import {
+  GROUP_TYPE,
+  HIDDEN,
+  LEARNER_ORIGIN,
+  PUBLIC,
+  REMOVED,
+  type LibraryClient,
+} from '@/lib/library/shared';
 
 // Publishing to the shared library (phase 8, L3; plan rules 4 to 8): a learner shares one of their
 // own items or groups as a snapshot entry. Only the web calls this; no MCP tool reaches it. Each
 // item or group has at most one open share, which publishing again updates.
 
-export const HIDDEN = 'hidden';
+export { HIDDEN };
 
 // What travels to the shared library. Notes, stars, suspensions and history stay private.
 export const SHARED_FIELDS = ['expression', 'reading', 'hanviet', 'meaningVi', 'level'] as const;
@@ -27,15 +34,19 @@ export type SharePlan =
   | { kind: 'update'; entryId: string }
   | { kind: 'create'; basedOnId: string | null }
   // Taken from the shared library and not edited: sharing it again would only make a duplicate.
-  | { kind: 'same-as-source'; entryId: string };
+  | { kind: 'same-as-source'; entryId: string }
+  // The admin hid the learner's share (L6): publishing it again would undo that.
+  | { kind: 'removed' };
 
-// Pure: what publishing an item does, from the item, the entry it was taken from (if any) and the
-// learner's open share of it (if any).
+// Pure: what publishing an item does, from the item, the entry it was taken from (if any), the
+// learner's open share of it (if any), and whether the admin hid a share of it.
 export function planItemShare(
   item: SharedContent,
   source: Shared | null,
   own: Shared | null,
+  removed = false,
 ): SharePlan {
+  if (removed) return { kind: 'removed' };
   if (own)
     return sameContent(own, item)
       ? { kind: 'unchanged', entryId: own.id }
@@ -46,6 +57,8 @@ export function planItemShare(
 
 export const SAME_AS_SOURCE =
   'Mục này giống hệt bản bạn lấy từ kho chung. Sửa nghĩa, cách đọc hoặc cấp rồi mới công khai được.';
+export const REMOVED_BY_ADMIN =
+  'Quản trị đã ẩn mục này khỏi Kho chung, nên không công khai lại được.';
 const NO_ITEM = 'Không tìm thấy mục này trong kho của bạn.';
 const NO_GROUP = 'Không tìm thấy nhóm này trong kho của bạn.';
 
@@ -75,32 +88,41 @@ type ItemRow = SharedContent & { id: string; kind: string; libraryEntryId: strin
 type Author = { db: Pick<LibraryClient, 'libraryEntry'>; me: string };
 const author = (db: UserDb): Author => ({ db, me: db.$ownerId() });
 
-// The learner's open shares of these items, and the entries they were taken from, by item id.
+// The learner's open shares of these items, the entries they were taken from, and which shares the
+// admin hid, by item id.
 async function shareContext({ db, me }: Author, items: readonly ItemRow[]) {
   const ids = items.map((i) => i.id);
   const sourceIds = items.flatMap((i) => (i.libraryEntryId ? [i.libraryEntryId] : []));
-  const [own, sources] = await Promise.all([
+  const [shares, sources] = await Promise.all([
     db.libraryEntry.findMany({
       where: {
         authorId: me,
         sourceId: { in: ids },
         type: { in: [GRAMMAR_KIND, VOCAB_KIND] },
-        status: PUBLIC,
+        status: { in: [PUBLIC, REMOVED] },
       },
       select: { ...ENTRY_CONTENT, sourceId: true },
     }),
     db.libraryEntry.findMany({ where: { id: { in: sourceIds } }, select: ENTRY_CONTENT }),
   ]);
-  const ownBy = new Map(own.map((e) => [e.sourceId!, e]));
+  const ownBy = new Map(shares.filter((e) => e.status === PUBLIC).map((e) => [e.sourceId!, e]));
+  const removed = new Set(shares.filter((e) => e.status === REMOVED).map((e) => e.sourceId!));
   const sourceBy = new Map(sources.map((e) => [e.id, e]));
   return (item: ItemRow) => ({
     own: ownBy.get(item.id) ?? null,
     source: item.libraryEntryId ? (sourceBy.get(item.libraryEntryId) ?? null) : null,
+    removed: removed.has(item.id),
   });
 }
+const planFor = (item: ItemRow, ctx: ReturnType<Awaited<ReturnType<typeof shareContext>>>) =>
+  planItemShare(item, ctx.source, ctx.own, ctx.removed);
 
 // Carries out a plan; returns the entry that now shares the item.
-async function applyPlan({ db, me }: Author, item: ItemRow, plan: SharePlan): Promise<string> {
+async function applyPlan(
+  { db, me }: Author,
+  item: ItemRow,
+  plan: Exclude<SharePlan, { kind: 'removed' }>,
+): Promise<string> {
   const content = sharedContent(item);
   if (plan.kind === 'update') {
     await db.libraryEntry.update({ where: { id: plan.entryId }, data: content });
@@ -135,14 +157,20 @@ export interface ItemShareStatus {
 export async function itemShareStatus(db: UserDb, itemId: string): Promise<ItemShareStatus | null> {
   const item = await db.item.findFirst({ where: { id: itemId }, select: ITEM_FIELDS });
   if (!item) return null;
-  const { own, source } = (await shareContext(author(db), [item]))(item);
-  const plan = planItemShare(item, source, own);
+  const ctx = (await shareContext(author(db), [item]))(item);
+  const { own, source } = ctx;
+  const plan = planFor(item, ctx);
   return {
     shared: own
       ? { entryId: own.id, takeCount: own.takeCount, changed: plan.kind === 'update' }
       : null,
     basedOn: source ? { entryId: source.id, status: source.status } : null,
-    blocked: plan.kind === 'same-as-source' ? SAME_AS_SOURCE : null,
+    blocked:
+      plan.kind === 'same-as-source'
+        ? SAME_AS_SOURCE
+        : plan.kind === 'removed'
+          ? REMOVED_BY_ADMIN
+          : null,
   };
 }
 
@@ -159,9 +187,9 @@ export async function publishItem(
 ): Promise<ActionResult<PublishResult>> {
   const item = await db.item.findFirst({ where: { id: itemId }, select: ITEM_FIELDS });
   if (!item) return err(NO_ITEM);
-  const { own, source } = (await shareContext(author(db), [item]))(item);
-  const plan = planItemShare(item, source, own);
+  const plan = planFor(item, (await shareContext(author(db), [item]))(item));
   if (plan.kind === 'same-as-source') return err(SAME_AS_SOURCE);
+  if (plan.kind === 'removed') return err(REMOVED_BY_ADMIN);
   return ok({ entryId: await applyPlan(author(db), item, plan), created: plan.kind === 'create' });
 }
 
@@ -197,7 +225,14 @@ const groupItems = (db: UserDb, groupId: string) =>
 export interface GroupShareStatus {
   shared: { entryId: string; takeCount: number } | null;
   // What publishing would put on the shared library, in order: the learner sees it before agreeing.
-  preview: { itemId: string; expression: string; action: 'new' | 'update' | 'reuse' | 'same' }[];
+  // An item the admin hid is left out of the group ('removed').
+  preview: {
+    itemId: string;
+    expression: string;
+    action: 'new' | 'update' | 'reuse' | 'same' | 'removed';
+  }[];
+  // Why "Công khai" is refused now, if it is.
+  blocked: string | null;
 }
 
 const PREVIEW_ACTION = {
@@ -205,7 +240,11 @@ const PREVIEW_ACTION = {
   update: 'update',
   'same-as-source': 'reuse',
   unchanged: 'same',
+  removed: 'removed',
 } as const;
+
+export const GROUP_REMOVED_BY_ADMIN =
+  'Quản trị đã ẩn nhóm này khỏi Kho chung, nên không công khai lại được.';
 
 export async function groupShareStatus(
   db: UserDb,
@@ -214,22 +253,26 @@ export async function groupShareStatus(
   const group = await groupItems(db, groupId);
   if (!group) return null;
   const items = group.members.map((m) => m.item);
-  const [context, own] = await Promise.all([
+  const [context, own, removed] = await Promise.all([
     shareContext(author(db), items),
     ownGroupShare(author(db), groupId),
+    groupRemoved(author(db), groupId),
   ]);
   return {
     shared: own ? { entryId: own.id, takeCount: own.takeCount } : null,
-    preview: items.map((item) => {
-      const { own, source } = context(item);
-      return {
-        itemId: item.id,
-        expression: item.expression ?? '',
-        action: PREVIEW_ACTION[planItemShare(item, source, own).kind],
-      };
-    }),
+    preview: items.map((item) => ({
+      itemId: item.id,
+      expression: item.expression ?? '',
+      action: PREVIEW_ACTION[planFor(item, context(item)).kind],
+    })),
+    blocked: removed ? GROUP_REMOVED_BY_ADMIN : null,
   };
 }
+
+const groupRemoved = async ({ db, me }: Author, groupId: string) =>
+  (await db.libraryEntry.count({
+    where: { authorId: me, sourceId: groupId, type: GROUP_TYPE, status: REMOVED },
+  })) > 0;
 
 const ownGroupShare = ({ db, me }: Author, groupId: string) =>
   db.libraryEntry.findFirst({
@@ -248,6 +291,10 @@ export async function publishGroup(
   if (!group) return err(NO_GROUP);
   const items = group.members.map((m) => m.item);
   if (items.length === 0) return err('Nhóm còn trống. Thêm mục vào nhóm rồi mới công khai được.');
+  if (await groupRemoved(author(db), groupId)) return err(GROUP_REMOVED_BY_ADMIN);
+  const before = await shareContext(author(db), items);
+  if (items.every((item) => planFor(item, before(item)).kind === 'removed'))
+    return err('Quản trị đã ẩn mọi mục trong nhóm này, nên không còn gì để công khai.');
 
   const me = db.$ownerId();
   return db.$transaction(async (tx) => {
@@ -255,8 +302,9 @@ export async function publishGroup(
     const context = await shareContext(as, items);
     const entryIds: string[] = [];
     for (const item of items) {
-      const { own, source } = context(item);
-      entryIds.push(await applyPlan(as, item, planItemShare(item, source, own)));
+      const plan = planFor(item, context(item));
+      // An item the admin hid stays out of the group.
+      if (plan.kind !== 'removed') entryIds.push(await applyPlan(as, item, plan));
     }
     const content = { name: group.name, groupKind: group.kind, notes: group.note };
     const own = await ownGroupShare(as, groupId);
