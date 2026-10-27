@@ -15,6 +15,7 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { chooseMe, layoutTurns, scriptSpeakers } from '@/lib/kaiwa/layout';
 import { editScriptCommand } from '@/components/features/kaiwa/kaiwa-commands';
 import type { RubyLine } from '@/components/features/kaiwa/kaiwa-line';
+import type { WordMeaning } from '@/lib/kaiwa/lookup';
 
 // One script (phase 8, K3): its lines as a chat seen from the part the learner picks ("Tôi là"),
 // each with the Japanese to listen to and the Vietnamese, which the learner can hide to test
@@ -23,12 +24,14 @@ import type { RubyLine } from '@/components/features/kaiwa/kaiwa-line';
 export function KaiwaScriptView({
   script,
   lines,
+  meanings,
   voiceSpeaker,
   speechRate,
   showFurigana,
 }: {
   script: { id: string; title: string; updatedAt: Date };
   lines: RubyLine[];
+  meanings: Record<string, WordMeaning>;
   voiceSpeaker?: number;
   speechRate?: number;
   showFurigana: boolean;
@@ -100,6 +103,7 @@ export function KaiwaScriptView({
               <KaiwaLine
                 key={turn.line.row}
                 turn={turn}
+                meanings={meanings}
                 showMeaning={showMeaning}
                 showFurigana={showFurigana}
                 voiceSpeaker={voiceSpeaker}

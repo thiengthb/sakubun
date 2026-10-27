@@ -9,6 +9,7 @@ import {
   type SaveScriptInput,
   type ScriptSummary,
 } from '@/lib/kaiwa/scripts';
+import { addOpenJlptWord } from '@/lib/kaiwa/lookup';
 
 export async function deleteScriptAction(scriptId: string): Promise<ActionResult> {
   const db = await getUserDb();
@@ -31,4 +32,12 @@ export async function saveScriptAction(
     revalidatePath(`/kaiwa/${saved.data.id}`);
   }
   return saved;
+}
+
+// "Thêm vào kho" on a word looked up in a script (K5): the OpenJLPT entry becomes the learner's item.
+export async function addWordAction(expression: string): Promise<ActionResult<{ itemId: string }>> {
+  const added = await addOpenJlptWord(await getUserDb(), expression);
+  if ('reason' in added) return err(added.reason);
+  revalidatePath('/resources');
+  return ok(added);
 }
