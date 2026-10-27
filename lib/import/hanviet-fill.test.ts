@@ -7,56 +7,72 @@ describe('hanvietFillSql', () => {
   it('điền từ trước đây trống, sửa từ có âm cũ đổi khác, không bao giờ xoá âm', () => {
     const sql = hanvietFillSql(
       [
-        { id: 'a', kind: 'VOCAB', hanviet: null },
-        { id: 'b', kind: 'VOCAB', hanviet: 'NHẤT' },
-        { id: 'g', kind: 'GRAMMAR', hanviet: null },
-        { id: 'c', kind: 'VOCAB', hanviet: null },
-        { id: 'd', kind: 'VOCAB', hanviet: 'NGÂN HÀNH' },
-        { id: 'e', kind: 'VOCAB', hanviet: 'TRIỀU' },
+        { id: 'a', kind: 'VOCAB', expression: 'a', hanviet: null },
+        { id: 'b', kind: 'VOCAB', expression: 'b', hanviet: 'NHẤT' },
+        { id: 'g', kind: 'GRAMMAR', expression: 'g', hanviet: null },
+        { id: 'c', kind: 'VOCAB', expression: 'c', hanviet: null },
+        { id: 'd', kind: 'VOCAB', expression: 'd', hanviet: 'NGÂN HÀNH' },
+        { id: 'e', kind: 'VOCAB', expression: 'e', hanviet: 'TRIỀU' },
       ],
       [
-        { id: 'a', kind: 'VOCAB', hanviet: 'KHÍ' },
-        { id: 'b', kind: 'VOCAB', hanviet: 'NHẤT' },
-        { id: 'g', kind: 'GRAMMAR', hanviet: 'X' },
-        { id: 'c', kind: 'VOCAB', hanviet: null },
-        { id: 'new', kind: 'VOCAB', hanviet: 'TÂN' },
-        { id: 'd', kind: 'VOCAB', hanviet: 'NGÂN HÀNG' },
-        { id: 'e', kind: 'VOCAB', hanviet: null },
+        { id: 'a', kind: 'VOCAB', expression: 'a', hanviet: 'KHÍ' },
+        { id: 'b', kind: 'VOCAB', expression: 'b', hanviet: 'NHẤT' },
+        { id: 'g', kind: 'GRAMMAR', expression: 'g', hanviet: 'X' },
+        { id: 'c', kind: 'VOCAB', expression: 'c', hanviet: null },
+        { id: 'new', kind: 'VOCAB', expression: 'new', hanviet: 'TÂN' },
+        { id: 'd', kind: 'VOCAB', expression: 'd', hanviet: 'NGÂN HÀNG' },
+        { id: 'e', kind: 'VOCAB', expression: 'e', hanviet: null },
       ],
     );
     expect(sql.split('\n')).toEqual([
-      `UPDATE "Item" SET "hanviet" = 'KHÍ' WHERE "id" = 'a' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;`,
-      `UPDATE "Item" SET "hanviet" = 'NGÂN HÀNG' WHERE "id" = 'd' AND "source" = 'OPENJLPT' AND "hanviet" = 'NGÂN HÀNH';`,
+      `UPDATE "Item" SET "hanviet" = 'KHÍ' WHERE "kind" = 'VOCAB' AND "expression" = 'a' AND "source" = 'OPENJLPT' AND "hanviet" IS NULL;`,
+      `UPDATE "Item" SET "hanviet" = 'NGÂN HÀNG' WHERE "kind" = 'VOCAB' AND "expression" = 'd' AND "source" = 'OPENJLPT' AND "hanviet" = 'NGÂN HÀNH';`,
     ]);
   });
 
   it('trên DB thật: điền ô trống, sửa âm máy ghi, không đè âm người học đã sửa, bỏ qua mục tự thêm', () => {
     const url = createTestDb('hanviet-fill-');
     const db = new Database(url.replace(/^file:/, ''));
-    db.prepare(
-      `INSERT INTO "user" ("id", "name", "email", "updatedAt") VALUES ('learner', 'learner', 'l@example.test', 0)`,
-    ).run();
-    const insert = db.prepare(
-      `INSERT INTO "Item" ("id", "userId", "kind", "expression", "hanviet", "meaningVi", "source") VALUES (?, 'learner', 'VOCAB', ?, ?, 'x', ?)`,
+    const addUser = db.prepare(
+      `INSERT INTO "user" ("id", "name", "email", "updatedAt") VALUES (?, ?, ?, 0)`,
     );
-    insert.run('empty', '気分', null, 'OPENJLPT');
-    insert.run('edited', '年', 'NIÊN (sửa)', 'OPENJLPT');
-    insert.run('manual', '実', null, 'MANUAL');
-    insert.run('machine', '銀行', 'NGÂN HÀNH', 'OPENJLPT');
-    insert.run('learner', '社長', 'XÃ TRƯỞNG (tự sửa)', 'OPENJLPT');
-    const rows = [
-      ...['empty', 'edited', 'manual'].map((id) => ({ id, kind: 'VOCAB', hanviet: null })),
-      { id: 'machine', kind: 'VOCAB', hanviet: 'NGÂN HÀNH' },
-      { id: 'learner', kind: 'VOCAB', hanviet: 'XÃ TRƯỜNG' },
-    ];
+    addUser.run('learner', 'learner', 'l@example.test');
+    addUser.run('second', 'second', 's@example.test');
+    const insert = db.prepare(
+      `INSERT INTO "Item" ("id", "userId", "kind", "expression", "hanviet", "meaningVi", "source") VALUES (?, ?, 'VOCAB', ?, ?, 'x', ?)`,
+    );
+    insert.run('empty', 'learner', '気分', null, 'OPENJLPT');
+    insert.run('edited', 'learner', '年', 'NIÊN (sửa)', 'OPENJLPT');
+    insert.run('manual', 'learner', '実', null, 'MANUAL');
+    insert.run('machine', 'learner', '銀行', 'NGÂN HÀNH', 'OPENJLPT');
+    insert.run('learner', 'learner', '社長', 'XÃ TRƯỞNG (tự sửa)', 'OPENJLPT');
+    // The second learner's copy of the deck has its own ids (roadmap 7.2).
+    insert.run('b-empty', 'second', '気分', null, 'OPENJLPT');
+    insert.run('b-machine', 'second', '銀行', 'NGÂN HÀNH', 'OPENJLPT');
+    const word = { a: '気分', b: '年', c: '実', d: '銀行', e: '社長' };
+    const row = (id: keyof typeof word, hanviet: string | null) => ({
+      id: `build-${id}`,
+      kind: 'VOCAB',
+      expression: word[id],
+      hanviet,
+    });
     db.exec(
-      hanvietFillSql(rows, [
-        { id: 'empty', kind: 'VOCAB', hanviet: 'KHÍ PHÂN' },
-        { id: 'edited', kind: 'VOCAB', hanviet: 'NIÊN' },
-        { id: 'manual', kind: 'VOCAB', hanviet: 'THỰC' },
-        { id: 'machine', kind: 'VOCAB', hanviet: 'NGÂN HÀNG' },
-        { id: 'learner', kind: 'VOCAB', hanviet: 'XÃ TRƯỞNG' },
-      ]),
+      hanvietFillSql(
+        [
+          row('a', null),
+          row('b', null),
+          row('c', null),
+          row('d', 'NGÂN HÀNH'),
+          row('e', 'XÃ TRƯỜNG'),
+        ],
+        [
+          row('a', 'KHÍ PHÂN'),
+          row('b', 'NIÊN'),
+          row('c', 'THỰC'),
+          row('d', 'NGÂN HÀNG'),
+          row('e', 'XÃ TRƯỞNG'),
+        ],
+      ),
     );
     const got = Object.fromEntries(
       (
@@ -73,6 +89,8 @@ describe('hanvietFillSql', () => {
       manual: null,
       machine: 'NGÂN HÀNG',
       learner: 'XÃ TRƯỞNG (tự sửa)',
+      'b-empty': 'KHÍ PHÂN',
+      'b-machine': 'NGÂN HÀNG',
     });
   });
 });
