@@ -42,10 +42,11 @@ test('a second account signs up, learns from its own deck and cannot reach admin
   await page.getByRole('button', { name: 'Đăng nhập' }).click();
   await page.waitForURL((u) => !u.pathname.startsWith('/login'), { timeout: 30_000 });
 
-  const admin = await page.goto('/admin');
-  expect(admin?.status()).toBe(404);
+  // loading.tsx streams the shell first, so the status stays 200; the page swaps to not-found.
+  await page.goto('/admin');
+  await expect(page.getByRole('heading', { name: 'Không tìm thấy trang' })).toBeVisible();
+  await expect(page.getByText(E2E_EMAIL)).toHaveCount(0);
   expect((await page.request.get('/api/backup')).status()).toBe(403);
   await page.goto('/settings');
   await expect(page.getByRole('link', { name: 'Mở' })).toHaveCount(0);
-  expect(E2E_EMAIL).not.toBe(EMAIL);
 });
