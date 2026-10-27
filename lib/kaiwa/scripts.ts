@@ -30,7 +30,7 @@ export interface SaveScriptInput {
 const SUMMARY = { id: true, title: true, version: true, updatedAt: true } as const;
 
 export async function listScripts(db: UserDb): Promise<ScriptSummary[]> {
-  return db.script.findMany({ select: SUMMARY, orderBy: { updatedAt: 'desc' } });
+  return db.script.findMany({ select: SUMMARY, orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }] });
 }
 
 export async function getScript(db: UserDb, id: string): Promise<ScriptRecord | null> {
