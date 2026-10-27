@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { MessagesSquare, Sparkles } from 'lucide-react';
 import { PageShell } from '@/components/layout/page-shell';
+import { AddButton } from '@/components/common/add-button';
 import { CopyCommandButton } from '@/components/common/copy-command-button';
 import { EmptyState } from '@/components/common/empty-state';
 import { LIST_CARD } from '@/components/common/list-card';
@@ -11,8 +12,8 @@ import { WRITE_SCRIPT_COMMAND } from '@/components/features/kaiwa/kaiwa-commands
 import type { ScriptSummary } from '@/lib/kaiwa/scripts';
 import { cn } from '@/lib/core/utils';
 
-// List template (phase 8, K3): the learner's scripts, newest first. Scripts are written with Claude
-// over MCP, so the header action copies the phrase that starts it.
+// List template (phase 8, K3): the learner's scripts, newest first. Scripts are mostly written with
+// Claude over MCP (the header copies the phrase that starts it); "Thêm" writes one on the web (K3c).
 export function KaiwaListView({ scripts }: { scripts: ScriptSummary[] }) {
   return (
     <PageShell
@@ -20,13 +21,17 @@ export function KaiwaListView({ scripts }: { scripts: ScriptSummary[] }) {
       title="Hội thoại"
       meta={`${scripts.length} kịch bản`}
       actions={
-        <CopyCommandButton
-          command={WRITE_SCRIPT_COMMAND}
-          label="Soạn với AI"
-          size="default"
-          icon={Sparkles}
-        />
+        <>
+          <CopyCommandButton
+            command={WRITE_SCRIPT_COMMAND}
+            label="Soạn với AI"
+            size="default"
+            icon={Sparkles}
+          />
+          <AddButton href="/kaiwa/new" />
+        </>
       }
+      actionsOnPhone="split"
     >
       {scripts.length === 0 ? (
         <EmptyState
@@ -34,8 +39,8 @@ export function KaiwaListView({ scripts }: { scripts: ScriptSummary[] }) {
           title="Chưa có kịch bản nào"
           description={
             <>
-              Bấm Soạn với AI rồi dán vào Claude. Claude soạn kịch bản trên canvas của nó, hai bên
-              sửa tới khi ổn, rồi Claude lưu vào đây.
+              Bấm Soạn với AI rồi dán vào Claude: Claude soạn kịch bản trên canvas của nó, hai bên
+              sửa tới khi ổn, rồi Claude lưu vào đây. Muốn tự viết thì bấm Thêm.
             </>
           }
         />

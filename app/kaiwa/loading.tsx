@@ -8,7 +8,13 @@ export default function Loading() {
       template="list"
       title="Hội thoại"
       meta
-      actions={<Skeleton className="h-9 w-28 rounded-sm md:h-7" />}
+      actions={
+        <>
+          <Skeleton className="h-9 w-28 rounded-sm md:h-7" />
+          <Skeleton className="h-9 w-20 rounded-sm md:h-7" />
+        </>
+      }
+      actionsOnPhone="split"
     >
       <CardsSkeleton rowHeight={62} footer={false} />
     </PageSkeleton>

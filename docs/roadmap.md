@@ -59,7 +59,7 @@ K6-K9.
 | K3 | Hội thoại pages `/kaiwa`, `/kaiwa/[id]`: view, listen, hide meanings, delete (editing stays with the AI) | e2e + screenshots | high | In review |
 | K4 | Automatic furigana and tokens on save (kuromoji; own reading alignment instead of kuroshiro) | tests, Docker image builds | high (column) | In review |
 | K3b | Script page as a chat: learner picks their part (left), others right, speaker-less lines as the scene | e2e + screenshots | medium | In review |
-| K3c | Edit and create scripts on the web, same check and version guard as MCP | e2e | medium | Planned |
+| K3c | Edit and create scripts on the web, same check and version guard as MCP | e2e | medium | In review |
 | K5 | Hover a word for its Vietnamese meaning, "Thêm vào kho" | e2e + screenshots | high | Todo |
 | K6 | Karaoke, whole-script playback, voice per speaker, server audio cache | screenshots | medium | Todo |
 | K7 | Publish scripts to kho chung | e2e | high | Todo |

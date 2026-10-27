@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+  checkBody,
   checkScript,
+  checkTitle,
   describeProblems,
   normalizeBody,
   parseScript,
@@ -139,5 +141,17 @@ describe('plainJapanese', () => {
 describe('normalizeBody', () => {
   it('drops line-ending and trailing-space differences only', () => {
     expect(normalizeBody('\nA: はい。  \r\nB: いいえ。\n\n')).toBe('A: はい。\nB: いいえ。');
+  });
+});
+
+describe('checkTitle and checkBody', () => {
+  it("keep the title's problems and the body's apart, for the web form's two fields", () => {
+    expect(checkTitle('')).toHaveLength(1);
+    expect(checkTitle('Ở ga')).toEqual([]);
+    expect(checkBody('A: 切符はどこですか。 | Vé ở đâu?')).toEqual([]);
+    expect(checkBody('A: hello | xin chào')).toEqual([
+      { row: 1, message: expect.stringMatching(/^Không có chữ Nhật/) },
+    ]);
+    expect(checkScript('', 'A: hello')).toEqual([...checkTitle(''), ...checkBody('A: hello')]);
   });
 });

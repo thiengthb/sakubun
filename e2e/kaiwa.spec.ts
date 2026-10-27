@@ -1,6 +1,6 @@
 import path from 'node:path';
 import Database from 'better-sqlite3';
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { E2E_DB_FILE, E2E_EMAIL, E2E_LOGIN, E2E_OWNER, seedE2eAccount } from './fixtures';
 
 // Phase 8, K3 and K4: a script Claude saved over MCP shows on Hội thoại; its page reads it as a chat
@@ -26,6 +26,14 @@ function db() {
   return new Database(path.join(process.cwd(), E2E_DB_FILE));
 }
 
+async function signIn(page: Page) {
+  await page.goto('/login');
+  await page.getByLabel('Email').fill(E2E_EMAIL);
+  await page.getByLabel('Mật khẩu').fill(E2E_LOGIN);
+  await page.getByRole('button', { name: 'Đăng nhập' }).click();
+  await page.waitForURL((u) => !u.pathname.startsWith('/login'), { timeout: 30_000 });
+}
+
 test('Hội thoại lists a saved script and its page reads it line by line', async ({ page }) => {
   await seedE2eAccount();
   const d = db();
@@ -36,11 +44,7 @@ test('Hội thoại lists a saved script and its page reads it line by line', as
   ).run(BODY, ANALYSIS, new Date().toISOString(), new Date().toISOString());
   d.close();
 
-  await page.goto('/login');
-  await page.getByLabel('Email').fill(E2E_EMAIL);
-  await page.getByLabel('Mật khẩu').fill(E2E_LOGIN);
-  await page.getByRole('button', { name: 'Đăng nhập' }).click();
-  await page.waitForURL((u) => !u.pathname.startsWith('/login'), { timeout: 30_000 });
+  await signIn(page);
 
   await page.goto('/kaiwa', { waitUntil: 'networkidle' });
   await expect(page.getByRole('heading', { name: 'Hội thoại' })).toBeVisible();
@@ -89,6 +93,7 @@ test('Hội thoại lists a saved script and its page reads it line by line', as
   await page.getByRole('button', { name: 'Hiện nghĩa' }).click();
   await expect(page.getByText('Hai người.')).toBeVisible();
 
+  await page.getByRole('link', { name: 'Sửa', exact: true }).click();
   await page.getByRole('button', { name: 'Xoá', exact: true }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Xoá' }).click();
   await page.waitForURL(/\/kaiwa$/);
@@ -98,4 +103,61 @@ test('Hội thoại lists a saved script and its page reads it line by line', as
       await page.setViewportSize({ width, height: width === 390 ? 844 : 900 });
       await page.screenshot({ path: path.join(shots, `kaiwa-empty-${width}.png`) });
     }
+});
+
+// K3c: the web editor writes the same format, checks it while typing, and refuses to overwrite a
+// version the AI saved meanwhile.
+test('a script is written and fixed on the web too', async ({ page }) => {
+  await seedE2eAccount();
+  const d = db();
+  d.exec(`DELETE FROM Script WHERE userId = ${E2E_OWNER}`);
+  d.close();
+  await signIn(page);
+
+  await page.goto('/kaiwa', { waitUntil: 'networkidle' });
+  await page.getByRole('link', { name: 'Thêm' }).click();
+  await page.waitForURL(/\/kaiwa\/new$/);
+  const save = page.getByRole('button', { name: 'Thêm kịch bản' });
+  await expect(save).toBeDisabled();
+
+  await page.getByLabel('Tiêu đề').fill('Ở ga');
+  await page.getByLabel('Kịch bản').fill('A: hello | xin chào');
+  await expect(page.getByText(/^Dòng 1: Không có chữ Nhật/)).toBeVisible();
+  await expect(save).toBeDisabled();
+
+  await page
+    .getByLabel('Kịch bản')
+    .fill('A: 切符はどこで買えますか。 | Mua vé ở đâu ạ?\nB: あちらです。 | Ở đằng kia.');
+  await expect(page.getByText('2 câu · Người nói: A, B')).toBeVisible();
+  await save.click();
+  await page.waitForURL(/\/kaiwa\/(?!new)[^/]+$/);
+  await expect(page.getByRole('heading', { name: 'Ở ga' })).toBeVisible();
+  await expect(page.locator('[data-slot="kaiwa-line"]')).toHaveCount(2);
+  const id = new URL(page.url()).pathname.split('/').pop()!;
+
+  await page.getByRole('link', { name: 'Sửa', exact: true }).click();
+  await page.waitForURL(/\/edit$/);
+  await expect(page.getByLabel('Tiêu đề')).toHaveValue('Ở ga');
+  // The AI saves a new version while the learner is editing.
+  const d2 = db();
+  d2.prepare('UPDATE Script SET version = version + 1 WHERE id = ?').run(id);
+  d2.close();
+  await page.getByLabel('Tiêu đề').fill('Ở nhà ga');
+  await page.getByRole('button', { name: 'Lưu' }).click();
+  await expect(page.getByText(/Kịch bản đã được sửa sau lần bạn đọc/)).toBeVisible();
+
+  await page.reload();
+  await page.getByLabel('Tiêu đề').fill('Ở nhà ga');
+  await page.getByRole('button', { name: 'Lưu' }).click();
+  await page.waitForURL(new RegExp(`/kaiwa/${id}$`));
+  await expect(page.getByRole('heading', { name: 'Ở nhà ga' })).toBeVisible();
+
+  const shots = process.env.SCREENSHOT_DIR;
+  if (shots) {
+    await page.goto(`/kaiwa/${id}/edit`, { waitUntil: 'networkidle' });
+    for (const width of [1440, 390]) {
+      await page.setViewportSize({ width, height: width === 390 ? 844 : 900 });
+      await page.screenshot({ path: path.join(shots, `kaiwa-edit-${width}.png`), fullPage: true });
+    }
+  }
 });

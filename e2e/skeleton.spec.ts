@@ -37,6 +37,8 @@ const PAIRS: Pair[] = [
   { name: 'group add', page: '/groups/grp-sk/add', skeleton: 'group-add' },
   { name: 'kaiwa', page: '/kaiwa', skeleton: 'kaiwa' },
   { name: 'kaiwa script', page: '/kaiwa/kw-sk', skeleton: 'kaiwa-script' },
+  { name: 'kaiwa new', page: '/kaiwa/new', skeleton: 'kaiwa-new' },
+  { name: 'kaiwa edit', page: '/kaiwa/kw-sk/edit', skeleton: 'kaiwa-edit' },
 ];
 
 const MEASURE = () => {
