@@ -4,24 +4,25 @@ Trang này trả lời ba câu cho bất kỳ phiên Claude nào (kể cả từ
 việc tiếp theo là gì**. Cập nhật nó **trong cùng PR** với việc làm, và khi nhận một bước mới (xem
 "Bắt đầu phiên" trong `CLAUDE.md`). Lộ trình đầy đủ: `docs/roadmap.md`. Kế hoạch đã duyệt: `docs/plans/`.
 
-Cập nhật lần cuối: 2026-10-27 (kế hoạch 7.2 duyệt, nhận 7.2a).
+Cập nhật lần cuối: 2026-10-27 (7.2c xong, 7.2d mở PR).
 
 ## Đang làm
 
 | Bước | Nhánh / PR | Giữ bởi | Trạng thái |
 | --- | --- | --- | --- |
-| 7.2c | `feat/7.2c-admin-page`, #140 | phiên `session_01FokVawKvZGmPLu9XkUuTAp` (từ 2026-10-27) | Chờ thien duyệt ảnh và merge |
+| 7.2d | `feat/7.2d-open-sign-up` | phiên `session_01FokVawKvZGmPLu9XkUuTAp` (từ 2026-10-27) | PR mở, chờ thien merge (risk:high) |
 
 ## Chờ thien
 
-- Duyệt ảnh trang `/admin` (1440, 390, hộp thoại xoá) trong #140 rồi merge.
+- Merge PR 7.2d (mở đăng ký). Trước khi người lạ đăng nhập được: chuyển app OAuth Google sang "In production"
+  (Google Cloud Console > OAuth consent screen); nếu muốn trần khác 50 tài khoản thì đặt `MAX_ACCOUNTS` trên NUC.
 - Gỡ runner `tnt-laptop-wsl` khỏi repo nếu còn (Settings > Actions > Runners).
 - Kiểm app sau khi bản 7.1d lên NUC (sao lưu trước đó: `~/backups/sakubun-before-7.1d-20261027T030406Z.db`).
 
 ## Tiếp theo
 
-1. 7.2a xong (#138), 7.2b xong (#139). 7.2c đến 7.2e theo `docs/plans/2026-10-27-phase7-2-sign-up.md` (mở đăng ký không cần duyệt, thien chặn
-   được). 7.2d mở cửa cuối cùng.
+1. 7.2a xong (#138), 7.2b xong (#139), 7.2c xong (#140: `/admin` và trang từng tài khoản), 7.2d đang ở PR.
+   Còn 7.2e theo `docs/plans/2026-10-27-phase7-2-sign-up.md`: Ứng dụng đã kết nối trong Cài đặt (4.2).
 
 ## Việc nhỏ còn treo
 
