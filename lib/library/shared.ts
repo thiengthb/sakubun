@@ -144,6 +144,7 @@ const ENTRY_FIELDS = {
   takeCount: true,
   createdAt: true,
   updatedAt: true,
+  _count: { select: { likes: true } },
 } as const;
 
 export interface SearchQuery {
@@ -157,7 +158,7 @@ export interface SearchQuery {
 export const MAX_RESULTS = 50;
 
 // Patterns and words matching a search, public only. The same expression may be shared many times
-// (rule 7): OpenJLPT's version comes first as the original, then the most taken.
+// (rule 7): OpenJLPT's version comes first as the original, then the most taken, then the most liked.
 export async function searchEntries(db: LibraryClient, query: SearchQuery = {}) {
   const text = query.text?.trim();
   return db.libraryEntry.findMany({
@@ -177,7 +178,13 @@ export async function searchEntries(db: LibraryClient, query: SearchQuery = {}) 
     },
     select: ENTRY_FIELDS,
     // OPENJLPT sorts after LEARNER, so descending puts the originals first.
-    orderBy: [{ origin: 'desc' }, { takeCount: 'desc' }, { createdAt: 'asc' }, { id: 'asc' }],
+    orderBy: [
+      { origin: 'desc' },
+      { takeCount: 'desc' },
+      { likes: { _count: 'desc' } },
+      { createdAt: 'asc' },
+      { id: 'asc' },
+    ],
     take: Math.min(query.take ?? MAX_RESULTS, MAX_RESULTS),
     skip: query.skip ?? 0,
   });

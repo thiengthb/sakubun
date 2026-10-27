@@ -12,6 +12,7 @@ Cập nhật lần cuối: 2026-10-27 (Kaiwa sơ bộ K1–K5 đã lên `main` q
 | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------ | ------------------------------------ | ----------------------- |
 | 8 L1 kho chung: `LibraryEntry`, nhóm, lượt thích, nạp OpenJLPT, lấy về | L1a `feat/8-l1-library-entries` (#159), L1b `feat/8-l1b-library-take` (xếp trên L1a) | Claude (phiên của thien, 2026-10-27) | hai PR mở; tiếp theo L2 |
 | 8 L2 trang Kho chung `/library`: nhóm, từng mục, Lấy                   | `feat/8-l2-library-page` (xếp trên L1b)                                              | Claude (phiên của thien, 2026-10-27) | PR mở; tiếp theo L3     |
+| 8 L3 công khai mục và nhóm, gỡ, "dựa trên", thích                      | L3a `feat/8-l3a-library-publish` (lib + test, xếp trên L2), L3b giao diện            | Claude (phiên của thien, 2026-10-27) | L3a mở; tiếp theo L3b   |
 
 ## Chờ thien
 
