@@ -112,6 +112,73 @@ test('Kho chung: take one entry, then the whole group', async ({ page }) => {
   await expect(page.getByText('Xem chi tiết 試験語').first()).toBeAttached();
 });
 
+// thien, 7.4i: an entry has its own page, opened from its card: the pattern without OpenJLPT's
+// English label, its formation and example from examples.json, the groups it is in, and "Lấy về kho";
+// the admin's Ẩn is in a menu at its foot.
+test('Kho chung: an entry opens its own page, to see it before taking it', async ({ page }) => {
+  test.setTimeout(120_000);
+  const open = () => new Database(path.join(process.cwd(), E2E_DB_FILE));
+  let db = open();
+  db.pragma('foreign_keys = ON');
+  db.exec(`DELETE FROM Item WHERE userId = ${E2E_OWNER} AND expression = '試験語'`);
+  db.exec(`UPDATE LibraryEntry SET status = 'public' WHERE id = 'lib-e2e-2'`);
+  db.close();
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await signIn(page);
+
+  await page.goto('/library?tab=items&q=試験語');
+  await page.getByRole('link', { name: 'Xem 試験語' }).click();
+  await page.waitForURL(/\/library\/item\/lib-e2e-2$/);
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('試験語');
+  await expect(page.getByText('từ thử nghiệm (e2e)')).toBeVisible();
+  await expect(page.getByRole('link', { name: /Nhóm thử e2e/ })).toHaveAttribute(
+    'href',
+    `/library/${GROUP}`,
+  );
+  await page.getByRole('button', { name: 'Lấy về kho' }).click();
+  await expect(page.getByText('Đã lấy 試験語 về kho')).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Mục của bạn' })).toHaveAttribute(
+    'href',
+    /^\/resources\//,
+  );
+
+  // An OpenJLPT pattern: its label in Vietnamese, its formation and example sentence.
+  db = open();
+  const ga = db
+    .prepare(
+      `SELECT id FROM LibraryEntry WHERE origin = 'OPENJLPT' AND expression = '〜が（subject）'`,
+    )
+    .get() as { id: string };
+  db.close();
+  await page.goto(`/library/item/${ga.id}`);
+  const title = page.getByRole('heading', { level: 1 });
+  await expect(title).toContainText('〜が');
+  await expect(title).toContainText('chủ ngữ');
+  await expect(title).not.toContainText('subject');
+  await expect(page.getByText('Danh từ + が')).toBeVisible();
+  const example = page.locator('[data-slot="library-example"]');
+  // The sentence carries its readings as ruby, shown on hover as everywhere else.
+  await expect(example.locator('ruby').first()).toHaveText('雨あめ');
+  await expect(example.locator('rt').first()).toHaveText('あめ');
+  await expect(example).toContainText('Trời đang mưa.');
+
+  // The admin hides an entry from its page, and lands back on the list.
+  try {
+    await page.goto('/library/item/lib-e2e-2');
+    await page.getByRole('button', { name: 'Quản trị 試験語' }).click();
+    await page.getByRole('menuitem', { name: 'Ẩn khỏi Kho chung' }).click();
+    await expect(page.getByText('Đã ẩn khỏi Kho chung')).toBeVisible();
+    await page.waitForURL(/\/library\?tab=items$/);
+    // Its page streams behind a loading screen, so the miss shows as the not-found page.
+    await page.goto('/library/item/lib-e2e-2');
+    await expect(page.getByText('Không tìm thấy trang')).toBeVisible();
+  } finally {
+    db = open();
+    db.exec(`UPDATE LibraryEntry SET status = 'public' WHERE id = 'lib-e2e-2'`);
+    db.close();
+  }
+});
+
 // thien, 7.4h: the level table says how much of each OpenJLPT group the learner has; a group page
 // finds an entry in it, and once taken, "Lấy phần còn thiếu" fills it again.
 test('Kho chung groups: progress by level, search in a group, fill what is missing', async ({

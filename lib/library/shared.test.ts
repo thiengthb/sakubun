@@ -164,3 +164,46 @@ describe('getGroupEntry', () => {
     expect(await L.getGroupEntry(prisma, vocab.id)).toBeNull();
   });
 });
+
+describe('getItemEntry', () => {
+  it('gives a public entry with its author and public groups; a group or a hidden entry is null', async () => {
+    await L.seedOpenJlpt(prisma, DECK);
+    const shop = await prisma.libraryEntry.findFirstOrThrow({ where: { expression: '店' } });
+    const vocab = (await L.listGroupEntries(prisma)).find((g) => g.name === 'N5 · Từ vựng')!;
+    const author = await createTestUser(prisma, 'Lan');
+    const mine = await prisma.libraryEntry.create({
+      data: {
+        type: 'GROUP',
+        name: 'Đi chợ',
+        groupKind: 'vocab',
+        origin: 'LEARNER',
+        authorId: author,
+      },
+    });
+    await prisma.libraryGroupMember.create({
+      data: { groupEntryId: mine.id, itemEntryId: shop.id, position: 0 },
+    });
+    const hiddenGroup = await prisma.libraryEntry.create({
+      data: { type: 'GROUP', name: 'Đã gỡ', origin: 'LEARNER', authorId: author, status: 'hidden' },
+    });
+    await prisma.libraryGroupMember.create({
+      data: { groupEntryId: hiddenGroup.id, itemEntryId: shop.id, position: 0 },
+    });
+
+    const entry = await L.getItemEntry(prisma, shop.id);
+    expect(entry).toMatchObject({
+      expression: '店',
+      meaningVi: 'cửa hàng',
+      author: null,
+      likes: 0,
+    });
+    expect(entry?.groups.map((g) => g.name)).toEqual(['N5 · Từ vựng', 'Đi chợ']);
+
+    expect(await L.getItemEntry(prisma, vocab.id)).toBeNull();
+    await prisma.libraryEntry.update({ where: { id: shop.id }, data: { status: 'hidden' } });
+    expect(await L.getItemEntry(prisma, shop.id)).toBeNull();
+    // Left in a group by a deleted account: still opens from that group.
+    await prisma.libraryEntry.update({ where: { id: shop.id }, data: { status: 'orphan' } });
+    expect((await L.getItemEntry(prisma, shop.id))?.expression).toBe('店');
+  });
+});
