@@ -114,6 +114,40 @@ describe('searchEntries', () => {
   });
 });
 
+describe('listGroupEntries', () => {
+  it("puts the learners' groups after OpenJLPT's, most taken then newest, with the author's name", async () => {
+    await L.seedOpenJlpt(prisma, DECK);
+    const author = await createTestUser(prisma, 'Minh Anh');
+    const group = (name: string, takeCount: number, at: string) => ({
+      type: 'GROUP',
+      name,
+      groupKind: 'vocab',
+      origin: 'LEARNER',
+      authorId: author,
+      takeCount,
+      createdAt: new Date(at),
+    });
+    await prisma.libraryEntry.createMany({
+      data: [
+        group('Cũ', 1, '2026-10-01'),
+        group('Mới', 1, '2026-10-20'),
+        group('Nhiều lượt', 9, '2026-09-01'),
+        { ...group('Mồ côi', 0, '2026-10-21'), authorId: null },
+      ],
+    });
+    const groups = await L.listGroupEntries(prisma);
+    expect(groups.map((g) => [g.name, g.author])).toEqual([
+      ['N5 · Ngữ pháp', null],
+      ['N5 · Từ vựng', null],
+      ['N2 · Ngữ pháp', null],
+      ['Nhiều lượt', 'Minh Anh'],
+      ['Mới', 'Minh Anh'],
+      ['Cũ', 'Minh Anh'],
+      ['Mồ côi', null],
+    ]);
+  });
+});
+
 describe('getGroupEntry', () => {
   it('hides a group that is not public, and the hidden entries of one that is', async () => {
     await L.seedOpenJlpt(prisma, DECK);

@@ -4,7 +4,7 @@ Trang này trả lời ba câu cho bất kỳ phiên Claude nào (kể cả từ
 việc tiếp theo là gì**. Cập nhật nó **trong cùng PR** với việc làm, và khi nhận một bước mới (xem
 "Bắt đầu phiên" trong `CLAUDE.md`). Lộ trình đầy đủ: `docs/roadmap.md`. Kế hoạch đã duyệt: `docs/plans/`.
 
-Cập nhật lần cuối: 2026-10-28 (7.4a #181, 7.4k #182, 7.4b #188, 7.4c #191, 7.4d #192, 7.4e #193, 7.4f #194, 7.4g #195 xong; 7.4h #196, 7.4i (phần 1) mở PR).
+Cập nhật lần cuối: 2026-10-28 (7.4a #181, 7.4k #182, 7.4b #188, 7.4c #191, 7.4d #192, 7.4e #193, 7.4f #194, 7.4g #195, 7.4h #196 xong; 7.4i (phần 1) mở PR).
 
 ## Đang làm
 
@@ -62,6 +62,5 @@ poller (`sudo`), user `thi3n` không có token ghcr. Xem log: `journalctl -u min
   commit và PR. Nếu còn bước 6.x chưa làm, chép kế hoạch vào `docs/plans/`.
 - `recordReviews` chưa gọi `invalidateStreak` sau mỗi lần ôn, nên chuỗi ngày có thể hiện chậm tới 60 giây
   (`lib/insights/streak.ts`; cache giờ theo từng người học).
-- Chữ "Xóa" và "Xoá" dùng lẫn lộn trong UI; chọn một cách viết (repo đang dùng "Xoá" trong tài liệu).
 - Repo public từ 2026-10-27; CI về lại runner của GitHub (#135, `docs/ci-runner.md`). Không dùng runner tự host khi
   repo public; runner `tnt-laptop-wsl` trên laptop đã dừng.

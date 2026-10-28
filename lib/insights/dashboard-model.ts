@@ -219,7 +219,7 @@ function weakReport(input: DashboardInput, live: readonly ItemRow[]): WeakReport
   for (const miss of input.logs) {
     if (miss.rating > 2 || miss.itemId == null || miss.reviewedAt.getTime() < since) continue;
     const entry = perItem.get(miss.itemId) ?? {
-      expression: miss.expression ?? '(đã xóa)',
+      expression: miss.expression ?? '(đã xoá)',
       misses: 0,
       tags: new Set<ErrorTag>(),
     };

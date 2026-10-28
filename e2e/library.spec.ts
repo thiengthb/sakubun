@@ -52,11 +52,12 @@ test('Kho chung: take one entry, then the whole group', async ({ page }) => {
   await signIn(page);
   const shots = process.env.SCREENSHOT_DIR;
 
-  // The groups tab: OpenJLPT's level groups first, then the learners'.
+  // The groups tab: OpenJLPT's level groups as a table, then the learners' groups.
   await page.goto('/library');
   await expect(page.getByRole('heading', { name: 'Kho chung' })).toBeVisible();
-  const cards = page.getByRole('link', { name: /^Mở / });
-  await expect(cards.first()).toHaveAccessibleName('Mở N5 · Ngữ pháp');
+  await expect(
+    page.locator('[data-slot="library-levels"]').getByRole('link').first(),
+  ).toHaveAccessibleName(/^Mở N5 · Ngữ pháp: \d+ mục/);
   await expect(page.getByRole('link', { name: 'Mở Nhóm thử e2e' })).toBeVisible();
   if (shots)
     for (const width of [1440, 390]) {
@@ -86,11 +87,11 @@ test('Kho chung: take one entry, then the whole group', async ({ page }) => {
   // The group: one of its two is already the learner's, so taking it adds one.
   await page.goto(`/library/${GROUP}`);
   await expect(page.getByRole('heading', { name: 'Nhóm thử e2e' })).toBeVisible();
-  await expect(
-    page.getByText('Hỗn hợp · 2 mục · Cộng đồng · Đã có 1').filter({ visible: true }),
-  ).toBeVisible();
+  const have = page.locator('[data-slot="group-have"]');
+  await expect(have).toContainText('Đã có 1/2');
   await page.getByRole('button', { name: 'Lấy cả nhóm' }).click();
   await expect(page.getByText('Đã lấy nhóm, thêm 1 mục mới vào kho')).toBeVisible();
+  await expect(have).toContainText('Đã có đủ');
   const mine = page.getByRole('link', { name: 'Nhóm của bạn' });
   await expect(mine).toBeVisible();
   if (shots)
@@ -176,6 +177,94 @@ test('Kho chung: an entry opens its own page, to see it before taking it', async
     db.exec(`UPDATE LibraryEntry SET status = 'public' WHERE id = 'lib-e2e-2'`);
     db.close();
   }
+});
+
+// thien, 7.4h: the level table says how much of each OpenJLPT group the learner has; a group page
+// finds an entry in it, and once taken, "Lấy phần còn thiếu" fills it again.
+test('Kho chung groups: progress by level, search in a group, fill what is missing', async ({
+  page,
+}) => {
+  test.setTimeout(120_000);
+  const open = () => new Database(path.join(process.cwd(), E2E_DB_FILE));
+  const expressions = ENTRIES.map((e) => `'${e.expression}'`).join(', ');
+  let db = open();
+  db.pragma('foreign_keys = ON');
+  db.exec(`DELETE FROM Item WHERE userId = ${E2E_OWNER} AND expression IN (${expressions})`);
+  db.exec(`DELETE FROM "Group" WHERE userId = ${E2E_OWNER} AND libraryEntryId = '${GROUP}'`);
+  db.close();
+
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await signIn(page);
+  await page.goto('/library');
+  const n5 = page
+    .locator('[data-slot="library-levels"]')
+    .getByRole('link', { name: /^Mở N5 · Ngữ pháp/ });
+  const owned = async () => {
+    const name = (await n5.getAttribute('aria-label')) ?? '';
+    const m = name.match(/đã có (\d+)\/|đã có đủ|chưa có/);
+    return m?.[1] ? Number(m[1]) : name.includes('chưa có') ? 0 : -1;
+  };
+  const before = await owned();
+  expect(before).toBeGreaterThanOrEqual(0);
+
+  // One more N5 pattern of the learner's own counts in the table, however it came.
+  db = open();
+  const pick = db
+    .prepare(
+      `SELECT e.expression, e.meaningVi FROM LibraryEntry e
+         JOIN LibraryGroupMember m ON m.itemEntryId = e.id
+         JOIN LibraryEntry g ON g.id = m.groupEntryId
+       WHERE g.sourceKey = 'openjlpt:group:N5:GRAMMAR'
+         AND NOT EXISTS (SELECT 1 FROM Item i WHERE i.userId = ${E2E_OWNER}
+           AND i.kind = 'GRAMMAR' AND i.expression = e.expression)
+       LIMIT 1`,
+    )
+    .get() as { expression: string; meaningVi: string };
+  db.prepare(
+    `INSERT INTO Item (id, userId, kind, expression, meaningVi, level, source, createdAt)
+     VALUES ('lib-e2e-progress', ${E2E_OWNER}, 'GRAMMAR', ?, ?, 'N5', 'MANUAL', ?)`,
+  ).run(pick.expression, pick.meaningVi, new Date().toISOString());
+  db.close();
+  try {
+    await page.reload();
+    await expect.poll(owned).toBe(before + 1);
+  } finally {
+    db = open();
+    db.exec(`DELETE FROM Item WHERE id = 'lib-e2e-progress'`);
+    db.close();
+  }
+
+  // The learners' group shows who shared it (here an account since deleted).
+  await expect(
+    page.locator('[data-slot="library-group"]', { hasText: 'Nhóm thử e2e' }),
+  ).toContainText('Người dùng đã xoá');
+
+  // The group page: a search finds one entry; taken whole, then one item deleted, it fills again.
+  await page.goto(`/library/${GROUP}`);
+  const cards = page.locator('[data-slot="library-entry"]');
+  await expect(cards).toHaveCount(2);
+  await page.getByLabel('Tìm trong nhóm').fill('thử nghiệm');
+  await expect(cards).toHaveCount(1);
+  await expect(cards).toContainText('試験語');
+  await page.getByLabel('Tìm trong nhóm').fill('không có');
+  await expect(page.getByText('Không có mục nào khớp trong nhóm này.')).toBeVisible();
+  await page.getByLabel('Tìm trong nhóm').fill('');
+
+  const have = page.locator('[data-slot="group-have"]');
+  await expect(have).toContainText('Chưa có');
+  await expect(have.getByRole('button', { name: 'Lấy phần còn thiếu' })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Lấy cả nhóm' }).click();
+  await expect(have).toContainText('Đã có đủ');
+
+  db = open();
+  db.pragma('foreign_keys = ON');
+  db.exec(`DELETE FROM Item WHERE userId = ${E2E_OWNER} AND expression = '試験語'`);
+  db.close();
+  await page.reload();
+  await expect(have).toContainText('Đã có 1/2');
+  await have.getByRole('button', { name: 'Lấy phần còn thiếu' }).click();
+  await expect(page.getByText('Đã lấy nhóm, thêm 1 mục mới vào kho')).toBeVisible();
+  await expect(have).toContainText('Đã có đủ');
 });
 
 // Phase 8, L3: the learner shares an item of their own and a group from their pages, likes an

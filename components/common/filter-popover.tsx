@@ -136,7 +136,7 @@ export function FilterChips({
           onClick={onReset}
           className="ml-0.5 rounded-sm px-1 text-xs text-muted-foreground underline-offset-2 transition-colors hover:text-foreground hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
         >
-          Xóa tất cả
+          Xoá tất cả
         </button>
       )}
     </div>
@@ -166,7 +166,7 @@ export function FilterPopover({
 
   return (
     <>
-      {/* No "Xóa lọc" button here any more: FilterChips renders "Xóa tất cả" next to the chips it
+      {/* No "Xoá lọc" button here any more: FilterChips renders "Xoá tất cả" next to the chips it
           clears, which is where you are already looking once a filter is on. */}
       <div className="relative shrink-0">
         {isMobile ? (
