@@ -114,6 +114,44 @@ describe('searchEntries', () => {
   });
 });
 
+describe('searchEntries sort, exclude and countEntries (7.4i)', () => {
+  it('sorts newest first, leaves out what the learner owns, and counts the whole result', async () => {
+    await L.seedOpenJlpt(prisma, DECK);
+    const author = await createTestUser(prisma, 'author');
+    await prisma.libraryEntry.create({
+      data: {
+        type: 'VOCAB',
+        expression: '新語',
+        meaningVi: 'từ mới đăng',
+        level: 'N5',
+        origin: 'LEARNER',
+        authorId: author,
+        createdAt: new Date(Date.now() + 60_000),
+      },
+    });
+
+    expect((await L.searchEntries(prisma, { sort: 'new' }))[0].expression).toBe('新語');
+    expect((await L.searchEntries(prisma, { sort: 'popular' }))[0].origin).toBe('OPENJLPT');
+
+    const exclude = { GRAMMAR: ['〜てから'], VOCAB: ['店', '新語'] };
+    expect((await L.searchEntries(prisma, { exclude })).map((e) => e.expression).sort()).toEqual(
+      ['〜ばかりに', '静か'].sort(),
+    );
+    // A kind only excludes its own expressions.
+    expect(
+      (await L.searchEntries(prisma, { exclude: { GRAMMAR: ['店'] } })).map((e) => e.expression),
+    ).toContain('店');
+
+    expect(await L.countEntries(prisma)).toEqual({ GRAMMAR: 2, VOCAB: 3 });
+    expect(await L.countEntries(prisma, { exclude })).toEqual({ GRAMMAR: 1, VOCAB: 1 });
+    expect(await L.countEntries(prisma, { type: 'VOCAB', level: 'N5' })).toEqual({
+      GRAMMAR: 0,
+      VOCAB: 3,
+    });
+    expect(await L.countEntries(prisma, { text: '店' })).toEqual({ GRAMMAR: 0, VOCAB: 1 });
+  });
+});
+
 describe('listGroupEntries', () => {
   it("puts the learners' groups after OpenJLPT's, most taken then newest, with the author's name", async () => {
     await L.seedOpenJlpt(prisma, DECK);

@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { BookCheck, Download } from 'lucide-react';
 import { CardAction } from '@/components/common/card-action';
@@ -12,21 +13,9 @@ import { speakable } from '@/lib/core/format';
 import { buildFuriganaMarkup } from '@/lib/japanese/furigana';
 import { splitPatternLabel } from '@/lib/library/pattern-label';
 import { cn } from '@/lib/core/utils';
+import type { LibraryEntryRow } from '@/lib/library/browse';
 
-export interface LibraryEntryRow {
-  id: string;
-  type: string;
-  expression: string | null;
-  reading: string | null;
-  meaningVi: string | null;
-  level: string | null;
-  origin: string;
-  takeCount: number;
-  likes: number;
-  liked: boolean;
-  // The learner's own copy, when they have one (same kind and expression).
-  itemId: string | null;
-}
+export type { LibraryEntryRow };
 
 export const ORIGIN_LABEL: Record<string, string> = { OPENJLPT: 'OpenJLPT', LEARNER: 'Cộng đồng' };
 
@@ -45,9 +34,13 @@ export function LibraryEntryCard({
   voiceSpeaker?: number;
   speechRate?: number;
 }) {
+  // Taken here: the tick shows at once, also on a card loaded past the page the server refreshes.
+  const [takenId, setTakenId] = useState<string | null>(null);
   const take = useServerAction(takeEntryAction, {
     success: (r) => (r.already ? 'Đã có trong kho' : `Đã lấy ${entry.expression} về kho`),
+    onSuccess: (r) => setTakenId(r.itemId),
   });
+  const itemId = entry.itemId ?? takenId;
   const expression = entry.expression ?? '';
   // OpenJLPT's English note on a pattern, 〜が（subject）, becomes a small Vietnamese one after it.
   const { pattern, label } =
@@ -73,11 +66,11 @@ export function LibraryEntryCard({
           <span className="shrink-0 text-xs">{ORIGIN_LABEL[entry.origin] ?? entry.origin}</span>
         }
         actions={
-          entry.itemId ? (
+          itemId ? (
             <CardAction
               icon={BookCheck}
               label="Đã có trong kho"
-              href={`/resources/${entry.itemId}`}
+              href={`/resources/${itemId}`}
               className="relative z-10 text-ok hover:text-ok"
             />
           ) : (

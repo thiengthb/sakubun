@@ -167,3 +167,28 @@ describe('groupProgress', () => {
     expect(await T.groupProgress(mine, [])).toEqual(new Map());
   });
 });
+
+describe('browseEntries (7.4i)', () => {
+  it('marks what the learner owns, and with hideOwned leaves it out of the rows and the counts', async () => {
+    const { browseEntries } = await import('@/lib/library/browse');
+    const { DEFAULT_BROWSE } = await import('@/lib/library/browse-query');
+    const shop = await entry('店');
+    const taken = await T.takeEntry(mine, shop.id);
+    expect(taken.ok).toBe(true);
+    expect(await T.ownedExpressions(mine)).toEqual({ GRAMMAR: [], VOCAB: ['店'] });
+
+    const all = await browseEntries(mine, DEFAULT_BROWSE);
+    expect(all.counts).toEqual({ GRAMMAR: 0, VOCAB: 3 });
+    expect(all.rows.find((r) => r.expression === '店')?.itemId).toBe(taken.ok && taken.data.itemId);
+
+    const hidden = await browseEntries(mine, { ...DEFAULT_BROWSE, hideOwned: true });
+    expect(hidden.counts).toEqual({ GRAMMAR: 0, VOCAB: 2 });
+    expect(hidden.rows.map((r) => r.expression)).not.toContain('店');
+    // Another learner still sees it.
+    expect((await browseEntries(other, { ...DEFAULT_BROWSE, hideOwned: true })).counts?.VOCAB).toBe(
+      3,
+    );
+    // A later page carries no counts.
+    expect((await browseEntries(mine, DEFAULT_BROWSE, 2)).counts).toBeNull();
+  });
+});

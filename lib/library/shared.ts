@@ -34,8 +34,8 @@ export const VISIBLE = { status: PUBLIC, AND: [AUTHOR_SHOWN] };
 // the group chose it.
 export const VISIBLE_MEMBER = { status: { in: [PUBLIC, ORPHAN] }, AND: [AUTHOR_SHOWN] };
 
-const ITEM_TYPES = [GRAMMAR_KIND, VOCAB_KIND] as const;
-type ItemType = (typeof ITEM_TYPES)[number];
+export const ITEM_TYPES = [GRAMMAR_KIND, VOCAB_KIND] as const;
+export type ItemType = (typeof ITEM_TYPES)[number];
 
 export const openJlptKey = (type: string, expression: string) => `openjlpt:${type}:${expression}`;
 const openJlptGroupKey = (level: string, type: ItemType) => `openjlpt:group:${level}:${type}`;
@@ -163,47 +163,80 @@ const ENTRY_FIELDS = {
   _count: { select: { likes: true } },
 } as const;
 
+export type EntrySort = 'popular' | 'new';
+
 export interface SearchQuery {
   text?: string;
   type?: ItemType;
   level?: string;
+  /** `popular` (the default): originals first, then the most taken and liked. `new`: newest first. */
+  sort?: EntrySort;
+  /** Expressions to leave out, by kind: what the learner owns, for "Ẩn mục đã có" (7.4i). */
+  exclude?: Partial<Record<ItemType, readonly string[]>>;
   take?: number;
   skip?: number;
 }
 
 export const MAX_RESULTS = 50;
 
+function entryWhere(query: SearchQuery, type: ItemType | { in: ItemType[] }) {
+  const text = query.text?.trim();
+  const exclude = Object.entries(query.exclude ?? {}).filter(([, list]) => list.length > 0);
+  return {
+    ...VISIBLE,
+    type,
+    ...(query.level ? { level: query.level } : {}),
+    ...(text
+      ? {
+          OR: [
+            { expression: { contains: text } },
+            { reading: { contains: text } },
+            { meaningVi: { contains: text } },
+          ],
+        }
+      : {}),
+    ...(exclude.length > 0
+      ? { NOT: exclude.map(([kind, list]) => ({ type: kind, expression: { in: [...list] } })) }
+      : {}),
+  };
+}
+
 // Patterns and words matching a search, public only. The same expression may be shared many times
 // (rule 7): OpenJLPT's version comes first as the original, then the most taken, then the most liked.
 export async function searchEntries(db: LibraryClient, query: SearchQuery = {}) {
-  const text = query.text?.trim();
   return db.libraryEntry.findMany({
-    where: {
-      ...VISIBLE,
-      type: query.type ?? { in: [...ITEM_TYPES] },
-      ...(query.level ? { level: query.level } : {}),
-      ...(text
-        ? {
-            OR: [
-              { expression: { contains: text } },
-              { reading: { contains: text } },
-              { meaningVi: { contains: text } },
-            ],
-          }
-        : {}),
-    },
+    where: entryWhere(query, query.type ?? { in: [...ITEM_TYPES] }),
     select: ENTRY_FIELDS,
-    // OPENJLPT sorts after LEARNER, so descending puts the originals first.
-    orderBy: [
-      { origin: 'desc' },
-      { takeCount: 'desc' },
-      { likes: { _count: 'desc' } },
-      { createdAt: 'asc' },
-      { id: 'asc' },
-    ],
+    orderBy:
+      query.sort === 'new'
+        ? [{ createdAt: 'desc' }, { id: 'asc' }]
+        : // OPENJLPT sorts after LEARNER, so descending puts the originals first.
+          [
+            { origin: 'desc' },
+            { takeCount: 'desc' },
+            { likes: { _count: 'desc' } },
+            { createdAt: 'asc' },
+            { id: 'asc' },
+          ],
     take: Math.min(query.take ?? MAX_RESULTS, MAX_RESULTS),
     skip: query.skip ?? 0,
   });
+}
+
+// How many entries a search finds in all, by kind (7.4i: the page says the real size of Kho chung,
+// not the 50 it shows first). A kind the query leaves out counts 0.
+export async function countEntries(
+  db: LibraryClient,
+  query: SearchQuery = {},
+): Promise<Record<ItemType, number>> {
+  const [grammar, vocab] = await Promise.all(
+    ITEM_TYPES.map((type) =>
+      query.type && query.type !== type
+        ? 0
+        : db.libraryEntry.count({ where: entryWhere(query, type) }),
+    ),
+  );
+  return { [GRAMMAR_KIND]: grammar, [VOCAB_KIND]: vocab } as Record<ItemType, number>;
 }
 
 // Shared groups, public only: OpenJLPT's level groups first, in level order, then the learners' groups,

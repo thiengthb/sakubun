@@ -10,6 +10,8 @@ import {
   type TakeGroupResult,
 } from '@/lib/library/take';
 import { setLike } from '@/lib/library/likes';
+import { browseEntries, type LibraryEntryRow } from '@/lib/library/browse';
+import { parseBrowseQuery } from '@/lib/library/browse-query';
 import {
   publishGroup,
   publishItem,
@@ -31,6 +33,17 @@ export async function takeGroupAction(
   const taken = await takeGroup(await getUserDb(), groupEntryId);
   if (taken.ok) revalidatePath('/library', 'layout');
   return taken;
+}
+
+// The next page of "Từng mục" as the list scrolls (7.4i). The search comes back from the page as
+// URL parameters and is read the same way the page reads its URL.
+const MAX_SKIP = 20_000;
+export async function moreEntriesAction(
+  params: Record<string, string>,
+  skip: number,
+): Promise<LibraryEntryRow[]> {
+  if (!Number.isInteger(skip) || skip < 0 || skip > MAX_SKIP) return [];
+  return (await browseEntries(await getUserDb(), parseBrowseQuery(params), skip)).rows;
 }
 
 // Publishing (L3) happens only here, from the learner's own pages: no MCP tool reaches it (rule 4).
