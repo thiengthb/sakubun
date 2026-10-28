@@ -1,6 +1,6 @@
 # Kế hoạch C: làm lại Ôn nhanh
 
-- Ngày: 2026-10-28. Trạng thái: **chờ thien duyệt** (chưa code).
+- Ngày: 2026-10-28. Duyệt: thien, 2026-10-28 (trả lời ba câu hỏi, phần còn lại theo đề xuất; xem cuối file).
 - Phần C của `docs/plans/2026-10-27-phase-8-kaiwa-kho-chung.md`.
 - Lời thien (2026-10-27): "đáp án chưa có phần dịch, các câu ngữ pháp nên đưa thành các câu ví dụ thì hay hơn, để
   người dùng biết trường hợp sử dụng của nó. Cần một sự cải thiện sâu hơn cho phần ôn nhanh." Và về cơ chế quiz gộp từ
@@ -69,9 +69,11 @@ Một file tĩnh mới `data/openjlpt/examples.json`, khoá theo id OpenJLPT, m�
 
 Thêm `formationVi` cho ngữ pháp (`Noun + は` thành `Danh từ + は`) và `pos` cho từ vựng (đã có trong nguồn).
 
-Soạn bằng một script chạy theo lô như `scripts/openjlpt/translate.mjs` đã làm cho nghĩa từ, kết quả commit vào repo,
-có test kiểm: `span` phải nằm đúng trong `ja`, `ruby` bỏ ngoặc phải ra đúng `ja`, `vi` không rỗng. Mẫu 50 câu ra
-`sample-review.md` cho thien xem trước khi chạy cả bộ. Web vẫn không tự sinh câu: đây là dữ liệu cố định như `vi.json`.
+**Codex soạn, không phải Claude** (thien chọn, để tiết kiệm lượt của Claude). Claude làm phần khung: script tách
+nguồn thành các lô đầu vào, bản hướng dẫn cho Codex (định dạng, luật dịch, cách đánh `span` và `skip`), và lệnh kiểm
+dữ liệu chạy được ở máy và trong CI: `span` phải nằm đúng trong `ja`, `ruby` bỏ ngoặc phải ra đúng `ja`, `vi` không
+rỗng, đủ mọi id. Codex làm 50 câu mẫu trước cho thien xem, rồi cả bộ; kết quả commit vào repo. Web vẫn không tự sinh
+câu: đây là dữ liệu cố định như `vi.json`.
 
 Không cần migration: Ôn nhanh tra file này theo (loại, mục) lúc dựng thẻ, nên mục đã nhập, đã lấy từ Kho chung hay
 tự thêm đều được hưởng nếu trùng mục OpenJLPT.
@@ -94,8 +96,8 @@ tự thêm đều được hưởng nếu trùng mục OpenJLPT.
 - **Nhiễu lấy từ cả kho OpenJLPT tĩnh**, xáo theo hạt giống, không lấy 300 mục đầu: tài khoản mới vẫn có thẻ điền
   chỗ trống, và nhiễu đổi mỗi lần.
 - **Hạt giống theo số lần ôn** của mục, không theo ngày: gặp lại là câu khác (nếu có) và thứ tự khác.
-- **Chấm**: đúng là Nhớ, sai là Quên như hôm nay; thêm nút nhỏ "Đoán" hiện sau khi chọn đúng, bấm thì ghi Khó thay vì
-  Nhớ. Lịch vẫn chỉ đi qua `recordReviews()`.
+- **Chấm**: đúng là Nhớ, sai là Quên, như hôm nay (thien bỏ nút "Đoán": đúng là nhớ). Nhiễu cùng dạng làm đoán may
+  khó hơn. Lịch vẫn chỉ đi qua `recordReviews()`.
 - **Câu sai gặp lại cuối buổi**: một vòng "Làm lại câu sai" để tập, không chấm thêm (lịch đã ghi Quên).
 
 ### Nhiều câu cho một mục
@@ -108,13 +110,14 @@ học thêm câu (có dịch) vào thẻ giải thích của một mục khi ng�
 
 | #   | PR                                                                                               | Xong khi                                  | Rủi ro                 |
 | --- | ------------------------------------------------------------------------------------------------ | ----------------------------------------- | ---------------------- |
-| C1  | `examples.json`: script soạn, 50 câu mẫu cho thien xem, rồi cả bộ; test dữ liệu                  | thien duyệt mẫu, test xanh                | low (dữ liệu chưa nối) |
+| C1a | Khung cho Codex: script tách lô, bản hướng dẫn, lệnh kiểm `examples.json` + test (Claude)        | test xanh                                 | low (chưa nối)         |
+| C1b | `examples.json`: 50 câu mẫu cho thien xem, rồi cả bộ (Codex)                                     | thien duyệt mẫu, lệnh kiểm xanh           | low (dữ liệu chưa nối) |
 | C2  | Dựng thẻ từ `examples.json`: span, furigana, câu dịch, ngữ pháp luôn có câu (logic thuần + test) | test trên toàn kho: ngữ pháp có câu > 95% | high (hành vi học)     |
-| C3  | Nhiễu cùng dạng từ kho tĩnh, hạt giống theo lần ôn, nút "Đoán", làm lại câu sai cuối buổi        | test + e2e                                | high                   |
+| C3  | Nhiễu cùng dạng từ kho tĩnh, hạt giống theo lần ôn, làm lại câu sai cuối buổi                    | test + e2e                                | high                   |
 | C4  | Giao diện thẻ: thẻ giới thiệu cho mục mới, khung đáp án mới, theo UI 7.4                         | ảnh trước/sau 1440 và 390, thien duyệt    | high                   |
 | C5  | Nhiều câu: câu từ Kaiwa, xoay vòng, MCP `example_add`                                            | test, thử trong claude.ai                 | high                   |
 
-Mỗi PR một mục đích, dưới khoảng 400 dòng code (file dữ liệu không tính). C2 và C3 độc lập sau C1.
+Mỗi PR một mục đích, dưới khoảng 400 dòng code (file dữ liệu không tính). C2 và C3 cần C1b; C3 phần nhiễu cùng dạng có thể làm trước bằng `pos` có sẵn trong nguồn.
 
 ## Giữ luật
 
@@ -123,9 +126,8 @@ Mỗi PR một mục đích, dưới khoảng 400 dòng code (file dữ liệu k
   `userDb(userId)`.
 - FSRS chỉ qua `recordReviews()`.
 
-## Câu hỏi cho thien
+## Quyết định của thien (2026-10-28)
 
-1. Ai dịch 7.700 câu ví dụ? Đề xuất: Claude soạn theo lô trong các phiên, thien xem 50 câu mẫu trước. (Cách khác:
-   Gemma trên ubuntu-pc như lúc dịch nghĩa từ, nhanh hơn nhưng lần trước sai Hán Việt khoảng 1/10.)
-2. Mục mới là **thẻ giới thiệu không chấm** (đề xuất), hay giữ thẻ lật bốn nút như hôm nay?
-3. Nút **"Đoán"** sau khi chọn đúng: thêm (đề xuất), hay để đơn giản, đúng luôn là Nhớ?
+1. Ai dịch khoảng 7.700 câu ví dụ: **Codex** (một AI khác), để tiết kiệm tài nguyên bên Claude. Claude làm khung C1a.
+2. Mục mới là **thẻ giới thiệu không chấm**, theo đề xuất.
+3. **Không có nút "Đoán"**: chọn đúng là Nhớ.
