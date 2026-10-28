@@ -8,10 +8,11 @@ import {
 } from '@/components/layout/page-skeleton';
 import { Skeleton } from '@/components/ui/skeleton';
 
-const TABLE = (
+// Each tab's DataTable keeps its own view switch (resource-table.tsx: persistKey, urlPrefix).
+const table = (storeKey: string, urlKey: string) => (
   <>
     <ToolbarSkeleton filters={1} columnMenu />
-    <TableSkeleton />
+    <TableSkeleton view={{ storeKey, urlKey }} />
   </>
 );
 
@@ -29,8 +30,8 @@ export default function Loading() {
         urlKey="tab"
         initial="grammar"
         shapes={{
-          grammar: TABLE,
-          vocab: TABLE,
+          grammar: table('items.view', 'view'),
+          vocab: table('vocab.view', 'vview'),
           groups: (
             <>
               <ToolbarSkeleton filters={1} />

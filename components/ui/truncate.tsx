@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState, type MouseEvent, type ReactNode } from 'react';
 import { Explain } from '@/components/common/explain';
 import { cn } from '@/lib/core/utils';
 
@@ -32,8 +32,21 @@ export function Truncate({
     return () => ro.disconnect();
   }, [check, children]);
 
+  // On a card that opens a page the cut text rises above the card's link to show its tooltip
+  // (LIST_CARD.linked), so a click on it follows that link itself.
+  const follow = (e: MouseEvent<HTMLSpanElement>) => {
+    const link = e.currentTarget
+      .closest('li')
+      ?.querySelector<HTMLAnchorElement>(':scope > a[href]');
+    if (link && !e.defaultPrevented) link.click();
+  };
   const span = (
-    <span ref={ref} className={cn('block min-w-0 truncate', className)}>
+    <span
+      ref={ref}
+      data-truncated={overflow || undefined}
+      onClick={overflow ? follow : undefined}
+      className={cn('block min-w-0 truncate', className)}
+    >
       {children}
     </span>
   );

@@ -2,17 +2,11 @@
 
 import { useState, useTransition } from 'react';
 import Link from 'next/link';
-import {
-  ChartColumn,
-  CirclePause,
-  CirclePlay,
-  MoreHorizontal,
-  Pencil,
-  Trash2,
-} from 'lucide-react';
+import { ChartColumn, CirclePause, CirclePlay, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
 import { toastResult } from '@/lib/core/action-toast';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/common/confirm-dialog';
+import { Explain } from '@/components/common/explain';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,10 +14,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import {
-  deleteItemAction,
-  setItemSuspendedAction,
-} from '@/app/actions';
+import { deleteItemAction, setItemSuspendedAction } from '@/app/actions';
 
 export interface EditableItem {
   itemId: string;
@@ -65,11 +56,18 @@ export function RowActions({
   return (
     <>
       <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" aria-label="Tác vụ">
-            <MoreHorizontal className="size-4" />
-          </Button>
-        </DropdownMenuTrigger>
+        <Explain text="Tác vụ">
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label="Tác vụ"
+              className="text-muted-foreground hover:text-foreground"
+            >
+              <MoreHorizontal className="size-4" />
+            </Button>
+          </DropdownMenuTrigger>
+        </Explain>
         <DropdownMenuContent align="end" className="min-w-40">
           {!hideDetail && (
             <>
