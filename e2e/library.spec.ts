@@ -414,3 +414,51 @@ test('the admin hides and shows an entry; a ban hides it too', async ({ page }) 
     db.close();
   }
 });
+
+// thien, 7.4i: Từng mục says how big Kho chung really is, loads more as it scrolls, sorts newest
+// first, and hides what the learner already has.
+test('Từng mục: real totals, more on scroll, newest first, hide owned', async ({ page }) => {
+  test.setTimeout(120_000);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await signIn(page);
+  // Visiting Kho chung seeds OpenJLPT first, so the entry dated tomorrow is the newest.
+  await page.goto('/library?tab=items&type=VOCAB&level=N5');
+  const db = new Database(path.join(process.cwd(), E2E_DB_FILE));
+  const tomorrow = new Date(Date.now() + 86_400_000).toISOString();
+  db.prepare(
+    `INSERT OR REPLACE INTO LibraryEntry (id, type, expression, meaningVi, level, origin, status,
+       takeCount, createdAt, updatedAt)
+     VALUES ('lib-e2e-newest', 'VOCAB', '最新語', 'mục mới nhất (e2e)', 'N3', 'LEARNER', 'public',
+       0, ?, ?)`,
+  ).run(tomorrow, tomorrow);
+  db.close();
+
+  await page.reload();
+  const cards = page.locator('[data-slot="library-entry"]');
+  await expect(cards).toHaveCount(50);
+  await expect(page.getByText(/^[\d.]+ từ vựng$/)).toBeVisible();
+  await cards.last().scrollIntoViewIfNeeded();
+  await expect.poll(() => cards.count(), { timeout: 30_000 }).toBeGreaterThan(50);
+
+  // Popular puts OpenJLPT's originals first, Mới the newest.
+  await page.getByRole('radio', { name: 'Mới' }).click();
+  await page.waitForURL(/sort=new/);
+  await page.getByRole('radio', { name: 'Tất cả' }).click();
+  await page.getByRole('radio', { name: 'Mọi cấp' }).click();
+  await page.waitForURL((u) => !u.searchParams.has('level'));
+  await expect(cards.first()).toContainText('最新語');
+  await page.getByRole('radio', { name: 'Phổ biến' }).click();
+  await page.waitForURL((u) => !u.searchParams.has('sort'));
+  await expect(cards.first()).toContainText('OpenJLPT');
+
+  // Taken, then hidden by "Ẩn mục đã có".
+  await page.goto('/library?tab=items&q=試験語');
+  await expect(cards).toHaveCount(1);
+  const take = cards.getByRole('button', { name: 'Lấy 試験語 về kho' });
+  if (await take.isVisible()) await take.click();
+  await expect(cards.getByRole('link', { name: 'Đã có trong kho' })).toBeVisible();
+  await page.getByRole('button', { name: 'Ẩn mục đã có' }).click();
+  await page.waitForURL(/hide=1/);
+  await expect(page.getByText('Không có mục nào khớp')).toBeVisible();
+  await expect(page.getByText('0 mục khớp')).toBeVisible();
+});

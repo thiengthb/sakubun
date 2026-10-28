@@ -95,7 +95,12 @@ describe('toTutorCard', () => {
       pitfalls: [],
       contrasts: [],
       synonyms: [
-        { term: '果たす', reading: 'はたす', vi: 'thực hiện xong', note: 'nghĩa vụ, không phải lời hứa' },
+        {
+          term: '果たす',
+          reading: 'はたす',
+          vi: 'thực hiện xong',
+          note: 'nghĩa vụ, không phải lời hứa',
+        },
         { term: '遵守する', reading: 'じゅんしゅする', vi: 'tuân thủ' },
         { term: '護る', reading: 'まもる', vi: 'bảo vệ' },
       ],

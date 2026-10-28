@@ -49,6 +49,7 @@ describe('component standards', () => {
       'components/common/use-server-action.ts', // hooks, not components
       'components/common/use-session-state.ts',
       'components/common/use-scroll-more.ts',
+      'components/common/use-server-scroll-more.ts',
       'components/common/field-label-context.ts',
       'components/common/list-card.ts', // class constants a card list spreads, not a component
       'components/ui/use-fit-rows.ts',

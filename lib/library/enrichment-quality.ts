@@ -135,8 +135,7 @@ export function scoreEnrichment(raw: string | null | undefined, kind: string): Q
     try {
       const loose = JSON.parse(raw) as { v?: unknown };
       if (typeof loose.v === 'number') v = loose.v;
-    } catch {
-    }
+    } catch {}
     return {
       tier: 'broken',
       score: 0,

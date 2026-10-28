@@ -192,3 +192,15 @@ export async function takeGroup(
   await countTakes(db, [...taken, group.id]);
   return ok({ groupId: mine, added: taken.length, already: owned.size - taken.length });
 }
+
+// Every expression the learner owns, by kind: what "Ẩn mục đã có" leaves out of Kho chung (7.4i).
+export async function ownedExpressions(
+  db: UserDb,
+): Promise<Record<typeof GRAMMAR_KIND | typeof VOCAB_KIND, string[]>> {
+  const items = await db.item.findMany({
+    where: { kind: { in: [GRAMMAR_KIND, VOCAB_KIND] } },
+    select: { kind: true, expression: true },
+  });
+  const of = (kind: string) => items.filter((i) => i.kind === kind).map((i) => i.expression);
+  return { [GRAMMAR_KIND]: of(GRAMMAR_KIND), [VOCAB_KIND]: of(VOCAB_KIND) };
+}
