@@ -13,6 +13,7 @@ import {
 import { AppLogo } from '@/components/layout/app-logo';
 import { AppSidebar, type AppSidebarGroup } from '@/components/layout/app-sidebar';
 import { EdgeNavRail } from '@/components/layout/edge-nav-rail';
+import { WordLookup } from '@/components/common/word-lookup';
 import { ScrollToTop } from '@/components/layout/scroll-to-top';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import { StreakBeacon } from '@/components/features/dashboard/streak-beacon';
@@ -80,6 +81,7 @@ export function AppShell({
       <EdgeNavRail groups={groups} />
       <ScrollToTop />
       {session?.user && <StreakBeacon />}
+      {session?.user && <WordLookup />}
     </SidebarProvider>
   );
 }

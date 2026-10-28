@@ -22,6 +22,7 @@ beforeAll(async () => {
   routes.system = (await import('@/app/api/import/system/route')).POST;
   routes.tts = (await import('@/app/api/tts/route')).GET;
   routes.mine = (await import('@/app/api/export/mine/route')).GET;
+  routes.lookup = (await import('@/app/api/lookup/route')).POST;
 });
 beforeEach(() => vi.stubEnv('ALLOWED_EMAIL', 'owner@example.test'));
 afterEach(() => {
@@ -40,7 +41,7 @@ describe('API route gates', () => {
     expect(await res.json()).toEqual({ ok: false, error: 'Chỉ quản trị dùng được.' });
   });
 
-  it.each(['backup', 'system', 'tts', 'mine'])(
+  it.each(['backup', 'system', 'tts', 'mine', 'lookup'])(
     '%s: chưa đăng nhập hoặc bị chặn thì 401',
     async (name) => {
       expect((await call(name)).status).toBe(401);
@@ -48,6 +49,13 @@ describe('API route gates', () => {
       expect((await call(name)).status).toBe(401);
     },
   );
+
+  it('lookup: người học gửi sai dạng thì 400 kèm cách sửa', async () => {
+    session.user = LEARNER;
+    const res = await call('lookup');
+    expect(res.status).toBe(400);
+    expect((await res.json()).error).toMatch(/texts/);
+  });
 
   it('quản trị qua được cửa của backup', async () => {
     session.user = { id: 'a', role: 'admin', email: 'owner@example.test', banned: false };

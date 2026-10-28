@@ -9,6 +9,7 @@ import { addItems, VOCAB_KIND } from '@/lib/library/practice';
 export interface WordMeaning {
   expression: string;
   reading: string | null;
+  hanviet: string | null;
   meaningVi: string;
   level: string;
   // The learner's own item, when the word is in their library; otherwise the meaning is OpenJLPT's
@@ -50,7 +51,14 @@ export async function lookupWords(
   const [mine, vocab] = await Promise.all([
     db.item.findMany({
       where: { expression: { in: [...keys] } },
-      select: { id: true, expression: true, reading: true, meaningVi: true, level: true },
+      select: {
+        id: true,
+        expression: true,
+        reading: true,
+        hanviet: true,
+        meaningVi: true,
+        level: true,
+      },
       // A word over a grammar pattern written the same way.
       orderBy: { kind: 'desc' },
     }),
@@ -69,6 +77,7 @@ export async function lookupWords(
       found[key] = {
         expression: entry.expression,
         reading: entry.reading,
+        hanviet: entry.hanviet ?? null,
         meaningVi: distinctSenses(entry.meaningVi),
         level: entry.level,
         itemId: null,

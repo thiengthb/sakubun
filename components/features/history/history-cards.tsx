@@ -210,6 +210,7 @@ export function HistoryDetail({
           <div className="text-xs font-medium text-muted-foreground">{labels.prompt}</div>
           {sentence.direction === 'JA_VI' ? (
             <SpokenLine
+              lookup
               text={sentence.sourceText}
               ruby={sentence.sourceRuby}
               showFurigana={showFurigana}
@@ -233,6 +234,7 @@ export function HistoryDetail({
             <div className="flex flex-wrap items-end gap-1.5">
               <span className="text-muted-foreground">{labels.answer}:</span>
               <SpokenLine
+                lookup
                 text={sentence.userAnswer}
                 showFurigana={showFurigana}
                 speaker={speaker}
@@ -251,6 +253,7 @@ export function HistoryDetail({
               <span className="text-muted-foreground">{labels.reference}:</span>
               {sentence.direction === 'VI_JA' ? (
                 <SpokenLine
+                  lookup
                   text={sentence.suggested}
                   ruby={sentence.suggestedRuby}
                   showFurigana={showFurigana}
@@ -330,6 +333,7 @@ function CardRows({
       <div className="flex min-h-7 min-w-0 items-end">
         {sentence.direction === 'JA_VI' ? (
           <SpokenLine
+            lookup="hover"
             text={sentence.sourceText}
             ruby={sentence.sourceRuby}
             showFurigana={showFurigana}
