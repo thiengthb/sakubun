@@ -119,7 +119,10 @@ export function renderFound(query: string, items: FoundItem[]) {
 
 export function renderStatus(s: StudyStatus, now: Date) {
   return text([
-    `ready now ${s.ready} · left today: ${s.left.newGrammar} new grammar, ${s.left.newVocab} new vocab, ${s.left.reviews} reviews`,
+    // "left today" alone read as items waiting (18 due, 100 reviews) on an empty account: the
+    // allowance is a cap, so it is labelled as one, after what is actually waiting.
+    `ready now ${s.ready}: ${s.readyBy.due} due, ${s.readyBy.newGrammar} new grammar, ${s.readyBy.newVocab} new vocab`,
+    `daily cap left (not items waiting): ${s.left.newGrammar} new grammar, ${s.left.newVocab} new vocab, ${s.left.reviews} reviews`,
     `done today: ${s.today.reviews} reviews, ${s.today.newGrammar + s.today.newVocab} new · streak ${s.streakDays} days`,
     s.ready === 0 && s.nextDueAt ? `next review in ${until(s.nextDueAt, now)}` : null,
   ]);

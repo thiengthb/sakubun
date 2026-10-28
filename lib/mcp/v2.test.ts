@@ -206,8 +206,10 @@ describe('MCP v2', () => {
     );
 
     const status = await call('status');
+    // What is waiting comes first; the allowance is labelled as a cap so it never reads as due.
+    expect(status.text).toMatch(/^ready now 1: 0 due, 1 new grammar, 0 new vocab\n/);
     expect(status.text).toMatch(
-      /^ready now 1 · left today: 2 new grammar, 0 new vocab, \d+ reviews/,
+      /\ndaily cap left \(not items waiting\): 2 new grammar, 0 new vocab, \d+ reviews\n/,
     );
     expect(status.text).toContain('streak 0 days');
   });

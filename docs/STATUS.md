@@ -56,8 +56,6 @@ poller (`sudo`), user `thi3n` không có token ghcr. Xem log: `journalctl -u min
 - Liên kết OAuth hỏng (vd `redirect_uri` lạ) đưa về `/login?error=invalid_redirect`, và trang đăng nhập ghi "Tài khoản này
   không được phép vào Sakubun" cho mọi mã lỗi: sai nghĩa, nên nói liên kết kết nối không hợp lệ (`onAPIError` trong
   `lib/auth/auth.ts`, `app/login/login-form.tsx`; đụng OAuth, risk:high; thấy 2026-10-28).
-- Lượt thử 2026-10-27: Claude đọc kết quả `status` thành "18 mục đến hạn, 100 lượt ôn" trong khi đó là hạn mức ngày
-  (tài khoản mới có 0 đến hạn). Cần làm chữ của `status` rõ hơn giữa "đến hạn" và "hạn mức".
 - e2e `skeleton` ở 390px: khung chờ trang một mục thấp hơn trang thật 44px (hàng nút đầu trang trên điện thoại); đỏ cả trên `main` (thấy 2026-10-28, sau 7.4k).
 - e2e `quick-review` "by keyboard" lúc xanh lúc đỏ trên `main` (đỏ 3 trong 4 lần, 2026-10-28): câu trả lời không bị chặn mạng như test muốn.
 - e2e `header-actions` "on a phone" tìm nút Bộ lọc ở Tài nguyên, nhưng khi DB e2e trống (spec khác vừa xoá mục) thì trang chỉ có trạng thái trống, không có nút lọc: phụ thuộc dữ liệu spec khác để lại (thấy 2026-10-28).

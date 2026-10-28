@@ -100,3 +100,21 @@ export function planQueue(input: QueueInput): QueuePlan {
     nextDueAt: ahead[0]?.due ?? null,
   };
 }
+
+export interface ReadyCount {
+  // Started cards waiting now: due reviews and learning steps.
+  due: number;
+  newGrammar: number;
+  newVocab: number;
+}
+
+// What a plan's cards are, so `status` can say "3 due" apart from the daily allowance.
+export function countReady(cards: readonly QueueCandidate[]): ReadyCount {
+  const count: ReadyCount = { due: 0, newGrammar: 0, newVocab: 0 };
+  for (const c of cards) {
+    if (!isNew(c)) count.due++;
+    else if (c.kind === 'GRAMMAR') count.newGrammar++;
+    else count.newVocab++;
+  }
+  return count;
+}
