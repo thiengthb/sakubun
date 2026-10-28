@@ -104,16 +104,26 @@ describe('openJlptExamples on the committed data', () => {
         ...source.vocab.map((e) => ['VOCAB', e] as const),
       ].map(([kind, e]) => [e.id, { kind, e }]),
     );
+    // The same word at two levels keeps its first written entry, so a later one is never read.
+    const shown = new Map<string, string>();
+    for (const [id, { kind, e }] of byId) {
+      const k = `${kind}\u0000${e.expression.normalize('NFKC').trim()}`;
+      if (!shown.has(k) && file.entries[id] && e.example) shown.set(k, id);
+    }
+    const shownIds = new Set(shown.values());
     let checked = 0;
     for (const [id, data] of Object.entries(file.entries)) {
+      if (!shownIds.has(id)) continue;
       const { kind, e } = byId.get(id)!;
       const found = openJlptExample(map, kind, e.expression);
       if (data.skip) {
         expect(found?.skip, id).toBe(true);
         continue;
       }
-      if (found?.skip !== false || found.example?.ja !== e.example?.ja) continue; // another level's
+      expect(found?.skip, id).toBe(false);
+      if (found?.skip !== false) continue;
       const { example } = found;
+      expect(example?.ja, id).toBe(e.example?.ja);
       expect(example?.vi, id).toBe(data.vi);
       expect(example?.spans?.length, id).toBeGreaterThan(0);
       const segments = markSpans(example!.ja, example!.jaRuby, example!.spans!, 'target');
@@ -124,6 +134,6 @@ describe('openJlptExamples on the committed data', () => {
       ).toBe(true);
       checked++;
     }
-    expect(checked).toBeGreaterThan(Object.keys(file.entries).length * 0.9);
+    expect(checked).toBeGreaterThan(shownIds.size * 0.9);
   });
 });

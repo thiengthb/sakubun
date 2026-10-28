@@ -21,6 +21,7 @@ export function SpokenLine({
   aside,
   title = false,
   groups,
+  lookup = false,
 }: {
   text: string;
   speakText?: string;
@@ -41,6 +42,9 @@ export function SpokenLine({
    * each, each run wrapped by its own `wrap` (a popover trigger). A run never splits a reading.
    * Needs `ruby`; the furigana setting still decides whether readings show. */
   groups?: readonly WrapGroup[];
+  /** The hover lookup on the sentence's words (components/common/word-lookup.tsx, 7.4b); 'hover'
+   * where a tap belongs to something else, such as a card that opens. */
+  lookup?: boolean | 'hover';
 }) {
   const [ratio, setRatio] = useState(0);
 
@@ -119,7 +123,11 @@ export function SpokenLine({
           playToken={playToken}
         />
       </span>
-      <span lang="ja" className={cn('furigana', truncate && 'block min-w-0 flex-1 truncate')}>
+      <span
+        lang="ja"
+        data-lookup={lookup === 'hover' ? 'hover' : lookup || undefined}
+        className={cn('furigana', truncate && 'block min-w-0 flex-1 truncate')}
+      >
         {wrapGroups(units, groups)}
         {aside}
       </span>
