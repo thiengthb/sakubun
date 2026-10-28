@@ -105,6 +105,8 @@ async function connect(
 
   await expect(page.getByText('Cho phép truy cập Sakubun?')).toBeVisible({ timeout: 30_000 });
   await expect(page.getByText('claude.ai', { exact: true })).toBeVisible();
+  // Which account the app gets, so a browser signed in to another one is caught before Cho phép.
+  await expect(page.locator('[data-slot="consent-account"]')).toContainText(E2E_EMAIL);
   // A click before hydration does nothing on a freshly compiled dev page.
   await page.waitForLoadState('networkidle');
   await page.getByRole('button', { name: 'Cho phép' }).click();

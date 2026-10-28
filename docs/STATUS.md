@@ -49,9 +49,6 @@ poller (`sudo`), user `thi3n` không có token ghcr. Xem log: `journalctl -u min
 
 ## Việc nhỏ còn treo
 
-- Trang đồng ý OAuth ("Cho phép truy cập Sakubun?") không ghi đang cấp quyền cho tài khoản nào; trình duyệt đang
-  đăng nhập sakubun bằng tài khoản khác thì connector âm thầm nối sai tài khoản (thử thật 2026-10-27). Nên hiện email
-  trên trang đó (đụng OAuth, risk:high).
 - Liên kết OAuth hỏng (vd `redirect_uri` lạ) đưa về `/login?error=invalid_redirect`, và trang đăng nhập ghi "Tài khoản này
   không được phép vào Sakubun" cho mọi mã lỗi: sai nghĩa, nên nói liên kết kết nối không hợp lệ (`onAPIError` trong
   `lib/auth/auth.ts`, `app/login/login-form.tsx`; đụng OAuth, risk:high; thấy 2026-10-28).
