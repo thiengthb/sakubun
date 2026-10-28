@@ -43,6 +43,7 @@ const PAIRS: Pair[] = [
   { name: 'kho chung', page: '/library', skeleton: 'library' },
   { name: 'kho chung items', page: '/library?tab=items', skeleton: 'library?tab=items' },
   { name: 'kho chung group', page: '/library/lib-sk', skeleton: 'library-group' },
+  { name: 'kho chung item', page: '/library/item/lib-sk0', skeleton: 'library-item' },
 ];
 
 const MEASURE = () => {

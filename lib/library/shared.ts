@@ -263,6 +263,32 @@ export async function getGroupEntry(db: LibraryClient, id: string) {
   return { ...group, entries: members.map((m) => m.item) };
 }
 
+// One public pattern or word for its own page (7.4i), with who shared it and the public groups it is
+// in; null when it is not shared (any more). An entry left in a group by a deleted account opens too,
+// since that group's page lists it.
+export async function getItemEntry(db: LibraryClient, id: string) {
+  const entry = await db.libraryEntry.findFirst({
+    where: { id, ...VISIBLE_MEMBER, type: { in: [...ITEM_TYPES] } },
+    select: {
+      ...ENTRY_FIELDS,
+      author: { select: { name: true } },
+      inGroups: {
+        where: { group: VISIBLE },
+        orderBy: { group: { createdAt: 'asc' } },
+        select: { group: { select: { id: true, name: true, groupKind: true } } },
+      },
+    },
+  });
+  if (!entry) return null;
+  const { author, inGroups, _count, ...rest } = entry;
+  return {
+    ...rest,
+    author: author?.name ?? null,
+    likes: _count.likes,
+    groups: inGroups.map((m) => m.group),
+  };
+}
+
 // One of OpenJLPT's level groups ("N5 · Ngữ pháp"), where a new learner starts (L4).
 export function findOpenJlptGroup(db: LibraryClient, level: string, type: ItemType) {
   return db.libraryEntry.findFirst({

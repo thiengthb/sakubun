@@ -33,7 +33,7 @@ export const ORIGIN_LABEL: Record<string, string> = { OPENJLPT: 'OpenJLPT', LEAR
 const TYPE_LABEL: Record<string, string> = { GRAMMAR: 'Ngữ pháp', VOCAB: 'Từ vựng' };
 
 // One pattern or word on Kho chung: playable like every Japanese line, its meaning, where it comes
-// from, and "Lấy" (or "Đã có", to the learner's copy).
+// from, and "Lấy" (or "Đã có", to the learner's copy). The card opens the entry's own page (7.4i).
 export function LibraryEntryCard({
   entry,
   admin = false,
@@ -53,7 +53,13 @@ export function LibraryEntryCard({
   });
   const expression = entry.expression ?? '';
   return (
-    <li data-slot="library-entry" className={cn(LIST_CARD.base, 'min-w-0 space-y-1.5')}>
+    <li
+      data-slot="library-entry"
+      className={cn(LIST_CARD.base, LIST_CARD.linked, 'min-w-0 space-y-1.5')}
+    >
+      <Link href={`/library/item/${entry.id}`} className={LIST_CARD.link}>
+        <span className="sr-only">Xem {expression}</span>
+      </Link>
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
           <SpokenLine
@@ -66,7 +72,7 @@ export function LibraryEntryCard({
           />
         </div>
         {entry.itemId ? (
-          <Button variant="ghost" asChild>
+          <Button variant="ghost" asChild className="relative z-10">
             <Link href={`/resources/${entry.itemId}`}>
               <Check aria-hidden />
               Đã có
