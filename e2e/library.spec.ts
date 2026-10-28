@@ -76,7 +76,7 @@ test('Kho chung: take one entry, then the whole group', async ({ page }) => {
   await expect(found).toContainText('từ thử nghiệm (e2e)');
   await found.getByRole('button', { name: 'Lấy 試験語 về kho' }).click();
   await expect(page.getByText('Đã lấy 試験語 về kho')).toBeVisible();
-  await expect(found.getByRole('link', { name: 'Đã có' })).toBeVisible();
+  await expect(found.getByRole('link', { name: 'Đã có trong kho' })).toBeVisible();
   if (shots)
     for (const width of [1440, 390]) {
       await page.setViewportSize({ width, height: width === 390 ? 844 : 900 });
@@ -381,7 +381,12 @@ test('the admin hides and shows an entry; a ban hides it too', async ({ page }) 
 
     await search();
     await expect(card).toHaveCount(1);
-    await card.getByRole('button', { name: 'Ẩn 他人語' }).click();
+    // Ẩn is on the entry's own page, in the admin's menu, not on the card (7.4i).
+    await expect(card.getByRole('button', { name: /^Ẩn/ })).toHaveCount(0);
+    await card.getByRole('link', { name: 'Xem 他人語' }).click();
+    await page.waitForURL(/\/library\/item\//);
+    await page.getByRole('button', { name: 'Quản trị 他人語' }).click();
+    await page.getByRole('menuitem', { name: 'Ẩn khỏi Kho chung' }).click();
     await expect(page.getByText('Đã ẩn khỏi Kho chung')).toBeVisible();
     await search();
     await expect(page.getByText('Không có mục nào khớp')).toBeVisible();

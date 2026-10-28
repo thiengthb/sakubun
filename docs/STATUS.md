@@ -4,14 +4,14 @@ Trang này trả lời ba câu cho bất kỳ phiên Claude nào (kể cả từ
 việc tiếp theo là gì**. Cập nhật nó **trong cùng PR** với việc làm, và khi nhận một bước mới (xem
 "Bắt đầu phiên" trong `CLAUDE.md`). Lộ trình đầy đủ: `docs/roadmap.md`. Kế hoạch đã duyệt: `docs/plans/`.
 
-Cập nhật lần cuối: 2026-10-28 (7.4a #181, 7.4k #182, 7.4b #188, 7.4c #191, 7.4d #192, 7.4e #193, 7.4f #194, 7.4g #195, 7.4h #196 xong; 7.4i (phần 1) mở PR).
+Cập nhật lần cuối: 2026-10-28 (7.4a #181, 7.4k #182, 7.4b #188, 7.4c #191, 7.4d #192, 7.4e #193, 7.4f #194, 7.4g #195, 7.4h #196, 7.4i phần 1 #197 xong; 7.4i phần 2a mở PR).
 
 ## Đang làm
 
-| Bước                                                                                                                  | Nhánh / PR               | Giữ bởi             | Trạng thái                                                                                                                                              |
-| --------------------------------------------------------------------------------------------------------------------- | ------------------------ | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 7.4i (phần 1) trang riêng cho một mục Kho chung: cách nối, câu ví dụ, nhóm chứa nó, Lấy về kho; Ẩn của quản trị ở đây | `feat/7.4i-library-item` | Claude (thread 7.4) | PR mở, chờ thien merge (risk:high: đổi Kho chung). Phần 2 (tab Từng mục, thẻ gọn) làm sau khi 7.4h merge                                                |
-| 8 C1b dịch câu ví dụ (cả bộ, mỗi PR khoảng 1.000 mục)                                                                 | `codex/openjlpt-*`       | Codex (thien giao)  | 50 câu mẫu (#172), đợt 1: 250 mục (#174); thien giao dịch hết phần còn lại 2026-10-28; mỗi đợt một nhánh mới từ `main`, Claude kiểm và merge (risk:low) |
+| Bước                                                                                                                               | Nhánh / PR                  | Giữ bởi             | Trạng thái                                                                                                                                              |
+| ---------------------------------------------------------------------------------------------------------------------------------- | --------------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 7.4i phần 2a: thẻ mục Kho chung gọn (chip cấp, tên mẫu sạch, nút chỉ biểu tượng, Ẩn chỉ ở trang một mục); trang nhóm cuộn tải thêm | `feat/7.4i-library-entries` | Claude (thread 7.4) | PR mở, chờ thien merge (risk:high: đổi UI). Tiếp theo 7.4i phần 2b: Từng mục tải thêm từ server, sắp xếp, Ẩn mục đã có.                                 |
+| 8 C1b dịch câu ví dụ (cả bộ, mỗi PR khoảng 1.000 mục)                                                                              | `codex/openjlpt-*`          | Codex (thien giao)  | 50 câu mẫu (#172), đợt 1: 250 mục (#174); thien giao dịch hết phần còn lại 2026-10-28; mỗi đợt một nhánh mới từ `main`, Claude kiểm và merge (risk:low) |
 
 ## Chờ thien
 
