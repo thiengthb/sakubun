@@ -1,6 +1,11 @@
-# Kế hoạch 7.4 (đợt 1): làm lại Hội thoại và Kho chung
+# Kế hoạch 7.4 (đợt 1): làm lại Hội thoại, Kho chung, Tài nguyên và Lịch sử
 
-- Ngày: 2026-10-28. Trạng thái: **chờ thien duyệt**.
+- Ngày: 2026-10-28. Trạng thái: **chờ thien duyệt vòng 2**. Vòng 1: thien trả lời ba câu (2026-10-28). Vòng 2: thien thêm
+  sáu ý (Hội thoại một canvas, nút furigana ở sidebar, thẻ và cuộn tải thêm cho Tài nguyên, Kho chung, Lịch sử, nút
+  chỉ có icon, furigana ở Lịch sử, tra nghĩa ở mọi câu tiếng Nhật, flashcard nhóm); phần "Vòng 2" bên dưới thay cho
+  những chỗ cũ trái với nó.
+- Mẫu để thien chọn: artifact "Mẫu giao diện 7.4 Sakubun" (https://claude.ai/artifact/LaXkUksJmqmQykq2t3VvCo, chỉ
+  tài khoản của thien mở được); các quyết định chốt từ đó được chép vào file này.
 - Bước 7.4 của `docs/roadmap.md` ("mỗi trang mới hoặc đổi theo UI mới, một PR một trang, thien duyệt ảnh trước và
   sau"). Đợt này làm hai trang mới của phase 8 trước, theo lời thien (2026-10-28): "tiếp đến làm lại giao diện trang
   kaiwa, kho chung". Các lỗi nhỏ trong STATUS đi kèm ở cuối.
@@ -102,22 +107,137 @@ thoại, vì `ui-standard` chỉ cho hộp thoại để xác nhận.
 của quản trị vào menu `...`. Dưới đầu trang: thanh "Đã có 12/81" và `Lấy phần còn thiếu`, ô tìm trong nhóm, thẻ bỏ
 dòng meta lặp, tải 60 mục một lần với `Xem thêm`.
 
-## Thứ tự PR
+## Vòng 1: thien trả lời (2026-10-28)
 
-Mỗi PR một trang, kèm ảnh trước và sau ở 1440 và 390 (sáng, thêm một ảnh tối), e2e cập nhật, `risk:high` theo
-roadmap 7.4 (thien duyệt ảnh và merge). Không có migration.
+1. "Che câu của tôi" làm ngay: **theo đề xuất**.
+2. "Tôi là" mặc định theo tên đã chọn ở bài gần nhất: **có**.
+3. Xem một mục Kho chung bằng trang riêng: **theo đề xuất**.
 
-| #    | PR                                                                                                  |
-| ---- | --------------------------------------------------------------------------------------------------- |
-| 7.4a | Trang kịch bản: bố cục, thanh công cụ dính, dấu người nói, loa ngoài bong bóng, Che câu của tôi, あ |
-| 7.4b | Danh sách Hội thoại và trang sửa có xem trước, lỗi theo dòng                                        |
-| 7.4c | Kho chung tab Nhóm (bảng OpenJLPT theo cấp, Cộng đồng) và trang nhóm                                |
-| 7.4d | Kho chung Từng mục (Xem thêm, sắp xếp, ẩn mục đã có, thẻ gọn) và trang một mục                      |
-| 7.4e | Lỗi nhỏ trong STATUS, mỗi lỗi một PR nhỏ (bên dưới)                                                 |
+## Vòng 2: ý mới của thien (2026-10-28)
 
-## Lỗi nhỏ đi kèm (7.4e)
+Ảnh thêm: `before-resources-grammar-cards-*`, `before-resources-groups-1440`, `before-history-*`,
+`before-group-flashcard-*`.
 
-Lấy từ "Việc nhỏ còn treo" trong `docs/STATUS.md`, làm sau 7.4a–d, theo thứ tự:
+### 1. Hội thoại: xem và sửa trên một canvas
+
+thien: trang sửa hợp nhất với trang xem như canvas cũ; ô sửa là editor đủ dùng, dựa trên editor của VS Code.
+
+Canvas cũ (đọc mã trên laptop 2026-10-28, `OneDrive/Tài liệu/ChatGPT/japanese-script-canvas`): CodeMirror 6 tối giản
+(chỉ số dòng, xuống dòng mềm, Tab chèn hai dấu cách; không hoàn tác, không tìm, không tô màu), lưới
+`bản thảo | thanh kéo | xem` bật bằng Ctrl E, tỉ lệ kéo 25 tới 75% nhớ trên máy, điện thoại chuyển qua lại hai khung,
+tự lưu sau 650ms. Phần đáng giữ nằm ở khung xem: karaoke, nghe cả bài, tải trước 8 câu, ↑ ↓ chọn câu và Enter để
+nghe, ẩn từng câu.
+
+Đề xuất (mẫu `Kaiwa-View`, `Kaiwa-Edit`, `Kaiwa-Phone`):
+
+- Một trang `/kaiwa/[id]`. Mặc định là chế độ xem; `Sửa` (Ctrl E) mở khung bản thảo bên trái, xem trước bên phải,
+  thanh kéo ở giữa (nhớ tỉ lệ trên máy). `/kaiwa/[id]/edit` chuyển về trang này ở chế độ sửa; `/kaiwa/new` mở thẳng
+  chế độ sửa với bản trống.
+- Editor CodeMirror 6 (`@codemirror/state`, `view`, `commands`, `search`, `language`, `autocomplete`, `lint`): số dòng,
+  tô dòng đang đứng, hoàn tác và làm lại, Ctrl F tìm và thay, nhiều con trỏ (Alt bấm, Ctrl D), tô màu theo định dạng
+  (tên người nói, chữ Nhật, dấu `|`, nghĩa Việt, `漢字[よみ]`), gợi ý tên người nói đã có khi gõ đầu dòng, lỗi định dạng
+  gạch sóng ngay dòng đó kèm lời sửa (lấy từ parser server đang dùng), thanh trạng thái (dòng, cột, số câu, số lỗi).
+- Xem trước dựng bằng đúng thẻ chat của chế độ xem. Con trỏ ở dòng nào thì câu đó viền cam bên xem trước; bấm một câu
+  bên xem trước thì nhảy tới dòng đó (parser giữ số dòng nguồn cho mỗi câu).
+- Lưu bằng nút `Lưu` hoặc Ctrl S, không tự lưu: mỗi lần lưu tính lại furigana, và giữ cơ chế số phiên bản để không ghi
+  đè bản AI vừa lưu. Rời trang khi chưa lưu thì hỏi lại.
+- Điện thoại: hai tab `Viết` và `Xem trước`; dòng tự xuống hàng; một hàng phím nhanh trên bàn phím chèn tên người nói
+  đã có, `|` và `[ ]`.
+- Chế độ xem theo phần "Hội thoại: đề xuất" ở trên, trừ nút あ (chuyển ra sidebar, ý 2). "Nghe cả bài" có karaoke là
+  K6, làm ngay sau; thanh công cụ chừa chỗ.
+
+### 2. Nút furigana ở sidebar, đổi kiểu nút giao diện
+
+- Laptop: chân sidebar, cùng hàng với nút giao diện: hai nút icon cùng kiểu, cùng cỡ (あ và mặt trăng hoặc mặt trời);
+  đang bật thì nền cam nhạt như lựa chọn khác; tooltip kèm phím tắt. Sidebar thu gọn thì hai nút xếp dọc. Điện thoại:
+  hai nút ở chân menu tài khoản. Mẫu `Sidebar-Lookup`.
+- Bật tắt đổi ngay mọi chữ trên trang đang mở (một context phía client, khởi tạo từ cài đặt) và lưu vào cài đặt của
+  người học (`furiganaMode`, như công tắc hôm nay), nên đúng trên mọi máy.
+- Bỏ công tắc Furigana trong Cài đặt. Bỏ các nút あ riêng lẻ trên trang (flashcard nhóm, Ôn nhanh nếu có).
+
+### 3. Thẻ và cuộn tải thêm: Tài nguyên, Kho chung, Lịch sử
+
+Luật chung cho mọi thẻ, hôm nay và sau này (trừ khi thien cho ngoại lệ), thêm vào `docs/ui-standard.md` và khoá bằng
+test:
+
+- Mỗi dòng chữ trên thẻ (tiêu đề, mô tả, nghĩa, câu) tối đa **một dòng**. Chữ bị cắt mới có tooltip hiện bản đầy đủ khi
+  rê chuột hay focus; chữ vừa thì không. Một component dùng chung (`TruncateText`) đo tràn và chỉ gắn tooltip khi tràn.
+- Danh sách thẻ **cuộn tải thêm** ở mọi bề rộng, như Tài nguyên hôm nay; bỏ phân trang ở chế độ thẻ (Lịch sử).
+- Danh sách thẻ có **khung đang tải riêng** (thẻ xám đúng hình thẻ thật), không mượn khung của bảng.
+- Ô chọn nhiều chỉ có ở chế độ bảng; chế độ thẻ không có ô chọn.
+
+**Thẻ Tài nguyên (Ngữ pháp, Từ vựng)**: chip cấp đứng chỗ ô chọn cũ; bỏ dòng trạng thái; mục mới (chưa ôn lần nào) có
+nhãn đỏ "Mới" đè lên viền trên, góc phải; sao xuống dưới, cùng cột với nút menu. Hai mẫu cho chỗ của loa:
+**A** (theo thien) loa dưới chip cấp, cùng cột; **B1** (đề xuất) loa nhỏ màu nhạt bám ngay sau tiêu đề, cột trái chỉ
+rộng bằng chip nên tiêu đề có thêm chỗ. **B2** là kiểu một hàng cho danh sách rất dài. Mẫu `Main`, `Resource-B`.
+
+**Thẻ nhóm (Tài nguyên và Kho chung)**: tên và mô tả một dòng, tooltip khi bị cắt; số đứng trước tim; tác giả là
+người thì có icon người trước tên.
+
+**Thẻ từng mục Kho chung**: cột trái chip cấp và nguồn; cột phải `Lấy` (hoặc dấu tích "Đã có") và số rồi tim; "Ẩn" của
+quản trị chuyển vào trang một mục. Mẫu `Library`.
+
+**Lịch sử**: thẻ một dòng câu; chip cấp cạnh chiều dịch; bỏ chip "Dịch câu" (chỉ còn dịch câu) và số ký tự, giữ thời
+gian làm. Hộp chi tiết: chip cấp bên phải chiều dịch, bỏ số ký tự và chữ "Đề", có nhãn "Nhận xét:", dòng cuối ghi
+"Đối tượng:" với chip nói rõ ngữ pháp hay từ vựng. Mẫu **A** đúng các ý trên (`History-A`), mẫu **B** (đề xuất): dòng
+thời gian theo ngày, mỗi lượt một dòng hai tầng gồm đề và bài bạn dịch, thanh màu kết quả mỗi ngày (`History-B`); chi
+tiết **B** là ngăn bên phải với ← → chuyển lượt và bài bạn đặt cạnh đáp án (`History-Detail`).
+
+### 4. Nút trên thẻ chỉ có icon
+
+Nút trên thẻ chỉ là icon, rê chuột hay focus hiện tooltip nói hành động (Lấy về kho, Đã có trong kho, Thích, Đánh dấu
+sao, Thao tác). Thêm vào `docs/ui-standard.md`, khoá bằng test: trong component thẻ, nút phải là nút icon có
+`aria-label` và tooltip. Áp vào thẻ nhóm của Tài nguyên (thêm tooltip cho mô tả) và thẻ từng mục Kho chung (bỏ chữ
+"Lấy", "Đã có", "Ẩn").
+
+### 5. Furigana ở Lịch sử
+
+Chế độ furigana bật thì câu tiếng Nhật trong thẻ và chi tiết Lịch sử hiện furigana luôn, không cần rê chuột.
+
+### 6. Tra nghĩa ở mọi câu tiếng Nhật
+
+Một component dùng chung (`JapaneseText`) thay chỗ hiện câu tiếng Nhật ở Hội thoại, Lịch sử, Ôn nhanh, Kho chung
+(câu ví dụ) và chi tiết mục: furigana theo nút ở sidebar, từ có nghĩa được gạch chấm, rê chuột hoặc chạm mở bảng tra.
+
+- Tách từ ở server (kuromoji đã có từ K4) một lần cho mỗi câu, có cache theo nội dung câu; Kaiwa vẫn lưu sẵn lúc lưu.
+  Trình duyệt không tải từ điển.
+- Nghĩa tiếng Việt: mục của người học trước, rồi Kho chung (OpenJLPT); từ đã chia tra theo dạng gốc. Nghĩa của cả
+  trang tra trong một truy vấn, không gọi mỗi lần rê chuột.
+- Bảng tra (mẫu `Sidebar-Lookup`): từ lớn, cách đọc, Hán Việt, từ loại, cấp; các nghĩa đánh số; dạng trong câu; nút icon
+  Nghe, Lấy về kho hoặc Đã có, Chép. Mở xuống dưới từ sau 150ms, cách mép màn hình 16px.
+- Test: tách từ và tra dạng gốc (đơn vị), e2e rê chuột ở Hội thoại, Lịch sử, Ôn nhanh.
+
+### 7. Flashcard của nhóm
+
+Bỏ nút あ không chạy và dòng "Chỉ để xem lại, không tính vào lịch ôn. Phím mũi tên để chuyển thẻ, phím cách để lật."
+Thẻ cao theo màn hình (từ dưới tab tới trên hàng nút), không còn khoảng trống dưới đáy. Mẫu `Flashcard`.
+
+### Lỗi thấy thêm khi chụp
+
+- Tài nguyên ở 390: nút "Sắp xếp" tràn ra ngoài màn hình (`before-resources-grammar-cards-390`). Sửa trong PR thẻ
+  Tài nguyên.
+
+## Thứ tự PR (thay bảng cũ)
+
+Mỗi PR một mục đích, ảnh trước và sau ở 1440 và 390, e2e cập nhật, `risk:high` theo roadmap 7.4 (thien duyệt ảnh và
+merge). Không có migration.
+
+| #    | PR                                                                                                                                                         |
+| ---- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 7.4a | Nền dùng chung: `TruncateText`, nút icon có tooltip, luật thẻ trong `ui-standard.md` và test; nút あ và nút giao diện ở sidebar, bỏ công tắc trong Cài đặt |
+| 7.4b | Tra nghĩa dùng chung (`JapaneseText`, tách từ ở server có cache); áp vào Hội thoại, Lịch sử, Ôn nhanh                                                      |
+| 7.4c | Thẻ Tài nguyên (Ngữ pháp, Từ vựng, Nhóm), khung tải của thẻ, bỏ ô chọn ở chế độ thẻ; flashcard nhóm                                                        |
+| 7.4d | Lịch sử: cuộn tải thêm mọi bề rộng, thẻ và chi tiết mới, furigana                                                                                          |
+| 7.4e | Hội thoại chế độ xem (thanh công cụ, dấu người nói, loa, Che câu của tôi, Tôi là mặc định)                                                                 |
+| 7.4f | Hội thoại một canvas: editor CodeMirror 6 và xem trước, Ctrl E, Ctrl S, điện thoại hai tab                                                                 |
+| 7.4g | Danh sách Hội thoại                                                                                                                                        |
+| 7.4h | Kho chung tab Nhóm (bảng OpenJLPT theo cấp, Cộng đồng) và trang nhóm                                                                                       |
+| 7.4i | Kho chung Từng mục (cuộn tải thêm từ server, sắp xếp, ẩn mục đã có) và trang một mục                                                                       |
+| 7.4j | Lỗi nhỏ trong STATUS, mỗi lỗi một PR nhỏ (bên dưới)                                                                                                        |
+
+## Lỗi nhỏ đi kèm (7.4j)
+
+Lấy từ "Việc nhỏ còn treo" trong `docs/STATUS.md`, theo thứ tự:
 
 1. Thống nhất "Xoá" (bỏ "Xóa") trên toàn UI, thêm test chặn chữ cũ. `risk:low`.
 2. Chữ của `status` (MCP) tách rõ "đến hạn" và "hạn mức ngày". `risk:medium`.
@@ -125,12 +245,10 @@ Lấy từ "Việc nhỏ còn treo" trong `docs/STATUS.md`, làm sau 7.4a–d, t
 4. e2e `critical-path` không phụ thuộc dữ liệu spec khác để lại. `risk:low`.
 5. Trang đồng ý OAuth hiện email đang cấp quyền. `risk:high` (đụng OAuth).
 
-## Cần thien chọn
+## Cần thien chọn (vòng 2)
 
-Mỗi câu có đề xuất; thien không trả lời câu nào thì làm theo đề xuất.
+Mỗi câu có đề xuất; 7.4a và 7.4b không phụ thuộc các câu này nên làm trước trong lúc chờ.
 
-1. "Che câu của tôi" làm ngay trong 7.4a, hay để dành cho K8 (AI nhập vai)? Đề xuất: làm ngay, vì không cần AI và
-   là cách luyện nói đơn giản nhất.
-2. "Tôi là" mặc định theo tên đã chọn ở bài gần nhất? Đề xuất: có.
-3. Xem một mục Kho chung bằng trang riêng (khuôn Chi tiết) hay mở rộng ngay trong thẻ? Đề xuất: trang riêng, có
-   đường dẫn gửi được và đủ chỗ cho câu ví dụ trên điện thoại.
+1. Thẻ Tài nguyên: mẫu A (loa dưới chip) hay B1 (loa nhỏ sau tiêu đề)? Đề xuất: B1.
+2. Lịch sử: thẻ A hay dòng thời gian B? Chi tiết: hộp thoại A hay ngăn bên B? Đề xuất: B và B.
+3. Hội thoại: lưu bằng nút và Ctrl S (đề xuất) hay tự lưu như canvas cũ?
