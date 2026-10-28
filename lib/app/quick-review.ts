@@ -18,6 +18,7 @@ import {
 } from '@/lib/domain/quick-review';
 import { markSpan, markSpans, type Segment } from '@/lib/domain/sentence';
 import { exampleFromNotes } from '@/lib/import/openjlpt';
+import { kaiwaExamples, kaiwaLines, type KaiwaLine } from '@/lib/kaiwa/examples';
 import { asItemKind, VOCAB_KIND, type ItemKind } from '@/lib/library/item-kinds';
 import { parseEnrichment } from '@/lib/library/enrichment';
 import { getSettings } from '@/lib/library/practice';
@@ -78,44 +79,51 @@ function seedFor(text: string): number {
 
 // The item's sentences: its card's (written by the learner's AI), then its OpenJLPT sentence with the
 // translation, furigana and place from data/openjlpt/examples.json when that has it, else the bare
-// sentence kept in its notes. A sentence examples.json marks unfit to learn from is left out.
+// sentence kept in its notes, then lines of the learner's own Kaiwa scripts that use it. A sentence
+// examples.json marks unfit to learn from is left out.
 function examplesOf(
-  item: { enrichment: string | null; notes: string | null },
+  item: { kind: string; expression: string; enrichment: string | null; notes: string | null },
   openJlpt: OpenJlptExample | null,
+  kaiwa: readonly KaiwaLine[],
 ): ClozeExample[] {
   const card = parseEnrichment(item.enrichment);
   const fromCard = card ? [card.example, ...card.examples] : [];
-  if (openJlpt?.skip) return fromCard;
-  if (openJlpt?.example) return [...fromCard, openJlpt.example];
+  const fromKaiwa = kaiwaExamples(kaiwa, item);
+  if (openJlpt?.skip) return [...fromCard, ...fromKaiwa];
+  if (openJlpt?.example) return [...fromCard, openJlpt.example, ...fromKaiwa];
   const fromNotes = exampleFromNotes(item.notes);
-  return fromNotes ? [...fromCard, { ja: fromNotes.ja }] : fromCard;
+  return [...fromCard, ...(fromNotes ? [{ ja: fromNotes.ja }] : []), ...fromKaiwa];
 }
 
-// The first example that contains the item in some form (a verb is often conjugated: 急いだ).
+// One of the examples that contain the item in some form (a verb is often conjugated: 急いだ), taken
+// in turn: the first on the first meeting, the next one on each later review.
 function underlined(
   item: { kind: string; expression: string; reading: string | null },
   examples: readonly ClozeExample[],
+  turn = 0,
 ): QuickSentence | null {
   const surface = answerSurface(item.expression);
   const forms =
     item.kind === VOCAB_KIND ? searchForms(surface, item.reading) : surface ? [surface] : [];
-  for (const example of examples) {
+  const marked = examples.flatMap((example): QuickSentence[] => {
+    const translation = example.vi?.trim() || null;
     if (example.spans) {
-      return {
-        segments: markSpans(example.ja, example.jaRuby?.trim(), example.spans, 'target'),
-        translation: example.vi?.trim() || null,
-      };
+      const segments = markSpans(example.ja, example.jaRuby?.trim(), example.spans, 'target');
+      return [{ segments, translation }];
     }
     const ja = example.ja.trim();
     const form = forms.find((f) => ja.includes(f));
-    if (!form) continue;
+    if (!form) return [];
     const start = ja.indexOf(form);
-    return {
-      segments: markSpan(ja, example.jaRuby?.trim(), { start, end: start + form.length }, 'target'),
-      translation: example.vi?.trim() || null,
-    };
-  }
-  return null;
+    const span = { start, end: start + form.length };
+    return [{ segments: markSpan(ja, example.jaRuby?.trim(), span, 'target'), translation }];
+  });
+  return marked.length > 0 ? marked[turn % marked.length] : null;
+}
+
+// The learner's Kaiwa lines, read once per request.
+async function learnerKaiwa(db: UserDb): Promise<KaiwaLine[]> {
+  return kaiwaLines(await db.script.findMany({ select: { body: true, analysis: true } }));
 }
 
 type CardItem = {
@@ -162,10 +170,11 @@ export async function getItemCards(
   ids: string[],
   now: Date = new Date(),
 ): Promise<QuickCard[]> {
-  const [settings, items, examples] = await Promise.all([
+  const [settings, items, examples, kaiwa] = await Promise.all([
     getSettings(db),
     db.item.findMany({ where: { id: { in: ids } }, include: { srs: true } }),
     openJlptExamples(),
+    learnerKaiwa(db),
   ]);
   const byId = new Map(items.map((i) => [i.id, i]));
   return ids.flatMap((id) => {
@@ -176,7 +185,7 @@ export async function getItemCards(
       {
         ...baseCard(item, item.srs, settings.desiredRetention, now, openJlpt),
         mode: 'flip' as const,
-        sentence: underlined(item, examplesOf(item, openJlpt)),
+        sentence: underlined(item, examplesOf(item, openJlpt, kaiwa)),
       },
     ];
   });
@@ -190,7 +199,7 @@ export async function getQuickReview(
   const settings = await getSettings(db);
   const queue = await getQueue(db, now, limit);
   const ids = queue.cards.map((c) => c.id);
-  const [items, states, pool, openJlpt] = await Promise.all([
+  const [items, states, pool, openJlpt, kaiwa] = await Promise.all([
     db.item.findMany({
       where: { id: { in: ids } },
       select: { id: true, hanviet: true, enrichment: true, notes: true },
@@ -198,6 +207,7 @@ export async function getQuickReview(
     db.srsState.findMany({ where: { itemId: { in: ids } } }),
     quizPool(),
     openJlptExamples(),
+    learnerKaiwa(db),
   ]);
   const itemById = new Map(items.map((i) => [i.id, i]));
   const srsById = new Map(states.map((s) => [s.itemId, s]));
@@ -207,7 +217,7 @@ export async function getQuickReview(
     const srs = srsById.get(queued.id)!;
     const found = openJlptExample(openJlpt, queued.kind, queued.expression);
     const base = baseCard({ ...queued, ...item }, srs, settings.desiredRetention, now, found);
-    const examples = examplesOf(item, found);
+    const examples = examplesOf({ ...queued, ...item }, found, kaiwa);
     // A new item is met first as a flip card; a cloze tests one already seen.
     if (!base.isNew) {
       const cloze = buildCloze({
@@ -226,7 +236,7 @@ export async function getQuickReview(
         };
       }
     }
-    return { ...base, mode: 'flip', sentence: underlined(queued, examples) };
+    return { ...base, mode: 'flip', sentence: underlined(queued, examples, srs.reps) };
   });
 
   return { cards, nextDueAt: queue.nextDueAt };
