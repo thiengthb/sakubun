@@ -16,7 +16,7 @@ export function ResourceCard({
   speakText,
   meaningVi,
   level,
-  suspended,
+  suspended = false,
   srs,
   showFurigana,
   voiceSpeaker,
@@ -31,8 +31,10 @@ export function ResourceCard({
   speakText: string;
   meaningVi: string;
   level: string;
-  suspended: boolean;
-  srs: { state: number } | null;
+  suspended?: boolean;
+  /** The learner's schedule; null when never reviewed. Left out for a card that is not theirs
+      (Kho chung), which then wears no "Mới" tag. */
+  srs?: { state: number } | null;
   showFurigana: boolean;
   voiceSpeaker?: number;
   speechRate?: number;
@@ -45,7 +47,7 @@ export function ResourceCard({
   /** Under the menu. */
   star?: ReactNode;
 }) {
-  const fresh = !suspended && (srs?.state ?? 0) === 0;
+  const fresh = srs !== undefined && !suspended && (srs?.state ?? 0) === 0;
   return (
     <div
       data-slot="resource-card"

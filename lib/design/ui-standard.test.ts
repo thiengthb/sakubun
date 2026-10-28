@@ -17,9 +17,6 @@ const ALLOW: Record<string, Record<string, string>> = {
   'components/ui/tooltip.tsx': {
     'radius-class': 'the tooltip arrow is a 10px rotated square; 2px only softens its tip',
   },
-  'components/features/library/library-entry-card.tsx': {
-    'card-actions-icon-only': 'Lấy and Đã có become CardAction in the Từng mục rework (7.4i)',
-  },
 };
 
 const SKIP_DIRS = new Set(['node_modules', 'generated', '.next']);

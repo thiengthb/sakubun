@@ -2,21 +2,16 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { Download, EyeOff, FolderOpen, MoreHorizontal, SearchX, UserRound } from 'lucide-react';
+import { Download, FolderOpen, SearchX, UserRound } from 'lucide-react';
 import { ParentCrumbs } from '@/components/layout/app-breadcrumbs';
 import { PageShell } from '@/components/layout/page-shell';
 import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { EmptyState } from '@/components/common/empty-state';
 import { GroupKindBadge } from '@/components/common/group-kind-badge';
 import { IconAction } from '@/components/common/icon-action';
+import { ScrollMoreStatus } from '@/components/common/scroll-more-status';
 import { SearchInput } from '@/components/common/search-input';
+import { useScrollMore } from '@/components/common/use-scroll-more';
 import { useServerAction } from '@/components/common/use-server-action';
 import {
   LibraryEntryCard,
@@ -24,13 +19,11 @@ import {
   type LibraryEntryRow,
 } from '@/components/features/library/library-entry-card';
 import { HaveBar, haveText } from '@/components/features/library/have-bar';
+import { LibraryAdminMenu } from '@/components/features/library/library-admin-menu';
 import { takeGroupAction } from '@/app/library/actions';
-import { setEntryRemovedAction } from '@/app/admin/actions';
 import { LikeButton } from '@/components/features/library/like-button';
 import { isGroupKind } from '@/lib/library/group-kinds';
 import { ExpandingIconButton } from '@/components/common/expanding-icon-button';
-
-const PAGE = 60;
 
 // One shared group (phase 8, L2; 7.4h): what is in it, how much of it the learner has, and "Lấy cả
 // nhóm", which copies the items the learner lacks and makes the group theirs. Once taken, the action
@@ -56,13 +49,12 @@ export function LibraryGroupView({
     myGroupId: string | null;
   };
   entries: LibraryEntryRow[];
-  /** The admin gets Ẩn on the group (in its menu) and on each entry (L6). */
+  /** The admin gets Ẩn on the group, in its menu (L6); an entry's is on its own page. */
   admin?: boolean;
   voiceSpeaker?: number;
   speechRate?: number;
   showFurigana: boolean;
 }) {
-  const [shown, setShown] = useState(PAGE);
   const [q, setQ] = useState('');
   const take = useServerAction(takeGroupAction, {
     success: (r) =>
@@ -77,6 +69,7 @@ export function LibraryGroupView({
         [e.expression, e.reading, e.meaningVi].some((t) => t?.toLowerCase().includes(needle)),
       )
     : entries;
+  const { items, hasMore, sentinelRef } = useScrollMore(found, needle);
 
   return (
     <PageShell
@@ -154,16 +147,13 @@ export function LibraryGroupView({
               <div className="flex w-full items-center gap-2 sm:w-auto">
                 <SearchInput
                   value={q}
-                  onChange={(e) => {
-                    setQ(e.target.value);
-                    setShown(PAGE);
-                  }}
+                  onChange={(e) => setQ(e.target.value)}
                   placeholder="Tìm trong nhóm…"
                   aria-label="Tìm trong nhóm"
                   className="flex-1 sm:w-64 sm:flex-none"
                 />
                 {/* Kept out of the header, which its loading screen draws the same for everyone. */}
-                {admin && <AdminMenu entryId={group.id} name={group.name} />}
+                {admin && <LibraryAdminMenu entryId={group.id} name={group.name} back="/library" />}
               </div>
             </div>
             {found.length === 0 ? (
@@ -171,11 +161,10 @@ export function LibraryGroupView({
             ) : (
               <div className="@container">
                 <ul className="grid gap-2 @2xl:grid-cols-2 @2xl:gap-3 @5xl:grid-cols-3">
-                  {found.slice(0, shown).map((e) => (
+                  {items.map((e) => (
                     <LibraryEntryCard
                       key={e.id}
                       entry={e}
-                      admin={admin}
                       showFurigana={showFurigana}
                       voiceSpeaker={voiceSpeaker}
                       speechRate={speechRate}
@@ -184,44 +173,10 @@ export function LibraryGroupView({
                 </ul>
               </div>
             )}
-            {shown < found.length && (
-              <Button variant="outline" onClick={() => setShown((n) => n + PAGE)}>
-                Xem thêm {Math.min(PAGE, found.length - shown)} mục
-              </Button>
-            )}
+            <ScrollMoreStatus ref={sentinelRef} hasMore={hasMore} />
           </>
         )}
       </div>
     </PageShell>
-  );
-}
-
-// The admin's tools for a shared group (L6), behind one menu, away from Thích so Ẩn is never one
-// stray click away: it takes the group off Kho chung for everyone, and the page goes back to the list.
-function AdminMenu({ entryId, name }: { entryId: string; name: string }) {
-  const router = useRouter();
-  const hide = useServerAction(setEntryRemovedAction, {
-    success: 'Đã ẩn khỏi Kho chung',
-    onSuccess: () => router.push('/library'),
-  });
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label={`Quản trị ${name}`}
-          disabled={hide.isPending}
-        >
-          <MoreHorizontal aria-hidden />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="min-w-44">
-        <DropdownMenuItem onSelect={() => hide.run(entryId, true)}>
-          <EyeOff aria-hidden />
-          Ẩn khỏi Kho chung
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
   );
 }
