@@ -65,10 +65,10 @@ K6-K9.
 | K7 | Publish scripts to kho chung | e2e | high | Todo |
 | K8 | MCP role-play from a script | tried in claude.ai | high | Todo |
 | K9 | Import the 5 old kaiwa-canvas scripts for thien | thien sees them | high | Todo |
-| L1 | `LibraryEntry`, groups, likes, OpenJLPT seed, `lib/library/` take | tests pass | high | In progress |
-| L2 | Kho chung page: groups and single items, take | e2e + screenshots | high | In progress |
-| L3 | Publish items and groups, update, unpublish, based-on copies, likes | e2e | high | Todo |
-| L4 | New accounts start empty, point to kho chung; decision 0008 | e2e | high | Todo |
-| L5 | MCP `library_search`, `library_take` | tried in claude.ai | high | Todo |
-| L6 | Admin hide/show entries, banned or deleted accounts | tests | high | Todo |
+| L1 | `LibraryEntry`, groups, likes, OpenJLPT seed, `lib/library/` take | tests pass | high | In review (#159, #160) |
+| L2 | Kho chung page: groups and single items, take | e2e + screenshots | high | In review (#161) |
+| L3 | Publish items and groups, update, unpublish, based-on copies, likes | e2e | high | In review (#162, #163) |
+| L4 | New accounts start empty, point to kho chung; decision 0008 | e2e | high | In review (#164) |
+| L5 | MCP `library_search`, `library_take` | tried in claude.ai | high | In review (#165); thien tries it in claude.ai |
+| L6 | Admin hide/show entries, banned or deleted accounts | tests | high | In review (#166, #167) |
 | C | Quick review rework (Vietnamese example translations, grammar leads with examples), own plan first | thien approves the plan and screenshots | high | Todo |

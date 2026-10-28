@@ -34,6 +34,7 @@ export function LibraryView({
   groups,
   entries,
   search,
+  admin = false,
   voiceSpeaker,
   speechRate,
   showFurigana,
@@ -41,6 +42,8 @@ export function LibraryView({
   groups: LibraryGroupRow[];
   entries: LibraryEntryRow[];
   search: { q: string; type: string; level: string };
+  /** The admin gets Ẩn on each entry (L6). */
+  admin?: boolean;
   voiceSpeaker?: number;
   speechRate?: number;
   showFurigana: boolean;
@@ -146,6 +149,7 @@ export function LibraryView({
                     <LibraryEntryCard
                       key={e.id}
                       entry={e}
+                      admin={admin}
                       showFurigana={showFurigana}
                       voiceSpeaker={voiceSpeaker}
                       speechRate={speechRate}

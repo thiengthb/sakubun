@@ -5,6 +5,8 @@ import { getAdminUserId } from '@/lib/auth/current-user';
 import { deleteAccount, findModerationTarget, setBanned } from '@/lib/admin/accounts';
 import { deleteConfirmed, moderationRefusal } from '@/lib/admin/moderation';
 import { type ActionResult, err, ok } from '@/lib/core/action-result';
+import { prisma } from '@/lib/db/db';
+import { setEntryRemoved } from '@/lib/library/moderation';
 
 async function target(id: unknown): Promise<ActionResult<{ id: string; email: string }>> {
   const actorId = await getAdminUserId();
@@ -29,4 +31,18 @@ export async function deleteAccountAction(id: string, typedEmail: string): Promi
   await deleteAccount(t.data.id);
   revalidatePath('/admin', 'layout');
   return ok(undefined);
+}
+
+// Kho chung moderation (phase 8, L6): hide an entry or group, or show it again.
+export async function setEntryRemovedAction(
+  entryId: string,
+  removed: boolean,
+): Promise<ActionResult<{ status: string }>> {
+  await getAdminUserId();
+  const res = await setEntryRemoved(prisma, String(entryId), removed === true);
+  if (res.ok) {
+    revalidatePath('/library', 'layout');
+    revalidatePath('/admin', 'layout');
+  }
+  return res;
 }

@@ -14,6 +14,7 @@ import {
   type LibraryEntryRow,
 } from '@/components/features/library/library-entry-card';
 import { takeGroupAction } from '@/app/library/actions';
+import { RemoveEntryButton } from '@/components/common/remove-entry-button';
 import { LikeButton } from '@/components/features/library/like-button';
 import { GROUP_KIND_LABELS, isGroupKind } from '@/lib/library/group-kinds';
 
@@ -24,6 +25,7 @@ const PAGE = 60;
 export function LibraryGroupView({
   group,
   entries,
+  admin = false,
   voiceSpeaker,
   speechRate,
   showFurigana,
@@ -40,6 +42,8 @@ export function LibraryGroupView({
     myGroupId: string | null;
   };
   entries: LibraryEntryRow[];
+  /** The admin gets Ẩn on the group and each entry (L6). */
+  admin?: boolean;
   voiceSpeaker?: number;
   speechRate?: number;
   showFurigana: boolean;
@@ -86,6 +90,13 @@ export function LibraryGroupView({
       }
     >
       <div className="space-y-4">
+        {/* Kept out of the header so the phone header stays one row, as its skeleton draws it. */}
+        {admin && (
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <span>Quản trị</span>
+            <RemoveEntryButton entryId={group.id} name={group.name} />
+          </div>
+        )}
         {group.notes && <p className="text-muted-foreground">{group.notes}</p>}
         {entries.length === 0 ? (
           <EmptyState icon={FolderOpen} title="Nhóm này chưa có mục nào" />
@@ -97,6 +108,7 @@ export function LibraryGroupView({
                   <LibraryEntryCard
                     key={e.id}
                     entry={e}
+                    admin={admin}
                     showFurigana={showFurigana}
                     voiceSpeaker={voiceSpeaker}
                     speechRate={speechRate}

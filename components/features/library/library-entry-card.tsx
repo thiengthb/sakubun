@@ -9,6 +9,7 @@ import { SpokenLine } from '@/components/common/spoken-line';
 import { useServerAction } from '@/components/common/use-server-action';
 import { takeEntryAction } from '@/app/library/actions';
 import { LikeButton } from '@/components/features/library/like-button';
+import { RemoveEntryButton } from '@/components/common/remove-entry-button';
 import { buildFuriganaMarkup } from '@/lib/japanese/furigana';
 import { cn } from '@/lib/core/utils';
 
@@ -34,11 +35,14 @@ const TYPE_LABEL: Record<string, string> = { GRAMMAR: 'Ngữ pháp', VOCAB: 'T�
 // from, and "Lấy" (or "Đã có", to the learner's copy).
 export function LibraryEntryCard({
   entry,
+  admin = false,
   showFurigana,
   voiceSpeaker,
   speechRate,
 }: {
   entry: LibraryEntryRow;
+  /** The admin's Ẩn (L6). */
+  admin?: boolean;
   showFurigana: boolean;
   voiceSpeaker?: number;
   speechRate?: number;
@@ -94,7 +98,8 @@ export function LibraryEntryCard({
             <span>{entry.takeCount} lượt lấy</span>
           </>
         )}
-        <span className="ml-auto">
+        <span className="ml-auto flex items-center gap-1">
+          {admin && <RemoveEntryButton entryId={entry.id} name={expression} />}
           <LikeButton
             entryId={entry.id}
             liked={entry.liked}
