@@ -233,6 +233,7 @@ merge). Không có migration.
 | 7.4g | Danh sách Hội thoại                                                                                                                                        |
 | 7.4h | Kho chung tab Nhóm (bảng OpenJLPT theo cấp, Cộng đồng) và trang nhóm                                                                                       |
 | 7.4i | Kho chung Từng mục (cuộn tải thêm từ server, sắp xếp, ẩn mục đã có) và trang một mục                                                                       |
+| 7.4k | Nút chỉ có icon trên laptop: luật, test, nút đầu trang mọi trang (chi tiết ở vòng 3)                                                                       |
 | 7.4j | Lỗi nhỏ trong STATUS, mỗi lỗi một PR nhỏ (bên dưới)                                                                                                        |
 
 ## Lỗi nhỏ đi kèm (7.4j)
@@ -245,10 +246,48 @@ Lấy từ "Việc nhỏ còn treo" trong `docs/STATUS.md`, theo thứ tự:
 4. e2e `critical-path` không phụ thuộc dữ liệu spec khác để lại. `risk:low`.
 5. Trang đồng ý OAuth hiện email đang cấp quyền. `risk:high` (đụng OAuth).
 
-## Cần thien chọn (vòng 2)
+## Vòng 2: thien chọn (2026-10-28)
 
-Mỗi câu có đề xuất; 7.4a và 7.4b không phụ thuộc các câu này nên làm trước trong lúc chờ.
+1. Thẻ Tài nguyên: **B1** (loa nhỏ màu nhạt sau tiêu đề).
+2. Lịch sử: **B** (dòng thời gian theo ngày) và chi tiết **B** (ngăn bên phải).
+3. Hội thoại: lưu bằng nút và **Ctrl S**, không tự lưu.
 
-1. Thẻ Tài nguyên: mẫu A (loa dưới chip) hay B1 (loa nhỏ sau tiêu đề)? Đề xuất: B1.
-2. Lịch sử: thẻ A hay dòng thời gian B? Chi tiết: hộp thoại A hay ngăn bên B? Đề xuất: B và B.
-3. Hội thoại: lưu bằng nút và Ctrl S (đề xuất) hay tự lưu như canvas cũ?
+## Vòng 3: ý mới của thien (2026-10-28)
+
+### Hội thoại
+
+- Một nút icon `?` ở cuối hàng nút đầu trang; rê chuột (hoặc focus, hoặc chạm trên điện thoại) hiện bảng mọi phím tắt
+  của trang (Ctrl E sửa, Ctrl S lưu, ↑ ↓ chọn câu, Enter nghe, Ctrl F tìm...). Trong nút không ghi phím tắt nữa.
+- Loa đặt sát bong bóng, phía trống, như nút bên cạnh tin nhắn của Messenger: icon nhỏ màu nhạt, đậm lên khi rê chuột
+  vào câu; điện thoại luôn hiện.
+
+### Sidebar thu gọn
+
+Icon các mục bị lệch sang phải, không nằm giữa. Nguyên nhân: nút mục có viền 2px (cho trạng thái đang chọn) nên khi thu
+gọn hộp 32px chỉ còn 12px cho icon 16px. Sửa trong 7.4a: bớt padding đúng 2px khi thu gọn, có e2e đo icon nằm giữa.
+
+### Flashcard của nhóm
+
+Thẻ thấp lại như cũ (không kéo cao hết màn hình); giữ vị trí thẻ, thanh tiến độ và hàng nút như mẫu `Flashcard`.
+
+### Nút chỉ có icon trên toàn app (laptop)
+
+thien: mọi nút thành icon trên laptop. Nút ở vùng tiêu đề co lại thành icon, rê chuột thì giãn ra hiện chữ (nút
+`ExpandingIconButton` đã có, hôm nay chỉ dùng cho Thêm, Lọc, Sắp xếp). Nút trong nội dung chỉ là icon, rê chuột hiện
+tooltip mô tả. Điện thoại không rê được: nút có icon ai cũng hiểu (thêm, sửa, xoá, lọc, sắp xếp, tìm, đóng, chép...) chỉ
+icon; nút ít gặp thì ghi chữ.
+
+Đề xuất cách làm:
+
+- Luật trong `docs/ui-standard.md`, khoá bằng test. Ở laptop mọi nút đầu trang là `ExpandingIconButton`; nút trong
+  nội dung là nút icon có tooltip. Chữ hiện trên điện thoại hay không thì code tự quyết theo icon: icon thuộc
+  `PLAIN_ICONS` (danh sách icon ai cũng hiểu, đã có) thì chỉ icon, icon khác thì kèm chữ. Không để mỗi chỗ tự chọn.
+- Giữ chữ ở hai chỗ: nút chính màu cam của trang (Lưu, Luyện nhóm, Lấy cả nhóm), vì đó là việc người học tìm đầu tiên;
+  và nút trong hộp xác nhận và biểu mẫu (Huỷ, Xoá vĩnh viễn), vì việc không hoàn tác được phải ghi rõ bằng chữ.
+- Rê chuột hay focus bằng bàn phím đều giãn nút; giãn ra thì đẩy các nút bên trái, không đè lên.
+- PR riêng **7.4k** ngay sau 7.4a: luật, test và nút đầu trang của mọi trang (một chỗ chung trong `PageShell`).
+  Nút trong nội dung đổi dần trong PR của từng trang (7.4c tới 7.4i).
+
+## Cần thien chọn (vòng 3)
+
+Nút chỉ có icon: nút chính màu cam và nút trong hộp xác nhận vẫn ghi chữ (đề xuất), hay cũng thành icon?

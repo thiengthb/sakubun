@@ -10,7 +10,7 @@ Cập nhật lần cuối: 2026-10-28 (nhận 7.4 đợt 1: Hội thoại và Kh
 
 | Bước | Nhánh / PR | Giữ bởi | Trạng thái |
 | --- | --- | --- | --- |
-| 7.4 đợt 1: làm lại Hội thoại, Kho chung, Tài nguyên, Lịch sử (kế hoạch `docs/plans/2026-10-28-ui-kaiwa-library.md`) | `docs/7.4-kaiwa-library-plan` | Claude (thread "Làm lại giao diện Hội thoại và Kho chung") | Kế hoạch vòng 2 chờ thien duyệt; 7.4a, 7.4b làm trước |
+| 7.4 đợt 1: làm lại Hội thoại, Kho chung, Tài nguyên, Lịch sử (kế hoạch `docs/plans/2026-10-28-ui-kaiwa-library.md`) | `docs/7.4-kaiwa-library-plan` | Claude (thread "Làm lại giao diện Hội thoại và Kho chung") | thien đã chọn vòng 2 (B1, Lịch sử B+B, Ctrl S); vòng 3 (nút chỉ có icon) chờ thien chốt; 7.4a đang làm |
 | 8 C1b dịch câu ví dụ (cả bộ, mỗi PR khoảng 1.000 mục) | `codex/openjlpt-*` | Codex (thien giao) | 50 câu mẫu (#172), đợt 1: 250 mục (#174); thien giao dịch hết phần còn lại 2026-10-28; mỗi đợt một nhánh mới từ `main`, Claude kiểm và merge (risk:low) |
 
 ## Chờ thien
