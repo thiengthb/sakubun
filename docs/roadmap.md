@@ -71,4 +71,4 @@ K6-K9.
 | L4 | New accounts start empty, point to kho chung; decision 0008 | e2e | high | Done 2026-10-28 (#164) |
 | L5 | MCP `library_search`, `library_take` | tried in claude.ai | high | Merged 2026-10-28 (#165), try in claude.ai pending |
 | L6 | Admin hide/show entries, banned or deleted accounts | tests | high | Done 2026-10-28 (#166, #167) |
-| C | Quick review rework (Vietnamese example translations, grammar leads with examples), own plan first (`docs/plans/2026-10-28-quick-review.md`) | thien approves the plan and screenshots | high | In progress: plan #168, C1a #170, C3 #171, sample data #172, C2 #173; C4 open |
+| C | Quick review rework (Vietnamese example translations, grammar leads with examples), own plan first (`docs/plans/2026-10-28-quick-review.md`) | thien approves the plan and screenshots | high | Code done 2026-10-28 (#168, #170, #171, #173, #175-#177); data C1b in progress (Codex: #172, #174) |
