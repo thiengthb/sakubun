@@ -4,20 +4,17 @@ Trang này trả lời ba câu cho bất kỳ phiên Claude nào (kể cả từ
 việc tiếp theo là gì**. Cập nhật nó **trong cùng PR** với việc làm, và khi nhận một bước mới (xem
 "Bắt đầu phiên" trong `CLAUDE.md`). Lộ trình đầy đủ: `docs/roadmap.md`. Kế hoạch đã duyệt: `docs/plans/`.
 
-Cập nhật lần cuối: 2026-10-28 (Ôn nhanh: C2 #173, C3 #171 đã merge; C4 PR mở; Codex dịch tiếp).
+Cập nhật lần cuối: 2026-10-28 (Ôn nhanh: code C2–C5 đã lên `main`, #171–#177; Codex dịch tiếp phần dữ liệu).
 
 ## Đang làm
 
 | Bước | Nhánh / PR | Giữ bởi | Trạng thái |
 | --- | --- | --- | --- |
-| 8 C4 thẻ giới thiệu cho mục mới (không hỏi, nút "Đã xem"), khung đáp án có "Dịch câu", báo mục chưa có câu ví dụ | `feat/8-c4-intro-card` | Claude (phiên của thien, 2026-10-28) | PR mở (risk:high, thien merge) |
-| 8 C5a câu ví dụ lấy từ kịch bản Kaiwa của người học, xoay câu theo lần ôn | `feat/8-c5a-kaiwa-examples` | Claude (phiên của thien, 2026-10-28) | PR mở (risk:high, thien merge) |
-| 8 C5b MCP `example_add` (mục chưa có thẻ thì tạo thẻ chỉ có câu, đánh dấu còn thiếu: thien chọn 2026-10-28) | chưa có | Claude (phiên của thien, 2026-10-28) | sau C5a |
-| 8 C1b dịch câu ví dụ (cả bộ, mỗi PR khoảng 1.000 mục) | `codex/openjlpt-*` | Codex (thien giao) | 50 câu mẫu đã merge (#172); đợt 1: 250 mục (#174); đợt sau tạo nhánh mới từ `main` |
+| 8 C1b dịch câu ví dụ (cả bộ, mỗi PR khoảng 1.000 mục) | `codex/openjlpt-*` | Codex (thien giao) | 50 câu mẫu (#172), đợt 1: 250 mục (#174); thien giao dịch hết phần còn lại 2026-10-28; mỗi đợt một nhánh mới từ `main`, Claude kiểm và merge (risk:low) |
 
 ## Chờ thien
 
-- Duyệt ảnh và merge C4 (risk:high).
+- Đưa bản có Ôn nhanh mới (#171–#177, không có migration) lên NUC. Rồi thử: Ôn nhanh với mục mới (thẻ giới thiệu, nút "Đã xem"), và trong claude.ai nhờ Claude thêm câu ví dụ cho một mục (`example_add`).
 - Đưa bản có Kho chung (#159–#167, thêm bảng mới) lên NUC: sao lưu DB trước. Rồi thử `/library`, và
   `library_search`, `library_take` trong claude.ai (L5).
 - Đưa bản có Kaiwa (#156, thêm bảng `Script` và cột `Script.analysis`) lên NUC: sao lưu DB trước. Rồi thử trong claude.ai: nhờ Claude soạn một đoạn hội thoại ngắn trên canvas, lưu, mở đường dẫn nó trả về; trên web thử chọn vai "Tôi là", rê chuột xem nghĩa, Thêm và Sửa.
@@ -40,7 +37,7 @@ Cập nhật lần cuối: 2026-10-28 (Ôn nhanh: C2 #173, C3 #171 đã merge; C
 5. Kho chung L1–L6 xong, lên `main` 2026-10-28: L1a #159, L1b #160, L2 #161, L3a #162, L3b #163, L4 #164, L5 #165,
    L6a #166, L6b #167.
 6. Ôn nhanh (C): kế hoạch `docs/plans/2026-10-28-quick-review.md` duyệt 2026-10-28 (Codex dịch câu ví dụ, mục mới là thẻ
-   giới thiệu, không có nút "Đoán"). Xong: C1a #170, C3 #171, 50 câu mẫu #172, C2 #173, 250 mục #174. Còn: C1b (Codex), C4, C5a, C5b. Sau đó 7.4
+   giới thiệu, không có nút "Đoán"). Xong: C1a #170, C3 #171, 50 câu mẫu #172, C2 #173, 250 mục #174, C4 #175, C5a #176, C5b #177. Còn: C1b (Codex dịch phần còn lại). Tiếp theo 7.4
    (làm lại UI, cùng các lỗi nhỏ bên dưới), rồi K6–K9.
 
 ## Việc nhỏ còn treo
