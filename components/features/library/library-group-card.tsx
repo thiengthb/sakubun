@@ -3,6 +3,7 @@ import { Check } from 'lucide-react';
 import { LIST_CARD } from '@/components/common/list-card';
 import { GroupKindBadge } from '@/components/common/group-kind-badge';
 import { ORIGIN_LABEL } from '@/components/features/library/library-entry-card';
+import { LikeButton } from '@/components/features/library/like-button';
 import { isGroupKind } from '@/lib/library/group-kinds';
 import { cn } from '@/lib/core/utils';
 
@@ -14,6 +15,8 @@ export interface LibraryGroupRow {
   origin: string;
   takeCount: number;
   size: number;
+  likes: number;
+  liked: boolean;
   // The learner's own group taken from this one, when they took it.
   myGroupId: string | null;
 }
@@ -53,6 +56,14 @@ export function LibraryGroupCard({ group }: { group: LibraryGroupRow }) {
             </span>
           </>
         )}
+        <span className="ml-auto">
+          <LikeButton
+            entryId={group.id}
+            liked={group.liked}
+            likes={group.likes}
+            name={group.name ?? ''}
+          />
+        </span>
       </div>
     </li>
   );

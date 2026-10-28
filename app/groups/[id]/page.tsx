@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import { GroupDetailView } from '@/components/features/groups/group-detail-view';
 import { getGroup } from '@/lib/library/groups';
+import { groupShareStatus } from '@/lib/library/publish';
 import { getItemCards } from '@/lib/app/quick-review';
 import { getSettings } from '@/lib/library/practice';
 import { getUserDb } from '@/lib/auth/current-user';
@@ -13,8 +14,9 @@ export default async function GroupDetailPage({ params }: { params: Promise<{ id
   const db = await getUserDb();
   const group = await getGroup(db, id);
   if (!group) notFound();
-  const [settings, cards] = await Promise.all([
+  const [settings, share, cards] = await Promise.all([
     getSettings(db),
+    groupShareStatus(db, id),
     getItemCards(
       db,
       group.members.map((m) => m.itemId),
@@ -24,6 +26,7 @@ export default async function GroupDetailPage({ params }: { params: Promise<{ id
     <GroupDetailView
       group={group}
       cards={cards}
+      share={share}
       voiceSpeaker={settings.voiceSpeaker}
       speechRate={settings.speechRate}
       showFurigana={furiganaInApp(settings.furiganaMode)}

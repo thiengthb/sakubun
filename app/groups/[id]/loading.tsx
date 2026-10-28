@@ -41,6 +41,8 @@ export default function Loading() {
         <>
           <Skeleton className="h-9 w-28 rounded-sm md:h-7" />
           <Skeleton className="h-9 w-16 rounded-sm md:h-7" />
+          {/* Chia sẻ */}
+          <Skeleton className="h-9 w-24 rounded-sm md:h-7 md:w-20" />
           <Skeleton className="h-9 w-20 rounded-sm md:h-7" />
         </>
       }

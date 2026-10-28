@@ -8,6 +8,7 @@ import { LIST_CARD } from '@/components/common/list-card';
 import { SpokenLine } from '@/components/common/spoken-line';
 import { useServerAction } from '@/components/common/use-server-action';
 import { takeEntryAction } from '@/app/library/actions';
+import { LikeButton } from '@/components/features/library/like-button';
 import { buildFuriganaMarkup } from '@/lib/japanese/furigana';
 import { cn } from '@/lib/core/utils';
 
@@ -20,6 +21,8 @@ export interface LibraryEntryRow {
   level: string | null;
   origin: string;
   takeCount: number;
+  likes: number;
+  liked: boolean;
   // The learner's own copy, when they have one (same kind and expression).
   itemId: string | null;
 }
@@ -91,6 +94,14 @@ export function LibraryEntryCard({
             <span>{entry.takeCount} lượt lấy</span>
           </>
         )}
+        <span className="ml-auto">
+          <LikeButton
+            entryId={entry.id}
+            liked={entry.liked}
+            likes={entry.likes}
+            name={expression}
+          />
+        </span>
       </div>
     </li>
   );

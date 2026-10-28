@@ -14,6 +14,7 @@ import {
   type LibraryEntryRow,
 } from '@/components/features/library/library-entry-card';
 import { takeGroupAction } from '@/app/library/actions';
+import { LikeButton } from '@/components/features/library/like-button';
 import { GROUP_KIND_LABELS, isGroupKind } from '@/lib/library/group-kinds';
 
 const PAGE = 60;
@@ -34,6 +35,8 @@ export function LibraryGroupView({
     notes: string | null;
     origin: string;
     takeCount: number;
+    likes: number;
+    liked: boolean;
     myGroupId: string | null;
   };
   entries: LibraryEntryRow[];
@@ -63,6 +66,9 @@ export function LibraryGroupView({
       ]
         .filter(Boolean)
         .join(' · ')}
+      pageIcons={
+        <LikeButton entryId={group.id} liked={group.liked} likes={group.likes} name={group.name} />
+      }
       actions={
         group.myGroupId ? (
           <Button variant="outline" asChild>

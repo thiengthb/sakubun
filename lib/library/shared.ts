@@ -204,7 +204,7 @@ export async function listGroupEntries(db: LibraryClient, { level }: { level?: s
       authorId: true,
       takeCount: true,
       updatedAt: true,
-      _count: { select: { members: { where: { item: { status: PUBLIC } } } } },
+      _count: { select: { members: { where: { item: { status: PUBLIC } } }, likes: true } },
     },
     orderBy: [{ origin: 'desc' }, { takeCount: 'desc' }, { createdAt: 'asc' }, { id: 'asc' }],
   });
@@ -213,7 +213,7 @@ export async function listGroupEntries(db: LibraryClient, { level }: { level?: s
     return at < 0 ? JLPT_LEVELS.length : at;
   };
   return groups
-    .map(({ _count, ...g }) => ({ ...g, size: _count.members }))
+    .map(({ _count, ...g }) => ({ ...g, size: _count.members, likes: _count.likes }))
     .sort(
       (a, b) =>
         Number(b.origin === OPENJLPT_ORIGIN) - Number(a.origin === OPENJLPT_ORIGIN) ||
@@ -235,6 +235,7 @@ export async function getGroupEntry(db: LibraryClient, id: string) {
       authorId: true,
       takeCount: true,
       updatedAt: true,
+      _count: { select: { likes: true } },
     },
   });
   if (!group) return null;

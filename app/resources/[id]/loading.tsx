@@ -40,6 +40,8 @@ export default function Loading() {
         <>
           <Skeleton className={cn(BUTTON, 'md:w-28')} />
           <Skeleton className={cn(BUTTON, 'md:w-32')} />
+          {/* Chia sẻ */}
+          <Skeleton className="h-9 w-24 rounded-sm md:h-7 md:w-20" />
         </>
       }
       pageIcons={<Skeleton className="size-7 rounded-md" />}
