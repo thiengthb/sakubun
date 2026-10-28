@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { chooseMe, layoutTurns, scriptSpeakers } from '@/lib/kaiwa/layout';
+import { chooseMe, digestScript, layoutTurns, scriptSpeakers } from '@/lib/kaiwa/layout';
 import { parseScript } from '@/lib/kaiwa/parse';
 
 const lines = parseScript(
@@ -68,5 +68,24 @@ describe('chooseMe', () => {
     expect(chooseMe(speakers, null, 'C')).toBe('C');
     expect(chooseMe(speakers, 'B', 'C')).toBe('B');
     expect(chooseMe(speakers, 'D', 'グエン')).toBe('A');
+  });
+});
+
+describe('digestScript', () => {
+  it('counts the lines, lists the speakers and quotes the first spoken line without readings', () => {
+    expect(
+      digestScript(
+        '店の中は静かだった。 | Yên tĩnh.\nA: 何名様[なんめいさま]ですか。 | Mấy người?\nB: 二人です。',
+      ),
+    ).toEqual({ lineCount: 3, speakers: ['A', 'B'], firstLine: '何名様ですか。' });
+  });
+
+  it('quotes the first line of a monologue, and nothing of an empty script', () => {
+    expect(digestScript('雨が降る。\n傘を持つ。')).toEqual({
+      lineCount: 2,
+      speakers: [],
+      firstLine: '雨が降る。',
+    });
+    expect(digestScript('')).toEqual({ lineCount: 0, speakers: [], firstLine: '' });
   });
 });
