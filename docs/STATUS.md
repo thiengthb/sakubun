@@ -4,24 +4,19 @@ Trang này trả lời ba câu cho bất kỳ phiên Claude nào (kể cả từ
 việc tiếp theo là gì**. Cập nhật nó **trong cùng PR** với việc làm, và khi nhận một bước mới (xem
 "Bắt đầu phiên" trong `CLAUDE.md`). Lộ trình đầy đủ: `docs/roadmap.md`. Kế hoạch đã duyệt: `docs/plans/`.
 
-Cập nhật lần cuối: 2026-10-27 (Kaiwa sơ bộ K1–K5 đã lên `main` qua #156).
+Cập nhật lần cuối: 2026-10-28 (Kho chung L1–L6 đã lên `main`, #159–#167; kế hoạch Ôn nhanh đã duyệt).
 
 ## Đang làm
 
-| Bước                                                                       | Nhánh / PR                                                                                                           | Giữ bởi                              | Trạng thái                                |
-| -------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- | ------------------------------------ | ----------------------------------------- |
-| 8 L1 kho chung: `LibraryEntry`, nhóm, lượt thích, nạp OpenJLPT, lấy về     | L1a `feat/8-l1-library-entries` (#159), L1b `feat/8-l1b-library-take` (xếp trên L1a)                                 | Claude (phiên của thien, 2026-10-27) | hai PR mở; tiếp theo L2                   |
-| 8 L2 trang Kho chung `/library`: nhóm, từng mục, Lấy                       | `feat/8-l2-library-page` (xếp trên L1b)                                                                              | Claude (phiên của thien, 2026-10-27) | PR mở; tiếp theo L3                       |
-| 8 L3 công khai mục và nhóm, gỡ, "dựa trên", thích                          | L3a `feat/8-l3a-library-publish` (lib + test, xếp trên L2), L3b `feat/8-l3b-library-publish-ui` (nút Chia sẻ, Thích) | Claude (phiên của thien, 2026-10-27) | hai PR mở; tiếp theo L4                   |
-| 8 L4 tài khoản mới bắt đầu trống, Phân tích và Hướng dẫn trỏ tới Kho chung | `feat/8-l4-empty-start` (xếp trên L3b)                                                                               | Claude (phiên của thien, 2026-10-27) | PR mở; tiếp theo L5                       |
-| 8 L5 MCP `library_search`, `library_take`, `lookup` chỉ sang Kho chung     | `feat/8-l5-library-mcp` (xếp trên L4)                                                                                | Claude (phiên của thien, 2026-10-27) | PR mở; tiếp theo L6                       |
-| 8 L6 quản trị ẩn/hiện mục, mục ẩn theo tài khoản bị chặn hoặc đã xoá       | L6a `feat/8-l6-library-moderation` (#166), L6b `feat/8-l6b-library-moderation-ui` (#167)                    | Claude (phiên của thien, 2026-10-27) | hai PR mở; Kho chung L1–L6 xong phần code |
+| Bước | Nhánh / PR | Giữ bởi | Trạng thái |
+| --- | --- | --- | --- |
+| 8 C Ôn nhanh: kế hoạch (`docs/plans/2026-10-28-quick-review.md`) | `docs/quick-review-plan` | Claude (phiên của thien, 2026-10-28) | kế hoạch duyệt 2026-10-28; tiếp theo C1a (khung cho Codex) |
 
 ## Chờ thien
 
-- Merge chuỗi Kho chung theo thứ tự #159 → #160 → #161 → #162 → #163 → #164 → #165 → #166 → #167; trước mỗi lần
-  merge đổi base của PR sang `main`. #159 thêm bảng mới (migration chỉ cộng thêm): sao lưu DB NUC trước khi đưa lên.
-  Rồi thử `library_search` và `library_take` trong claude.ai (L5).
+- Giao Codex soạn `data/openjlpt/examples.json` (C1b) khi khung C1a đã merge.
+- Đưa bản có Kho chung (#159–#167, thêm bảng mới) lên NUC: sao lưu DB trước. Rồi thử `/library`, và
+  `library_search`, `library_take` trong claude.ai (L5).
 - Đưa bản có Kaiwa (#156, thêm bảng `Script` và cột `Script.analysis`) lên NUC: sao lưu DB trước. Rồi thử trong claude.ai: nhờ Claude soạn một đoạn hội thoại ngắn trên canvas, lưu, mở đường dẫn nó trả về; trên web thử chọn vai "Tôi là", rê chuột xem nghĩa, Thêm và Sửa.
 - Muốn trần khác 50 tài khoản thì đặt `MAX_ACCOUNTS` trên NUC.
 - Sau khi bản 7.3 lên NUC: mở Cài đặt > Hướng dẫn, kiểm địa chỉ MCP là `https://sakubun.thientnse.site/api/mcp`.
@@ -39,8 +34,11 @@ Cập nhật lần cuối: 2026-10-27 (Kaiwa sơ bộ K1–K5 đã lên `main` q
 4. Kaiwa sơ bộ xong 2026-10-27: K1 #151, K2 #152, rồi K3, K4, K3b (thẻ kiểu tin nhắn, vai "Tôi là" bên trái),
    K3c (sửa và tạo trên web) và K5 (rê chuột xem nghĩa) cùng lên `main` qua #156 (#153–#155, #157 merge vào nhánh
    xếp chồng). Giao diện Kaiwa còn thô, làm đẹp trong 7.4.
-5. Kho chung L1–L6 xong phần code 2026-10-27, mở thành chuỗi PR xếp chồng: L1a #159, L1b #160, L2 #161, L3a #162,
-   L3b #163, L4 #164, L5 #165, L6a #166, L6b #167. Tiếp theo: Ôn nhanh (C) cần kế hoạch riêng, rồi 7.4, rồi K6–K9.
+5. Kho chung L1–L6 xong, lên `main` 2026-10-28: L1a #159, L1b #160, L2 #161, L3a #162, L3b #163, L4 #164, L5 #165,
+   L6a #166, L6b #167.
+6. Ôn nhanh (C): kế hoạch `docs/plans/2026-10-28-quick-review.md` duyệt 2026-10-28 (Codex dịch câu ví dụ, mục mới là thẻ
+   giới thiệu, không có nút "Đoán"); làm C1a–C5. Sau đó 7.4
+   (làm lại UI, cùng các lỗi nhỏ bên dưới), rồi K6–K9.
 
 ## Việc nhỏ còn treo
 
