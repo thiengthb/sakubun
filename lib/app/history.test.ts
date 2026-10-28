@@ -64,7 +64,7 @@ describe('turnToRow', () => {
     const staged = H.turnToRow({ ...TURN, status: 'staged', answer: null, rating: null });
     expect(staged).toMatchObject({ status: 'PENDING', userAnswer: '', ratings: [] });
     expect(H.turnToRow({ ...TURN, status: 'skipped', rating: null }).status).toBe('SKIPPED');
-    expect(H.turnToRow({ ...TURN, item: null }).ratings[0].expression).toBe('(đã xóa)');
+    expect(H.turnToRow({ ...TURN, item: null }).ratings[0].expression).toBe('(đã xoá)');
   });
 });
 
