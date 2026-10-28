@@ -180,6 +180,7 @@ export function ItemAnalytics({
               command={`luyện tập trung mẫu ${stats.expression}`}
               label="Luyện riêng"
               size="default"
+              expandOnHover
               icon={Target}
             />
             {missing.length > 0 && (
@@ -187,6 +188,7 @@ export function ItemAnalytics({
                 command={`bổ sung ${missing.join(' và ')} cho mẫu ${stats.expression}`}
                 label="Nhờ bổ sung"
                 size="default"
+                expandOnHover
                 icon={Sparkles}
               />
             )}

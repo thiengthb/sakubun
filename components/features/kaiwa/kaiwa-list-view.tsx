@@ -26,6 +26,7 @@ export function KaiwaListView({ scripts }: { scripts: ScriptSummary[] }) {
             command={WRITE_SCRIPT_COMMAND}
             label="Soạn với AI"
             size="default"
+            expandOnHover
             icon={Sparkles}
           />
           <AddButton href="/kaiwa/new" />

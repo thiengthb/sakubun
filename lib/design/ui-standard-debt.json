@@ -2,8 +2,6 @@
   "$doc": "Breaks of docs/ui-standard.md that existed when the standard was locked (2026-10-24). rule id -> file -> count. Only ever shrinks: ui-standard.test.ts fails on anything new, and on anything fixed until this file is lowered. It is paid off by the step-6 page PRs, not by editing it.",
   "debt": {
     "icon-only-plain": {
-      "components/common/filter-popover.tsx": 1,
-      "components/common/sort-sheet.tsx": 1,
       "components/layout/sidebar-user.tsx": 1
     },
     "no-round-controls": {

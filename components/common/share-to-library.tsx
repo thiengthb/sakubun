@@ -20,6 +20,7 @@ import {
 } from '@/app/library/actions';
 import type { GroupShareStatus, ItemShareStatus } from '@/lib/library/publish';
 import { cn } from '@/lib/core/utils';
+import { ExpandingIconButton } from '@/components/common/expanding-icon-button';
 
 // "Chia sẻ" (phase 8, L3) on an item's or a group's own page: a header action that opens what will
 // go public, then Công khai, Cập nhật or Gỡ. Only the web shares (rule 4).
@@ -46,10 +47,12 @@ function ShareDialog({
   const [open, setOpen] = useState(false);
   return (
     <>
-      <Button variant="outline" onClick={() => setOpen(true)}>
-        <Globe aria-hidden className={cn(shared && 'text-accent-brand')} />
-        {shared ? 'Đang chia sẻ' : 'Chia sẻ'}
-      </Button>
+      <ExpandingIconButton
+        icon={Globe}
+        label={shared ? 'Đang chia sẻ' : 'Chia sẻ'}
+        onClick={() => setOpen(true)}
+        className={cn(shared && '[&>svg]:text-accent-brand')}
+      />
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
           <DialogHeader>

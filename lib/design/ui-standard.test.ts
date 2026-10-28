@@ -125,6 +125,10 @@ describe('ui standard: each check goes red on a bad sample', () => {
       check('icon-only-plain', `${imp}<Button size="icon" aria-label="Đóng"><X /></Button>`),
     ).toEqual([]);
     expect(check('icon-only-plain', `${imp}<Button><Lightbulb />Gợi ý</Button>`)).toEqual([]);
+    // ExpandingIconButton shows the word itself: on hover on a laptop, always on a phone for this icon.
+    expect(
+      check('icon-only-plain', `${imp}<ExpandingIconButton icon={Lightbulb} label="Gợi ý" />`),
+    ).toEqual([]);
   });
 
   it('card-actions-icon-only', () => {
@@ -163,6 +167,32 @@ describe('ui standard: each check goes red on a bad sample', () => {
     expect(check('card-text-one-line', '<p className="line-clamp-2">x</p>', card)).toHaveLength(1);
     expect(check('card-text-one-line', '<Truncate>{meaningVi}</Truncate>', card)).toEqual([]);
     expect(check('card-text-one-line', '<p className="line-clamp-3">x</p>')).toEqual([]);
+  });
+
+  it('header-actions-icon', () => {
+    expect(
+      check('header-actions-icon', 'actions={<Button variant="outline"><Pencil />Sửa</Button>}'),
+    ).toHaveLength(1);
+    expect(
+      check(
+        'header-actions-icon',
+        'actions={<><CopyCommandButton command={c} label="Luyện nhóm" size="default" /></>}',
+      ),
+    ).toHaveLength(1);
+    expect(
+      check(
+        'header-actions-icon',
+        'actions={<><CopyCommandButton command={c} label="Luyện" expandOnHover /><ExpandingIconButton icon={Pencil} label="Sửa" /></>}',
+      ),
+    ).toEqual([]);
+    // The primary action keeps its word; a button elsewhere on the page is not a header action.
+    expect(
+      check(
+        'header-actions-icon',
+        'actions={<Button onClick={take}><Download />Lấy cả nhóm</Button>}',
+      ),
+    ).toEqual([]);
+    expect(check('header-actions-icon', '<Button variant="outline">Sửa</Button>')).toEqual([]);
   });
 
   it('no-form-dialog', () => {

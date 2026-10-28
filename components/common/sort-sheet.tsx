@@ -41,15 +41,7 @@ export function SortSheet({
     <div className="relative shrink-0 lg:hidden">
       <BottomSheet
         icon={ArrowUpDown}
-        trigger={
-          <ExpandingIconButton
-            icon={ArrowUpDown}
-            label="Sắp xếp"
-            labelOnPhone
-            aria-label={label}
-            title={label}
-          />
-        }
+        trigger={<ExpandingIconButton icon={ArrowUpDown} label="Sắp xếp" aria-label={label} />}
         title="Sắp xếp"
         description={
           active
