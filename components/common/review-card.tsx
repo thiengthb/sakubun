@@ -32,13 +32,22 @@ export function Sentence({
   segments,
   fill,
   showFurigana,
+  lookup = false,
+  hideTarget = false,
 }: {
   segments: Segment[];
   fill: string | null;
   showFurigana: boolean;
+  /** The hover lookup on its words (7.4b); `hideTarget` keeps the word under review out of it. */
+  lookup?: boolean;
+  hideTarget?: boolean;
 }) {
   return (
-    <p lang="ja" className="furigana text-2xl leading-loose font-medium sm:text-3xl">
+    <p
+      lang="ja"
+      data-lookup={lookup || undefined}
+      className="furigana text-2xl leading-loose font-medium sm:text-3xl"
+    >
       {segments.map((s, i) => {
         if (s.mark === 'blank') {
           return fill ? (
@@ -58,13 +67,14 @@ export function Sentence({
         const target =
           s.mark === 'target' &&
           'font-semibold text-accent-brand underline decoration-2 underline-offset-8';
+        const hide = (hideTarget && s.mark === 'target') || undefined;
         return s.reading ? (
-          <ruby key={i} className={cn(target)}>
+          <ruby key={i} className={cn(target)} data-lookup-hide={hide}>
             {s.text}
             <rt className={showFurigana ? 'visible' : 'invisible'}>{s.reading}</rt>
           </ruby>
         ) : (
-          <span key={i} className={cn(target)}>
+          <span key={i} className={cn(target)} data-lookup-hide={hide}>
             {s.text}
           </span>
         );
@@ -168,6 +178,8 @@ export function ReviewCard({
             segments={segments}
             fill={card.mode === 'cloze' && answered ? fill : null}
             showFurigana={showFurigana}
+            lookup
+            hideTarget={!answered}
           />
         </TapToHear>
       ) : (

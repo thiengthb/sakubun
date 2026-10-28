@@ -107,9 +107,10 @@ Thẻ của Tài nguyên, Kho chung, Lịch sử, Hội thoại (file `*-card.ts
 
 ## Chữ trên trang và trạng thái
 
-| Luật                                                                                                                                                            | Khoá bởi     |
-| --------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
-| Mỗi phần giữ tiêu đề và nhãn; giải thích dài để sau nút (i).                                                                                                    | ảnh          |
-| Cách đọc tiếng Nhật nằm bên tiêu đề dạng `[かな]`, chữ nhỏ, cùng đường chân chữ; không đặt furigana phía trên tiêu đề.                                          | ảnh          |
-| Sáu trạng thái của nút (thường, giữ chuột, focus, bấm, khoá, đang tải) và sáu trạng thái dữ liệu (rỗng, đang tải, lỗi, chữ dài, số 0, số rất lớn) theo thienui. | thienui, ảnh |
-| Trạng thái rỗng là hộp viền đứt căn trái, không lặp nút đã có ở đầu trang.                                                                                      | ảnh          |
+| Luật                                                                                                                                                                                                                                                                               | Khoá bởi                  |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- |
+| Mỗi phần giữ tiêu đề và nhãn; giải thích dài để sau nút (i).                                                                                                                                                                                                                       | ảnh                       |
+| Cách đọc tiếng Nhật nằm bên tiêu đề dạng `[かな]`, chữ nhỏ, cùng đường chân chữ; không đặt furigana phía trên tiêu đề.                                                                                                                                                             | ảnh                       |
+| Sáu trạng thái của nút (thường, giữ chuột, focus, bấm, khoá, đang tải) và sáu trạng thái dữ liệu (rỗng, đang tải, lỗi, chữ dài, số 0, số rất lớn) theo thienui.                                                                                                                    | thienui, ảnh              |
+| Trạng thái rỗng là hộp viền đứt căn trái, không lặp nút đã có ở đầu trang.                                                                                                                                                                                                         | ảnh                       |
+| Câu tiếng Nhật trên trang (đề, đáp án, câu ví dụ, câu hội thoại) tra được từ: gắn `data-lookup` (`SpokenLine lookup`, `'hover'` khi chạm thuộc về thẻ). Từ đang ôn bọc `data-lookup-hide`. Một lớp chung (`components/common/word-lookup.tsx`) gạch chấm từ có nghĩa và mở thẻ từ. | `e2e/word-lookup.spec.ts` |
