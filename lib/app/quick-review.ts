@@ -2,6 +2,7 @@ import type { UserDb } from '@/lib/db/user-db';
 import { err, ok, type ActionResult } from '@/lib/core/action-result';
 import { recordReviews } from '@/lib/app/record-review';
 import { getQueue } from '@/lib/app/queue';
+import { classOf, quizPool } from '@/lib/app/quiz-pool';
 import { answerSurface, buildCloze, type ClozeChoice, type ClozeExample } from '@/lib/domain/cloze';
 import { CARD_STATE } from '@/lib/domain/queue';
 import {
@@ -16,8 +17,6 @@ import { asItemKind, VOCAB_KIND, type ItemKind } from '@/lib/library/item-kinds'
 import { parseEnrichment } from '@/lib/library/enrichment';
 import { getSettings } from '@/lib/library/practice';
 import { searchForms } from '@/lib/session/staging-checks';
-import { JLPT_LEVELS } from '@/lib/settings/schema';
-import { studyDayStart } from '@/lib/srs/select';
 import { rateOnce, type RatingValue, type SrsFields } from '@/lib/srs/srs';
 
 // Quick review on the web: the queue's cards dressed for the screen (an example sentence with the
@@ -48,17 +47,21 @@ interface QuickCardBase {
 
 export type QuickCard =
   | (QuickCardBase & { mode: 'flip'; sentence: QuickSentence | null })
-  | (QuickCardBase & { mode: 'cloze'; sentence: QuickSentence; choices: ClozeChoice[] });
+  | (QuickCardBase & {
+      mode: 'cloze';
+      sentence: QuickSentence;
+      // What fills the blank once answered.
+      answer: string;
+      choices: ClozeChoice[];
+    });
 
 export interface QuickReview {
   cards: QuickCard[];
   nextDueAt: Date | null;
 }
 
-// Distractors come from this many items per kind, ordered by id (a stable, well-mixed sample).
-const POOL_SIZE = 300;
-
-// FNV-1a: a stable number per item and study day, so a reload shows the same card.
+// FNV-1a: a stable number per item and review count, so a reload shows the same card and the next
+// review of the item a different sentence or order.
 function seedFor(text: string): number {
   let hash = 0x811c9dc5;
   for (let i = 0; i < text.length; i++) {
@@ -94,15 +97,6 @@ function underlined(
     };
   }
   return null;
-}
-
-function neighbours(levels: readonly string[]): string[] {
-  const at = new Set<number>();
-  for (const level of levels) {
-    const i = JLPT_LEVELS.indexOf(level as (typeof JLPT_LEVELS)[number]);
-    if (i >= 0) for (const j of [i - 1, i, i + 1]) if (j >= 0 && j < JLPT_LEVELS.length) at.add(j);
-  }
-  return [...at].map((i) => JLPT_LEVELS[i]);
 }
 
 type CardItem = {
@@ -168,55 +162,36 @@ export async function getQuickReview(
   const settings = await getSettings(db);
   const queue = await getQueue(db, now, limit);
   const ids = queue.cards.map((c) => c.id);
-  const [items, states] = await Promise.all([
+  const [items, states, pool] = await Promise.all([
     db.item.findMany({
       where: { id: { in: ids } },
       select: { id: true, hanviet: true, enrichment: true, notes: true },
     }),
     db.srsState.findMany({ where: { itemId: { in: ids } } }),
+    quizPool(),
   ]);
   const itemById = new Map(items.map((i) => [i.id, i]));
   const srsById = new Map(states.map((s) => [s.itemId, s]));
 
-  const kinds = [...new Set(queue.cards.map((c) => c.kind))];
-  const pools = new Map(
-    await Promise.all(
-      kinds.map(async (kind) => {
-        const levels = neighbours(queue.cards.filter((c) => c.kind === kind).map((c) => c.level));
-        const rows = await db.item.findMany({
-          where: { kind, suspended: false, level: { in: levels } },
-          select: { id: true, kind: true, expression: true, reading: true, level: true },
-          orderBy: { id: 'asc' },
-          take: POOL_SIZE,
-        });
-        return [kind, rows.map((r) => ({ ...r, kind: asItemKind(r.kind) }))] as const;
-      }),
-    ),
-  );
-
-  const day = studyDayStart(now, settings.dayCutoffHour).toISOString();
   const cards = queue.cards.map((queued): QuickCard => {
     const item = itemById.get(queued.id)!;
-    const base = baseCard(
-      { ...queued, ...item },
-      srsById.get(queued.id)!,
-      settings.desiredRetention,
-      now,
-    );
+    const srs = srsById.get(queued.id)!;
+    const base = baseCard({ ...queued, ...item }, srs, settings.desiredRetention, now);
     const examples = examplesOf(item);
     // A new item is met first as a flip card; a cloze tests one already seen.
     if (!base.isNew) {
       const cloze = buildCloze({
-        target: queued,
+        target: { ...queued, cls: classOf(pool, queued.kind, queued.expression) },
         examples,
-        pool: pools.get(queued.kind) ?? [],
-        seed: seedFor(`${queued.id}:${day}`),
+        pool: pool.items[queued.kind],
+        seed: seedFor(`${queued.id}:${srs.reps}`),
       });
       if (cloze) {
         return {
           ...base,
           mode: 'cloze',
           sentence: { segments: cloze.sentence, translation: cloze.translation },
+          answer: cloze.answer,
           choices: cloze.choices,
         };
       }

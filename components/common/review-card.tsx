@@ -119,6 +119,8 @@ export function ReviewCard({
   // The question already shows a word's kanji, so its answer leads with the reading; a grammar
   // pattern leads with itself, since the sentence shows only one form of it.
   const heading = card.kind === 'VOCAB' && card.reading ? card.reading : card.expression;
+  // A cloze puts back the text it blanked (より), not the pattern's name (〜より).
+  const fill = card.mode === 'cloze' ? card.answer : card.expression;
 
   return (
     <div className="flex flex-col gap-6">
@@ -143,7 +145,7 @@ export function ReviewCard({
           {(card.mode === 'flip' || answered) && (
             <span className="flex h-lh shrink-0 items-center">
               <SpeakButton
-                text={spokenText(segments, card.expression)}
+                text={spokenText(segments, fill)}
                 label="Nghe câu"
                 speaker={tts.voiceSpeaker}
                 rate={tts.speechRate}
@@ -152,7 +154,7 @@ export function ReviewCard({
           )}
           <Sentence
             segments={segments}
-            fill={card.mode === 'cloze' && answered ? card.expression : null}
+            fill={card.mode === 'cloze' && answered ? fill : null}
             showFurigana={showFurigana}
           />
         </TapToHear>

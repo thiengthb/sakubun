@@ -35,6 +35,13 @@ const GRADES: { rating: RatingValue; label: string; tone?: string }[] = [
   { rating: 4, label: 'Dễ', tone: 'text-ok' },
 ];
 
+// A missed card comes back at the end of the session for practice, ungraded: its schedule already took
+// the miss. A cloze shows its choices in another order, so the place of the answer is not what is
+// remembered.
+function retryCard(card: QuickCard): QuickCard {
+  return card.mode === 'cloze' ? { ...card, choices: [...card.choices].reverse() } : card;
+}
+
 /** "Còn 4 thẻ: 1 ngữ pháp, 3 từ vựng", naming only the kinds left. */
 function leftLine(left: QuickCard[]): string {
   const grammar = left.filter((c) => c.kind === 'GRAMMAR').length;
@@ -51,25 +58,29 @@ function KeyHints({
   card,
   picked,
   revealed,
+  practice,
 }: {
   card: QuickCard;
   picked: string | null;
   revealed: boolean;
+  practice: boolean;
 }) {
   const keys: [string, string][] =
     card.mode === 'cloze'
       ? picked
         ? [['Enter', 'thẻ tiếp']]
         : [['1 2 3 4', 'chọn đáp án theo số trên thẻ']]
-      : revealed
-        ? [
-            ['1', 'Quên'],
-            ['2', 'Khó'],
-            ['3', 'Nhớ'],
-            ['4', 'Dễ'],
-            ['Enter', 'Nhớ'],
-          ]
-        : [['Space', 'xem đáp án']];
+      : revealed && practice
+        ? [['Enter', 'thẻ tiếp']]
+        : revealed
+          ? [
+              ['1', 'Quên'],
+              ['2', 'Khó'],
+              ['3', 'Nhớ'],
+              ['4', 'Dễ'],
+              ['Enter', 'Nhớ'],
+            ]
+          : [['Space', 'xem đáp án']];
   return (
     <p className="mr-auto flex flex-wrap items-center gap-x-4 gap-y-2 self-center text-xs text-muted-foreground max-lg:hidden">
       <span>Phím tắt</span>
@@ -146,17 +157,28 @@ export function QuickReviewView({
   // sent again rather than reopening the choices (a second pick would grade with the answer known).
   const [unsent, setUnsent] = useState<CardAnswer | null>(null);
   const [results, setResults] = useState<Result[]>([]);
+  // The end-of-session round over the cards missed above; null until it starts.
+  const [retry, setRetry] = useState<{
+    cards: QuickCard[];
+    index: number;
+    right: boolean[];
+  } | null>(null);
+  const missed = useRef<QuickCard[]>([]);
   const [showFurigana, setShowFurigana] = useState(furiganaDefault);
   const [isPending, startTransition] = useTransition();
   // The answer bar rests on the window bottom while the card is short, and sticks there when long.
   const sessionRef = useRef<HTMLDivElement>(null);
   useFillWindow(sessionRef);
 
-  const card = cards[index] as QuickCard | undefined;
-  const done = index >= cards.length;
+  const practice = retry !== null;
+  const deck = retry ? retry.cards : cards;
+  const at = retry ? retry.index : index;
+  const card = deck[at] as QuickCard | undefined;
+  const done = at >= deck.length;
 
   const send = (payload: CardAnswer, rating: RatingValue, advance: boolean) => {
     if (!card || isPending) return;
+    const answered = card;
     const kind = card.kind;
     startTransition(async () => {
       const result = await answer(payload).catch((): ActionResult<unknown> => ({
@@ -170,12 +192,19 @@ export function QuickReviewView({
       }
       setUnsent(null);
       setResults((r) => [...r, { kind, rating }]);
+      if (rating === 1) missed.current.push(retryCard(answered));
       if (advance) next();
     });
   };
 
   const next = () => {
-    setIndex((i) => i + 1);
+    if (retry) {
+      setRetry({ ...retry, index: retry.index + 1 });
+    } else if (index + 1 >= cards.length && missed.current.length > 0) {
+      setRetry({ cards: missed.current, index: 0, right: [] });
+    } else {
+      setIndex((i) => i + 1);
+    }
     setPicked(null);
     setRevealed(false);
     setUnsent(null);
@@ -185,6 +214,10 @@ export function QuickReviewView({
   const pick = (choiceId: string) => {
     if (!card || card.mode !== 'cloze' || picked) return;
     setPicked(choiceId);
+    if (retry) {
+      setRetry({ ...retry, right: [...retry.right, choiceId === card.itemId] });
+      return;
+    }
     send({ itemId: card.itemId, mode: 'cloze', choiceId }, choiceId === card.itemId ? 3 : 1, false);
   };
   const resend = () => {
@@ -196,9 +229,15 @@ export function QuickReviewView({
     send({ itemId: card.itemId, mode: 'flip', rating }, rating, true);
   };
 
-  const graded = card?.mode === 'cloze' && picked !== null && results.length > index;
+  const graded = card?.mode === 'cloze' && picked !== null && (practice || results.length > index);
   const showReveal = card?.mode === 'flip' && !revealed;
-  const showGrade = card?.mode === 'flip' && revealed;
+  const showGrade = card?.mode === 'flip' && revealed && !practice;
+  // A practice flip is not graded: once its answer is shown, the learner moves on.
+  const showNext = graded || (card?.mode === 'flip' && revealed && practice);
+  const practiceNext = () => {
+    if (retry && card?.mode === 'flip') setRetry({ ...retry, right: [...retry.right, true] });
+    next();
+  };
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -211,7 +250,7 @@ export function QuickReviewView({
         grade(Number(e.key) as RatingValue);
       } else if (e.key === 'Enter' || e.key === ' ') {
         if (showReveal) setRevealed(true);
-        else if (graded) next();
+        else if (showNext) practiceNext();
         else if (unsent) resend();
         // A focused grade button handles its own Enter; otherwise Enter means "Nhớ".
         else if (showGrade && !(e.target instanceof HTMLButtonElement)) grade(3);
@@ -261,26 +300,33 @@ export function QuickReviewView({
     <PageShell
       template="form"
       title="Ôn nhanh"
-      meta={<span className="tabular-nums">{leftLine(cards.slice(index))}</span>}
+      meta={
+        <span className="tabular-nums">
+          {retry && !done ? `Làm lại ${retry.cards.length} câu sai` : leftLine(cards.slice(index))}
+        </span>
+      }
       pageIcons={furigana}
     >
       <div ref={sessionRef} className="flex flex-col gap-6 md:gap-8">
         <div
           className="flex gap-1.5"
           role="img"
-          aria-label={`Thẻ ${Math.min(index + 1, cards.length)} / ${cards.length}`}
+          aria-label={`${retry ? 'Làm lại' : 'Thẻ'} ${Math.min(at + 1, deck.length)} / ${deck.length}`}
         >
-          {cards.map((c, i) => (
-            <div
-              key={c.itemId}
-              className={cn(
-                'h-2 flex-1 rounded-full bg-muted',
-                i < results.length &&
-                  (isRemembered(results[i].rating) ? 'bg-ok' : 'bg-destructive'),
-                i === index && i >= results.length && 'bg-accent-brand',
-              )}
-            />
-          ))}
+          {deck.map((c, i) => {
+            const right = retry ? retry.right[i] : results[i] && isRemembered(results[i].rating);
+            const answeredAt = retry ? retry.right.length : results.length;
+            return (
+              <div
+                key={c.itemId}
+                className={cn(
+                  'h-2 flex-1 rounded-full bg-muted',
+                  i < answeredAt && (right ? 'bg-ok' : 'bg-destructive'),
+                  i === at && i >= answeredAt && 'bg-accent-brand',
+                )}
+              />
+            );
+          })}
         </div>
 
         <div className="flex-1">
@@ -288,7 +334,7 @@ export function QuickReviewView({
             <Summary results={results} nextDueAt={nextDueAt} />
           ) : (
             <ReviewCard
-              key={card.itemId}
+              key={`${practice ? 'retry' : 'main'}-${card.itemId}`}
               card={card}
               picked={picked}
               revealed={revealed}
@@ -301,7 +347,9 @@ export function QuickReviewView({
 
         {/* Phone: the bar's buttons share the width; laptop: they keep their own size, at the right. */}
         <div className="sticky bottom-0 flex gap-2 bg-background pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] max-sm:[&>*]:flex-1 sm:justify-end sm:[&>*]:min-w-32">
-          {card && !done && <KeyHints card={card} picked={picked} revealed={revealed} />}
+          {card && !done && (
+            <KeyHints card={card} picked={picked} revealed={revealed} practice={practice} />
+          )}
           {showReveal && (
             <Button size="lg" onClick={() => setRevealed(true)}>
               Xem đáp án
@@ -336,8 +384,8 @@ export function QuickReviewView({
               Gửi lại
             </Button>
           )}
-          {card?.mode === 'cloze' && picked && !unsent && (
-            <Button size="lg" disabled={!graded} onClick={next}>
+          {((card?.mode === 'cloze' && picked && !unsent) || (showNext && practice)) && (
+            <Button size="lg" disabled={!showNext} onClick={practiceNext}>
               Tiếp
             </Button>
           )}

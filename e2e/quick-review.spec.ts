@@ -185,6 +185,23 @@ async function runSession(page: Page, { keyboard = false } = {}) {
     if (n < 3) await expect(page.getByLabel(`Thẻ ${n + 2} / 4`)).toBeVisible();
   }
 
+  if (keyboard) {
+    // The two misses (the wrong cloze, the flip graded Quên) come back once more, ungraded.
+    for (let n = 0; n < 2; n++) {
+      await expect(page.getByLabel(`Làm lại ${n + 1} / 2`)).toBeVisible();
+      const choices = page.getByRole('group', { name: 'Chọn đáp án' });
+      if (await choices.isVisible()) {
+        const labels = await choices.getByRole('button').allTextContents();
+        await page.keyboard.press(String(labels.findIndex((t) => t.includes('約束')) + 1));
+      } else {
+        await page.keyboard.press(' ');
+        await expect(page.getByRole('group', { name: 'Chấm thẻ' })).toHaveCount(0);
+      }
+      await page.keyboard.press('Enter');
+    }
+    expect(reviewLogCount(), 'practice answers are not graded').toBe(4);
+  }
+
   await expect(page.getByText('Xong buổi ôn')).toBeVisible();
   await expect(page.getByText(keyboard ? 'Nhớ 2 trên 4 thẻ.' : 'Nhớ 4 trên 4 thẻ.')).toBeVisible();
   expect(ratings()).toEqual(keyboard ? [1, 1, 3, 4] : [3, 3, 3, 3]);
