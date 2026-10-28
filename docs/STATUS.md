@@ -14,6 +14,7 @@ Cập nhật lần cuối: 2026-10-27 (Kaiwa sơ bộ K1–K5 đã lên `main` q
 | 8 L2 trang Kho chung `/library`: nhóm, từng mục, Lấy                       | `feat/8-l2-library-page` (xếp trên L1b)                                                                              | Claude (phiên của thien, 2026-10-27) | PR mở; tiếp theo L3     |
 | 8 L3 công khai mục và nhóm, gỡ, "dựa trên", thích                          | L3a `feat/8-l3a-library-publish` (lib + test, xếp trên L2), L3b `feat/8-l3b-library-publish-ui` (nút Chia sẻ, Thích) | Claude (phiên của thien, 2026-10-27) | hai PR mở; tiếp theo L4 |
 | 8 L4 tài khoản mới bắt đầu trống, Phân tích và Hướng dẫn trỏ tới Kho chung | `feat/8-l4-empty-start` (xếp trên L3b)                                                                               | Claude (phiên của thien, 2026-10-27) | PR mở; tiếp theo L5     |
+| 8 L5 MCP `library_search`, `library_take`, `lookup` chỉ sang Kho chung     | `feat/8-l5-library-mcp` (xếp trên L4)                                                                                | Claude (phiên của thien, 2026-10-27) | PR mở; tiếp theo L6     |
 
 ## Chờ thien
 

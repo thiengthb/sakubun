@@ -15,10 +15,10 @@ function registered(profile: McpProfile) {
 }
 
 describe('MCP profiles', () => {
-  it('v2 có bảy tool học, ba tool Kaiwa và hai prompt hoc, kaiwa', () => {
+  it('v2 có bảy tool học, ba tool Kaiwa, hai tool Kho chung và hai prompt hoc, kaiwa', () => {
     const { tools, prompts } = registered('v2');
     expect(tools.sort()).toEqual([...V2_TOOLS].sort());
-    expect(tools).toHaveLength(10);
+    expect(tools).toHaveLength(12);
     expect(prompts).toEqual(['hoc', 'kaiwa']);
   });
 

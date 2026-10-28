@@ -41,6 +41,26 @@ beforeAll(async () => {
   await server.connect(serverSide);
   client = new Client({ name: 'v2-test', version: '0.0.0' });
   await client.connect(clientSide);
+  // A small Kho chung, so lookup's fallback (L5) does not seed all of OpenJLPT; its own cases are in
+  // lib/mcp/library.test.ts.
+  await (
+    await import('@/lib/library/shared')
+  ).seedOpenJlpt(prisma, [
+    {
+      id: 'GRAMMAR-〜ている',
+      kind: 'GRAMMAR',
+      expression: '〜ている',
+      reading: null,
+      hanviet: null,
+      meaningVi: 'đang',
+      level: 'N5',
+      notes: '',
+      tags: '[]',
+      source: 'OPENJLPT',
+      suspended: false,
+      starred: false,
+    },
+  ]);
 });
 
 afterAll(async () => {
@@ -60,7 +80,7 @@ beforeEach(async () => {
 });
 
 describe('MCP v2', () => {
-  it('lists exactly the seven study tools, the three Kaiwa tools and two prompts', async () => {
+  it('lists exactly the seven study tools, three Kaiwa and two Kho chung tools, and two prompts', async () => {
     const { tools } = await client.listTools();
     expect(tools.map((t) => t.name).sort()).toEqual(
       [
@@ -69,6 +89,8 @@ describe('MCP v2', () => {
         'kaiwa_get',
         'kaiwa_list',
         'kaiwa_save',
+        'library_search',
+        'library_take',
         'lookup',
         'next_turn',
         'skip_turn',

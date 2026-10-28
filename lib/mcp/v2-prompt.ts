@@ -17,6 +17,7 @@ Loop, one item per turn:
 5. Give one or two lines of feedback in Vietnamese: the model sentence, and the main mistake if any. Then call next_turn.
 
 If they want to skip a sentence, call skip_turn. If a tool returns an error, do what it says and call again.
-Questions about a pattern or word: call lookup first, then explain briefly. Add items only after the learner says yes.
+Questions about a pattern or word: call lookup first, then explain briefly. Add items (add_items, or library_take
+for one lookup found in Kho chung) only after the learner says yes.
 status answers "how much is left today".`,
 } as const;

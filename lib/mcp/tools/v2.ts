@@ -13,6 +13,7 @@ import {
 } from '@/lib/app/turn';
 import { CARD_STATE } from '@/lib/domain/queue';
 import { guard, learnerDb, mcpError, type McpServer, type ToolExtra } from '@/lib/mcp/tool-kit';
+import { findShared } from '@/lib/mcp/tools/library';
 import { ERROR_TAGS } from '@/lib/session/error-tags';
 import { JLPT_LEVELS } from '@/lib/settings/schema';
 
@@ -90,13 +91,22 @@ export function renderGraded(data: GradedTurn, now: Date) {
   ]);
 }
 
-export function renderFound(query: string, items: FoundItem[]) {
-  if (items.length === 0) {
+export function renderNotFound(query: string, shared: string[]) {
+  if (shared.length === 0) {
     return text([
       `No item matches "${query}".`,
       'next: answer from your own knowledge; offer add_items.',
     ]);
   }
+  return text([
+    `No item in the learner's library matches "${query}". In Kho chung:`,
+    ...shared,
+    'next: explain it; offer library_take (only with their yes).',
+  ]);
+}
+
+export function renderFound(query: string, items: FoundItem[]) {
+  if (items.length === 0) return renderNotFound(query, []);
   return text(
     items.map((i) => {
       const reading = i.reading ? ` (${i.reading})` : '';
@@ -192,8 +202,14 @@ export function registerV2Tools(server: McpServer) {
     { query: z.string().min(1), kind: KIND.optional() },
     guard(
       'lookup',
-      async ({ query, kind }: { query: string; kind?: 'GRAMMAR' | 'VOCAB' }, extra: ToolExtra) =>
-        renderFound(query, await findItems(learnerDb(extra), query, kind)),
+      async ({ query, kind }: { query: string; kind?: 'GRAMMAR' | 'VOCAB' }, extra: ToolExtra) => {
+        const db = learnerDb(extra);
+        const items = await findItems(db, query, kind);
+        // Not the learner's yet: say whether Kho chung has it (phase 8, L5).
+        return items.length > 0
+          ? renderFound(query, items)
+          : renderNotFound(query, await findShared(db, query, { kind, take: 3 }));
+      },
     ),
   );
 

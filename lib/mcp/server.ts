@@ -2,6 +2,7 @@ import { createMcpHandler } from 'mcp-handler';
 import type { McpProfile } from '@/lib/mcp/profiles';
 import { registerPlannerTools } from '@/lib/mcp/tools/planner';
 import { registerKaiwaTools } from '@/lib/mcp/tools/kaiwa';
+import { registerLibraryTools } from '@/lib/mcp/tools/library';
 import { registerV2Tools } from '@/lib/mcp/tools/v2';
 import { KAIWA_PROMPT } from '@/lib/mcp/kaiwa-prompt';
 import { HOC_PROMPT } from '@/lib/mcp/v2-prompt';
@@ -17,6 +18,7 @@ export function registerAll(server: McpServer, profile: McpProfile): void {
   }
   registerV2Tools(server);
   registerKaiwaTools(server);
+  registerLibraryTools(server);
   for (const prompt of [HOC_PROMPT, KAIWA_PROMPT]) {
     server.prompt(prompt.name, prompt.description, async () => ({
       messages: [{ role: 'user', content: { type: 'text', text: prompt.text } }],
