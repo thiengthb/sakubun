@@ -17,6 +17,22 @@ export const GROUP_TYPE = 'GROUP';
 export const OPENJLPT_ORIGIN = 'OPENJLPT';
 export const LEARNER_ORIGIN = 'LEARNER';
 export const PUBLIC = 'public';
+// Taken down by its author (publish.ts), hidden by the admin (moderation.ts), or left by an account
+// that was deleted: then it only still shows inside other learners' groups (plan rule 9).
+export const HIDDEN = 'hidden';
+export const REMOVED = 'removed';
+export const ORPHAN = 'orphan';
+
+// Whose entries show: OpenJLPT's and those of accounts not banned (L6). A banned author's entries come
+// back by themselves when the ban is lifted.
+const AUTHOR_SHOWN = {
+  OR: [{ authorId: null }, { author: { OR: [{ banned: false }, { banned: null }] } }],
+};
+// An entry or group anyone can find and take. Under AND, so a query's own OR (searchEntries) adds to it.
+export const VISIBLE = { status: PUBLIC, AND: [AUTHOR_SHOWN] };
+// An entry inside a shared group: also one whose author's account was deleted, because whoever made
+// the group chose it.
+export const VISIBLE_MEMBER = { status: { in: [PUBLIC, ORPHAN] }, AND: [AUTHOR_SHOWN] };
 
 const ITEM_TYPES = [GRAMMAR_KIND, VOCAB_KIND] as const;
 type ItemType = (typeof ITEM_TYPES)[number];
@@ -163,7 +179,7 @@ export async function searchEntries(db: LibraryClient, query: SearchQuery = {}) 
   const text = query.text?.trim();
   return db.libraryEntry.findMany({
     where: {
-      status: PUBLIC,
+      ...VISIBLE,
       type: query.type ?? { in: [...ITEM_TYPES] },
       ...(query.level ? { level: query.level } : {}),
       ...(text
@@ -193,7 +209,7 @@ export async function searchEntries(db: LibraryClient, query: SearchQuery = {}) 
 // Shared groups, public only: OpenJLPT's level groups first, in level order, then the most taken.
 export async function listGroupEntries(db: LibraryClient, { level }: { level?: string } = {}) {
   const groups = await db.libraryEntry.findMany({
-    where: { type: GROUP_TYPE, status: PUBLIC, ...(level ? { level } : {}) },
+    where: { type: GROUP_TYPE, ...VISIBLE, ...(level ? { level } : {}) },
     select: {
       id: true,
       name: true,
@@ -204,7 +220,7 @@ export async function listGroupEntries(db: LibraryClient, { level }: { level?: s
       authorId: true,
       takeCount: true,
       updatedAt: true,
-      _count: { select: { members: { where: { item: { status: PUBLIC } } }, likes: true } },
+      _count: { select: { members: { where: { item: VISIBLE_MEMBER } }, likes: true } },
     },
     orderBy: [{ origin: 'desc' }, { takeCount: 'desc' }, { createdAt: 'asc' }, { id: 'asc' }],
   });
@@ -224,7 +240,7 @@ export async function listGroupEntries(db: LibraryClient, { level }: { level?: s
 // One public group with its public entries in order; null when it is not shared (any more).
 export async function getGroupEntry(db: LibraryClient, id: string) {
   const group = await db.libraryEntry.findFirst({
-    where: { id, type: GROUP_TYPE, status: PUBLIC },
+    where: { id, type: GROUP_TYPE, ...VISIBLE },
     select: {
       id: true,
       name: true,
@@ -240,7 +256,7 @@ export async function getGroupEntry(db: LibraryClient, id: string) {
   });
   if (!group) return null;
   const members = await db.libraryGroupMember.findMany({
-    where: { groupEntryId: id, item: { status: PUBLIC } },
+    where: { groupEntryId: id, item: VISIBLE_MEMBER },
     orderBy: { position: 'asc' },
     select: { item: { select: ENTRY_FIELDS } },
   });

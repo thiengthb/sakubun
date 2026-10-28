@@ -119,6 +119,7 @@ const ACTION_LABEL: Record<GroupShareStatus['preview'][number]['action'], string
   update: 'Cập nhật',
   reuse: 'Dùng bản gốc',
   same: 'Đã chia sẻ',
+  removed: 'Quản trị đã ẩn, không đưa lên',
 };
 
 export function GroupShareButton({
@@ -133,19 +134,20 @@ export function GroupShareButton({
       r.created ? `Đã công khai nhóm và ${r.items} mục` : 'Đã cập nhật nhóm trên Kho chung',
   });
   const unpublish = useServerAction(unpublishGroupAction, { success: 'Đã gỡ nhóm khỏi Kho chung' });
-  const { shared, preview } = status;
+  const { shared, preview, blocked } = status;
   return (
     <ShareDialog
       shared={!!shared}
       title={shared ? 'Nhóm đang chia sẻ trên Kho chung' : 'Chia sẻ nhóm lên Kho chung'}
       description={
-        preview.length === 0
+        blocked ??
+        (preview.length === 0
           ? 'Nhóm còn trống. Thêm mục vào nhóm rồi mới công khai được.'
           : shared
             ? `${shared.takeCount} lượt lấy. Cập nhật để Kho chung theo đúng nhóm bây giờ. Gỡ nhóm thì các mục đã chia sẻ vẫn ở lại, gỡ từng mục ở trang của mục.`
-            : `Nhóm và ${preview.length} mục dưới đây sẽ lên Kho chung. Mục không có trong nhóm vẫn riêng tư.`
+            : `Nhóm và ${preview.length} mục dưới đây sẽ lên Kho chung. Mục không có trong nhóm vẫn riêng tư.`)
       }
-      publish={preview.length ? () => publish.run(groupId) : null}
+      publish={preview.length && !blocked ? () => publish.run(groupId) : null}
       unpublish={() => unpublish.run(groupId)}
       canPublish={preview.length > 0}
       pending={publish.isPending || unpublish.isPending}

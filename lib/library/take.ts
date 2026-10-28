@@ -4,7 +4,7 @@ import { addItemsToGroup, createGroup, type GroupKind } from '@/lib/library/grou
 import { isGroupKind } from '@/lib/library/group-kinds';
 import { GRAMMAR_KIND, VOCAB_KIND } from '@/lib/library/item-kinds';
 import { addItems } from '@/lib/library/practice';
-import { GROUP_TYPE, PUBLIC } from '@/lib/library/shared';
+import { GROUP_TYPE, VISIBLE, VISIBLE_MEMBER } from '@/lib/library/shared';
 
 // Taking from the shared library (phase 8, L1b; plan rules 1, 2 and 8): an entry is copied into the
 // learner's own items with a fresh schedule, as a new item joins the "new" queue under the daily
@@ -110,7 +110,7 @@ export async function takeEntry(
   entryId: string,
 ): Promise<ActionResult<TakeEntryResult>> {
   const entry = await db.libraryEntry.findFirst({
-    where: { id: entryId, status: PUBLIC, type: { in: [GRAMMAR_KIND, VOCAB_KIND] } },
+    where: { id: entryId, ...VISIBLE, type: { in: [GRAMMAR_KIND, VOCAB_KIND] } },
     select: CONTENT,
   });
   if (!entry) return err(GONE);
@@ -137,13 +137,13 @@ export async function takeGroup(
   groupEntryId: string,
 ): Promise<ActionResult<TakeGroupResult>> {
   const group = await db.libraryEntry.findFirst({
-    where: { id: groupEntryId, type: GROUP_TYPE, status: PUBLIC },
+    where: { id: groupEntryId, type: GROUP_TYPE, ...VISIBLE },
     select: { id: true, name: true, groupKind: true, notes: true },
   });
   if (!group) return err(GONE);
   const entries = (
     await db.libraryGroupMember.findMany({
-      where: { groupEntryId, item: { status: PUBLIC } },
+      where: { groupEntryId, item: VISIBLE_MEMBER },
       orderBy: { position: 'asc' },
       select: { item: { select: CONTENT } },
     })
