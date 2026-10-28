@@ -288,6 +288,6 @@ icon; nút ít gặp thì ghi chữ.
 - PR riêng **7.4k** ngay sau 7.4a: luật, test và nút đầu trang của mọi trang (một chỗ chung trong `PageShell`).
   Nút trong nội dung đổi dần trong PR của từng trang (7.4c tới 7.4i).
 
-## Cần thien chọn (vòng 3)
+## Vòng 3: thien chọn (2026-10-28)
 
-Nút chỉ có icon: nút chính màu cam và nút trong hộp xác nhận vẫn ghi chữ (đề xuất), hay cũng thành icon?
+Nút chỉ có icon: nút chính màu cam và nút trong hộp xác nhận **vẫn ghi chữ**. Không còn câu nào chờ chọn.
