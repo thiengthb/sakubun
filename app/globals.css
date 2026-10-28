@@ -143,6 +143,9 @@
   --input: oklch(0.65 0.01 96);
   --ring: oklch(0.527 0.1375 39);
   --accent-brand: oklch(0.527 0.1375 39);
+  /* The hover lookup's underline and open word (components/common/word-lookup.tsx). */
+  --lookup-mark: oklch(0.512 0.008 97 / 0.7);
+  --lookup-open: oklch(0.527 0.1375 39 / 0.16);
   --ok: oklch(0.496 0.122 155);
   --warn: oklch(0.514 0.105 85);
   --alert: oklch(0.538 0.2 20);
@@ -200,6 +203,8 @@
   --input: oklch(0.62 0.008 100);
   --ring: oklch(0.731 0.13 42);
   --accent-brand: oklch(0.731 0.13 42);
+  --lookup-mark: oklch(0.718 0.008 97 / 0.7);
+  --lookup-open: oklch(0.731 0.13 42 / 0.2);
   --ok: oklch(0.702 0.14 155);
   --warn: oklch(0.72 0.13 88);
   --alert: oklch(0.761 0.14 20);
@@ -325,6 +330,16 @@
       visibility: visible;
     }
   }
+}
+
+/* The hover lookup (components/common/word-lookup.tsx): words with a meaning get a dotted underline,
+   the one whose card is open a brand tint. Drawn by the CSS Custom Highlight API, no extra DOM. */
+::highlight(word-lookup) {
+  text-decoration: underline dotted var(--lookup-mark);
+  text-underline-offset: 0.3em;
+}
+::highlight(word-lookup-active) {
+  background-color: var(--lookup-open);
 }
 
 @keyframes streak-rise {

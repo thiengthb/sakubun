@@ -23,6 +23,7 @@ export function SpokenLine({
   title = false,
   speakerEnd = false,
   groups,
+  lookup = false,
 }: {
   text: string;
   speakText?: string;
@@ -46,6 +47,9 @@ export function SpokenLine({
    * each, each run wrapped by its own `wrap` (a popover trigger). A run never splits a reading.
    * Needs `ruby`; the furigana setting still decides whether readings show. */
   groups?: readonly WrapGroup[];
+  /** The hover lookup on the sentence's words (components/common/word-lookup.tsx, 7.4b); 'hover'
+   * where a tap belongs to something else, such as a card that opens. */
+  lookup?: boolean | 'hover';
 }) {
   const [ratio, setRatio] = useState(0);
 
@@ -119,6 +123,7 @@ export function SpokenLine({
       />
     </span>
   );
+  const mark = lookup === 'hover' ? 'hover' : lookup || undefined;
   const content = (
     <>
       {wrapGroups(units, groups)}
@@ -128,10 +133,12 @@ export function SpokenLine({
   // A cut line shows in full in a tooltip, and only when it is cut (docs/ui-standard.md, Thẻ).
   const line = truncate ? (
     <Truncate full={text} className={cn('furigana', !speakerEnd && 'flex-1')}>
-      <span lang="ja">{content}</span>
+      <span lang="ja" data-lookup={mark}>
+        {content}
+      </span>
     </Truncate>
   ) : (
-    <span lang="ja" className="furigana">
+    <span lang="ja" data-lookup={mark} className="furigana">
       {content}
     </span>
   );
