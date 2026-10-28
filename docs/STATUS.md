@@ -10,11 +10,12 @@ Cập nhật lần cuối: 2026-10-28 (Kho chung L1–L6 đã lên `main`, #159�
 
 | Bước | Nhánh / PR | Giữ bởi | Trạng thái |
 | --- | --- | --- | --- |
-| 8 C Ôn nhanh: kế hoạch (`docs/plans/2026-10-28-quick-review.md`) | `docs/quick-review-plan` | Claude (phiên của thien, 2026-10-28) | kế hoạch duyệt 2026-10-28; tiếp theo C1a (khung cho Codex) |
+| 8 C1a khung câu ví dụ cho Codex: lệnh tách lô, gộp, kiểm `data/openjlpt/examples.json`, bản hướng dẫn `docs/codex/2026-10-28-examples-brief.md` | `feat/8-c1a-examples-frame` | Claude (phiên của thien, 2026-10-28) | PR mở; kế hoạch C đã duyệt (#168) |
+| 8 C1b dịch câu ví dụ (50 câu mẫu trước, rồi cả bộ) | `data/openjlpt-examples-*` | Codex (thien giao) | chờ C1a merge |
 
 ## Chờ thien
 
-- Giao Codex soạn `data/openjlpt/examples.json` (C1b) khi khung C1a đã merge.
+- Khi C1a merge: giao Codex bản `docs/codex/2026-10-28-examples-brief.md` (C1b), duyệt 50 câu mẫu Codex gửi.
 - Đưa bản có Kho chung (#159–#167, thêm bảng mới) lên NUC: sao lưu DB trước. Rồi thử `/library`, và
   `library_search`, `library_take` trong claude.ai (L5).
 - Đưa bản có Kaiwa (#156, thêm bảng `Script` và cột `Script.analysis`) lên NUC: sao lưu DB trước. Rồi thử trong claude.ai: nhờ Claude soạn một đoạn hội thoại ngắn trên canvas, lưu, mở đường dẫn nó trả về; trên web thử chọn vai "Tôi là", rê chuột xem nghĩa, Thêm và Sửa.
