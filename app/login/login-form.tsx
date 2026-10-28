@@ -15,6 +15,7 @@ export function LoginForm({
 }: {
   googleReady: boolean;
   passwordLogin: boolean;
+  /** What went wrong on the way here (loginErrorText), or null. */
   error: string | null;
 }) {
   return (
@@ -22,7 +23,7 @@ export function LoginForm({
       <CardContent className="space-y-4">
         {error && (
           <p role="alert" className="rounded-sm bg-alert-wash px-3 py-2 text-sm text-destructive">
-            Tài khoản này không được phép vào Sakubun.
+            {error}
           </p>
         )}
         {googleReady ? (
