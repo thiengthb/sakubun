@@ -49,7 +49,7 @@ export function RowActions({
   const doDelete = () => {
     startTransition(async () => {
       const r = await deleteItemAction(item.itemId);
-      if (toastResult(r, 'Đã xóa (lịch sử ôn vẫn được giữ)')) setDeleteOpen(false);
+      if (toastResult(r, 'Đã xoá (lịch sử ôn vẫn được giữ)')) setDeleteOpen(false);
     });
   };
 
@@ -109,7 +109,7 @@ export function RowActions({
               setDeleteOpen(true);
             }}
           >
-            <Trash2 className="size-4" /> Xóa
+            <Trash2 className="size-4" /> Xoá
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -117,14 +117,14 @@ export function RowActions({
       <ConfirmDialog
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
-        title={<>Xóa {noun} này?</>}
+        title={<>Xoá {noun} này?</>}
         description={
           <>
-            «{item.expression}» sẽ bị xóa khỏi kho và không luyện nữa. Lịch sử ôn cũ vẫn được GIỮ để
+            «{item.expression}» sẽ bị xoá khỏi kho và không luyện nữa. Lịch sử ôn cũ vẫn được GIỮ để
             thống kê. Không thể hoàn tác.
           </>
         }
-        confirmLabel="Xóa"
+        confirmLabel="Xoá"
         onConfirm={doDelete}
         pending={isPending}
       />

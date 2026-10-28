@@ -45,7 +45,7 @@ const CRUMBS = {
     href: '/resources',
     icon: Library,
     description:
-      'Kho học của bạn — ngữ pháp (được lên lịch ôn) và từ vựng (client MCP thêm qua MCP). Sửa/xóa không đổi lịch ôn.',
+      'Kho học của bạn — ngữ pháp (được lên lịch ôn) và từ vựng (client MCP thêm qua MCP). Sửa/xoá không đổi lịch ôn.',
   },
   grammar: {
     label: 'Ngữ pháp',

@@ -148,7 +148,7 @@ export function GroupShareButton({
           ? 'Nhóm còn trống. Thêm mục vào nhóm rồi mới công khai được.'
           : shared
             ? `${shared.takeCount} lượt lấy. Cập nhật để Kho chung theo đúng nhóm bây giờ. Gỡ nhóm thì các mục đã chia sẻ vẫn ở lại, gỡ từng mục ở trang của mục.`
-            : `Nhóm và ${preview.length} mục dưới đây sẽ lên Kho chung. Mục không có trong nhóm vẫn riêng tư.`)
+            : `Nhóm và ${preview.length} mục dưới đây sẽ lên Kho chung. Nhóm ghi tên tài khoản của bạn là người chia sẻ. Mục không có trong nhóm vẫn riêng tư.`)
       }
       publish={preview.length && !blocked ? () => publish.run(groupId) : null}
       unpublish={() => unpublish.run(groupId)}

@@ -392,7 +392,7 @@ export function DataTable<T>({
     list.push({ keys: 'n · p', desc: 'Trang sau · trang trước' });
     if (enableRowSelection) list.push({ keys: 'a', desc: 'Chọn / bỏ chọn mọi dòng trên trang' });
     if (showColumnMenu) list.push({ keys: 'c', desc: 'Mở menu Cột' });
-    list.push({ keys: 'Esc', desc: 'Xóa từ khóa tìm · bỏ chọn' });
+    list.push({ keys: 'Esc', desc: 'Xoá từ khóa tìm · bỏ chọn' });
     return list;
   }, [searchPlaceholder, enableRowSelection, showColumnMenu]);
 

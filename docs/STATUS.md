@@ -4,15 +4,15 @@ Trang này trả lời ba câu cho bất kỳ phiên Claude nào (kể cả từ
 việc tiếp theo là gì**. Cập nhật nó **trong cùng PR** với việc làm, và khi nhận một bước mới (xem
 "Bắt đầu phiên" trong `CLAUDE.md`). Lộ trình đầy đủ: `docs/roadmap.md`. Kế hoạch đã duyệt: `docs/plans/`.
 
-Cập nhật lần cuối: 2026-10-28 (7.4a #181, 7.4k #182, 7.4b #188, 7.4c #191, 7.4d #192, 7.4e #193, 7.4f #194 xong; 7.4g mở PR).
+Cập nhật lần cuối: 2026-10-28 (7.4a #181, 7.4k #182, 7.4b #188, 7.4c #191, 7.4d #192, 7.4e #193, 7.4f #194, 7.4g #195 xong; 7.4h #196 mở PR).
 
 ## Đang làm
 
-| Bước                                                                  | Nhánh / PR                       | Giữ bởi             | Trạng thái                                                                                                                                              |
-| --------------------------------------------------------------------- | -------------------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 7.4g danh sách Hội thoại (câu đầu, số câu, người nói, ô tìm từ 9 bài) | `feat/7.4g-kaiwa-list`           | Claude (thread 7.4) | PR mở, chờ thien merge (risk:high: đổi Hội thoại).                                                                                                      |
-| Trang lỗi gốc theo style chung (thien thấy chữ kiểu Times)            | `fix/7.4-standalone-pages-style` | Claude (thread 7.4) | PR mở, chờ thien merge (risk:high: đổi UI). Dò cả trang đăng nhập, đồng ý OAuth, 404, lỗi, chính sách: chỉ trang lỗi gốc lệch.                          |
-| 8 C1b dịch câu ví dụ (cả bộ, mỗi PR khoảng 1.000 mục)                 | `codex/openjlpt-*`               | Codex (thien giao)  | 50 câu mẫu (#172), đợt 1: 250 mục (#174); thien giao dịch hết phần còn lại 2026-10-28; mỗi đợt một nhánh mới từ `main`, Claude kiểm và merge (risk:low) |
+| Bước                                                                                                                          | Nhánh / PR                        | Giữ bởi             | Trạng thái                                                                                                                                              |
+| ----------------------------------------------------------------------------------------------------------------------------- | --------------------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 7.4h Kho chung tab Nhóm (bảng OpenJLPT theo cấp có "Đã có x/y", Cộng đồng) và trang nhóm (tìm trong nhóm, Lấy phần còn thiếu) | `feat/7.4h-library-groups` (#196) | Claude (thread 7.4) | PR mở, chờ thien merge (risk:high: đổi Kho chung). Thẻ từng mục giữ nguyên tới 7.4i                                                                     |
+| Trang lỗi gốc theo style chung (thien thấy chữ kiểu Times)                                                                    | `fix/7.4-standalone-pages-style`  | Claude (thread 7.4) | PR mở, chờ thien merge (risk:high: đổi UI). Dò cả trang đăng nhập, đồng ý OAuth, 404, lỗi, chính sách: chỉ trang lỗi gốc lệch.                          |
+| 8 C1b dịch câu ví dụ (cả bộ, mỗi PR khoảng 1.000 mục)                                                                         | `codex/openjlpt-*`                | Codex (thien giao)  | 50 câu mẫu (#172), đợt 1: 250 mục (#174); thien giao dịch hết phần còn lại 2026-10-28; mỗi đợt một nhánh mới từ `main`, Claude kiểm và merge (risk:low) |
 
 ## Chờ thien
 
@@ -66,6 +66,5 @@ poller (`sudo`), user `thi3n` không có token ghcr. Xem log: `journalctl -u min
   commit và PR. Nếu còn bước 6.x chưa làm, chép kế hoạch vào `docs/plans/`.
 - `recordReviews` chưa gọi `invalidateStreak` sau mỗi lần ôn, nên chuỗi ngày có thể hiện chậm tới 60 giây
   (`lib/insights/streak.ts`; cache giờ theo từng người học).
-- Chữ "Xóa" và "Xoá" dùng lẫn lộn trong UI; chọn một cách viết (repo đang dùng "Xoá" trong tài liệu).
 - Repo public từ 2026-10-27; CI về lại runner của GitHub (#135, `docs/ci-runner.md`). Không dùng runner tự host khi
   repo public; runner `tnt-laptop-wsl` trên laptop đã dừng.
