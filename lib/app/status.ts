@@ -1,6 +1,6 @@
 import type { UserDb } from '@/lib/db/user-db';
 import { getQueue } from '@/lib/app/queue';
-import type { StudiedToday } from '@/lib/domain/queue';
+import { countReady, type ReadyCount, type StudiedToday } from '@/lib/domain/queue';
 import { getSettings } from '@/lib/library/practice';
 import { computeStreak, studyDayKey } from '@/lib/srs/streak';
 
@@ -13,6 +13,7 @@ const DAY_MS = 86_400_000;
 export interface StudyStatus {
   // Cards the queue would serve now (learning steps, due reviews within the cap, new within the caps).
   ready: number;
+  readyBy: ReadyCount;
   left: { newGrammar: number; newVocab: number; reviews: number };
   today: StudiedToday;
   streakDays: number;
@@ -31,6 +32,7 @@ export async function getStatus(db: UserDb, now: Date = new Date()): Promise<Stu
   const days = logs.map((l) => studyDayKey(l.reviewedAt, dayCutoffHour));
   return {
     ready: queue.cards.length,
+    readyBy: countReady(queue.cards),
     left: queue.left,
     today: queue.today,
     streakDays: computeStreak(days, studyDayKey(now, dayCutoffHour)).current,

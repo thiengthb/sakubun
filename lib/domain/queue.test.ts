@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   CARD_STATE,
+  countReady,
   isDue,
   planQueue,
   type DailyCaps,
@@ -144,5 +145,27 @@ describe('planQueue', () => {
       left: { newGrammar: 5, newVocab: 15, reviews: 200 },
       nextDueAt: null,
     });
+  });
+});
+
+describe('countReady', () => {
+  it('splits waiting cards into started ones and new ones by kind', () => {
+    const plan = planQueue({
+      candidates: [
+        card('GRAMMAR', CARD_STATE.REVIEW, -5),
+        card('VOCAB', CARD_STATE.LEARNING, -1),
+        card('VOCAB', CARD_STATE.REVIEW, 60),
+        ...newGrammar(2),
+        ...newVocab(1),
+      ],
+      caps: CAPS,
+      today: NONE,
+      now: NOW,
+    });
+    expect(countReady(plan.cards)).toEqual({ due: 2, newGrammar: 2, newVocab: 1 });
+  });
+
+  it('counts nothing for an empty store, whatever the allowance', () => {
+    expect(countReady([])).toEqual({ due: 0, newGrammar: 0, newVocab: 0 });
   });
 });
