@@ -1,13 +1,15 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { FolderOpen, SearchX } from 'lucide-react';
+import { SearchX, UsersRound } from 'lucide-react';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { EmptyState } from '@/components/common/empty-state';
 import { PageTabs } from '@/components/common/page-tabs';
 import { SearchInput } from '@/components/common/search-input';
+import { SectionHeading } from '@/components/common/section-heading';
 import { useSessionState } from '@/components/common/use-session-state';
 import { PageShell } from '@/components/layout/page-shell';
 import { LIBRARY_TABS } from '@/components/layout/page-heads';
@@ -19,7 +21,8 @@ import {
   LibraryGroupCard,
   type LibraryGroupRow,
 } from '@/components/features/library/library-group-card';
-import { MAX_RESULTS } from '@/lib/library/shared';
+import { LibraryLevels } from '@/components/features/library/library-levels';
+import { MAX_RESULTS, OPENJLPT_ORIGIN } from '@/lib/library/shared';
 import { JLPT_LEVELS } from '@/lib/settings/schema';
 
 const TYPES = [
@@ -29,7 +32,8 @@ const TYPES = [
 ] as const;
 
 // List template (phase 8, L2): the shared library. Groups first, the way thien shares related items
-// (a whole level, a topic); single entries under "Từng mục", searched on the server.
+// (a whole level, a topic): OpenJLPT's as a table by level, then the learners' (7.4h); single entries
+// under "Từng mục", searched on the server.
 export function LibraryView({
   groups,
   entries,
@@ -55,6 +59,8 @@ export function LibraryView({
     LIBRARY_TABS.urlKey,
   );
   const [q, setQ] = useState(search.q);
+  const openJlpt = groups.filter((g) => g.origin === OPENJLPT_ORIGIN);
+  const community = groups.filter((g) => g.origin !== OPENJLPT_ORIGIN);
 
   const go = (next: Partial<typeof search>) => {
     const params = new URLSearchParams({ tab: 'items' });
@@ -73,18 +79,45 @@ export function LibraryView({
         meta={tab === 'items' ? `${entries.length} mục` : `${groups.length} nhóm`}
         tabs={<PageTabs items={LIBRARY_TABS.items} label={LIBRARY_TABS.label} />}
       >
-        <TabsContent value="groups">
-          {groups.length === 0 ? (
-            <EmptyState icon={FolderOpen} title="Kho chung chưa có nhóm nào" />
-          ) : (
-            <div className="@container">
-              <ul className="grid gap-2 @2xl:grid-cols-2 @2xl:gap-3 @5xl:grid-cols-3">
-                {groups.map((g) => (
-                  <LibraryGroupCard key={g.id} group={g} />
-                ))}
-              </ul>
-            </div>
+        <TabsContent value="groups" className="space-y-6 md:space-y-8">
+          {openJlpt.length > 0 && (
+            <section className="space-y-3">
+              <SectionHeading
+                title="OpenJLPT theo cấp"
+                hint="Toàn bộ ngữ pháp và từ vựng của mỗi cấp. Bấm một ô để xem nhóm và lấy về kho."
+              />
+              <LibraryLevels groups={openJlpt} />
+            </section>
           )}
+          <section className="space-y-3">
+            <SectionHeading
+              title="Cộng đồng"
+              hint="Nhóm người học chia sẻ, nhiều lượt lấy trước."
+            />
+            {community.length === 0 ? (
+              <EmptyState
+                icon={UsersRound}
+                title="Chưa có nhóm nào do người học chia sẻ"
+                description={
+                  <>
+                    Muốn chia sẻ nhóm của bạn: mở nhóm ở{' '}
+                    <Link href="/resources?tab=groups" className="underline underline-offset-2">
+                      Tài nguyên › Nhóm
+                    </Link>{' '}
+                    rồi bấm Chia sẻ.
+                  </>
+                }
+              />
+            ) : (
+              <div className="@container">
+                <ul className="grid gap-2 @2xl:grid-cols-2 @2xl:gap-3 @5xl:grid-cols-3">
+                  {community.map((g) => (
+                    <LibraryGroupCard key={g.id} group={g} />
+                  ))}
+                </ul>
+              </div>
+            )}
+          </section>
         </TabsContent>
 
         <TabsContent value="items" className="space-y-4">

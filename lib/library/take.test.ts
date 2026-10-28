@@ -146,3 +146,24 @@ describe('takeGroup', () => {
     expect((await T.takeGroup(other, group.id)).ok).toBe(false);
   });
 });
+
+describe('groupProgress', () => {
+  it("counts each group's visible entries the learner has, theirs only", async () => {
+    const P = await import('@/lib/library/practice');
+    const group = await vocabGroup();
+    expect(await T.groupProgress(mine, [group.id])).toEqual(new Map([[group.id, 0]]));
+
+    await P.addItems(mine, [{ expression: '静か', meaningVi: 'yên' }], 'MANUAL', 'VOCAB');
+    await T.takeEntry(mine, (await entry('店')).id);
+    expect((await T.groupProgress(mine, [group.id])).get(group.id)).toBe(2);
+    expect((await T.groupProgress(other, [group.id])).get(group.id)).toBe(0);
+
+    // A hidden entry leaves the group, as it leaves the group's count.
+    await prisma.libraryEntry.updateMany({
+      where: { expression: '店' },
+      data: { status: 'hidden' },
+    });
+    expect((await T.groupProgress(mine, [group.id])).get(group.id)).toBe(1);
+    expect(await T.groupProgress(mine, [])).toEqual(new Map());
+  });
+});

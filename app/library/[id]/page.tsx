@@ -35,6 +35,7 @@ export default async function LibraryGroupPage({ params }: { params: Promise<{ i
         groupKind: group.groupKind,
         notes: group.notes,
         origin: group.origin,
+        author: group.author,
         takeCount: group.takeCount,
         likes: group._count.likes,
         liked: liked.has(group.id),

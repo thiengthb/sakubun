@@ -4,6 +4,7 @@ import { addItemsToGroup, createGroup, type GroupKind } from '@/lib/library/grou
 import { isGroupKind } from '@/lib/library/group-kinds';
 import { GRAMMAR_KIND, VOCAB_KIND } from '@/lib/library/item-kinds';
 import { addItems } from '@/lib/library/practice';
+import { countOwned } from '@/lib/library/progress';
 import { GROUP_TYPE, VISIBLE, VISIBLE_MEMBER } from '@/lib/library/shared';
 
 // Taking from the shared library (phase 8, L1b; plan rules 1, 2 and 8): an entry is copied into the
@@ -62,6 +63,28 @@ export async function ownedItems(
     if (id) owned.set(e.id, id);
   }
   return owned;
+}
+
+// How many visible entries of each shared group the learner has already (7.4h), by group id.
+export async function groupProgress(
+  db: UserDb,
+  groupEntryIds: readonly string[],
+): Promise<Map<string, number>> {
+  if (groupEntryIds.length === 0) return new Map();
+  const [members, items] = await Promise.all([
+    db.libraryGroupMember.findMany({
+      where: { groupEntryId: { in: [...groupEntryIds] }, item: VISIBLE_MEMBER },
+      select: { groupEntryId: true, item: { select: { type: true, expression: true } } },
+    }),
+    db.item.findMany({
+      where: { kind: { in: [GRAMMAR_KIND, VOCAB_KIND] } },
+      select: { kind: true, expression: true },
+    }),
+  ]);
+  return countOwned(
+    members.map((m) => ({ groupEntryId: m.groupEntryId, ...m.item })),
+    items,
+  );
 }
 
 // Copies the entries the learner lacks; returns how many were new.
