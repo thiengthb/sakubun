@@ -11,6 +11,8 @@ Cập nhật lần cuối: 2026-10-27 (Kaiwa sơ bộ K1–K5 đã lên `main` q
 | Bước                                                                   | Nhánh / PR                                                                           | Giữ bởi                              | Trạng thái              |
 | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------ | ------------------------------------ | ----------------------- |
 | 8 L1 kho chung: `LibraryEntry`, nhóm, lượt thích, nạp OpenJLPT, lấy về | L1a `feat/8-l1-library-entries` (#159), L1b `feat/8-l1b-library-take` (xếp trên L1a) | Claude (phiên của thien, 2026-10-27) | hai PR mở; tiếp theo L2 |
+| 8 L2 trang Kho chung `/library`: nhóm, từng mục, Lấy                   | `feat/8-l2-library-page` (xếp trên L1b)                                              | Claude (phiên của thien, 2026-10-27) | PR mở; tiếp theo L3     |
+| 8 L3 công khai mục và nhóm, gỡ, "dựa trên", thích                      | L3a `feat/8-l3a-library-publish` (lib + test, xếp trên L2), L3b giao diện            | Claude (phiên của thien, 2026-10-27) | L3a mở; tiếp theo L3b   |
 
 ## Chờ thien
 
@@ -30,7 +32,7 @@ Cập nhật lần cuối: 2026-10-27 (Kaiwa sơ bộ K1–K5 đã lên `main` q
    (AI soạn và lưu kịch bản qua MCP), rồi kho chung L1–L6, Ôn nhanh (C) và 7.4 cùng các lỗi bên dưới, rồi K6–K9.
 4. Kaiwa sơ bộ xong 2026-10-27: K1 #151, K2 #152, rồi K3, K4, K3b (thẻ kiểu tin nhắn, vai "Tôi là" bên trái),
    K3c (sửa và tạo trên web) và K5 (rê chuột xem nghĩa) cùng lên `main` qua #156 (#153–#155, #157 merge vào nhánh
-   xếp chồng). Giao diện Kaiwa còn thô, làm đẹp trong 7.4. Tiếp theo: L1.
+   xếp chồng). Giao diện Kaiwa còn thô, làm đẹp trong 7.4. Kho chung: L1a #159, L1b #160, L2 (trang `/library`) mở, merge theo thứ tự. Tiếp theo: L3.
 
 ## Việc nhỏ còn treo
 

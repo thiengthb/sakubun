@@ -39,6 +39,9 @@ const PAIRS: Pair[] = [
   { name: 'kaiwa script', page: '/kaiwa/kw-sk', skeleton: 'kaiwa-script' },
   { name: 'kaiwa new', page: '/kaiwa/new', skeleton: 'kaiwa-new' },
   { name: 'kaiwa edit', page: '/kaiwa/kw-sk/edit', skeleton: 'kaiwa-edit' },
+  { name: 'kho chung', page: '/library', skeleton: 'library' },
+  { name: 'kho chung items', page: '/library?tab=items', skeleton: 'library?tab=items' },
+  { name: 'kho chung group', page: '/library/lib-sk', skeleton: 'library-group' },
 ];
 
 const MEASURE = () => {
@@ -128,6 +131,30 @@ test.beforeAll(async () => {
       `INSERT INTO Script (userId, id, title, body, version, createdAt, updatedAt)
        VALUES (${E2E_OWNER}, 'kw-sk', 'Ở nhà hàng', ?, 1, ?, ?)`,
     ).run(lines.join('\n'), iso(now), iso(now));
+    db.exec(`DELETE FROM LibraryEntry WHERE id LIKE 'lib-sk%'`);
+    const entry = db.prepare(
+      `INSERT INTO LibraryEntry (id, type, expression, meaningVi, level, name, groupKind, notes, origin,
+         status, takeCount, createdAt, updatedAt)
+       VALUES (?, ?, ?, ?, 'N5', ?, ?, ?, 'LEARNER', 'public', 0, ?, ?)`,
+    );
+    entry.run('lib-sk', 'GROUP', null, null, 'N5 · Ngữ pháp', 'grammar', null, iso(now), iso(now));
+    const member = db.prepare(
+      `INSERT INTO LibraryGroupMember (groupEntryId, itemEntryId, position) VALUES ('lib-sk', ?, ?)`,
+    );
+    for (let n = 0; n < 12; n++) {
+      entry.run(
+        `lib-sk${n}`,
+        'GRAMMAR',
+        `〜ために${n}`,
+        `để ${n}`,
+        null,
+        null,
+        null,
+        iso(now),
+        iso(now),
+      );
+      member.run(`lib-sk${n}`, n);
+    }
   } finally {
     db.close();
   }

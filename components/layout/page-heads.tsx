@@ -71,6 +71,17 @@ export const RESOURCE_TABS: StoredTabSet = {
   urlKey: 'tab',
 };
 
+export const LIBRARY_TABS: StoredTabSet = {
+  items: [
+    { value: 'groups', label: 'Nhóm', icon: FolderOpen },
+    { value: 'items', label: 'Từng mục', icon: List },
+  ],
+  label: 'Chọn cách lấy',
+  initial: 'groups',
+  storeKey: 'library.tab',
+  urlKey: 'tab',
+};
+
 export const GROUP_TABS: StoredTabSet = {
   items: [
     { value: 'list', label: 'Danh sách', icon: List },
@@ -123,6 +134,7 @@ export const PAGE_TAB_SETS = {
   analytics: ANALYTICS_TABS,
   settings: SETTINGS_TABS,
   resources: RESOURCE_TABS,
+  library: LIBRARY_TABS,
   input: INPUT_TABS,
   item: itemTabs(),
   group: GROUP_TABS,

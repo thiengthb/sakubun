@@ -12,7 +12,7 @@ import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { AddButton } from '@/components/common/add-button';
 import { GroupEditButton } from '@/components/features/groups/group-actions';
 import { GroupCards } from '@/components/features/groups/group-cards';
-import { GroupKindBadge } from '@/components/features/groups/group-kind-badge';
+import { GroupKindBadge } from '@/components/common/group-kind-badge';
 import { GroupItemTable } from '@/components/features/groups/group-item-table';
 import { GROUP_KIND_LABELS } from '@/lib/library/group-kinds';
 import type { GroupDetail } from '@/lib/library/groups';
