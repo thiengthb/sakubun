@@ -4,15 +4,13 @@ Trang này trả lời ba câu cho bất kỳ phiên Claude nào (kể cả từ
 việc tiếp theo là gì**. Cập nhật nó **trong cùng PR** với việc làm, và khi nhận một bước mới (xem
 "Bắt đầu phiên" trong `CLAUDE.md`). Lộ trình đầy đủ: `docs/roadmap.md`. Kế hoạch đã duyệt: `docs/plans/`.
 
-Cập nhật lần cuối: 2026-10-28 (7.4a #181, 7.4k #182, 7.4b #188, 7.4c #191, 7.4d #192, 7.4e #193, 7.4f #194, 7.4g #195, 7.4h #196, 7.4i phần 1 #197 xong; 7.4i phần 2a mở PR).
+Cập nhật lần cuối: 2026-10-28 (7.4 xong: 7.4a–k, các PR cuối #206–#210).
 
 ## Đang làm
 
-| Bước                                                                                                                               | Nhánh / PR                                     | Giữ bởi             | Trạng thái                                                                                                                                              |
-| ---------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 7.4i phần 2a: thẻ mục Kho chung gọn (chip cấp, tên mẫu sạch, nút chỉ biểu tượng, Ẩn chỉ ở trang một mục); trang nhóm cuộn tải thêm | `feat/7.4i-library-entries`                    | Claude (thread 7.4) | PR mở, chờ thien merge (risk:high: đổi UI).                                                                                                             |
-| 7.4i phần 2b: Từng mục ghi tổng thật, tải thêm từ server khi cuộn, sắp xếp Phổ biến / Mới, Ẩn mục đã có                            | `feat/7.4i-library-browse` (xếp chồng trên 2a) | Claude (thread 7.4) | PR mở, chờ thien merge sau 2a (risk:high: đổi UI).                                                                                                      |
-| 8 C1b dịch câu ví dụ (cả bộ, mỗi PR khoảng 1.000 mục)                                                                              | `codex/openjlpt-*`                             | Codex (thien giao)  | 50 câu mẫu (#172), đợt 1: 250 mục (#174); thien giao dịch hết phần còn lại 2026-10-28; mỗi đợt một nhánh mới từ `main`, Claude kiểm và merge (risk:low) |
+| Bước                                                  | Nhánh / PR         | Giữ bởi            | Trạng thái                                                                                                                                              |
+| ----------------------------------------------------- | ------------------ | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 8 C1b dịch câu ví dụ (cả bộ, mỗi PR khoảng 1.000 mục) | `codex/openjlpt-*` | Codex (thien giao) | 50 câu mẫu (#172), đợt 1: 250 mục (#174); thien giao dịch hết phần còn lại 2026-10-28; mỗi đợt một nhánh mới từ `main`, Claude kiểm và merge (risk:low) |
 
 ## Chờ thien
 
@@ -45,8 +43,11 @@ poller (`sudo`), user `thi3n` không có token ghcr. Xem log: `journalctl -u min
 5. Kho chung L1–L6 xong, lên `main` 2026-10-28: L1a #159, L1b #160, L2 #161, L3a #162, L3b #163, L4 #164, L5 #165,
    L6a #166, L6b #167.
 6. Ôn nhanh (C): kế hoạch `docs/plans/2026-10-28-quick-review.md` duyệt 2026-10-28 (Codex dịch câu ví dụ, mục mới là thẻ
-   giới thiệu, không có nút "Đoán"). Xong: C1a #170, C3 #171, 50 câu mẫu #172, C2 #173, 250 mục #174, C4 #175, C5a #176, C5b #177. Còn: C1b (Codex dịch phần còn lại). Tiếp theo 7.4
-   (làm lại UI, cùng các lỗi nhỏ bên dưới), rồi K6–K9.
+   giới thiệu, không có nút "Đoán"). Xong: C1a #170, C3 #171, 50 câu mẫu #172, C2 #173, 250 mục #174, C4 #175, C5a #176, C5b #177. Còn: C1b (Codex dịch phần còn lại).
+7. 7.4 (làm lại UI) xong 2026-10-28: kế hoạch PR #180 (còn mở, chưa vào `main`), 7.4a #181,
+   7.4k #182, 7.4b #188, 7.4c #191, 7.4d #192, 7.4e #193, 7.4f #194, 7.4g #195, 7.4h #196, 7.4i #197, #206, #210
+   (#207 merge nhầm vào nhánh xếp chồng nên đưa lại qua #210); 7.4j: #198, #199, #203, #204, #208, #209; trang lỗi
+   toàn app theo style mới #201. Tiếp theo: K6–K9.
 
 ## Việc nhỏ còn treo
 
