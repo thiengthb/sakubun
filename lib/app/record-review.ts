@@ -1,4 +1,5 @@
 import type { UserDb } from '@/lib/db/user-db';
+import { invalidateStreak } from '@/lib/insights/streak';
 import type { Prisma } from '@/lib/generated/prisma/client';
 import { serializeErrorDetail, type Confusion } from '@/lib/session/error-tags';
 import type { ItemRole } from '@/lib/srs/select';
@@ -73,5 +74,6 @@ export async function recordReviews(
   }
 
   await db.$transaction(writes);
+  invalidateStreak(db.$ownerId());
   return recorded;
 }

@@ -60,7 +60,13 @@ describe('recordReviews', () => {
     const itemId = await seedOne('把握');
     const srs = await db.srsState.findUniqueOrThrow({ where: { itemId } });
     const turn = await db.turn.create({
-      data: { userId: db.$ownerId(), itemId, direction: 'JA_VI', ja: '状況を把握する', vi: 'nắm bắt tình hình' },
+      data: {
+        userId: db.$ownerId(),
+        itemId,
+        direction: 'JA_VI',
+        ja: '状況を把握する',
+        vi: 'nắm bắt tình hình',
+      },
     });
 
     await R.recordReviews(db, [{ itemId, srs, rating: 2, turnId: turn.id }], {
@@ -104,5 +110,20 @@ describe('recordReviews', () => {
       ),
     ).rejects.toThrow(/reviewed twice/);
     expect(await db.reviewLog.count()).toBe(0);
+  });
+});
+
+describe('recordReviews and the streak', () => {
+  it('a review shows in the streak at once, though the streak is cached for a minute', async () => {
+    const S = await import('@/lib/insights/streak');
+    const other = (await import('@/lib/db/user-db')).userDb(await createTestUser(prisma, 'other'));
+    S.invalidateStreak();
+    const itemId = await seedOne('約束');
+    expect((await S.studyStreak(db, 4, NOW)).current).toBe(0);
+    await S.studyStreak(other, 4, NOW);
+
+    const srs = await db.srsState.findUniqueOrThrow({ where: { itemId } });
+    await R.recordReviews(db, [{ itemId, srs, rating: 3 }], { retention: 0.9, now: NOW });
+    expect((await S.studyStreak(db, 4, NOW)).current).toBe(1);
   });
 });

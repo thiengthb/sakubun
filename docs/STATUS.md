@@ -60,8 +60,6 @@ poller (`sudo`), user `thi3n` không có token ghcr. Xem log: `journalctl -u min
 - e2e `header-actions` "on a phone" tìm nút Bộ lọc ở Tài nguyên, nhưng khi DB e2e trống (spec khác vừa xoá mục) thì trang chỉ có trạng thái trống, không có nút lọc: phụ thuộc dữ liệu spec khác để lại (thấy 2026-10-28).
 - Kế hoạch phase 6 (UI redo, các bước 6.x như PR #128 "6.9") chưa có trong repo; chỉ còn dấu vết trong
   commit và PR. Nếu còn bước 6.x chưa làm, chép kế hoạch vào `docs/plans/`.
-- `recordReviews` chưa gọi `invalidateStreak` sau mỗi lần ôn, nên chuỗi ngày có thể hiện chậm tới 60 giây
-  (`lib/insights/streak.ts`; cache giờ theo từng người học).
 - Chữ "Xóa" và "Xoá" dùng lẫn lộn trong UI; chọn một cách viết (repo đang dùng "Xoá" trong tài liệu).
 - Repo public từ 2026-10-27; CI về lại runner của GitHub (#135, `docs/ci-runner.md`). Không dùng runner tự host khi
   repo public; runner `tnt-laptop-wsl` trên laptop đã dừng.
