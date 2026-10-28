@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { markSpan, segmentsText } from '@/lib/domain/sentence';
+import { markSpan, markSpans, segmentsText } from '@/lib/domain/sentence';
 
 const JA = '友達と約束をしました。';
 const RUBY = '友達[ともだち]と約束[やくそく]をしました。';
@@ -63,5 +63,60 @@ describe('markSpan', () => {
       { text: 'をしました。' },
     ]);
     expect(markSpan(JA, '友達[ともだち]と会[あ]った。', SPAN, 'target')).toHaveLength(3);
+  });
+});
+
+describe('markSpans', () => {
+  const ja = '今年の夏は去年ほど暑くない。';
+  const ruby = '今年[ことし]の夏[なつ]は去年[きょねん]ほど暑[あつ]くない。';
+  const HODO_NAI = [
+    { start: 7, end: 9 },
+    { start: 11, end: 13 },
+  ];
+
+  it('underlines both pieces of a split pattern and keeps the furigana around them', () => {
+    expect(markSpans(ja, ruby, HODO_NAI, 'target')).toEqual([
+      { text: '今年', reading: 'ことし' },
+      { text: 'の' },
+      { text: '夏', reading: 'なつ' },
+      { text: 'は' },
+      { text: '去年', reading: 'きょねん' },
+      { text: 'ほど', mark: 'target' },
+      { text: '暑', reading: 'あつ' },
+      { text: 'く' },
+      { text: 'ない', mark: 'target' },
+      { text: '。' },
+    ]);
+  });
+
+  it('marks the one は the data places, not the first one in the sentence', () => {
+    expect(
+      markSpans(
+        '私はこれは好きです。',
+        '私[わたし]はこれは好[す]きです。',
+        [{ start: 4, end: 5 }],
+        'target',
+      ),
+    ).toEqual([
+      { text: '私', reading: 'わたし' },
+      { text: 'はこれ' },
+      { text: 'は', mark: 'target' },
+      { text: '好', reading: 'す' },
+      { text: 'きです。' },
+    ]);
+  });
+
+  it('merges pieces that touch into one blank', () => {
+    const segments = markSpans(
+      '私は学生です。',
+      '私[わたし]は学生[がくせい]です。',
+      [
+        { start: 1, end: 2 },
+        { start: 2, end: 4 },
+      ],
+      'blank',
+    );
+    expect(segmentsText(segments)).toBe('私（　）です。');
+    expect(segments.filter((s) => s.mark === 'blank')).toHaveLength(1);
   });
 });

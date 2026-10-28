@@ -1,7 +1,7 @@
 import type { ItemKind } from '@/lib/library/item-kinds';
 import { normalizeExpression, stripDecoration } from '@/lib/core/normalize';
 import { choiceLabel, isSplitPattern } from '@/lib/domain/quiz-class';
-import { markSpan, type Segment } from '@/lib/domain/sentence';
+import { markSpan, type Segment, type Span } from '@/lib/domain/sentence';
 import { JLPT_LEVELS } from '@/lib/settings/schema';
 
 // A fill-in-the-blank card for quick review, built without any AI (the WordQuiz algorithm): blank the
@@ -16,7 +16,8 @@ export const BLANK = '（　）';
 // WordQuiz bounds: shorter sentences give too little context, longer ones do not fit a phone card.
 const MIN_SENTENCE = 6;
 const MAX_SENTENCE = 90;
-// A one-character answer (は, に, 木) matches too many places to blank deterministically.
+// A one-character answer (は, に, 木) matches too many places to blank deterministically, unless the
+// example says exactly where the item stands.
 const MIN_ANSWER = 2;
 
 export interface ClozeItem {
@@ -34,6 +35,8 @@ export interface ClozeExample {
   vi?: string | null;
   // 漢字[かな] markup, as stored in enrichment examples.
   jaRuby?: string | null;
+  // Where the item stands, when known exactly (OpenJLPT examples: data/openjlpt/examples.json).
+  spans?: Span[];
 }
 
 export interface ClozeChoice {
@@ -68,10 +71,10 @@ function occurrences(text: string, part: string): number {
   return count;
 }
 
-export function canBlank(surface: string, ja: string): boolean {
+export function canBlank(surface: string, ja: string, placed = false): boolean {
   const length = [...ja].length;
   return (
-    [...surface].length >= MIN_ANSWER &&
+    [...surface].length >= (placed ? 1 : MIN_ANSWER) &&
     length >= MIN_SENTENCE &&
     length <= MAX_SENTENCE &&
     occurrences(ja, surface) === 1
@@ -143,14 +146,27 @@ export function buildCloze(input: {
   const { target, examples, pool, seed } = input;
   if (isSplitPattern(target.expression)) return null;
   const surface = answerSurface(target.expression);
-  const usable = examples.filter((e) => canBlank(surface, e.ja.trim()));
+  const usable = examples.flatMap((e) => {
+    // A placed item is blanked only where it stands as itself: one piece, in the form the choices
+    // show (明るい, not 明るく).
+    if (e.spans) {
+      const [span, more] = e.spans;
+      const fits =
+        span &&
+        !more &&
+        e.ja.slice(span.start, span.end) === surface &&
+        canBlank(surface, e.ja, true);
+      return fits ? [{ example: e, ja: e.ja, span }] : [];
+    }
+    const ja = e.ja.trim();
+    if (!canBlank(surface, ja)) return [];
+    const start = ja.indexOf(surface);
+    return [{ example: e, ja, span: { start, end: start + surface.length } }];
+  });
   if (usable.length === 0) return null;
   const rand = seeded(seed);
-  const example = usable[Math.floor(rand() * usable.length)];
-  const ja = example.ja.trim();
-  const start = ja.indexOf(surface);
-  const span = { start, end: start + surface.length };
-  const prompt = ja.replace(surface, BLANK);
+  const { example, ja, span } = usable[Math.floor(rand() * usable.length)];
+  const prompt = `${ja.slice(0, span.start)}${BLANK}${ja.slice(span.end)}`;
 
   const distractors = pickDistractors(target, prompt, pool, rand);
   if (distractors.length < CLOZE_CHOICES - 1) return null;

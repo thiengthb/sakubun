@@ -130,20 +130,68 @@ describe('getQuickReview', () => {
   it('falls back to a flip card when no sentence can be blanked', async () => {
     const ids = await seed([
       {
-        expression: '急ぐ',
-        notes: 'EN: hurry · Ví dụ: ニックはバスに間に合うように急いだ。 (Nick hurried.)',
+        // Not in OpenJLPT, so the sentence kept in its notes is all it has.
+        expression: '書き直す',
+        notes: 'EN: rewrite · Ví dụ: 名前を間違えたので、書類を書き直した。 (I rewrote the form.)',
       },
       { expression: '準備' },
       { expression: '練習' },
       { expression: '連絡' },
     ]);
-    await makeSeen(ids['急ぐ']);
+    await makeSeen(ids['書き直す']);
 
-    const card = (await Q.getQuickReview(db, NOW)).cards.find((c) => c.itemId === ids['急ぐ'])!;
+    const card = (await Q.getQuickReview(db, NOW)).cards.find((c) => c.itemId === ids['書き直す'])!;
     expect(card.mode).toBe('flip');
-    // The conjugated form is still found and underlined; OpenJLPT gives no Vietnamese translation.
-    expect(card.sentence?.segments).toContainEqual({ text: '急', mark: 'target' });
+    // The conjugated form is still found and underlined; a bare sentence has no translation.
+    expect(card.sentence?.segments).toContainEqual({ text: '書き直', mark: 'target' });
     expect(card.sentence?.translation).toBeNull();
+  });
+
+  it('takes the translation, furigana, place and formation of an OpenJLPT sentence', async () => {
+    // data/openjlpt/examples.json: 〜は "私は学生です。" with Vietnamese, the は placed, the formation.
+    const ids = await seed([{ expression: '〜は' }], 'GRAMMAR');
+    const [card] = (await Q.getQuickReview(db, NOW)).cards;
+    expect(card).toMatchObject({ mode: 'flip', isNew: true, structure: 'Danh từ + は' });
+    expect(card.sentence).toEqual({
+      translation: 'Tôi là sinh viên.',
+      segments: [
+        { text: '私', reading: 'わたし' },
+        { text: 'は', mark: 'target' },
+        { text: '学生', reading: 'がくせい' },
+        { text: 'です。' },
+      ],
+    });
+
+    // Placed exactly, a one-character pattern can be blanked once it has been seen.
+    await makeSeen(ids['〜は']);
+    const [seen] = (await Q.getQuickReview(db, NOW)).cards;
+    expect(seen.mode).toBe('cloze');
+    if (seen.mode !== 'cloze') return;
+    expect(seen.answer).toBe('は');
+    expect(seen.sentence.translation).toBe('Tôi là sinh viên.');
+    expect(seen.sentence.segments).toEqual([
+      { text: '私', reading: 'わたし' },
+      { text: '', mark: 'blank' },
+      { text: '学生', reading: 'がくせい' },
+      { text: 'です。' },
+    ]);
+  });
+
+  it('underlines a conjugated word where the data places it, and leaves a skipped sentence out', async () => {
+    const ids = await seed([
+      { expression: '会う' },
+      // Its OpenJLPT sentence uses another sense; examples.json marks it unfit to learn from.
+      { expression: '拝む', notes: 'Ví dụ: その不届きな野郎の顔を、拝ませてもらうか。' },
+    ]);
+    await makeSeen(ids['会う']);
+    const cards = await Q.getQuickReview(db, NOW);
+    const au = cards.cards.find((c) => c.itemId === ids['会う'])!;
+    // 会わ is not 会う as the choices would show it, so the card stays a flip card.
+    expect(au.mode).toBe('flip');
+    expect(au.sentence?.translation).toBe('Anh đã gặp anh Smith rồi nhỉ.');
+    expect(au.sentence?.segments).toContainEqual({ text: '会', reading: 'あ', mark: 'target' });
+    expect(au.sentence?.segments).toContainEqual({ text: 'わ', mark: 'target' });
+    expect(cards.cards.find((c) => c.itemId === ids['拝む'])?.sentence).toBeNull();
   });
 
   it('shows the same cards when reloaded the same day', async () => {
