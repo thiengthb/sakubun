@@ -9,7 +9,8 @@ const iso = (ms: number) => new Date(ms).toISOString().replace('Z', '+00:00');
 const card = (ja: string, vi: string, jaRuby: string) =>
   JSON.stringify({ structure: [], usage: 'u', example: { ja, vi, jaRuby }, pitfalls: [] });
 
-// One seen word that can be clozed, and three new words: the cloze's distractors, met as flip cards.
+// One seen word that can be clozed, one new word met on an intro card, and two seen words with no
+// sentence (not in OpenJLPT either), tested as bare flip cards.
 function seed() {
   const db = new Database(path.join(process.cwd(), E2E_DB_FILE));
   const now = Date.now();
@@ -47,23 +48,26 @@ function seed() {
       ),
     );
     srs.run('sq1', 'q1', iso(now - DAY), 4, 5, 3, 3, 2, iso(now - 4 * DAY));
-    const fresh: [string, string, string, string | null][] = [
-      [
-        'q2',
-        '準備',
-        'chuẩn bị',
-        card(
-          '旅行の準備をします。',
-          'Tôi chuẩn bị cho chuyến đi.',
-          '旅行[りょこう]の準備[じゅんび]をします。',
-        ),
-      ],
-      ['q3', '練習', 'luyện tập', null],
-      ['q4', '連絡', 'liên lạc', null],
+    item.run(
+      'q2',
+      '準備',
+      null,
+      'chuẩn bị',
+      iso(now - 3000),
+      card(
+        '旅行の準備をします。',
+        'Tôi chuẩn bị cho chuyến đi.',
+        '旅行[りょこう]の準備[じゅんび]をします。',
+      ),
+    );
+    srs.run('sq2', 'q2', iso(now), 0, 0, 0, 0, 0, null);
+    const bare: [string, string, string][] = [
+      ['q3', '書き直す', 'viết lại'],
+      ['q4', '言い張る', 'khăng khăng'],
     ];
-    fresh.forEach(([id, expression, meaning, enrichment], n) => {
-      item.run(id, expression, null, meaning, iso(now - (3 - n) * 1000), enrichment);
-      srs.run(`s${id}`, id, iso(now), 0, 0, 0, 0, 0, null);
+    bare.forEach(([id, expression, meaning], n) => {
+      item.run(id, expression, null, meaning, iso(now - (2 - n) * 1000), null);
+      srs.run(`s${id}`, id, iso(now - DAY + n * 1000), 4, 5, 3, 3, 2, iso(now - 4 * DAY));
     });
   } finally {
     db.close();
@@ -116,7 +120,8 @@ function clozeRating(): number | undefined {
 }
 
 // By mouse every card is answered right. By keyboard the cloze gets a wrong pick that is lost on
-// the network and sent again, and the three flips are graded with 1 (Quên), 4 (Dễ) and Enter (Nhớ).
+// the network and sent again, and the two flips are graded with 1 (Quên) and 4 (Dễ). The intro card
+// asks nothing: "Đã xem" (or Enter) records Nhớ.
 async function runSession(page: Page, { keyboard = false } = {}) {
   await login(page);
   await page.goto('/review');
@@ -136,13 +141,15 @@ async function runSession(page: Page, { keyboard = false } = {}) {
   });
 
   let sawCloze = false;
-  let sawSentence = false;
-  const flipKeys = ['1', '4', 'Enter'];
+  let sawIntro = false;
+  let sawBare = 0;
+  const flipKeys = ['1', '4'];
   for (let n = 0; n < 4; n++) {
     await expect(page.getByLabel(`Thẻ ${n + 1} / 4`)).toBeVisible();
     const choices = page.getByRole('group', { name: 'Chọn đáp án' });
     const reveal = page.getByRole('button', { name: 'Xem đáp án' });
-    await expect(choices.or(reveal)).toBeVisible();
+    const seen = page.getByRole('button', { name: 'Đã xem' });
+    await expect(choices.or(reveal).or(seen)).toBeVisible();
     if (await choices.isVisible()) {
       sawCloze = true;
       await expect(choices.getByRole('button')).toHaveCount(4);
@@ -168,8 +175,16 @@ async function runSession(page: Page, { keyboard = false } = {}) {
         await expect(choices.getByRole('button', { name: /約束/ })).toBeDisabled();
         await next.click();
       }
+    } else if (await seen.isVisible()) {
+      // Met inside its sentence, the answer already open with the translation.
+      sawIntro = true;
+      await expect(page.getByText('旅行')).toBeVisible();
+      await expect(page.getByText('Tôi chuẩn bị cho chuyến đi.')).toBeVisible();
+      await expect(page.getByRole('group', { name: 'Chấm thẻ' })).toHaveCount(0);
+      if (keyboard) await page.keyboard.press('Enter');
+      else await seen.click();
     } else {
-      if (await page.getByText('旅行').isVisible()) sawSentence = true;
+      if (await page.getByText('Mục này chưa có câu ví dụ.').isVisible()) sawBare++;
       if (keyboard) {
         await page.keyboard.press('Enter');
         await expect(page.getByRole('group', { name: 'Chấm thẻ' }).getByRole('button')).toHaveCount(
@@ -203,10 +218,14 @@ async function runSession(page: Page, { keyboard = false } = {}) {
   }
 
   await expect(page.getByText('Xong buổi ôn')).toBeVisible();
-  await expect(page.getByText(keyboard ? 'Nhớ 2 trên 4 thẻ.' : 'Nhớ 4 trên 4 thẻ.')).toBeVisible();
+  // The intro card is not counted as remembered: it was read, not tested.
+  await expect(
+    page.getByText(keyboard ? /Nhớ 1 trên 3 thẻ\. Đã làm quen 1 mục mới/ : /Nhớ 3 trên 3 thẻ\./),
+  ).toBeVisible();
   expect(ratings()).toEqual(keyboard ? [1, 1, 3, 4] : [3, 3, 3, 3]);
   expect(sawCloze, 'the seen word is tested as a cloze').toBe(true);
-  expect(sawSentence, 'a new word with an example is met inside its sentence').toBe(true);
+  expect(sawIntro, 'a new word is met on an intro card').toBe(true);
+  expect(sawBare, 'a word with no sentence says so').toBe(2);
   expect(reviewLogCount()).toBe(4);
 
   const overflow = await page.evaluate(
@@ -217,7 +236,7 @@ async function runSession(page: Page, { keyboard = false } = {}) {
 
 test.beforeAll(seedE2eAccount);
 
-test('quick review on desktop: cloze for a seen word, flip for new ones, every answer recorded', async ({
+test('quick review on desktop: cloze for a seen word, intro for a new one, every answer recorded', async ({
   page,
 }) => {
   seed();

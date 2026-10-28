@@ -4,18 +4,18 @@ Trang này trả lời ba câu cho bất kỳ phiên Claude nào (kể cả từ
 việc tiếp theo là gì**. Cập nhật nó **trong cùng PR** với việc làm, và khi nhận một bước mới (xem
 "Bắt đầu phiên" trong `CLAUDE.md`). Lộ trình đầy đủ: `docs/roadmap.md`. Kế hoạch đã duyệt: `docs/plans/`.
 
-Cập nhật lần cuối: 2026-10-28 (Ôn nhanh: C3 đã merge #171, 50 câu mẫu Codex #172; C2 PR mở).
+Cập nhật lần cuối: 2026-10-28 (Ôn nhanh: C2 #173, C3 #171 đã merge; C4 PR mở; Codex dịch tiếp).
 
 ## Đang làm
 
 | Bước | Nhánh / PR | Giữ bởi | Trạng thái |
 | --- | --- | --- | --- |
-| 8 C2 thẻ Ôn nhanh lấy câu dịch, furigana, chỗ gạch chân và cách nối tiếng Việt từ `data/openjlpt/examples.json` | `feat/8-c2-example-cards` | Claude (phiên của thien, 2026-10-28) | PR mở (risk:high, thien merge) |
-| 8 C1b dịch câu ví dụ (cả bộ, mỗi PR khoảng 1.000 mục) | `codex/openjlpt-*` | Codex (thien giao) | 50 câu mẫu đã merge (#172); đang dịch phần còn lại |
+| 8 C4 thẻ giới thiệu cho mục mới (không hỏi, nút "Đã xem"), khung đáp án có "Dịch câu", báo mục chưa có câu ví dụ | `feat/8-c4-intro-card` | Claude (phiên của thien, 2026-10-28) | PR mở (risk:high, thien merge) |
+| 8 C1b dịch câu ví dụ (cả bộ, mỗi PR khoảng 1.000 mục) | `codex/openjlpt-*` | Codex (thien giao) | 50 câu mẫu đã merge (#172); đợt 1 dừng ở 250 mục (hết hạn mức), mở PR với số đã có, đợt sau tạo nhánh mới từ `main` |
 
 ## Chờ thien
 
-- Merge C2 (risk:high) sau khi xem mô tả PR. Mục nào Codex đã dịch thì thẻ hiện bản dịch ngay khi lên NUC.
+- Duyệt ảnh và merge C4 (risk:high).
 - Đưa bản có Kho chung (#159–#167, thêm bảng mới) lên NUC: sao lưu DB trước. Rồi thử `/library`, và
   `library_search`, `library_take` trong claude.ai (L5).
 - Đưa bản có Kaiwa (#156, thêm bảng `Script` và cột `Script.analysis`) lên NUC: sao lưu DB trước. Rồi thử trong claude.ai: nhờ Claude soạn một đoạn hội thoại ngắn trên canvas, lưu, mở đường dẫn nó trả về; trên web thử chọn vai "Tôi là", rê chuột xem nghĩa, Thêm và Sửa.
@@ -38,7 +38,7 @@ Cập nhật lần cuối: 2026-10-28 (Ôn nhanh: C3 đã merge #171, 50 câu m�
 5. Kho chung L1–L6 xong, lên `main` 2026-10-28: L1a #159, L1b #160, L2 #161, L3a #162, L3b #163, L4 #164, L5 #165,
    L6a #166, L6b #167.
 6. Ôn nhanh (C): kế hoạch `docs/plans/2026-10-28-quick-review.md` duyệt 2026-10-28 (Codex dịch câu ví dụ, mục mới là thẻ
-   giới thiệu, không có nút "Đoán"). Xong: C1a #170, C3 #171, 50 câu mẫu #172. Còn: C1b (Codex), C2, C4, C5. Sau đó 7.4
+   giới thiệu, không có nút "Đoán"). Xong: C1a #170, C3 #171, 50 câu mẫu #172, C2 #173. Còn: C1b (Codex), C4, C5. Sau đó 7.4
    (làm lại UI, cùng các lỗi nhỏ bên dưới), rồi K6–K9.
 
 ## Việc nhỏ còn treo
