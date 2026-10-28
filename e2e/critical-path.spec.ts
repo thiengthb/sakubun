@@ -10,7 +10,10 @@ test('login → dashboard → a settings change persists across reload', async (
   await page.getByLabel('Mật khẩu').fill(E2E_LOGIN);
   await page.getByRole('button', { name: 'Đăng nhập' }).click();
 
-  await expect(page.getByText('Chưa có gì để học')).toBeVisible();
+  // Lands on Phân tích. Its body depends on what other specs left in the shared e2e DB (empty
+  // store or charts), so the check is the page itself, not one of its states.
+  await page.waitForURL((u) => u.pathname === '/', { timeout: 30_000 });
+  await expect(page.getByRole('heading', { name: 'Phân tích', level: 1 })).toBeVisible();
 
   await page.goto('/settings');
   // Nội dung + Nhịp học + Nghe & nói are one "Luyện tập" tab now, and it is the default — the daily
