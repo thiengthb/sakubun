@@ -4,6 +4,7 @@ import Database from 'better-sqlite3';
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
 import { E2E_BASE_URL, E2E_DB_FILE, E2E_EMAIL, E2E_LOGIN } from './fixtures';
 import { MCP_URL, parseRpc, seedMcpAccount } from './mcp-client';
+import { LINK_ERROR_TEXT } from '@/lib/auth/login-error';
 
 // The OAuth provider behind /api/mcp (roadmap 4.1), driven the way claude.ai drives it: register a
 // client (DCR), send thien through /login and /consent, trade the code for tokens, refresh them, and
@@ -283,6 +284,8 @@ test('callback lạ không bao giờ nhận được code, kể cả khi client 
   await signInDirectly(page);
   await page.goto(authorizeUrl(clientId, evil, pkce().challenge));
   await expect(page.getByText('Cho phép truy cập Sakubun?')).toHaveCount(0);
+  // The login page blames the link, not the account (7.4j).
+  await expect(page.getByText(LINK_ERROR_TEXT)).toBeVisible();
   expect(page.url()).not.toContain('evil.example');
   expect(reached).toBe(false);
 });
