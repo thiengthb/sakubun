@@ -78,4 +78,18 @@ describe('UI layout standard (nuc-platform/12-ui-layout-standard.md)', () => {
         `(nuc-platform/12-ui-layout-standard.md):\n${offenders.join('\n')}`,
     ).toEqual([]);
   });
+
+  it('only RootDocument draws <html>, so every page gets the same fonts and theme', () => {
+    // app/global-error.tsx replaces the root layout. It once drew its own <html>, lost next/font and
+    // the theme, and fell back to Times while the rest of the app moved on.
+    const offenders = ['app', 'components']
+      .flatMap((root) => walk(root))
+      .map(rel)
+      .filter((path) => path !== 'components/layout/root-document.tsx' && !path.includes('.test.'))
+      .filter((path) => /<html[\s>]/.test(readFileSync(path, 'utf8')));
+    expect(
+      offenders,
+      `Render <RootDocument> (components/layout/root-document.tsx) instead of <html>:\n${offenders.join('\n')}`,
+    ).toEqual([]);
+  });
 });

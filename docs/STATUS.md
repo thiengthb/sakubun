@@ -8,10 +8,11 @@ Cập nhật lần cuối: 2026-10-28 (7.4a #181, 7.4k #182, 7.4b #188, 7.4c #19
 
 ## Đang làm
 
-| Bước                                                                  | Nhánh / PR             | Giữ bởi             | Trạng thái                                                                                                                                              |
-| --------------------------------------------------------------------- | ---------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 7.4g danh sách Hội thoại (câu đầu, số câu, người nói, ô tìm từ 9 bài) | `feat/7.4g-kaiwa-list` | Claude (thread 7.4) | PR mở, chờ thien merge (risk:high: đổi Hội thoại).                                                                                                      |
-| 8 C1b dịch câu ví dụ (cả bộ, mỗi PR khoảng 1.000 mục)                 | `codex/openjlpt-*`     | Codex (thien giao)  | 50 câu mẫu (#172), đợt 1: 250 mục (#174); thien giao dịch hết phần còn lại 2026-10-28; mỗi đợt một nhánh mới từ `main`, Claude kiểm và merge (risk:low) |
+| Bước                                                                  | Nhánh / PR                       | Giữ bởi             | Trạng thái                                                                                                                                              |
+| --------------------------------------------------------------------- | -------------------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 7.4g danh sách Hội thoại (câu đầu, số câu, người nói, ô tìm từ 9 bài) | `feat/7.4g-kaiwa-list`           | Claude (thread 7.4) | PR mở, chờ thien merge (risk:high: đổi Hội thoại).                                                                                                      |
+| Trang lỗi gốc theo style chung (thien thấy chữ kiểu Times)            | `fix/7.4-standalone-pages-style` | Claude (thread 7.4) | PR mở, chờ thien merge (risk:high: đổi UI). Dò cả trang đăng nhập, đồng ý OAuth, 404, lỗi, chính sách: chỉ trang lỗi gốc lệch.                          |
+| 8 C1b dịch câu ví dụ (cả bộ, mỗi PR khoảng 1.000 mục)                 | `codex/openjlpt-*`               | Codex (thien giao)  | 50 câu mẫu (#172), đợt 1: 250 mục (#174); thien giao dịch hết phần còn lại 2026-10-28; mỗi đợt một nhánh mới từ `main`, Claude kiểm và merge (risk:low) |
 
 ## Chờ thien
 
@@ -52,6 +53,9 @@ poller (`sudo`), user `thi3n` không có token ghcr. Xem log: `journalctl -u min
 - Trang đồng ý OAuth ("Cho phép truy cập Sakubun?") không ghi đang cấp quyền cho tài khoản nào; trình duyệt đang
   đăng nhập sakubun bằng tài khoản khác thì connector âm thầm nối sai tài khoản (thử thật 2026-10-27). Nên hiện email
   trên trang đó (đụng OAuth, risk:high).
+- Liên kết OAuth hỏng (vd `redirect_uri` lạ) đưa về `/login?error=invalid_redirect`, và trang đăng nhập ghi "Tài khoản này
+  không được phép vào Sakubun" cho mọi mã lỗi: sai nghĩa, nên nói liên kết kết nối không hợp lệ (`onAPIError` trong
+  `lib/auth/auth.ts`, `app/login/login-form.tsx`; đụng OAuth, risk:high; thấy 2026-10-28).
 - Lượt thử 2026-10-27: Claude đọc kết quả `status` thành "18 mục đến hạn, 100 lượt ôn" trong khi đó là hạn mức ngày
   (tài khoản mới có 0 đến hạn). Cần làm chữ của `status` rõ hơn giữa "đến hạn" và "hạn mức".
 - e2e `skeleton` ở 390px: khung chờ trang một mục thấp hơn trang thật 44px (hàng nút đầu trang trên điện thoại); đỏ cả trên `main` (thấy 2026-10-28, sau 7.4k).
