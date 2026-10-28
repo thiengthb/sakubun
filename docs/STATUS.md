@@ -14,10 +14,16 @@ Cập nhật lần cuối: 2026-10-28 (Ôn nhanh: code C2–C5 đã lên `main`,
 
 ## Chờ thien
 
-- Đưa bản có Ôn nhanh mới (#171–#177, không có migration) lên NUC. Rồi thử: Ôn nhanh với mục mới (thẻ giới thiệu, nút "Đã xem"), và trong claude.ai nhờ Claude thêm câu ví dụ cho một mục (`example_add`).
-- Đưa bản có Kho chung (#159–#167, thêm bảng mới) lên NUC: sao lưu DB trước. Rồi thử `/library`, và
+NUC tự cập nhật sakubun: `main` xanh CI thì `deploy.yml` đẩy image lên ghcr; poller trên miniserver (2 phút, chỉ app có
+`/opt/apps/sakubun/.autodeploy`) chụp DB (`.snapshot`), kéo bản mới, chạy migration lúc khởi động, kiểm healthy; hỏng thì
+tự quay về bản cũ và đổi thành `.autodeploy.blocked` (`nuc-infra/runbooks/02-add-app.md`). Bị khoá từ 2026-10-27 14:27 UTC
+(lỗi migrate trong image, sửa ở #169); bật lại 2026-10-28, lần chạy 07:40 UTC `deploy healthy`. Kéo tay phải dùng quyền của
+poller (`sudo`), user `thi3n` không có token ghcr. Xem log: `journalctl -u miniserver-deploy-poll --since "-10 min" | grep sakubun`.
+
+- Thử Ôn nhanh mới (#171–#177, đã lên NUC 2026-10-28): Ôn nhanh với mục mới (thẻ giới thiệu, nút "Đã xem"), và trong claude.ai nhờ Claude thêm câu ví dụ cho một mục (`example_add`).
+- Thử Kho chung (#159–#167, đã lên NUC): `/library`, và
   `library_search`, `library_take` trong claude.ai (L5).
-- Đưa bản có Kaiwa (#156, thêm bảng `Script` và cột `Script.analysis`) lên NUC: sao lưu DB trước. Rồi thử trong claude.ai: nhờ Claude soạn một đoạn hội thoại ngắn trên canvas, lưu, mở đường dẫn nó trả về; trên web thử chọn vai "Tôi là", rê chuột xem nghĩa, Thêm và Sửa.
+- Thử Kaiwa (#156, đã lên NUC) trong claude.ai: nhờ Claude soạn một đoạn hội thoại ngắn trên canvas, lưu, mở đường dẫn nó trả về; trên web thử chọn vai "Tôi là", rê chuột xem nghĩa, Thêm và Sửa.
 - Muốn trần khác 50 tài khoản thì đặt `MAX_ACCOUNTS` trên NUC.
 - Sau khi bản 7.3 lên NUC: mở Cài đặt > Hướng dẫn, kiểm địa chỉ MCP là `https://sakubun.thientnse.site/api/mcp`.
 - Gỡ runner `tnt-laptop-wsl` khỏi repo nếu còn (Settings > Actions > Runners).
