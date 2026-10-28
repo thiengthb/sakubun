@@ -11,7 +11,9 @@ Cập nhật lần cuối: 2026-10-28 (Ôn nhanh: C2 #173, C3 #171 đã merge; C
 | Bước | Nhánh / PR | Giữ bởi | Trạng thái |
 | --- | --- | --- | --- |
 | 8 C4 thẻ giới thiệu cho mục mới (không hỏi, nút "Đã xem"), khung đáp án có "Dịch câu", báo mục chưa có câu ví dụ | `feat/8-c4-intro-card` | Claude (phiên của thien, 2026-10-28) | PR mở (risk:high, thien merge) |
-| 8 C1b dịch câu ví dụ (cả bộ, mỗi PR khoảng 1.000 mục) | `codex/openjlpt-*` | Codex (thien giao) | 50 câu mẫu đã merge (#172); đợt 1 dừng ở 250 mục (hết hạn mức), mở PR với số đã có, đợt sau tạo nhánh mới từ `main` |
+| 8 C5a câu ví dụ lấy từ kịch bản Kaiwa của người học, xoay câu theo lần ôn | `feat/8-c5a-kaiwa-examples` | Claude (phiên của thien, 2026-10-28) | PR mở (risk:high, thien merge) |
+| 8 C5b MCP `example_add` (mục chưa có thẻ thì tạo thẻ chỉ có câu, đánh dấu còn thiếu: thien chọn 2026-10-28) | chưa có | Claude (phiên của thien, 2026-10-28) | sau C5a |
+| 8 C1b dịch câu ví dụ (cả bộ, mỗi PR khoảng 1.000 mục) | `codex/openjlpt-*` | Codex (thien giao) | 50 câu mẫu đã merge (#172); đợt 1: 250 mục (#174); đợt sau tạo nhánh mới từ `main` |
 
 ## Chờ thien
 
@@ -38,7 +40,7 @@ Cập nhật lần cuối: 2026-10-28 (Ôn nhanh: C2 #173, C3 #171 đã merge; C
 5. Kho chung L1–L6 xong, lên `main` 2026-10-28: L1a #159, L1b #160, L2 #161, L3a #162, L3b #163, L4 #164, L5 #165,
    L6a #166, L6b #167.
 6. Ôn nhanh (C): kế hoạch `docs/plans/2026-10-28-quick-review.md` duyệt 2026-10-28 (Codex dịch câu ví dụ, mục mới là thẻ
-   giới thiệu, không có nút "Đoán"). Xong: C1a #170, C3 #171, 50 câu mẫu #172, C2 #173. Còn: C1b (Codex), C4, C5. Sau đó 7.4
+   giới thiệu, không có nút "Đoán"). Xong: C1a #170, C3 #171, 50 câu mẫu #172, C2 #173, 250 mục #174. Còn: C1b (Codex), C4, C5a, C5b. Sau đó 7.4
    (làm lại UI, cùng các lỗi nhỏ bên dưới), rồi K6–K9.
 
 ## Việc nhỏ còn treo
