@@ -8,6 +8,7 @@ import { cn } from '@/lib/core/utils';
 
 // thienui registry/base/toggle.tsx, on Radix until components/ui moves to Base UI. Radix marks a
 // pressed toggle with data-state="on" (Base UI uses aria-pressed), so both selectors stay.
+// A tooltip trigger (Explain) overwrites data-state with its own, so the choice look keys on both too.
 const toggleVariants = cva(
   "target-44 group/toggle inline-flex items-center justify-center gap-1 rounded-sm text-sm font-medium whitespace-nowrap transition-all outline-none hover:bg-muted hover:text-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 aria-pressed:bg-muted data-[state=on]:bg-muted dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
   {
@@ -16,7 +17,7 @@ const toggleVariants = cva(
         default: 'bg-transparent',
         outline: 'border border-input bg-transparent hover:bg-muted',
         choice:
-          'border-2 border-control-edge bg-card text-muted-foreground shadow-lift active:translate-y-0.5 active:shadow-none data-[state=on]:border-brand-wash data-[state=on]:bg-brand-wash data-[state=on]:text-accent-brand data-[state=on]:shadow-lift-chosen',
+          'border-2 border-control-edge bg-card text-muted-foreground shadow-lift active:translate-y-0.5 active:shadow-none data-[state=on]:border-brand-wash data-[state=on]:bg-brand-wash data-[state=on]:text-accent-brand data-[state=on]:shadow-lift-chosen aria-pressed:border-brand-wash aria-pressed:bg-brand-wash aria-pressed:text-accent-brand aria-pressed:shadow-lift-chosen',
       },
       size: {
         default: 'h-9 min-w-9 px-2.5 md:h-7 md:min-w-7',

@@ -21,6 +21,9 @@ export const FURIGANA_MODES = ['app', 'claude', 'both', 'none'] as const;
 export type FuriganaMode = (typeof FURIGANA_MODES)[number];
 export const furiganaInApp = (m: FuriganaMode): boolean => m === 'app' || m === 'both';
 export const furiganaForClaude = (m: FuriganaMode): boolean => m === 'claude' || m === 'both';
+// The sidebar's あ switches the app's furigana and leaves Claude's as it was.
+export const withAppFurigana = (m: FuriganaMode, on: boolean): FuriganaMode =>
+  furiganaForClaude(m) ? (on ? 'both' : 'claude') : on ? 'app' : 'none';
 
 export const VOICE_SPEAKERS = [
   { id: 3, label: 'Nữ · dễ thương (ずんだもん)' },

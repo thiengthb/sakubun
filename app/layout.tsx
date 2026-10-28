@@ -7,6 +7,10 @@ import { LucideProvider } from 'lucide-react';
 import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { AppShell } from '@/components/layout/app-shell';
+import { getSessionAccess } from '@/lib/auth/current-user';
+import { userDb } from '@/lib/db/user-db';
+import { getSettings } from '@/lib/library/practice';
+import { furiganaInApp } from '@/lib/settings/schema';
 import './globals.css';
 import { cn } from '@/lib/core/utils';
 
@@ -44,6 +48,12 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const sidebarOpen = (await cookies()).get('sidebar_state')?.value !== 'false';
+  // The sidebar's あ shows the learner's furigana setting (7.4a); nobody signed in, no switch.
+  const session = await getSessionAccess();
+  const furigana =
+    session && session.access !== 'none'
+      ? furiganaInApp((await getSettings(userDb(session.userId))).furiganaMode)
+      : null;
 
   return (
     <html
@@ -63,7 +73,7 @@ export default async function RootLayout({
                 600-weight text beside it (thien, item detail round 2, docs/ui-standard.md). */}
             <LucideProvider strokeWidth={1.5}>
               <TooltipProvider delayDuration={300}>
-                <AppShell defaultSidebarOpen={sidebarOpen}>{children}</AppShell>
+                <AppShell defaultSidebarOpen={sidebarOpen} furigana={furigana}>{children}</AppShell>
               </TooltipProvider>
             </LucideProvider>
           </MotionConfig>

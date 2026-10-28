@@ -3,7 +3,7 @@ import { join, relative, sep } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import { countViolations, overDebt, shrinkDebt, staleDebt, type Debt } from './thienui-debt';
-import { elements, runUiRules, UI_RULES, type Source } from './ui-standard';
+import { elements, NOT_LIST_CARDS, runUiRules, UI_RULES, type Source } from './ui-standard';
 
 // docs/ui-standard.md, as tests. Code written before the standard is recorded in
 // ui-standard-debt.json; the record only shrinks (same ratchet as thienui-debt.json), and each
@@ -16,6 +16,13 @@ const LOWER = 'UPDATE_UI_STANDARD_DEBT=1 npx vitest run lib/design/ui-standard.t
 const ALLOW: Record<string, Record<string, string>> = {
   'components/ui/tooltip.tsx': {
     'radius-class': 'the tooltip arrow is a 10px rotated square; 2px only softens its tip',
+  },
+  'components/features/history/history-cards.tsx': {
+    'card-actions-icon-only':
+      '"Đang chờ" is the result pill of a pending turn, a button only so its tooltip opens on focus',
+  },
+  'components/features/library/library-entry-card.tsx': {
+    'card-actions-icon-only': 'Lấy and Đã có become CardAction in the Từng mục rework (7.4i)',
   },
 };
 
@@ -118,6 +125,44 @@ describe('ui standard: each check goes red on a bad sample', () => {
       check('icon-only-plain', `${imp}<Button size="icon" aria-label="Đóng"><X /></Button>`),
     ).toEqual([]);
     expect(check('icon-only-plain', `${imp}<Button><Lightbulb />Gợi ý</Button>`)).toEqual([]);
+  });
+
+  it('card-actions-icon-only', () => {
+    const card = 'components/features/library/library-entry-card.tsx';
+    expect(check('card-actions-icon-only', '<Button size="sm">Lấy</Button>', card)).toHaveLength(1);
+    expect(
+      check('card-actions-icon-only', '<Button>{busy ? <Spinner /> : null}Đã có</Button>', card),
+    ).toHaveLength(1);
+    expect(
+      check(
+        'card-actions-icon-only',
+        '<Button aria-label="Lấy">{busy ? <Spinner /> : <Plus />}</Button>',
+        card,
+      ),
+    ).toEqual([]);
+    expect(check('card-actions-icon-only', '<CardAction icon={Plus} label="Lấy" />', card)).toEqual(
+      [],
+    );
+    // Only cards in a list: a page or the study card keeps its worded buttons.
+    expect(check('card-actions-icon-only', '<Button>Lấy</Button>')).toEqual([]);
+    expect(
+      check(
+        'card-actions-icon-only',
+        '<Button>Lật thẻ</Button>',
+        'components/common/review-card.tsx',
+      ),
+    ).toEqual([]);
+  });
+
+  it('every card kept out of the list-card rules still exists', () => {
+    expect(Object.keys(NOT_LIST_CARDS).filter((f) => !existsSync(f))).toEqual([]);
+  });
+
+  it('card-text-one-line', () => {
+    const card = 'components/common/resource-card.tsx';
+    expect(check('card-text-one-line', '<p className="line-clamp-2">x</p>', card)).toHaveLength(1);
+    expect(check('card-text-one-line', '<Truncate>{meaningVi}</Truncate>', card)).toEqual([]);
+    expect(check('card-text-one-line', '<p className="line-clamp-3">x</p>')).toEqual([]);
   });
 
   it('no-form-dialog', () => {

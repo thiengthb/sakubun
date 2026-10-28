@@ -8,6 +8,7 @@ import {
   addItems,
   deleteItem,
   deleteItems,
+  getSettings,
   saveSettings,
   setItemStarred,
   setItemSuspended,
@@ -17,7 +18,12 @@ import {
   VOCAB_KIND,
 } from '@/lib/library/practice';
 import { getStreak } from '@/lib/insights/streak';
-import { JLPT_LEVELS, settingsPatchSchema, type Settings } from '@/lib/settings/schema';
+import {
+  JLPT_LEVELS,
+  settingsPatchSchema,
+  withAppFurigana,
+  type Settings,
+} from '@/lib/settings/schema';
 import { getSessionUserId, getUserDb } from '@/lib/auth/current-user';
 import {
   GROUP_KINDS,
@@ -41,6 +47,16 @@ export async function saveSettingsAction(patch: unknown): Promise<ActionResult<S
   if (!parsed.ok) return parsed;
   const settings = await saveSettings(db, parsed.data);
   return ok(settings);
+}
+
+// The sidebar's あ: furigana in the app on or off, for every page and device (7.4a).
+export async function setAppFuriganaAction(on: unknown): Promise<ActionResult> {
+  const parsed = parseInput(z.boolean(), on);
+  if (!parsed.ok) return parsed;
+  const db = await getUserDb();
+  const { furiganaMode } = await getSettings(db);
+  await saveSettings(db, { furiganaMode: withAppFurigana(furiganaMode, parsed.data) });
+  return ok(undefined);
 }
 
 const importEntrySchema = z.object({
