@@ -19,6 +19,11 @@ export const MCP_CATALOG: CatalogEntry[] = [
     summary: 'Tìm mẫu hoặc từ trong kho của bạn; không có thì báo Kho chung có không',
   },
   { name: 'add_items', kind: 'tool', summary: 'Thêm mẫu hoặc từ khi bạn đồng ý' },
+  {
+    name: 'example_add',
+    kind: 'tool',
+    summary: 'Thêm câu ví dụ có dịch vào thẻ của một mục khi bạn đồng ý; server kiểm câu',
+  },
   { name: 'status', kind: 'tool', summary: 'Đến hạn bao nhiêu, hôm nay còn lại bao nhiêu' },
   { name: 'kaiwa_list', kind: 'tool', summary: 'Liệt kê kịch bản Kaiwa của bạn' },
   { name: 'kaiwa_get', kind: 'tool', summary: 'Đọc một kịch bản Kaiwa trước khi sửa' },

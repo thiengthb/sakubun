@@ -162,9 +162,11 @@ export function EnrichmentCard({
           </Section>
         )}
 
-        <Section value="usage" title="Cách dùng">
-          <p>{enrichment.usage}</p>
-        </Section>
+        {enrichment.usage.trim() && (
+          <Section value="usage" title="Cách dùng">
+            <p>{enrichment.usage}</p>
+          </Section>
+        )}
 
         <Section value="examples" title="Ví dụ">
           <ul className="space-y-2.5">

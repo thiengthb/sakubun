@@ -135,12 +135,13 @@ export function EnrichmentSections({
         </ul>
       ),
     });
-  lead.push({
-    id: 'usage',
-    title: 'Cách dùng',
-    icon: BookOpen,
-    body: <p className="text-base leading-relaxed">{enrichment.usage}</p>,
-  });
+  if (enrichment.usage.trim())
+    lead.push({
+      id: 'usage',
+      title: 'Cách dùng',
+      icon: BookOpen,
+      body: <p className="text-base leading-relaxed">{enrichment.usage}</p>,
+    });
   const exampleBlock: Block = {
     id: 'examples',
     title: 'Ví dụ',

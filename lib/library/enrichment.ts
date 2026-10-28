@@ -37,7 +37,8 @@ export const contrastSchema = z.object({ with: z.string().min(1), note: z.string
 
 export const enrichmentSchema = z.object({
   structure: z.array(z.string().min(1)).max(ENRICHMENT_CAPS.structure).default([]),
-  usage: z.string().min(1),
+  // Empty on a card that so far holds only sentences added by example_add (lib/library/example-add.ts).
+  usage: z.string(),
   collocations: z.array(z.string()).max(ENRICHMENT_CAPS.collocations).default([]),
   example: exampleSchema,
   examples: z.array(exampleSchema).max(ENRICHMENT_CAPS.examples).default([]),
