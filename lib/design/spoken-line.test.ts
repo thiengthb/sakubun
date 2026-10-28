@@ -48,7 +48,7 @@ describe('invariant #9 — Japanese content renders through SpokenLine', () => {
       'These print a sentence field as bare text and never render it through <SpokenLine>, so when ' +
         'that field holds Japanese (VI_JA / CONVERSATION answers, JA_VI source) the learner gets no ' +
         'audio, no karaoke and no furigana. Branch on `direction` and give the Japanese side a ' +
-        `SpokenLine (see components/features/history/history-cards.tsx):\n${offenders.join('\n')}`,
+        `SpokenLine (see components/features/history/history-row.tsx):\n${offenders.join('\n')}`,
     ).toEqual([]);
   });
 
@@ -83,8 +83,8 @@ describe('invariant #9 — Japanese content renders through SpokenLine', () => {
         'dense 30-day weak-spot chips; each links to the item page, which is playable',
       ],
       [
-        'components/features/history/history-cards.tsx',
-        'RatingChip — a dense per-item tag on the card, same exception',
+        'components/features/history/history-detail.tsx',
+        'RatingChip — a dense per-item tag in the turn detail, same exception',
       ],
       [
         'components/features/resources/resource-add-form.tsx',

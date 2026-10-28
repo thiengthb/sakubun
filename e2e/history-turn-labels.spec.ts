@@ -11,7 +11,7 @@ async function login(page: Page) {
   await page.waitForURL((u) => !u.pathname.startsWith('/login'), { timeout: 30_000 });
 }
 
-test('mỗi kiểu luyện được gọi đúng tên trên thẻ lịch sử', async ({ page }) => {
+test('mỗi kiểu luyện được gọi đúng tên trong ngăn chi tiết lịch sử', async ({ page }) => {
   await seedE2eAccount();
   const db = new Database(path.join(process.cwd(), E2E_DB_FILE));
   for (const t of ['ReviewLog', 'Sentence', 'SrsState', 'Item']) db.exec(`DELETE FROM "${t}"`);
@@ -81,14 +81,14 @@ test('mỗi kiểu luyện được gọi đúng tên trên thẻ lịch sử', 
     },
   ];
   for (const c of cases) {
-    // A click on the card opens its detail (the phone's scroll list shares the DOM, hidden).
-    await page.getByText(c.open, { exact: false }).filter({ visible: true }).first().click();
+    // A click on the row opens its detail in the side panel.
+    await page.locator('[data-history-row]').filter({ hasText: c.open }).click();
     const dialog = page.getByRole('dialog');
     await expect(dialog).toBeVisible();
     await expect(dialog.getByText(c.prompt, { exact: true })).toBeVisible();
-    await expect(dialog.getByText(`${c.answer}:`, { exact: true })).toBeVisible();
-    await expect(dialog.getByText(`${c.reference}:`, { exact: true })).toBeVisible();
-    await expect(dialog.getByText('Bạn dịch:', { exact: true })).toHaveCount(0);
+    await expect(dialog.getByText(c.answer, { exact: true })).toBeVisible();
+    await expect(dialog.getByText(c.reference, { exact: true })).toBeVisible();
+    await expect(dialog.getByText('Bạn dịch', { exact: true })).toHaveCount(0);
     await page.keyboard.press('Escape');
     await expect(dialog).toHaveCount(0);
   }

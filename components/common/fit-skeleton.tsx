@@ -260,6 +260,47 @@ export function CardsSkeleton({
   );
 }
 
+/** Lịch sử's timeline: a day's heading over a raised box of two-line rows (history-list.tsx). */
+export function TimelineSkeleton({
+  rowHeight = 58,
+  rows = 8,
+}: {
+  rowHeight?: number;
+  rows?: number;
+}) {
+  return (
+    <div className="space-y-1">
+      <div className="flex items-center gap-2.5 pb-1.5">
+        <Skeleton className="h-4 w-16" />
+        <Skeleton className="h-3 w-24" />
+        <Skeleton className="ml-auto h-2 w-28 rounded-full" />
+      </div>
+      <FitList
+        rowHeight={rowHeight}
+        fallback={rows}
+        className={cn(LIST_CARD.base, 'divide-y divide-border overflow-hidden bg-card p-0')}
+        item={
+          <div
+            data-skeleton-row
+            className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1.5 px-3.5 py-2 md:grid-cols-[2.75rem_auto_minmax(0,1fr)_auto]"
+            style={{ height: rowHeight }}
+          >
+            <span className="col-start-1 row-start-2 flex items-center gap-2 md:contents">
+              <Skeleton className="h-3 w-9 md:col-start-1 md:row-start-1" />
+              <Skeleton className="h-5 w-24 rounded-sm md:col-start-2 md:row-start-1" />
+            </span>
+            <span className="col-start-1 row-start-1 flex flex-col gap-1.5 md:col-start-3">
+              <Skeleton className="h-4 w-3/4" />
+              <Skeleton className="h-3 w-1/2" />
+            </span>
+            <Skeleton className="col-start-2 row-span-2 row-start-1 h-5 w-12 rounded-md md:col-start-4 md:row-span-1" />
+          </div>
+        }
+      />
+    </div>
+  );
+}
+
 export function ListSkeleton({
   rows = 5,
   rowHeight = 64,

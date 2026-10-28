@@ -81,8 +81,8 @@ test('the mouse resting on a word opens its card, in the list and in the dialog'
   await page.mouse.move(1300, 850);
   await expect(card).toBeHidden();
 
-  // The turn's dialog looks its sentence up as well.
-  await page.locator('main [data-lookup]:visible').first().click();
+  // The turn's detail panel looks its sentence up as well.
+  await page.locator('[data-history-row]').first().click();
   const dialog = page.getByRole('dialog');
   await expect(dialog).toBeVisible();
   const station = await charAt(page, '[role="dialog"]', '駅');
