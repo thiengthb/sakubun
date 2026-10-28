@@ -14,7 +14,6 @@ import GroupNewLoading from '@/app/groups/new/loading';
 import KaiwaLoading from '@/app/kaiwa/loading';
 import KaiwaScriptLoading from '@/app/kaiwa/[id]/loading';
 import KaiwaNewLoading from '@/app/kaiwa/new/loading';
-import KaiwaEditLoading from '@/app/kaiwa/[id]/edit/loading';
 import LibraryLoading from '@/app/library/loading';
 import LibraryGroupLoading from '@/app/library/[id]/loading';
 
@@ -34,7 +33,6 @@ const SKELETONS: Record<string, () => React.ReactElement> = {
   kaiwa: KaiwaLoading,
   'kaiwa-script': KaiwaScriptLoading,
   'kaiwa-new': KaiwaNewLoading,
-  'kaiwa-edit': KaiwaEditLoading,
   library: LibraryLoading,
   'library-group': LibraryGroupLoading,
 };

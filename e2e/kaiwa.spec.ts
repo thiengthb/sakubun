@@ -192,11 +192,12 @@ test('Hội thoại lists a saved script and its page reads it line by line', as
   await page.keyboard.press('ArrowDown');
   await expect(lines.nth(1).locator('.ring-2')).toHaveCount(1);
   await page.keyboard.press('Control+e');
-  await page.waitForURL(/\/kaiwa\/kw-e2e\/edit$/);
-  await page.goBack();
+  await page.waitForURL(/\/kaiwa\/kw-e2e\?edit=1$/);
+  await expect(page.getByLabel('Kịch bản')).toBeVisible();
+  await page.keyboard.press('Control+e');
   await page.waitForURL(/\/kaiwa\/kw-e2e$/);
 
-  await page.getByRole('link', { name: 'Sửa', exact: true }).click();
+  await page.getByRole('button', { name: 'Sửa', exact: true }).click();
   await page.getByRole('button', { name: 'Xoá', exact: true }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Xoá' }).click();
   await page.waitForURL(/\/kaiwa$/);
@@ -208,8 +209,8 @@ test('Hội thoại lists a saved script and its page reads it line by line', as
     }
 });
 
-// K3c: the web editor writes the same format, checks it while typing, and refuses to overwrite a
-// version the AI saved meanwhile.
+// K3c, on one canvas since 7.4f: the web editor writes the same format, checks it while typing,
+// and refuses to overwrite a version the AI saved meanwhile.
 test('a script is written and fixed on the web too', async ({ page }) => {
   await seedE2eAccount();
   const d = db();
@@ -238,8 +239,8 @@ test('a script is written and fixed on the web too', async ({ page }) => {
   await expect(page.locator('[data-slot="kaiwa-line"]')).toHaveCount(2);
   const id = new URL(page.url()).pathname.split('/').pop()!;
 
-  await page.getByRole('link', { name: 'Sửa', exact: true }).click();
-  await page.waitForURL(/\/edit$/);
+  await page.getByRole('button', { name: 'Sửa', exact: true }).click();
+  await page.waitForURL(/\?edit=1$/);
   await expect(page.getByLabel('Tiêu đề')).toHaveValue('Ở ga');
   // The AI saves a new version while the learner is editing.
   const d2 = db();
@@ -249,15 +250,18 @@ test('a script is written and fixed on the web too', async ({ page }) => {
   await page.getByRole('button', { name: 'Lưu' }).click();
   await expect(page.getByText(/Kịch bản đã được sửa sau lần bạn đọc/)).toBeVisible();
 
+  // A reload keeps the editor open and reads the new version.
   await page.reload();
   await page.getByLabel('Tiêu đề').fill('Ở nhà ga');
   await page.getByRole('button', { name: 'Lưu' }).click();
+  await expect(page.getByText('Đã lưu', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Xong' }).click();
   await page.waitForURL(new RegExp(`/kaiwa/${id}$`));
   await expect(page.getByRole('heading', { name: 'Ở nhà ga' })).toBeVisible();
 
   const shots = process.env.SCREENSHOT_DIR;
   if (shots) {
-    await page.goto(`/kaiwa/${id}/edit`, { waitUntil: 'networkidle' });
+    await page.goto(`/kaiwa/${id}?edit=1`, { waitUntil: 'networkidle' });
     for (const width of [1440, 390]) {
       await page.setViewportSize({ width, height: width === 390 ? 844 : 900 });
       await page.screenshot({ path: path.join(shots, `kaiwa-edit-${width}.png`), fullPage: true });
@@ -300,4 +304,100 @@ test('"Tôi là" carries the last part over to a script with the same name', asy
   // No グエン here: the first speaker, as before.
   await page.goto('/kaiwa/kw-three', { waitUntil: 'networkidle' });
   await expect(page.getByRole('radio', { name: 'X' })).toHaveAttribute('aria-checked', 'true');
+});
+
+// thien, 7.4f: the editor colours the format, offers the speakers so far, saves with Ctrl S, and its
+// preview follows the cursor; leaving with changes not saved asks first.
+test('the canvas edits a script in place, with a live preview', async ({ page }) => {
+  await seedE2eAccount();
+  const d = db();
+  d.exec(`DELETE FROM Script WHERE userId = ${E2E_OWNER}`);
+  const now = new Date().toISOString();
+  d.prepare(
+    `INSERT INTO Script (id, userId, title, body, analysis, version, createdAt, updatedAt)
+     VALUES ('kw-canvas', ${E2E_OWNER}, 'Ở ga', ?, NULL, 1, ?, ?)`,
+  ).run('A: 切符[きっぷ]はどこですか。 | Vé ở đâu?\nB: あちらです。 | Ở đằng kia.', now, now);
+  d.close();
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await signIn(page);
+  await page.goto('/kaiwa/kw-canvas?edit=1', { waitUntil: 'networkidle' });
+
+  const editor = page.getByLabel('Kịch bản');
+  await expect(page.locator('.cm-kw-speaker')).toHaveText(['A: ', 'B: ']);
+  await expect(page.locator('.cm-kw-reading')).toHaveText(['[きっぷ]']);
+  const preview = page.getByRole('region', { name: 'Xem trước' });
+  await expect(preview.locator('[data-slot="kaiwa-line"]')).toHaveCount(2);
+
+  // The preview rings the line under the cursor; a click on a line sends the cursor there.
+  await expect(preview.locator('[data-row="1"] .ring-2')).toHaveCount(1);
+  await preview.getByText('Ở đằng kia.').click();
+  await expect(page.locator('[data-slot="kaiwa-status"]')).toContainText('Dòng 2, cột 1');
+  await expect(preview.locator('[data-row="2"] .ring-2')).toHaveCount(1);
+
+  // A new row offers the speakers already used.
+  await editor.press('End');
+  await editor.press('Enter');
+  await page.keyboard.type('B');
+  await page.keyboard.press('Control+Space');
+  const offer = page.locator('.cm-tooltip-autocomplete li').filter({ hasText: 'B' });
+  await expect(offer).toHaveCount(1);
+  await offer.click();
+  await page.keyboard.type('ありがとう。 | Cảm ơn.');
+  await expect(preview.locator('[data-slot="kaiwa-line"]')).toHaveCount(3);
+  await expect(page.locator('.cm-kw-speaker')).toHaveText(['A: ', 'B: ', 'B: ']);
+
+  // Ctrl S saves and stays in the editor.
+  await page.keyboard.press('Control+s');
+  await expect(page.getByText('Đã lưu', { exact: true })).toBeVisible();
+  await expect(page).toHaveURL(/\?edit=1$/);
+
+  // A change not saved asks before leaving the editor.
+  await page.keyboard.type(' x');
+  await page.getByRole('button', { name: 'Xong' }).click();
+  const ask = page.getByRole('dialog');
+  await expect(ask).toContainText('Bỏ những thay đổi chưa lưu?');
+  await ask.getByRole('button', { name: 'Bỏ thay đổi' }).click();
+  await page.waitForURL(/\/kaiwa\/kw-canvas$/);
+  await expect(page.locator('[data-slot="kaiwa-line"]')).toHaveCount(3);
+  await expect(page.getByText('Cảm ơn. x')).toHaveCount(0);
+});
+
+test.describe('on a phone', () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test('the canvas switches between Viết and Xem trước, and inserts a speaker', async ({
+    page,
+  }) => {
+    await seedE2eAccount();
+    const d = db();
+    d.exec(`DELETE FROM Script WHERE userId = ${E2E_OWNER}`);
+    const now = new Date().toISOString();
+    d.prepare(
+      `INSERT INTO Script (id, userId, title, body, analysis, version, createdAt, updatedAt)
+       VALUES ('kw-phone', ${E2E_OWNER}, 'Ở ga', ?, NULL, 1, ?, ?)`,
+    ).run('A: はい。 | Vâng.\nB: いいえ。 | Không.', now, now);
+    d.close();
+    await signIn(page);
+    await page.goto('/kaiwa/kw-phone?edit=1', { waitUntil: 'networkidle' });
+
+    const editor = page.getByLabel('Kịch bản');
+    const preview = page.getByRole('region', { name: 'Xem trước' });
+    await expect(editor).toBeVisible();
+    await expect(preview).toBeHidden();
+    await editor.click();
+    await page.keyboard.press('Control+End');
+    await page.keyboard.press('Enter');
+    await page
+      .getByRole('toolbar', { name: 'Chèn nhanh' })
+      .getByRole('button', { name: 'A:' })
+      .click();
+    await page.keyboard.type('またね。');
+    await page.getByRole('radio', { name: 'Xem trước' }).click();
+    await expect(editor).toBeHidden();
+    await expect(preview.locator('[data-slot="kaiwa-line"]')).toHaveCount(3);
+    await expect(preview.locator('[data-slot="kaiwa-line"]').nth(2)).toContainText('またね。');
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth),
+    ).toBeLessThanOrEqual(0);
+  });
 });
