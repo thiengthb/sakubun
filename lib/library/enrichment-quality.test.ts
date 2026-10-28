@@ -155,9 +155,7 @@ describe('provenance — additive, optional, and never a reason a card stops par
 
   it('a card written BEFORE provenance existed still parses and scores the same', () => {
     const before = score(JSON.stringify(complete));
-    const after = score(
-      JSON.stringify({ ...complete, provenance: { confidence: 'high' } }),
-    );
+    const after = score(JSON.stringify({ ...complete, provenance: { confidence: 'high' } }));
     expect(before.tier).toBe(after.tier);
     expect(before.score).toBe(after.score);
     expect(before.provenance).toBeUndefined();
@@ -177,9 +175,7 @@ describe('provenance — additive, optional, and never a reason a card stops par
   });
 
   it('a malformed provenance drops ITSELF, never the card', () => {
-    const report = score(
-      JSON.stringify({ ...complete, provenance: { confidence: 'khá chắc' } }),
-    );
+    const report = score(JSON.stringify({ ...complete, provenance: { confidence: 'khá chắc' } }));
     expect(report.tier).not.toBe('broken');
     expect(report.provenance).toBeUndefined();
   });
@@ -214,9 +210,7 @@ describe('the VOCAB bar is a different bar (2026-08-12)', () => {
   });
 
   it('an example whose Vietnamese translation is only whitespace does NOT count', () => {
-    const r = scoreVocab(
-      vocabCard({ examples: [{ ja: '彼は約束を守らない。', vi: '  ' }] }),
-    );
+    const r = scoreVocab(vocabCard({ examples: [{ ja: '彼は約束を守らない。', vi: '  ' }] }));
     expect(r.tier).toBe('thin');
     expect(r.missing).toContain('ví dụ có dịch tiếng Việt');
   });

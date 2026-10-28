@@ -2,13 +2,14 @@ import type { Metadata } from 'next';
 import { LibraryView } from '@/components/features/library/library-view';
 import { getUserDb } from '@/lib/auth/current-user';
 import { prisma } from '@/lib/db/db';
-import { GRAMMAR_KIND, VOCAB_KIND } from '@/lib/library/item-kinds';
 import { getSettings } from '@/lib/library/practice';
 import { ensureOpenJlptLibrary } from '@/lib/library/seed';
-import { listGroupEntries, searchEntries } from '@/lib/library/shared';
+import { browseEntries } from '@/lib/library/browse';
+import { browseMeta, parseBrowseQuery } from '@/lib/library/browse-query';
+import { listGroupEntries } from '@/lib/library/shared';
 import { likedEntries } from '@/lib/library/likes';
-import { groupProgress, ownedItems } from '@/lib/library/take';
-import { furiganaInApp, JLPT_LEVELS } from '@/lib/settings/schema';
+import { groupProgress } from '@/lib/library/take';
+import { furiganaInApp } from '@/lib/settings/schema';
 
 export const metadata: Metadata = { title: 'Kho chung — sakubun' };
 export const dynamic = 'force-dynamic';
@@ -21,24 +22,21 @@ export default async function LibraryPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const params = await searchParams;
-  const q = one(params.q)?.trim() ?? '';
-  const typeParam = one(params.type);
-  const type = typeParam === GRAMMAR_KIND || typeParam === VOCAB_KIND ? typeParam : undefined;
-  const levelParam = one(params.level);
-  const level = JLPT_LEVELS.find((l) => l === levelParam);
+  const query = parseBrowseQuery(
+    Object.fromEntries(Object.entries(params).map(([k, v]) => [k, one(v)])),
+  );
 
   const db = await getUserDb();
   await ensureOpenJlptLibrary();
-  const [groups, entries, settings] = await Promise.all([
+  const [groups, { rows, counts }, settings] = await Promise.all([
     listGroupEntries(prisma),
-    searchEntries(prisma, { text: q, type, level }),
+    browseEntries(db, query),
     getSettings(db),
   ]);
-  const [owned, liked, takenGroups, have] = await Promise.all([
-    ownedItems(db, entries),
+  const [liked, takenGroups, have] = await Promise.all([
     likedEntries(
       db,
-      [...entries, ...groups].map((e) => e.id),
+      groups.map((g) => g.id),
     ),
     db.group.findMany({
       where: { libraryEntryId: { in: groups.map((g) => g.id) } },
@@ -50,6 +48,7 @@ export default async function LibraryPage({
     ),
   ]);
   const myGroup = new Map(takenGroups.map((g) => [g.libraryEntryId, g.id]));
+  const total = counts ? counts.GRAMMAR + counts.VOCAB : rows.length;
 
   return (
     <LibraryView
@@ -59,13 +58,10 @@ export default async function LibraryPage({
         liked: liked.has(g.id),
         myGroupId: myGroup.get(g.id) ?? null,
       }))}
-      entries={entries.map(({ _count, ...e }) => ({
-        ...e,
-        likes: _count.likes,
-        liked: liked.has(e.id),
-        itemId: owned.get(e.id) ?? null,
-      }))}
-      search={{ q, type: type ?? 'all', level: level ?? 'all' }}
+      entries={rows}
+      entriesTotal={total}
+      entriesMeta={counts ? browseMeta(counts, query) : `${total} mục`}
+      search={query}
       voiceSpeaker={settings.voiceSpeaker}
       speechRate={settings.speechRate}
       showFurigana={furiganaInApp(settings.furiganaMode)}
