@@ -1,19 +1,7 @@
-import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
-import { KaiwaScriptForm } from '@/components/features/kaiwa/kaiwa-script-form';
-import { getUserDb } from '@/lib/auth/current-user';
-import { getScript } from '@/lib/kaiwa/scripts';
+import { redirect } from 'next/navigation';
 
-export const metadata: Metadata = { title: 'Sửa kịch bản — sakubun' };
-export const dynamic = 'force-dynamic';
-
+// Editing happens on the script's own page since 7.4f (one canvas); old links still land there.
 export default async function EditScriptPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const script = await getScript(await getUserDb(), id);
-  if (!script) notFound();
-  return (
-    <KaiwaScriptForm
-      script={{ id: script.id, version: script.version, title: script.title, body: script.body }}
-    />
-  );
+  redirect(`/kaiwa/${id}?edit=1`);
 }

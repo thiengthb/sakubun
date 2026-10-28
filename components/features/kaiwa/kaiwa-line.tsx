@@ -24,6 +24,7 @@ export function KaiwaLine({
   onUncover,
   selected,
   playToken,
+  lookup = true,
   voiceSpeaker,
   speechRate,
 }: {
@@ -36,6 +37,8 @@ export function KaiwaLine({
   /** Chosen with ↑ ↓; Enter plays it. */
   selected: boolean;
   playToken: number | null;
+  /** Off in the editor's preview, which changes as the learner types. */
+  lookup?: boolean;
   voiceSpeaker?: number;
   speechRate?: number;
 }) {
@@ -47,7 +50,7 @@ export function KaiwaLine({
     speaker: voiceSpeaker,
     rate: speechRate,
     label: 'Nghe câu',
-    lookup: true,
+    lookup,
     playToken,
   } as const;
   const meaning = line.translation && showMeaning && (
@@ -57,7 +60,11 @@ export function KaiwaLine({
 
   if (turn.kind === 'narration') {
     return (
-      <li data-slot="kaiwa-line" className={cn(LIST_CARD.base, 'space-y-1', ring)}>
+      <li
+        data-slot="kaiwa-line"
+        data-row={line.row}
+        className={cn(LIST_CARD.base, 'space-y-1', ring)}
+      >
         <SpokenLine {...spokenProps} />
         {meaning}
       </li>
@@ -70,6 +77,7 @@ export function KaiwaLine({
     return (
       <li
         data-slot="kaiwa-line"
+        data-row={line.row}
         data-kind="scene"
         className={cn(
           'flex items-center gap-3 rounded-lg py-1 text-xs text-muted-foreground',
@@ -96,6 +104,7 @@ export function KaiwaLine({
   return (
     <li
       data-slot="kaiwa-line"
+      data-row={line.row}
       data-side={turn.side}
       className={cn(
         'group/line flex flex-col',

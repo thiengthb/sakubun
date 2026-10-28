@@ -38,7 +38,8 @@ const PAIRS: Pair[] = [
   { name: 'kaiwa', page: '/kaiwa', skeleton: 'kaiwa' },
   { name: 'kaiwa script', page: '/kaiwa/kw-sk', skeleton: 'kaiwa-script' },
   { name: 'kaiwa new', page: '/kaiwa/new', skeleton: 'kaiwa-new' },
-  { name: 'kaiwa edit', page: '/kaiwa/kw-sk/edit', skeleton: 'kaiwa-edit' },
+  // The editor opens on the script's own route, whose loading screen is the reading view's.
+  { name: 'kaiwa edit', page: '/kaiwa/kw-sk?edit=1', skeleton: 'kaiwa-script' },
   { name: 'kho chung', page: '/library', skeleton: 'library' },
   { name: 'kho chung items', page: '/library?tab=items', skeleton: 'library?tab=items' },
   { name: 'kho chung group', page: '/library/lib-sk', skeleton: 'library-group' },
