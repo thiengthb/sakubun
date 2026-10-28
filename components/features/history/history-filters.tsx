@@ -10,7 +10,7 @@ import {
   type FilterChip,
   type FilterOption,
 } from '@/components/common/filter-popover';
-import { EXERCISE_TYPE_LABELS, durationSecOf } from '@/components/features/history/history-cards';
+import { EXERCISE_TYPE_LABELS, durationSecOf } from '@/components/features/history/history-shared';
 import {
   DATE_PRESETS,
   LENGTH_BUCKETS,

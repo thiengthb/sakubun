@@ -1,11 +1,9 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { SearchX } from 'lucide-react';
-import { DataPagination } from '@/components/ui/data-pagination';
-import { Dialog } from '@/components/ui/dialog';
-import { PAGE_BOTTOM, useFitRows, usePinnedFooter } from '@/components/ui/use-fit-rows';
+import { Explain } from '@/components/common/explain';
 import { EmptyState } from '@/components/common/empty-state';
 import { FilterChips, SelectFilterRow } from '@/components/common/filter-popover';
 import { LIST_CARD } from '@/components/common/list-card';
@@ -14,7 +12,9 @@ import { SearchInput } from '@/components/common/search-input';
 import { SearchToolbar } from '@/components/common/search-toolbar';
 import { useScrollMore } from '@/components/common/use-scroll-more';
 import { useSessionState } from '@/components/common/use-session-state';
-import { HistoryCard, HistoryDetail } from '@/components/features/history/history-cards';
+import { HistoryDetailPanel } from '@/components/features/history/history-detail';
+import { HistoryTimelineRow } from '@/components/features/history/history-row';
+import { TONE } from '@/components/features/history/history-shared';
 import {
   DEFAULT_FILTERS,
   HistoryFilterPopover,
@@ -22,24 +22,49 @@ import {
   matchesFilters,
   type Filters,
 } from '@/components/features/history/history-filters';
+import { groupByDay, type HistoryDay } from '@/lib/history/days';
 import { HISTORY_SORTS, matchesSearch, sortHistory, type HistorySort } from '@/lib/history/order';
-import { cn } from '@/lib/core/utils';
+import type { ResultTone } from '@/lib/history/result';
 import type { HistoryRow } from '@/lib/app/history';
-
-// Every size divides into rows of two and three. By default a page holds as many rows as the
-// window does (Tự động), as the tables do.
-const PAGE_SIZES = [12, 24, 48, 96];
-const CARD_HEIGHT = 112;
+import { cn } from '@/lib/core/utils';
 
 /**
- * The translation timeline as cards on every width (thien, Lịch sử round 1): turns differ by
- * direction and exercise type too much to share table columns. Below 1024px the cards load more as
- * they scroll; from 1024px they come in pages (thien, Lịch sử round 2). Both lists are drawn and CSS
- * shows one, so the layout never flips after hydration. The sort sits in the filter popover, as on
- * Nhóm. A turn's detail opens in one dialog the list owns, so a turn graded while the page is open
+ * The translation timeline (thien, 7.4 History B): the turns gathered by day, each day a box of
+ * two-line rows with a bar of how its results came out. It loads more as it scrolls at every width.
+ * Sorted by result, the days would only break the order apart, so the rows stand in one box. A
+ * turn's detail opens in a side panel the list owns, so a turn graded while the page is open
  * (LiveRefresh) can open it on its own.
  */
-const GRID = 'grid grid-cols-1 gap-2 @2xl:grid-cols-2 @2xl:gap-3 @5xl:grid-cols-3';
+
+const BAR_ORDER: { tone: ResultTone; label: string }[] = [
+  { tone: 'alert', label: 'Again hoặc dưới 50' },
+  { tone: 'warn', label: 'Hard hoặc 50–69' },
+  { tone: 'ok', label: 'Good hoặc 70–89' },
+  { tone: 'info', label: 'Easy hoặc từ 90' },
+  { tone: 'muted', label: 'Bỏ qua' },
+];
+
+function DayBar({ tally }: { tally: HistoryDay<HistoryRow>['tally'] }) {
+  const parts = BAR_ORDER.filter((p) => tally[p.tone] > 0);
+  if (parts.length === 0) return null;
+  const text = parts.map((p) => `${p.label}: ${tally[p.tone]}`).join(' · ');
+  return (
+    <Explain text={text}>
+      <span
+        role="img"
+        aria-label={text}
+        className="ml-auto flex h-2 w-28 shrink-0 overflow-hidden rounded-full bg-muted"
+      >
+        {parts.map((p) => (
+          <span key={p.tone} className={TONE[p.tone].bar} style={{ flex: tally[p.tone] }} />
+        ))}
+      </span>
+    </Explain>
+  );
+}
+
+// A day's turns in one raised box, a rule between rows.
+const BOX = cn(LIST_CARD.base, 'divide-y divide-border overflow-hidden bg-card p-0');
 
 export function HistoryList({
   sentences,
@@ -56,21 +81,11 @@ export function HistoryList({
   const [q, setQ] = useSessionState('history.search', '', 'q');
   const [filters, setFilters] = useSessionState<Filters>('history.filters', DEFAULT_FILTERS, 'hf');
   const [sort, setSort] = useSessionState<HistorySort>('history.sort', 'recent', 'hs');
-  const [pageSize, setPageSize] = useSessionState<number>('history.size', PAGE_SIZES[0], 'size');
-  const [autoFit, setAutoFit] = useSessionState<boolean>('history.autofit', true);
-  const [pageIndex, setPageIndex] = useSessionState<number>('history.page', 0, 'page');
-  // Any change to what the list holds starts it again at page 1.
-  const narrow =
-    <A extends unknown[]>(set: (...a: A) => void) =>
-    (...a: A) => {
-      set(...a);
-      setPageIndex(0);
-    };
-  const patch = narrow((p: Partial<Filters>) => setFilters((f) => ({ ...f, ...p })));
-  const reset = narrow(() => {
+  const patch = (p: Partial<Filters>) => setFilters((f) => ({ ...f, ...p }));
+  const reset = () => {
     setFilters(DEFAULT_FILTERS);
     setSort('recent');
-  });
+  };
 
   const shown = useMemo(
     () =>
@@ -84,26 +99,8 @@ export function HistoryList({
     shown,
     JSON.stringify([q.trim(), filters, sort]),
   );
-  // From 1024px the page fills the window with whole rows of cards and its footer rests at the
-  // window's bottom, as a table's does (thien, Tài nguyên 2026-10-24 and Lịch sử round 3).
-  const pagedRef = useRef<HTMLUListElement>(null);
-  const footerRef = useRef<HTMLDivElement>(null);
-  const spacerRef = useRef<HTMLDivElement>(null);
-  const fit = useFitRows({
-    topRef: pagedRef,
-    footerRef,
-    spacerRef,
-    rowHeight: CARD_HEIGHT,
-    rowGap: 12,
-    grid: true,
-    bottomGap: PAGE_BOTTOM,
-  });
-  usePinnedFooter({ footerRef, spacerRef, bottomGap: PAGE_BOTTOM });
-  const effectiveSize = autoFit && fit != null ? fit : pageSize;
-  const pageCount = Math.max(1, Math.ceil(shown.length / effectiveSize));
-  const page = Math.min(pageIndex, pageCount - 1);
-  const start = page * effectiveSize;
-  const paged = shown.slice(start, start + effectiveSize);
+  const byDay = sort === 'recent' || sort === 'oldest';
+  const days = useMemo(() => (byDay ? groupByDay(items) : null), [byDay, items]);
 
   // `?open=<id>` (a link from elsewhere) opens that turn once, then leaves the URL.
   const router = useRouter();
@@ -128,29 +125,49 @@ export function HistoryList({
     prevStatusRef.current = new Map(sentences.map((s) => [s.id, s.status]));
   }, [sentences]);
 
-  const opened = openId ? sentences.find((s) => s.id === openId) : undefined;
-  const card = (s: HistoryRow) => (
-    <li
-      key={s.id}
-      className={cn(LIST_CARD.base, 'flex flex-col', s.status !== 'PENDING' && 'hover:bg-muted/40')}
-    >
-      <HistoryCard
+  // The panel steps through what the timeline shows, in its order; a turn opened from a link that
+  // the filters hide still opens, on its own.
+  const openable = useMemo(() => {
+    const list = shown.filter((s) => s.status !== 'PENDING');
+    const linked = openId ? sentences.find((s) => s.id === openId) : undefined;
+    return linked && !list.includes(linked) ? [linked] : list;
+  }, [shown, sentences, openId]);
+  // Stepping to a row further down than the list has loaded scrolls it into view.
+  const openTurn = useCallback((id: string) => {
+    setOpenId(id);
+    requestAnimationFrame(() =>
+      document.querySelector(`[data-history-row="${id}"]`)?.scrollIntoView({ block: 'nearest' }),
+    );
+  }, []);
+
+  const row = (s: HistoryRow) => (
+    <li key={s.id}>
+      <HistoryTimelineRow
         sentence={s}
+        selected={s.id === openId}
+        showFurigana={showFurigana}
         speaker={voiceSpeaker}
         rate={speechRate}
-        showFurigana={showFurigana}
-        onOpen={() => setOpenId(s.id)}
+        onOpen={() => openTurn(s.id)}
       />
     </li>
   );
 
   return (
-    <div className="space-y-6">
+    // With furigana on, the readings in Lịch sử show without a hover (thien, 7.4).
+    // While a turn is open on a laptop the list makes room for the panel, so no row hides under it.
+    <div
+      className={cn(
+        'space-y-6',
+        showFurigana && '[&_.furigana_rt]:visible',
+        openId && 'lg:pr-108',
+      )}
+    >
       <SearchToolbar
         search={
           <SearchInput
             value={q}
-            onChange={narrow((e) => setQ(e.target.value))}
+            onChange={(e) => setQ(e.target.value)}
             placeholder="Tìm trong đề / bài dịch…"
             className="sm:max-w-none"
           />
@@ -161,7 +178,7 @@ export function HistoryList({
             className="col-span-2"
             label="Sắp xếp"
             value={sort}
-            onValueChange={narrow((v) => setSort(v as HistorySort))}
+            onValueChange={(v) => setSort(v as HistorySort)}
             options={HISTORY_SORTS}
           />
         </HistoryFilterPopover>
@@ -172,66 +189,42 @@ export function HistoryList({
       {shown.length === 0 ? (
         <EmptyState icon={SearchX} title="Không có lượt dịch nào khớp tìm kiếm / bộ lọc." />
       ) : (
-        <>
-          <div className="@container">
-            {/* grid-cols-1 is minmax(0, 1fr): an implicit `auto` track would grow to a card's
-                longest unbroken line (a long Vietnamese prompt) and scroll the page sideways. */}
-            <ul data-slot="history-cards" data-layout="scroll" className={cn(GRID, 'lg:hidden')}>
-              {items.map(card)}
+        <div data-slot="history-timeline" className="space-y-1">
+          {days ? (
+            days.map((day, i) => (
+              <Fragment key={`${day.key}-${i}`}>
+                <div className="flex items-baseline gap-2.5 pt-2 pb-1.5 first:pt-0">
+                  <h2 className="shrink-0 text-sm font-semibold">{day.label}</h2>
+                  <span className="min-w-0 truncate text-xs text-muted-foreground">
+                    {day.rows.length} lượt
+                    {day.tally.ok + day.tally.info > 0 &&
+                      ` · ${day.tally.ok + day.tally.info} Good trở lên`}
+                  </span>
+                  <DayBar tally={day.tally} />
+                </div>
+                <ul data-slot="history-day" className={BOX}>
+                  {day.rows.map(row)}
+                </ul>
+              </Fragment>
+            ))
+          ) : (
+            <ul data-slot="history-day" className={BOX}>
+              {items.map(row)}
             </ul>
-            <ul
-              ref={pagedRef}
-              data-slot="history-cards"
-              data-layout="pages"
-              className={cn(GRID, 'max-lg:hidden')}
-            >
-              {paged.map(card)}
-            </ul>
-          </div>
-          <ScrollMoreStatus ref={sentinelRef} hasMore={hasMore} className="lg:hidden" />
-          <div ref={footerRef} className="max-lg:hidden">
-            <div ref={spacerRef} aria-hidden />
-            {/* One page needs no footer; the count is in the page header (thien, 2026-10-24). The
-                box stays so the fit and the pinned spacer keep measuring it. */}
-            {pageCount > 1 && (
-              <DataPagination
-                count={
-                  <>
-                    {start + 1}–{start + paged.length} / {shown.length} lượt
-                    {shown.length !== sentences.length && ` (lọc từ ${sentences.length})`}
-                  </>
-                }
-                page={page + 1}
-                pageCount={pageCount}
-                onPageChange={(p) => {
-                  setPageIndex(p - 1);
-                  window.scrollTo({ top: 0 });
-                }}
-                pageSize={effectiveSize}
-                pageSizeOptions={PAGE_SIZES}
-                onPageSizeChange={narrow((size: number) => {
-                  setAutoFit(false);
-                  setPageSize(size);
-                })}
-                autoFit={autoFit}
-                autoFitSize={fit ?? effectiveSize}
-                onAutoFit={narrow(() => setAutoFit(true))}
-              />
-            )}
-          </div>
-        </>
+          )}
+          <ScrollMoreStatus ref={sentinelRef} hasMore={hasMore} />
+        </div>
       )}
 
-      <Dialog open={opened != null} onOpenChange={(o) => !o && setOpenId(null)}>
-        {opened && (
-          <HistoryDetail
-            sentence={opened}
-            speaker={voiceSpeaker}
-            rate={speechRate}
-            showFurigana={showFurigana}
-          />
-        )}
-      </Dialog>
+      <HistoryDetailPanel
+        rows={openable}
+        openId={openId}
+        onOpen={openTurn}
+        onClose={() => setOpenId(null)}
+        speaker={voiceSpeaker}
+        rate={speechRate}
+        showFurigana={showFurigana}
+      />
     </div>
   );
 }
