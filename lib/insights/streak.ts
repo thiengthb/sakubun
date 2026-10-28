@@ -7,8 +7,11 @@ import { type Streak, computeStreak, studyDayKey } from '@/lib/srs/streak';
 const STREAK_TTL_MS = 60_000;
 const streakCache = new Map<string, { value: Streak; dayKey: string; at: number }>();
 
-export function invalidateStreak(): void {
-  streakCache.clear();
+// A learner's cached streak is dropped the moment they review (recordReviews), so a new study day
+// shows at once; with no learner given, every entry goes (tests).
+export function invalidateStreak(ownerId?: string): void {
+  if (ownerId === undefined) streakCache.clear();
+  else streakCache.delete(ownerId);
 }
 
 export async function studyStreak(db: UserDb, cutoffHour: number, now: Date): Promise<Streak> {
