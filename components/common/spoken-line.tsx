@@ -2,6 +2,7 @@
 
 import { Fragment, useState, type ReactNode } from 'react';
 import { SpeakButton } from '@/components/common/speak-button';
+import { Truncate } from '@/components/ui/truncate';
 import { hasFurigana, parseFurigana } from '@/lib/japanese/furigana';
 import { cn } from '@/lib/core/utils';
 
@@ -20,6 +21,7 @@ export function SpokenLine({
   className,
   aside,
   title = false,
+  speakerEnd = false,
   groups,
   lookup = false,
 }: {
@@ -38,6 +40,9 @@ export function SpokenLine({
   /** A page title: a block row one title line tall (20px on a phone, 30px from 768px), so it
    * never grows the header. */
   title?: boolean;
+  /** The speaker right after the text, small and pale (a card's title, thien 7.4 B1); a cut text
+   * keeps it in sight. */
+  speakerEnd?: boolean;
   /** Words to wrap, such as Kaiwa's word lookup: runs of the text in order, `length` characters
    * each, each run wrapped by its own `wrap` (a popover trigger). A run never splits a reading.
    * Needs `ruby`; the furigana setting still decides whether readings show. */
@@ -105,32 +110,52 @@ export function SpokenLine({
 
   // The button is centred on the text's first line, at any size and on every page: its box is one
   // line of the text tall (h-lh), so the type classes sit on the row and the text inherits them.
+  const button = (
+    <span className="flex h-lh shrink-0 items-center">
+      <SpeakButton
+        text={speakText ?? text}
+        speaker={speaker}
+        label={label}
+        rate={rate}
+        onProgress={setRatio}
+        playToken={playToken}
+        className={cn(speakerEnd && 'text-muted-foreground/70')}
+      />
+    </span>
+  );
+  const mark = lookup === 'hover' ? 'hover' : lookup || undefined;
+  const content = (
+    <>
+      {wrapGroups(units, groups)}
+      {aside}
+    </>
+  );
+  // A cut line shows in full in a tooltip, and only when it is cut (docs/ui-standard.md, Thẻ).
+  const line = truncate ? (
+    <Truncate full={text} className={cn('furigana', !speakerEnd && 'flex-1')}>
+      <span lang="ja" data-lookup={mark}>
+        {content}
+      </span>
+    </Truncate>
+  ) : (
+    <span lang="ja" data-lookup={mark} className="furigana">
+      {content}
+    </span>
+  );
   return (
     <span
       className={cn(
-        'items-start gap-2 font-medium',
+        'font-medium',
+        // After the text the button sits on its middle: a smaller aside (Hán Việt) on the same line
+        // makes the line box taller than one line.
+        speakerEnd ? 'items-center gap-0.5' : 'items-start gap-2',
         truncate || title ? 'flex w-full' : 'inline-flex',
         className,
       )}
     >
-      <span className="flex h-lh shrink-0 items-center">
-        <SpeakButton
-          text={speakText ?? text}
-          speaker={speaker}
-          label={label}
-          rate={rate}
-          onProgress={setRatio}
-          playToken={playToken}
-        />
-      </span>
-      <span
-        lang="ja"
-        data-lookup={lookup === 'hover' ? 'hover' : lookup || undefined}
-        className={cn('furigana', truncate && 'block min-w-0 flex-1 truncate')}
-      >
-        {wrapGroups(units, groups)}
-        {aside}
-      </span>
+      {!speakerEnd && button}
+      {line}
+      {speakerEnd && button}
     </span>
   );
 }

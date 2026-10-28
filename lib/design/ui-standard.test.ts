@@ -17,10 +17,6 @@ const ALLOW: Record<string, Record<string, string>> = {
   'components/ui/tooltip.tsx': {
     'radius-class': 'the tooltip arrow is a 10px rotated square; 2px only softens its tip',
   },
-  'components/features/history/history-cards.tsx': {
-    'card-actions-icon-only':
-      '"Đang chờ" is the result pill of a pending turn, a button only so its tooltip opens on focus',
-  },
   'components/features/library/library-entry-card.tsx': {
     'card-actions-icon-only': 'Lấy and Đã có become CardAction in the Từng mục rework (7.4i)',
   },

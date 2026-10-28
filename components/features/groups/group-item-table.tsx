@@ -201,6 +201,7 @@ export function GroupItemTable({
       enableRowNumbers
       enableRowSelection
       onSelectionChange={onSelectionChange}
+      cardSelection={!members}
       footer={footer}
       cardHref={members ? (r) => `/resources/${r.itemId}` : undefined}
       cardHrefLabel={(r) => `Xem chi tiết ${r.expression}`}
@@ -216,14 +217,7 @@ export function GroupItemTable({
           showFurigana={showFurigana}
           voiceSpeaker={voiceSpeaker}
           speechRate={speechRate}
-          aside={
-            mixed ? (
-              <>
-                <span aria-hidden>·</span>
-                <span>{KIND_LABEL[r.kind]}</span>
-              </>
-            ) : undefined
-          }
+          aside={mixed ? <span className="shrink-0 text-xs">{KIND_LABEL[r.kind]}</span> : undefined}
           actions={members ? removeButton(r) : <DetailButton row={r} prefs={prefs} />}
         />
       )}

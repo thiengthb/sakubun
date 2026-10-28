@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ChevronLeft, ChevronRight, RefreshCw, RotateCcw, Shuffle, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { IconAction } from '@/components/common/icon-action';
 import { SpeakButton } from '@/components/common/speak-button';
 import { Sentence, spokenText, type CardTts } from '@/components/common/review-card';
 import { useLocalState } from '@/components/common/use-session-state';
@@ -125,7 +126,7 @@ function Back({ card, showFurigana }: { card: QuickCard; showFurigana: boolean }
 export function GroupCards({
   groupId,
   cards,
-  showFurigana: furiganaDefault,
+  showFurigana,
   tts,
 }: {
   groupId: string;
@@ -138,7 +139,6 @@ export function GroupCards({
   const [saved, setSaved] = useLocalState<DeckProgress>(`group.${groupId}.deck`, FRESH_DECK);
   const { order, index } = useMemo(() => resumeDeck(ids, saved), [ids, saved]);
   const [revealed, setRevealed] = useState(false);
-  const [showFurigana, setShowFurigana] = useState(furiganaDefault);
 
   const total = order.length;
   const done = index >= total;
@@ -180,14 +180,14 @@ export function GroupCards({
     );
   }
 
-  // Fills the screen under the list template's header (title, actions, tabs) so the controls sit
-  // under the card without pushing the page into a scroll. On a laptop the deck keeps to a reading
-  // width in the middle, like a card on a table, not a banner across the page.
+  // A card of a set height, not the whole screen (thien, 7.4): the bar over it and the controls
+  // under it stay close. On a laptop the deck keeps to a reading width in the middle, like a card
+  // on a table, not a banner across the page.
   return (
-    <div className="mx-auto flex min-h-[calc(100dvh-16rem)] w-full max-w-3xl flex-col gap-4">
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">
       <Progress index={index} total={total} />
 
-      <div className="relative flex min-h-72 flex-1 perspective-distant">
+      <div className="relative flex h-[clamp(18rem,45dvh,24rem)] perspective-distant">
         {done || !card ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-xl border bg-card px-6 text-center">
             <p className="text-lg font-bold">Đã xem hết {total} thẻ</p>
@@ -237,17 +237,8 @@ export function GroupCards({
                 {revealed && <Back card={card} showFurigana={showFurigana} />}
               </span>
             </button>
+            {/* Furigana follows the sidebar's あ, like every page. */}
             <div className="absolute top-2.5 right-2.5 flex items-center gap-1">
-              <Button
-                variant={showFurigana ? 'secondary' : 'ghost'}
-                size="icon"
-                aria-label="Bật tắt furigana"
-                title="Furigana"
-                aria-pressed={showFurigana}
-                onClick={() => setShowFurigana((v) => !v)}
-              >
-                <span lang="ja">あ</span>
-              </Button>
               <SpeakButton
                 key={`speak-${card.itemId}`}
                 text={
@@ -266,56 +257,42 @@ export function GroupCards({
 
       <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
         <div>
-          <Button
+          <IconAction
+            icon={Shuffle}
+            label="Đảo thứ tự"
             variant={saved.shuffled ? 'secondary' : 'ghost'}
-            aria-label="Đảo thứ tự"
             aria-pressed={saved.shuffled != null}
             onClick={shuffle}
-          >
-            <Shuffle aria-hidden />
-            {/* A phone has room for the short word only, beside the counter. */}
-            Đảo<span className="max-md:hidden"> thứ tự</span>
-          </Button>
+          />
         </div>
         <div className="flex items-center gap-1">
-          <Button
+          <IconAction
+            icon={ChevronLeft}
+            label="Thẻ trước"
             variant="outline"
-            size="icon"
-            aria-label="Thẻ trước"
             disabled={index === 0}
             onClick={() => go(index - 1)}
-          >
-            <ChevronLeft aria-hidden />
-          </Button>
+          />
           <span className="min-w-12 text-center text-sm font-semibold whitespace-nowrap tabular-nums">
             {Math.min(index + 1, total)} / {total}
           </span>
-          <Button
+          <IconAction
+            icon={ChevronRight}
+            label="Thẻ sau"
             variant="outline"
-            size="icon"
-            aria-label="Thẻ sau"
             disabled={done}
             onClick={() => go(index + 1)}
-          >
-            <ChevronRight aria-hidden />
-          </Button>
+          />
         </div>
         <div className="flex justify-end">
-          <Button
-            variant="ghost"
-            aria-label="Lật thẻ"
+          <IconAction
+            icon={RefreshCw}
+            label="Lật thẻ"
             disabled={done}
             onClick={() => setRevealed((r) => !r)}
-          >
-            <RefreshCw aria-hidden />
-            Lật<span className="max-md:hidden"> thẻ</span>
-          </Button>
+          />
         </div>
       </div>
-      <p className="text-center text-xs text-muted-foreground">
-        Chỉ để xem lại, không tính vào lịch ôn.
-        <span className="max-md:hidden"> Phím mũi tên để chuyển thẻ, phím cách để lật.</span>
-      </p>
     </div>
   );
 }

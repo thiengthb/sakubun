@@ -20,6 +20,7 @@ export {
   CardsSkeleton,
   ListSkeleton,
   TabbedSkeleton,
+  TimelineSkeleton,
 } from '@/components/common/fit-skeleton';
 
 type PageWidth = 'full' | 'wide' | 'narrow' | 'form';

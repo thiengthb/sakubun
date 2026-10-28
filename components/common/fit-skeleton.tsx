@@ -67,29 +67,55 @@ function PaginationFooterSkeleton() {
   );
 }
 
+// The grammar and vocab card (ResourceCard) as grey shapes of the same size: the level chip across
+// both lines, the title, the meaning, and the menu over the star.
+const RESOURCE_CARD_HEIGHT = 94;
 const RESOURCE_CARD = (
   <div
     data-skeleton-row
-    className="flex flex-col gap-1.5 rounded-lg border border-border/70 p-3"
-    style={{ height: 110 }}
+    className={cn(
+      LIST_CARD.base,
+      'grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-2.5 gap-y-0.5',
+    )}
   >
-    <div className="flex items-start justify-between gap-2">
-      <div className="flex min-w-0 flex-1 items-center gap-2">
-        <Skeleton className="size-6 shrink-0 rounded-full" />
-        <Skeleton className="h-4 min-w-0 flex-1" style={{ maxWidth: 150 }} />
-      </div>
-      <div className="flex shrink-0 items-center gap-0.5">
-        <Skeleton className="size-7 rounded-md" />
-        <Skeleton className="size-7 rounded-md" />
-      </div>
-    </div>
-    <Skeleton className="h-4 w-full" />
-    <div className="flex items-center gap-2">
-      <Skeleton className="h-3 w-16" />
-      <Skeleton className="h-4 w-10 rounded-md" />
-    </div>
+    <Skeleton className="row-span-2 h-5 w-8 rounded-sm" />
+    <Skeleton className="h-4 w-2/5" />
+    <Skeleton className="size-9 rounded-md md:size-7" />
+    <Skeleton className="h-3.5 w-3/4" />
+    <Skeleton className="size-7 rounded-md" />
   </div>
 );
+
+/** The card list a DataTable draws: the same columns and gaps. */
+function ResourceCardsSkeleton({
+  auto,
+  fallback,
+  min,
+  max,
+  className,
+}: {
+  auto: boolean;
+  fallback: number;
+  min?: number;
+  max?: number;
+  className?: string;
+}) {
+  return (
+    <div className={cn('@container', className)}>
+      <FitList
+        rowHeight={RESOURCE_CARD_HEIGHT}
+        rowGap={14}
+        grid
+        auto={auto}
+        fallback={fallback}
+        min={min}
+        max={max}
+        className="grid gap-x-2 gap-y-3.5 @2xl:grid-cols-2 @2xl:gap-x-3 @5xl:grid-cols-3"
+        item={RESOURCE_CARD}
+      />
+    </div>
+  );
+}
 
 const TABLE_ROW = (
   <div data-skeleton-row className="flex h-12 items-center gap-3">
@@ -106,36 +132,51 @@ const TABLE_ROW = (
   </div>
 );
 
-export function TableSkeleton({
-  rows = 8,
-  rowHeight = 49,
-  cardHeight = 110,
-  auto = true,
-  footer = true,
-  min,
-  max,
-}: {
+interface TableSkeletonProps {
   rows?: number;
   rowHeight?: number;
-  cardHeight?: number;
   auto?: boolean;
   footer?: boolean;
   min?: number;
   max?: number;
-}) {
+  /**
+   * Where the DataTable keeps its view switch (`${persistKey}.view`, `${urlPrefix}view`): when the
+   * learner chose cards, the wide layout waits as cards too, not as a table.
+   */
+  view?: { storeKey: string; urlKey: string };
+}
+
+export function TableSkeleton({ view, ...props }: TableSkeletonProps) {
+  return view ? <ViewTableSkeleton view={view} {...props} /> : <Table {...props} cards={false} />;
+}
+
+function ViewTableSkeleton({
+  view,
+  ...props
+}: Omit<TableSkeletonProps, 'view'> & { view: { storeKey: string; urlKey: string } }) {
+  const [chosen] = useSessionState<string>(view.storeKey, 'table', view.urlKey);
+  return <Table {...props} cards={chosen === 'cards'} />;
+}
+
+function Table({
+  rows = 8,
+  rowHeight = 49,
+  auto = true,
+  footer = true,
+  min,
+  max,
+  cards,
+}: Omit<TableSkeletonProps, 'view'> & { cards: boolean }) {
   return (
     <div className="space-y-3">
-      <FitList
-        rowHeight={cardHeight}
-        rowGap={8}
+      <ResourceCardsSkeleton
         auto={auto}
         fallback={Math.min(rows, 5)}
         min={min}
         max={max}
-        className="flex flex-col gap-2 lg:hidden"
-        item={RESOURCE_CARD}
+        className={cn(!cards && 'lg:hidden')}
       />
-      <div className="space-y-2 rounded-lg border p-4 max-lg:hidden">
+      <div className={cn('space-y-2 rounded-lg border p-4 max-lg:hidden', cards && 'lg:hidden')}>
         <div className="flex items-center gap-3 border-b pb-2">
           <div className="size-6 shrink-0" />
           <Skeleton className="h-3 w-24 flex-[3]" style={{ maxWidth: 100 }} />
@@ -154,8 +195,8 @@ export function TableSkeleton({
           item={TABLE_ROW}
         />
       </div>
-      {/* Below 1024px the cards load more as they scroll: no pagination. */}
-      {footer && (
+      {/* The cards load more as they scroll: no pagination. */}
+      {footer && !cards && (
         <div className="max-lg:hidden">
           <PaginationFooterSkeleton />
         </div>
@@ -215,6 +256,47 @@ export function CardsSkeleton({
           <PaginationFooterSkeleton />
         </div>
       )}
+    </div>
+  );
+}
+
+/** Lịch sử's timeline: a day's heading over a raised box of two-line rows (history-list.tsx). */
+export function TimelineSkeleton({
+  rowHeight = 58,
+  rows = 8,
+}: {
+  rowHeight?: number;
+  rows?: number;
+}) {
+  return (
+    <div className="space-y-1">
+      <div className="flex items-center gap-2.5 pb-1.5">
+        <Skeleton className="h-4 w-16" />
+        <Skeleton className="h-3 w-24" />
+        <Skeleton className="ml-auto h-2 w-28 rounded-full" />
+      </div>
+      <FitList
+        rowHeight={rowHeight}
+        fallback={rows}
+        className={cn(LIST_CARD.base, 'divide-y divide-border overflow-hidden bg-card p-0')}
+        item={
+          <div
+            data-skeleton-row
+            className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1.5 px-3.5 py-2 md:grid-cols-[2.75rem_auto_minmax(0,1fr)_auto]"
+            style={{ height: rowHeight }}
+          >
+            <span className="col-start-1 row-start-2 flex items-center gap-2 md:contents">
+              <Skeleton className="h-3 w-9 md:col-start-1 md:row-start-1" />
+              <Skeleton className="h-5 w-24 rounded-sm md:col-start-2 md:row-start-1" />
+            </span>
+            <span className="col-start-1 row-start-1 flex flex-col gap-1.5 md:col-start-3">
+              <Skeleton className="h-4 w-3/4" />
+              <Skeleton className="h-3 w-1/2" />
+            </span>
+            <Skeleton className="col-start-2 row-span-2 row-start-1 h-5 w-12 rounded-md md:col-start-4 md:row-span-1" />
+          </div>
+        }
+      />
     </div>
   );
 }
