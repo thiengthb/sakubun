@@ -41,6 +41,11 @@ import { getDashboard } from '@/lib/insights/dashboard';
 import { getUserDb } from '@/lib/auth/current-user';
 import { hasAiConnection } from '@/lib/auth/connected-apps';
 import { showConnectHint } from '@/lib/insights/connect-hint';
+import { prisma } from '@/lib/db/db';
+import { GRAMMAR_KIND } from '@/lib/library/item-kinds';
+import { ensureOpenJlptLibrary } from '@/lib/library/seed';
+import { findOpenJlptGroup } from '@/lib/library/shared';
+import { StartFromLibrary } from '@/components/features/dashboard/start-from-library';
 
 export const metadata: Metadata = {
   title: 'Phân tích — sakubun',
@@ -87,20 +92,18 @@ export default async function HomePage() {
   }));
 
   if (totalItems === 0) {
+    // A new account starts empty (phase 8, L4): the way in is Kho chung's N5 set.
+    await ensureOpenJlptLibrary();
+    const starter = await findOpenJlptGroup(prisma, 'N5', GRAMMAR_KIND);
     return (
       <PageShell template="dashboard" title="Phân tích">
         <LiveRefresh />
+        {connectHint}
         <EmptyState
           icon={Inbox}
-          title="Chưa có gì để học"
-          description="Thêm mẫu ngữ pháp vào Tài nguyên, rồi số liệu sẽ hiện ở đây."
-          action={
-            <Button asChild variant="outline">
-              <Link href="/resources">
-                Mở Tài nguyên <ArrowRight aria-hidden />
-              </Link>
-            </Button>
-          }
+          title="Kho của bạn còn trống"
+          description="Lấy bộ ngữ pháp N5 từ Kho chung để bắt đầu, hoặc tìm mục khác ở đó. Số liệu sẽ hiện ở đây khi bạn ôn."
+          action={<StartFromLibrary starter={starter} />}
         />
       </PageShell>
     );

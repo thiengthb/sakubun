@@ -246,3 +246,11 @@ export async function getGroupEntry(db: LibraryClient, id: string) {
   });
   return { ...group, entries: members.map((m) => m.item) };
 }
+
+// One of OpenJLPT's level groups ("N5 · Ngữ pháp"), where a new learner starts (L4).
+export function findOpenJlptGroup(db: LibraryClient, level: string, type: ItemType) {
+  return db.libraryEntry.findFirst({
+    where: { sourceKey: openJlptGroupKey(level, type), status: PUBLIC },
+    select: { id: true, name: true },
+  });
+}
