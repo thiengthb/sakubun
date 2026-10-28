@@ -4,12 +4,13 @@ Trang này trả lời ba câu cho bất kỳ phiên Claude nào (kể cả từ
 việc tiếp theo là gì**. Cập nhật nó **trong cùng PR** với việc làm, và khi nhận một bước mới (xem
 "Bắt đầu phiên" trong `CLAUDE.md`). Lộ trình đầy đủ: `docs/roadmap.md`. Kế hoạch đã duyệt: `docs/plans/`.
 
-Cập nhật lần cuối: 2026-10-28 (Ôn nhanh: code C2–C5 đã lên `main`, #171–#177; Codex dịch tiếp phần dữ liệu).
+Cập nhật lần cuối: 2026-10-28 (nhận 7.4 đợt 1: Hội thoại và Kho chung, kế hoạch chờ duyệt).
 
 ## Đang làm
 
 | Bước | Nhánh / PR | Giữ bởi | Trạng thái |
 | --- | --- | --- | --- |
+| 7.4 đợt 1: làm lại Hội thoại, Kho chung, Tài nguyên, Lịch sử (kế hoạch `docs/plans/2026-10-28-ui-kaiwa-library.md`) | `docs/7.4-kaiwa-library-plan` | Claude (thread "Làm lại giao diện Hội thoại và Kho chung") | thien đã chọn vòng 2 (B1, Lịch sử B+B, Ctrl S); vòng 3 đã chốt (nút chỉ có icon, giữ chữ ở nút cam và hộp xác nhận); 7.4a đang làm |
 | 8 C1b dịch câu ví dụ (cả bộ, mỗi PR khoảng 1.000 mục) | `codex/openjlpt-*` | Codex (thien giao) | 50 câu mẫu (#172), đợt 1: 250 mục (#174); thien giao dịch hết phần còn lại 2026-10-28; mỗi đợt một nhánh mới từ `main`, Claude kiểm và merge (risk:low) |
 
 ## Chờ thien
