@@ -1,7 +1,8 @@
 import { CardsSkeleton, PageSkeleton } from '@/components/layout/page-skeleton';
 import { Skeleton } from '@/components/ui/skeleton';
 
-// KaiwaListView's shape: the count waits for data, then a grid of script cards.
+// KaiwaListView's shape: the count waits for data, then a grid of script cards (title, first line,
+// facts).
 export default function Loading() {
   return (
     <PageSkeleton
@@ -16,7 +17,7 @@ export default function Loading() {
       }
       actionsOnPhone="split"
     >
-      <CardsSkeleton rowHeight={62} footer={false} />
+      <CardsSkeleton rowHeight={96} footer={false} />
     </PageSkeleton>
   );
 }

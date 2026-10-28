@@ -4,14 +4,14 @@ Trang này trả lời ba câu cho bất kỳ phiên Claude nào (kể cả từ
 việc tiếp theo là gì**. Cập nhật nó **trong cùng PR** với việc làm, và khi nhận một bước mới (xem
 "Bắt đầu phiên" trong `CLAUDE.md`). Lộ trình đầy đủ: `docs/roadmap.md`. Kế hoạch đã duyệt: `docs/plans/`.
 
-Cập nhật lần cuối: 2026-10-28 (7.4a #181, 7.4k #182, 7.4b #188, 7.4c #191, 7.4d #192 xong; 7.4e #193 mở PR).
+Cập nhật lần cuối: 2026-10-28 (7.4a #181, 7.4k #182, 7.4b #188, 7.4c #191, 7.4d #192, 7.4e #193 xong; 7.4f #194, 7.4g mở PR).
 
 ## Đang làm
 
-| Bước                                                                                     | Nhánh / PR             | Giữ bởi             | Trạng thái                                                                                                                                              |
-| ---------------------------------------------------------------------------------------- | ---------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 7.4e Hội thoại chế độ xem (thanh công cụ, tên người nói, loa, Che câu của tôi, phím tắt) | `feat/7.4e-kaiwa-view` | Claude (thread 7.4) | PR #193 mở, chờ thien merge (risk:high: đổi Hội thoại)                                                                                                  |
-| 8 C1b dịch câu ví dụ (cả bộ, mỗi PR khoảng 1.000 mục)                                    | `codex/openjlpt-*`     | Codex (thien giao)  | 50 câu mẫu (#172), đợt 1: 250 mục (#174); thien giao dịch hết phần còn lại 2026-10-28; mỗi đợt một nhánh mới từ `main`, Claude kiểm và merge (risk:low) |
+| Bước                                                                  | Nhánh / PR             | Giữ bởi             | Trạng thái                                                                                                                                              |
+| --------------------------------------------------------------------- | ---------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 7.4g danh sách Hội thoại (câu đầu, số câu, người nói, ô tìm từ 9 bài) | `feat/7.4g-kaiwa-list` | Claude (thread 7.4) | PR mở, chờ thien merge (risk:high: đổi Hội thoại). 7.4f #194 mở song song, không phụ thuộc                                                              |
+| 8 C1b dịch câu ví dụ (cả bộ, mỗi PR khoảng 1.000 mục)                 | `codex/openjlpt-*`     | Codex (thien giao)  | 50 câu mẫu (#172), đợt 1: 250 mục (#174); thien giao dịch hết phần còn lại 2026-10-28; mỗi đợt một nhánh mới từ `main`, Claude kiểm và merge (risk:low) |
 
 ## Chờ thien
 

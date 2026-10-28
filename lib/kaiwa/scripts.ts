@@ -3,6 +3,7 @@ import { err, ok, type ActionResult } from '@/lib/core/action-result';
 import { analyzeLines, type Tokenize } from '@/lib/kaiwa/furigana';
 import { checkScript, describeProblems, normalizeBody, parseScript } from '@/lib/kaiwa/parse';
 import { japaneseTokenizer } from '@/lib/kaiwa/tokenizer';
+import { digestScript } from '@/lib/kaiwa/layout';
 
 // A learner's Kaiwa scripts (phase 8, K1). Every write goes through saveScript, so the web page and
 // the AI over MCP (K2) get the same format check and the same guard against overwriting newer work.
@@ -34,6 +35,22 @@ const SUMMARY = { id: true, title: true, version: true, updatedAt: true } as con
 
 export async function listScripts(db: UserDb): Promise<ScriptSummary[]> {
   return db.script.findMany({ select: SUMMARY, orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }] });
+}
+
+/** A script on Hội thoại's list (thien, 7.4g): what it is about at a glance. */
+export interface ScriptCard extends ScriptSummary {
+  lineCount: number;
+  speakers: string[];
+  /** The first spoken line, else the first line, without its readings. */
+  firstLine: string;
+}
+
+export async function listScriptCards(db: UserDb): Promise<ScriptCard[]> {
+  const rows = await db.script.findMany({
+    select: { ...SUMMARY, body: true },
+    orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
+  });
+  return rows.map(({ body, ...summary }) => ({ ...summary, ...digestScript(body) }));
 }
 
 export async function getScript(db: UserDb, id: string): Promise<ScriptRecord | null> {

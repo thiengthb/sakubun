@@ -93,6 +93,13 @@ test('Hội thoại lists a saved script and its page reads it line by line', as
   await page.goto('/kaiwa', { waitUntil: 'networkidle' });
   await expect(page.getByRole('heading', { name: 'Hội thoại' })).toBeVisible();
   await expect(page.getByText('1 kịch bản')).toBeVisible();
+  // The card says what the script is about: its first spoken line without readings, its length and
+  // who speaks (7.4g).
+  const scriptCard = page.locator('[data-slot="kaiwa-card"]');
+  await expect(scriptCard).toContainText('いらっしゃいませ。何名様ですか。');
+  await expect(scriptCard).toContainText('4 câu');
+  await expect(scriptCard).toContainText('A · B');
+  await expect(page.getByLabel('Tìm theo tên kịch bản')).toHaveCount(0);
   await page.getByRole('link', { name: 'Mở Ở nhà hàng' }).click();
   await page.waitForURL(/\/kaiwa\/kw-e2e$/);
 
@@ -300,4 +307,28 @@ test('"Tôi là" carries the last part over to a script with the same name', asy
   // No グエン here: the first speaker, as before.
   await page.goto('/kaiwa/kw-three', { waitUntil: 'networkidle' });
   await expect(page.getByRole('radio', { name: 'X' })).toHaveAttribute('aria-checked', 'true');
+});
+
+// thien, 7.4g: from nine scripts on, a search box finds one by its name.
+test('Hội thoại finds a script by name once there are nine', async ({ page }) => {
+  await seedE2eAccount();
+  const d = db();
+  d.exec(`DELETE FROM Script WHERE userId = ${E2E_OWNER}`);
+  const insert = d.prepare(
+    `INSERT INTO Script (id, userId, title, body, analysis, version, createdAt, updatedAt)
+     VALUES (?, ${E2E_OWNER}, ?, 'A: はい。 | Vâng.', NULL, 1, ?, ?)`,
+  );
+  const now = new Date().toISOString();
+  for (let i = 0; i < 9; i++) insert.run(`kw-s${i}`, i === 4 ? 'Ở ga Tokyo' : `Bài ${i}`, now, now);
+  d.close();
+  await signIn(page);
+  await page.goto('/kaiwa', { waitUntil: 'networkidle' });
+
+  const cards = page.locator('[data-slot="kaiwa-card"]');
+  await expect(cards).toHaveCount(9);
+  await page.getByLabel('Tìm theo tên kịch bản').fill('tokyo');
+  await expect(cards).toHaveCount(1);
+  await expect(cards).toContainText('Ở ga Tokyo');
+  await page.getByLabel('Tìm theo tên kịch bản').fill('không có');
+  await expect(page.getByText('Không có kịch bản nào khớp tên này.')).toBeVisible();
 });
