@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { BookCheck, BookPlus, Copy } from 'lucide-react';
 import { toast } from 'sonner';
@@ -15,9 +16,15 @@ import type { WordMeaning } from '@/lib/kaiwa/lookup';
 // the form it takes in the sentence; then icon buttons to keep it and copy it.
 export function WordCard({ meaning, surface }: { meaning: WordMeaning; surface?: string }) {
   const router = useRouter();
+  // The card was read before the word was kept: it learns the new item from the answer.
+  const [addedId, setAddedId] = useState<string | null>(null);
+  const itemId = meaning.itemId ?? addedId;
   const add = useServerAction(addWordAction, {
     success: `Đã thêm ${meaning.expression} vào kho`,
-    onSuccess: () => router.refresh(),
+    onSuccess: (added) => {
+      setAddedId(added.itemId);
+      router.refresh();
+    },
   });
   const senses = meaning.meaningVi
     .split(';')
@@ -78,11 +85,11 @@ export function WordCard({ meaning, surface }: { meaning: WordMeaning; surface?:
         </p>
       )}
       <div className="flex items-center gap-1 border-t border-border/70 pt-1.5">
-        {meaning.itemId ? (
+        {itemId ? (
           <CardAction
             icon={BookCheck}
             label="Đã có trong kho của bạn"
-            href={`/resources/${meaning.itemId}`}
+            href={`/resources/${itemId}`}
             className="text-accent-brand"
           />
         ) : (

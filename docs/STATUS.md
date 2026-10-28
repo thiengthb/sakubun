@@ -4,15 +4,14 @@ Trang này trả lời ba câu cho bất kỳ phiên Claude nào (kể cả từ
 việc tiếp theo là gì**. Cập nhật nó **trong cùng PR** với việc làm, và khi nhận một bước mới (xem
 "Bắt đầu phiên" trong `CLAUDE.md`). Lộ trình đầy đủ: `docs/roadmap.md`. Kế hoạch đã duyệt: `docs/plans/`.
 
-Cập nhật lần cuối: 2026-10-28 (7.4a #181, 7.4k #182, 7.4b #188 xong; 7.4c #191, 7.4d #192 mở PR).
+Cập nhật lần cuối: 2026-10-28 (7.4a #181, 7.4k #182, 7.4b #188, 7.4c #191, 7.4d #192 xong; 7.4e #193 mở PR).
 
 ## Đang làm
 
-| Bước                                                               | Nhánh / PR                   | Giữ bởi             | Trạng thái                                                                                                                                              |
-| ------------------------------------------------------------------ | ---------------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 7.4c thẻ Tài nguyên (B1, Nhóm), khung chờ dạng thẻ, flashcard nhóm | `feat/7.4c-resource-cards`   | Claude (thread 7.4) | PR mở, chờ thien merge (risk:high: đổi Tài nguyên, Nhóm). 7.4b #188 đã merge                                                                            |
-| 7.4d Lịch sử dạng dòng thời gian, chi tiết ở ngăn bên phải         | `feat/7.4d-history-timeline` | Claude (thread 7.4) | PR #192 mở, xếp chồng trên 7.4c #191: merge #191 trước                                                                                                  |
-| 8 C1b dịch câu ví dụ (cả bộ, mỗi PR khoảng 1.000 mục)              | `codex/openjlpt-*`           | Codex (thien giao)  | 50 câu mẫu (#172), đợt 1: 250 mục (#174); thien giao dịch hết phần còn lại 2026-10-28; mỗi đợt một nhánh mới từ `main`, Claude kiểm và merge (risk:low) |
+| Bước                                                                                     | Nhánh / PR             | Giữ bởi             | Trạng thái                                                                                                                                              |
+| ---------------------------------------------------------------------------------------- | ---------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 7.4e Hội thoại chế độ xem (thanh công cụ, tên người nói, loa, Che câu của tôi, phím tắt) | `feat/7.4e-kaiwa-view` | Claude (thread 7.4) | PR #193 mở, chờ thien merge (risk:high: đổi Hội thoại)                                                                                                  |
+| 8 C1b dịch câu ví dụ (cả bộ, mỗi PR khoảng 1.000 mục)                                    | `codex/openjlpt-*`     | Codex (thien giao)  | 50 câu mẫu (#172), đợt 1: 250 mục (#174); thien giao dịch hết phần còn lại 2026-10-28; mỗi đợt một nhánh mới từ `main`, Claude kiểm và merge (risk:low) |
 
 ## Chờ thien
 
@@ -58,6 +57,7 @@ poller (`sudo`), user `thi3n` không có token ghcr. Xem log: `journalctl -u min
 - e2e `skeleton` ở 390px: khung chờ trang một mục thấp hơn trang thật 44px (hàng nút đầu trang trên điện thoại); đỏ cả trên `main` (thấy 2026-10-28, sau 7.4k).
 - e2e `critical-path` chờ "Chưa có gì để học", nhưng Phân tích nay ghi "Kho của bạn còn trống": đỏ cả khi chạy riêng (thấy 2026-10-28).
 - e2e `quick-review` "by keyboard" lúc xanh lúc đỏ trên `main` (đỏ 3 trong 4 lần, 2026-10-28): câu trả lời không bị chặn mạng như test muốn.
+- e2e `header-actions` "on a phone" tìm nút Bộ lọc ở Tài nguyên, nhưng khi DB e2e trống (spec khác vừa xoá mục) thì trang chỉ có trạng thái trống, không có nút lọc: phụ thuộc dữ liệu spec khác để lại (thấy 2026-10-28).
 - Kế hoạch phase 6 (UI redo, các bước 6.x như PR #128 "6.9") chưa có trong repo; chỉ còn dấu vết trong
   commit và PR. Nếu còn bước 6.x chưa làm, chép kế hoạch vào `docs/plans/`.
 - `recordReviews` chưa gọi `invalidateStreak` sau mỗi lần ôn, nên chuỗi ngày có thể hiện chậm tới 60 giây

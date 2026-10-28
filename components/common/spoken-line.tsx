@@ -1,12 +1,10 @@
 'use client';
 
-import { Fragment, useState, type ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { SpeakButton } from '@/components/common/speak-button';
 import { Truncate } from '@/components/ui/truncate';
 import { hasFurigana, parseFurigana } from '@/lib/japanese/furigana';
 import { cn } from '@/lib/core/utils';
-
-type WrapGroup = { length: number; wrap?: (children: ReactNode) => ReactNode };
 
 export function SpokenLine({
   text,
@@ -22,8 +20,8 @@ export function SpokenLine({
   aside,
   title = false,
   speakerEnd = false,
-  groups,
   lookup = false,
+  arrange,
 }: {
   text: string;
   speakText?: string;
@@ -43,34 +41,25 @@ export function SpokenLine({
   /** The speaker right after the text, small and pale (a card's title, thien 7.4 B1); a cut text
    * keeps it in sight. */
   speakerEnd?: boolean;
-  /** Words to wrap, such as Kaiwa's word lookup: runs of the text in order, `length` characters
-   * each, each run wrapped by its own `wrap` (a popover trigger). A run never splits a reading.
-   * Needs `ruby`; the furigana setting still decides whether readings show. */
-  groups?: readonly WrapGroup[];
   /** The hover lookup on the sentence's words (components/common/word-lookup.tsx, 7.4b); 'hover'
    * where a tap belongs to something else, such as a card that opens. */
   lookup?: boolean | 'hover';
+  /** Places the button and the sentence apart, such as Hội thoại's speaker beside its bubble
+   * (thien, 7.4 round 3); the karaoke still lights the sentence as the button plays. */
+  arrange?: (parts: { button: ReactNode; line: ReactNode }) => ReactNode;
 }) {
   const [ratio, setRatio] = useState(0);
 
-  const segments =
-    groups && ruby
-      ? parseFurigana(ruby).map((s) => (showFurigana ? s : { text: s.text }))
-      : showFurigana && ruby && hasFurigana(ruby)
-        ? parseFurigana(ruby)
-        : [{ text }];
+  const segments = showFurigana && ruby && hasFurigana(ruby) ? parseFurigana(ruby) : [{ text }];
   const total = segments.reduce((n, s) => n + [...s.text].length, 0);
   const lit = Math.round(ratio * total);
 
   const starts = segments.map((_, i) =>
     segments.slice(0, i).reduce((n, s) => n + [...s.text].length, 0),
   );
-  // One unit per reading (never split) and one per plain character, so a group can end anywhere
-  // outside a reading.
-  const units = segments.flatMap((seg, si) => {
-    const chars = [...seg.text];
+  const nodes = segments.map((seg, si) => {
     const start = starts[si];
-    const litChars = chars.map((ch, ci) => (
+    const litChars = [...seg.text].map((ch, ci) => (
       <span
         key={ci}
         className={cn(
@@ -81,31 +70,20 @@ export function SpokenLine({
         {ch}
       </span>
     ));
-    if (seg.reading) {
-      return [
-        {
-          length: chars.length,
-          node: (
-            <ruby key={si}>
-              {litChars}
-              <rt
-                className={cn(
-                  'transition-colors duration-150 ease-linear motion-reduce:transition-none',
-                  start < lit && 'text-accent-brand',
-                )}
-              >
-                {seg.reading}
-              </rt>
-            </ruby>
-          ),
-        },
-      ];
-    }
-    if (!groups) return [{ length: chars.length, node: <span key={si}>{litChars}</span> }];
-    return litChars.map((node, ci) => ({
-      length: 1,
-      node: <span key={`${si}-${ci}`}>{node}</span>,
-    }));
+    if (!seg.reading) return <span key={si}>{litChars}</span>;
+    return (
+      <ruby key={si}>
+        {litChars}
+        <rt
+          className={cn(
+            'transition-colors duration-150 ease-linear motion-reduce:transition-none',
+            start < lit && 'text-accent-brand',
+          )}
+        >
+          {seg.reading}
+        </rt>
+      </ruby>
+    );
   });
 
   // The button is centred on the text's first line, at any size and on every page: its box is one
@@ -126,7 +104,7 @@ export function SpokenLine({
   const mark = lookup === 'hover' ? 'hover' : lookup || undefined;
   const content = (
     <>
-      {wrapGroups(units, groups)}
+      {nodes}
       {aside}
     </>
   );
@@ -142,6 +120,7 @@ export function SpokenLine({
       {content}
     </span>
   );
+  if (arrange) return arrange({ button, line });
   return (
     <span
       className={cn(
@@ -158,20 +137,4 @@ export function SpokenLine({
       {speakerEnd && button}
     </span>
   );
-}
-
-function wrapGroups(
-  units: { length: number; node: ReactNode }[],
-  groups: readonly WrapGroup[] | undefined,
-): ReactNode {
-  if (!groups) return units.map((u) => u.node);
-  let at = 0;
-  return groups.map((group, gi) => {
-    const run: ReactNode[] = [];
-    for (let n = 0; n < group.length && at < units.length; at++) {
-      run.push(units[at].node);
-      n += units[at].length;
-    }
-    return <Fragment key={gi}>{group.wrap ? group.wrap(run) : run}</Fragment>;
-  });
 }
