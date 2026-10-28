@@ -62,6 +62,5 @@ poller (`sudo`), user `thi3n` không có token ghcr. Xem log: `journalctl -u min
   commit và PR. Nếu còn bước 6.x chưa làm, chép kế hoạch vào `docs/plans/`.
 - `recordReviews` chưa gọi `invalidateStreak` sau mỗi lần ôn, nên chuỗi ngày có thể hiện chậm tới 60 giây
   (`lib/insights/streak.ts`; cache giờ theo từng người học).
-- Chữ "Xóa" và "Xoá" dùng lẫn lộn trong UI; chọn một cách viết (repo đang dùng "Xoá" trong tài liệu).
 - Repo public từ 2026-10-27; CI về lại runner của GitHub (#135, `docs/ci-runner.md`). Không dùng runner tự host khi
   repo public; runner `tnt-laptop-wsl` trên laptop đã dừng.

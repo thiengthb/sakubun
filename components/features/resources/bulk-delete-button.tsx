@@ -18,7 +18,7 @@ export function BulkDeleteButton({
 }) {
   const [open, setOpen] = useState(false);
   const { run, isPending } = useServerAction(deleteItemsAction, {
-    success: (d) => `Đã xóa ${d.deleted} ${noun} (lịch sử ôn vẫn được giữ)`,
+    success: (d) => `Đã xoá ${d.deleted} ${noun} (lịch sử ôn vẫn được giữ)`,
     onSuccess: () => {
       setOpen(false);
       onDone?.();
@@ -30,7 +30,7 @@ export function BulkDeleteButton({
     <>
       <BulkActionButton
         icon={Trash2}
-        label={`Xóa ${ids.length} ${noun}`}
+        label={`Xoá ${ids.length} ${noun}`}
         variant="destructive"
         onClick={() => setOpen(true)}
       />
@@ -40,11 +40,11 @@ export function BulkDeleteButton({
         onOpenChange={setOpen}
         title={
           <>
-            Xóa {ids.length} {noun} đã chọn?
+            Xoá {ids.length} {noun} đã chọn?
           </>
         }
-        description="Các mục này sẽ bị xóa khỏi kho và không luyện nữa. Lịch sử ôn cũ vẫn được GIỮ để thống kê. Không thể hoàn tác."
-        confirmLabel={`Xóa ${ids.length} mục`}
+        description="Các mục này sẽ bị xoá khỏi kho và không luyện nữa. Lịch sử ôn cũ vẫn được GIỮ để thống kê. Không thể hoàn tác."
+        confirmLabel={`Xoá ${ids.length} mục`}
         onConfirm={doDelete}
         pending={isPending}
       />

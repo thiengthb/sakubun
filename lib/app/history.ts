@@ -61,7 +61,7 @@ export function turnToRow(turn: TurnHistorySource): HistoryRow {
         ? []
         : [
             {
-              expression: turn.item?.expression ?? '(đã xóa)',
+              expression: turn.item?.expression ?? '(đã xoá)',
               rating: turn.rating,
               role: 'TARGET',
             },

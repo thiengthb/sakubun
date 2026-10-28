@@ -316,7 +316,7 @@ test('chọn dòng: thanh hành động khối gọi đúng danh từ của từ
   for (const t of TABS) {
     await page.goto(`/resources?tab=${t.tab}`, { waitUntil: 'networkidle' });
     await page.getByRole('checkbox', { name: 'Chọn tất cả dòng trên trang' }).check();
-    await expect(page.getByRole('button', { name: `Xóa 4 ${t.bulkNoun}` })).toBeVisible();
+    await expect(page.getByRole('button', { name: `Xoá 4 ${t.bulkNoun}` })).toBeVisible();
     await expect(page.getByRole('button', { name: /Tạm ngưng|Cho học lại/ })).toBeVisible();
     await expect(page.getByRole('button', { name: /Thêm vào nhóm/ })).toBeVisible();
     await page.getByRole('button', { name: 'Bỏ chọn' }).click();

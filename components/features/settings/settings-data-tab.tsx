@@ -172,8 +172,8 @@ export function DataTab({ isAdmin }: { isAdmin: boolean }) {
       toast.success('Đã nạp xong', {
         description:
           preview.kind === 'full'
-            ? `Thêm mới ${added} bản ghi. Không có gì bị xóa hay ghi đè.`
-            : `Thêm mới ${added} bản ghi, cập nhật ${updated}. Không có gì bị xóa.`,
+            ? `Thêm mới ${added} bản ghi. Không có gì bị xoá hay ghi đè.`
+            : `Thêm mới ${added} bản ghi, cập nhật ${updated}. Không có gì bị xoá.`,
       });
       setPreview(null);
       router.refresh();
@@ -353,7 +353,7 @@ export function DataTab({ isAdmin }: { isAdmin: boolean }) {
               )}
               , bỏ qua <span className="font-medium">{previewTotals.skip}</span> bản ghi.{' '}
               <span className="text-muted-foreground">
-                {showUpdates ? 'Không xóa gì.' : 'Không xóa, không ghi đè bản ghi đã có.'}
+                {showUpdates ? 'Không xoá gì.' : 'Không xoá, không ghi đè bản ghi đã có.'}
               </span>
             </p>
           )}

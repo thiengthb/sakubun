@@ -279,7 +279,7 @@ export async function listSentences(
       answeredAt: s.answeredAt,
       charCount: s.sourceText.length,
       ratings: s.reviews.map((r) => ({
-        expression: r.item?.expression ?? '(đã xóa)', // item may be null after a user-initiated delete
+        expression: r.item?.expression ?? '(đã xoá)', // item may be null after a user-initiated delete
         rating: r.rating,
         role: r.role,
       })),
