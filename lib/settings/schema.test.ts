@@ -11,6 +11,7 @@ import {
   settingsSchema,
   syncDirection,
   toCompositionSettings,
+  withAppFurigana,
 } from '@/lib/settings/schema';
 
 describe('settingsSchema', () => {
@@ -157,5 +158,15 @@ describe('parseStoredSettings', () => {
     const parsed = parseStoredSettings(stored);
     expect(parsed.difficulty).toBe(4);
     expect(parsed.direction).toBe(DEFAULT_SETTINGS.direction);
+  });
+});
+
+describe('withAppFurigana', () => {
+  it("switches the app's furigana and keeps Claude's", () => {
+    expect(withAppFurigana('none', true)).toBe('app');
+    expect(withAppFurigana('app', false)).toBe('none');
+    expect(withAppFurigana('claude', true)).toBe('both');
+    expect(withAppFurigana('both', false)).toBe('claude');
+    expect(withAppFurigana('app', true)).toBe('app');
   });
 });

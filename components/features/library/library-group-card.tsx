@@ -6,6 +6,7 @@ import { ORIGIN_LABEL } from '@/components/features/library/library-entry-card';
 import { LikeButton } from '@/components/features/library/like-button';
 import { isGroupKind } from '@/lib/library/group-kinds';
 import { cn } from '@/lib/core/utils';
+import { Truncate } from '@/components/ui/truncate';
 
 export interface LibraryGroupRow {
   id: string;
@@ -36,7 +37,7 @@ export function LibraryGroupCard({ group }: { group: LibraryGroupRow }) {
         )}
         <span className="min-w-0 truncate font-bold">{group.name}</span>
       </div>
-      {group.notes && <p className="line-clamp-2 text-sm text-muted-foreground">{group.notes}</p>}
+      {group.notes && <Truncate className="text-sm text-muted-foreground">{group.notes}</Truncate>}
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
         <span>{group.size} mục</span>
         <span aria-hidden>·</span>

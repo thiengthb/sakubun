@@ -10,6 +10,7 @@ Cập nhật lần cuối: 2026-10-28 (Ôn nhanh: code C2–C5 đã lên `main`,
 
 | Bước | Nhánh / PR | Giữ bởi | Trạng thái |
 | --- | --- | --- | --- |
+| 7.4a luật thẻ, nút あ ở sidebar | `feat/7.4a-card-rules-furigana-toggle` | Claude (thread 7.4) | PR mở, chờ thien merge (risk:high: đổi Cài đặt) |
 | 8 C1b dịch câu ví dụ (cả bộ, mỗi PR khoảng 1.000 mục) | `codex/openjlpt-*` | Codex (thien giao) | 50 câu mẫu (#172), đợt 1: 250 mục (#174); thien giao dịch hết phần còn lại 2026-10-28; mỗi đợt một nhánh mới từ `main`, Claude kiểm và merge (risk:low) |
 
 ## Chờ thien

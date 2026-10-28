@@ -152,6 +152,29 @@ export const PLAIN_ICONS = new Set([
 const RADIUS_SUFFIX =
   /^(?:-[tblrse]{1,2})?(?:-(?:none|xs|sm|md|lg|xl|2xl|full|\[[^\]]*var\(--radius[^\]]*\]))?!?$/;
 
+/**
+ * Cards in a list (thien, 7.4): a file under components/common or components/features named
+ * `*-card.tsx` or `*-cards.tsx`, except these, which are not items of a list.
+ */
+export const NOT_LIST_CARDS: Record<string, string> = {
+  'components/common/review-card.tsx': 'the one study card of Ôn nhanh, its grades are words',
+  'components/features/groups/group-cards.tsx': 'a flashcard deck to study, not a list',
+  'components/features/resources/enrichment-card.tsx': 'a section of the item detail page',
+  'components/features/dashboard/streak-card.tsx': 'a dashboard tile',
+  'components/features/settings/mcp-usage-card.tsx': 'a settings panel',
+};
+export const isListCard = (path: string) =>
+  /^components\/(?:common|features)\/.*-cards?\.tsx$/.test(path) && !(path in NOT_LIST_CARDS);
+
+/** The words a control shows: its body without tags and without expressions that render JSX. */
+const wordsOf = (el: Element) =>
+  el.body
+    .replace(/\{[^{}]*<[^{}]*\}/g, '')
+    .replace(/<[^>]*>/g, '')
+    .replace(/\{\/\*[\s\S]*?\*\/\}/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+
 export const UI_RULES: UiRule[] = [
   {
     id: 'radius-class',
@@ -220,7 +243,7 @@ export const UI_RULES: UiRule[] = [
     id: 'icon-only-plain',
     rule:
       'A button with only an icon uses an icon from PLAIN_ICONS and has an aria-label. Any other ' +
-      'icon gets a word next to it.',
+      'icon gets a word next to it, or is a CardAction, whose tooltip always says it.',
     check: ({ src }) => {
       const lucide = lucideNames(src);
       return elements(src, ['Button', 'ExpandingIconButton'])
@@ -253,6 +276,34 @@ export const UI_RULES: UiRule[] = [
         const what = forms.length > 0 ? `<${forms[0]}>` : `${fields.length} fields`;
         return [{ line: lineAt(src, el.index), excerpt: `<${el.name}> holds ${what}` }];
       }),
+  },
+  {
+    id: 'card-actions-icon-only',
+    rule:
+      'A button on a card in a list is only an icon, with a tooltip that says what it does ' +
+      '(CardAction): the card keeps its room for the content.',
+    check: ({ path, src }) =>
+      !isListCard(path)
+        ? []
+        : elements(src, ['Button', 'button']).flatMap((el) => {
+            const words = wordsOf(el);
+            return words
+              ? [{ line: lineAt(src, el.index), excerpt: `button says "${excerpt(words)}"` }]
+              : [];
+          }),
+  },
+  {
+    id: 'card-text-one-line',
+    rule:
+      'Every text on a card in a list is one line; text cut short shows in full in a tooltip ' +
+      '(Truncate), text that fits has none.',
+    check: ({ path, src }) =>
+      !isListCard(path)
+        ? []
+        : [...src.matchAll(/\bline-clamp-(?:[2-9]|none)\b/g)].map((m) => ({
+            line: lineAt(src, m.index),
+            excerpt: m[0],
+          })),
   },
   {
     id: 'page-template',

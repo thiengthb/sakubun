@@ -89,6 +89,19 @@ Trang đang tải là trang thật chưa có dữ liệu, giống nhau ở mọi
 | Đổi theo bề rộng hộp chứa (container query), không theo màn hình, cho mọi component dùng lại.         | ảnh      |
 | Lề 16px điện thoại, 32px laptop, rộng tối đa 1152px. Cách giữa các phần 24px điện thoại, 32px laptop. | ảnh      |
 
+## Thẻ trong danh sách
+
+Thẻ của Tài nguyên, Kho chung, Lịch sử, Hội thoại (file `*-card.tsx`, `*-cards.tsx`; ngoại lệ có lý do ở
+`NOT_LIST_CARDS` trong `lib/design/ui-standard.ts`). thien chốt 2026-10-28 (kế hoạch 7.4 vòng 2).
+
+| Luật                                                                                                    | Khoá bởi                      |
+| ------------------------------------------------------------------------------------------------------- | ----------------------------- |
+| Mỗi dòng chữ trên thẻ chỉ một dòng. Bị cắt thì rê chuột thấy đủ (`Truncate`); vừa thì không có tooltip. | test `card-text-one-line`     |
+| Nút trên thẻ chỉ có icon, tooltip nói nó làm gì (`CardAction`). Vì luôn có tooltip, icon nào cũng được. | test `card-actions-icon-only` |
+| Danh sách thẻ tải thêm khi cuộn, ở mọi bề rộng; không phân trang.                                       | ảnh (từ 7.4c, 7.4d)           |
+| Đang tải thì hiện khung thẻ (skeleton dạng thẻ), không dùng khung bảng.                                 | ảnh (từ 7.4c)                 |
+| Dạng thẻ không có ô chọn; chọn nhiều chỉ ở dạng bảng.                                                   | ảnh (từ 7.4c)                 |
+
 ## Chữ trên trang và trạng thái
 
 | Luật                                                                                                                                                            | Khoá bởi     |

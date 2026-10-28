@@ -22,7 +22,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { SpeakButton } from '@/components/common/speak-button';
 import { Stepper } from '@/components/common/stepper';
@@ -31,7 +30,6 @@ import { IconTile } from '@/components/common/icon-tile';
 import { SettingRow } from '@/components/features/settings/setting-row';
 import { cn } from '@/lib/core/utils';
 import {
-  furiganaInApp,
   JLPT_LEVELS,
   VOICE_SPEAKERS,
   type DirectionMode,
@@ -64,7 +62,6 @@ export function PracticeTab({
 }) {
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const advancedId = useId();
-  const furigana = furiganaInApp(settings.furiganaMode);
   const retention = Math.round(settings.desiredRetention * 100);
   const rates = speechRateOptions(settings.speechRate);
 
@@ -159,22 +156,6 @@ export function PracticeTab({
         </SettingRow>
 
         <SettingRow
-          glyph="あ"
-          label="Furigana"
-          aside={
-            <ruby lang="ja" aria-hidden className="ml-1 shrink-0 text-base text-muted-foreground">
-              漢字<rt className={cn(!furigana && 'invisible')}>かんじ</rt>
-            </ruby>
-          }
-        >
-          <Switch
-            checked={furigana}
-            onCheckedChange={(on) => set('furiganaMode', on ? 'app' : 'none')}
-            aria-label="Hiện furigana"
-          />
-        </SettingRow>
-
-        <SettingRow
           icon={Volume2}
           label="Giọng đọc"
           info="Giọng VOICEVOX cho các nút phát âm. Chưa bật VOICEVOX thì app dùng giọng của trình duyệt."
@@ -207,7 +188,8 @@ export function PracticeTab({
           />
         </SettingRow>
 
-        <SettingRow icon={Gauge} label="Tốc độ" wide>
+        {/* The seventh row of a two-column grid: it takes the whole line, no empty half beside it. */}
+        <SettingRow icon={Gauge} label="Tốc độ" wide className="col-span-full">
           <ToggleGroup
             type="single"
             variant="choice"

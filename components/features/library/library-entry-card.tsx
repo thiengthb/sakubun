@@ -12,6 +12,7 @@ import { LikeButton } from '@/components/features/library/like-button';
 import { RemoveEntryButton } from '@/components/common/remove-entry-button';
 import { buildFuriganaMarkup } from '@/lib/japanese/furigana';
 import { cn } from '@/lib/core/utils';
+import { Truncate } from '@/components/ui/truncate';
 
 export interface LibraryEntryRow {
   id: string;
@@ -83,7 +84,7 @@ export function LibraryEntryCard({
           </Button>
         )}
       </div>
-      <p className="line-clamp-2 text-sm text-muted-foreground">{entry.meaningVi}</p>
+      <Truncate className="text-sm text-muted-foreground">{entry.meaningVi}</Truncate>
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
         <span>{TYPE_LABEL[entry.type] ?? entry.type}</span>
         <span aria-hidden>·</span>

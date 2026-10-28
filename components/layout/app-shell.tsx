@@ -16,7 +16,7 @@ import { EdgeNavRail } from '@/components/layout/edge-nav-rail';
 import { ScrollToTop } from '@/components/layout/scroll-to-top';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import { StreakBeacon } from '@/components/features/dashboard/streak-beacon';
-import { ThemeToggle } from '@/components/layout/theme-toggle';
+import { DisplayToggles } from '@/components/layout/display-toggles';
 import { SidebarUser } from '@/components/layout/sidebar-user';
 import { useSession } from '@/lib/auth/auth-client';
 
@@ -37,9 +37,12 @@ const NAV_ITEMS = [
 export function AppShell({
   children,
   defaultSidebarOpen = true,
+  furigana = null,
 }: {
   children: React.ReactNode;
   defaultSidebarOpen?: boolean;
+  /** The learner's furigana setting, read by the root layout; null when nobody is signed in. */
+  furigana?: boolean | null;
 }) {
   const pathname = usePathname();
   const { data: session } = useSession();
@@ -58,7 +61,7 @@ export function AppShell({
         groups={groups}
         footer={
           <>
-            <ThemeToggle />
+            <DisplayToggles furigana={session?.user ? furigana : null} />
             {session?.user && (
               <SidebarUser
                 user={{

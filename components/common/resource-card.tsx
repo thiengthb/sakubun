@@ -6,6 +6,7 @@ import { SpokenLine } from '@/components/common/spoken-line';
 import { DueCell } from '@/components/common/due-cell';
 import { STATE_LABELS } from '@/lib/srs/constants';
 import { cn } from '@/lib/core/utils';
+import { Truncate } from '@/components/ui/truncate';
 
 export function ResourceCard({
   expression,
@@ -54,7 +55,7 @@ export function ResourceCard({
         <div className="flex shrink-0 items-center gap-0.5">{actions}</div>
       </div>
 
-      <p className="line-clamp-2 text-sm text-muted-foreground">{meaningVi}</p>
+      <Truncate className="text-sm text-muted-foreground">{meaningVi}</Truncate>
 
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
         <span>{suspended ? 'Tạm ngưng' : (STATE_LABELS[srs?.state ?? 0] ?? '—')}</span>
