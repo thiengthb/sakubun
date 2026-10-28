@@ -133,6 +133,11 @@ export interface DataTableProps<T> {
   renderCard?: (row: T, index: number) => ReactNode;
   cardHref?: (row: T) => string;
   cardHrefLabel?: (row: T) => string;
+  /**
+   * Cards with a tick box, for a list whose point is choosing (a picker). Elsewhere choosing many is
+   * the table's job and the cards have none (thien, 7.4).
+   */
+  cardSelection?: boolean;
 }
 
 export function DataTable<T>({
@@ -166,6 +171,7 @@ export function DataTable<T>({
   renderCard,
   cardHref,
   cardHrefLabel,
+  cardSelection = false,
 }: DataTableProps<T>) {
   'use no memo'; // TanStack's useReactTable returns fresh functions each render — opt out of React Compiler memoization (official guidance); the table does its own memoization internally.
   const up = urlPrefix ?? `${persistKey}.`;
@@ -253,6 +259,12 @@ export function DataTable<T>({
 
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const clearSelection = useCallback(() => setRowSelection({}), []);
+  // Leaving the table for cards without tick boxes drops what was chosen, so no bar acts on rows
+  // nobody can see are chosen.
+  const tickCards = enableRowSelection && cardSelection;
+  useEffect(() => {
+    if (cards && !tickCards) setRowSelection({});
+  }, [cards, tickCards]);
   useEffect(() => {
     onSelectionChange?.(Object.keys(rowSelection).filter((id) => rowSelection[id]));
   }, [rowSelection, onSelectionChange]);
@@ -567,10 +579,10 @@ export function DataTable<T>({
             <div className={cn('@container', !cards && 'lg:hidden')}>
               <ul
                 data-slot="data-table-cards"
-                className="grid gap-2 @2xl:grid-cols-2 @2xl:gap-3 @5xl:grid-cols-3"
+                className="grid gap-x-2 gap-y-3.5 @2xl:grid-cols-2 @2xl:gap-x-3 @5xl:grid-cols-3"
               >
                 {cardRows.map((row, i) => {
-                  const selected = enableRowSelection && row.getIsSelected();
+                  const selected = tickCards && row.getIsSelected();
                   return (
                     <li
                       key={row.id}
@@ -588,7 +600,7 @@ export function DataTable<T>({
                         </Link>
                       )}
                       <div className="flex items-start gap-2.5">
-                        {enableRowSelection && (
+                        {tickCards && (
                           <Checkbox
                             className="relative z-10 mt-1 shrink-0"
                             checked={selected}

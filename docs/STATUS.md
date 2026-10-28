@@ -4,14 +4,14 @@ Trang này trả lời ba câu cho bất kỳ phiên Claude nào (kể cả từ
 việc tiếp theo là gì**. Cập nhật nó **trong cùng PR** với việc làm, và khi nhận một bước mới (xem
 "Bắt đầu phiên" trong `CLAUDE.md`). Lộ trình đầy đủ: `docs/roadmap.md`. Kế hoạch đã duyệt: `docs/plans/`.
 
-Cập nhật lần cuối: 2026-10-28 (7.4a xong #181: nút あ ở sidebar, luật thẻ; 7.4k nút chỉ có icon đang mở PR).
+Cập nhật lần cuối: 2026-10-28 (7.4a #181, 7.4k #182 xong; 7.4b #188 và 7.4c mở PR).
 
 ## Đang làm
 
-| Bước                                                  | Nhánh / PR               | Giữ bởi             | Trạng thái                                                                                                                                              |
-| ----------------------------------------------------- | ------------------------ | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 7.4k nút đầu trang chỉ có icon (giãn ra khi rê chuột) | `feat/7.4k-icon-buttons` | Claude (thread 7.4) | PR mở, chờ thien merge (risk:high: đổi đầu trang mọi trang). 7.4a xong (#181)                                                                           |
-| 8 C1b dịch câu ví dụ (cả bộ, mỗi PR khoảng 1.000 mục) | `codex/openjlpt-*`       | Codex (thien giao)  | 50 câu mẫu (#172), đợt 1: 250 mục (#174); thien giao dịch hết phần còn lại 2026-10-28; mỗi đợt một nhánh mới từ `main`, Claude kiểm và merge (risk:low) |
+| Bước                                                               | Nhánh / PR                 | Giữ bởi             | Trạng thái                                                                                                                                              |
+| ------------------------------------------------------------------ | -------------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 7.4c thẻ Tài nguyên (B1, Nhóm), khung chờ dạng thẻ, flashcard nhóm | `feat/7.4c-resource-cards` | Claude (thread 7.4) | PR mở, chờ thien merge (risk:high: đổi Tài nguyên, Nhóm). 7.4b #188 cũng chờ merge; hai PR không phụ thuộc nhau                                         |
+| 8 C1b dịch câu ví dụ (cả bộ, mỗi PR khoảng 1.000 mục)              | `codex/openjlpt-*`         | Codex (thien giao)  | 50 câu mẫu (#172), đợt 1: 250 mục (#174); thien giao dịch hết phần còn lại 2026-10-28; mỗi đợt một nhánh mới từ `main`, Claude kiểm và merge (risk:low) |
 
 ## Chờ thien
 
@@ -54,6 +54,7 @@ poller (`sudo`), user `thi3n` không có token ghcr. Xem log: `journalctl -u min
   trên trang đó (đụng OAuth, risk:high).
 - Lượt thử 2026-10-27: Claude đọc kết quả `status` thành "18 mục đến hạn, 100 lượt ôn" trong khi đó là hạn mức ngày
   (tài khoản mới có 0 đến hạn). Cần làm chữ của `status` rõ hơn giữa "đến hạn" và "hạn mức".
+- e2e `skeleton` ở 390px: khung chờ trang một mục thấp hơn trang thật 44px (hàng nút đầu trang trên điện thoại); đỏ cả trên `main` (thấy 2026-10-28, sau 7.4k).
 - e2e `critical-path` chờ "Chưa có gì để học" nhưng fail khi chạy chung DB với spec khác đã thêm dữ liệu.
 - Kế hoạch phase 6 (UI redo, các bước 6.x như PR #128 "6.9") chưa có trong repo; chỉ còn dấu vết trong
   commit và PR. Nếu còn bước 6.x chưa làm, chép kế hoạch vào `docs/plans/`.

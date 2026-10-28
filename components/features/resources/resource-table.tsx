@@ -394,23 +394,21 @@ export function ResourceTable({
           speechRate={speechRate}
           extra={config.cardExtra?.(item)}
           aside={config.cardAside?.(item)}
+          star={<StarButton id={item.itemId} starred={item.starred} kind="item" />}
           actions={
-            <>
-              <StarButton id={item.itemId} starred={item.starred} kind="item" />
-              <RowActions
-                item={{
-                  itemId: item.itemId,
-                  expression: item.expression,
-                  reading: item.reading,
-                  meaningVi: item.meaningVi,
-                  notes: item.notes,
-                  level: item.level,
-                  suspended: item.suspended,
-                }}
-                kind={kind}
-                hideDetail
-              />
-            </>
+            <RowActions
+              item={{
+                itemId: item.itemId,
+                expression: item.expression,
+                reading: item.reading,
+                meaningVi: item.meaningVi,
+                notes: item.notes,
+                level: item.level,
+                suspended: item.suspended,
+              }}
+              kind={kind}
+              hideDetail
+            />
           }
         />
       )}

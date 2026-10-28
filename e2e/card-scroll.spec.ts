@@ -100,7 +100,7 @@ test('groups are cards that load more as they scroll', async ({ page }) => {
   await expect(cards).toHaveCount(GROUPS);
   await expect(page.getByText('Đang tải thêm…')).toHaveCount(0);
 
-  // thien, 2026-10-24: every card is one height, a long name and note are cut at two lines each,
+  // thien, 2026-10-24 and 7.4: every card is one height, a long name and note are cut at one line each,
   // and a card without a note says so.
   const heights = await cards.evaluateAll((els) =>
     els.map((e) => Math.round(e.getBoundingClientRect().height)),

@@ -44,7 +44,7 @@ chỗ sai mới làm test đỏ, chỗ đã sửa cũng làm test đỏ cho tớ
 | Nút chỉ có icon dùng icon trong `PLAIN_ICONS` (`lib/design/plain-icons.ts`) và có `aria-label`. Icon khác phải có chữ đi kèm, hoặc là `ExpandingIconButton` hay `CardAction`.                                                                                                                                  | `ui-standard` `icon-only-plain`          |
 | Nút ở đầu trang (thien, 7.4): laptop chỉ hiện icon, rê chuột hay focus thì giãn ra hiện chữ (`ExpandingIconButton`, `CopyCommandButton expandOnHover`). Điện thoại: icon trong `PLAIN_ICONS` (thêm, sửa, xoá, lọc, sắp xếp, tìm...) đứng một mình, icon khác kèm chữ; component tự quyết, nơi dùng không chọn. | `ui-standard` `header-actions-icon`      |
 | Giữ chữ ở mọi bề rộng: nút chính màu cam của trang (`variant="default"`), và nút trong hộp xác nhận, biểu mẫu (việc không hoàn tác được phải ghi rõ).                                                                                                                                                          | `ui-standard` `header-actions-icon`, ảnh |
-| Nút trong nội dung trang chỉ có icon, rê chuột hay focus hiện tooltip nói hành động. Đổi dần theo PR của từng trang (7.4c tới 7.4i).                                                                                                                                                                           | ảnh                                      |
+| Nút trong nội dung trang chỉ có icon, rê chuột hay focus hiện tooltip nói hành động (`IconAction`; điện thoại: icon trong `PLAIN_ICONS` đứng một mình, icon khác kèm chữ). Đổi dần theo PR của từng trang (7.4c tới 7.4i).                                                                                     | ảnh                                      |
 | Mô tả hiện khi giữ chuột 0,5 giây và khi focus; nút bị khoá nói vì sao. Sau nút (i) dùng `TapTooltip`, vì tooltip Radix không mở khi chạm.                                                                                                                                                                     | ảnh                                      |
 
 ## Đầu trang
@@ -97,13 +97,14 @@ Trang đang tải là trang thật chưa có dữ liệu, giống nhau ở mọi
 Thẻ của Tài nguyên, Kho chung, Lịch sử, Hội thoại (file `*-card.tsx`, `*-cards.tsx`; ngoại lệ có lý do ở
 `NOT_LIST_CARDS` trong `lib/design/ui-standard.ts`). thien chốt 2026-10-28 (kế hoạch 7.4 vòng 2).
 
-| Luật                                                                                                    | Khoá bởi                      |
-| ------------------------------------------------------------------------------------------------------- | ----------------------------- |
-| Mỗi dòng chữ trên thẻ chỉ một dòng. Bị cắt thì rê chuột thấy đủ (`Truncate`); vừa thì không có tooltip. | test `card-text-one-line`     |
-| Nút trên thẻ chỉ có icon, tooltip nói nó làm gì (`CardAction`). Vì luôn có tooltip, icon nào cũng được. | test `card-actions-icon-only` |
-| Danh sách thẻ tải thêm khi cuộn, ở mọi bề rộng; không phân trang.                                       | ảnh (từ 7.4c, 7.4d)           |
-| Đang tải thì hiện khung thẻ (skeleton dạng thẻ), không dùng khung bảng.                                 | ảnh (từ 7.4c)                 |
-| Dạng thẻ không có ô chọn; chọn nhiều chỉ ở dạng bảng.                                                   | ảnh (từ 7.4c)                 |
+| Luật                                                                                                                           | Khoá bởi                      |
+| ------------------------------------------------------------------------------------------------------------------------------ | ----------------------------- |
+| Mỗi dòng chữ trên thẻ chỉ một dòng. Bị cắt thì rê chuột thấy đủ (`Truncate`); vừa thì không có tooltip.                        | test `card-text-one-line`     |
+| Nút trên thẻ chỉ có icon, tooltip nói nó làm gì (`CardAction`). Vì luôn có tooltip, icon nào cũng được.                        | test `card-actions-icon-only` |
+| Danh sách thẻ tải thêm khi cuộn, ở mọi bề rộng; không phân trang.                                                              | ảnh (từ 7.4c, 7.4d)           |
+| Đang tải thì hiện khung thẻ (skeleton dạng thẻ, cùng chiều cao), không dùng khung bảng.                                        | `e2e/resource-cards.spec.ts`  |
+| Dạng thẻ không có ô chọn; chọn nhiều chỉ ở dạng bảng (trừ trang chọn mục, `cardSelection`).                                    | `e2e/resource-cards.spec.ts`  |
+| Thẻ ngữ pháp, từ vựng (B1): chip cấp bên trái, loa nhỏ sau tiêu đề, menu trên sao; mục chưa ôn có nhãn đỏ "Mới" trên mép trên. | `e2e/resource-cards.spec.ts`  |
 
 ## Chữ trên trang và trạng thái
 

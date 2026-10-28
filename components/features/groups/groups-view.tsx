@@ -1,10 +1,8 @@
 'use client';
 
-import Link from 'next/link';
 import { useMemo, useState, useTransition } from 'react';
-import { Layers, SearchX, Trash2 } from 'lucide-react';
+import { Layers, SearchX } from 'lucide-react';
 import { toastResult } from '@/lib/core/action-toast';
-import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/common/confirm-dialog';
 import { EmptyState } from '@/components/common/empty-state';
 import {
@@ -15,15 +13,12 @@ import {
   type FilterChip,
   type FilterOption,
 } from '@/components/common/filter-popover';
-import { GroupEditAction } from '@/components/features/groups/group-actions';
-import { GroupKindBadge } from '@/components/common/group-kind-badge';
+import { GroupCard } from '@/components/features/groups/group-card';
 import { GROUP_KIND_LABELS } from '@/lib/library/group-kinds';
 import { SearchInput } from '@/components/common/search-input';
 import { SearchToolbar } from '@/components/common/search-toolbar';
 import { useScrollMore } from '@/components/common/use-scroll-more';
-import { LIST_CARD } from '@/components/common/list-card';
 import { ScrollMoreStatus } from '@/components/common/scroll-more-status';
-import { cn } from '@/lib/core/utils';
 import { useSessionState } from '@/components/common/use-session-state';
 import { deleteGroupAction } from '@/app/actions';
 import type { GroupSummary } from '@/lib/library/groups';
@@ -149,53 +144,7 @@ export function GroupsView({ groups }: { groups: GroupSummary[] }) {
           <div className="@container">
             <ul className="grid gap-2 @2xl:grid-cols-2 @2xl:gap-3 @5xl:grid-cols-3">
               {shownGroups.map((g) => (
-                <li
-                  key={g.id}
-                  className={cn(LIST_CARD.base, LIST_CARD.linked, 'flex flex-col gap-1.5')}
-                >
-                  <Link href={`/groups/${g.id}`} className={LIST_CARD.link}>
-                    <span className="sr-only">Mở nhóm {g.name}</span>
-                  </Link>
-
-                  <div className="flex items-start justify-between gap-2">
-                    <span className="flex min-w-0 flex-1 items-start gap-2 font-medium">
-                      <Layers
-                        className="mt-0.5 size-4 shrink-0 text-muted-foreground"
-                        aria-hidden
-                      />
-                      <span className="line-clamp-2 min-h-10">{g.name}</span>
-                    </span>
-                    <span className="flex shrink-0 items-center gap-0.5">
-                      <GroupEditAction group={g} />
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-muted-foreground hover:text-destructive"
-                        onClick={() => setDeleting(g)}
-                        aria-label={`Xoá nhóm ${g.name}`}
-                      >
-                        <Trash2 className="size-4" />
-                      </Button>
-                    </span>
-                  </div>
-
-                  {/* Every card is the same height: two lines for the name and two for the note
-                      are kept even when shorter (min-h-10 is two text-sm lines; thien, 2026-10-24). */}
-                  <p
-                    className={cn(
-                      'line-clamp-2 min-h-10 text-sm text-muted-foreground',
-                      !g.note && 'text-muted-foreground/70',
-                    )}
-                  >
-                    {g.note || 'Chưa có ghi chú'}
-                  </p>
-
-                  <div className="mt-auto flex flex-wrap items-center gap-x-2 gap-y-1 pt-1 text-xs text-muted-foreground">
-                    <span>{g.memberCount} mục</span>
-                    <span aria-hidden>·</span>
-                    <GroupKindBadge kind={g.kind} />
-                  </div>
-                </li>
+                <GroupCard key={g.id} group={g} onDelete={setDeleting} />
               ))}
             </ul>
           </div>
