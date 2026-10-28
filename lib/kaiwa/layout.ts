@@ -22,9 +22,16 @@ export function scriptSpeakers(lines: readonly ScriptLine[]): string[] {
   return [...new Set(lines.flatMap((l) => (l.speaker === null ? [] : [l.speaker])))];
 }
 
-// The speaker the learner chose before, if the script still has them; else whoever speaks first.
-export function chooseMe(speakers: readonly string[], stored: string | null): string | null {
+// The part the learner chose on this script, if it still has them; else the part they took on the
+// last script they chose one in, when this script has it too (often their own name, thien 7.4);
+// else whoever speaks first.
+export function chooseMe(
+  speakers: readonly string[],
+  stored: string | null,
+  last: string | null = null,
+): string | null {
   if (stored !== null && speakers.includes(stored)) return stored;
+  if (last !== null && speakers.includes(last)) return last;
   return speakers[0] ?? null;
 }
 

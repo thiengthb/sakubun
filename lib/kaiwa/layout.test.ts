@@ -62,4 +62,11 @@ describe('chooseMe', () => {
     expect(chooseMe(speakers, null)).toBe('A');
     expect(chooseMe([], 'A')).toBeNull();
   });
+
+  it('falls back to the part taken on the last script before the first speaker', () => {
+    const speakers = scriptSpeakers(lines);
+    expect(chooseMe(speakers, null, 'C')).toBe('C');
+    expect(chooseMe(speakers, 'B', 'C')).toBe('B');
+    expect(chooseMe(speakers, 'D', 'グエン')).toBe('A');
+  });
 });
