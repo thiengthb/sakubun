@@ -80,11 +80,12 @@ beforeEach(async () => {
 });
 
 describe('MCP v2', () => {
-  it('lists exactly the seven study tools, three Kaiwa and two Kho chung tools, and two prompts', async () => {
+  it('lists exactly the seven study tools, example_add, three Kaiwa and two Kho chung tools, and two prompts', async () => {
     const { tools } = await client.listTools();
     expect(tools.map((t) => t.name).sort()).toEqual(
       [
         'add_items',
+        'example_add',
         'grade_turn',
         'kaiwa_get',
         'kaiwa_list',
@@ -209,5 +210,24 @@ describe('MCP v2', () => {
       /^ready now 1 · left today: 2 new grammar, 0 new vocab, \d+ reviews/,
     );
     expect(status.text).toContain('streak 0 days');
+  });
+
+  it('adds an example sentence to a card, creating one that holds only sentences', async () => {
+    const item = await db.item.findFirstOrThrow({ where: { expression: '〜ばかりに' } });
+    const ja = '寝坊したばかりに、電車に乗り遅れた。';
+    const added = await call('example_add', {
+      itemId: item.id,
+      ja,
+      vi: 'Chỉ vì ngủ quên mà tôi lỡ tàu.',
+    });
+    expect(added.text).toMatch(/^added to 〜ばかりに: 1 sentence on its card \(new card/);
+    const quick = await (await import('@/lib/app/quick-review')).getItemCards(db, [item.id]);
+    expect(quick[0].sentence?.translation).toBe('Chỉ vì ngủ quên mà tôi lỡ tàu.');
+
+    const again = await call('example_add', { itemId: item.id, ja, vi: 'x' });
+    expect(again).toEqual({ isError: true, text: expect.stringContaining('already has') });
+    const off = await call('example_add', { itemId: item.id, ja: '電車に乗り遅れた。', vi: 'x' });
+    expect(off.isError).toBe(true);
+    expect(off.text).toContain('does not use 〜ばかりに');
   });
 });

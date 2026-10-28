@@ -32,7 +32,7 @@ describe('MCP_CATALOG matches the server registrations', () => {
   const catalog = new Map(MCP_CATALOG.map((e) => [e.name, e.kind]));
 
   it('finds registrations to compare against (guards the regex itself)', () => {
-    expect(reg.tool.size).toBe(14);
+    expect(reg.tool.size).toBe(15);
     expect(reg.prompt.size).toBe(2);
   });
 

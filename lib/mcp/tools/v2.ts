@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type { ActionResult } from '@/lib/core/action-result';
+import { addExample } from '@/lib/app/examples';
 import { addLibraryItems, findItems, type FoundItem } from '@/lib/app/library';
 import { getStatus, type StudyStatus } from '@/lib/app/status';
 import {
@@ -251,6 +252,30 @@ export function registerV2Tools(server: McpServer) {
           'next: lookup gives the itemId; next_turn with it practises one now.',
         ]);
       },
+    ),
+  );
+
+  server.tool(
+    'example_add',
+    "Add an example sentence to an item's card, only after the learner agrees.",
+    {
+      itemId: z.string(),
+      ja: z.string(),
+      vi: z.string(),
+      jaRuby: z.string().optional().describe('ja with readings: 漢字[かんじ]'),
+    },
+    guard(
+      'example_add',
+      async (
+        { itemId, ...example }: { itemId: string; ja: string; vi: string; jaRuby?: string },
+        extra: ToolExtra,
+      ) =>
+        fromResult(await addExample(learnerDb(extra), itemId, example), (d) =>
+          text([
+            `added to ${d.expression}: ${d.sentences} sentence${d.sentences === 1 ? '' : 's'} on its card${d.created ? ' (new card, sentences only)' : ''}`,
+            'next: tell the learner it shows in quick review on the web.',
+          ]),
+        ),
     ),
   );
 
