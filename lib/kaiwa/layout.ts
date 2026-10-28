@@ -1,4 +1,4 @@
-import type { ScriptLine } from '@/lib/kaiwa/parse';
+import { parseScript, plainJapanese, type ScriptLine } from '@/lib/kaiwa/parse';
 
 // How a script reads as a chat (thien, 2026-10-27): the learner picks who they are, their lines sit
 // on the left and everyone else's on the right. A line with no speaker inside a dialogue
@@ -60,4 +60,20 @@ export function layoutTurns<L extends ScriptLine>(
       tone: mine ? 0 : others.indexOf(speaker) + 1,
     };
   });
+}
+
+// What a script's card on the list says about it (thien, 7.4g): how long it is, who speaks, and
+// its first spoken line (the scene before it says less), as the learner reads it.
+export function digestScript(body: string): {
+  lineCount: number;
+  speakers: string[];
+  firstLine: string;
+} {
+  const lines = parseScript(body);
+  const first = lines.find((l) => l.speaker !== null) ?? lines[0];
+  return {
+    lineCount: lines.length,
+    speakers: scriptSpeakers(lines),
+    firstLine: first ? plainJapanese(first.japanese) : '',
+  };
 }
