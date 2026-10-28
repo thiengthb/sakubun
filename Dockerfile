@@ -93,4 +93,6 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
   CMD wget -qO- http://127.0.0.1:3789/api/health || exit 1
 
 # Apply migrations to /data first, then start the server (exec so node receives signals).
-CMD ["sh", "-c", "./prisma-cli/node_modules/.bin/prisma migrate deploy && exec node server.js"]
+# The standalone tree can carry a traced @prisma/config without its `effect` dependency, and
+# prisma.config.ts then loads that copy and fails. NODE_PATH lets it fall back to the CLI's tree.
+CMD ["sh", "-c", "NODE_PATH=/app/prisma-cli/node_modules ./prisma-cli/node_modules/.bin/prisma migrate deploy && exec node server.js"]
