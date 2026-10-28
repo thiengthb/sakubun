@@ -4,14 +4,14 @@ Trang này trả lời ba câu cho bất kỳ phiên Claude nào (kể cả từ
 việc tiếp theo là gì**. Cập nhật nó **trong cùng PR** với việc làm, và khi nhận một bước mới (xem
 "Bắt đầu phiên" trong `CLAUDE.md`). Lộ trình đầy đủ: `docs/roadmap.md`. Kế hoạch đã duyệt: `docs/plans/`.
 
-Cập nhật lần cuối: 2026-10-28 (Ôn nhanh: code C2–C5 đã lên `main`, #171–#177; Codex dịch tiếp phần dữ liệu).
+Cập nhật lần cuối: 2026-10-28 (7.4a xong #181: nút あ ở sidebar, luật thẻ; 7.4k nút chỉ có icon đang mở PR).
 
 ## Đang làm
 
-| Bước | Nhánh / PR | Giữ bởi | Trạng thái |
-| --- | --- | --- | --- |
-| 7.4a luật thẻ, nút あ ở sidebar | `feat/7.4a-card-rules-furigana-toggle` | Claude (thread 7.4) | PR mở, chờ thien merge (risk:high: đổi Cài đặt) |
-| 8 C1b dịch câu ví dụ (cả bộ, mỗi PR khoảng 1.000 mục) | `codex/openjlpt-*` | Codex (thien giao) | 50 câu mẫu (#172), đợt 1: 250 mục (#174); thien giao dịch hết phần còn lại 2026-10-28; mỗi đợt một nhánh mới từ `main`, Claude kiểm và merge (risk:low) |
+| Bước                                                  | Nhánh / PR               | Giữ bởi             | Trạng thái                                                                                                                                              |
+| ----------------------------------------------------- | ------------------------ | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 7.4k nút đầu trang chỉ có icon (giãn ra khi rê chuột) | `feat/7.4k-icon-buttons` | Claude (thread 7.4) | PR mở, chờ thien merge (risk:high: đổi đầu trang mọi trang). 7.4a xong (#181)                                                                           |
+| 8 C1b dịch câu ví dụ (cả bộ, mỗi PR khoảng 1.000 mục) | `codex/openjlpt-*`       | Codex (thien giao)  | 50 câu mẫu (#172), đợt 1: 250 mục (#174); thien giao dịch hết phần còn lại 2026-10-28; mỗi đợt một nhánh mới từ `main`, Claude kiểm và merge (risk:low) |
 
 ## Chờ thien
 

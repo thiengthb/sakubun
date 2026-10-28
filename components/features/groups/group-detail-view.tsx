@@ -68,6 +68,7 @@ export function GroupDetailView({
                 command={`luyện nhóm ${group.name}`}
                 label="Luyện nhóm"
                 size="default"
+                expandOnHover
                 icon={Target}
               />
             )}

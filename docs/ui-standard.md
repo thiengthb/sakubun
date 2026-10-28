@@ -37,12 +37,15 @@ chỗ sai mới làm test đỏ, chỗ đã sửa cũng làm test đỏ cho tớ
 
 ## Nhãn nút
 
-| Luật                                                                                                                                       | Khoá bởi                        |
-| ------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------- |
-| 1 đến 2 từ trên điện thoại, 1 đến 3 từ trên laptop.                                                                                        | ảnh                             |
-| Nút tạo mới (icon `Plus` kèm chữ) ghi đúng "Thêm", không thêm chữ ngữ cảnh.                                                                | `ui-standard` `create-label`    |
-| Nút chỉ có icon dùng icon trong `PLAIN_ICONS` (`lib/design/ui-standard.ts`) và có `aria-label`. Icon khác phải có chữ đi kèm.              | `ui-standard` `icon-only-plain` |
-| Mô tả hiện khi giữ chuột 0,5 giây và khi focus; nút bị khoá nói vì sao. Sau nút (i) dùng `TapTooltip`, vì tooltip Radix không mở khi chạm. | ảnh                             |
+| Luật                                                                                                                                                                                                                                                                                                           | Khoá bởi                                 |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
+| 1 đến 2 từ trên điện thoại, 1 đến 3 từ trên laptop.                                                                                                                                                                                                                                                            | ảnh                                      |
+| Nút tạo mới (icon `Plus` kèm chữ) ghi đúng "Thêm", không thêm chữ ngữ cảnh.                                                                                                                                                                                                                                    | `ui-standard` `create-label`             |
+| Nút chỉ có icon dùng icon trong `PLAIN_ICONS` (`lib/design/plain-icons.ts`) và có `aria-label`. Icon khác phải có chữ đi kèm, hoặc là `ExpandingIconButton` hay `CardAction`.                                                                                                                                  | `ui-standard` `icon-only-plain`          |
+| Nút ở đầu trang (thien, 7.4): laptop chỉ hiện icon, rê chuột hay focus thì giãn ra hiện chữ (`ExpandingIconButton`, `CopyCommandButton expandOnHover`). Điện thoại: icon trong `PLAIN_ICONS` (thêm, sửa, xoá, lọc, sắp xếp, tìm...) đứng một mình, icon khác kèm chữ; component tự quyết, nơi dùng không chọn. | `ui-standard` `header-actions-icon`      |
+| Giữ chữ ở mọi bề rộng: nút chính màu cam của trang (`variant="default"`), và nút trong hộp xác nhận, biểu mẫu (việc không hoàn tác được phải ghi rõ).                                                                                                                                                          | `ui-standard` `header-actions-icon`, ảnh |
+| Nút trong nội dung trang chỉ có icon, rê chuột hay focus hiện tooltip nói hành động. Đổi dần theo PR của từng trang (7.4c tới 7.4i).                                                                                                                                                                           | ảnh                                      |
+| Mô tả hiện khi giữ chuột 0,5 giây và khi focus; nút bị khoá nói vì sao. Sau nút (i) dùng `TapTooltip`, vì tooltip Radix không mở khi chạm.                                                                                                                                                                     | ảnh                                      |
 
 ## Đầu trang
 

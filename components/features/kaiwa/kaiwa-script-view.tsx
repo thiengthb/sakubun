@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { Eye, EyeOff, MessagesSquare, Pencil, Sparkles } from 'lucide-react';
 import { ParentCrumbs } from '@/components/layout/app-breadcrumbs';
 import { PageShell } from '@/components/layout/page-shell';
-import { Button } from '@/components/ui/button';
 import { CopyCommandButton } from '@/components/common/copy-command-button';
 import { EmptyState } from '@/components/common/empty-state';
 import { RelativeTime } from '@/components/common/relative-time';
@@ -16,6 +15,7 @@ import { chooseMe, layoutTurns, scriptSpeakers } from '@/lib/kaiwa/layout';
 import { editScriptCommand } from '@/components/features/kaiwa/kaiwa-commands';
 import type { RubyLine } from '@/components/features/kaiwa/kaiwa-line';
 import type { WordMeaning } from '@/lib/kaiwa/lookup';
+import { ExpandingIconButton } from '@/components/common/expanding-icon-button';
 
 // One script (phase 8, K3): its lines as a chat seen from the part the learner picks ("Tôi là"),
 // each with the Japanese to listen to and the Vietnamese, which the learner can hide to test
@@ -55,20 +55,19 @@ export function KaiwaScriptView({
       }
       actions={
         <>
-          <Button variant="outline" onClick={() => setShowMeaning((v) => !v)}>
-            {showMeaning ? <EyeOff aria-hidden /> : <Eye aria-hidden />}
-            {showMeaning ? 'Ẩn nghĩa' : 'Hiện nghĩa'}
-          </Button>
-          <Button variant="outline" asChild>
-            <Link href={`/kaiwa/${script.id}/edit`}>
-              <Pencil aria-hidden />
-              Sửa
-            </Link>
-          </Button>
+          <ExpandingIconButton
+            icon={showMeaning ? EyeOff : Eye}
+            label={showMeaning ? 'Ẩn nghĩa' : 'Hiện nghĩa'}
+            onClick={() => setShowMeaning((v) => !v)}
+          />
+          <ExpandingIconButton asChild icon={Pencil} label="Sửa">
+            <Link href={`/kaiwa/${script.id}/edit`} />
+          </ExpandingIconButton>
           <CopyCommandButton
             command={editScriptCommand(script.title)}
             label="Sửa với AI"
             size="default"
+            expandOnHover
             icon={Sparkles}
           />
         </>

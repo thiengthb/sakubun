@@ -160,9 +160,7 @@ export function FilterPopover({
     <ExpandingIconButton
       icon={SlidersHorizontal}
       label="Lọc"
-      labelOnPhone
       aria-label={activeCount > 0 ? `Bộ lọc (${activeCount} đang bật)` : 'Bộ lọc'}
-      title={activeCount > 0 ? `Bộ lọc (${activeCount} đang bật)` : 'Bộ lọc'}
     />
   );
 
@@ -192,10 +190,7 @@ export function FilterPopover({
         ) : (
           <Popover>
             <PopoverTrigger asChild>{trigger}</PopoverTrigger>
-            <PopoverContent
-              align={align}
-              className="max-h-[70vh] w-80 gap-3 overflow-y-auto"
-            >
+            <PopoverContent align={align} className="max-h-[70vh] w-80 gap-3 overflow-y-auto">
               <div className="flex items-center justify-between">
                 <span className="flex items-center gap-2 text-sm font-bold">
                   <SlidersHorizontal className="size-4 text-muted-foreground" aria-hidden />

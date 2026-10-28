@@ -1,4 +1,5 @@
 import type { PatternResult, Violation } from '@/tooling/thienui-guards/src/pattern-lock.mjs';
+import { PLAIN_ICONS } from './plain-icons';
 
 // The machine-checkable rules of docs/ui-standard.md. Pure: each check takes a file's path and
 // source and returns what breaks the rule, so ui-standard.test.ts can prove every check goes red on
@@ -116,38 +117,6 @@ const WEIGHTED_CONTROLS = [
 ];
 const ICON_SIZE = /\bsize=(?:"icon[\w-]*"|\{'icon[\w-]*'\})/;
 
-/** Icons whose meaning nobody has to guess. Anything else needs a word next to it. */
-export const PLAIN_ICONS = new Set([
-  'ArrowLeft',
-  'ArrowUp',
-  'Check',
-  'ChevronDown',
-  'ChevronLeft',
-  'ChevronRight',
-  'ChevronUp',
-  'Copy',
-  'Eye',
-  'EyeOff',
-  'Info',
-  'Loader2',
-  'Minus',
-  'Moon',
-  'MoreHorizontal',
-  'MoreVertical',
-  'PanelLeftIcon',
-  'Pause',
-  'Pencil',
-  'Play',
-  'Plus',
-  'Search',
-  'Star',
-  'Sun',
-  'Trash2',
-  'Volume2',
-  'X',
-  'XIcon',
-]);
-
 /** What may follow `rounded`: an optional side (t, b, l, r, s, e, tl, ...), a step, an optional `!`. */
 const RADIUS_SUFFIX =
   /^(?:-[tblrse]{1,2})?(?:-(?:none|xs|sm|md|lg|xl|2xl|full|\[[^\]]*var\(--radius[^\]]*\]))?!?$/;
@@ -174,6 +143,23 @@ const wordsOf = (el: Element) =>
     .replace(/\{\/\*[\s\S]*?\*\/\}/g, '')
     .replace(/\s+/g, ' ')
     .trim();
+
+/** The source of each `name={...}` prop in a file, braces balanced. */
+function propBodies(src: string, name: string): { body: string; index: number }[] {
+  const out: { body: string; index: number }[] = [];
+  for (const m of src.matchAll(new RegExp(`\\b${name}=\\{`, 'g'))) {
+    const start = m.index + m[0].length;
+    let depth = 1;
+    for (let i = start; i < src.length; i++) {
+      if (src[i] === '{') depth++;
+      else if (src[i] === '}' && --depth === 0) {
+        out.push({ body: src.slice(start, i), index: start });
+        break;
+      }
+    }
+  }
+  return out;
+}
 
 export const UI_RULES: UiRule[] = [
   {
@@ -242,21 +228,20 @@ export const UI_RULES: UiRule[] = [
   {
     id: 'icon-only-plain',
     rule:
-      'A button with only an icon uses an icon from PLAIN_ICONS and has an aria-label. Any other ' +
-      'icon gets a word next to it, or is a CardAction, whose tooltip always says it.',
+      'A Button with only an icon uses an icon from PLAIN_ICONS and has an aria-label. Any other ' +
+      'icon gets a word next to it, or is an ExpandingIconButton (which shows its word where ' +
+      'needed) or a CardAction (whose tooltip always says it).',
     check: ({ src }) => {
       const lucide = lucideNames(src);
-      return elements(src, ['Button', 'ExpandingIconButton'])
-        .filter((el) => el.name === 'ExpandingIconButton' || ICON_SIZE.test(el.open))
+      return elements(src, ['Button'])
+        .filter((el) => ICON_SIZE.test(el.open))
         .flatMap((el) => {
           const out: Omit<Violation, 'file'>[] = [];
           const line = lineAt(src, el.index);
           for (const icon of iconsOf(el, lucide)) {
             if (!PLAIN_ICONS.has(icon)) out.push({ line, excerpt: `icon-only ${icon}` });
           }
-          const labelled =
-            el.name === 'ExpandingIconButton' ||
-            /\baria-label=|className="sr-only"/.test(el.open + el.body);
+          const labelled = /\baria-label=|className="sr-only"/.test(el.open + el.body);
           if (iconsOf(el, lucide).length > 0 && !labelled)
             out.push({ line, excerpt: 'icon-only button without aria-label' });
           return out;
@@ -304,6 +289,28 @@ export const UI_RULES: UiRule[] = [
             line: lineAt(src, m.index),
             excerpt: m[0],
           })),
+  },
+  {
+    id: 'header-actions-icon',
+    rule:
+      'A page header action is ExpandingIconButton (its icon on a laptop, the word on hover) or a ' +
+      'CopyCommandButton with expandOnHover; only the primary (orange) action keeps a worded Button.',
+    check: ({ src }) =>
+      propBodies(src, 'actions').flatMap(({ body, index }) => [
+        ...elements(body, ['Button'])
+          .filter((el) => /\bvariant=/.test(el.open) && !/\bvariant="default"/.test(el.open))
+          .filter((el) => wordsOf(el))
+          .map((el) => ({
+            line: lineAt(src, index + el.index),
+            excerpt: `header button says "${excerpt(wordsOf(el))}"`,
+          })),
+        ...elements(body, ['CopyCommandButton'])
+          .filter((el) => !/\bexpandOnHover\b/.test(el.open))
+          .map((el) => ({
+            line: lineAt(src, index + el.index),
+            excerpt: 'CopyCommandButton without expandOnHover',
+          })),
+      ]),
   },
   {
     id: 'page-template',

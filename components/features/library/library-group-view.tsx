@@ -17,6 +17,7 @@ import { takeGroupAction } from '@/app/library/actions';
 import { RemoveEntryButton } from '@/components/common/remove-entry-button';
 import { LikeButton } from '@/components/features/library/like-button';
 import { GROUP_KIND_LABELS, isGroupKind } from '@/lib/library/group-kinds';
+import { ExpandingIconButton } from '@/components/common/expanding-icon-button';
 
 const PAGE = 60;
 
@@ -75,12 +76,9 @@ export function LibraryGroupView({
       }
       actions={
         group.myGroupId ? (
-          <Button variant="outline" asChild>
-            <Link href={`/groups/${group.myGroupId}`}>
-              <FolderOpen aria-hidden />
-              Nhóm của bạn
-            </Link>
-          </Button>
+          <ExpandingIconButton asChild icon={FolderOpen} label="Nhóm của bạn">
+            <Link href={`/groups/${group.myGroupId}`} />
+          </ExpandingIconButton>
         ) : (
           <Button onClick={() => take.run(group.id)} disabled={take.isPending}>
             <Download aria-hidden />
