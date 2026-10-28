@@ -3,6 +3,11 @@ import { err, ok, type ActionResult } from '@/lib/core/action-result';
 import { recordReviews } from '@/lib/app/record-review';
 import { getQueue } from '@/lib/app/queue';
 import { classOf, quizPool } from '@/lib/app/quiz-pool';
+import {
+  openJlptExample,
+  openJlptExamples,
+  type OpenJlptExample,
+} from '@/lib/app/openjlpt-examples';
 import { answerSurface, buildCloze, type ClozeChoice, type ClozeExample } from '@/lib/domain/cloze';
 import { CARD_STATE } from '@/lib/domain/queue';
 import {
@@ -11,7 +16,7 @@ import {
   RATINGS,
   type QuickAnswer,
 } from '@/lib/domain/quick-review';
-import { markSpan, type Segment } from '@/lib/domain/sentence';
+import { markSpan, markSpans, type Segment } from '@/lib/domain/sentence';
 import { exampleFromNotes } from '@/lib/import/openjlpt';
 import { asItemKind, VOCAB_KIND, type ItemKind } from '@/lib/library/item-kinds';
 import { parseEnrichment } from '@/lib/library/enrichment';
@@ -26,7 +31,7 @@ import { rateOnce, type RatingValue, type SrsFields } from '@/lib/srs/srs';
 
 export interface QuickSentence {
   segments: Segment[];
-  // Vietnamese when the item's card has one; OpenJLPT examples only come with English.
+  // Vietnamese, from the item's card or data/openjlpt/examples.json; null for a bare sentence.
   translation: string | null;
 }
 
@@ -71,9 +76,17 @@ function seedFor(text: string): number {
   return hash >>> 0;
 }
 
-function examplesOf(item: { enrichment: string | null; notes: string | null }): ClozeExample[] {
+// The item's sentences: its card's (written by the learner's AI), then its OpenJLPT sentence with the
+// translation, furigana and place from data/openjlpt/examples.json when that has it, else the bare
+// sentence kept in its notes. A sentence examples.json marks unfit to learn from is left out.
+function examplesOf(
+  item: { enrichment: string | null; notes: string | null },
+  openJlpt: OpenJlptExample | null,
+): ClozeExample[] {
   const card = parseEnrichment(item.enrichment);
   const fromCard = card ? [card.example, ...card.examples] : [];
+  if (openJlpt?.skip) return fromCard;
+  if (openJlpt?.example) return [...fromCard, openJlpt.example];
   const fromNotes = exampleFromNotes(item.notes);
   return fromNotes ? [...fromCard, { ja: fromNotes.ja }] : fromCard;
 }
@@ -87,6 +100,12 @@ function underlined(
   const forms =
     item.kind === VOCAB_KIND ? searchForms(surface, item.reading) : surface ? [surface] : [];
   for (const example of examples) {
+    if (example.spans) {
+      return {
+        segments: markSpans(example.ja, example.jaRuby?.trim(), example.spans, 'target'),
+        translation: example.vi?.trim() || null,
+      };
+    }
     const ja = example.ja.trim();
     const form = forms.find((f) => ja.includes(f));
     if (!form) continue;
@@ -110,8 +129,15 @@ type CardItem = {
   enrichment: string | null;
 };
 
-function baseCard(item: CardItem, srs: SrsFields, retention: number, now: Date): QuickCardBase {
+function baseCard(
+  item: CardItem,
+  srs: SrsFields,
+  retention: number,
+  now: Date,
+  openJlpt: OpenJlptExample | null,
+): QuickCardBase {
   const card = parseEnrichment(item.enrichment);
+  const formation = openJlpt && !openJlpt.skip ? openJlpt.formationVi : null;
   return {
     itemId: item.id,
     kind: asItemKind(item.kind),
@@ -120,7 +146,7 @@ function baseCard(item: CardItem, srs: SrsFields, retention: number, now: Date):
     reading: item.reading,
     hanviet: item.hanviet,
     meaningVi: item.meaningVi,
-    structure: card?.structure.join(' / ') || null,
+    structure: card?.structure.join(' / ') || formation || null,
     note: card?.pitfalls[0] ?? null,
     isNew: srs.state === CARD_STATE.NEW,
     dueBy: Object.fromEntries(
@@ -136,19 +162,21 @@ export async function getItemCards(
   ids: string[],
   now: Date = new Date(),
 ): Promise<QuickCard[]> {
-  const [settings, items] = await Promise.all([
+  const [settings, items, examples] = await Promise.all([
     getSettings(db),
     db.item.findMany({ where: { id: { in: ids } }, include: { srs: true } }),
+    openJlptExamples(),
   ]);
   const byId = new Map(items.map((i) => [i.id, i]));
   return ids.flatMap((id) => {
     const item = byId.get(id);
     if (!item?.srs) return [];
+    const openJlpt = openJlptExample(examples, item.kind, item.expression);
     return [
       {
-        ...baseCard(item, item.srs, settings.desiredRetention, now),
+        ...baseCard(item, item.srs, settings.desiredRetention, now, openJlpt),
         mode: 'flip' as const,
-        sentence: underlined(item, examplesOf(item)),
+        sentence: underlined(item, examplesOf(item, openJlpt)),
       },
     ];
   });
@@ -162,13 +190,14 @@ export async function getQuickReview(
   const settings = await getSettings(db);
   const queue = await getQueue(db, now, limit);
   const ids = queue.cards.map((c) => c.id);
-  const [items, states, pool] = await Promise.all([
+  const [items, states, pool, openJlpt] = await Promise.all([
     db.item.findMany({
       where: { id: { in: ids } },
       select: { id: true, hanviet: true, enrichment: true, notes: true },
     }),
     db.srsState.findMany({ where: { itemId: { in: ids } } }),
     quizPool(),
+    openJlptExamples(),
   ]);
   const itemById = new Map(items.map((i) => [i.id, i]));
   const srsById = new Map(states.map((s) => [s.itemId, s]));
@@ -176,8 +205,9 @@ export async function getQuickReview(
   const cards = queue.cards.map((queued): QuickCard => {
     const item = itemById.get(queued.id)!;
     const srs = srsById.get(queued.id)!;
-    const base = baseCard({ ...queued, ...item }, srs, settings.desiredRetention, now);
-    const examples = examplesOf(item);
+    const found = openJlptExample(openJlpt, queued.kind, queued.expression);
+    const base = baseCard({ ...queued, ...item }, srs, settings.desiredRetention, now, found);
+    const examples = examplesOf(item, found);
     // A new item is met first as a flip card; a cloze tests one already seen.
     if (!base.isNew) {
       const cloze = buildCloze({
