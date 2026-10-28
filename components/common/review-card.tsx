@@ -7,18 +7,21 @@ import type { QuickCard } from '@/lib/app/quick-review';
 import type { Segment } from '@/lib/domain/sentence';
 import { cn } from '@/lib/core/utils';
 import { Badge } from '@/components/ui/badge';
+import { choiceLabel } from '@/lib/domain/quiz-class';
 import { buildFuriganaMarkup } from '@/lib/japanese/furigana';
 
 // The one card of quick review (decision 0001, flashcard style B "context first"): the item stands
 // in a real sentence, underlined on a flip card or blanked on a cloze, and the explanation opens
-// below it once the learner has answered or asked to see it.
+// below it once the learner has answered or asked to see it. A new item is met on an intro card: the
+// explanation is open from the start and nothing is asked (docs/plans/2026-10-28-quick-review.md, C4).
 
 export interface CardTts {
   voiceSpeaker?: number;
   speechRate?: number;
 }
 
-const QUESTION: Record<'flip' | 'bare' | 'cloze', Record<QuickCard['kind'], string>> = {
+const QUESTION: Record<'intro' | 'flip' | 'bare' | 'cloze', Record<QuickCard['kind'], string>> = {
+  intro: { VOCAB: 'Từ mới: đọc câu và nghĩa', GRAMMAR: 'Mẫu mới: đọc câu và cách dùng' },
   flip: { VOCAB: 'Từ gạch chân nghĩa là gì?', GRAMMAR: 'Mẫu gạch chân nói lên điều gì?' },
   // A flip card with no example sentence: the item stands alone.
   bare: { VOCAB: 'Từ này nghĩa là gì?', GRAMMAR: 'Mẫu này nói lên điều gì?' },
@@ -100,6 +103,7 @@ export function spokenText(segments: Segment[], fill: string): string {
 
 export function ReviewCard({
   card,
+  intro = false,
   picked,
   revealed,
   showFurigana,
@@ -107,18 +111,22 @@ export function ReviewCard({
   onPick,
 }: {
   card: QuickCard;
+  // Met for the first time: the answer is shown at once, and the card asks nothing.
+  intro?: boolean;
   picked: string | null;
   revealed: boolean;
   showFurigana: boolean;
   tts: CardTts;
   onPick: (choiceId: string) => void;
 }) {
-  const answered = card.mode === 'cloze' ? picked !== null : revealed;
+  const answered = card.mode === 'cloze' ? picked !== null : revealed || intro;
   const segments = card.sentence?.segments ?? null;
   const ruby = buildFuriganaMarkup(card.expression, card.reading);
   // The question already shows a word's kanji, so its answer leads with the reading; a grammar
-  // pattern leads with itself, since the sentence shows only one form of it.
-  const heading = card.kind === 'VOCAB' && card.reading ? card.reading : card.expression;
+  // pattern leads with itself, since the sentence shows only one form of it, without the English
+  // label some patterns carry (〜から（reason） is 〜から).
+  const heading =
+    card.kind === 'VOCAB' && card.reading ? card.reading : choiceLabel(card.expression);
   // A cloze puts back the text it blanked (より), not the pattern's name (〜より).
   const fill = card.mode === 'cloze' ? card.answer : card.expression;
 
@@ -131,7 +139,11 @@ export function ReviewCard({
           {card.isNew && <Badge variant="secondary">Mới</Badge>}
         </div>
         <p className="text-base font-bold">
-          {QUESTION[card.mode === 'flip' && !segments ? 'bare' : card.mode][card.kind]}
+          {
+            QUESTION[intro ? 'intro' : card.mode === 'flip' && !segments ? 'bare' : card.mode][
+              card.kind
+            ]
+          }
         </p>
       </div>
 
@@ -161,7 +173,7 @@ export function ReviewCard({
       ) : (
         // No example sentence yet: the item alone in the middle of the free space, unframed; only
         // the answer below is a card.
-        <TapToHear active className="flex justify-center py-8 md:py-16">
+        <TapToHear active className="flex flex-col items-center justify-center gap-2 py-8 md:py-16">
           <SpokenLine
             text={card.expression}
             ruby={ruby}
@@ -171,6 +183,7 @@ export function ReviewCard({
             label="Nghe"
             className="text-2xl leading-loose font-semibold sm:text-3xl"
           />
+          <p className="text-muted-foreground">Mục này chưa có câu ví dụ.</p>
         </TapToHear>
       )}
 
@@ -232,14 +245,17 @@ export function ReviewCard({
             )}
           </div>
           <p className="text-lg font-semibold">{card.meaningVi}</p>
+          {/* Only here, never on the question: the translation would give the answer away. */}
+          {card.sentence?.translation && (
+            <p>
+              <span className="font-semibold">Dịch câu</span> {card.sentence.translation}
+            </p>
+          )}
           {card.structure && (
             <p>
               <span className="font-semibold">Cấu trúc</span>{' '}
               <span lang="ja">{card.structure}</span>
             </p>
-          )}
-          {card.sentence?.translation && (
-            <p className="text-muted-foreground">{card.sentence.translation}</p>
           )}
           {card.note && (
             <p className="rounded-sm bg-warn-wash px-3 py-2">

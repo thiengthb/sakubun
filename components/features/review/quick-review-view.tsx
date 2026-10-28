@@ -21,6 +21,8 @@ type Answer = (answer: CardAnswer) => Promise<ActionResult<unknown>>;
 interface Result {
   kind: QuickCard['kind'];
   rating: RatingValue;
+  // An intro card was read, not tested, so it does not count towards what was remembered.
+  intro: boolean;
 }
 
 // "10 phút", "8 ngày": the wait on a grade button, without "nữa" and never "dưới 1 phút".
@@ -56,17 +58,20 @@ function leftLine(left: QuickCard[]): string {
 // keyboard, and a narrow laptop page needs the bar's width for the buttons.
 function KeyHints({
   card,
+  intro,
   picked,
   revealed,
   practice,
 }: {
   card: QuickCard;
+  intro: boolean;
   picked: string | null;
   revealed: boolean;
   practice: boolean;
 }) {
-  const keys: [string, string][] =
-    card.mode === 'cloze'
+  const keys: [string, string][] = intro
+    ? [['Enter', 'đã xem']]
+    : card.mode === 'cloze'
       ? picked
         ? [['Enter', 'thẻ tiếp']]
         : [['1 2 3 4', 'chọn đáp án theo số trên thẻ']]
@@ -96,7 +101,9 @@ function KeyHints({
   );
 }
 
-function Summary({ results, nextDueAt }: { results: Result[]; nextDueAt: Date | null }) {
+function Summary({ results: all, nextDueAt }: { results: Result[]; nextDueAt: Date | null }) {
+  const results = all.filter((r) => !r.intro);
+  const met = all.length - results.length;
   const remembered = (of: Result[]) => of.filter((r) => isRemembered(r.rating)).length;
   const byKind = (kind: QuickCard['kind'], label: string) => {
     const of = results.filter((r) => r.kind === kind);
@@ -114,8 +121,9 @@ function Summary({ results, nextDueAt }: { results: Result[]; nextDueAt: Date | 
       <div className="space-y-1">
         <h2 className="text-lg font-bold">Xong buổi ôn</h2>
         <p className="text-muted-foreground tabular-nums">
-          Nhớ {remembered(results)} trên {results.length} thẻ.
-          {nextDueAt && ` Thẻ tiếp theo đến hạn ${humanizeUntil(nextDueAt)}.`}
+          {results.length > 0 && `Nhớ ${remembered(results)} trên ${results.length} thẻ. `}
+          {met > 0 && `Đã làm quen ${met} mục mới. `}
+          {nextDueAt && `Thẻ tiếp theo đến hạn ${humanizeUntil(nextDueAt)}.`}
         </p>
       </div>
       <dl className="flex flex-wrap gap-3">
@@ -175,11 +183,14 @@ export function QuickReviewView({
   const at = retry ? retry.index : index;
   const card = deck[at] as QuickCard | undefined;
   const done = at >= deck.length;
+  // A new item is met before it is tested: read, then "Đã xem" records Good, as it always has.
+  const intro = !practice && card?.mode === 'flip' && card.isNew;
 
   const send = (payload: CardAnswer, rating: RatingValue, advance: boolean) => {
     if (!card || isPending) return;
     const answered = card;
     const kind = card.kind;
+    const met = intro;
     startTransition(async () => {
       const result = await answer(payload).catch((): ActionResult<unknown> => ({
         ok: false,
@@ -191,7 +202,7 @@ export function QuickReviewView({
         return;
       }
       setUnsent(null);
-      setResults((r) => [...r, { kind, rating }]);
+      setResults((r) => [...r, { kind, rating, intro: met }]);
       if (rating === 1) missed.current.push(retryCard(answered));
       if (advance) next();
     });
@@ -230,8 +241,8 @@ export function QuickReviewView({
   };
 
   const graded = card?.mode === 'cloze' && picked !== null && (practice || results.length > index);
-  const showReveal = card?.mode === 'flip' && !revealed;
-  const showGrade = card?.mode === 'flip' && revealed && !practice;
+  const showReveal = card?.mode === 'flip' && !revealed && !intro;
+  const showGrade = card?.mode === 'flip' && revealed && !practice && !intro;
   // A practice flip is not graded: once its answer is shown, the learner moves on.
   const showNext = graded || (card?.mode === 'flip' && revealed && practice);
   const practiceNext = () => {
@@ -249,7 +260,8 @@ export function QuickReviewView({
       } else if (showGrade && /^[1-4]$/.test(e.key)) {
         grade(Number(e.key) as RatingValue);
       } else if (e.key === 'Enter' || e.key === ' ') {
-        if (showReveal) setRevealed(true);
+        if (intro) grade(3);
+        else if (showReveal) setRevealed(true);
         else if (showNext) practiceNext();
         else if (unsent) resend();
         // A focused grade button handles its own Enter; otherwise Enter means "Nhớ".
@@ -336,6 +348,7 @@ export function QuickReviewView({
             <ReviewCard
               key={`${practice ? 'retry' : 'main'}-${card.itemId}`}
               card={card}
+              intro={intro}
               picked={picked}
               revealed={revealed}
               showFurigana={showFurigana}
@@ -348,7 +361,23 @@ export function QuickReviewView({
         {/* Phone: the bar's buttons share the width; laptop: they keep their own size, at the right. */}
         <div className="sticky bottom-0 flex gap-2 bg-background pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] max-sm:[&>*]:flex-1 sm:justify-end sm:[&>*]:min-w-32">
           {card && !done && (
-            <KeyHints card={card} picked={picked} revealed={revealed} practice={practice} />
+            <KeyHints
+              card={card}
+              intro={intro}
+              picked={picked}
+              revealed={revealed}
+              practice={practice}
+            />
+          )}
+          {intro && (
+            <Button
+              size="lg"
+              disabled={isPending}
+              aria-keyshortcuts="Enter"
+              onClick={() => grade(3)}
+            >
+              Đã xem
+            </Button>
           )}
           {showReveal && (
             <Button size="lg" onClick={() => setRevealed(true)}>
