@@ -7,7 +7,7 @@ import { setLikeAction } from '@/app/library/actions';
 import { toast } from 'sonner';
 import { cn } from '@/lib/core/utils';
 
-// "Thích" on a shared entry or group (phase 8, L3): the count beside the heart, one per learner.
+// "Thích" on a shared entry or group (phase 8, L3): the count, then the heart (7.4h), one per learner.
 export function LikeButton({
   entryId,
   liked,
@@ -36,8 +36,8 @@ export function LikeButton({
       aria-label={`${state.liked ? 'Bỏ thích' : 'Thích'} ${name}`}
       className={cn('relative z-10', state.liked ? 'text-destructive' : 'text-muted-foreground')}
     >
-      <Heart aria-hidden className={cn(state.liked && 'fill-current')} />
       {state.likes}
+      <Heart aria-hidden className={cn(state.liked && 'fill-current')} />
     </Button>
   );
 }

@@ -63,10 +63,10 @@ function Input({
         {...props}
       />
       {showClear && (
-        <Explain text="Xóa toàn bộ nội dung đang gõ trong ô này.">
+        <Explain text="Xoá toàn bộ nội dung đang gõ trong ô này.">
           <button
             type="button"
-            aria-label="Xóa nội dung"
+            aria-label="Xoá nội dung"
             onClick={() => {
               if (innerRef.current) clearNatively(innerRef.current);
             }}

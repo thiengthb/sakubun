@@ -101,7 +101,7 @@ describe('invariant #9 — Japanese content renders through SpokenLine', () => {
       ],
       [
         'components/features/resources/row-actions.tsx',
-        'delete-confirmation prose («X» sẽ bị xóa…) — a warning sentence, not study content',
+        'delete-confirmation prose («X» sẽ bị xoá…) — a warning sentence, not study content',
       ],
     ]);
     const offenders: string[] = [];

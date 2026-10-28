@@ -226,7 +226,7 @@ export async function deleteItemAction(itemId: string): Promise<ActionResult> {
   try {
     await deleteItem(db, itemId);
   } catch (e) {
-    return err(e instanceof Error ? e.message : 'Không xóa được');
+    return err(e instanceof Error ? e.message : 'Không xoá được');
   }
   revalidateResources();
   return ok(undefined);
@@ -240,7 +240,7 @@ export async function deleteItemsAction(ids: string[]): Promise<ActionResult<{ d
   try {
     ({ deleted } = await deleteItems(db, clean));
   } catch (e) {
-    return err(e instanceof Error ? e.message : 'Không xóa được');
+    return err(e instanceof Error ? e.message : 'Không xoá được');
   }
   revalidateResources();
   return ok({ deleted });
@@ -311,7 +311,7 @@ export async function deleteGroupAction(groupId: string): Promise<ActionResult> 
     const deleted = await deleteGroup(db, groupId);
     if (!deleted) return err('Không tìm thấy nhóm');
   } catch (e) {
-    return err(e instanceof Error ? e.message : 'Không xóa được');
+    return err(e instanceof Error ? e.message : 'Không xoá được');
   }
   revalidatePath('/resources');
   return ok(undefined);

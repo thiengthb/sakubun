@@ -206,7 +206,8 @@ export async function searchEntries(db: LibraryClient, query: SearchQuery = {}) 
   });
 }
 
-// Shared groups, public only: OpenJLPT's level groups first, in level order, then the most taken.
+// Shared groups, public only: OpenJLPT's level groups first, in level order, then the learners' groups,
+// the most taken first and then the newest (7.4h). `author` is the name of the learner who shared it.
 export async function listGroupEntries(db: LibraryClient, { level }: { level?: string } = {}) {
   const groups = await db.libraryEntry.findMany({
     where: { type: GROUP_TYPE, ...VISIBLE, ...(level ? { level } : {}) },
@@ -218,7 +219,9 @@ export async function listGroupEntries(db: LibraryClient, { level }: { level?: s
       notes: true,
       origin: true,
       authorId: true,
+      author: { select: { name: true } },
       takeCount: true,
+      createdAt: true,
       updatedAt: true,
       _count: { select: { members: { where: { item: VISIBLE_MEMBER } }, likes: true } },
     },
@@ -229,11 +232,18 @@ export async function listGroupEntries(db: LibraryClient, { level }: { level?: s
     return at < 0 ? JLPT_LEVELS.length : at;
   };
   return groups
-    .map(({ _count, ...g }) => ({ ...g, size: _count.members, likes: _count.likes }))
+    .map(({ _count, author, ...g }) => ({
+      ...g,
+      author: author?.name ?? null,
+      size: _count.members,
+      likes: _count.likes,
+    }))
     .sort(
       (a, b) =>
         Number(b.origin === OPENJLPT_ORIGIN) - Number(a.origin === OPENJLPT_ORIGIN) ||
-        (a.origin === OPENJLPT_ORIGIN ? rank(a.level) - rank(b.level) : 0),
+        (a.origin === OPENJLPT_ORIGIN
+          ? rank(a.level) - rank(b.level)
+          : b.takeCount - a.takeCount || b.createdAt.getTime() - a.createdAt.getTime()),
     );
 }
 
@@ -249,6 +259,7 @@ export async function getGroupEntry(db: LibraryClient, id: string) {
       notes: true,
       origin: true,
       authorId: true,
+      author: { select: { name: true } },
       takeCount: true,
       updatedAt: true,
       _count: { select: { likes: true } },
@@ -260,7 +271,8 @@ export async function getGroupEntry(db: LibraryClient, id: string) {
     orderBy: { position: 'asc' },
     select: { item: { select: ENTRY_FIELDS } },
   });
-  return { ...group, entries: members.map((m) => m.item) };
+  const { author, ...rest } = group;
+  return { ...rest, author: author?.name ?? null, entries: members.map((m) => m.item) };
 }
 
 // One of OpenJLPT's level groups ("N5 · Ngữ pháp"), where a new learner starts (L4).
