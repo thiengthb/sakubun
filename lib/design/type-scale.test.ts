@@ -18,7 +18,6 @@ const rel = (file: string) => relative(process.cwd(), file).split(sep).join('/')
 
 const DISPLAY_ALLOW = [
   'components/layout/page-state.tsx', // the title of a page that only reports a state (error, not found)
-  'components/layout/error-boundary.tsx', // the same title drawn by hand for the root-layout failure
   // Dashboard data display: stat-tile metrics and the 10px chart axis labels. Moved out of
   // app/page.tsx when the chart toolkit became a component — the exemption follows the code.
   'components/features/dashboard/dashboard-charts.tsx',

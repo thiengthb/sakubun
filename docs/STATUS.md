@@ -52,10 +52,12 @@ poller (`sudo`), user `thi3n` không có token ghcr. Xem log: `journalctl -u min
 - Trang đồng ý OAuth ("Cho phép truy cập Sakubun?") không ghi đang cấp quyền cho tài khoản nào; trình duyệt đang
   đăng nhập sakubun bằng tài khoản khác thì connector âm thầm nối sai tài khoản (thử thật 2026-10-27). Nên hiện email
   trên trang đó (đụng OAuth, risk:high).
+- Liên kết OAuth hỏng (vd `redirect_uri` lạ) đưa về `/login?error=invalid_redirect`, và trang đăng nhập ghi "Tài khoản này
+  không được phép vào Sakubun" cho mọi mã lỗi: sai nghĩa, nên nói liên kết kết nối không hợp lệ (`onAPIError` trong
+  `lib/auth/auth.ts`, `app/login/login-form.tsx`; đụng OAuth, risk:high; thấy 2026-10-28).
 - Lượt thử 2026-10-27: Claude đọc kết quả `status` thành "18 mục đến hạn, 100 lượt ôn" trong khi đó là hạn mức ngày
   (tài khoản mới có 0 đến hạn). Cần làm chữ của `status` rõ hơn giữa "đến hạn" và "hạn mức".
 - e2e `skeleton` ở 390px: khung chờ trang một mục thấp hơn trang thật 44px (hàng nút đầu trang trên điện thoại); đỏ cả trên `main` (thấy 2026-10-28, sau 7.4k).
-- e2e `critical-path` chờ "Chưa có gì để học", nhưng Phân tích nay ghi "Kho của bạn còn trống": đỏ cả khi chạy riêng (thấy 2026-10-28).
 - e2e `quick-review` "by keyboard" lúc xanh lúc đỏ trên `main` (đỏ 3 trong 4 lần, 2026-10-28): câu trả lời không bị chặn mạng như test muốn.
 - e2e `header-actions` "on a phone" tìm nút Bộ lọc ở Tài nguyên, nhưng khi DB e2e trống (spec khác vừa xoá mục) thì trang chỉ có trạng thái trống, không có nút lọc: phụ thuộc dữ liệu spec khác để lại (thấy 2026-10-28).
 - Kế hoạch phase 6 (UI redo, các bước 6.x như PR #128 "6.9") chưa có trong repo; chỉ còn dấu vết trong
