@@ -194,6 +194,47 @@ describe('getQuickReview', () => {
     expect(cards.cards.find((c) => c.itemId === ids['拝む'])?.sentence).toBeNull();
   });
 
+  it("meets a word in a line of the learner's own Kaiwa script, then takes its sentences in turn", async () => {
+    const { analyzeLines } = await import('@/lib/kaiwa/furigana');
+    const { parseScript } = await import('@/lib/kaiwa/parse');
+    const body = 'A: 名前を書き直した。 | Tôi đã viết lại tên.';
+    const tokens = [
+      { surface: '名前', reading: 'なまえ' },
+      { surface: 'を' },
+      { surface: '書き直し', reading: 'かきなおし', base: '書き直す' },
+      { surface: 'た' },
+      { surface: '。' },
+    ];
+    await db.script.create({
+      data: {
+        userId: db.$ownerId(),
+        title: 'Viết lại',
+        body,
+        analysis: JSON.stringify(analyzeLines(parseScript(body), () => tokens)),
+      },
+    });
+    // Not in OpenJLPT: its notes sentence and the Kaiwa line are all it has.
+    const ids = await seed([
+      { expression: '書き直す', notes: 'Ví dụ: 書類を書き直してください。 (Please rewrite it.)' },
+    ]);
+    const target = (card: { sentence: { segments: { text: string; mark?: string }[] } | null }) =>
+      card.sentence?.segments
+        .filter((s) => s.mark === 'target')
+        .map((s) => s.text)
+        .join('');
+
+    await makeSeen(ids['書き直す']);
+    const sentences = [];
+    for (const reps of [3, 4]) {
+      await db.srsState.update({ where: { itemId: ids['書き直す'] }, data: { reps } });
+      const [card] = (await Q.getQuickReview(db, NOW)).cards;
+      expect(card.mode).toBe('flip');
+      sentences.push([target(card), card.sentence?.translation]);
+    }
+    expect(sentences).toContainEqual(['書き直し', 'Tôi đã viết lại tên.']);
+    expect(sentences).toContainEqual(['書き直', null]);
+  });
+
   it('shows the same cards when reloaded the same day', async () => {
     const ids = await seed([
       { expression: '約束' },
