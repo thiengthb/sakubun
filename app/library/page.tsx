@@ -7,7 +7,7 @@ import { getSettings } from '@/lib/library/practice';
 import { ensureOpenJlptLibrary } from '@/lib/library/seed';
 import { listGroupEntries, searchEntries } from '@/lib/library/shared';
 import { likedEntries } from '@/lib/library/likes';
-import { ownedItems } from '@/lib/library/take';
+import { groupProgress, ownedItems } from '@/lib/library/take';
 import { furiganaInApp, JLPT_LEVELS } from '@/lib/settings/schema';
 
 export const metadata: Metadata = { title: 'Kho chung — sakubun' };
@@ -35,7 +35,7 @@ export default async function LibraryPage({
     searchEntries(prisma, { text: q, type, level }),
     getSettings(db),
   ]);
-  const [owned, liked, takenGroups] = await Promise.all([
+  const [owned, liked, takenGroups, have] = await Promise.all([
     ownedItems(db, entries),
     likedEntries(
       db,
@@ -45,6 +45,10 @@ export default async function LibraryPage({
       where: { libraryEntryId: { in: groups.map((g) => g.id) } },
       select: { id: true, libraryEntryId: true },
     }),
+    groupProgress(
+      db,
+      groups.map((g) => g.id),
+    ),
   ]);
   const myGroup = new Map(takenGroups.map((g) => [g.libraryEntryId, g.id]));
 
@@ -52,6 +56,7 @@ export default async function LibraryPage({
     <LibraryView
       groups={groups.map((g) => ({
         ...g,
+        have: have.get(g.id) ?? 0,
         liked: liked.has(g.id),
         myGroupId: myGroup.get(g.id) ?? null,
       }))}

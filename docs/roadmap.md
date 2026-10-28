@@ -42,7 +42,7 @@ artifact 8dhCRanXdgsiDFTJBbUHdf, which only its own Claude account can open). De
 | 7.1d | `userId` required (backfill first), Item unique per user, bare client throws on learning tables, raw SQL scan                                                                       | Bare-client test throws on each table                                  | high | Done 2026-10-27 (#133)                         |
 | 7.2  | Open sign-up with Google (thien can ban; changed 2026-10-27, plan `docs/plans/2026-10-27-phase7-2-sign-up.md`), admin page, MCP tool stats and database backup admin only, then 4.2 | A second account learns without seeing the first                       | high | Done 2026-10-27 (#138, #139, #140, #141, #142) |
 | 7.3  | Hướng dẫn page (removed 2026-08-14) rewritten for today's app (plan `docs/plans/2026-10-27-phase7-3-guide.md`)                                                                      | thien approves the screenshots                                         | high | Done 2026-10-27 (#146, #147, #148)             |
-| 7.4  | Each new or changed page in the new UI, one PR per page                                                                                                                             | thien approves before and after screenshots                            | high | In progress (7.4a-d, 7.4k merged)              |
+| 7.4  | Each new or changed page in the new UI, one PR per page                                                                                                                             | thien approves before and after screenshots                            | high | In progress (7.4a-f, 7.4k merged)              |
 
 ## Phase 8: Kaiwa canvas and shared library
 
