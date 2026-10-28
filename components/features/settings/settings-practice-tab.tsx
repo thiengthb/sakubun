@@ -188,7 +188,8 @@ export function PracticeTab({
           />
         </SettingRow>
 
-        <SettingRow icon={Gauge} label="Tốc độ" wide>
+        {/* The seventh row of a two-column grid: it takes the whole line, no empty half beside it. */}
+        <SettingRow icon={Gauge} label="Tốc độ" wide className="col-span-full">
           <ToggleGroup
             type="single"
             variant="choice"
