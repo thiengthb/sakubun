@@ -1,10 +1,12 @@
 import type { ItemKind } from '@/lib/library/item-kinds';
 import { normalizeExpression, stripDecoration } from '@/lib/core/normalize';
+import { choiceLabel, isSplitPattern } from '@/lib/domain/quiz-class';
 import { markSpan, type Segment } from '@/lib/domain/sentence';
 import { JLPT_LEVELS } from '@/lib/settings/schema';
 
 // A fill-in-the-blank card for quick review, built without any AI (the WordQuiz algorithm): blank the
-// item out of one of its example sentences and offer it among three other items of the same kind,
+// item out of one of its example sentences and offer it among three other items of the same kind and,
+// when known, the same class (part of speech, or what a pattern attaches to: lib/domain/quiz-class.ts),
 // nearest JLPT level first. Only sentences that can be blanked unambiguously are used, so there is
 // exactly one right choice and the sentence never shows the answer. Same seed, same card.
 
@@ -23,6 +25,8 @@ export interface ClozeItem {
   expression: string;
   reading: string | null;
   level: string;
+  // Same class as the answer, so a choice cannot be ruled out by grammar alone; null when unknown.
+  cls?: string | null;
 }
 
 export interface ClozeExample {
@@ -44,14 +48,19 @@ export interface Cloze {
   prompt: string;
   sentence: Segment[];
   translation: string | null;
+  // The text that was blanked, to put back once answered (より, not the pattern name 〜より).
+  answer: string;
   choices: ClozeChoice[];
   answerIndex: number;
 }
 
-// What gets blanked: the expression without the 〜 and brackets that decorate grammar patterns.
+// What gets blanked: the expression without the English label, 〜 and brackets that decorate grammar
+// patterns (〜に（time） → に).
 export function answerSurface(expression: string): string {
-  return stripDecoration(expression.normalize('NFKC'));
+  return stripDecoration(choiceLabel(expression.normalize('NFKC')));
 }
+
+const choiceKey = (expression: string) => normalizeExpression(choiceLabel(expression));
 
 function occurrences(text: string, part: string): number {
   let count = 0;
@@ -97,27 +106,30 @@ function shuffled<T>(input: readonly T[], rand: () => number): T[] {
 }
 
 // Three items of the same kind that cannot also be right: not the same word, not sharing text with
-// the answer (約束 / 約束する), and not already standing in the sentence.
+// the answer (約束 / 約束する), not already standing in the sentence, and not a two-part pattern. Of
+// the same class as the answer while there are enough of those.
 function pickDistractors(
   target: ClozeItem,
   prompt: string,
   pool: readonly ClozeItem[],
   rand: () => number,
 ): ClozeItem[] {
-  const answer = normalizeExpression(target.expression);
+  const answer = choiceKey(target.expression);
   const seen = new Set<string>([answer]);
   const usable: ClozeItem[] = [];
   for (const item of shuffled(pool, rand)) {
-    if (item.id === target.id || item.kind !== target.kind) continue;
-    const key = normalizeExpression(item.expression);
+    if (item.id === target.id || item.kind !== target.kind || isSplitPattern(item.expression))
+      continue;
+    const key = choiceKey(item.expression);
     const surface = answerSurface(item.expression);
     if (!key || !surface || seen.has(key)) continue;
     if (key.includes(answer) || answer.includes(key) || prompt.includes(surface)) continue;
     seen.add(key);
     usable.push(item);
   }
+  const sameClass = target.cls ? usable.filter((item) => item.cls === target.cls) : [];
   // Stable sort keeps the shuffled order inside each level band.
-  return usable
+  return (sameClass.length >= CLOZE_CHOICES - 1 ? sameClass : usable)
     .sort((a, b) => levelDistance(a.level, target.level) - levelDistance(b.level, target.level))
     .slice(0, CLOZE_CHOICES - 1);
 }
@@ -129,6 +141,7 @@ export function buildCloze(input: {
   seed: number;
 }): Cloze | null {
   const { target, examples, pool, seed } = input;
+  if (isSplitPattern(target.expression)) return null;
   const surface = answerSurface(target.expression);
   const usable = examples.filter((e) => canBlank(surface, e.ja.trim()));
   if (usable.length === 0) return null;
@@ -144,7 +157,7 @@ export function buildCloze(input: {
 
   const toChoice = (item: ClozeItem): ClozeChoice => ({
     itemId: item.id,
-    expression: item.expression,
+    expression: choiceLabel(item.expression),
     reading: item.reading,
   });
   const choices = shuffled([target, ...distractors], rand).map(toChoice);
@@ -153,6 +166,7 @@ export function buildCloze(input: {
     prompt,
     sentence: markSpan(ja, example.jaRuby?.trim(), span, 'blank'),
     translation: example.vi?.trim() || null,
+    answer: surface,
     choices,
     answerIndex: choices.findIndex((c) => c.itemId === target.id),
   };

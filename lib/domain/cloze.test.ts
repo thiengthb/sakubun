@@ -117,4 +117,51 @@ describe('buildCloze', () => {
       );
     }
   });
+
+  it('offers only distractors of the answer class while there are three of them', () => {
+    const target = { ...vocab('t', '多い', 'N5'), cls: 'adj-i' };
+    const example = { ja: 'この学校は男子よりも女子が多い。' };
+    const pool = [
+      { ...vocab('v1', '開く', 'N5'), cls: 'verb' },
+      { ...vocab('v2', '生まれる', 'N5'), cls: 'verb' },
+      { ...vocab('n1', 'あさって', 'N5'), cls: 'noun' },
+      { ...vocab('a1', '少ない', 'N5'), cls: 'adj-i' },
+      { ...vocab('a2', '古い', 'N5'), cls: 'adj-i' },
+      { ...vocab('a3', '高い', 'N4'), cls: 'adj-i' },
+    ];
+    for (let seed = 1; seed <= 20; seed++) {
+      const ids = buildCloze({ target, examples: [example], pool, seed })!.choices.map(
+        (c) => c.itemId,
+      );
+      expect(ids.sort()).toEqual(['a1', 'a2', 'a3', 't']);
+    }
+    // Fewer than three of the class: any item of the kind rather than no cloze.
+    const few = buildCloze({ target, examples: [example], pool: pool.slice(0, 5), seed: 1 })!;
+    expect(few.choices).toHaveLength(CLOZE_CHOICES);
+  });
+
+  it('shows patterns without English labels, never two-part ones, and puts back what it blanked', () => {
+    const grammar = (id: string, expression: string) =>
+      ({ id, kind: 'GRAMMAR', expression, reading: null, level: 'N5', cls: 'Noun' }) as const;
+    const target = grammar('t', '〜より');
+    const pool = [
+      grammar('a', '〜か（or）'),
+      grammar('b', '〜な（na-adjective）'),
+      grammar('c', '全然〜ない'),
+      grammar('d', '〜や'),
+      grammar('e', '〜まで（until）'),
+    ];
+    const example = { ja: '今日はきのうより寒いです。' };
+    const cloze = buildCloze({ target, examples: [example], pool, seed: 5 })!;
+    expect(cloze.answer).toBe('より');
+    expect(cloze.choices.map((c) => c.expression)).not.toContain('全然〜ない');
+    for (const c of cloze.choices) expect(c.expression).not.toMatch(/[A-Za-z]/);
+    expect(
+      buildCloze({ target: grammar('s', '〜しか〜ない'), examples: [example], pool, seed: 1 }),
+    ).toBeNull();
+  });
+
+  it('blanks a labelled pattern by its Japanese part', () => {
+    expect(answerSurface('〜ように（purpose）')).toBe('ように');
+  });
 });

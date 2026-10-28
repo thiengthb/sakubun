@@ -91,21 +91,40 @@ describe('getQuickReview', () => {
   });
 
   it('tests a seen item with a cloze: four choices, the answer not in the sentence', async () => {
-    const ids = await seed([
-      { expression: '約束' },
-      { expression: '準備' },
-      { expression: '練習' },
-      { expression: '連絡' },
-    ]);
+    // A learner with a single item still gets a cloze: distractors come from the OpenJLPT list.
+    const ids = await seed([{ expression: '約束', level: 'N4' }]);
     await db.item.update({ where: { id: ids['約束'] }, data: { enrichment: ENRICHMENT } });
     await makeSeen(ids['約束']);
 
     const card = (await Q.getQuickReview(db, NOW)).cards.find((c) => c.itemId === ids['約束'])!;
     expect(card.mode).toBe('cloze');
     if (card.mode !== 'cloze') return;
-    expect(card.choices.map((c) => c.itemId).sort()).toEqual(Object.values(ids).sort());
+    expect(card.answer).toBe('約束');
+    expect(card.choices).toHaveLength(4);
+    expect(card.choices.filter((c) => c.itemId === ids['約束'])).toHaveLength(1);
     expect(card.sentence.segments).toContainEqual({ text: '', mark: 'blank' });
     expect(JSON.stringify(card.sentence.segments)).not.toMatch(/約束|やくそく/);
+
+    // 約束 is a noun in OpenJLPT, so every distractor is a noun of the same level: none can be ruled
+    // out by grammar alone.
+    const { classOf, quizPool } = await import('@/lib/app/quiz-pool');
+    const pool = await quizPool();
+    for (const choice of card.choices) {
+      expect(classOf(pool, 'VOCAB', choice.expression)).toBe('noun');
+    }
+  });
+
+  it('offers another order on the next review of the same item', async () => {
+    const ids = await seed([{ expression: '約束', level: 'N4' }]);
+    await db.item.update({ where: { id: ids['約束'] }, data: { enrichment: ENRICHMENT } });
+    await makeSeen(ids['約束']);
+    const orders = new Set<string>();
+    for (let reps = 3; reps < 13; reps++) {
+      await db.srsState.update({ where: { itemId: ids['約束'] }, data: { reps } });
+      const [card] = (await Q.getQuickReview(db, NOW)).cards;
+      if (card.mode === 'cloze') orders.add(card.choices.map((c) => c.itemId).join());
+    }
+    expect(orders.size).toBeGreaterThan(5);
   });
 
   it('falls back to a flip card when no sentence can be blanked', async () => {
