@@ -23,8 +23,11 @@ export const PAGE_CHROME = {
   meta: 'text-xs leading-4 text-muted-foreground md:mt-2',
   /** Phone, nested page: the trail holds the block's small line, so the meta drops below the row. */
   phoneMeta: 'text-xs leading-4 text-muted-foreground md:hidden',
-  /** Phone, `actionsOnPhone="split"`: the actions get their own row and share it equally. */
-  phoneActions: 'grid auto-cols-fr grid-flow-col gap-2 md:hidden [&>*]:w-full',
+  /**
+   * Phone, `actionsOnPhone="split"`: the actions get their own row. Each starts at its own width (an
+   * icon stays narrow, a word stays whole) and they share what is left; too many wrap to a 2nd row.
+   */
+  phoneActions: 'flex flex-wrap gap-2 md:hidden [&>*]:flex-auto',
   actions: 'flex shrink-0 items-center gap-2',
   pageIcons: 'flex shrink-0 items-center gap-1',
   /** Underline tabs, the full width of the template. */
