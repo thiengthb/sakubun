@@ -12,6 +12,9 @@ import { CardContent } from '@/components/ui/card';
 export type ConsentRequest = {
   clientName: string | null;
   redirectHost: string | null;
+  // The signed-in account the app gets: a browser signed in to another account would otherwise
+  // connect the wrong one without a word (thien, 2026-10-27).
+  account: string;
 };
 
 // What the MCP tools can do, in the words of the pages that show the same data.
@@ -55,6 +58,15 @@ export function ConsentForm({ request }: { request: ConsentRequest | null }) {
             </li>
           ))}
         </ul>
+        <div data-slot="consent-account" className="space-y-1 text-sm">
+          <p className="text-muted-foreground">
+            Tài khoản Sakubun:{' '}
+            <span className="font-medium break-all text-foreground">{request.account}</span>
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Không phải tài khoản này? Từ chối, đăng xuất khỏi Sakubun, rồi kết nối lại từ ứng dụng.
+          </p>
+        </div>
         <p className="text-sm text-muted-foreground">
           Gửi quyền về{' '}
           <span className="font-medium text-foreground">

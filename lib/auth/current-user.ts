@@ -6,11 +6,16 @@ import { userDb, type UserDb } from '@/lib/db/user-db';
 
 export async function getSessionAccess(): Promise<{
   userId: string;
+  email: string;
   access: AccountAccess;
 } | null> {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session?.user) return null;
-  return { userId: session.user.id, access: accountAccess(session.user) };
+  return {
+    userId: session.user.id,
+    email: session.user.email,
+    access: accountAccess(session.user),
+  };
 }
 
 export async function getSessionUserId(): Promise<string> {

@@ -1,7 +1,8 @@
 import { headers } from 'next/headers';
 import { verifyOAuthQueryParams } from '@better-auth/oauth-provider';
 import { auth } from '@/lib/auth/auth';
-import { getSessionUserId } from '@/lib/auth/current-user';
+import { redirect } from 'next/navigation';
+import { getSessionAccess } from '@/lib/auth/current-user';
 import { ConsentForm } from './consent-form';
 
 export const dynamic = 'force-dynamic';
@@ -13,7 +14,8 @@ export default async function ConsentPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  await getSessionUserId();
+  const me = await getSessionAccess();
+  if (!me || me.access === 'none') redirect('/login');
   const query = new URLSearchParams();
   for (const [key, value] of Object.entries(await searchParams)) {
     for (const v of Array.isArray(value) ? value : [value])
@@ -36,6 +38,7 @@ export default async function ConsentPage({
       request={{
         clientName: client?.client_name ?? null,
         redirectHost: host,
+        account: me.email,
       }}
     />
   );
