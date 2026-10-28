@@ -4,15 +4,14 @@ Trang này trả lời ba câu cho bất kỳ phiên Claude nào (kể cả từ
 việc tiếp theo là gì**. Cập nhật nó **trong cùng PR** với việc làm, và khi nhận một bước mới (xem
 "Bắt đầu phiên" trong `CLAUDE.md`). Lộ trình đầy đủ: `docs/roadmap.md`. Kế hoạch đã duyệt: `docs/plans/`.
 
-Cập nhật lần cuối: 2026-10-28 (7.4a #181, 7.4k #182 xong; 7.4b #188, 7.4c #191, 7.4d mở PR).
+Cập nhật lần cuối: 2026-10-28 (7.4a #181, 7.4k #182, 7.4b #188 xong; 7.4c #191, 7.4d #192 mở PR).
 
 ## Đang làm
 
 | Bước                                                               | Nhánh / PR                   | Giữ bởi             | Trạng thái                                                                                                                                              |
 | ------------------------------------------------------------------ | ---------------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 7.4b tra từ khi rê chuột trên mọi câu tiếng Nhật                   | `feat/7.4b-word-lookup`      | Claude (thread 7.4) | PR mở, chờ thien merge (risk:high: đổi Lịch sử, Ôn nhanh). 7.4a #181, 7.4k #182 xong                                                                    |
-| 7.4c thẻ Tài nguyên (B1, Nhóm), khung chờ dạng thẻ, flashcard nhóm | `feat/7.4c-resource-cards`   | Claude (thread 7.4) | PR mở, chờ thien merge (risk:high: đổi Tài nguyên, Nhóm). 7.4b #188 cũng chờ merge; hai PR không phụ thuộc nhau                                         |
-| 7.4d Lịch sử dạng dòng thời gian, chi tiết ở ngăn bên phải         | `feat/7.4d-history-timeline` | Claude (thread 7.4) | PR mở, xếp chồng trên 7.4b #188 và 7.4c #191: merge hai PR đó trước                                                                                     |
+| 7.4c thẻ Tài nguyên (B1, Nhóm), khung chờ dạng thẻ, flashcard nhóm | `feat/7.4c-resource-cards`   | Claude (thread 7.4) | PR mở, chờ thien merge (risk:high: đổi Tài nguyên, Nhóm). 7.4b #188 đã merge                                                                            |
+| 7.4d Lịch sử dạng dòng thời gian, chi tiết ở ngăn bên phải         | `feat/7.4d-history-timeline` | Claude (thread 7.4) | PR #192 mở, xếp chồng trên 7.4c #191: merge #191 trước                                                                                                  |
 | 8 C1b dịch câu ví dụ (cả bộ, mỗi PR khoảng 1.000 mục)              | `codex/openjlpt-*`           | Codex (thien giao)  | 50 câu mẫu (#172), đợt 1: 250 mục (#174); thien giao dịch hết phần còn lại 2026-10-28; mỗi đợt một nhánh mới từ `main`, Claude kiểm và merge (risk:low) |
 
 ## Chờ thien
