@@ -14,11 +14,11 @@ const BODY = [
 ].join('\n');
 const SENTENCES = ['店の中は静かだった。', 'いらっしゃいませ。', '二人です。', 'こちらへどうぞ。'];
 
-// A tenth of a second of silence: VOICEVOX is not running in e2e, and a real WAV lets the page's
-// <audio> play to its end.
-function silentWav(): Buffer {
+// Silence, a tenth of a second by default: VOICEVOX is not running in e2e, and a real WAV lets the
+// page's <audio> play to its end.
+function silentWav(seconds = 0.1): Buffer {
   const rate = 8000;
-  const samples = rate / 10;
+  const samples = Math.round(rate * seconds);
   const wav = Buffer.alloc(44 + samples * 2);
   wav.write('RIFF', 0);
   wav.writeUInt32LE(36 + samples * 2, 4);
@@ -45,9 +45,9 @@ async function signIn(page: Page) {
 
 // Every reading the page played, in order: the sentence and the voice. The early fetches for the
 // next lines are left out; only the <audio> element's own requests count.
-async function recordSpeech(page: Page) {
+async function recordSpeech(page: Page, seconds?: number) {
   const asked: { text: string; speaker: string | null }[] = [];
-  const wav = silentWav();
+  const wav = silentWav(seconds);
   await page.route('**/api/tts**', (route) => {
     const url = new URL(route.request().url());
     if (route.request().resourceType() === 'media')
@@ -130,4 +130,28 @@ test('Space pauses and resumes, Esc stops', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Tạm dừng' })).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(page.getByRole('button', { name: 'Nghe cả bài' })).toBeVisible();
+});
+
+test('pressing the line being read pauses listening; Enter on another line goes on from there', async ({
+  page,
+}) => {
+  const asked = await recordSpeech(page, 30); // each line plays long enough to press things
+  await signIn(page);
+  await page.goto('/kaiwa/kw-listen', { waitUntil: 'networkidle' });
+  await page.getByRole('radio', { name: 'A' }).click();
+  const lines = page.locator('[data-slot="kaiwa-line"]');
+
+  await page.getByRole('button', { name: 'Nghe cả bài' }).click();
+  await expect.poll(() => [...new Set(asked.map((a) => a.text))]).toEqual([SENTENCES[0]]);
+  await lines.nth(0).getByRole('button', { name: 'Dừng phát' }).click();
+  await expect(page.getByRole('button', { name: 'Tiếp tục' })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Tiếp tục' }).click();
+  await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('Enter');
+  await expect(lines.nth(2).locator('.ring-2')).toHaveCount(1);
+  await expect(page.getByRole('button', { name: 'Tạm dừng' })).toBeVisible();
+  await expect.poll(() => asked.at(-1)?.text).toBe(SENTENCES[2]);
 });

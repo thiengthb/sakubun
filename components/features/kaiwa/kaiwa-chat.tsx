@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { MessagesSquare, Pause, Play, Square } from 'lucide-react';
 import { EmptyState } from '@/components/common/empty-state';
 import { KaiwaLine, type RubyLine } from '@/components/features/kaiwa/kaiwa-line';
@@ -106,15 +106,24 @@ export function KaiwaChat({
     setListen({ index: i, phase: 'play', paused: false });
     setSelected(i);
   };
+  // A press that stops the line being read pauses listening, so Tiếp tục picks it up again.
+  const lineStopped = (i: number) => {
+    if (listen && !listen.paused && listen.index === i) setListen({ ...listen, paused: true });
+  };
 
   // The learner's turn on a covered line: a pause about as long as the sentence, then the model.
+  // Timed from when the turn began: other renders (↑ ↓) do not restart it.
+  const gapLine = listen && !listen.paused && listen.phase === 'gap' ? turns[listen.index] : null;
+  const gapMs = gapLine ? speakingPauseMs(plainJapanese(gapLine.line.japanese), speechRate) : null;
+  const advanceRef = useRef(() => {});
   useEffect(() => {
-    if (!listen || listen.paused || listen.phase !== 'gap') return;
-    const line = turns[listen.index]?.line;
-    const wait = speakingPauseMs(line ? plainJapanese(line.japanese) : '', speechRate);
-    const timer = window.setTimeout(() => go(nextStep(listen, turns.length, isCovered)), wait);
-    return () => window.clearTimeout(timer);
+    advanceRef.current = () => listen && go(nextStep(listen, turns.length, isCovered));
   });
+  useEffect(() => {
+    if (gapMs === null) return;
+    const timer = window.setTimeout(() => advanceRef.current(), gapMs);
+    return () => window.clearTimeout(timer);
+  }, [listen, gapMs]);
 
   useEffect(() => {
     if (preview) return;
@@ -154,7 +163,11 @@ export function KaiwaChat({
         if (e.target instanceof HTMLElement && e.target.closest('button, a, [role="button"]'))
           return;
         e.preventDefault();
-        if (isCovered(selected)) setUncovered((s) => new Set(s).add(selected));
+        if (listen && listen.index !== selected) {
+          // While listening, Enter on another line carries on from there, as its speaker would.
+          stopLine(listen.index);
+          go(enterLine(selected, isCovered));
+        } else if (isCovered(selected)) setUncovered((s) => new Set(s).add(selected));
         else setPlay((p) => ({ row: selected, n: (p?.n ?? 0) + 1 }));
       }
     };
@@ -265,6 +278,7 @@ export function KaiwaChat({
             stopToken={stop?.row === i ? stop.n : null}
             onDone={(heard) => lineDone(i, heard)}
             onManualPlay={() => lineChosen(i)}
+            onManualStop={() => lineStopped(i)}
             lookup={!preview}
             voiceSpeaker={voiceOf(i)}
             speechRate={speechRate}

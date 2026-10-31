@@ -54,6 +54,7 @@ export function SpeakButton({
   stopToken = null,
   onDone,
   onManualPlay,
+  onManualStop,
   className,
 }: {
   text: string;
@@ -70,6 +71,8 @@ export function SpeakButton({
   onDone?: (heard: boolean) => void;
   /** The learner pressed this button to play (not playToken). */
   onManualPlay?: () => void;
+  /** The learner pressed this button to stop it while it played. */
+  onManualStop?: () => void;
   className?: string;
 }) {
   const supported = useSpeechSupported();
@@ -226,6 +229,7 @@ export function SpeakButton({
   const toggle = () => {
     if (speaking) {
       stopAll();
+      onManualStop?.();
       return;
     }
     onManualPlay?.();

@@ -27,6 +27,7 @@ export function KaiwaLine({
   stopToken = null,
   onDone,
   onManualPlay,
+  onManualStop,
   lookup = true,
   voiceSpeaker,
   speechRate,
@@ -44,6 +45,7 @@ export function KaiwaLine({
   stopToken?: number | null;
   onDone?: (heard: boolean) => void;
   onManualPlay?: () => void;
+  onManualStop?: () => void;
   /** Off in the editor's preview, which changes as the learner types. */
   lookup?: boolean;
   voiceSpeaker?: number;
@@ -62,6 +64,7 @@ export function KaiwaLine({
     stopToken,
     onDone,
     onManualPlay,
+    onManualStop,
   } as const;
   const meaning = line.translation && showMeaning && (
     <p className="text-sm text-muted-foreground">{line.translation}</p>
