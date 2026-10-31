@@ -4,14 +4,14 @@ Trang này trả lời ba câu cho bất kỳ phiên Claude nào (kể cả từ
 việc tiếp theo là gì**. Cập nhật nó **trong cùng PR** với việc làm, và khi nhận một bước mới (xem
 "Bắt đầu phiên" trong `CLAUDE.md`). Lộ trình đầy đủ: `docs/roadmap.md`. Kế hoạch đã duyệt: `docs/plans/`.
 
-Cập nhật lần cuối: 2026-10-31 (K6a, K6b xong; K6c trong PR, chờ thien duyệt ảnh; thứ tự Kaiwa còn lại: K6, K8, K7).
+Cập nhật lần cuối: 2026-10-31 (K6 xong; K8 kế hoạch duyệt, K8a trong PR; còn lại K8b rồi K7).
 
 ## Đang làm
 
-| Bước                                                  | Nhánh / PR                     | Giữ bởi                                  | Trạng thái                                                                                                                                                                                     |
-| ----------------------------------------------------- | ------------------------------ | ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 8 C1b dịch câu ví dụ (cả bộ, mỗi PR khoảng 1.000 mục) | `codex/openjlpt-*`             | Codex (thien giao)                       | 50 câu mẫu (#172), đợt 1: 250 mục (#174); thien giao dịch hết phần còn lại 2026-10-28; mỗi đợt một nhánh mới từ `main`, Claude kiểm và merge (risk:low)                                        |
-| K6 karaoke, nghe cả bài                               | `claude/project-thread-5kvuk6` | phiên `session_01T9DcRAaagJRZ7mH5PyFjJM` | Kế hoạch `docs/plans/2026-10-31-k6-kaiwa-listening.md` duyệt 2026-10-31; K6a (cache âm thanh) #222 xong; K6b (giọng theo người nói) #223 xong; K6c (Nghe cả bài) trong PR, chờ thien duyệt ảnh |
+| Bước                                                  | Nhánh / PR                     | Giữ bởi                                  | Trạng thái                                                                                                                                                             |
+| ----------------------------------------------------- | ------------------------------ | ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 8 C1b dịch câu ví dụ (cả bộ, mỗi PR khoảng 1.000 mục) | `codex/openjlpt-*`             | Codex (thien giao)                       | 50 câu mẫu (#172), đợt 1: 250 mục (#174); thien giao dịch hết phần còn lại 2026-10-28; mỗi đợt một nhánh mới từ `main`, Claude kiểm và merge (risk:low)                |
+| K8 nhập vai với AI qua MCP                            | `claude/project-thread-5kvuk6` | phiên `session_01T9DcRAaagJRZ7mH5PyFjJM` | Kế hoạch `docs/plans/2026-10-31-k8-kaiwa-roleplay.md` duyệt 2026-10-31; K8a (tool `kaiwa_roleplay`) trong PR, rồi thien thử trong claude.ai; sau đó K8b (nút trên web) |
 
 ## Chờ thien
 
@@ -53,6 +53,8 @@ poller (`sudo`), user `thi3n` không có token ghcr. Xem log: `journalctl -u min
 8. K9 xong 2026-10-31: 5 kịch bản kaiwa-canvas cũ (scripts.json trong bản lưu laptop; Yjs không có bản mới hơn) lưu vào
    Hội thoại của thien qua `kaiwa_save`, không đổi code. 11 bản chỉ còn trong Yjs (đã xoá trên app cũ) thien chọn không
    nhập; còn trong `kaiwa-k9\yjs-orphans.json` trên laptop. Kaiwa còn lại theo thứ tự thien chọn: K6, K8, K7.
+9. K6 xong 2026-10-31 (`docs/plans/2026-10-31-k6-kaiwa-listening.md`): cache file âm thanh VOICEVOX trên server #222,
+   mỗi vai một giọng #223, "Nghe cả bài" (che câu thì chờ người học nói trước) #224. Karaoke theo âm tiết để sau.
 
 ## Việc nhỏ còn treo
 

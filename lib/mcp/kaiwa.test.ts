@@ -95,6 +95,19 @@ describe('MCP Kaiwa', () => {
     expect((await db.script.findFirst({ where: { id } }))?.title).toBe('Sửa trên web');
   });
 
+  it('sets up a role-play with the learner on the part they named', async () => {
+    const id = scriptIdIn((await call('kaiwa_save', { title: 'Ở nhà hàng', body: BODY })).text);
+    const played = await call('kaiwa_roleplay', { scriptId: id, part: 'b' });
+    expect(played.text).toContain('the learner is B, you play A.');
+    expect(played.text).toContain('LEARNER B:');
+    expect(played.text).toContain(`review: `);
+
+    const wrong = await call('kaiwa_roleplay', { scriptId: id, part: 'C' });
+    expect(wrong).toEqual({ isError: true, text: 'No part "C". Parts: A, B.' });
+    const unknown = await call('kaiwa_roleplay', { scriptId: 'nope', part: 'A' });
+    expect(unknown).toEqual({ isError: true, text: expect.stringContaining('Unknown scriptId') });
+  });
+
   it('does not read another learner’s script', async () => {
     const { userDb } = await import('@/lib/db/user-db');
     const { saveScript } = await import('@/lib/kaiwa/scripts');

@@ -33,6 +33,11 @@ export const MCP_CATALOG: CatalogEntry[] = [
     summary: 'Lưu kịch bản Kaiwa khi bạn đồng ý; server kiểm định dạng',
   },
   {
+    name: 'kaiwa_roleplay',
+    kind: 'tool',
+    summary: 'Nhập vai một kịch bản Kaiwa: AI đóng các vai kia, bạn đóng vai của mình',
+  },
+  {
     name: 'library_search',
     kind: 'tool',
     summary: 'Tìm mẫu, từ hoặc nhóm có sẵn trên Kho chung',

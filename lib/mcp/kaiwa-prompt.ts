@@ -11,6 +11,7 @@ export const KAIWA_PROMPT = {
 2. Draft the script in your own canvas or artifact, in the format below. Revise it with the learner until they say it is good.
 3. Only then call kaiwa_save with a short title and the script. Give the learner the view link it returns.
 4. To change a saved script, call kaiwa_list and kaiwa_get first, then kaiwa_save with its scriptId and version.
+5. To practise a saved script, call kaiwa_roleplay with the learner's part.
 If kaiwa_save returns an error, fix the lines it names and call again.
 
 Format, one Japanese sentence per line:

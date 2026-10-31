@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { appLink } from '@/lib/core/app-url';
 import { parseScript } from '@/lib/kaiwa/parse';
+import { roleplayScript } from '@/lib/kaiwa/roleplay';
 import { getScript, listScripts, saveScript } from '@/lib/kaiwa/scripts';
 import { guard, learnerDb, mcpError, type McpServer, type ToolExtra } from '@/lib/mcp/tool-kit';
 
@@ -82,6 +83,25 @@ export function registerKaiwaTools(server: McpServer): void {
           `view: ${scriptLink(saved.data.id)}`,
           'next: give the learner the view link.',
         ]);
+      },
+    ),
+  );
+
+  server.tool(
+    'kaiwa_roleplay',
+    'Role-play a saved Kaiwa script: you play the other parts, the learner plays theirs.',
+    {
+      scriptId: z.string(),
+      part: z.string().describe("The learner's speaker label, e.g. A"),
+    },
+    guard(
+      'kaiwa_roleplay',
+      async ({ scriptId, part }: { scriptId: string; part: string }, extra: ToolExtra) => {
+        const script = await getScript(learnerDb(extra), scriptId);
+        if (!script) return mcpError('Unknown scriptId. Call kaiwa_list for a current one.');
+        const played = roleplayScript(script.title, parseScript(script.body), part);
+        if (!played.ok) return mcpError(played.error);
+        return text([played.text, `review: ${scriptLink(script.id)}`]);
       },
     ),
   );

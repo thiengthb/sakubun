@@ -80,7 +80,7 @@ beforeEach(async () => {
 });
 
 describe('MCP v2', () => {
-  it('lists exactly the seven study tools, example_add, three Kaiwa and two Kho chung tools, and two prompts', async () => {
+  it('lists exactly the seven study tools, example_add, four Kaiwa and two Kho chung tools, and two prompts', async () => {
     const { tools } = await client.listTools();
     expect(tools.map((t) => t.name).sort()).toEqual(
       [
@@ -89,6 +89,7 @@ describe('MCP v2', () => {
         'grade_turn',
         'kaiwa_get',
         'kaiwa_list',
+        'kaiwa_roleplay',
         'kaiwa_save',
         'library_search',
         'library_take',
