@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { cacheDir, cacheKey, filesToEvict } from '@/lib/tts/cache-policy';
+import { cacheDir, cacheKey, cacheMaxBytes, filesToEvict } from '@/lib/tts/cache-policy';
 
 describe('cacheKey', () => {
   it('differs by sentence, voice and speed, and is the same for the same reading', () => {
@@ -43,5 +43,17 @@ describe('cacheDir', () => {
   it('is off for a relative dev database or none', () => {
     expect(cacheDir({ DATABASE_URL: 'file:./dev.db' })).toBeNull();
     expect(cacheDir({})).toBeNull();
+  });
+});
+
+describe('cacheMaxBytes', () => {
+  it('reads megabytes, defaulting to 300 when unset or not a usable number', () => {
+    const mb = 1024 * 1024;
+    expect(cacheMaxBytes('50')).toBe(50 * mb);
+    expect(cacheMaxBytes('0')).toBe(0);
+    expect(cacheMaxBytes(undefined)).toBe(300 * mb);
+    expect(cacheMaxBytes('300MB')).toBe(300 * mb);
+    expect(cacheMaxBytes('-5')).toBe(300 * mb);
+    expect(cacheMaxBytes('Infinity')).toBe(300 * mb);
   });
 });

@@ -1,4 +1,4 @@
-import { mkdtempSync, readdirSync, rmSync, utimesSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readdirSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -36,6 +36,24 @@ describe('audioCache', () => {
 
     await cache.put('new', bytes(10));
     expect(readdirSync(dir).sort()).toEqual(['new.wav', 'played.wav']);
+  });
+
+  it('drops a temp file a dead write left behind, but not one being written now', async () => {
+    const dir = tempDir();
+    writeFileSync(path.join(dir, 'dead.1.tmp'), bytes(5));
+    writeFileSync(path.join(dir, 'busy.2.tmp'), bytes(5));
+    const longAgo = new Date(Date.now() - 60 * 60_000);
+    utimesSync(path.join(dir, 'dead.1.tmp'), longAgo, longAgo);
+
+    await audioCache(dir, 1000).put('a', bytes(10));
+    expect(readdirSync(dir).sort()).toEqual(['a.wav', 'busy.2.tmp']);
+  });
+
+  it('leaves no temp file when the write fails', async () => {
+    const dir = tempDir();
+    mkdirSync(path.join(dir, 'a.wav')); // a folder where the file should go: rename fails
+    await audioCache(dir, 1000).put('a', bytes(10));
+    expect(readdirSync(dir)).toEqual(['a.wav']);
   });
 
   it('is a no-op without a folder', async () => {

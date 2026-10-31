@@ -1,15 +1,14 @@
 import { routeUserId } from '@/lib/auth/current-user';
 import { audioCache } from '@/lib/tts/audio-cache';
-import { cacheDir, cacheKey } from '@/lib/tts/cache-policy';
+import { cacheDir, cacheKey, cacheMaxBytes } from '@/lib/tts/cache-policy';
 
 const ENGINE = process.env.VOICEVOX_URL ?? 'http://voicevox:50021';
 const DEFAULT_SPEAKER = Number(process.env.VOICEVOX_SPEAKER ?? '2');
 const MAX_CHARS = 200; // a reference sentence is short; cap so one call can't tie up the CPU engine
 const TIMEOUT_MS = 15_000;
-const CACHE_MAX_BYTES = Number(process.env.TTS_CACHE_MAX_MB ?? '300') * 1024 * 1024;
 
 // Readings VOICEVOX has made once, kept on the data volume (K6a): the next play is a file read.
-const cache = audioCache(cacheDir(process.env), CACHE_MAX_BYTES);
+const cache = audioCache(cacheDir(process.env), cacheMaxBytes(process.env.TTS_CACHE_MAX_MB));
 
 async function synthesize(
   text: string,
@@ -51,9 +50,10 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const text = url.searchParams.get('text')?.trim().slice(0, MAX_CHARS);
   if (!text) return new Response('missing text', { status: 400 });
-  const speakerParam = Number(url.searchParams.get('speaker'));
+  // Voice 0 is a real voice (四国めたん); only a missing or malformed value takes the default.
+  const speakerParam = Number(url.searchParams.get('speaker') || NaN);
   const speaker =
-    Number.isFinite(speakerParam) && speakerParam > 0 ? speakerParam : DEFAULT_SPEAKER;
+    Number.isInteger(speakerParam) && speakerParam >= 0 ? speakerParam : DEFAULT_SPEAKER;
   const rateRaw = url.searchParams.get('rate');
   const rateNum = rateRaw != null ? Number(rateRaw) : NaN;
   const rate = Number.isFinite(rateNum) && rateNum > 0 ? Math.min(2, Math.max(0.5, rateNum)) : 1;
