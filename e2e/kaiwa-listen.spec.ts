@@ -5,7 +5,7 @@ import { E2E_DB_FILE, E2E_EMAIL, E2E_LOGIN, E2E_OWNER, seedE2eAccount } from './
 
 // K6b and K6c (docs/plans/2026-10-31-k6-kaiwa-listening.md): "Nghe cả bài" plays a script's lines
 // in order, each speaker in a voice of their own; with "Che câu của tôi" on, the learner's covered
-// line waits for them, then opens and plays; Space pauses and Esc stops.
+// line waits for them, then opens and plays; Space pauses and Esc stops. Also K8b's "Nhập vai với AI".
 const BODY = [
   '店の中は静かだった。 | Trong quán yên tĩnh.',
   'A: いらっしゃいませ。 | Xin mời vào.',
@@ -154,4 +154,30 @@ test('pressing the line being read pauses listening; Enter on another line goes 
   await expect(lines.nth(2).locator('.ring-2')).toHaveCount(1);
   await expect(page.getByRole('button', { name: 'Tạm dừng' })).toBeVisible();
   await expect.poll(() => asked.at(-1)?.text).toBe(SENTENCES[2]);
+});
+
+test('"Nhập vai với AI" copies a request for the part the learner plays, and is not offered for a monologue', async ({
+  page,
+  context,
+}) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  await signIn(page);
+  await page.goto('/kaiwa/kw-listen', { waitUntil: 'networkidle' });
+  await page.getByRole('radio', { name: 'B' }).click();
+  await page.getByRole('button', { name: 'Nhập vai với AI' }).click();
+  await expect
+    .poll(() => page.evaluate(() => navigator.clipboard.readText()))
+    .toBe('Nhập vai kịch bản Kaiwa "Nghe cả bài" trong sakubun, tôi là B');
+
+  const d = new Database(path.join(process.cwd(), E2E_DB_FILE));
+  d.exec(`DELETE FROM Script WHERE id = 'kw-mono'`);
+  const now = new Date().toISOString();
+  d.prepare(
+    `INSERT INTO Script (id, userId, title, body, analysis, version, createdAt, updatedAt)
+     VALUES ('kw-mono', ${E2E_OWNER}, 'Độc thoại', ?, NULL, 1, ?, ?)`,
+  ).run('はじめまして。 | Rất vui được gặp.', now, now);
+  d.close();
+  await page.goto('/kaiwa/kw-mono', { waitUntil: 'networkidle' });
+  await expect(page.getByRole('button', { name: 'Sửa với AI' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Nhập vai với AI' })).toHaveCount(0);
 });

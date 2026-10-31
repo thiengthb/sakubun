@@ -4,11 +4,11 @@ import { useEffect, useRef, useState } from 'react';
 import { MessagesSquare, Pause, Play, Square } from 'lucide-react';
 import { EmptyState } from '@/components/common/empty-state';
 import { KaiwaLine, type RubyLine } from '@/components/features/kaiwa/kaiwa-line';
-import { useLocalState } from '@/components/common/use-session-state';
+import { useKaiwaMe } from '@/components/features/kaiwa/use-kaiwa-me';
 import { Button } from '@/components/ui/button';
 import { Toggle } from '@/components/ui/toggle';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { chooseMe, layoutTurns, scriptSpeakers } from '@/lib/kaiwa/layout';
+import { layoutTurns, scriptSpeakers } from '@/lib/kaiwa/layout';
 import { speakerVoices } from '@/lib/kaiwa/voices';
 import { enterLine, nextStep, speakingPauseMs, type ListenState } from '@/lib/kaiwa/listen';
 import { plainJapanese } from '@/lib/kaiwa/parse';
@@ -45,11 +45,7 @@ export function KaiwaChat({
   const [stop, setStop] = useState<{ row: number; n: number } | null>(null);
   const [listen, setListen] = useState<ListenState | null>(null);
   const speakers = scriptSpeakers(lines);
-  // Remembered per script on this device, so the learner comes back to the same part; a new script
-  // starts from the part they took last, when it has that name.
-  const [stored, setStored] = useLocalState<string | null>(`kaiwa-me:${scriptId ?? 'new'}`, null);
-  const [last, setLast] = useLocalState<string | null>('kaiwa-me:last', null);
-  const me = chooseMe(speakers, stored, last);
+  const [me, chooseMe] = useKaiwaMe(scriptId, speakers);
   const turns = layoutTurns(lines, me);
   // Each part its own voice; the learner's is the one in Cài đặt (K6b).
   const voices = voiceSpeaker === undefined ? null : speakerVoices(speakers, me, voiceSpeaker);
@@ -193,9 +189,7 @@ export function KaiwaChat({
               aria-label="Tôi là"
               value={me ?? ''}
               onValueChange={(value) => {
-                if (!value) return;
-                setStored(value);
-                setLast(value);
+                if (value) chooseMe(value);
               }}
               className="flex-wrap"
             >
