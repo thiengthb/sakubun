@@ -50,9 +50,19 @@ describe('/api/tts audio cache', () => {
     expect(readdirSync(dir).filter((n) => n.endsWith('.wav'))).toHaveLength(3);
   });
 
+  it('reads in voice 0 when asked, and in the default voice when no voice is given', async () => {
+    const voiceOf = () => new URL(String(engine.mock.calls.at(-1)![0])).searchParams.get('speaker');
+    await play('text=声ゼロ&speaker=0');
+    expect(voiceOf()).toBe('0');
+    await play('text=声なし');
+    expect(voiceOf()).toBe('2');
+    await play('text=声が変&speaker=abc');
+    expect(voiceOf()).toBe('2');
+  });
+
   it('stores nothing when VOICEVOX fails', async () => {
     engine.mockImplementationOnce(async () => new Response('down', { status: 500 }));
     expect((await play('text=失敗')).status).toBe(503);
-    expect(readdirSync(dir).filter((n) => n.endsWith('.wav'))).toHaveLength(3);
+    expect(readdirSync(dir).filter((n) => n.endsWith('.wav'))).toHaveLength(6);
   });
 });

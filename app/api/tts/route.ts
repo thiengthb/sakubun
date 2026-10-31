@@ -50,9 +50,10 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const text = url.searchParams.get('text')?.trim().slice(0, MAX_CHARS);
   if (!text) return new Response('missing text', { status: 400 });
-  const speakerParam = Number(url.searchParams.get('speaker'));
+  // Voice 0 is a real voice (四国めたん); only a missing or malformed value takes the default.
+  const speakerParam = Number(url.searchParams.get('speaker') || NaN);
   const speaker =
-    Number.isFinite(speakerParam) && speakerParam > 0 ? speakerParam : DEFAULT_SPEAKER;
+    Number.isInteger(speakerParam) && speakerParam >= 0 ? speakerParam : DEFAULT_SPEAKER;
   const rateRaw = url.searchParams.get('rate');
   const rateNum = rateRaw != null ? Number(rateRaw) : NaN;
   const rate = Number.isFinite(rateNum) && rateNum > 0 ? Math.min(2, Math.max(0.5, rateNum)) : 1;
