@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { Loader2, Volume2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/core/utils';
+import { ttsUrl } from '@/lib/japanese/tts-url';
 
 const SLOW_FACTOR = 0.6; // slow = default × this (clamped to VOICEVOX's 0.5 floor)
 const IDLE_RESET_MS = 6000; // after this long idle, the next press starts at normal again
@@ -50,6 +51,10 @@ export function SpeakButton({
   onProgress,
   rate = 1,
   playToken = null,
+  stopToken = null,
+  onDone,
+  onManualPlay,
+  onManualStop,
   className,
 }: {
   text: string;
@@ -59,15 +64,30 @@ export function SpeakButton({
   onProgress?: (ratio: number) => void;
   rate?: number;
   playToken?: string | number | null;
+  /** A new value stops this button's playback, as a press on it would. */
+  stopToken?: string | number | null;
+  /** A play ended by itself: true when it was heard to the end, false when nothing could play. A
+   * stop (a press, stopToken) calls nothing. Hội thoại's whole-script listening (K6c) moves on. */
+  onDone?: (heard: boolean) => void;
+  /** The learner pressed this button to play (not playToken). */
+  onManualPlay?: () => void;
+  /** The learner pressed this button to stop it while it played. */
+  onManualStop?: () => void;
   className?: string;
 }) {
   const supported = useSpeechSupported();
   const [speaking, setSpeaking] = useState(false);
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const firedRef = useRef<string | number | null | undefined>(undefined); // the playToken played last
   const lastPlayRef = useRef(0); // timestamp of the last play start
   const slowNextRef = useRef(false); // whether the NEXT (soon) press should play slow
   const playRateRef = useRef(rate); // the speed chosen for the in-flight play (read by the Web Speech path)
+  const onDoneRef = useRef(onDone);
+  useEffect(() => {
+    onDoneRef.current = onDone;
+  });
+  const done = (heard: boolean) => onDoneRef.current?.(heard);
 
   useEffect(() => {
     if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
@@ -79,6 +99,8 @@ export function SpeakButton({
       window.speechSynthesis.cancel(); // stop any in-flight utterance on unmount
       audioRef.current?.pause();
       audioRef.current = null;
+      // A remount (React's dev double mount, or a line that just opened) plays its token again.
+      firedRef.current = undefined;
     };
   }, []);
 
@@ -101,6 +123,7 @@ export function SpeakButton({
       });
       setSpeaking(false);
       onProgress?.(0);
+      done(false);
       return;
     }
     const synth = window.speechSynthesis;
@@ -117,6 +140,7 @@ export function SpeakButton({
         duration: 8000,
       });
       setSpeaking(false);
+      done(false);
       return;
     }
 
@@ -128,13 +152,18 @@ export function SpeakButton({
     utterance.pitch = 1;
     utterance.onboundary = (e) =>
       onProgress?.(Math.min(1, text.length ? e.charIndex / text.length : 0));
+    let ended = false;
     utterance.onend = () => {
+      ended = true;
       setSpeaking(false);
       onProgress?.(0);
+      done(true);
     };
-    utterance.onerror = () => {
+    utterance.onerror = (e) => {
       setSpeaking(false);
       onProgress?.(0);
+      // cancel() (a stop, or the next line taking over) is not a failure.
+      if (!ended && e.error !== 'canceled' && e.error !== 'interrupted') done(false);
     };
     const started = { current: false };
     utterance.onstart = () => {
@@ -146,6 +175,7 @@ export function SpeakButton({
       if (started.current) return; // a real utterance is running — its own events own the state now
       setSpeaking(false);
       onProgress?.(0);
+      done(false);
     }, SPEECH_START_TIMEOUT_MS);
   };
 
@@ -161,15 +191,13 @@ export function SpeakButton({
     onProgress?.(0); // reset the highlight at the start of playback
     if (lang.toLowerCase().startsWith('ja')) {
       setSpeaking(true);
-      const speakerParam = speaker != null ? `&speaker=${speaker}` : '';
-      const rateParam = thisRate !== 1 ? `&rate=${thisRate}` : '';
-      const audio = new Audio(
-        `/api/tts?text=${encodeURIComponent(text)}${speakerParam}${rateParam}`,
-      );
+      const audio = new Audio(ttsUrl(text, speaker, thisRate));
       audioRef.current = audio;
       let fellBack = false;
       const fallback = () => {
-        if (fellBack) return;
+        // Stopped on purpose (a press, the next line, an unmount): play() rejects, but that is no
+        // reason to read the line aloud another way.
+        if (fellBack || audioRef.current !== audio) return;
         fellBack = true;
         window.clearTimeout(stallTimer);
         audio.pause();
@@ -189,6 +217,7 @@ export function SpeakButton({
         audioRef.current = null;
         setSpeaking(false);
         onProgress?.(0);
+        done(true);
       };
       audio.onerror = fallback;
       audio.play().catch(fallback);
@@ -200,8 +229,10 @@ export function SpeakButton({
   const toggle = () => {
     if (speaking) {
       stopAll();
+      onManualStop?.();
       return;
     }
+    onManualPlay?.();
     startPlay(false);
   };
 
@@ -210,7 +241,6 @@ export function SpeakButton({
     startPlay(true);
   };
   const playRef = useRef<() => void>(() => {});
-  const firedRef = useRef<string | number | null | undefined>(undefined);
   useEffect(() => {
     playRef.current = playFn;
   });
@@ -219,6 +249,16 @@ export function SpeakButton({
     firedRef.current = playToken;
     playRef.current();
   }, [playToken]);
+  const stopRef = useRef<() => void>(() => {});
+  const stoppedRef = useRef<string | number | null | undefined>(undefined);
+  useEffect(() => {
+    stopRef.current = stopAll;
+  });
+  useEffect(() => {
+    if (stopToken == null || stopToken === stoppedRef.current) return;
+    stoppedRef.current = stopToken;
+    stopRef.current();
+  }, [stopToken]);
 
   if (!canPlay || !text.trim()) return null;
 

@@ -24,6 +24,10 @@ export function KaiwaLine({
   onUncover,
   selected,
   playToken,
+  stopToken = null,
+  onDone,
+  onManualPlay,
+  onManualStop,
   lookup = true,
   voiceSpeaker,
   speechRate,
@@ -37,6 +41,11 @@ export function KaiwaLine({
   /** Chosen with ↑ ↓; Enter plays it. */
   selected: boolean;
   playToken: number | null;
+  /** Whole-script listening (K6c): stops this line, and hears when it ends or is pressed. */
+  stopToken?: number | null;
+  onDone?: (heard: boolean) => void;
+  onManualPlay?: () => void;
+  onManualStop?: () => void;
   /** Off in the editor's preview, which changes as the learner types. */
   lookup?: boolean;
   voiceSpeaker?: number;
@@ -52,6 +61,10 @@ export function KaiwaLine({
     label: 'Nghe câu',
     lookup,
     playToken,
+    stopToken,
+    onDone,
+    onManualPlay,
+    onManualStop,
   } as const;
   const meaning = line.translation && showMeaning && (
     <p className="text-sm text-muted-foreground">{line.translation}</p>

@@ -16,6 +16,10 @@ export function SpokenLine({
   rate,
   truncate = false,
   playToken = null,
+  stopToken = null,
+  onDone,
+  onManualPlay,
+  onManualStop,
   className,
   aside,
   title = false,
@@ -32,6 +36,11 @@ export function SpokenLine({
   rate?: number;
   truncate?: boolean;
   playToken?: string | number | null;
+  stopToken?: string | number | null;
+  /** See SpeakButton: whole-script listening (K6c) moves on when a line ends by itself. */
+  onDone?: (heard: boolean) => void;
+  onManualPlay?: () => void;
+  onManualStop?: () => void;
   className?: string;
   /** Inline after the text, on its baseline: a reading in brackets beside a title. */
   aside?: ReactNode;
@@ -97,6 +106,10 @@ export function SpokenLine({
         rate={rate}
         onProgress={setRatio}
         playToken={playToken}
+        stopToken={stopToken}
+        onDone={onDone}
+        onManualPlay={onManualPlay}
+        onManualStop={onManualStop}
         className={cn(speakerEnd && 'text-muted-foreground/70')}
       />
     </span>
