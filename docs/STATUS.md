@@ -4,14 +4,14 @@ Trang này trả lời ba câu cho bất kỳ phiên Claude nào (kể cả từ
 việc tiếp theo là gì**. Cập nhật nó **trong cùng PR** với việc làm, và khi nhận một bước mới (xem
 "Bắt đầu phiên" trong `CLAUDE.md`). Lộ trình đầy đủ: `docs/roadmap.md`. Kế hoạch đã duyệt: `docs/plans/`.
 
-Cập nhật lần cuối: 2026-10-31 (K6 xong; K8 xong phần code, chờ thien thử trong claude.ai; K7a trong PR).
+Cập nhật lần cuối: 2026-11-04 (K8 xong phần code, chờ thien thử trong claude.ai; K7a #227 xong; K7b trong PR, chờ thien duyệt ảnh).
 
 ## Đang làm
 
-| Bước                                                  | Nhánh / PR                     | Giữ bởi                                  | Trạng thái                                                                                                                                                |
-| ----------------------------------------------------- | ------------------------------ | ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 8 C1b dịch câu ví dụ (cả bộ, mỗi PR khoảng 1.000 mục) | `codex/openjlpt-*`             | Codex (thien giao)                       | 50 câu mẫu (#172), đợt 1: 250 mục (#174); thien giao dịch hết phần còn lại 2026-10-28; mỗi đợt một nhánh mới từ `main`, Claude kiểm và merge (risk:low)   |
-| K7 kịch bản lên Kho chung                             | `claude/project-thread-5kvuk6` | phiên `session_01T9DcRAaagJRZ7mH5PyFjJM` | Kế hoạch `docs/plans/2026-10-31-k7-kaiwa-library.md` duyệt 2026-10-31; K7a (schema và logic) trong PR, thien merge (risk:high); K7b (giao diện) tiếp theo |
+| Bước                                                  | Nhánh / PR                     | Giữ bởi                                  | Trạng thái                                                                                                                                                                                                                                |
+| ----------------------------------------------------- | ------------------------------ | ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 8 C1b dịch câu ví dụ (cả bộ, mỗi PR khoảng 1.000 mục) | `codex/openjlpt-*`             | Codex (thien giao)                       | 50 câu mẫu (#172), đợt 1: 250 mục (#174); thien giao dịch hết phần còn lại 2026-10-28; mỗi đợt một nhánh mới từ `main`, Claude kiểm và merge (risk:low)                                                                                   |
+| K7 kịch bản lên Kho chung                             | `claude/project-thread-5kvuk6` | phiên `session_01T9DcRAaagJRZ7mH5PyFjJM` | Kế hoạch `docs/plans/2026-10-31-k7-kaiwa-library.md` duyệt 2026-10-31; K7a (schema và logic) #227 xong; K7b (giao diện) trong PR, chờ thien duyệt ảnh rồi merge (risk:high); xong khi thien chia sẻ thử và một tài khoản khác lấy về được |
 
 ## Chờ thien
 

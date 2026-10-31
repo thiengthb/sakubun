@@ -14,6 +14,7 @@ import { ParentCrumbs } from '@/components/layout/app-breadcrumbs';
 import { PageShell } from '@/components/layout/page-shell';
 import { ConfirmDialog } from '@/components/common/confirm-dialog';
 import { CopyCommandButton } from '@/components/common/copy-command-button';
+import { ScriptShareButton } from '@/components/common/share-to-library';
 import { ExpandingIconButton } from '@/components/common/expanding-icon-button';
 import { RelativeTime } from '@/components/common/relative-time';
 import { ShortcutsHelp, type Shortcut } from '@/components/common/shortcuts-help';
@@ -24,6 +25,7 @@ import { ScriptEditor, type EditorStatus } from '@/components/features/kaiwa/scr
 import { editScriptCommand, roleplayCommand } from '@/components/features/kaiwa/kaiwa-commands';
 import { useKaiwaMe } from '@/components/features/kaiwa/use-kaiwa-me';
 import type { RubyLine } from '@/components/features/kaiwa/kaiwa-line';
+import type { ScriptShareStatus } from '@/lib/library/scripts';
 import { deleteScriptAction, saveScriptAction } from '@/app/kaiwa/actions';
 import { toastResult } from '@/lib/core/action-toast';
 import { cn } from '@/lib/core/utils';
@@ -71,6 +73,7 @@ const SPLIT = { min: 25, max: 75, initial: 50 };
 // version the AI saved meanwhile is never overwritten. A phone switches between Viết and Xem trước.
 export function KaiwaCanvas({
   script,
+  share,
   startEditing,
   voiceSpeaker,
   speechRate,
@@ -78,6 +81,8 @@ export function KaiwaCanvas({
 }: {
   /** Absent: a new script, written from scratch. */
   script?: CanvasScript;
+  /** Its share on Kho chung (K7), for Chia sẻ. */
+  share?: ScriptShareStatus | null;
   startEditing: boolean;
   voiceSpeaker?: number;
   speechRate?: number;
@@ -240,6 +245,7 @@ export function KaiwaCanvas({
           icon={Drama}
         />
       )}
+      {share && <ScriptShareButton scriptId={script!.id} status={share} />}
       <ShortcutsHelp shortcuts={VIEW_KEYS} />
     </>
   );

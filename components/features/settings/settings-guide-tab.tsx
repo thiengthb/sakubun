@@ -186,8 +186,9 @@ export function GuideTab({
         </GuideRow>
         <GuideRow icon={Globe} title="Kho chung">
           <p>
-            Ngữ pháp và từ vựng mọi người cùng dùng, khởi đầu từ OpenJLPT. Lấy về một mục hay cả
-            nhóm; bấm Chia sẻ ở trang một mục hay một nhóm của bạn để đưa nó lên cho người khác.
+            Ngữ pháp, từ vựng và kịch bản hội thoại mọi người cùng dùng, khởi đầu từ OpenJLPT. Lấy về
+            một mục, cả nhóm hay một kịch bản; bấm Chia sẻ ở trang một mục, một nhóm hay một kịch bản
+            của bạn để đưa nó lên cho người khác.
           </p>
         </GuideRow>
         <GuideRow icon={History} title="Lịch sử">

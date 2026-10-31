@@ -8,7 +8,7 @@ import {
 } from '@/components/layout/page-skeleton';
 
 // LibraryView's shape: OpenJLPT's level table over the learners' group cards (7.4h), or the search
-// row over entry cards.
+// row over entry cards, or over shared Kaiwa script cards (K7).
 export default function Loading() {
   return (
     <PageSkeleton template="list" title="Kho chung" meta tabs={<PageTabsSkeleton set="library" />}>
@@ -34,6 +34,12 @@ export default function Loading() {
               <ToolbarSkeleton filters={2} />
               <CardsSkeleton rowHeight={96} footer={false} />
             </>
+          ),
+          scripts: (
+            <div className="space-y-4">
+              <ToolbarSkeleton filters={0} />
+              <CardsSkeleton rowHeight={96} footer={false} />
+            </div>
           ),
         }}
       />

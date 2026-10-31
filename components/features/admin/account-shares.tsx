@@ -16,7 +16,14 @@ export interface AccountShare {
   createdAt: Date;
 }
 
-const TYPE_LABEL: Record<string, string> = { GRAMMAR: 'Ngữ pháp', VOCAB: 'Từ vựng', GROUP: 'Nhóm' };
+const TYPE_LABEL: Record<string, string> = {
+  GRAMMAR: 'Ngữ pháp',
+  VOCAB: 'Từ vựng',
+  GROUP: 'Nhóm',
+  SCRIPT: 'Kịch bản',
+};
+// A group's name and a script's title are the learner's words; an item's expression is Japanese.
+const JAPANESE_LABEL = new Set(['GRAMMAR', 'VOCAB']);
 const STATUS_LABEL: Record<string, string> = {
   public: 'Đang hiện',
   hidden: 'Tác giả đã gỡ',
@@ -40,7 +47,7 @@ export function AccountShares({ shares }: { shares: AccountShare[] }) {
                 className={cn(LIST_CARD.base, 'flex min-w-0 items-start justify-between gap-2')}
               >
                 <div className="min-w-0 space-y-1">
-                  <p lang={s.type === 'GROUP' ? undefined : 'ja'} className="truncate font-bold">
+                  <p lang={JAPANESE_LABEL.has(s.type) ? 'ja' : undefined} className="truncate font-bold">
                     {label}
                   </p>
                   {s.meaningVi && (

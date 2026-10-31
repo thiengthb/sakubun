@@ -15,15 +15,19 @@ import {
 } from '@/components/features/library/library-group-card';
 import { LibraryItems } from '@/components/features/library/library-items';
 import { LibraryLevels } from '@/components/features/library/library-levels';
+import type { LibraryScriptRow } from '@/components/features/library/library-script-card';
+import { LibraryScripts } from '@/components/features/library/library-scripts';
 import type { LibraryEntryRow } from '@/lib/library/browse';
 import type { BrowseQuery } from '@/lib/library/browse-query';
 import { OPENJLPT_ORIGIN } from '@/lib/library/shared';
 
 // List template (phase 8, L2): the shared library. Groups first, the way thien shares related items
 // (a whole level, a topic): OpenJLPT's as a table by level, then the learners' (7.4h); single entries
-// under "Từng mục" (LibraryItems), searched on the server.
+// under "Từng mục" (LibraryItems), searched on the server; Kaiwa scripts under "Kịch bản" (K7).
 export function LibraryView({
   groups,
+  scripts,
+  scriptsQuery,
   entries,
   entriesTotal,
   entriesMeta,
@@ -33,6 +37,9 @@ export function LibraryView({
   showFurigana,
 }: {
   groups: LibraryGroupRow[];
+  scripts: LibraryScriptRow[];
+  /** The scripts tab's search. */
+  scriptsQuery: string;
   entries: LibraryEntryRow[];
   /** All the entries the search finds; `entries` is the first page of them. */
   entriesTotal: number;
@@ -56,7 +63,13 @@ export function LibraryView({
       <PageShell
         template="list"
         title="Kho chung"
-        meta={tab === 'items' ? entriesMeta : `${groups.length} nhóm`}
+        meta={
+          tab === 'items'
+            ? entriesMeta
+            : tab === 'scripts'
+              ? `${scripts.length} kịch bản${scriptsQuery ? ' khớp' : ''}`
+              : `${groups.length} nhóm`
+        }
         tabs={<PageTabs items={LIBRARY_TABS.items} label={LIBRARY_TABS.label} />}
       >
         <TabsContent value="groups" className="space-y-6 md:space-y-8">
@@ -98,6 +111,10 @@ export function LibraryView({
               </div>
             )}
           </section>
+        </TabsContent>
+
+        <TabsContent value="scripts">
+          <LibraryScripts scripts={scripts} q={scriptsQuery} />
         </TabsContent>
 
         <TabsContent value="items">

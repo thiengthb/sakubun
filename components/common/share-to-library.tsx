@@ -15,14 +15,17 @@ import { useServerAction } from '@/components/common/use-server-action';
 import {
   publishGroupAction,
   publishItemAction,
+  publishScriptAction,
   unpublishGroupAction,
   unpublishItemAction,
+  unpublishScriptAction,
 } from '@/app/library/actions';
 import type { GroupShareStatus, ItemShareStatus } from '@/lib/library/publish';
+import type { ScriptShareStatus } from '@/lib/library/scripts';
 import { cn } from '@/lib/core/utils';
 import { ExpandingIconButton } from '@/components/common/expanding-icon-button';
 
-// "Chia sẻ" (phase 8, L3) on an item's or a group's own page: a header action that opens what will
+// "Chia sẻ" (phase 8, L3) on an item's, a group's or a Kaiwa script's (K7) own page: a header action that opens what will
 // go public, then Công khai, Cập nhật or Gỡ. Only the web shares (rule 4).
 
 function ShareDialog({
@@ -174,6 +177,44 @@ export function GroupShareButton({
           </ul>
           <p className="text-xs text-muted-foreground">{SHARED_NOTE}</p>
         </>
+      )}
+    </ShareDialog>
+  );
+}
+
+export function ScriptShareButton({
+  scriptId,
+  status,
+}: {
+  scriptId: string;
+  status: ScriptShareStatus;
+}) {
+  const publish = useServerAction(publishScriptAction, {
+    success: (r) => (r.created ? 'Đã chia sẻ lên Kho chung' : 'Đã cập nhật bản chia sẻ'),
+  });
+  const unpublish = useServerAction(unpublishScriptAction, { success: 'Đã gỡ khỏi Kho chung' });
+  const { shared, blocked, basedOn } = status;
+  return (
+    <ShareDialog
+      shared={!!shared}
+      title={shared ? 'Kịch bản đang chia sẻ trên Kho chung' : 'Chia sẻ kịch bản lên Kho chung'}
+      description={
+        blocked ??
+        (shared
+          ? `${shared.takeCount} lượt lấy. ${shared.changed ? 'Kịch bản đã sửa từ lần chia sẻ trước: cập nhật để Kho chung có bản mới.' : 'Bản chia sẻ đang khớp với kịch bản.'} Gỡ thì người đã lấy vẫn giữ bản của họ.`
+          : 'Người học khác sẽ đọc, nghe và lấy được một bản sao của kịch bản này. Bản chia sẻ ghi tên tài khoản của bạn.')
+      }
+      publish={blocked ? null : () => publish.run(scriptId)}
+      unpublish={() => unpublish.run(scriptId)}
+      canPublish={!shared || shared.changed}
+      pending={publish.isPending || unpublish.isPending}
+    >
+      {!blocked && (
+        <p className="text-muted-foreground">
+          Đi kèm: tiêu đề và toàn bộ nội dung. Sửa kịch bản sau đó thì bản chia sẻ chưa đổi, đến khi
+          bạn cập nhật.
+          {basedOn && ' Bản chia sẻ ghi là dựa trên kịch bản bạn đã lấy từ Kho chung.'}
+        </p>
       )}
     </ShareDialog>
   );

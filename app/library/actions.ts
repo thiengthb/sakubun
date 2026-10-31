@@ -19,6 +19,12 @@ import {
   unpublishItem,
   type PublishResult,
 } from '@/lib/library/publish';
+import {
+  publishScript,
+  takeScript,
+  unpublishScript,
+  type TakeScriptResult,
+} from '@/lib/library/scripts';
 
 // "Lấy" on Kho chung (phase 8, L2): the copy itself and its rules live in lib/library/take.ts.
 export async function takeEntryAction(entryId: string): Promise<ActionResult<TakeEntryResult>> {
@@ -79,6 +85,34 @@ export async function unpublishGroupAction(
 ): Promise<ActionResult<{ hidden: number }>> {
   const res = await unpublishGroup(await getUserDb(), groupId);
   if (res.ok) refresh(`/groups/${groupId}`);
+  return res;
+}
+
+// Kaiwa scripts on Kho chung (K7): shared from the script's own page, taken from the shared one.
+const refreshScript = (scriptId: string) => {
+  refresh(`/kaiwa/${scriptId}`);
+  revalidatePath('/kaiwa');
+};
+
+export async function publishScriptAction(
+  scriptId: string,
+): Promise<ActionResult<PublishResult>> {
+  const res = await publishScript(await getUserDb(), scriptId);
+  if (res.ok) refreshScript(scriptId);
+  return res;
+}
+
+export async function unpublishScriptAction(
+  scriptId: string,
+): Promise<ActionResult<{ hidden: number }>> {
+  const res = await unpublishScript(await getUserDb(), scriptId);
+  if (res.ok) refreshScript(scriptId);
+  return res;
+}
+
+export async function takeScriptAction(entryId: string): Promise<ActionResult<TakeScriptResult>> {
+  const res = await takeScript(await getUserDb(), entryId);
+  if (res.ok) refreshScript(res.data.scriptId);
   return res;
 }
 

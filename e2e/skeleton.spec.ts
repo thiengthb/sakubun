@@ -39,11 +39,13 @@ const PAIRS: Pair[] = [
   { name: 'kaiwa script', page: '/kaiwa/kw-sk', skeleton: 'kaiwa-script' },
   { name: 'kaiwa new', page: '/kaiwa/new', skeleton: 'kaiwa-new' },
   // The editor opens on the script's own route, whose loading screen is the reading view's.
-  { name: 'kaiwa edit', page: '/kaiwa/kw-sk?edit=1', skeleton: 'kaiwa-script' },
+  { name: 'kaiwa edit', page: '/kaiwa/kw-sk?edit=1', skeleton: 'kaiwa-script?edit=1' },
   { name: 'kho chung', page: '/library', skeleton: 'library' },
   { name: 'kho chung items', page: '/library?tab=items', skeleton: 'library?tab=items' },
   { name: 'kho chung group', page: '/library/lib-sk', skeleton: 'library-group' },
   { name: 'kho chung item', page: '/library/item/lib-sk0', skeleton: 'library-item' },
+  { name: 'kho chung scripts', page: '/library?tab=scripts', skeleton: 'library?tab=scripts' },
+  { name: 'kho chung script', page: '/library/script/lib-sk-script', skeleton: 'library-script' },
 ];
 
 const MEASURE = () => {
@@ -157,6 +159,11 @@ test.beforeAll(async () => {
       );
       member.run(`lib-sk${n}`, n);
     }
+    // A shared Kaiwa script (K7), for the scripts tab and its own page.
+    db.prepare(
+      `INSERT INTO LibraryEntry (id, type, name, body, origin, status, takeCount, createdAt, updatedAt)
+       VALUES ('lib-sk-script', 'SCRIPT', 'Ở nhà hàng', ?, 'LEARNER', 'public', 0, ?, ?)`,
+    ).run(lines.join('\n'), iso(now), iso(now));
   } finally {
     db.close();
   }

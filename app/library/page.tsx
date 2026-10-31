@@ -9,12 +9,14 @@ import { browseMeta, parseBrowseQuery } from '@/lib/library/browse-query';
 import { listGroupEntries } from '@/lib/library/shared';
 import { likedEntries } from '@/lib/library/likes';
 import { groupProgress } from '@/lib/library/take';
+import { listScriptEntries, scriptCopies } from '@/lib/library/scripts';
 import { furiganaInApp } from '@/lib/settings/schema';
 
 export const metadata: Metadata = { title: 'Kho chung — sakubun' };
 export const dynamic = 'force-dynamic';
 
 const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
+const MAX_SCRIPT_QUERY = 100;
 
 export default async function LibraryPage({
   searchParams,
@@ -26,18 +28,18 @@ export default async function LibraryPage({
     Object.fromEntries(Object.entries(params).map(([k, v]) => [k, one(v)])),
   );
 
+  const scriptsQuery = (one(params.sq) ?? '').trim().slice(0, MAX_SCRIPT_QUERY);
+
   const db = await getUserDb();
   await ensureOpenJlptLibrary();
-  const [groups, { rows, counts }, settings] = await Promise.all([
+  const [groups, scripts, { rows, counts }, settings] = await Promise.all([
     listGroupEntries(prisma),
+    listScriptEntries(prisma, { text: scriptsQuery }),
     browseEntries(db, query),
     getSettings(db),
   ]);
-  const [liked, takenGroups, have] = await Promise.all([
-    likedEntries(
-      db,
-      groups.map((g) => g.id),
-    ),
+  const [liked, takenGroups, have, copies] = await Promise.all([
+    likedEntries(db, [...groups.map((g) => g.id), ...scripts.map((s) => s.id)]),
     db.group.findMany({
       where: { libraryEntryId: { in: groups.map((g) => g.id) } },
       select: { id: true, libraryEntryId: true },
@@ -46,6 +48,7 @@ export default async function LibraryPage({
       db,
       groups.map((g) => g.id),
     ),
+    scriptCopies(db, scripts),
   ]);
   const myGroup = new Map(takenGroups.map((g) => [g.libraryEntryId, g.id]));
   const total = counts ? counts.GRAMMAR + counts.VOCAB : rows.length;
@@ -58,6 +61,19 @@ export default async function LibraryPage({
         liked: liked.has(g.id),
         myGroupId: myGroup.get(g.id) ?? null,
       }))}
+      scripts={scripts.map((s) => ({
+        id: s.id,
+        title: s.title,
+        firstLine: s.firstLine,
+        speakers: s.speakers,
+        lineCount: s.lineCount,
+        author: s.author,
+        takeCount: s.takeCount,
+        likes: s.likes,
+        liked: liked.has(s.id),
+        myScriptId: copies.get(s.id) ?? null,
+      }))}
+      scriptsQuery={scriptsQuery}
       entries={rows}
       entriesTotal={total}
       entriesMeta={counts ? browseMeta(counts, query) : `${total} mục`}

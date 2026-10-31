@@ -1,5 +1,5 @@
 import { ParentCrumbs } from '@/components/layout/app-breadcrumbs';
-import { PageSkeleton, SkeletonText } from '@/components/layout/page-skeleton';
+import { PageSkeleton, SkeletonText, TabbedSkeleton } from '@/components/layout/page-skeleton';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/core/utils';
 
@@ -13,11 +13,32 @@ export default function Loading() {
       title={<SkeletonText text="Ở nhà hàng" />}
       meta
       actions={
-        <>
-          <Skeleton className="h-9 w-16 rounded-sm md:w-7 md:h-7" />
-          <Skeleton className="h-9 w-28 rounded-sm md:w-7 md:h-7" />
-          <Skeleton className="size-9 rounded-sm md:size-7" />
-        </>
+        // The reading view's Sửa, Sửa với AI, Nhập vai với AI, Chia sẻ and the shortcuts (on a phone
+        // the last two wrap to a second row, as the words keep their width there), or the editor's
+        // (?edit=1) Xoá, Xong, Lưu and the shortcuts on one row.
+        <TabbedSkeleton
+          storeKey="kaiwa.loading-mode"
+          urlKey="edit"
+          initial="0"
+          shapes={{
+            '0': (
+              <>
+                <Skeleton className="h-9 w-14 rounded-sm md:w-7 md:h-7" />
+                <Skeleton className="h-9 w-32 rounded-sm md:w-7 md:h-7" />
+                <Skeleton className="h-9 w-40 rounded-sm md:w-7 md:h-7" />
+                <Skeleton className="h-9 w-24 rounded-sm md:w-7 md:h-7" />
+                <Skeleton className="size-9 rounded-sm md:size-7" />
+              </>
+            ),
+            '1': (
+              <>
+                <Skeleton className="h-9 w-16 rounded-sm md:w-7 md:h-7" />
+                <Skeleton className="h-9 w-28 rounded-sm md:w-7 md:h-7" />
+                <Skeleton className="size-9 rounded-sm md:size-7" />
+              </>
+            ),
+          }}
+        />
       }
       actionsOnPhone="split"
     >
