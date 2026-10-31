@@ -176,8 +176,9 @@ export function GuideTab({
         </GuideRow>
         <GuideRow icon={MessagesSquare} title="Hội thoại">
           <p>
-            Kịch bản hội thoại Claude soạn cùng bạn: nghe từng câu, chọn vai của mình, rê chuột lên
-            một từ để xem nghĩa.
+            Kịch bản hội thoại Claude soạn cùng bạn: nghe từng câu hoặc cả bài, chọn vai của mình,
+            rê chuột lên một từ để xem nghĩa. Bấm Nhập vai với AI rồi dán vào Claude để nó đóng các
+            vai còn lại.
           </p>
         </GuideRow>
         <GuideRow icon={Library} title="Tài nguyên">

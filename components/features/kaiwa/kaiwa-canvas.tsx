@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import type { EditorView } from '@codemirror/view';
-import { Check, Pencil, Sparkles, Trash2 } from 'lucide-react';
+import { Check, Drama, Pencil, Sparkles, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,7 +21,8 @@ import { useLocalState } from '@/components/common/use-session-state';
 import { useServerAction } from '@/components/common/use-server-action';
 import { KaiwaChat } from '@/components/features/kaiwa/kaiwa-chat';
 import { ScriptEditor, type EditorStatus } from '@/components/features/kaiwa/script-editor';
-import { editScriptCommand } from '@/components/features/kaiwa/kaiwa-commands';
+import { editScriptCommand, roleplayCommand } from '@/components/features/kaiwa/kaiwa-commands';
+import { useKaiwaMe } from '@/components/features/kaiwa/use-kaiwa-me';
 import type { RubyLine } from '@/components/features/kaiwa/kaiwa-line';
 import { deleteScriptAction, saveScriptAction } from '@/app/kaiwa/actions';
 import { toastResult } from '@/lib/core/action-toast';
@@ -105,6 +106,9 @@ export function KaiwaCanvas({
   const draft = parseScript(body);
   const draftLines: RubyLine[] = draft.map((line) => ({ ...line, ruby: line.japanese }));
   const speakers = scriptSpeakers(draft);
+  // The part chosen in the chat, for "Nhập vai với AI" (K8): the saved script's, not the draft's.
+  const savedSpeakers = script ? scriptSpeakers(script.lines) : [];
+  const [me] = useKaiwaMe(script?.id, savedSpeakers);
   const problems = body.trim() ? checkBody(normalizeBody(body)) : [];
   const titleError = title.trim() ? describeProblems(checkTitle(title)) || null : null;
   const dirty = title.trim() !== saved.title || normalizeBody(body) !== saved.body;
@@ -227,6 +231,15 @@ export function KaiwaCanvas({
         expandOnHover
         icon={Sparkles}
       />
+      {me && savedSpeakers.length > 1 && (
+        <CopyCommandButton
+          command={roleplayCommand(script!.title, me)}
+          label="Nhập vai với AI"
+          size="default"
+          expandOnHover
+          icon={Drama}
+        />
+      )}
       <ShortcutsHelp shortcuts={VIEW_KEYS} />
     </>
   );
