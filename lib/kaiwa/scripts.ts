@@ -29,6 +29,8 @@ export interface SaveScriptInput {
   version?: number;
   title: string;
   body: string;
+  // A new script copied from Kho chung (K7): the entry it was taken from.
+  libraryEntryId?: string;
 }
 
 const SUMMARY = { id: true, title: true, version: true, updatedAt: true } as const;
@@ -84,7 +86,13 @@ export async function saveScript(
       return err(`Đã có ${MAX_SCRIPTS} kịch bản. Xoá bớt kịch bản cũ rồi lưu lại.`);
     }
     const created = await db.script.create({
-      data: { userId: db.$ownerId(), title, body, analysis },
+      data: {
+        userId: db.$ownerId(),
+        title,
+        body,
+        analysis,
+        libraryEntryId: input.libraryEntryId ?? null,
+      },
       select: SUMMARY,
     });
     return ok(created);
