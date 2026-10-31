@@ -1,6 +1,7 @@
 # Kế hoạch K6: nghe cả bài Kaiwa, giọng theo người nói, cache âm thanh
 
-- Ngày: 2026-10-31. Trạng thái: **chờ thien duyệt**.
+- Ngày: 2026-10-31. Duyệt: thien, 2026-10-31 02:57 ("theo đề xuất"): không chọn giọng cho từng vai, dừng để tự nói
+  ở dòng bị che, karaoke theo âm tiết để sau K6c.
 - Gốc: hàng K6 trong `docs/plans/2026-10-27-phase-8-kaiwa-kho-chung.md` ("Karaoke, nghe cả bài, giọng theo
   người nói, cache file âm thanh trên server", rủi ro medium). thien chọn thứ tự K9, K6, K8, K7 ngày 2026-10-31.
 
