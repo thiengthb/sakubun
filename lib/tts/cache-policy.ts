@@ -46,3 +46,12 @@ export function cacheDir(env: Record<string, string | undefined>): string | null
   const file = url.slice('file:'.length);
   return `${file.slice(0, file.lastIndexOf('/'))}/tts-cache`;
 }
+
+const DEFAULT_MAX_MB = 300;
+
+// The cache's size cap in bytes from TTS_CACHE_MAX_MB. A typo or a negative number falls back to the
+// default instead of a cap of NaN, which no total ever exceeds, so the folder would grow forever.
+export function cacheMaxBytes(rawMb: string | undefined): number {
+  const mb = Number(rawMb ?? DEFAULT_MAX_MB);
+  return (Number.isFinite(mb) && mb >= 0 ? mb : DEFAULT_MAX_MB) * 1024 * 1024;
+}

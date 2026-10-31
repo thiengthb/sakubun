@@ -22,16 +22,22 @@ export interface AudioCache {
 
 const NO_CACHE: AudioCache = { get: async () => null, put: async () => {} };
 
+// A temp file this old was left by a write that died midway (the process stopped); prune drops it.
+const STALE_TEMP_MS = 10 * 60_000;
+
 export function audioCache(dir: string | null, maxBytes: number): AudioCache {
   if (!dir) return NO_CACHE;
   const file = (key: string) => path.join(dir, `${key}.wav`);
 
   async function prune(): Promise<void> {
-    const names = (await readdir(dir!)).filter((n) => n.endsWith('.wav'));
     const files: CachedFile[] = [];
-    for (const name of names) {
+    for (const name of await readdir(dir!)) {
       const info = await stat(path.join(dir!, name)).catch(() => null);
-      if (info) files.push({ name, size: info.size, usedAt: info.mtimeMs });
+      if (!info) continue;
+      if (name.endsWith('.wav')) files.push({ name, size: info.size, usedAt: info.mtimeMs });
+      else if (name.endsWith('.tmp') && Date.now() - info.mtimeMs > STALE_TEMP_MS) {
+        await unlink(path.join(dir!, name)).catch(() => {});
+      }
     }
     for (const name of filesToEvict(files, maxBytes)) {
       await unlink(path.join(dir!, name)).catch(() => {});
@@ -51,14 +57,15 @@ export function audioCache(dir: string | null, maxBytes: number): AudioCache {
       }
     },
     async put(key, audio) {
+      // Written whole under another name first, so a play never reads half a file.
+      const temp = path.join(dir, `${key}.${randomUUID()}.tmp`);
       try {
         await mkdir(dir, { recursive: true });
-        // Written whole under another name first, so a play never reads half a file.
-        const temp = path.join(dir, `${key}.${randomUUID()}.tmp`);
         await writeFile(temp, audio);
         await rename(temp, file(key));
         await prune();
       } catch (error) {
+        await unlink(temp).catch(() => {});
         console.warn('[tts] audio cache write failed', error);
       }
     },

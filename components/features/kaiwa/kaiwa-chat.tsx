@@ -8,6 +8,7 @@ import { useLocalState } from '@/components/common/use-session-state';
 import { Toggle } from '@/components/ui/toggle';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { chooseMe, layoutTurns, scriptSpeakers } from '@/lib/kaiwa/layout';
+import { speakerVoices } from '@/lib/kaiwa/voices';
 
 // A script read as a chat (phase 8, K3; view redo 7.4e) from the part the learner picks ("Tôi là").
 // A toolbar that stays in sight while the chat scrolls holds who the learner is, hiding the
@@ -42,6 +43,8 @@ export function KaiwaChat({
   const [last, setLast] = useLocalState<string | null>('kaiwa-me:last', null);
   const me = chooseMe(speakers, stored, last);
   const turns = layoutTurns(lines, me);
+  // Each part its own voice; the learner's is the one in Cài đặt (K6b).
+  const voices = voiceSpeaker === undefined ? null : speakerVoices(speakers, me, voiceSpeaker);
   const covering = cover && !preview;
   const isCovered = (i: number) => {
     const turn = turns[i];
@@ -162,7 +165,10 @@ export function KaiwaChat({
             selected={preview ? preview.row === turn.line.row : selected === i}
             playToken={play?.row === i ? play.n : null}
             lookup={!preview}
-            voiceSpeaker={voiceSpeaker}
+            voiceSpeaker={
+              (turn.line.speaker === null ? undefined : voices?.get(turn.line.speaker)) ??
+              voiceSpeaker
+            }
             speechRate={speechRate}
           />
         ))}

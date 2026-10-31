@@ -50,6 +50,9 @@ Vài điểm cần biết:
   client: `<BETTER_AUTH_URL>/api/auth/callback/google`.
 - **VOICEVOX** (TTS tiếng Nhật) chạy như service thứ hai, không mở ra host — chỉ app gọi qua mạng
   nội bộ của compose. Nếu nó chết thì client tự rơi về giọng Web Speech của trình duyệt.
+- **Câu VOICEVOX đã đọc được giữ thành file trong `/data/tts-cache`** (tối đa `TTS_CACHE_MAX_MB`, mặc định
+  300). Nâng phiên bản VOICEVOX hay đổi giọng thì xoá thư mục đó (`rm -rf /data/tts-cache` trong container)
+  để không phát bản cũ. Không cần sao lưu nó: mất thì app đọc lại.
 
 Sao lưu:
 
