@@ -46,8 +46,8 @@ poller (`sudo`), user `thi3n` không có token ghcr. Xem log: `journalctl -u min
 5. Kho chung L1–L6 xong, lên `main` 2026-10-28: L1a #159, L1b #160, L2 #161, L3a #162, L3b #163, L4 #164, L5 #165,
    L6a #166, L6b #167.
 6. Ôn nhanh (C): kế hoạch `docs/plans/2026-10-28-quick-review.md` duyệt 2026-10-28 (Codex dịch câu ví dụ, mục mới là thẻ
-   giới thiệu, không có nút "Đoán"). Xong: C1a #170, C3 #171, 50 câu mẫu #172, C2 #173, 250 mục #174, C4 #175, C5a #176, C5b #177. Còn: C1b (Codex dịch phần còn lại).
-7. 7.4 (làm lại UI) xong 2026-10-28: kế hoạch PR #180 (còn mở, chưa vào `main`), 7.4a #181,
+   giới thiệu, không có nút "Đoán"). Xong: C1a #170, C3 #171, 50 câu mẫu #172, C2 #173, 250 mục #174, C4 #175, C5a #176, C5b #177; C1b Codex dịch xong cả bộ #213–#220 (2026-10-29).
+7. 7.4 (làm lại UI) xong 2026-10-28: kế hoạch `docs/plans/2026-10-28-ui-kaiwa-library.md` (từ PR #180), 7.4a #181,
    7.4k #182, 7.4b #188, 7.4c #191, 7.4d #192, 7.4e #193, 7.4f #194, 7.4g #195, 7.4h #196, 7.4i #197, #206, #210
    (#207 merge nhầm vào nhánh xếp chồng nên đưa lại qua #210); 7.4j: #198, #199, #203, #204, #208, #209; trang lỗi
    toàn app theo style mới #201.
