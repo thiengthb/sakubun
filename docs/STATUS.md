@@ -61,9 +61,7 @@ poller (`sudo`), user `thi3n` không có token ghcr. Xem log: `journalctl -u min
 
 ## Việc nhỏ còn treo
 
-- e2e `skeleton` ở 390px: khung chờ trang một mục thấp hơn trang thật 44px (hàng nút đầu trang trên điện thoại); đỏ cả trên `main` (thấy 2026-10-28, sau 7.4k).
-- e2e `quick-review` "by keyboard" lúc xanh lúc đỏ trên `main` (đỏ 3 trong 4 lần, 2026-10-28): câu trả lời không bị chặn mạng như test muốn.
-- e2e `header-actions` "on a phone" tìm nút Bộ lọc ở Tài nguyên, nhưng khi DB e2e trống (spec khác vừa xoá mục) thì trang chỉ có trạng thái trống, không có nút lọc: phụ thuộc dữ liệu spec khác để lại (thấy 2026-10-28).
+- e2e `quick-review` "by keyboard" lúc xanh lúc đỏ trên `main` (đỏ 3 trong 4 lần, 2026-10-28): câu trả lời không bị chặn mạng như test muốn. 2026-11-04 không tái hiện được (17 lần chạy đều xanh, riêng lẻ và cả file); chưa sửa, nếu đỏ lại thì ghi lại cách chạy.
 - Kế hoạch phase 6 (UI redo, các bước 6.x như PR #128 "6.9") chưa có trong repo; chỉ còn dấu vết trong
   commit và PR. Nếu còn bước 6.x chưa làm, chép kế hoạch vào `docs/plans/`.
 - Repo public từ 2026-10-27; CI về lại runner của GitHub (#135, `docs/ci-runner.md`). Không dùng runner tự host khi
