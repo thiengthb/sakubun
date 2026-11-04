@@ -1,5 +1,7 @@
+import path from 'node:path';
+import Database from 'better-sqlite3';
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { E2E_EMAIL, E2E_LOGIN, seedE2eAccount } from './fixtures';
+import { E2E_DB_FILE, E2E_EMAIL, E2E_LOGIN, E2E_OWNER, seedE2eAccount } from './fixtures';
 
 // thien, 7.4: on a laptop a header action is its icon and opens to its word on hover; on a phone an
 // icon anyone reads (filter, sort, add...) stands alone and any other keeps its word. The page's
@@ -7,6 +9,17 @@ import { E2E_EMAIL, E2E_LOGIN, seedE2eAccount } from './fixtures';
 
 test.beforeAll(async () => {
   await seedE2eAccount();
+  // Tài nguyên shows its filter and sort only over items, and other specs empty the shared DB: keep
+  // one item of this spec's own.
+  const db = new Database(path.join(process.cwd(), E2E_DB_FILE));
+  try {
+    db.prepare(
+      `INSERT OR IGNORE INTO Item (userId, id, kind, expression, reading, meaningVi, level, source, createdAt)
+       VALUES (${E2E_OWNER}, 'ha-item', 'GRAMMAR', '〜ておく', 'ておく', 'làm sẵn (e2e)', 'N4', 'MANUAL', ?)`,
+    ).run(new Date().toISOString());
+  } finally {
+    db.close();
+  }
 });
 
 async function signIn(page: Page) {

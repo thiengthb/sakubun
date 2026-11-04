@@ -38,8 +38,10 @@ export default function Loading() {
       }
       actions={
         <>
-          <Skeleton className={cn(BUTTON, 'md:w-28')} />
-          <Skeleton className={cn(BUTTON, 'md:w-32')} />
+          {/* On a phone the two keep their words ("Luyện riêng", "Nhờ bổ sung") and fill the row,
+              so Chia sẻ wraps to a row of its own. */}
+          <Skeleton className={cn(BUTTON, 'w-36 md:w-28')} />
+          <Skeleton className={cn(BUTTON, 'w-40 md:w-32')} />
           {/* Chia sẻ */}
           <Skeleton className="h-9 w-24 rounded-sm md:h-7 md:w-20" />
         </>
