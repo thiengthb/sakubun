@@ -4,11 +4,16 @@ Trang này trả lời ba câu cho bất kỳ phiên Claude nào (kể cả từ
 việc tiếp theo là gì**. Cập nhật nó **trong cùng PR** với việc làm, và khi nhận một bước mới (xem
 "Bắt đầu phiên" trong `CLAUDE.md`). Lộ trình đầy đủ: `docs/roadmap.md`. Kế hoạch đã duyệt: `docs/plans/`.
 
-Cập nhật lần cuối: 2026-11-04 (K7 xong phần code: #227, #229; chờ thien thử bằng tài khoản thứ hai).
+Cập nhật lần cuối: 2026-11-04 (bắt đầu nghiên cứu tính năng: quy trình 1 trong ba quy trình thien đặt ra).
 
 ## Đang làm
 
-Không có bước nào đang làm. Lộ trình phase 8 đã hết; việc tiếp theo do thien chọn.
+| Bước | Nhánh | Phiên |
+|---|---|---|
+| Quy trình 1: nghiên cứu học ngôn ngữ và ứng cử viên tính năng (`docs/plans/2026-11-04-research/`, `docs/plans/2026-11-04-feature-candidates.md`) | `docs/2026-11-04-research` | thread "Nghiên cứu và đề xuất tính năng Sakubun" |
+
+thien đặt ra ba quy trình theo thứ tự: (1) nghiên cứu và chọn tính năng, (2) luật làm việc lâu dài giữa thien và
+Claude, (3) mổ xẻ UI/UX và hệ thống style. Không bắt đầu 2 và 3 trước khi thien duyệt danh sách tính năng của 1.
 
 ## Chờ thien
 
