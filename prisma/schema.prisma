@@ -528,6 +528,8 @@ model Script {
   // Furigana and words worked out on save (lib/kaiwa/furigana.ts, JSON); null when that failed.
   analysis  String?
   version   Int      @default(1)
+  // The shared-library script this was taken from (K7), as on Item: a plain column, no foreign key.
+  libraryEntryId String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -540,7 +542,7 @@ model Script {
 // a fresh schedule. Every write goes through lib/library/shared.ts.
 model LibraryEntry {
   id         String   @id @default(cuid())
-  // GRAMMAR, VOCAB or GROUP (SCRIPT later, K7).
+  // GRAMMAR, VOCAB, GROUP or SCRIPT (a Kaiwa script, K7).
   type       String
   // A grammar pattern or a word.
   expression String?
@@ -550,9 +552,11 @@ model LibraryEntry {
   level      String?
   notes      String?
   enrichment String?
-  // A group: its name and kind (grammar, vocab, mixed); its note is in `notes`.
+  // A group: its name and kind (grammar, vocab, mixed); its note is in `notes`. A script: its title.
   name       String?
   groupKind  String?
+  // A script: its text, in the format of Script.body.
+  body       String?
   // OPENJLPT (the seed, no author) or LEARNER. A learner entry whose author is gone stays LEARNER.
   origin     String
   authorId   String?
