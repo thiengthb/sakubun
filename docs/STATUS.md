@@ -61,7 +61,6 @@ poller (`sudo`), user `thi3n` không có token ghcr. Xem log: `journalctl -u min
 
 ## Việc nhỏ còn treo
 
-- e2e `skeleton` ở 390px: trang một kịch bản đỏ từ K8b (#226: nút "Nhập vai với AI" đẩy hàng nút điện thoại xuống hai dòng); K7b (#229) sửa bằng cách ẩn nút `?` phím tắt trên điện thoại.
 - e2e `quick-review` "by keyboard" lúc xanh lúc đỏ trên `main` (đỏ 3 trong 4 lần, 2026-10-28): câu trả lời không bị chặn mạng như test muốn. 2026-11-04 không tái hiện được (17 lần chạy đều xanh, riêng lẻ và cả file); chưa sửa, nếu đỏ lại thì ghi lại cách chạy.
 - Kế hoạch phase 6 (UI redo, các bước 6.x như PR #128 "6.9") chưa có trong repo; chỉ còn dấu vết trong
   commit và PR. Nếu còn bước 6.x chưa làm, chép kế hoạch vào `docs/plans/`.
