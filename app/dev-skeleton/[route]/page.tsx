@@ -17,6 +17,7 @@ import KaiwaNewLoading from '@/app/kaiwa/new/loading';
 import LibraryLoading from '@/app/library/loading';
 import LibraryGroupLoading from '@/app/library/[id]/loading';
 import LibraryItemLoading from '@/app/library/item/[id]/loading';
+import LibraryScriptLoading from '@/app/library/script/[id]/loading';
 
 const SKELETONS: Record<string, () => React.ReactElement> = {
   dashboard: DashboardLoading,
@@ -37,6 +38,7 @@ const SKELETONS: Record<string, () => React.ReactElement> = {
   library: LibraryLoading,
   'library-group': LibraryGroupLoading,
   'library-item': LibraryItemLoading,
+  'library-script': LibraryScriptLoading,
 };
 
 export default async function DevSkeletonPage({ params }: { params: Promise<{ route: string }> }) {

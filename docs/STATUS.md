@@ -4,14 +4,11 @@ Trang này trả lời ba câu cho bất kỳ phiên Claude nào (kể cả từ
 việc tiếp theo là gì**. Cập nhật nó **trong cùng PR** với việc làm, và khi nhận một bước mới (xem
 "Bắt đầu phiên" trong `CLAUDE.md`). Lộ trình đầy đủ: `docs/roadmap.md`. Kế hoạch đã duyệt: `docs/plans/`.
 
-Cập nhật lần cuối: 2026-10-31 (K6 xong; K8a #225 xong; K8b trong PR, chờ thien duyệt ảnh; còn lại K7).
+Cập nhật lần cuối: 2026-11-04 (K7 xong phần code: #227, #229; chờ thien thử bằng tài khoản thứ hai).
 
 ## Đang làm
 
-| Bước                                                  | Nhánh / PR                     | Giữ bởi                                  | Trạng thái                                                                                                                                                                                          |
-| ----------------------------------------------------- | ------------------------------ | ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 8 C1b dịch câu ví dụ (cả bộ, mỗi PR khoảng 1.000 mục) | `codex/openjlpt-*`             | Codex (thien giao)                       | 50 câu mẫu (#172), đợt 1: 250 mục (#174); thien giao dịch hết phần còn lại 2026-10-28; mỗi đợt một nhánh mới từ `main`, Claude kiểm và merge (risk:low)                                             |
-| K8 nhập vai với AI qua MCP                            | `claude/project-thread-5kvuk6` | phiên `session_01T9DcRAaagJRZ7mH5PyFjJM` | Kế hoạch `docs/plans/2026-10-31-k8-kaiwa-roleplay.md` duyệt 2026-10-31; K8a (tool `kaiwa_roleplay`) #225 xong; K8b (nút trên web) trong PR, chờ thien duyệt ảnh; thien thử nhập vai trong claude.ai |
+Không có bước nào đang làm. Lộ trình phase 8 đã hết; việc tiếp theo do thien chọn.
 
 ## Chờ thien
 
@@ -25,6 +22,8 @@ poller (`sudo`), user `thi3n` không có token ghcr. Xem log: `journalctl -u min
 - Thử Kho chung (#159–#167, đã lên NUC): `/library`, và
   `library_search`, `library_take` trong claude.ai (L5).
 - Thử Kaiwa (#156, đã lên NUC) trong claude.ai: nhờ Claude soạn một đoạn hội thoại ngắn trên canvas, lưu, mở đường dẫn nó trả về; trên web thử chọn vai "Tôi là", rê chuột xem nghĩa, Thêm và Sửa.
+- Thử K7: chia sẻ một kịch bản (nút Chia sẻ cạnh tiêu đề), rồi bằng tài khoản thứ hai (`kai`) mở Kho chung › Kịch bản và Lấy về.
+- Thử nhập vai (K8) trong claude.ai: mở một kịch bản có từ hai vai, bấm "Nhập vai với AI", dán câu vào claude.ai.
 - Thu hồi token MCP `k9` (Cài đặt > Tài khoản > Token MCP) và xoá `token.txt` trong `C:\FPT_Source\sakubun-backups\kaiwa-k9` trên laptop: chỉ dùng để nhập K9.
 - Muốn trần khác 50 tài khoản thì đặt `MAX_ACCOUNTS` trên NUC.
 - Sau khi bản 7.3 lên NUC: mở Cài đặt > Hướng dẫn, kiểm địa chỉ MCP là `https://sakubun.thientnse.site/api/mcp`.
@@ -45,8 +44,8 @@ poller (`sudo`), user `thi3n` không có token ghcr. Xem log: `journalctl -u min
 5. Kho chung L1–L6 xong, lên `main` 2026-10-28: L1a #159, L1b #160, L2 #161, L3a #162, L3b #163, L4 #164, L5 #165,
    L6a #166, L6b #167.
 6. Ôn nhanh (C): kế hoạch `docs/plans/2026-10-28-quick-review.md` duyệt 2026-10-28 (Codex dịch câu ví dụ, mục mới là thẻ
-   giới thiệu, không có nút "Đoán"). Xong: C1a #170, C3 #171, 50 câu mẫu #172, C2 #173, 250 mục #174, C4 #175, C5a #176, C5b #177. Còn: C1b (Codex dịch phần còn lại).
-7. 7.4 (làm lại UI) xong 2026-10-28: kế hoạch PR #180 (còn mở, chưa vào `main`), 7.4a #181,
+   giới thiệu, không có nút "Đoán"). Xong: C1a #170, C3 #171, 50 câu mẫu #172, C2 #173, 250 mục #174, C4 #175, C5a #176, C5b #177; C1b Codex dịch xong cả bộ #213–#220 (2026-10-29).
+7. 7.4 (làm lại UI) xong 2026-10-28: kế hoạch `docs/plans/2026-10-28-ui-kaiwa-library.md` (từ PR #180), 7.4a #181,
    7.4k #182, 7.4b #188, 7.4c #191, 7.4d #192, 7.4e #193, 7.4f #194, 7.4g #195, 7.4h #196, 7.4i #197, #206, #210
    (#207 merge nhầm vào nhánh xếp chồng nên đưa lại qua #210); 7.4j: #198, #199, #203, #204, #208, #209; trang lỗi
    toàn app theo style mới #201.
@@ -55,6 +54,10 @@ poller (`sudo`), user `thi3n` không có token ghcr. Xem log: `journalctl -u min
    nhập; còn trong `kaiwa-k9\yjs-orphans.json` trên laptop. Kaiwa còn lại theo thứ tự thien chọn: K6, K8, K7.
 9. K6 xong 2026-10-31 (`docs/plans/2026-10-31-k6-kaiwa-listening.md`): cache file âm thanh VOICEVOX trên server #222,
    mỗi vai một giọng #223, "Nghe cả bài" (che câu thì chờ người học nói trước) #224. Karaoke theo âm tiết để sau.
+10. K8 xong phần code 2026-10-31 (`docs/plans/2026-10-31-k8-kaiwa-roleplay.md`): tool `kaiwa_roleplay` #225, nút
+    "Nhập vai với AI" trên trang kịch bản #226. Còn: thien thử nhập vai thật trong claude.ai.
+11. K7 xong phần code 2026-11-04 (`docs/plans/2026-10-31-k7-kaiwa-library.md`): schema và logic #227, giao diện #229
+    (nút Chia sẻ trên trang kịch bản, tab Kịch bản trên Kho chung, trang `/library/script/[id]`, Lấy về).
 
 ## Việc nhỏ còn treo
 

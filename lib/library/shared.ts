@@ -14,6 +14,8 @@ export type LibraryClient = Pick<
 >;
 
 export const GROUP_TYPE = 'GROUP';
+// A Kaiwa script (K7): its title in `name`, its text in `body`. lib/library/scripts.ts writes it.
+export const SCRIPT_TYPE = 'SCRIPT';
 export const OPENJLPT_ORIGIN = 'OPENJLPT';
 export const LEARNER_ORIGIN = 'LEARNER';
 export const PUBLIC = 'public';

@@ -7,6 +7,7 @@ import {
   GROUP_TYPE,
   listGroupEntries,
   OPENJLPT_ORIGIN,
+  SCRIPT_TYPE,
   searchEntries,
   VISIBLE,
 } from '@/lib/library/shared';
@@ -97,6 +98,8 @@ export function registerLibraryTools(server: McpServer): void {
         select: { type: true, name: true, expression: true },
       });
       if (!entry) return mcpError('Unknown entryId. Call library_search for a current one.');
+      if (entry.type === SCRIPT_TYPE)
+        return mcpError('That is a Kaiwa script: the learner takes it on the web, in Kho chung.');
       if (entry.type === GROUP_TYPE) {
         const res = await takeGroup(db, entryId);
         if (!res.ok) return mcpError(res.error);

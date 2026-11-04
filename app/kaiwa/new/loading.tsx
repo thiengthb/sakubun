@@ -13,7 +13,7 @@ export default function Loading() {
       actions={
         <>
           <Skeleton className="h-8.5 w-32 rounded-sm md:h-6.5" />
-          <Skeleton className="size-9 rounded-sm md:size-7" />
+          <Skeleton className="size-9 rounded-sm max-md:hidden md:size-7" />
         </>
       }
       actionsOnPhone="split"

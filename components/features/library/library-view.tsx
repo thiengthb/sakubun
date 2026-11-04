@@ -15,19 +15,22 @@ import {
 } from '@/components/features/library/library-group-card';
 import { LibraryItems } from '@/components/features/library/library-items';
 import { LibraryLevels } from '@/components/features/library/library-levels';
+import { LibraryScripts } from '@/components/features/library/library-scripts';
 import type { LibraryEntryRow } from '@/lib/library/browse';
 import type { BrowseQuery } from '@/lib/library/browse-query';
+import type { LibraryScriptRow } from '@/lib/library/script-rows';
 import { OPENJLPT_ORIGIN } from '@/lib/library/shared';
 
 // List template (phase 8, L2): the shared library. Groups first, the way thien shares related items
 // (a whole level, a topic): OpenJLPT's as a table by level, then the learners' (7.4h); single entries
-// under "Từng mục" (LibraryItems), searched on the server.
+// under "Từng mục" (LibraryItems), searched on the server; shared Kaiwa scripts under "Kịch bản" (K7b).
 export function LibraryView({
   groups,
   entries,
   entriesTotal,
   entriesMeta,
   search,
+  scripts,
   voiceSpeaker,
   speechRate,
   showFurigana,
@@ -39,6 +42,7 @@ export function LibraryView({
   /** "518 ngữ pháp, 7.625 từ vựng" or "12 mục khớp". */
   entriesMeta: string;
   search: BrowseQuery;
+  scripts: LibraryScriptRow[];
   voiceSpeaker?: number;
   speechRate?: number;
   showFurigana: boolean;
@@ -56,7 +60,13 @@ export function LibraryView({
       <PageShell
         template="list"
         title="Kho chung"
-        meta={tab === 'items' ? entriesMeta : `${groups.length} nhóm`}
+        meta={
+          tab === 'items'
+            ? entriesMeta
+            : tab === 'scripts'
+              ? `${scripts.length} kịch bản`
+              : `${groups.length} nhóm`
+        }
         tabs={<PageTabs items={LIBRARY_TABS.items} label={LIBRARY_TABS.label} />}
       >
         <TabsContent value="groups" className="space-y-6 md:space-y-8">
@@ -109,6 +119,10 @@ export function LibraryView({
             speechRate={speechRate}
             showFurigana={showFurigana}
           />
+        </TabsContent>
+
+        <TabsContent value="scripts">
+          <LibraryScripts scripts={scripts} />
         </TabsContent>
       </PageShell>
     </Tabs>

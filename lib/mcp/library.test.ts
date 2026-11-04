@@ -122,4 +122,14 @@ describe('MCP Kho chung', () => {
 
     expect((await call('library_take', { entryId: 'nope' })).isError).toBe(true);
   });
+
+  it('sends a shared Kaiwa script to the web instead of taking it', async () => {
+    const script = await prisma.libraryEntry.create({
+      data: { type: 'SCRIPT', name: 'Ở quán', body: 'A: どうぞ。 | Mời.', origin: 'LEARNER' },
+    });
+    const took = await call('library_take', { entryId: script.id });
+    expect(took.isError).toBe(true);
+    expect(took.text).toContain('on the web, in Kho chung');
+    expect(await db.script.count()).toBe(0);
+  });
 });

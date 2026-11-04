@@ -11,7 +11,8 @@ const CLOSE_DELAY = 150;
 export type Shortcut = { keys: string[]; does: string };
 
 // The page's shortcuts behind one `?` at the end of the header (thien, 7.4 round 3): the mouse
-// resting on it, focus or a tap shows the list, so no button carries a key in its face.
+// resting on it, focus or a click shows the list, so no button carries a key in its face. Not on a
+// phone, which has no keys to press.
 export function ShortcutsHelp({ shortcuts }: { shortcuts: readonly Shortcut[] }) {
   const [open, setOpen] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -40,6 +41,8 @@ export function ShortcutsHelp({ shortcuts }: { shortcuts: readonly Shortcut[] })
           onFocus={() => show(true)}
           onBlur={() => show(false)}
           onClick={() => setOpen((o) => !o)}
+          // A phone has no keyboard to press them on, and its row of actions has no room to spare.
+          className="max-md:hidden"
         >
           <CircleHelp />
         </Button>
