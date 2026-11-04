@@ -16,10 +16,11 @@ export default function Loading() {
         <>
           <Skeleton className="h-9 w-16 rounded-sm md:w-7 md:h-7" />
           <Skeleton className="h-9 w-28 rounded-sm md:w-7 md:h-7" />
-          <Skeleton className="size-9 rounded-sm md:size-7" />
+          <Skeleton className="size-9 rounded-sm max-md:hidden md:size-7" />
         </>
       }
       actionsOnPhone="split"
+      pageIcons={<Skeleton className="h-9 w-24 rounded-sm md:w-7 md:h-7" />}
     >
       <div className="space-y-3">
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 py-2">

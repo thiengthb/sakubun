@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, useTransition } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { EditorView } from '@codemirror/view';
 import { Check, Drama, Pencil, Sparkles, Trash2 } from 'lucide-react';
@@ -14,6 +15,7 @@ import { ParentCrumbs } from '@/components/layout/app-breadcrumbs';
 import { PageShell } from '@/components/layout/page-shell';
 import { ConfirmDialog } from '@/components/common/confirm-dialog';
 import { CopyCommandButton } from '@/components/common/copy-command-button';
+import { ScriptShareButton } from '@/components/common/share-to-library';
 import { ExpandingIconButton } from '@/components/common/expanding-icon-button';
 import { RelativeTime } from '@/components/common/relative-time';
 import { ShortcutsHelp, type Shortcut } from '@/components/common/shortcuts-help';
@@ -28,6 +30,8 @@ import { deleteScriptAction, saveScriptAction } from '@/app/kaiwa/actions';
 import { toastResult } from '@/lib/core/action-toast';
 import { cn } from '@/lib/core/utils';
 import { scriptSpeakers } from '@/lib/kaiwa/layout';
+import type { ScriptShareStatus } from '@/lib/library/scripts';
+import { PUBLIC } from '@/lib/library/shared';
 import {
   checkBody,
   checkTitle,
@@ -71,6 +75,7 @@ const SPLIT = { min: 25, max: 75, initial: 50 };
 // version the AI saved meanwhile is never overwritten. A phone switches between Viết and Xem trước.
 export function KaiwaCanvas({
   script,
+  share,
   startEditing,
   voiceSpeaker,
   speechRate,
@@ -78,6 +83,8 @@ export function KaiwaCanvas({
 }: {
   /** Absent: a new script, written from scratch. */
   script?: CanvasScript;
+  /** Where the script stands on Kho chung (K7b); absent for a new script. */
+  share?: ScriptShareStatus;
   startEditing: boolean;
   voiceSpeaker?: number;
   speechRate?: number;
@@ -253,11 +260,25 @@ export function KaiwaCanvas({
         script && (
           <span>
             {script.lines.length} câu · Cập nhật <RelativeTime value={script.updatedAt} />
+            {share?.basedOn?.status === PUBLIC && (
+              <>
+                {' · '}
+                <Link
+                  href={`/library/script/${share.basedOn.entryId}`}
+                  className="underline underline-offset-2"
+                >
+                  Lấy từ Kho chung
+                </Link>
+              </>
+            )}
           </span>
         )
       }
       actions={header}
       actionsOnPhone="split"
+      // Chia sẻ (K7b) is about the script itself, beside its title, so a phone's row of actions stays
+      // one row in both modes.
+      pageIcons={script && share && <ScriptShareButton scriptId={script.id} status={share} />}
     >
       {!editing && script ? (
         <KaiwaChat

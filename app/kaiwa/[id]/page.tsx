@@ -5,6 +5,7 @@ import { readAnalysis } from '@/lib/kaiwa/furigana';
 import { parseScript } from '@/lib/kaiwa/parse';
 import { getScript } from '@/lib/kaiwa/scripts';
 import { getSettings } from '@/lib/library/practice';
+import { scriptShareStatus } from '@/lib/library/scripts';
 import { furiganaInApp } from '@/lib/settings/schema';
 
 export const dynamic = 'force-dynamic';
@@ -18,8 +19,12 @@ export default async function KaiwaScriptPage({
 }) {
   const [{ id }, { edit }] = await Promise.all([params, searchParams]);
   const db = await getUserDb();
-  const [script, settings] = await Promise.all([getScript(db, id), getSettings(db)]);
-  if (!script) notFound();
+  const [script, settings, share] = await Promise.all([
+    getScript(db, id),
+    getSettings(db),
+    scriptShareStatus(db, id),
+  ]);
+  if (!script || !share) notFound();
   const lines = parseScript(script.body);
   const analysis = readAnalysis(script.analysis, lines.length);
 
@@ -37,6 +42,7 @@ export default async function KaiwaScriptPage({
           ruby: analysis?.lines[i].ruby ?? line.japanese,
         })),
       }}
+      share={share}
       startEditing={edit === '1'}
       voiceSpeaker={settings.voiceSpeaker}
       speechRate={settings.speechRate}
