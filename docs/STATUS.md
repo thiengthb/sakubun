@@ -4,14 +4,13 @@ Trang này trả lời ba câu cho bất kỳ phiên Claude nào (kể cả từ
 việc tiếp theo là gì**. Cập nhật nó **trong cùng PR** với việc làm, và khi nhận một bước mới (xem
 "Bắt đầu phiên" trong `CLAUDE.md`). Lộ trình đầy đủ: `docs/roadmap.md`. Kế hoạch đã duyệt: `docs/plans/`.
 
-Cập nhật lần cuối: 2026-10-31 (K6 xong; K8 xong phần code, chờ thien thử trong claude.ai; K7a trong PR).
+Cập nhật lần cuối: 2026-11-04 (C1b xong; K8 xong phần code, chờ thien thử; K7a #227 và K7b trong PR, thien merge).
 
 ## Đang làm
 
-| Bước                                                  | Nhánh / PR                     | Giữ bởi                                  | Trạng thái                                                                                                                                                |
-| ----------------------------------------------------- | ------------------------------ | ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 8 C1b dịch câu ví dụ (cả bộ, mỗi PR khoảng 1.000 mục) | `codex/openjlpt-*`             | Codex (thien giao)                       | 50 câu mẫu (#172), đợt 1: 250 mục (#174); thien giao dịch hết phần còn lại 2026-10-28; mỗi đợt một nhánh mới từ `main`, Claude kiểm và merge (risk:low)   |
-| K7 kịch bản lên Kho chung                             | `claude/project-thread-5kvuk6` | phiên `session_01T9DcRAaagJRZ7mH5PyFjJM` | Kế hoạch `docs/plans/2026-10-31-k7-kaiwa-library.md` duyệt 2026-10-31; K7a (schema và logic) trong PR, thien merge (risk:high); K7b (giao diện) tiếp theo |
+| Bước                      | Nhánh / PR                                                              | Giữ bởi                                  | Trạng thái                                                                                                                                                                                 |
+| ------------------------- | ----------------------------------------------------------------------- | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| K7 kịch bản lên Kho chung | `claude/project-thread-5kvuk6` (K7a), `feat/k7b-kaiwa-library-ui` (K7b) | phiên `session_01LiS5XqfuGoApNKKWe96rZi` | Kế hoạch `docs/plans/2026-10-31-k7-kaiwa-library.md` duyệt 2026-10-31; K7a (schema, logic) #227 và K7b (giao diện, xếp trên K7a) chờ thien duyệt ảnh và merge (risk:high), merge K7a trước |
 
 ## Chờ thien
 
@@ -25,6 +24,7 @@ poller (`sudo`), user `thi3n` không có token ghcr. Xem log: `journalctl -u min
 - Thử Kho chung (#159–#167, đã lên NUC): `/library`, và
   `library_search`, `library_take` trong claude.ai (L5).
 - Thử Kaiwa (#156, đã lên NUC) trong claude.ai: nhờ Claude soạn một đoạn hội thoại ngắn trên canvas, lưu, mở đường dẫn nó trả về; trên web thử chọn vai "Tôi là", rê chuột xem nghĩa, Thêm và Sửa.
+- Duyệt và merge K7a #227 rồi K7b; sau đó chia sẻ thử một kịch bản và lấy nó về bằng tài khoản thứ hai (`kai`).
 - Thử nhập vai (K8) trong claude.ai: mở một kịch bản có từ hai vai, bấm "Nhập vai với AI", dán câu vào claude.ai.
 - Thu hồi token MCP `k9` (Cài đặt > Tài khoản > Token MCP) và xoá `token.txt` trong `C:\FPT_Source\sakubun-backups\kaiwa-k9` trên laptop: chỉ dùng để nhập K9.
 - Muốn trần khác 50 tài khoản thì đặt `MAX_ACCOUNTS` trên NUC.

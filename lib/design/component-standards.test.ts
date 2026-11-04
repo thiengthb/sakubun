@@ -123,7 +123,12 @@ describe('component standards', () => {
     // The one exception is a COMPOSITION ROOT — the component a route renders to assemble a page
     // out of features. /resources is one page with three tabs and the third tab IS the groups
     // list, so that import is the page doing its job, not two features entangling.
-    const ALLOW = new Set(['components/features/resources/resources-view.tsx']);
+    // A shared Kaiwa script on Kho chung (K7b) is the same kind of root: a library page whose body is
+    // the Kaiwa chat.
+    const ALLOW = new Set([
+      'components/features/resources/resources-view.tsx',
+      'components/features/library/library-script-view.tsx',
+    ]);
     const offenders: string[] = [];
     const root = 'components/features';
     for (const file of sources(root)) {

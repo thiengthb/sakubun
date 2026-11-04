@@ -11,6 +11,7 @@ import {
   GalleryVerticalEnd,
   Languages,
   List,
+  MessagesSquare,
   TextCursorInput,
   TrendingUp,
   UserRound,
@@ -75,6 +76,7 @@ export const LIBRARY_TABS: StoredTabSet = {
   items: [
     { value: 'groups', label: 'Nhóm', icon: FolderOpen },
     { value: 'items', label: 'Từng mục', icon: List },
+    { value: 'scripts', label: 'Kịch bản', icon: MessagesSquare },
   ],
   label: 'Chọn cách lấy',
   initial: 'groups',

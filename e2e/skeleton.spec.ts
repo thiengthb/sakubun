@@ -44,6 +44,7 @@ const PAIRS: Pair[] = [
   { name: 'kho chung items', page: '/library?tab=items', skeleton: 'library?tab=items' },
   { name: 'kho chung group', page: '/library/lib-sk', skeleton: 'library-group' },
   { name: 'kho chung item', page: '/library/item/lib-sk0', skeleton: 'library-item' },
+  { name: 'kho chung script', page: '/library/script/lib-sk-script', skeleton: 'library-script' },
 ];
 
 const MEASURE = () => {
@@ -157,6 +158,11 @@ test.beforeAll(async () => {
       );
       member.run(`lib-sk${n}`, n);
     }
+    // A shared Kaiwa script (K7b), the same lines as kw-sk.
+    db.prepare(
+      `INSERT INTO LibraryEntry (id, type, name, body, origin, status, takeCount, createdAt, updatedAt)
+       VALUES ('lib-sk-script', 'SCRIPT', 'Ở nhà hàng', ?, 'LEARNER', 'public', 0, ?, ?)`,
+    ).run(lines.join('\n'), iso(now), iso(now));
   } finally {
     db.close();
   }

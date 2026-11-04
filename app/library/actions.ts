@@ -19,6 +19,13 @@ import {
   unpublishItem,
   type PublishResult,
 } from '@/lib/library/publish';
+import {
+  publishScript,
+  takeScript,
+  unpublishScript,
+  type TakeScriptResult,
+} from '@/lib/library/scripts';
+import { libraryScriptRows, type LibraryScriptRow } from '@/lib/library/script-rows';
 
 // "Lấy" on Kho chung (phase 8, L2): the copy itself and its rules live in lib/library/take.ts.
 export async function takeEntryAction(entryId: string): Promise<ActionResult<TakeEntryResult>> {
@@ -89,4 +96,35 @@ export async function setLikeAction(
   const res = await setLike(await getUserDb(), entryId, liked);
   if (res.ok) revalidatePath('/library', 'layout');
   return res;
+}
+
+// Kaiwa scripts on Kho chung (K7b): shared from the script's own page, searched and taken on Kho
+// chung. A taken script is the learner's own, in Hội thoại.
+export async function publishScriptAction(scriptId: string): Promise<ActionResult<PublishResult>> {
+  const res = await publishScript(await getUserDb(), scriptId);
+  if (res.ok) refresh(`/kaiwa/${scriptId}`);
+  return res;
+}
+
+export async function unpublishScriptAction(
+  scriptId: string,
+): Promise<ActionResult<{ hidden: number }>> {
+  const res = await unpublishScript(await getUserDb(), scriptId);
+  if (res.ok) refresh(`/kaiwa/${scriptId}`);
+  return res;
+}
+
+export async function takeScriptAction(entryId: string): Promise<ActionResult<TakeScriptResult>> {
+  const res = await takeScript(await getUserDb(), entryId);
+  if (res.ok) {
+    revalidatePath('/library', 'layout');
+    revalidatePath('/kaiwa');
+  }
+  return res;
+}
+
+const MAX_SEARCH = 200;
+export async function searchScriptsAction(text: string): Promise<LibraryScriptRow[]> {
+  if (typeof text !== 'string' || text.length > MAX_SEARCH) return [];
+  return libraryScriptRows(await getUserDb(), text);
 }
