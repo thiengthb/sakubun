@@ -1,68 +1,39 @@
 # Trạng thái hiện tại
 
-Trang này trả lời ba câu cho bất kỳ phiên Claude nào (kể cả từ tài khoản khác): **đang làm gì, ai đang giữ,
-việc tiếp theo là gì**. Cập nhật nó **trong cùng PR** với việc làm, và khi nhận một bước mới (xem
-"Bắt đầu phiên" trong `CLAUDE.md`). Lộ trình đầy đủ: `docs/roadmap.md`. Kế hoạch đã duyệt: `docs/plans/`.
+Cập nhật lần cuối: 2026-11-05 · Claude (thread "Xây bộ luật làm việc người–AI chung", tài khoản của thien)
 
-Cập nhật lần cuối: 2026-11-04 (K7 xong phần code: #227, #229; chờ thien thử bằng tài khoản thứ hai).
+Trang này cho mọi phiên (kể cả tài khoản, model khác) biết trong 2 phút: đang ở đâu, ai giữ việc gì, cần thien làm gì.
+Lịch sử nằm trong git, PR và `docs/roadmap.md`, không ghi ở đây. Cả file dưới 40 dòng.
+
+## Đang ở đâu
+Lộ trình phase 8 đã xong phần code. Đang nghiên cứu tính năng cho chặng tiếp theo (PR #232, bản nháp, chờ thien).
 
 ## Đang làm
+| Bước | Nhánh | Phiên |
+|---|---|---|
+| Nghiên cứu học ngôn ngữ và ứng cử viên tính năng | `docs/2026-11-04-research` (#232) | thread "Nghiên cứu và đề xuất tính năng Sakubun" |
 
-Không có bước nào đang làm. Lộ trình phase 8 đã hết; việc tiếp theo do thien chọn.
+## Vừa xong
+- K7 phần code: chia sẻ và lấy kịch bản Kaiwa trên Kho chung (#227, #229).
+- K8 phần code: nhập vai với AI (#225, #226). K6 nghe cả bài (#222–#224). Sửa e2e trên điện thoại (#230).
 
-## Chờ thien
+## Đang chờ thien (tối đa 3)
+1. **Duyệt nghiên cứu tính năng:** trả lời 8 câu hỏi trong `00-ke-hoach.md` của PR #232. Mọi việc tiếp theo chờ cái này.
+2. **Thử phase 8 một lượt trên NUC** (khoảng 20 phút): Ôn nhanh mới, Kho chung và `library_search`/`library_take`,
+   Kaiwa, K7 bằng tài khoản thứ hai (`kai`), K8 nhập vai trong claude.ai, địa chỉ MCP trong Cài đặt > Hướng dẫn.
+   Bước nào còn chờ thử thì cột Status của `docs/roadmap.md` ghi rõ.
+3. **Thu hồi token MCP `k9`** (Cài đặt > Tài khoản > Token MCP) và xoá `token.txt` trong
+   `C:\FPT_Source\sakubun-backups\kaiwa-k9` trên laptop. Token chỉ dùng để nhập K9, để lâu là rủi ro.
 
-NUC tự cập nhật sakubun: `main` xanh CI thì `deploy.yml` đẩy image lên ghcr; poller trên miniserver (2 phút, chỉ app có
-`/opt/apps/sakubun/.autodeploy`) chụp DB (`.snapshot`), kéo bản mới, chạy migration lúc khởi động, kiểm healthy; hỏng thì
-tự quay về bản cũ và đổi thành `.autodeploy.blocked` (`nuc-infra/runbooks/02-add-app.md`). Bị khoá từ 2026-10-27 14:27 UTC
-(lỗi migrate trong image, sửa ở #169); bật lại 2026-10-28, lần chạy 07:40 UTC `deploy healthy`. Kéo tay phải dùng quyền của
-poller (`sudo`), user `thi3n` không có token ghcr. Xem log: `journalctl -u miniserver-deploy-poll --since "-10 min" | grep sakubun`.
-
-- Thử Ôn nhanh mới (#171–#177, đã lên NUC 2026-10-28): Ôn nhanh với mục mới (thẻ giới thiệu, nút "Đã xem"), và trong claude.ai nhờ Claude thêm câu ví dụ cho một mục (`example_add`).
-- Thử Kho chung (#159–#167, đã lên NUC): `/library`, và
-  `library_search`, `library_take` trong claude.ai (L5).
-- Thử Kaiwa (#156, đã lên NUC) trong claude.ai: nhờ Claude soạn một đoạn hội thoại ngắn trên canvas, lưu, mở đường dẫn nó trả về; trên web thử chọn vai "Tôi là", rê chuột xem nghĩa, Thêm và Sửa.
-- Thử K7: chia sẻ một kịch bản (nút Chia sẻ cạnh tiêu đề), rồi bằng tài khoản thứ hai (`kai`) mở Kho chung › Kịch bản và Lấy về.
-- Thử nhập vai (K8) trong claude.ai: mở một kịch bản có từ hai vai, bấm "Nhập vai với AI", dán câu vào claude.ai.
-- Thu hồi token MCP `k9` (Cài đặt > Tài khoản > Token MCP) và xoá `token.txt` trong `C:\FPT_Source\sakubun-backups\kaiwa-k9` trên laptop: chỉ dùng để nhập K9.
-- Muốn trần khác 50 tài khoản thì đặt `MAX_ACCOUNTS` trên NUC.
-- Sau khi bản 7.3 lên NUC: mở Cài đặt > Hướng dẫn, kiểm địa chỉ MCP là `https://sakubun.thientnse.site/api/mcp`.
-- Gỡ runner `tnt-laptop-wsl` khỏi repo nếu còn (Settings > Actions > Runners).
-- Kiểm app sau khi bản 7.1d lên NUC (sao lưu trước đó: `~/backups/sakubun-before-7.1d-20261027T030406Z.db`).
-
-## Tiếp theo
-
-1. Phase 7.2 xong: quyền theo vai trò (#138), kho OpenJLPT cho người mới (#139), `/admin` và trang từng tài khoản
-   (#140), mở đăng ký (#141), Ứng dụng đã kết nối với thu hồi ngay (#142).
-2. Phase 7.3 xong 2026-10-27: kế hoạch (#146), tab Hướng dẫn trong Cài đặt (#147), thẻ "Kết nối Claude" trên
-   Phân tích cho người chưa kết nối AI và chưa ôn (#148). Luồng claude.ai đã thử thật bằng tài khoản thứ hai.
-3. Phase 8 duyệt 2026-10-27 (#150, `docs/plans/2026-10-27-phase-8-kaiwa-kho-chung.md`): Kaiwa sơ bộ K1–K5 trước
-   (AI soạn và lưu kịch bản qua MCP), rồi kho chung L1–L6, Ôn nhanh (C) và 7.4 cùng các lỗi bên dưới, rồi K6–K9.
-4. Kaiwa sơ bộ xong 2026-10-27: K1 #151, K2 #152, rồi K3, K4, K3b (thẻ kiểu tin nhắn, vai "Tôi là" bên trái),
-   K3c (sửa và tạo trên web) và K5 (rê chuột xem nghĩa) cùng lên `main` qua #156 (#153–#155, #157 merge vào nhánh
-   xếp chồng). Giao diện Kaiwa còn thô, làm đẹp trong 7.4.
-5. Kho chung L1–L6 xong, lên `main` 2026-10-28: L1a #159, L1b #160, L2 #161, L3a #162, L3b #163, L4 #164, L5 #165,
-   L6a #166, L6b #167.
-6. Ôn nhanh (C): kế hoạch `docs/plans/2026-10-28-quick-review.md` duyệt 2026-10-28 (Codex dịch câu ví dụ, mục mới là thẻ
-   giới thiệu, không có nút "Đoán"). Xong: C1a #170, C3 #171, 50 câu mẫu #172, C2 #173, 250 mục #174, C4 #175, C5a #176, C5b #177; C1b Codex dịch xong cả bộ #213–#220 (2026-10-29).
-7. 7.4 (làm lại UI) xong 2026-10-28: kế hoạch `docs/plans/2026-10-28-ui-kaiwa-library.md` (từ PR #180), 7.4a #181,
-   7.4k #182, 7.4b #188, 7.4c #191, 7.4d #192, 7.4e #193, 7.4f #194, 7.4g #195, 7.4h #196, 7.4i #197, #206, #210
-   (#207 merge nhầm vào nhánh xếp chồng nên đưa lại qua #210); 7.4j: #198, #199, #203, #204, #208, #209; trang lỗi
-   toàn app theo style mới #201.
-8. K9 xong 2026-10-31: 5 kịch bản kaiwa-canvas cũ (scripts.json trong bản lưu laptop; Yjs không có bản mới hơn) lưu vào
-   Hội thoại của thien qua `kaiwa_save`, không đổi code. 11 bản chỉ còn trong Yjs (đã xoá trên app cũ) thien chọn không
-   nhập; còn trong `kaiwa-k9\yjs-orphans.json` trên laptop. Kaiwa còn lại theo thứ tự thien chọn: K6, K8, K7.
-9. K6 xong 2026-10-31 (`docs/plans/2026-10-31-k6-kaiwa-listening.md`): cache file âm thanh VOICEVOX trên server #222,
-   mỗi vai một giọng #223, "Nghe cả bài" (che câu thì chờ người học nói trước) #224. Karaoke theo âm tiết để sau.
-10. K8 xong phần code 2026-10-31 (`docs/plans/2026-10-31-k8-kaiwa-roleplay.md`): tool `kaiwa_roleplay` #225, nút
-    "Nhập vai với AI" trên trang kịch bản #226. Còn: thien thử nhập vai thật trong claude.ai.
-11. K7 xong phần code 2026-11-04 (`docs/plans/2026-10-31-k7-kaiwa-library.md`): schema và logic #227, giao diện #229
-    (nút Chia sẻ trên trang kịch bản, tab Kịch bản trên Kho chung, trang `/library/script/[id]`, Lấy về).
+## Việc tiếp theo
+1. Sau khi thien duyệt #232: viết kế hoạch cho đợt tính năng đầu tiên vào `docs/plans/`.
 
 ## Việc nhỏ còn treo
+- PR #231 là một bản K7b làm song song với #229; #229 đã merge nên #231 có lẽ đóng được. thien xem rồi quyết.
+- e2e `quick-review` "by keyboard" từng đỏ 3/4 lần (2026-10-28); 2026-11-04 chạy 17 lần đều xanh. Đỏ lại thì ghi cách chạy.
+- Gỡ runner `tnt-laptop-wsl` khỏi repo nếu còn (Settings > Actions > Runners); repo public nên chỉ dùng runner của GitHub (`docs/ci-runner.md`).
+- Kế hoạch phase 6 (các bước 6.x) chưa có trong repo; nếu còn bước chưa làm thì chép vào `docs/plans/`.
 
-- e2e `quick-review` "by keyboard" lúc xanh lúc đỏ trên `main` (đỏ 3 trong 4 lần, 2026-10-28): câu trả lời không bị chặn mạng như test muốn. 2026-11-04 không tái hiện được (17 lần chạy đều xanh, riêng lẻ và cả file); chưa sửa, nếu đỏ lại thì ghi lại cách chạy.
-- Kế hoạch phase 6 (UI redo, các bước 6.x như PR #128 "6.9") chưa có trong repo; chỉ còn dấu vết trong
-  commit và PR. Nếu còn bước 6.x chưa làm, chép kế hoạch vào `docs/plans/`.
-- Repo public từ 2026-10-27; CI về lại runner của GitHub (#135, `docs/ci-runner.md`). Không dùng runner tự host khi
-  repo public; runner `tnt-laptop-wsl` trên laptop đã dừng.
+## Ghi chú vận hành
+- NUC tự cập nhật khi `main` xanh CI (`nuc-infra/runbooks/02-add-app.md`). Kéo tay cần `sudo` vì user `thi3n` không có token
+  ghcr. Log: `journalctl -u miniserver-deploy-poll --since "-10 min" | grep sakubun`. Trần tài khoản: `MAX_ACCOUNTS` (mặc định 50).
