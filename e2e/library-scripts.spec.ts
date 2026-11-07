@@ -107,6 +107,18 @@ for (const width of [1440, 390]) {
     await expect(page.getByRole('link', { name: 'Lấy từ Kho chung' })).toBeVisible();
     const copy = page.url();
 
+    // Hội thoại marks the script shared now and the copy taken from Kho chung, and links there.
+    await page.goto('/kaiwa', { waitUntil: 'networkidle' });
+    const kaiwaCards = page.locator('[data-slot="kaiwa-card"]');
+    await expect(kaiwaCards.filter({ hasText: 'Ở nhà hàng (e2e)' })).toContainText('Đang chia sẻ');
+    await expect(kaiwaCards.filter({ hasText: 'Hỏi đường (e2e)' })).toContainText('Từ Kho chung');
+    await expect(page.getByRole('link', { name: 'Kịch bản trên Kho chung' })).toHaveAttribute(
+      'href',
+      '/library?tab=scripts',
+    );
+    await shot('kaiwa-list-marks');
+    await page.goto(copy, { waitUntil: 'networkidle' });
+
     // Unedited, the copy cannot be shared again.
     await page.getByRole('button', { name: 'Chia sẻ', exact: true }).click();
     await expect(page.getByRole('dialog')).toContainText('giống hệt bản bạn lấy từ Kho chung');
