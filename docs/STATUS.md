@@ -4,13 +4,13 @@ Trang này trả lời ba câu cho bất kỳ phiên Claude nào (kể cả từ
 việc tiếp theo là gì**. Cập nhật nó **trong cùng PR** với việc làm, và khi nhận một bước mới (xem
 "Bắt đầu phiên" trong `CLAUDE.md`). Lộ trình đầy đủ: `docs/roadmap.md`. Kế hoạch đã duyệt: `docs/plans/`.
 
-Cập nhật lần cuối: 2026-11-07 (hoàn thiện chia sẻ Kaiwa: link xem chung).
+Cập nhật lần cuối: 2026-11-07 (hoàn thiện Kaiwa: chia sẻ, bố cục màn hình lớn, menu, cỡ chữ).
 
 ## Đang làm
 
 | Bước | Nhánh | Phiên |
 |---|---|---|
-| Hoàn thiện Kaiwa, chia sẻ trước (thien, 2026-11-07). PR 1: ai có link cũng đọc được kịch bản đã chia sẻ (thien chọn không cần đăng nhập), nút "Chép đường dẫn", đăng nhập xong về đúng trang. Tiếp: PR 2 Hội thoại đánh dấu kịch bản đang chia sẻ và lối sang Kho chung; rồi các phần Kaiwa còn lại (MCP cho kịch bản chung, karaoke theo âm tiết, giọng từng vai, lưu buổi nhập vai) theo thứ tự thien chọn. | `feat/kaiwa-share-link` | thread "Hoàn thiện Kaiwa, ưu tiên chia sẻ hội thoại" |
+| Hoàn thiện Kaiwa (thien, 2026-11-07). Mở PR, chờ thien merge theo thứ tự #234 → #235 → #236 → #237 → #238 (xếp chồng): #234 ai có link cũng đọc được kịch bản đã chia sẻ (thien chọn không cần đăng nhập) và đăng nhập xong về đúng trang; #235 thẻ Hội thoại ghi "Đang chia sẻ" / "Từ Kho chung"; #236 từ 1280px mở bài đọc gần nhất, danh sách một cột bên phải; #237 nút gom vào menu Thao tác, ↑ ↓ đưa câu ra giữa màn hình; #238 cỡ chữ hội thoại 5 mức (phím + và −, không Ctrl, theo thien), nhớ theo từng máy. Còn lại để thien chọn thứ tự: MCP tìm và lấy kịch bản chung, karaoke theo âm tiết, chọn giọng từng vai, lưu buổi nhập vai. | `feat/kaiwa-text-size` (và các nhánh dưới) | thread "Hoàn thiện Kaiwa, ưu tiên chia sẻ hội thoại" |
 
 ## Chờ thien
 

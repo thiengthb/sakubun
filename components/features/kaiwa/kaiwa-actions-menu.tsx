@@ -1,7 +1,16 @@
 'use client';
 
 import { useState } from 'react';
-import { Drama, Globe, Keyboard, MoreHorizontal, Pencil, Sparkles } from 'lucide-react';
+import {
+  AArrowDown,
+  AArrowUp,
+  Drama,
+  Globe,
+  Keyboard,
+  MoreHorizontal,
+  Pencil,
+  Sparkles,
+} from 'lucide-react';
 import { toast } from 'sonner';
 import {
   Dialog,
@@ -20,6 +29,7 @@ import {
 import { ExpandingIconButton } from '@/components/common/expanding-icon-button';
 import { ScriptShareButton } from '@/components/common/share-to-library';
 import { ShortcutsList, type Shortcut } from '@/components/common/shortcuts-help';
+import { useKaiwaTextSize } from '@/components/features/kaiwa/use-kaiwa-text-size';
 import type { ScriptShareStatus } from '@/lib/library/scripts';
 
 async function copyCommand(command: string) {
@@ -32,7 +42,7 @@ async function copyCommand(command: string) {
 }
 
 // A script's actions behind one menu (thien, 2026-11-07): Sửa, the two phrases to paste into
-// Claude, Chia sẻ and the shortcuts. What the learner presses while practising (Tôi là, Nghe cả bài,
+// Claude, the chat's text size, Chia sẻ and the shortcuts. What the learner presses while practising (Tôi là, Nghe cả bài,
 // Ẩn nghĩa, Che câu của tôi) stays in the chat's toolbar.
 export function KaiwaActionsMenu({
   scriptId,
@@ -51,6 +61,7 @@ export function KaiwaActionsMenu({
   shortcuts: readonly Shortcut[];
 }) {
   const [dialog, setDialog] = useState<'share' | 'keys' | null>(null);
+  const textSize = useKaiwaTextSize();
   return (
     <>
       <DropdownMenu>
@@ -72,6 +83,29 @@ export function KaiwaActionsMenu({
               Nhập vai với AI
             </DropdownMenuItem>
           )}
+          <DropdownMenuSeparator />
+          {/* The menu stays open, so the learner sees the chat grow step by step. */}
+          <DropdownMenuItem
+            disabled={!textSize.canGrow}
+            onSelect={(e) => {
+              e.preventDefault();
+              textSize.grow();
+            }}
+          >
+            <AArrowUp aria-hidden />
+            Chữ to hơn
+            <span className="ml-auto text-xs text-muted-foreground">{textSize.label}</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            disabled={!textSize.canShrink}
+            onSelect={(e) => {
+              e.preventDefault();
+              textSize.shrink();
+            }}
+          >
+            <AArrowDown aria-hidden />
+            Chữ nhỏ hơn
+          </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onSelect={() => setDialog('share')}>
             <Globe aria-hidden className={share.shared ? 'text-accent-brand' : undefined} />

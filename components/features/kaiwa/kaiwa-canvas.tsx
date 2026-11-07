@@ -55,6 +55,7 @@ const VIEW_KEYS: Shortcut[] = [
   { keys: ['Ctrl', 'E'], does: 'Sửa kịch bản' },
   { keys: ['↑', '↓'], does: 'Chọn câu' },
   { keys: ['Enter'], does: 'Nghe câu đang chọn' },
+  { keys: ['+', '−'], does: 'Chữ to hơn, nhỏ hơn' },
 ];
 const EDIT_KEYS: Shortcut[] = [
   { keys: ['Ctrl', 'S'], does: 'Lưu' },
