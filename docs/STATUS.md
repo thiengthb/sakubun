@@ -6,9 +6,9 @@ Trang này cho mọi phiên (kể cả tài khoản, model khác) biết trong 2
 Lịch sử nằm trong git, PR và `docs/roadmap.md`, không ghi ở đây. Cả file dưới 40 dòng; quá thì gộp hoặc bỏ, đừng thêm.
 
 ## Đang ở đâu
-Phase 8, đợt hoàn thiện Kaiwa (#234–#238) và nghiên cứu tính năng (#232) đã lên `main`. Chưa có bước nào đang làm: việc
-tiếp theo chờ thien chọn. Ba quy trình thien đặt, xong cái trước mới sang cái sau: (1) chọn tính năng (đang ở đây),
-(2) luật làm việc lâu dài với Claude, (3) UI/UX; phác thảo ở mục 6 của `docs/plans/2026-11-04-research/00-ke-hoach.md`.
+Phase 8, hoàn thiện Kaiwa (#234–#238) và nghiên cứu tính năng (#232) đã lên `main`; việc tiếp theo chờ thien chọn. Ba quy
+trình thien đặt, xong cái trước mới sang cái sau: (1) chọn tính năng (đang ở đây), (2) luật làm việc lâu dài với Claude,
+(3) UI/UX (phác thảo: mục 6 của `docs/plans/2026-11-04-research/00-ke-hoach.md`).
 
 ## Đang làm
 | Bước | Nhánh | Phiên |
@@ -16,7 +16,7 @@ tiếp theo chờ thien chọn. Ba quy trình thien đặt, xong cái trước m
 | (trống; nhận bước nào thì ghi vào đây trong commit đầu tiên của nhánh) | | |
 
 ## Vừa xong
-- Nghiên cứu tính năng vòng 2 (#232): `docs/plans/2026-11-04-feature-candidates.md` và `docs/plans/2026-11-04-research/`.
+- Nghiên cứu tính năng vòng 2 (#232): `docs/plans/2026-11-04-feature-candidates.md`, chi tiết trong `2026-11-04-research/`.
 - Hoàn thiện Kaiwa (#234–#238): link chia sẻ đọc được không cần đăng nhập, thẻ "Đang chia sẻ" / "Từ Kho chung",
   màn hình rộng có danh sách bên phải, menu Thao tác, cỡ chữ 5 mức.
 
