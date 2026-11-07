@@ -95,10 +95,10 @@ test('admin page: list, account page, ban, unban and delete a learner', async ({
   await fromMenu(page, 'minh@example.test', 'Xoá tài khoản');
   const dialog = page.getByRole('dialog');
   if (shots) await dialog.screenshot({ path: path.join(shots, 'admin-delete-dialog.png') });
-  await dialog.getByRole('button', { name: 'Xoá' }).click();
+  await dialog.getByRole('button', { name: 'Xoá', exact: true }).click();
   await expect(page.getByText('Gõ đúng email của tài khoản để xác nhận xoá.')).toBeVisible();
   await dialog.getByLabel('Email của tài khoản cần xoá').fill('Minh@Example.test');
-  await dialog.getByRole('button', { name: 'Xoá' }).click();
+  await dialog.getByRole('button', { name: 'Xoá', exact: true }).click();
   await expect(card(page, 'minh@example.test')).toHaveCount(0);
   await expect(page.getByText('3 tài khoản')).toBeVisible();
 });

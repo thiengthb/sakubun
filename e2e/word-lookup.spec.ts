@@ -127,12 +127,18 @@ test('Ôn nhanh looks up its sentence but never the word under review', async ({
     page.evaluate(() =>
       [...(CSS.highlights.get('word-lookup') ?? [])].map((r) => (r as Range).toString()).join('|'),
     );
-  await expect.poll(marked).toContain('友');
+  // The cloze sentence may come from the shared OpenJLPT examples rather than the item's own card,
+  // so the test takes whichever word is underlined first instead of naming one.
+  await expect.poll(marked).not.toBe('');
   expect(await marked()).not.toContain('約');
 
-  const friend = await charAt(page, 'main', '友');
-  await page.mouse.move(friend.x, friend.y);
+  const first = await page.evaluate(() => {
+    const range = [...(CSS.highlights.get('word-lookup') ?? [])][0] as Range;
+    const r = range.getClientRects()[0];
+    return { x: r.x + r.width / 2, y: r.y + r.height / 2, text: range.toString() };
+  });
+  await page.mouse.move(first.x, first.y);
   const card = page.locator('[data-slot="word-card"]');
   await expect(card).toBeVisible();
-  await expect(card).toContainText('友達');
+  await expect(card).toContainText(first.text[0]);
 });

@@ -16,9 +16,11 @@ import {
 
 const V2_TOOLS = [
   'add_items',
+  'example_add',
   'grade_turn',
   'kaiwa_get',
   'kaiwa_list',
+  'kaiwa_roleplay',
   'kaiwa_save',
   'library_search',
   'library_take',
