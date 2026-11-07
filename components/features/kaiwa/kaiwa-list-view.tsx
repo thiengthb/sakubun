@@ -2,11 +2,12 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { MessagesSquare, SearchX, Sparkles } from 'lucide-react';
+import { Download, Globe, MessagesSquare, SearchX, Sparkles } from 'lucide-react';
 import { PageShell } from '@/components/layout/page-shell';
 import { AddButton } from '@/components/common/add-button';
 import { CopyCommandButton } from '@/components/common/copy-command-button';
 import { EmptyState } from '@/components/common/empty-state';
+import { ExpandingIconButton } from '@/components/common/expanding-icon-button';
 import { LIST_CARD } from '@/components/common/list-card';
 import { RelativeTime } from '@/components/common/relative-time';
 import { SearchInput } from '@/components/common/search-input';
@@ -21,8 +22,11 @@ const SEARCH_FROM = 9;
 // List template (phase 8, K3; cards 7.4g): the learner's scripts, newest first. Each card says what
 // the script is about at a glance: its first spoken line, how many lines, who speaks, and when it
 // changed. Scripts are mostly written with Claude over MCP (the header copies the phrase that
-// starts it); "Thêm" writes one on the web (K3c).
-export function KaiwaListView({ scripts }: { scripts: ScriptCard[] }) {
+// starts it); "Thêm" writes one on the web (K3c). A card says when the script is shared on Kho
+// chung or was taken from it, and the header opens the scripts others share (2026-11-07).
+export type KaiwaListCard = ScriptCard & { sharedEntryId: string | null; taken: boolean };
+
+export function KaiwaListView({ scripts }: { scripts: KaiwaListCard[] }) {
   const [q, setQ] = useState('');
   const needle = q.trim().toLowerCase();
   const shown = needle ? scripts.filter((s) => s.title.toLowerCase().includes(needle)) : scripts;
@@ -34,6 +38,9 @@ export function KaiwaListView({ scripts }: { scripts: ScriptCard[] }) {
       meta={`${scripts.length} kịch bản`}
       actions={
         <>
+          <ExpandingIconButton asChild icon={Globe} label="Kho chung">
+            <Link href="/library?tab=scripts" />
+          </ExpandingIconButton>
           <CopyCommandButton
             command={WRITE_SCRIPT_COMMAND}
             label="Soạn với AI"
@@ -53,7 +60,12 @@ export function KaiwaListView({ scripts }: { scripts: ScriptCard[] }) {
           description={
             <>
               Bấm Soạn với AI rồi dán vào Claude: Claude soạn kịch bản trên canvas của nó, hai bên
-              sửa tới khi ổn, rồi Claude lưu vào đây. Muốn tự viết thì bấm Thêm.
+              sửa tới khi ổn, rồi Claude lưu vào đây. Muốn tự viết thì bấm Thêm. Hoặc lấy kịch bản
+              người khác chia sẻ ở{' '}
+              <Link href="/library?tab=scripts" className="underline underline-offset-4">
+                Kho chung › Kịch bản
+              </Link>
+              .
             </>
           }
         />
@@ -99,7 +111,28 @@ export function KaiwaListView({ scripts }: { scripts: ScriptCard[] }) {
                           </Truncate>
                         </>
                       )}
-                      <span className="ml-auto shrink-0">
+                      {script.sharedEntryId ? (
+                        <span
+                          data-slot="kaiwa-card-shared"
+                          className="ml-auto inline-flex shrink-0 items-center gap-1 text-accent-brand"
+                        >
+                          <Globe className="size-4" aria-hidden />
+                          Đang chia sẻ
+                        </span>
+                      ) : (
+                        script.taken && (
+                          <span className="ml-auto inline-flex shrink-0 items-center gap-1">
+                            <Download className="size-4" aria-hidden />
+                            Từ Kho chung
+                          </span>
+                        )
+                      )}
+                      <span
+                        className={cn(
+                          'shrink-0',
+                          !script.sharedEntryId && !script.taken && 'ml-auto',
+                        )}
+                      >
                         <RelativeTime value={script.updatedAt} />
                       </span>
                     </div>
