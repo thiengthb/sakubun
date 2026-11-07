@@ -159,7 +159,6 @@ export function HistoryList({
     <div
       className={cn(
         'space-y-6',
-        showFurigana && '[&_.furigana_rt]:visible',
         openId && 'lg:pr-108',
       )}
     >

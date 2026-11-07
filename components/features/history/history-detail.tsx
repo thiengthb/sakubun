@@ -224,7 +224,6 @@ export function HistoryDetailPanel({
           showCloseButton={false}
           className={cn(
             'gap-3 overflow-y-auto p-4 data-[side=right]:w-full data-[side=right]:sm:max-w-md',
-            showFurigana && '[&_.furigana_rt]:visible',
           )}
           onOpenAutoFocus={(e) => e.preventDefault()}
           // A click on another row of the timeline shows that turn instead of closing the panel.

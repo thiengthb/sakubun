@@ -147,7 +147,7 @@ function Summary({ results: all, nextDueAt }: { results: Result[]; nextDueAt: Da
 export function QuickReviewView({
   initial,
   answer,
-  showFurigana: furiganaDefault,
+  showFurigana,
   tts,
 }: {
   initial: QuickReview;
@@ -172,7 +172,6 @@ export function QuickReviewView({
     right: boolean[];
   } | null>(null);
   const missed = useRef<QuickCard[]>([]);
-  const [showFurigana, setShowFurigana] = useState(furiganaDefault);
   const [isPending, startTransition] = useTransition();
   // The answer bar rests on the window bottom while the card is short, and sticks there when long.
   const sessionRef = useRef<HTMLDivElement>(null);
@@ -277,21 +276,10 @@ export function QuickReviewView({
     return () => window.removeEventListener('keydown', onKey);
   });
 
-  const furigana = (
-    <Button
-      variant={showFurigana ? 'secondary' : 'ghost'}
-      size="icon"
-      aria-label="Bật tắt furigana"
-      aria-pressed={showFurigana}
-      onClick={() => setShowFurigana((v) => !v)}
-    >
-      <span lang="ja">あ</span>
-    </Button>
-  );
 
   if (cards.length === 0) {
     return (
-      <PageShell template="form" title="Ôn nhanh" meta="Không có thẻ đến hạn" pageIcons={furigana}>
+      <PageShell template="form" title="Ôn nhanh" meta="Không có thẻ đến hạn">
         <EmptyState
           title={nextDueAt ? 'Hôm nay ôn xong rồi' : 'Kho chưa có mục nào'}
           description={
@@ -320,7 +308,7 @@ export function QuickReviewView({
           {retry && !done ? `Làm lại ${retry.cards.length} câu sai` : leftLine(cards.slice(index))}
         </span>
       }
-      pageIcons={furigana}
+     
     >
       <div ref={sessionRef} className="flex flex-col gap-6 md:gap-8">
         <div
