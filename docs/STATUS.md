@@ -6,12 +6,14 @@ Trang này cho mọi phiên (kể cả tài khoản, model khác) biết trong 2
 Lịch sử nằm trong git, PR và `docs/roadmap.md`, không ghi ở đây. Cả file dưới 40 dòng; quá thì gộp hoặc bỏ, đừng thêm.
 
 ## Đang ở đâu
-Phase 8, hoàn thiện Kaiwa (#234–#238) và nghiên cứu tính năng (#232) đã lên `main`; việc tiếp theo chờ thien chọn. Ba quy
-trình thien đặt, xong cái trước mới sang cái sau: (1) chọn tính năng (đang ở đây), (2) luật làm việc lâu dài với Claude,
-(3) UI/UX (phác thảo: mục 6 của `docs/plans/2026-11-04-research/00-ke-hoach.md`).
+thien đã chọn (2026-11-07): không làm kế hoạch cấp tốc N2; có làm kanji (học tiếng Nhật nói chung); Kaiwa làm theo thứ tự
+(a) MCP tìm và lấy kịch bản chung, (b) karaoke theo âm tiết, (c) chọn giọng từng vai, (d) lưu buổi nhập vai vào Lịch sử
+(cần kế hoạch). Luyện dịch với AI (độ khó tăng dần, đáp án tham khảo, cấp độ từ vựng) có kế hoạch riêng chờ thien duyệt.
 
 ## Đang làm
-Chưa có bước nào. Nhận bước nào thì ghi bảng `Bước | Nhánh | Phiên` vào đây trong commit đầu tiên của nhánh.
+| Bước | Nhánh | Phiên |
+| --- | --- | --- |
+| Kaiwa (a): `library_search`/`library_take` cho kịch bản | `claude/project-thread-2ogyjr` | thread "Gom và hoàn thiện việc dang dở Sakubun" |
 
 ## Vừa xong
 - Nghiên cứu tính năng vòng 2 (#232): `docs/plans/2026-11-04-feature-candidates.md`, chi tiết trong `2026-11-04-research/`.
@@ -19,13 +21,9 @@ Chưa có bước nào. Nhận bước nào thì ghi bảng `Bước | Nhánh | 
   màn hình rộng có danh sách bên phải, menu Thao tác, cỡ chữ 5 mức.
 
 ## Đang chờ thien (tối đa 3)
-1. **Chọn việc tiếp theo:** trả lời 3 câu ở mục 6 của `docs/plans/2026-11-04-feature-candidates.md`, và xếp thứ tự 4 việc
-   Kaiwa còn lại: (a) MCP tìm và lấy kịch bản chung, (b) karaoke theo âm tiết, (c) chọn giọng từng vai, (d) lưu buổi
-   nhập vai vào Lịch sử (đổi schema, cần kế hoạch trước).
-2. **Thử phase 8 và Kaiwa mới một lượt trên NUC** (khoảng 20 phút): Ôn nhanh, Kho chung và `library_search`/`library_take`,
-   chia sẻ kịch bản rồi mở link ở cửa sổ ẩn danh, Lấy về bằng tài khoản thứ hai (`kai`), K8 nhập vai trong claude.ai,
-   cỡ chữ và phím ↑ ↓, địa chỉ MCP trong Cài đặt > Hướng dẫn.
-3. **Thu hồi token MCP `k9`** (Cài đặt > Tài khoản > Token MCP), xoá `token.txt` trong `C:\FPT_Source\sakubun-backups\kaiwa-k9`.
+1. **Duyệt kế hoạch luyện dịch** (độ khó tăng dần, đáp án tham khảo, cấp độ từ vựng): 4 câu hỏi cuối kế hoạch.
+2. **Thử chia sẻ kịch bản** trên NUC: chia sẻ, mở link ở cửa sổ ẩn danh, Lấy về bằng tài khoản thứ hai (`kai`). Phần MCP
+   (`status`, `library_search`, `library_take`, `kaiwa_list`, `kaiwa_roleplay`) Claude đã thử trên tài khoản thien, chạy đúng.
 
 ## Việc nhỏ còn treo
 - Trên điện thoại, nút ⋯ của trang kịch bản nằm riêng một hàng để khớp màn hình đang tải; đổi thì đổi cả hai.

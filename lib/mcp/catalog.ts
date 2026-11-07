@@ -40,12 +40,12 @@ export const MCP_CATALOG: CatalogEntry[] = [
   {
     name: 'library_search',
     kind: 'tool',
-    summary: 'Tìm mẫu, từ hoặc nhóm có sẵn trên Kho chung',
+    summary: 'Tìm mẫu, từ, nhóm hoặc kịch bản Kaiwa có sẵn trên Kho chung',
   },
   {
     name: 'library_take',
     kind: 'tool',
-    summary: 'Lấy một mục hoặc cả nhóm từ Kho chung về kho của bạn khi bạn đồng ý',
+    summary: 'Lấy một mục, cả nhóm hoặc một kịch bản Kaiwa từ Kho chung về khi bạn đồng ý',
   },
   { name: 'hoc', kind: 'prompt', summary: 'Học theo lịch ôn, dịch từng câu với Claude' },
   { name: 'kaiwa', kind: 'prompt', summary: 'Soạn kịch bản hội thoại cùng AI rồi lưu vào Sakubun' },

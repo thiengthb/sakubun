@@ -123,13 +123,40 @@ describe('MCP Kho chung', () => {
     expect((await call('library_take', { entryId: 'nope' })).isError).toBe(true);
   });
 
-  it('sends a shared Kaiwa script to the web instead of taking it', async () => {
+  it('finds a shared Kaiwa script and takes it into Kaiwa', async () => {
     const script = await prisma.libraryEntry.create({
-      data: { type: 'SCRIPT', name: 'Ở quán', body: 'A: どうぞ。 | Mời.', origin: 'LEARNER' },
+      data: {
+        type: 'SCRIPT',
+        name: 'Ở quán',
+        body: 'A: いらっしゃいませ。 | Xin mời vào.\nB: コーヒーをください。 | Cho tôi cà phê.',
+        origin: 'LEARNER',
+        status: 'public',
+      },
     });
+    const line = `entryId ${script.id} · script "Ở quán" · 2 lines · parts A, B · 0 takes`;
+    expect((await call('library_search', { query: 'コーヒー' })).text).toContain(line);
+    expect((await call('library_search', { query: 'quán', kind: 'SCRIPT' })).text).toContain(line);
+    // A search narrowed to items leaves scripts out.
+    expect((await call('library_search', { query: 'quán', kind: 'VOCAB' })).text).not.toContain(
+      'script',
+    );
+
     const took = await call('library_take', { entryId: script.id });
-    expect(took.isError).toBe(true);
-    expect(took.text).toContain('on the web, in Kho chung');
-    expect(await db.script.count()).toBe(0);
+    expect(took.isError).toBe(false);
+    const scriptId = took.text.match(/^took script "Ở quán" as scriptId (\S+)/)?.[1];
+    expect(scriptId).toBeTruthy();
+    expect(took.text).toContain(`/kaiwa/${scriptId}`);
+    expect(took.text).toContain('kaiwa_roleplay');
+    expect((await db.script.findFirstOrThrow()).libraryEntryId).toBe(script.id);
+
+    const again = await call('library_take', { entryId: script.id });
+    expect(again.text).toMatch(new RegExp(`^already had script "Ở quán" as scriptId ${scriptId}`));
+    expect(await db.script.count()).toBe(1);
+    expect((await call('library_search', { query: 'quán', kind: 'SCRIPT' })).text).toContain(
+      '1 takes · already in Kaiwa',
+    );
+
+    const none = await call('library_search', { query: 'không có đâu', kind: 'SCRIPT' });
+    expect(none.text).toContain('No shared Kaiwa script matches');
   });
 });
