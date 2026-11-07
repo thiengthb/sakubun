@@ -115,7 +115,7 @@ describe('MCP v2', () => {
     expect(text).toContain('3 right (the usual grade)');
     expect(text).toContain('4 only if instant and flawless');
     // A learner's wish (longer, other direction) must reach stage_turn too, or its checks refuse it.
-    expect(text).toContain('Call stage_turn,\n   passing the same hint if there is one.');
+    expect(text).toContain('Call stage_turn, passing the same hint if there is one.');
   });
 
   it('runs one whole turn and each result names the next call', async () => {

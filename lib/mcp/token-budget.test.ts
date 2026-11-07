@@ -24,15 +24,28 @@ const V2_TARGET = {
 };
 
 // One sentence per seeded item that passes stage_turn's checks.
-const V2_SENTENCES: Record<string, { ja: string; vi: string }> = {
-  '〜ばかりに': {
-    ja: '少し遅れたばかりに、電車に乗れなかった。',
-    vi: 'Chỉ vì trễ một chút mà lỡ tàu.',
-  },
-  '〜ながら': { ja: '音楽を聞きながら勉強します。', vi: 'Tôi vừa nghe nhạc vừa học.' },
-  '〜てしまう': { ja: '財布を忘れてしまいました。', vi: 'Tôi lỡ quên mất ví.' },
-  約束: { ja: '友達と約束をしました。', vi: 'Tôi đã hứa với bạn.' },
-  急ぐ: { ja: '急いで駅へ行きました。', vi: 'Tôi vội đi ra ga.' },
+// Two sentences per item: an item never gets the same sentence twice (R3).
+const V2_SENTENCES: Record<string, { ja: string; vi: string }[]> = {
+  '〜ばかりに': [
+    { ja: '少し遅れたばかりに、電車に乗れなかった。', vi: 'Chỉ vì trễ một chút mà lỡ tàu.' },
+    { ja: '寝坊したばかりに、試験に遅れた。', vi: 'Chỉ vì ngủ quên mà trễ giờ thi.' },
+  ],
+  '〜ながら': [
+    { ja: '音楽を聞きながら勉強します。', vi: 'Tôi vừa nghe nhạc vừa học.' },
+    { ja: '歩きながら電話をしました。', vi: 'Tôi vừa đi vừa gọi điện.' },
+  ],
+  '〜てしまう': [
+    { ja: '財布を忘れてしまいました。', vi: 'Tôi lỡ quên mất ví.' },
+    { ja: 'ケーキを全部食べてしまった。', vi: 'Tôi lỡ ăn hết cả cái bánh.' },
+  ],
+  約束: [
+    { ja: '友達と約束をしました。', vi: 'Tôi đã hứa với bạn.' },
+    { ja: '約束の時間に遅れました。', vi: 'Tôi trễ giờ hẹn.' },
+  ],
+  急ぐ: [
+    { ja: '急いで駅へ行きました。', vi: 'Tôi vội đi ra ga.' },
+    { ja: '急がないと間に合いません。', vi: 'Không vội thì không kịp.' },
+  ],
 };
 
 type Db = typeof import('@/lib/db/db');
@@ -156,7 +169,7 @@ describe('MCP v2 token targets', () => {
       await call('next_turn', { itemId: item.id, hint: turn === 0 ? 'chủ đề du lịch' : undefined });
       const staged = await call('stage_turn', {
         itemId: item.id,
-        ...V2_SENTENCES[item.expression],
+        ...V2_SENTENCES[item.expression][Math.floor(turn / items.length)],
       });
       const turnId = staged.split('\n')[0].replace('turnId ', '');
       await call('grade_turn', {

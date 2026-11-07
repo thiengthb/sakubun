@@ -15,6 +15,7 @@ Luyện dịch (R1–R4, kế hoạch đã duyệt) và Kaiwa (c) chọn giọng
 | Bước                                                                                         | Nhánh                          | Phiên                                           |
 | -------------------------------------------------------------------------------------------- | ------------------------------ | ----------------------------------------------- |
 | R1 luyện dịch: mỗi loại một cấp đang học (`docs/plans/2026-11-07-translation-difficulty.md`) | `claude/project-thread-2ogyjr` | thread "Gom và hoàn thiện việc dang dở Sakubun" |
+| R2 + R3 luyện dịch: bậc câu 1–5 từ lịch sử ôn, cảnh luân phiên, chặn câu trùng (cùng kế hoạch) | `claude/project-thread-2ogyjr` | thread "Gom và hoàn thiện việc dang dở Sakubun" |
 
 ## Vừa xong
 

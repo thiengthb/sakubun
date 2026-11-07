@@ -5,6 +5,8 @@ import { getQueue } from '@/lib/app/queue';
 import { recordReviews } from '@/lib/app/record-review';
 import { composeSpec, type ComposeSpec, type Direction } from '@/lib/domain/compose';
 import { CARD_STATE, type StudiedToday } from '@/lib/domain/queue';
+import { sentenceStep } from '@/lib/domain/sentence-step';
+import { AVOID_CHECKED, AVOID_SHOWN, sceneFor, usedBefore } from '@/lib/domain/variety';
 import { checkStage, finalRating, nextTurnStatus, parseRating } from '@/lib/domain/turn';
 import { exampleFromNotes } from '@/lib/import/openjlpt';
 import { parseEnrichment } from '@/lib/library/enrichment';
@@ -53,21 +55,54 @@ export interface TurnItem {
 }
 
 export type NextTurn =
-  | { done: false; item: TurnItem; spec: ComposeSpec; card: TurnCard; hint: string | null }
+  | {
+      done: false;
+      item: TurnItem;
+      spec: ComposeSpec;
+      card: TurnCard;
+      hint: string | null;
+      /** R3: where to set the sentence, and the item's last sentences to stay away from. */
+      scene: string;
+      avoid: string[];
+    }
   | { done: true; nextDueAt: Date | null; today: StudiedToday };
 
 function asLevel(level: string): JlptLevel {
   return (JLPT_LEVELS as readonly string[]).includes(level) ? (level as JlptLevel) : 'N5';
 }
 
-function specFor(item: ItemRow, settings: Settings): ComposeSpec {
+// The sentence step comes from the item's own reviews (R2): every grade of it, oldest first, a
+// Good given with a hint marked so it does not count toward a rise.
+async function specFor(db: UserDb, item: ItemRow, settings: Settings): Promise<ComposeSpec> {
+  const reviews = await db.reviewLog.findMany({
+    where: { itemId: item.id, role: 'TARGET' },
+    orderBy: [{ reviewedAt: 'asc' }, { id: 'asc' }],
+    select: { rating: true, turn: { select: { hinted: true } } },
+  });
+  const level = asLevel(item.level);
   return composeSpec({
-    itemLevel: asLevel(item.level),
-    state: item.srs?.state ?? CARD_STATE.NEW,
-    stability: item.srs?.stability ?? 0,
+    itemLevel: level,
+    step: sentenceStep(
+      reviews.map((r) => ({ rating: r.rating, hinted: r.turn?.hinted ?? false })),
+      level,
+    ),
     learnerLevel: settings.vocabLevel,
     mode: settings.directionMode,
   });
+}
+
+// The item's sentences so far, newest first (R3), and the scene for the next one.
+async function pastSentences(db: UserDb, itemId: string, settings: Settings) {
+  const [count, recent] = await Promise.all([
+    db.turn.count({ where: { itemId } }),
+    db.turn.findMany({
+      where: { itemId },
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      take: AVOID_CHECKED,
+      select: { ja: true },
+    }),
+  ]);
+  return { scene: sceneFor(count, settings.topics), recent: recent.map((t) => t.ja) };
 }
 
 function cardOf(item: ItemRow): TurnCard {
@@ -111,6 +146,10 @@ export async function nextTurn(
   const found = await findItem(db, itemId);
   if (!found.ok) return found;
   const item = found.data;
+  const [spec, past] = await Promise.all([
+    specFor(db, item, settings),
+    pastSentences(db, item.id, settings),
+  ]);
   return ok({
     done: false,
     item: {
@@ -121,9 +160,11 @@ export async function nextTurn(
       level: item.level,
       isNew: item.srs.state === CARD_STATE.NEW,
     },
-    spec: specFor(item, settings),
+    spec,
     card: cardOf(item),
     hint: cleanHint(input.hint),
+    scene: past.scene,
+    avoid: past.recent.slice(0, AVOID_SHOWN),
   });
 }
 
@@ -154,7 +195,11 @@ export async function stageTurn(
   const found = await findItem(db, input.itemId);
   if (!found.ok) return found;
   const item = found.data;
-  const spec = specFor(item, await getSettings(db));
+  const settings = await getSettings(db);
+  const [spec, past] = await Promise.all([
+    specFor(db, item, settings),
+    pastSentences(db, item.id, settings),
+  ]);
   const hint = cleanHint(input.hint);
   if (input.direction && input.direction !== spec.direction && !hint) {
     return err(
@@ -173,6 +218,13 @@ export async function stageTurn(
     spec.lengthJa,
   );
   if (!checked.ok) return checked;
+  // R3: the item's last sentences and the example on its card are spent.
+  const example = cardOf(item).example?.ja;
+  if (usedBefore(draft.ja, example ? [...past.recent, example] : past.recent)) {
+    return err(
+      `This item already had this sentence. Write a new one, set in: ${past.scene}; then call stage_turn.`,
+    );
+  }
 
   const direction = input.direction ?? spec.direction;
   // A turn left staged was never answered: a new one replaces it rather than piling up.
