@@ -1,11 +1,12 @@
 import { notFound } from 'next/navigation';
 import { KaiwaCanvas } from '@/components/features/kaiwa/kaiwa-canvas';
+import { KaiwaSideList } from '@/components/features/kaiwa/kaiwa-side-list';
 import { getUserDb } from '@/lib/auth/current-user';
 import { readAnalysis } from '@/lib/kaiwa/furigana';
 import { parseScript } from '@/lib/kaiwa/parse';
-import { getScript } from '@/lib/kaiwa/scripts';
+import { getScript, listScriptCards } from '@/lib/kaiwa/scripts';
 import { getSettings } from '@/lib/library/practice';
-import { scriptShareStatus } from '@/lib/library/scripts';
+import { scriptLibraryMarks, scriptShareStatus } from '@/lib/library/scripts';
 import { furiganaInApp } from '@/lib/settings/schema';
 
 export const dynamic = 'force-dynamic';
@@ -19,10 +20,12 @@ export default async function KaiwaScriptPage({
 }) {
   const [{ id }, { edit }] = await Promise.all([params, searchParams]);
   const db = await getUserDb();
-  const [script, settings, share] = await Promise.all([
+  const [script, settings, share, cards, marks] = await Promise.all([
     getScript(db, id),
     getSettings(db),
     scriptShareStatus(db, id),
+    listScriptCards(db),
+    scriptLibraryMarks(db),
   ]);
   if (!script || !share) notFound();
   const lines = parseScript(script.body);
@@ -47,6 +50,16 @@ export default async function KaiwaScriptPage({
       voiceSpeaker={settings.voiceSpeaker}
       speechRate={settings.speechRate}
       showFurigana={furiganaInApp(settings.furiganaMode)}
+      aside={
+        <KaiwaSideList
+          currentId={script.id}
+          scripts={cards.map((s) => ({
+            ...s,
+            sharedEntryId: marks.get(s.id)?.sharedEntryId ?? null,
+            taken: marks.get(s.id)?.taken ?? false,
+          }))}
+        />
+      }
     />
   );
 }

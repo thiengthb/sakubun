@@ -114,7 +114,9 @@ for (const width of [1440, 390]) {
     await expect(page.getByRole('link', { name: 'Lấy từ Kho chung' })).toBeVisible();
     const copy = page.url();
 
-    // Hội thoại marks the script shared now and the copy taken from Kho chung, and links there.
+    // Hội thoại marks the script shared now and the copy taken from Kho chung, and links there. (A
+    // screen 1280px wide or more opens a script instead of the cards.)
+    if (width >= 1280) await page.setViewportSize({ width: 1200, height: 900 });
     await page.goto('/kaiwa', { waitUntil: 'networkidle' });
     const kaiwaCards = page.locator('[data-slot="kaiwa-card"]');
     await expect(kaiwaCards.filter({ hasText: 'Ở nhà hàng (e2e)' })).toContainText('Đang chia sẻ');
@@ -123,6 +125,7 @@ for (const width of [1440, 390]) {
       page.locator('main').getByRole('link', { name: 'Kho chung', exact: true }),
     ).toHaveAttribute('href', '/library?tab=scripts');
     await shot('kaiwa-list-marks');
+    await page.setViewportSize({ width, height: 900 });
     await page.goto(copy, { waitUntil: 'networkidle' });
 
     // Unedited, the copy cannot be shared again.

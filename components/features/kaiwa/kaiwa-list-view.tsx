@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Download, Globe, MessagesSquare, SearchX, Sparkles } from 'lucide-react';
 import { PageShell } from '@/components/layout/page-shell';
 import { AddButton } from '@/components/common/add-button';
@@ -13,6 +14,7 @@ import { RelativeTime } from '@/components/common/relative-time';
 import { SearchInput } from '@/components/common/search-input';
 import { Truncate } from '@/components/ui/truncate';
 import { WRITE_SCRIPT_COMMAND } from '@/components/features/kaiwa/kaiwa-commands';
+import { KAIWA_WIDE, LAST_SCRIPT_KEY } from '@/components/features/kaiwa/kaiwa-side-list';
 import type { ScriptCard } from '@/lib/kaiwa/scripts';
 import { cn } from '@/lib/core/utils';
 
@@ -26,7 +28,25 @@ const SEARCH_FROM = 9;
 // chung or was taken from it, and the header opens the scripts others share (2026-11-07).
 export type KaiwaListCard = ScriptCard & { sharedEntryId: string | null; taken: boolean };
 
+// On a wide screen (thien, 2026-11-07) Hội thoại opens the script this browser read last, or the
+// newest, whose page lists the rest in a column; the cards below stay for smaller screens.
+function useOpenLastOnWide(scripts: KaiwaListCard[]) {
+  const router = useRouter();
+  useEffect(() => {
+    if (scripts.length === 0 || !window.matchMedia(KAIWA_WIDE).matches) return;
+    let last: string | null = null;
+    try {
+      last = window.localStorage.getItem(LAST_SCRIPT_KEY);
+    } catch {
+      // Storage off: the newest script.
+    }
+    const target = scripts.find((s) => s.id === last) ?? scripts[0];
+    router.replace(`/kaiwa/${target.id}`);
+  }, [scripts, router]);
+}
+
 export function KaiwaListView({ scripts }: { scripts: KaiwaListCard[] }) {
+  useOpenLastOnWide(scripts);
   const [q, setQ] = useState('');
   const needle = q.trim().toLowerCase();
   const shown = needle ? scripts.filter((s) => s.title.toLowerCase().includes(needle)) : scripts;
