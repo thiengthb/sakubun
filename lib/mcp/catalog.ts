@@ -38,6 +38,11 @@ export const MCP_CATALOG: CatalogEntry[] = [
     summary: 'Nhập vai một kịch bản Kaiwa: AI đóng các vai kia, bạn đóng vai của mình',
   },
   {
+    name: 'kaiwa_roleplay_save',
+    kind: 'tool',
+    summary: 'Hết buổi nhập vai, lưu từng câu bạn nói và nhận xét vào Lịch sử',
+  },
+  {
     name: 'library_search',
     kind: 'tool',
     summary: 'Tìm mẫu, từ, nhóm hoặc kịch bản Kaiwa có sẵn trên Kho chung',

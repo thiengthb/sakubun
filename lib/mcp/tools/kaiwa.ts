@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { appLink } from '@/lib/core/app-url';
 import { parseScript } from '@/lib/kaiwa/parse';
 import { roleplayScript } from '@/lib/kaiwa/roleplay';
+import { saveRoleplay } from '@/lib/kaiwa/roleplays';
 import { getScript, listScripts, saveScript } from '@/lib/kaiwa/scripts';
 import { guard, learnerDb, mcpError, type McpServer, type ToolExtra } from '@/lib/mcp/tool-kit';
 
@@ -102,6 +103,44 @@ export function registerKaiwaTools(server: McpServer): void {
         const played = roleplayScript(script.title, parseScript(script.body), part);
         if (!played.ok) return mcpError(played.error);
         return text([played.text, `review: ${scriptLink(script.id)}`]);
+      },
+    ),
+  );
+
+  server.tool(
+    'kaiwa_roleplay_save',
+    "At the end of a role-play, save the learner's turns to their Lịch sử.",
+    {
+      scriptId: z.string(),
+      part: z.string(),
+      turns: z
+        .array(
+          z.object({
+            turn: z.number().int().describe('Turn number from kaiwa_roleplay'),
+            said: z.string().describe("The learner's last try"),
+            ok: z.boolean().describe('Same meaning as the model line'),
+            note: z.string().optional().describe('One line of feedback, Vietnamese'),
+          }),
+        )
+        .describe("Every turn of the learner's part they tried"),
+    },
+    guard(
+      'kaiwa_roleplay_save',
+      async (
+        args: {
+          scriptId: string;
+          part: string;
+          turns: { turn: number; said: string; ok: boolean; note?: string }[];
+        },
+        extra: ToolExtra,
+      ) => {
+        const saved = await saveRoleplay(learnerDb(extra), args);
+        if (!saved.ok) return mcpError(saved.error);
+        return text([
+          `saved roleplayId ${saved.id} · part ${saved.part} · ${saved.correct}/${saved.total} right`,
+          `view: ${appLink('/history')}`,
+          'next: tell the learner it is in Lịch sử, with the view link.',
+        ]);
       },
     ),
   );

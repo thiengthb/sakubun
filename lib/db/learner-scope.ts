@@ -12,6 +12,7 @@ export const LEARNING_MODELS = [
   'GroupMember',
   'Settings',
   'Script',
+  'Roleplay',
 ] as const;
 
 const LEARNING = new Set<string>(LEARNING_MODELS);

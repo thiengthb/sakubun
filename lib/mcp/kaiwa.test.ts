@@ -108,6 +108,61 @@ describe('MCP Kaiwa', () => {
     expect(unknown).toEqual({ isError: true, text: expect.stringContaining('Unknown scriptId') });
   });
 
+  it('saves a finished role-play to Lịch sử, checked against the script', async () => {
+    const id = scriptIdIn((await call('kaiwa_save', { title: 'Ở nhà hàng', body: BODY })).text);
+    const saved = await call('kaiwa_roleplay_save', {
+      scriptId: id,
+      part: 'b',
+      turns: [{ turn: 2, said: ' 二人です ', ok: true, note: 'Đúng ý.' }],
+    });
+    expect(saved.isError).toBe(false);
+    expect(saved.text).toMatch(/^saved roleplayId \S+ · part B · 1\/1 right$/m);
+    expect(saved.text).toContain('view: http://localhost:3789/history');
+    const row = await db.roleplay.findFirstOrThrow();
+    expect(row).toMatchObject({
+      scriptId: id,
+      scriptTitle: 'Ở nhà hàng',
+      part: 'B',
+      total: 1,
+      correct: 1,
+    });
+    expect(JSON.parse(row.turns)).toEqual([
+      { turn: 2, said: '二人です', ok: true, note: 'Đúng ý.' },
+    ]);
+    // FSRS is not touched.
+    expect(await db.reviewLog.count()).toBe(0);
+
+    const notMine = await call('kaiwa_roleplay_save', {
+      scriptId: id,
+      part: 'B',
+      turns: [{ turn: 1, said: 'いらっしゃいませ', ok: true }],
+    });
+    expect(notMine).toEqual({ isError: true, text: "Turn 1 is not B's. B's turns: 2." });
+    const empty = await call('kaiwa_roleplay_save', { scriptId: id, part: 'B', turns: [] });
+    expect(empty.isError).toBe(true);
+    const unknown = await call('kaiwa_roleplay_save', {
+      scriptId: 'nope',
+      part: 'B',
+      turns: [{ turn: 2, said: 'x', ok: false }],
+    });
+    expect(unknown).toEqual({ isError: true, text: expect.stringContaining('Unknown scriptId') });
+    expect(await db.roleplay.count()).toBe(1);
+  });
+
+  it('does not save a role-play on another learner’s script', async () => {
+    const { userDb } = await import('@/lib/db/user-db');
+    const { saveScript } = await import('@/lib/kaiwa/scripts');
+    const theirs = await saveScript(userDb('other'), { title: 'Riêng', body: BODY });
+    if (!theirs.ok) throw new Error(theirs.error);
+    const saved = await call('kaiwa_roleplay_save', {
+      scriptId: theirs.data.id,
+      part: 'B',
+      turns: [{ turn: 2, said: '二人です', ok: true }],
+    });
+    expect(saved).toEqual({ isError: true, text: expect.stringContaining('Unknown scriptId') });
+    expect(await userDb('other').roleplay.count()).toBe(0);
+  });
+
   it('does not read another learner’s script', async () => {
     const { userDb } = await import('@/lib/db/user-db');
     const { saveScript } = await import('@/lib/kaiwa/scripts');

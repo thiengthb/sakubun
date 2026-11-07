@@ -7,19 +7,19 @@ Lịch sử nằm trong git, PR và `docs/roadmap.md`, không ghi ở đây. C�
 
 ## Đang ở đâu
 
-Luyện dịch (R1–R4, kế hoạch đã duyệt) và Kaiwa (c) chọn giọng, (d) lưu nhập vai vào Lịch sử đang lên từng PR. Kanji
-(`docs/plans/2026-11-08-kanji.md`, đã duyệt): KJ1 xong, Codex viết nghĩa Việt (KJ1b), Claude làm KJ2–KJ7.
+Luyện dịch R1–R4 và Kaiwa (a)–(c) đã xong; Kaiwa (d) lưu nhập vai vào Lịch sử đang ở PR. Kanji
+(`docs/plans/2026-11-08-kanji.md`, đã duyệt): KJ1 và nghĩa Việt (KJ1b) xong, Claude làm KJ2–KJ7.
 
 ## Đang làm
 
-| Bước                                                                                                                         | Nhánh                          | Phiên                                           |
-| ---------------------------------------------------------------------------------------------------------------------------- | ------------------------------ | ----------------------------------------------- |
-| Kaiwa c (K10): giọng từng vai, cột `voices` và trang `/kaiwa/[id]/voices` (`docs/plans/2026-11-07-kaiwa-voices-roleplay.md`) | `claude/project-thread-2ogyjr` | thread "Gom và hoàn thiện việc dang dở Sakubun" |
+| Bước                                                                                                                               | Nhánh                          | Phiên                                           |
+| ---------------------------------------------------------------------------------------------------------------------------------- | ------------------------------ | ----------------------------------------------- |
+| Kaiwa d (K11): lưu buổi nhập vai, bảng `Roleplay` và tool `kaiwa_roleplay_save` (`docs/plans/2026-11-07-kaiwa-voices-roleplay.md`) | `claude/project-thread-2ogyjr` | thread "Gom và hoàn thiện việc dang dở Sakubun" |
 
 ## Vừa xong
 
 - R1 #247: mỗi loại một cấp đang học (#248 sửa lỗi bấm あ làm cài đặt về mặc định). R2 + R3 #249: bậc câu 1–5, cảnh luân phiên, chặn câu trùng. R4 #255, #257: khối kết quả mỗi lượt.
-- Kaiwa (a) #243, (b) #245; Kho chung #244. KJ1 #246: dữ liệu kanji 2.136 chữ Jōyō; nghĩa Việt cả 2.136 chữ do Codex viết (#250–#256).
+- Kaiwa (a) #243, (b) #245, (c) #258 giọng từng vai; Kho chung #244. KJ1 #246: dữ liệu kanji 2.136 chữ Jōyō; nghĩa Việt cả 2.136 chữ do Codex viết (#250–#256).
 
 ## Đang chờ thien (tối đa 3)
 
