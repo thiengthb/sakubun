@@ -29,14 +29,21 @@ function GoogleG({ className }: { className?: string }) {
   );
 }
 
-export function GoogleSignInButton({ label = 'Tiếp tục với Google' }: { label?: string }) {
+export function GoogleSignInButton({
+  label = 'Tiếp tục với Google',
+  callbackURL = '/',
+}: {
+  label?: string;
+  /** Where Google sends the learner back to; a path checked by safeReturnPath. */
+  callbackURL?: string;
+}) {
   const [pending, setPending] = useState(false);
 
   async function onClick() {
     setPending(true);
     const { error } = await authClient.signIn.social({
       provider: 'google',
-      callbackURL: '/',
+      callbackURL,
       errorCallbackURL: '/login',
     });
     if (error) {
