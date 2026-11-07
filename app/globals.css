@@ -319,16 +319,13 @@
   .furigana rt {
     /* Half the base size: a wider reading would spread the kanji under it apart. */
     font-size: 0.5em;
-    visibility: hidden;
     user-select: none;
   }
-  .furigana:hover rt {
-    visibility: visible;
-  }
-  @media (hover: none) {
-    .furigana rt {
-      visibility: visible;
-    }
+  /* The sidebar's あ is the only switch (thien, 2026-11-07): on shows every reading at once, off
+     hides them all; a hover never reveals one. The space stays, so text does not jump. */
+  [data-furigana='off'] .furigana rt,
+  [data-furigana='off'] ruby rt {
+    visibility: hidden;
   }
 }
 

@@ -40,7 +40,7 @@ export default async function RootLayout({
       : null;
 
   return (
-    <RootDocument>
+    <RootDocument furigana={furigana}>
       <AppShell defaultSidebarOpen={sidebarOpen} furigana={furigana}>
         {children}
       </AppShell>

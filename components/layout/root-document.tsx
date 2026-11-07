@@ -21,10 +21,20 @@ const geistMono = Geist_Mono({
  * and app/global-error.tsx render it: global-error replaces the root layout, so before this it
  * had its own <html> that lost the fonts (text fell back to Times) and the dark theme.
  */
-export function RootDocument({ children }: { children: React.ReactNode }) {
+export function RootDocument({
+  children,
+  furigana = null,
+}: {
+  children: React.ReactNode;
+  /** The learner's furigana setting; null when nobody is signed in (readings then show). */
+  furigana?: boolean | null;
+}) {
   return (
     <html
       lang="vi"
+      // One switch for the whole app (thien, 2026-11-07): globals.css hides every reading under
+      // data-furigana="off" and shows them all otherwise, with no hover in between.
+      data-furigana={furigana === false ? 'off' : 'on'}
       suppressHydrationWarning
       className={cn(interSans.variable, geistMono.variable, 'h-full antialiased')}
     >

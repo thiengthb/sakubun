@@ -33,12 +33,17 @@ function FuriganaToggle({ initial }: { initial: boolean }) {
   const [pending, startTransition] = useTransition();
   const label = on ? 'Ẩn furigana' : 'Hiện furigana';
 
+  // The page follows at once through the html element's data-furigana; the server copy and the refresh follow.
+  const show = (value: boolean) => {
+    setOn(value);
+    document.documentElement.dataset.furigana = value ? 'on' : 'off';
+  };
   const toggle = (next: boolean) => {
-    setOn(next);
+    show(next);
     startTransition(async () => {
       const result = await setAppFuriganaAction(next);
       if (!result.ok) {
-        setOn(!next);
+        show(!next);
         toast.error(result.error);
         return;
       }
