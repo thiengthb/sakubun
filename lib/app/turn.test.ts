@@ -20,7 +20,7 @@ const SENTENCE = {
 };
 
 async function seed(): Promise<{ grammar: string; vocab: string }> {
-  await P.saveSettings(db, { grammarLevels: ['N2'], dailyNewGrammar: 5, dailyNewVocab: 5 });
+  await P.saveSettings(db, { grammarLevel: 'N2', vocabLevel: 'N2', dailyNewGrammar: 5, dailyNewVocab: 5 });
   await P.addItems(
     db,
     [{ expression: '〜ばかりに', meaningVi: 'chỉ vì... (kết quả xấu)', level: 'N2' }],

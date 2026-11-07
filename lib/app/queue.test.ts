@@ -123,13 +123,50 @@ describe('getQueue', () => {
     expect(queue.cards.filter((c) => c.state === 2)).toHaveLength(10);
   });
 
-  it('keeps new vocabulary at or below the learner level, ignoring the old hidden ceiling', async () => {
-    await P.saveSettings(db, { grammarLevels: ['N4'], vocabCeiling: 'N1' });
-    await seed('VOCAB', 1, 'N5');
-    await seed('VOCAB', 1, 'N4');
-    await seed('VOCAB', 1, 'N2');
+  it('brings new vocabulary in from the level studied, not N5 first (thien, 2026-11-07)', async () => {
+    await P.saveSettings(db, { vocabLevel: 'N3', dailyNewVocab: 8 });
+    // N5 went into the library first, as OpenJLPT's N5 did for thien.
+    await seed('VOCAB', 10, 'N5');
+    await seed('VOCAB', 10, 'N4');
+    await seed('VOCAB', 10, 'N3');
+    await seed('VOCAB', 10, 'N2');
     const queue = await Q.getQueue(db, NOW);
-    expect(queue.cards.map((c) => c.level).sort()).toEqual(['N4', 'N5']);
+    expect(queue.cards.map((c) => c.level)).toEqual([
+      'N3',
+      'N3',
+      'N3',
+      'N4',
+      'N3',
+      'N3',
+      'N3',
+      'N4',
+    ]);
+  });
+
+  it('keeps grammar and vocabulary on their own levels', async () => {
+    await P.saveSettings(db, {
+      grammarLevel: 'N4',
+      vocabLevel: 'N2',
+      dailyNewGrammar: 3,
+      dailyNewVocab: 3,
+    });
+    await seed('GRAMMAR', 3, 'N4');
+    await seed('GRAMMAR', 3, 'N2');
+    await seed('VOCAB', 3, 'N4');
+    await seed('VOCAB', 3, 'N2');
+    const queue = await Q.getQueue(db, NOW);
+    const of = (kind: string) => queue.cards.filter((c) => c.kind === kind).map((c) => c.level);
+    expect(of('GRAMMAR')).toEqual(['N4', 'N4', 'N4']);
+    expect(of('VOCAB')).toEqual(['N2', 'N2', 'N2']);
+  });
+
+  it('takes the easier one as the fourth new item counted over all days', async () => {
+    await P.saveSettings(db, { vocabLevel: 'N4', dailyNewVocab: 1 });
+    const n4 = await seed('VOCAB', 5, 'N4');
+    await seed('VOCAB', 5, 'N5');
+    for (const id of n4.slice(0, 3)) await review(id, 3, new Date(NOW.getTime() - 3 * 86_400_000));
+    const queue = await Q.getQueue(db, NOW);
+    expect(queue.cards.filter((c) => c.state === 0).map((c) => c.level)).toEqual(['N5']);
   });
 
   it('tells when the next item comes back once nothing is left', async () => {

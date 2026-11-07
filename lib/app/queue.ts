@@ -8,7 +8,8 @@ import {
 } from '@/lib/domain/queue';
 import { getSettings } from '@/lib/library/practice';
 import { GRAMMAR_KIND, VOCAB_KIND, asItemKind } from '@/lib/library/item-kinds';
-import { hardestLevel, JLPT_LEVELS, type Settings } from '@/lib/settings/schema';
+import { levelsFrom, pickNewItems } from '@/lib/domain/new-items';
+import type { JlptLevel, Settings } from '@/lib/settings/schema';
 import { studyDayStart } from '@/lib/srs/select';
 
 // Reads what the queue needs from the database and lets lib/domain/queue decide. Nothing calls this
@@ -80,9 +81,44 @@ export async function studiedToday(
   return counts;
 }
 
-// JLPT_LEVELS runs N5 → N1: "at or below" a ceiling is every level up to its index.
-function levelsUpTo(ceiling: string): string[] {
-  return JLPT_LEVELS.slice(0, JLPT_LEVELS.indexOf(ceiling as (typeof JLPT_LEVELS)[number]) + 1);
+// The next new items of one kind (plan 2026-11-07-translation-difficulty, D): every unstarted item
+// at or below the level studied is read lightly, lib/domain/new-items picks, and only the picked
+// ones are read whole, in the picked order.
+async function newItems(db: UserDb, kind: string, level: JlptLevel, take: number): Promise<Row[]> {
+  if (take <= 0) return [];
+  const live = { suspended: false, kind };
+  const [candidates, started] = await Promise.all([
+    db.item.findMany({
+      where: { ...live, level: { in: levelsFrom(level) }, srs: { state: 0 } },
+      select: {
+        id: true,
+        level: true,
+        expression: true,
+        source: true,
+        libraryEntryId: true,
+        createdAt: true,
+      },
+    }),
+    db.srsState.count({ where: { state: { not: 0 }, item: { kind } } }),
+  ]);
+  const ids = pickNewItems(
+    candidates.map((c) => ({
+      id: c.id,
+      level: c.level,
+      listed: c.libraryEntryId !== null || c.source === 'OPENJLPT',
+      createdAt: c.createdAt,
+      key: `${kind}:${c.expression}`,
+    })),
+    level,
+    started,
+    take,
+  );
+  const rows = await db.srsState.findMany({
+    where: { itemId: { in: ids } },
+    select: { state: true, due: true, item: { select: ITEM_FIELDS } },
+  });
+  const at = new Map(ids.map((id, i) => [id, i]));
+  return rows.sort((a, b) => at.get(a.item.id)! - at.get(b.item.id)!);
 }
 
 export async function getQueue(db: UserDb, now: Date = new Date(), limit?: number): Promise<Queue> {
@@ -114,29 +150,8 @@ export async function getQueue(db: UserDb, now: Date = new Date(), limit?: numbe
       take: Math.max(0, caps.maxReviews - today.reviews),
       select,
     }),
-    db.srsState.findMany({
-      where: {
-        state: 0,
-        item: { ...live, kind: GRAMMAR_KIND, level: { in: settings.grammarLevels } },
-      },
-      orderBy: { item: { createdAt: 'asc' } },
-      take: Math.max(0, caps.newGrammar - today.newGrammar),
-      select,
-    }),
-    db.srsState.findMany({
-      where: {
-        state: 0,
-        item: {
-          ...live,
-          kind: VOCAB_KIND,
-          // The JLPT levels on the web are the only ceiling; the old hidden vocabCeiling is not read.
-          level: { in: levelsUpTo(hardestLevel(settings.grammarLevels)) },
-        },
-      },
-      orderBy: { item: { createdAt: 'asc' } },
-      take: Math.max(0, caps.newVocab - today.newVocab),
-      select,
-    }),
+    newItems(db, GRAMMAR_KIND, settings.grammarLevel, caps.newGrammar - today.newGrammar),
+    newItems(db, VOCAB_KIND, settings.vocabLevel, caps.newVocab - today.newVocab),
     db.srsState.findFirst({
       where: { state: { not: 0 }, due: { gt: now }, item: live },
       orderBy: { due: 'asc' },

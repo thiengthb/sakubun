@@ -11,7 +11,7 @@ import { parseEnrichment } from '@/lib/library/enrichment';
 import { asItemKind, type ItemKind } from '@/lib/library/item-kinds';
 import { getSettings } from '@/lib/library/practice';
 import { ERROR_TAGS, type ErrorTag } from '@/lib/session/error-tags';
-import { hardestLevel, JLPT_LEVELS, type JlptLevel, type Settings } from '@/lib/settings/schema';
+import { JLPT_LEVELS, type JlptLevel, type Settings } from '@/lib/settings/schema';
 import type { RatingValue } from '@/lib/srs/srs';
 
 // One translation turn with Claude, end to end: pick the item and how to write the sentence
@@ -65,7 +65,7 @@ function specFor(item: ItemRow, settings: Settings): ComposeSpec {
     itemLevel: asLevel(item.level),
     state: item.srs?.state ?? CARD_STATE.NEW,
     stability: item.srs?.stability ?? 0,
-    learnerLevel: hardestLevel(settings.grammarLevels),
+    learnerLevel: settings.vocabLevel,
     mode: settings.directionMode,
   });
 }

@@ -82,7 +82,7 @@ export function SettingsForm({ initial, account, isAdmin, mcpUrl }: SettingsForm
         title="Cài đặt"
         tabs={<PageTabs items={SETTINGS_TABS.items} label={SETTINGS_TABS.label} />}
       >
-        <PracticeTab settings={settings} set={set} setSettings={setSettings} />
+        <PracticeTab settings={settings} set={set} />
         <DataTab isAdmin={isAdmin} />
         <AccountTab {...account} isAdmin={isAdmin} />
         <GuideTab mcpUrl={mcpUrl} openTab={setTab} />

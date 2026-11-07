@@ -88,8 +88,10 @@ export type DirectionMode = (typeof DIRECTION_MODES)[number];
 export type SentenceSize = (typeof SENTENCE_SIZES)[number];
 
 export const settingsSchema = z.object({
-  grammarLevels: z.array(z.enum(JLPT_LEVELS)).min(1).default(['N5']),
-  vocabCeiling: z.enum(JLPT_LEVELS).nullable().default(null),
+  // The level being studied, one per kind (plan 2026-11-07-translation-difficulty, D): new items
+  // come mostly from it and some from the easier levels not finished yet, never from harder ones.
+  grammarLevel: z.enum(JLPT_LEVELS).default('N5'),
+  vocabLevel: z.enum(JLPT_LEVELS).default('N5'),
   direction: z.enum(DIRECTIONS).default('ALTERNATING'),
   directionMode: z.enum(DIRECTION_MODES).default('auto'),
   difficulty: z.number().int().min(1).max(5).default(2),
@@ -126,8 +128,8 @@ export type SettingsPatch = z.input<typeof settingsPatchSchema>;
 export const DEFAULT_SETTINGS: Settings = settingsSchema.parse({});
 
 export const COMPOSITION_SETTING_KEYS = [
-  'grammarLevels',
-  'vocabCeiling',
+  'grammarLevel',
+  'vocabLevel',
   'direction',
   'difficulty',
   'sentenceSize',
@@ -158,12 +160,6 @@ export function hardestLevel(levels: readonly string[]): JlptLevel {
   return (sorted[0] as JlptLevel) ?? 'N5';
 }
 
-export function resolveVocabCeiling(
-  settings: Pick<Settings, 'vocabCeiling' | 'grammarLevels'>,
-): JlptLevel {
-  return settings.vocabCeiling ?? hardestLevel(settings.grammarLevels);
-}
-
 // The web edits `directionMode`; the old MCP path still reads a Direction. Until roadmap 3.2 removes
 // that path, this is the one bridge between them: auto alternates there, a fixed mode stays fixed.
 export function legacyDirection(settings: Pick<Settings, 'directionMode'>): Direction {
@@ -177,6 +173,21 @@ export function migrateSettingsInput(raw: unknown): unknown {
     if (o.grammarLevels === undefined && Array.isArray(o.levels)) o.grammarLevels = o.levels;
     delete o.levels;
   }
+  // Settings from before one level per kind (2026-11-07): the hardest level ticked becomes the level
+  // studied, for grammar and for vocabulary alike. The hidden vocabCeiling had not been read since
+  // 7.x, so an old value there is not trusted.
+  if ('grammarLevels' in o) {
+    const ticked = Array.isArray(o.grammarLevels)
+      ? o.grammarLevels.filter((l): l is JlptLevel => JLPT_LEVELS.includes(l as JlptLevel))
+      : [];
+    if (ticked.length > 0) {
+      const level = hardestLevel(ticked);
+      if (o.grammarLevel === undefined) o.grammarLevel = level;
+      if (o.vocabLevel === undefined) o.vocabLevel = level;
+    }
+    delete o.grammarLevels;
+  }
+  delete o.vocabCeiling;
   // Settings stored before directionMode existed, and an MCP client still sending `direction`.
   if (o.directionMode === undefined && typeof o.direction === 'string') {
     o.directionMode = o.direction === 'ALTERNATING' ? 'auto' : o.direction;
