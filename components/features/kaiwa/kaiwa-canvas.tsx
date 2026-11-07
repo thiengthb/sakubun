@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, useTransition } from 'react';
+import { useEffect, useRef, useState, useTransition, type ReactNode } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { EditorView } from '@codemirror/view';
@@ -26,6 +26,7 @@ import { ScriptEditor, type EditorStatus } from '@/components/features/kaiwa/scr
 import { editScriptCommand, roleplayCommand } from '@/components/features/kaiwa/kaiwa-commands';
 import { useKaiwaMe } from '@/components/features/kaiwa/use-kaiwa-me';
 import type { RubyLine } from '@/components/features/kaiwa/kaiwa-line';
+import { LAST_SCRIPT_KEY } from '@/components/features/kaiwa/kaiwa-side-list';
 import { deleteScriptAction, saveScriptAction } from '@/app/kaiwa/actions';
 import { toastResult } from '@/lib/core/action-toast';
 import { cn } from '@/lib/core/utils';
@@ -80,6 +81,7 @@ export function KaiwaCanvas({
   voiceSpeaker,
   speechRate,
   showFurigana,
+  aside,
 }: {
   /** Absent: a new script, written from scratch. */
   script?: CanvasScript;
@@ -89,6 +91,8 @@ export function KaiwaCanvas({
   voiceSpeaker?: number;
   speechRate?: number;
   showFurigana: boolean;
+  /** On a wide screen, the list of scripts in a column on the right. */
+  aside?: ReactNode;
 }) {
   const router = useRouter();
   const [editing, setEditing] = useState(startEditing || !script);
@@ -182,6 +186,17 @@ export function KaiwaCanvas({
     return () => window.removeEventListener('keydown', onKey);
   });
 
+  // A wide screen opens this script again from Hội thoại (KaiwaListView).
+  const scriptId = script?.id;
+  useEffect(() => {
+    if (!scriptId) return;
+    try {
+      window.localStorage.setItem(LAST_SCRIPT_KEY, scriptId);
+    } catch {
+      // Storage off: Hội thoại then opens the newest script.
+    }
+  }, [scriptId]);
+
   // Leaving the page with changes not saved asks first.
   useEffect(() => {
     if (!editing || !dirty) return;
@@ -251,7 +266,7 @@ export function KaiwaCanvas({
     </>
   );
 
-  return (
+  const page = (
     <PageShell
       template="list"
       breadcrumb={<ParentCrumbs section="kaiwa" self />}
@@ -449,6 +464,15 @@ export function KaiwaCanvas({
         </>
       )}
     </PageShell>
+  );
+  if (!aside) return page;
+  return (
+    <div className="xl:flex xl:items-start xl:gap-6">
+      <div className="min-w-0 flex-1">{page}</div>
+      <aside className="sticky top-0 hidden h-dvh w-72 shrink-0 border-l py-4 pl-4 xl:block">
+        {aside}
+      </aside>
+    </div>
   );
 }
 

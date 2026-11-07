@@ -9,6 +9,8 @@ interface Pair {
   skeleton: string;
   asideTol?: number;
   items?: boolean;
+  /** Only below this width: from 1280px Hội thoại opens a script instead of its list. */
+  below?: number;
 }
 
 const PAIRS: Pair[] = [
@@ -35,7 +37,7 @@ const PAIRS: Pair[] = [
   { name: 'group new', page: '/groups/new', skeleton: 'group-new' },
   { name: 'group edit', page: '/groups/grp-sk/edit', skeleton: 'group-edit' },
   { name: 'group add', page: '/groups/grp-sk/add', skeleton: 'group-add' },
-  { name: 'kaiwa', page: '/kaiwa', skeleton: 'kaiwa' },
+  { name: 'kaiwa', page: '/kaiwa', skeleton: 'kaiwa', below: 1280 },
   { name: 'kaiwa script', page: '/kaiwa/kw-sk', skeleton: 'kaiwa-script' },
   { name: 'kaiwa new', page: '/kaiwa/new', skeleton: 'kaiwa-new' },
   // The editor opens on the script's own route, whose loading screen is the reading view's.
@@ -180,6 +182,7 @@ for (const width of [1440, 390]) {
 
     const failures: string[] = [];
     for (const pair of PAIRS) {
+      if (pair.below && width >= pair.below) continue;
       await page.evaluate(() => sessionStorage.clear());
 
       await page.goto(pair.page, { waitUntil: 'networkidle' });

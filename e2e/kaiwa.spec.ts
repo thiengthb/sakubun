@@ -88,6 +88,8 @@ test('Hội thoại lists a saved script and its page reads it line by line', as
   ).run(BODY, ANALYSIS, new Date().toISOString(), new Date().toISOString());
   d.close();
 
+  // Below a wide screen Hội thoại is the list of cards (a wide one opens the last script instead).
+  await page.setViewportSize({ width: 1200, height: 900 });
   await signIn(page);
 
   await page.goto('/kaiwa', { waitUntil: 'networkidle' });
@@ -325,6 +327,7 @@ test('Hội thoại finds a script by name once there are nine', async ({ page }
   const now = new Date().toISOString();
   for (let i = 0; i < 9; i++) insert.run(`kw-s${i}`, i === 4 ? 'Ở ga Tokyo' : `Bài ${i}`, now, now);
   d.close();
+  await page.setViewportSize({ width: 1200, height: 900 });
   await signIn(page);
   await page.goto('/kaiwa', { waitUntil: 'networkidle' });
 
@@ -335,6 +338,53 @@ test('Hội thoại finds a script by name once there are nine', async ({ page }
   await expect(cards).toContainText('Ở ga Tokyo');
   await page.getByLabel('Tìm theo tên kịch bản').fill('không có');
   await expect(page.getByText('Không có kịch bản nào khớp tên này.')).toBeVisible();
+});
+
+// thien, 2026-11-07: on a wide screen Hội thoại opens the script read last (or the newest), and
+// every script sits in one column on the right, the open one marked; a phone keeps the cards.
+test('a wide screen opens the last script read, with the list in a column', async ({ page }) => {
+  await seedE2eAccount();
+  const d = db();
+  d.exec(`DELETE FROM Script WHERE userId = ${E2E_OWNER}`);
+  const insert = d.prepare(
+    `INSERT INTO Script (id, userId, title, body, analysis, version, createdAt, updatedAt)
+     VALUES (?, ${E2E_OWNER}, ?, 'A: はい。 | Vâng.', NULL, 1, ?, ?)`,
+  );
+  insert.run('kw-old', 'Bài cũ', '2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z');
+  insert.run('kw-new', 'Bài mới', '2026-02-01T00:00:00.000Z', '2026-02-01T00:00:00.000Z');
+  d.close();
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await signIn(page);
+
+  // Nothing read yet: the newest.
+  await page.evaluate(() => localStorage.removeItem('sakubun.local:kaiwa-last'));
+  await page.goto('/kaiwa');
+  await page.waitForURL(/\/kaiwa\/kw-new$/);
+  const side = page.locator('[data-slot="kaiwa-side-list"]');
+  await expect(side).toBeVisible();
+  await expect(side.locator('[data-slot="kaiwa-side-item"]')).toHaveCount(2);
+  await expect(side.locator('[aria-current="page"]')).toContainText('Bài mới');
+
+  // Open the older one from the column; Hội thoại now opens it.
+  await side.getByRole('link', { name: /Bài cũ/ }).click();
+  await page.waitForURL(/\/kaiwa\/kw-old$/);
+  await expect(page.getByRole('heading', { name: 'Bài cũ' })).toBeVisible();
+  await expect(side.locator('[aria-current="page"]')).toContainText('Bài cũ');
+  if (process.env.SCREENSHOT_DIR) {
+    await page.screenshot({
+      path: path.join(process.env.SCREENSHOT_DIR, 'kaiwa-wide-1440.png'),
+      fullPage: false,
+    });
+  }
+  await page.goto('/kaiwa');
+  await page.waitForURL(/\/kaiwa\/kw-old$/);
+
+  // A smaller screen keeps the list of cards and no column.
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/kaiwa', { waitUntil: 'networkidle' });
+  await expect(page.locator('[data-slot="kaiwa-card"]')).toHaveCount(2);
+  await page.goto('/kaiwa/kw-old', { waitUntil: 'networkidle' });
+  await expect(side).toBeHidden();
 });
 
 // thien, 7.4f: the editor colours the format, offers the speakers so far, saves with Ctrl S, and its
