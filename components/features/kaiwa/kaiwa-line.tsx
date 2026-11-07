@@ -31,6 +31,7 @@ export function KaiwaLine({
   lookup = true,
   voiceSpeaker,
   speechRate,
+  speak = true,
 }: {
   turn: Turn<RubyLine>;
   showMeaning: boolean;
@@ -50,6 +51,8 @@ export function KaiwaLine({
   lookup?: boolean;
   voiceSpeaker?: number;
   speechRate?: number;
+  /** Off for a guest (SpokenLine). */
+  speak?: boolean;
 }) {
   const { line } = turn;
   const spokenProps = {
@@ -65,6 +68,7 @@ export function KaiwaLine({
     onDone,
     onManualPlay,
     onManualStop,
+    speak,
   } as const;
   const meaning = line.translation && showMeaning && (
     <p className="text-sm text-muted-foreground">{line.translation}</p>

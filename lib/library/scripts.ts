@@ -141,6 +141,30 @@ export async function unpublishScript(
   return res.count > 0 ? ok({ hidden: res.count }) : err('Kịch bản này chưa được chia sẻ.');
 }
 
+// How each of the learner's scripts stands on Kho chung, for the cards on Hội thoại: shared now
+// (with its entry, so the card can link the page friends read), or taken from Kho chung.
+export interface ScriptLibraryMark {
+  sharedEntryId: string | null;
+  taken: boolean;
+}
+
+export async function scriptLibraryMarks(db: UserDb): Promise<Map<string, ScriptLibraryMark>> {
+  const [shares, taken] = await Promise.all([
+    db.libraryEntry.findMany({
+      where: { authorId: db.$ownerId(), type: SCRIPT_TYPE, status: PUBLIC },
+      select: { id: true, sourceId: true },
+    }),
+    db.script.findMany({ where: { libraryEntryId: { not: null } }, select: { id: true } }),
+  ]);
+  const marks = new Map<string, ScriptLibraryMark>();
+  for (const s of taken) marks.set(s.id, { sharedEntryId: null, taken: true });
+  for (const e of shares) {
+    if (!e.sourceId) continue;
+    marks.set(e.sourceId, { taken: marks.get(e.sourceId)?.taken ?? false, sharedEntryId: e.id });
+  }
+  return marks;
+}
+
 // The learner's copies of these shared scripts, by entry id: what they took, and for their own
 // shares the script they shared it from.
 export async function scriptCopies(

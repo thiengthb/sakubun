@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useRef, useState, useTransition } from 'react';
+import { useEffect, useRef, useState, useTransition, type ReactNode } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { EditorView } from '@codemirror/view';
-import { Check, Drama, Pencil, Sparkles, Trash2 } from 'lucide-react';
+import { Check, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,18 +14,18 @@ import { FormGuide, GuideSample } from '@/components/common/form-guide';
 import { ParentCrumbs } from '@/components/layout/app-breadcrumbs';
 import { PageShell } from '@/components/layout/page-shell';
 import { ConfirmDialog } from '@/components/common/confirm-dialog';
-import { CopyCommandButton } from '@/components/common/copy-command-button';
-import { ScriptShareButton } from '@/components/common/share-to-library';
 import { ExpandingIconButton } from '@/components/common/expanding-icon-button';
 import { RelativeTime } from '@/components/common/relative-time';
 import { ShortcutsHelp, type Shortcut } from '@/components/common/shortcuts-help';
 import { useLocalState } from '@/components/common/use-session-state';
 import { useServerAction } from '@/components/common/use-server-action';
+import { KaiwaActionsMenu } from '@/components/features/kaiwa/kaiwa-actions-menu';
 import { KaiwaChat } from '@/components/features/kaiwa/kaiwa-chat';
 import { ScriptEditor, type EditorStatus } from '@/components/features/kaiwa/script-editor';
 import { editScriptCommand, roleplayCommand } from '@/components/features/kaiwa/kaiwa-commands';
 import { useKaiwaMe } from '@/components/features/kaiwa/use-kaiwa-me';
 import type { RubyLine } from '@/components/features/kaiwa/kaiwa-line';
+import { LAST_SCRIPT_KEY } from '@/components/features/kaiwa/kaiwa-side-list';
 import { deleteScriptAction, saveScriptAction } from '@/app/kaiwa/actions';
 import { toastResult } from '@/lib/core/action-toast';
 import { cn } from '@/lib/core/utils';
@@ -55,6 +55,7 @@ const VIEW_KEYS: Shortcut[] = [
   { keys: ['Ctrl', 'E'], does: 'Sửa kịch bản' },
   { keys: ['↑', '↓'], does: 'Chọn câu' },
   { keys: ['Enter'], does: 'Nghe câu đang chọn' },
+  { keys: ['+', '−'], does: 'Chữ to hơn, nhỏ hơn' },
 ];
 const EDIT_KEYS: Shortcut[] = [
   { keys: ['Ctrl', 'S'], does: 'Lưu' },
@@ -80,6 +81,7 @@ export function KaiwaCanvas({
   voiceSpeaker,
   speechRate,
   showFurigana,
+  aside,
 }: {
   /** Absent: a new script, written from scratch. */
   script?: CanvasScript;
@@ -89,6 +91,8 @@ export function KaiwaCanvas({
   voiceSpeaker?: number;
   speechRate?: number;
   showFurigana: boolean;
+  /** On a wide screen, the list of scripts in a column on the right. */
+  aside?: ReactNode;
 }) {
   const router = useRouter();
   const [editing, setEditing] = useState(startEditing || !script);
@@ -182,6 +186,17 @@ export function KaiwaCanvas({
     return () => window.removeEventListener('keydown', onKey);
   });
 
+  // A wide screen opens this script again from Hội thoại (KaiwaListView).
+  const scriptId = script?.id;
+  useEffect(() => {
+    if (!scriptId) return;
+    try {
+      window.localStorage.setItem(LAST_SCRIPT_KEY, scriptId);
+    } catch {
+      // Storage off: Hội thoại then opens the newest script.
+    }
+  }, [scriptId]);
+
   // Leaving the page with changes not saved asks first.
   useEffect(() => {
     if (!editing || !dirty) return;
@@ -229,29 +244,17 @@ export function KaiwaCanvas({
       <ShortcutsHelp shortcuts={script ? EDIT_KEYS : EDIT_KEYS.filter((k) => k.keys[1] !== 'E')} />
     </>
   ) : (
-    <>
-      <ExpandingIconButton icon={Pencil} label="Sửa" onClick={() => switchTo(true)} />
-      <CopyCommandButton
-        command={editScriptCommand(script!.title)}
-        label="Sửa với AI"
-        size="default"
-        expandOnHover
-        icon={Sparkles}
-      />
-      {me && savedSpeakers.length > 1 && (
-        <CopyCommandButton
-          command={roleplayCommand(script!.title, me)}
-          label="Nhập vai với AI"
-          size="default"
-          expandOnHover
-          icon={Drama}
-        />
-      )}
-      <ShortcutsHelp shortcuts={VIEW_KEYS} />
-    </>
+    <KaiwaActionsMenu
+      scriptId={script!.id}
+      share={share!}
+      onEdit={() => switchTo(true)}
+      editCommand={editScriptCommand(script!.title)}
+      roleplay={me && savedSpeakers.length > 1 ? roleplayCommand(script!.title, me) : null}
+      shortcuts={VIEW_KEYS}
+    />
   );
 
-  return (
+  const page = (
     <PageShell
       template="list"
       breadcrumb={<ParentCrumbs section="kaiwa" self />}
@@ -276,9 +279,6 @@ export function KaiwaCanvas({
       }
       actions={header}
       actionsOnPhone="split"
-      // Chia sẻ (K7b) is about the script itself, beside its title, so a phone's row of actions stays
-      // one row in both modes.
-      pageIcons={script && share && <ScriptShareButton scriptId={script.id} status={share} />}
     >
       {!editing && script ? (
         <KaiwaChat
@@ -449,6 +449,15 @@ export function KaiwaCanvas({
         </>
       )}
     </PageShell>
+  );
+  if (!aside) return page;
+  return (
+    <div className="xl:flex xl:items-start xl:gap-6">
+      <div className="min-w-0 flex-1">{page}</div>
+      <aside className="sticky top-0 hidden h-dvh w-72 shrink-0 border-l py-4 pl-4 xl:block">
+        {aside}
+      </aside>
+    </div>
   );
 }
 

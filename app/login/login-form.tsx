@@ -12,11 +12,14 @@ export function LoginForm({
   googleReady,
   passwordLogin,
   error,
+  next = '/',
 }: {
   googleReady: boolean;
   passwordLogin: boolean;
   /** What went wrong on the way here (loginErrorText), or null. */
   error: string | null;
+  /** Where to land after signing in: '/' or the page a guest opened (lib/auth/login-return.ts). */
+  next?: string;
 }) {
   return (
     <AuthCard title="Đăng nhập" description="Đăng nhập hoặc tạo tài khoản bằng Google.">
@@ -27,20 +30,20 @@ export function LoginForm({
           </p>
         )}
         {googleReady ? (
-          <GoogleSignInButton label="Đăng nhập với Google" />
+          <GoogleSignInButton label="Đăng nhập với Google" callbackURL={next} />
         ) : (
           <p className="rounded-sm bg-muted px-3 py-2 text-sm text-muted-foreground">
             Server chưa cấu hình đăng nhập Google (GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET).
           </p>
         )}
-        {passwordLogin && <TestPasswordForm />}
+        {passwordLogin && <TestPasswordForm next={next} />}
       </CardContent>
     </AuthCard>
   );
 }
 
 // Test-only (never rendered in a production build): lets Playwright sign in without Google.
-function TestPasswordForm() {
+function TestPasswordForm({ next }: { next: string }) {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -49,7 +52,7 @@ function TestPasswordForm() {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setPending(true);
-    const { data, error } = await signIn.email({ email, password, callbackURL: '/' });
+    const { data, error } = await signIn.email({ email, password, callbackURL: next });
     setPending(false);
     if (error) {
       toast.error(error.message ?? 'Đăng nhập không thành công');
@@ -58,7 +61,7 @@ function TestPasswordForm() {
     // The auth client already follows a redirect answer: '/' normally, or the OAuth authorize step
     // when claude.ai or ChatGPT sent thien here to connect.
     if (data?.redirect) return;
-    router.push('/');
+    router.push(next);
     router.refresh();
   }
 

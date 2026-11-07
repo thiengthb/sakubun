@@ -26,6 +26,7 @@ export function SpokenLine({
   speakerEnd = false,
   lookup = false,
   arrange,
+  speak = true,
 }: {
   text: string;
   speakText?: string;
@@ -56,6 +57,8 @@ export function SpokenLine({
   /** Places the button and the sentence apart, such as Hội thoại's speaker beside its bubble
    * (thien, 7.4 round 3); the karaoke still lights the sentence as the button plays. */
   arrange?: (parts: { button: ReactNode; line: ReactNode }) => ReactNode;
+  /** Off for a guest reading a shared script: the speech server needs an account. */
+  speak?: boolean;
 }) {
   const [ratio, setRatio] = useState(0);
 
@@ -97,7 +100,7 @@ export function SpokenLine({
 
   // The button is centred on the text's first line, at any size and on every page: its box is one
   // line of the text tall (h-lh), so the type classes sit on the row and the text inherits them.
-  const button = (
+  const button = speak && (
     <span className="flex h-lh shrink-0 items-center">
       <SpeakButton
         text={speakText ?? text}

@@ -269,3 +269,25 @@ describe('listScriptEntries', () => {
     expect((await L.getScriptEntry(prisma, entryId))?.likes).toBe(1);
   });
 });
+
+describe('scriptLibraryMarks', () => {
+  it('marks the scripts shared now and the ones taken from Kho chung', async () => {
+    const { script, entryId } = await shared();
+    const own = await written(author, 'Riêng');
+    const taken = await L.takeScript(taker, entryId);
+    if (!taken.ok) throw new Error(taken.error);
+
+    const mine = await L.scriptLibraryMarks(author);
+    expect(mine.get(script.id)).toEqual({ sharedEntryId: entryId, taken: false });
+    expect(mine.has(own.id)).toBe(false);
+    expect(await L.scriptLibraryMarks(taker)).toEqual(
+      new Map([[taken.data.scriptId, { sharedEntryId: null, taken: true }]]),
+    );
+  });
+
+  it('drops the mark once the share is taken down', async () => {
+    const { script } = await shared();
+    await L.unpublishScript(author, script.id);
+    expect((await L.scriptLibraryMarks(author)).has(script.id)).toBe(false);
+  });
+});

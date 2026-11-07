@@ -4,16 +4,34 @@ Trang này trả lời ba câu cho bất kỳ phiên Claude nào (kể cả từ
 việc tiếp theo là gì**. Cập nhật nó **trong cùng PR** với việc làm, và khi nhận một bước mới (xem
 "Bắt đầu phiên" trong `CLAUDE.md`). Lộ trình đầy đủ: `docs/roadmap.md`. Kế hoạch đã duyệt: `docs/plans/`.
 
-Cập nhật lần cuối: 2026-11-04 (bắt đầu nghiên cứu tính năng: quy trình 1 trong ba quy trình thien đặt ra).
+Cập nhật lần cuối: 2026-11-07 (hoàn thiện Kaiwa: chia sẻ, bố cục màn hình lớn, menu, cỡ chữ; bàn giao nghiên cứu tính năng, PR #232).
 
 ## Đang làm
 
 | Bước | Nhánh | Phiên |
 |---|---|---|
-| Quy trình 1: nghiên cứu học ngôn ngữ và ứng cử viên tính năng (`docs/plans/2026-11-04-research/`, `docs/plans/2026-11-04-feature-candidates.md`) | `docs/2026-11-04-research` | thread "Nghiên cứu và đề xuất tính năng Sakubun" |
+| Hoàn thiện Kaiwa (thien, 2026-11-07). Mở PR, chờ thien merge theo thứ tự #234 → #235 → #236 → #237 → #238 (xếp chồng): #234 ai có link cũng đọc được kịch bản đã chia sẻ (thien chọn không cần đăng nhập) và đăng nhập xong về đúng trang; #235 thẻ Hội thoại ghi "Đang chia sẻ" / "Từ Kho chung"; #236 từ 1280px mở bài đọc gần nhất, danh sách một cột bên phải; #237 nút gom vào menu Thao tác, ↑ ↓ đưa câu ra giữa màn hình; #238 cỡ chữ hội thoại 5 mức (phím + và −, không Ctrl, theo thien), nhớ theo từng máy. Còn lại để thien chọn thứ tự: MCP tìm và lấy kịch bản chung, karaoke theo âm tiết, chọn giọng từng vai, lưu buổi nhập vai. | `feat/kaiwa-text-size` (và các nhánh dưới) | thread "Hoàn thiện Kaiwa, ưu tiên chia sẻ hội thoại" |
+| Quy trình 1: nghiên cứu học ngôn ngữ và ứng cử viên tính năng. Bản nháp vòng 2 xong, **chờ thien duyệt** (PR #232, chỉ có tài liệu, risk:high, thien merge). Bàn giao 2026-11-07: phiên cũ dừng, tài khoản mới nhận tiếp (xem "Bàn giao nghiên cứu" bên dưới). | `docs/2026-11-04-research` | thread "Nghiên cứu và đề xuất tính năng Sakubun" (đã dừng; ai nhận thì ghi tên phiên vào đây) |
 
-thien đặt ra ba quy trình theo thứ tự: (1) nghiên cứu và chọn tính năng, (2) luật làm việc lâu dài giữa thien và
-Claude, (3) mổ xẻ UI/UX và hệ thống style. Không bắt đầu 2 và 3 trước khi thien duyệt danh sách tính năng của 1.
+### Bàn giao nghiên cứu (2026-11-07)
+
+thien đặt ra ba quy trình dài, làm theo thứ tự, mỗi quy trình chỉ bắt đầu khi thien đồng ý quy trình trước:
+
+1. **Nghiên cứu và chọn tính năng** (đang ở đây). Kế hoạch và nghiên cứu: `docs/plans/2026-11-04-research/`
+   (`00-ke-hoach.md`, A SLA, B trí nhớ, C thói quen, D đa giác quan, E đối thủ, F Việt–Nhật, G nguồn dữ liệu,
+   H phản biện app). Danh sách ứng cử viên vòng 2 (đã tính 8 câu trả lời của thien, có bảng ở mục 1):
+   `docs/plans/2026-11-04-feature-candidates.md`. Việc còn lại: thien trả lời 3 câu ở mục 6 của file đó
+   (vòng dịch "chưa ổn" ở đâu, có muốn kế hoạch N2 cấp tốc 4 tuần không, có cần viết tay kanji không), phản biện,
+   duyệt danh sách cuối; sửa file theo đó rồi để thien merge #232. Mỗi đợt tính năng sau đó có kế hoạch riêng.
+2. **Luật làm việc lâu dài giữa thien và Claude**: tiếng Việt tự nhiên, không mù mờ; mỗi đề xuất có phản biện; khi
+   nào hỏi, khi nào tự làm; mẫu đầu ra. Phác thảo ở mục 6 của `00-ke-hoach.md`. Chưa bắt đầu.
+3. **Mổ xẻ UI/UX và hệ thống style**: kiểm từng trang (Nielsen, WCAG 2.2, `docs/ui-standard.md`), thử bằng nhiệm vụ
+   thật, nghiên cứu style rồi ra token, component, kế hoạch từng PR. Phác thảo ở mục 6 của `00-ke-hoach.md`. Chưa bắt đầu.
+
+Điều cần biết về thien với tư cách người học (2026-11-04): N3 tháng 7/2026 117/180 (ngôn ngữ 48, đọc 34, nghe 35),
+thi **N2 tháng 12/2026**; yếu nhất nghe và nói; học theo hứng, dùng Anki và Quizlet; thích luyện dịch và học đa giác
+quan; muốn nhiều người Việt dùng (có thể thu phí); **không đưa AI vào web** khi chưa có chiến lược kinh doanh; không có
+dữ liệu nào bắt buộc giữ.
 
 ## Chờ thien
 
