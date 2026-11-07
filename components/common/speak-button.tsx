@@ -61,7 +61,9 @@ export function SpeakButton({
   lang?: string;
   label?: string;
   speaker?: number;
-  onProgress?: (ratio: number) => void;
+  /** How far the reading is, 0 to 1; `audio` when it is the server's voice, whose mora timing
+   * /api/tts can give (karaoke by the syllable), not the browser's. */
+  onProgress?: (ratio: number, audio?: boolean) => void;
   rate?: number;
   playToken?: string | number | null;
   /** A new value stops this button's playback, as a press on it would. */
@@ -210,7 +212,7 @@ export function SpeakButton({
         fallback();
       }, AUDIO_START_TIMEOUT_MS);
       audio.ontimeupdate = () => {
-        if (audio.duration) onProgress?.(Math.min(1, audio.currentTime / audio.duration));
+        if (audio.duration) onProgress?.(Math.min(1, audio.currentTime / audio.duration), true);
       };
       audio.onended = () => {
         window.clearTimeout(stallTimer);

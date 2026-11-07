@@ -13,6 +13,7 @@ import { layoutTurns, scriptSpeakers } from '@/lib/kaiwa/layout';
 import { speakerVoices } from '@/lib/kaiwa/voices';
 import { enterLine, nextStep, speakingPauseMs, type ListenState } from '@/lib/kaiwa/listen';
 import { plainJapanese } from '@/lib/kaiwa/parse';
+import { loadMoraStarts } from '@/lib/japanese/karaoke-timing';
 import { ttsUrl } from '@/lib/japanese/tts-url';
 
 // A script read as a chat (phase 8, K3; view redo 7.4e) from the part the learner picks ("Tôi là").
@@ -80,7 +81,9 @@ export function KaiwaChat({
     setPlay((p) => ({ row: state.index, n: (p?.n ?? 0) + 1 }));
     for (const i of [state.index + 1, state.index + 2]) {
       const line = turns[i]?.line;
-      if (line) fetch(ttsUrl(plainJapanese(line.japanese), voiceOf(i), speechRate)).catch(() => {});
+      if (!line) continue;
+      fetch(ttsUrl(plainJapanese(line.japanese), voiceOf(i), speechRate)).catch(() => {});
+      void loadMoraStarts(plainJapanese(line.japanese), voiceOf(i));
     }
   };
   const stopLine = (row: number) => setStop((s) => ({ row, n: (s?.n ?? 0) + 1 }));

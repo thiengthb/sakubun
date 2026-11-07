@@ -1,4 +1,5 @@
 import { routeUserId } from '@/lib/auth/current-user';
+import { moraStarts, type AudioQuery } from '@/lib/japanese/karaoke';
 import { audioCache } from '@/lib/tts/audio-cache';
 import { cacheDir, cacheKey, cacheMaxBytes } from '@/lib/tts/cache-policy';
 
@@ -9,6 +10,26 @@ const TIMEOUT_MS = 15_000;
 
 // Readings VOICEVOX has made once, kept on the data volume (K6a): the next play is a file read.
 const cache = audioCache(cacheDir(process.env), cacheMaxBytes(process.env.TTS_CACHE_MAX_MB));
+
+// When each mora starts in a sentence's reading, for karaoke by the syllable (Kaiwa b). The shares do
+// not depend on the speed, so one answer per sentence and voice, kept in memory: it is small, and
+// VOICEVOX makes it again quickly after a restart.
+const TIMING_KEPT = 2_000;
+const timings = new Map<string, number[] | null>();
+
+async function moraTiming(text: string, speaker: number): Promise<number[] | null | Response> {
+  const key = `${speaker}:${text}`;
+  if (timings.has(key)) return timings.get(key)!;
+  const res = await fetch(
+    `${ENGINE}/audio_query?speaker=${speaker}&text=${encodeURIComponent(text)}`,
+    { method: 'POST', signal: AbortSignal.timeout(TIMEOUT_MS) },
+  );
+  if (!res.ok) return new Response('tts query failed', { status: 503 });
+  const starts = moraStarts((await res.json()) as AudioQuery);
+  if (timings.size >= TIMING_KEPT) timings.delete(timings.keys().next().value!);
+  timings.set(key, starts);
+  return starts;
+}
 
 async function synthesize(
   text: string,
@@ -59,6 +80,11 @@ export async function GET(req: Request) {
   const rate = Number.isFinite(rateNum) && rateNum > 0 ? Math.min(2, Math.max(0.5, rateNum)) : 1;
 
   try {
+    if (url.searchParams.get('timing') === '1') {
+      const starts = await moraTiming(text, speaker);
+      if (starts instanceof Response) return starts;
+      return Response.json({ starts }, { headers: { 'cache-control': 'public, max-age=86400' } });
+    }
     const key = cacheKey({ text, speaker, rate });
     let audio = await cache.get(key);
     if (!audio) {

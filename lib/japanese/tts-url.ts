@@ -6,3 +6,8 @@ export function ttsUrl(text: string, speaker?: number, rate = 1): string {
   const rateParam = rate !== 1 ? `&rate=${rate}` : '';
   return `/api/tts?text=${encodeURIComponent(text)}${speakerParam}${rateParam}`;
 }
+
+// Where a reading's mora timing comes from (Kaiwa b): the same sentence and voice, any speed.
+export function ttsTimingUrl(text: string, speaker?: number): string {
+  return `${ttsUrl(text, speaker)}&timing=1`;
+}

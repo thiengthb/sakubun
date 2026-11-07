@@ -13,9 +13,10 @@ thien đã chọn (2026-11-07): không làm kế hoạch cấp tốc N2; có là
 ## Đang làm
 | Bước | Nhánh | Phiên |
 | --- | --- | --- |
-| Quản trị hiện lại mục đã ẩn trên Kho chung (cả nhóm OpenJLPT) | `claude/project-thread-2ogyjr` | thread "Gom và hoàn thiện việc dang dở Sakubun" |
+| Kaiwa (b): karaoke theo âm tiết | `claude/project-thread-2ogyjr` | thread "Gom và hoàn thiện việc dang dở Sakubun" |
 
 ## Vừa xong
+- Quản trị hiện lại mục đã ẩn trên Kho chung, cả nhóm OpenJLPT (#244).
 - Kaiwa (a) #243: `library_search`/`library_take` tìm và lấy kịch bản chung.
 - Nghiên cứu tính năng vòng 2 (#232): `docs/plans/2026-11-04-feature-candidates.md`, chi tiết trong `2026-11-04-research/`.
 - Hoàn thiện Kaiwa (#234–#238): link chia sẻ đọc được không cần đăng nhập, thẻ "Đang chia sẻ" / "Từ Kho chung",
