@@ -1,7 +1,9 @@
 'use client';
 
 import { useState, type ReactNode } from 'react';
-import { Globe, Loader2 } from 'lucide-react';
+import Link from 'next/link';
+import { Check, Copy, ExternalLink, Globe, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -182,6 +184,43 @@ export function GroupShareButton({
   );
 }
 
+// The shared script's own page, to send to a friend: anyone with it reads the script, signed in or
+// not (thien, 2026-11-07).
+function ShareLink({ path }: { path: string }) {
+  const [copied, setCopied] = useState(false);
+  const copy = async () => {
+    const url = new URL(path, window.location.origin).toString();
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      toast.success('Đã chép đường dẫn', { description: url });
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast.error('Không chép được, hãy chép đường dẫn trên trang chung', { description: url });
+    }
+  };
+  const Icon = copied ? Check : Copy;
+  return (
+    <div data-slot="share-link" className="space-y-2">
+      <p className="text-muted-foreground">
+        Gửi đường dẫn này cho bạn bè: ai có nó cũng đọc được kịch bản, kể cả khi chưa đăng nhập.
+      </p>
+      <div className="flex flex-wrap gap-2">
+        <Button variant="outline" size="sm" onClick={copy}>
+          <Icon className={cn(copied && 'text-ok')} aria-hidden />
+          {copied ? 'Đã chép' : 'Chép đường dẫn'}
+        </Button>
+        <Button variant="outline" size="sm" asChild>
+          <Link href={path}>
+            <ExternalLink aria-hidden />
+            Mở trang chung
+          </Link>
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 // A Kaiwa script (K7b): the share is a copy of the script as it is now, title and lines; editing the
 // script later does not change it until Cập nhật.
 export function ScriptShareButton({
@@ -211,10 +250,11 @@ export function ScriptShareButton({
       canPublish={!shared || shared.changed}
       pending={publish.isPending || unpublish.isPending}
     >
+      {shared && <ShareLink path={`/library/script/${shared.entryId}`} />}
       {!blocked && (
         <p className="text-muted-foreground">
-          Đi kèm: tiêu đề và mọi câu, cả nghĩa. Bản chia sẻ ghi tên tài khoản của bạn; sửa kịch bản
-          sau này không tự đổi bản chia sẻ.
+          Đi kèm: tiêu đề và mọi câu, cả nghĩa. Bản chia sẻ ghi tên tài khoản của bạn và ai có đường
+          dẫn cũng đọc được; sửa kịch bản sau này không tự đổi bản chia sẻ.
           {basedOn && ' Bản chia sẻ ghi là dựa trên kịch bản bạn đã lấy từ Kho chung.'}
         </p>
       )}

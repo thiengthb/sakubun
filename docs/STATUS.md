@@ -4,11 +4,13 @@ Trang này trả lời ba câu cho bất kỳ phiên Claude nào (kể cả từ
 việc tiếp theo là gì**. Cập nhật nó **trong cùng PR** với việc làm, và khi nhận một bước mới (xem
 "Bắt đầu phiên" trong `CLAUDE.md`). Lộ trình đầy đủ: `docs/roadmap.md`. Kế hoạch đã duyệt: `docs/plans/`.
 
-Cập nhật lần cuối: 2026-11-04 (K7 xong phần code: #227, #229; chờ thien thử bằng tài khoản thứ hai).
+Cập nhật lần cuối: 2026-11-07 (hoàn thiện chia sẻ Kaiwa: link xem chung).
 
 ## Đang làm
 
-Không có bước nào đang làm. Lộ trình phase 8 đã hết; việc tiếp theo do thien chọn.
+| Bước | Nhánh | Phiên |
+|---|---|---|
+| Hoàn thiện Kaiwa, chia sẻ trước (thien, 2026-11-07). PR 1: ai có link cũng đọc được kịch bản đã chia sẻ (thien chọn không cần đăng nhập), nút "Chép đường dẫn", đăng nhập xong về đúng trang. Tiếp: PR 2 Hội thoại đánh dấu kịch bản đang chia sẻ và lối sang Kho chung; rồi các phần Kaiwa còn lại (MCP cho kịch bản chung, karaoke theo âm tiết, giọng từng vai, lưu buổi nhập vai) theo thứ tự thien chọn. | `feat/kaiwa-share-link` | thread "Hoàn thiện Kaiwa, ưu tiên chia sẻ hội thoại" |
 
 ## Chờ thien
 
