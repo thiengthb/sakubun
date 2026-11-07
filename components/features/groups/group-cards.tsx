@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useLayoutEffect, useMemo, useState } from 'react';
 import { ChevronLeft, ChevronRight, RefreshCw, RotateCcw, Shuffle, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { IconAction } from '@/components/common/icon-action';
@@ -152,7 +152,9 @@ export function GroupCards({
     setRevealed(false);
   };
 
-  useEffect(() => {
+  // A layout effect, so the handler matching what is on screen is in place before the browser paints it;
+  // a passive effect left a gap where a fast key reached the previous render's handler.
+  useLayoutEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLElement && e.target.closest('input, textarea, select')) return;
       if (e.repeat || e.metaKey || e.ctrlKey || e.altKey) return;

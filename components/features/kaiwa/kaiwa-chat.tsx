@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { MessagesSquare, Pause, Play, Square } from 'lucide-react';
 import { EmptyState } from '@/components/common/empty-state';
 import { KaiwaLine, type RubyLine } from '@/components/features/kaiwa/kaiwa-line';
@@ -126,7 +126,9 @@ export function KaiwaChat({
     return () => window.clearTimeout(timer);
   }, [listen, gapMs]);
 
-  useEffect(() => {
+  // A layout effect, so the handler matching what is on screen is in place before the browser paints it;
+  // a passive effect left a gap where a fast key reached the previous render's handler.
+  useLayoutEffect(() => {
     if (preview) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLElement && e.target.closest('input, textarea, select')) return;

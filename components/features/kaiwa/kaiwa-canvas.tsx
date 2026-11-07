@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, useTransition, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, useTransition, type ReactNode } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { EditorView } from '@codemirror/view';
@@ -169,7 +169,9 @@ export function KaiwaCanvas({
     else switchTo(false);
   };
 
-  useEffect(() => {
+  // A layout effect, so the handler matching what is on screen is in place before the browser paints it;
+  // a passive effect left a gap where a fast key reached the previous render's handler.
+  useLayoutEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.defaultPrevented || !(e.ctrlKey || e.metaKey) || e.altKey) return;
       const key = e.key.toLowerCase();

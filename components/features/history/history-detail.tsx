@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, type ReactNode } from 'react';
+import { useLayoutEffect, type ReactNode } from 'react';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -200,7 +200,9 @@ export function HistoryDetailPanel({
   const next = index >= 0 && index < rows.length - 1 ? rows[index + 1] : undefined;
 
   // The arrow keys step through the turns while the panel is open, as its buttons do.
-  useEffect(() => {
+  // A layout effect, so the handler matching what is on screen is in place before the browser paints it;
+  // a passive effect left a gap where a fast key reached the previous render's handler.
+  useLayoutEffect(() => {
     if (!sentence) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLElement && e.target.closest('input, textarea, select')) return;
