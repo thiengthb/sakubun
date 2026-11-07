@@ -11,9 +11,7 @@ trình thien đặt, xong cái trước mới sang cái sau: (1) chọn tính n�
 (3) UI/UX (phác thảo: mục 6 của `docs/plans/2026-11-04-research/00-ke-hoach.md`).
 
 ## Đang làm
-| Bước | Nhánh | Phiên |
-|---|---|---|
-| (trống; nhận bước nào thì ghi vào đây trong commit đầu tiên của nhánh) | | |
+Chưa có bước nào. Nhận bước nào thì ghi bảng `Bước | Nhánh | Phiên` vào đây trong commit đầu tiên của nhánh.
 
 ## Vừa xong
 - Nghiên cứu tính năng vòng 2 (#232): `docs/plans/2026-11-04-feature-candidates.md`, chi tiết trong `2026-11-04-research/`.
