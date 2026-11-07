@@ -419,6 +419,44 @@ test('the line chosen with the arrows stays in the middle of the screen', async 
     .toBeLessThan(80);
 });
 
+// thien, 2026-11-07: + and − (not Ctrl) size the chat's text, as do the menu's items; the browser
+// keeps the size.
+test('the chat text grows and shrinks with + and −, and the browser keeps it', async ({ page }) => {
+  await seedE2eAccount();
+  const d = db();
+  d.exec(`DELETE FROM Script WHERE userId = ${E2E_OWNER} AND id = 'kw-size'`);
+  const now = new Date().toISOString();
+  d.prepare(
+    `INSERT INTO Script (id, userId, title, body, analysis, version, createdAt, updatedAt)
+     VALUES ('kw-size', ${E2E_OWNER}, 'Cỡ chữ', ?, NULL, 1, ?, ?)`,
+  ).run('A: はい。 | Vâng.\nB: いいえ。 | Không.', now, now);
+  d.close();
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await signIn(page);
+  await page.goto('/kaiwa/kw-size', { waitUntil: 'networkidle' });
+  await page.evaluate(() => localStorage.removeItem('sakubun.local:kaiwa-text-size'));
+  await page.reload({ waitUntil: 'networkidle' });
+  const chat = page.locator('[data-slot="kaiwa-lines"]');
+  const zoom = () => chat.evaluate((el) => getComputedStyle(el).zoom);
+  const width = async () => (await page.locator('[data-slot="kaiwa-line"]').first().boundingBox())!;
+  const before = await width();
+
+  await page.keyboard.press('+');
+  await page.keyboard.press('+');
+  await expect.poll(zoom).toBe('1.3');
+  expect((await width()).height).toBeGreaterThan(before.height * 1.2);
+  await page.reload({ waitUntil: 'networkidle' });
+  await expect.poll(zoom).toBe('1.3');
+
+  await page.keyboard.press('-');
+  await expect.poll(zoom).toBe('1.15');
+  await page.getByRole('button', { name: 'Thao tác' }).click();
+  await expect(page.getByRole('menuitem', { name: /Chữ to hơn/ })).toContainText('115%');
+  await page.getByRole('menuitem', { name: 'Chữ nhỏ hơn' }).click();
+  await expect.poll(zoom).toBe('1');
+  await expect(page.getByRole('menuitem', { name: 'Chữ nhỏ hơn' })).toBeDisabled();
+});
+
 // thien, 7.4f: the editor colours the format, offers the speakers so far, saves with Ctrl S, and its
 // preview follows the cursor; leaving with changes not saved asks first.
 test('the canvas edits a script in place, with a live preview', async ({ page }) => {
