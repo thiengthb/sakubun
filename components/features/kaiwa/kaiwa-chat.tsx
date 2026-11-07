@@ -28,6 +28,7 @@ export function KaiwaChat({
   speechRate,
   showFurigana,
   preview,
+  guest = false,
 }: {
   /** Where "Tôi là" is remembered; a new script has none yet. */
   scriptId: string | null;
@@ -36,6 +37,8 @@ export function KaiwaChat({
   speechRate?: number;
   showFurigana: boolean;
   preview?: { row: number | null; onPick: (row: number) => void };
+  /** Someone not signed in reading a shared script: no speech, which needs an account. */
+  guest?: boolean;
 }) {
   const [showMeaning, setShowMeaning] = useState(true);
   const [cover, setCover] = useState(false);
@@ -203,7 +206,7 @@ export function KaiwaChat({
         )}
         {!preview && (
           <div className="flex flex-wrap items-center gap-2">
-            {listen ? (
+            {guest ? null : listen ? (
               <>
                 <Button
                   variant="outline"
@@ -273,7 +276,8 @@ export function KaiwaChat({
             onDone={(heard) => lineDone(i, heard)}
             onManualPlay={() => lineChosen(i)}
             onManualStop={() => lineStopped(i)}
-            lookup={!preview}
+            lookup={!preview && !guest}
+            speak={!guest}
             voiceSpeaker={voiceOf(i)}
             speechRate={speechRate}
           />

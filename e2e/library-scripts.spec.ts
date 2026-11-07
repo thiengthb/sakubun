@@ -72,6 +72,13 @@ for (const width of [1440, 390]) {
     await shot('k7b-share-dialog');
     await dialog.getByRole('button', { name: 'Công khai' }).click();
     await expect(page.getByText('Đã công khai lên Kho chung')).toBeVisible();
+    // Once shared, the dialog has the link to send a friend.
+    await expect(dialog.getByRole('button', { name: 'Chép đường dẫn' })).toBeVisible();
+    await expect(dialog.getByRole('link', { name: 'Mở trang chung' })).toHaveAttribute(
+      'href',
+      /^\/library\/script\//,
+    );
+    await shot('share-link-dialog');
     await page.keyboard.press('Escape');
 
     // Kho chung › Kịch bản lists both, the most taken first; the learner's own is marked as theirs.
@@ -140,3 +147,43 @@ for (const width of [1440, 390]) {
     }
   });
 }
+
+// Anyone with the link reads a shared script, signed in or not (thien, 2026-11-07). A guest gets no
+// speech, and "Đăng nhập để lấy về" brings them back to the same script once signed in.
+for (const width of [1440, 390]) {
+  test(`a guest reads a shared script from its link, then signs in to take it at ${width}px`, async ({
+    page,
+  }) => {
+    test.skip(width === 390 && !process.env.SCREENSHOT_DIR, 'the phone run only takes screenshots');
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto(`/library/script/${SHARED}`, { waitUntil: 'networkidle' });
+    await expect(page).toHaveURL(new RegExp(`/library/script/${SHARED}$`));
+    await expect(page.getByRole('heading', { name: 'Hỏi đường (e2e)' })).toBeVisible();
+    await expect(page.locator('[data-slot="kaiwa-line"]')).toHaveCount(4);
+    await expect(page.locator('rt').first()).toHaveText('えき');
+    await expect(page.locator('[data-slot="guest-note"]')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Nghe câu' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Nghe cả bài' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Lấy về' })).toHaveCount(0);
+    if (process.env.SCREENSHOT_DIR) {
+      await page.screenshot({
+        path: path.join(process.env.SCREENSHOT_DIR, `share-guest-${width}.png`),
+        fullPage: true,
+      });
+    }
+
+    await page.getByRole('link', { name: 'Đăng nhập để lấy về' }).click();
+    await page.waitForURL(/\/login\?next=/);
+    await page.getByLabel('Email').fill(E2E_EMAIL);
+    await page.getByLabel('Mật khẩu').fill(E2E_LOGIN);
+    await page.getByRole('button', { name: 'Đăng nhập' }).click();
+    await page.waitForURL(`**/library/script/${SHARED}`, { timeout: 30_000 });
+    await expect(page.getByRole('button', { name: 'Lấy về' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Nghe cả bài' })).toBeVisible();
+  });
+}
+
+test('a hidden or missing shared script is not found for a guest', async ({ page }) => {
+  await page.goto('/library/script/kwlib-missing');
+  await expect(page.getByRole('heading', { name: 'Không tìm thấy trang' })).toBeVisible();
+});
