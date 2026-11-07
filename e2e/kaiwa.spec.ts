@@ -193,10 +193,12 @@ test('Hội thoại lists a saved script and its page reads it line by line', as
   await page.getByRole('button', { name: 'Che câu của tôi' }).click();
   await expect(covered).toHaveCount(0);
 
-  // The page's keys sit behind the `?`; ↑ ↓ choose a line and Ctrl E opens the editor.
-  await page.getByRole('button', { name: 'Phím tắt' }).hover();
+  // The page's actions sit behind one menu (thien, 2026-11-07), the keys too; ↑ ↓ choose a line,
+  // brought to the middle of the screen, and Ctrl E opens the editor.
+  await page.getByRole('button', { name: 'Thao tác' }).click();
+  await page.getByRole('menuitem', { name: 'Phím tắt' }).click();
   await expect(page.locator('[data-slot="shortcuts"]')).toContainText('Sửa kịch bản');
-  await page.mouse.move(0, 0);
+  await page.keyboard.press('Escape');
   await page.keyboard.press('ArrowDown');
   await page.keyboard.press('ArrowDown');
   await expect(lines.nth(1).locator('.ring-2')).toHaveCount(1);
@@ -206,7 +208,8 @@ test('Hội thoại lists a saved script and its page reads it line by line', as
   await page.keyboard.press('Control+e');
   await page.waitForURL(/\/kaiwa\/kw-e2e$/);
 
-  await page.getByRole('button', { name: 'Sửa', exact: true }).click();
+  await page.getByRole('button', { name: 'Thao tác' }).click();
+  await page.getByRole('menuitem', { name: 'Sửa', exact: true }).click();
   await page.getByRole('button', { name: 'Xoá', exact: true }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Xoá' }).click();
   await page.waitForURL(/\/kaiwa$/);
@@ -248,7 +251,8 @@ test('a script is written and fixed on the web too', async ({ page }) => {
   await expect(page.locator('[data-slot="kaiwa-line"]')).toHaveCount(2);
   const id = new URL(page.url()).pathname.split('/').pop()!;
 
-  await page.getByRole('button', { name: 'Sửa', exact: true }).click();
+  await page.getByRole('button', { name: 'Thao tác' }).click();
+  await page.getByRole('menuitem', { name: 'Sửa', exact: true }).click();
   await page.waitForURL(/\?edit=1$/);
   await expect(page.getByLabel('Tiêu đề')).toHaveValue('Ở ga');
   // The AI saves a new version while the learner is editing.
@@ -385,6 +389,34 @@ test('a wide screen opens the last script read, with the list in a column', asyn
   await expect(page.locator('[data-slot="kaiwa-card"]')).toHaveCount(2);
   await page.goto('/kaiwa/kw-old', { waitUntil: 'networkidle' });
   await expect(side).toBeHidden();
+});
+
+// thien, 2026-11-07: ↑ ↓ bring the chosen line to the middle of the screen, not to its bottom edge.
+test('the line chosen with the arrows stays in the middle of the screen', async ({ page }) => {
+  await seedE2eAccount();
+  const d = db();
+  d.exec(`DELETE FROM Script WHERE userId = ${E2E_OWNER} AND id = 'kw-long'`);
+  const body = Array.from({ length: 30 }, (_, i) =>
+    i % 2 ? `B: はい、${i}です。 | Vâng, ${i}.` : `A: ${i}ですか。 | ${i} à?`,
+  ).join('\n');
+  const now = new Date().toISOString();
+  d.prepare(
+    `INSERT INTO Script (id, userId, title, body, analysis, version, createdAt, updatedAt)
+     VALUES ('kw-long', ${E2E_OWNER}, 'Bài dài', ?, NULL, 1, ?, ?)`,
+  ).run(body, now, now);
+  d.close();
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await signIn(page);
+  await page.goto('/kaiwa/kw-long', { waitUntil: 'networkidle' });
+  for (let i = 0; i < 20; i++) await page.keyboard.press('ArrowDown');
+  const chosen = page.locator('[data-slot="kaiwa-line"]').nth(19);
+  await expect(chosen.locator('.ring-2')).toHaveCount(1);
+  await expect
+    .poll(async () => {
+      const box = (await chosen.boundingBox())!;
+      return Math.abs(box.y + box.height / 2 - 450);
+    })
+    .toBeLessThan(80);
 });
 
 // thien, 7.4f: the editor colours the format, offers the speakers so far, saves with Ctrl S, and its

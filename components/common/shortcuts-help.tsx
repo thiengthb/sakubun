@@ -55,27 +55,31 @@ export function ShortcutsHelp({ shortcuts }: { shortcuts: readonly Shortcut[] })
         onPointerLeave={leave}
       >
         <p className="mb-2 text-xs font-medium text-muted-foreground">Phím tắt</p>
-        <dl
-          data-slot="shortcuts"
-          className="grid grid-cols-[auto_1fr] items-center gap-x-3 gap-y-1.5"
-        >
-          {shortcuts.map((s) => (
-            <div key={s.does} className="contents">
-              <dt className="flex gap-1">
-                {s.keys.map((k) => (
-                  <kbd
-                    key={k}
-                    className="min-w-6 rounded-sm border border-border bg-card px-1.5 py-0.5 text-center font-sans text-xs font-medium"
-                  >
-                    {k}
-                  </kbd>
-                ))}
-              </dt>
-              <dd className="text-sm">{s.does}</dd>
-            </div>
-          ))}
-        </dl>
+        <ShortcutsList shortcuts={shortcuts} />
       </PopoverContent>
     </Popover>
+  );
+}
+
+/** The keys and what each does, as a two-column list (the `?` popover, Hội thoại's menu). */
+export function ShortcutsList({ shortcuts }: { shortcuts: readonly Shortcut[] }) {
+  return (
+    <dl data-slot="shortcuts" className="grid grid-cols-[auto_1fr] items-center gap-x-3 gap-y-1.5">
+      {shortcuts.map((s) => (
+        <div key={s.does} className="contents">
+          <dt className="flex gap-1">
+            {s.keys.map((k) => (
+              <kbd
+                key={k}
+                className="min-w-6 rounded-sm border border-border bg-card px-1.5 py-0.5 text-center font-sans text-xs font-medium"
+              >
+                {k}
+              </kbd>
+            ))}
+          </dt>
+          <dd className="text-sm">{s.does}</dd>
+        </div>
+      ))}
+    </dl>
   );
 }

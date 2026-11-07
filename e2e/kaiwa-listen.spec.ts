@@ -164,7 +164,8 @@ test('"Nhập vai với AI" copies a request for the part the learner plays, and
   await signIn(page);
   await page.goto('/kaiwa/kw-listen', { waitUntil: 'networkidle' });
   await page.getByRole('radio', { name: 'B' }).click();
-  await page.getByRole('button', { name: 'Nhập vai với AI' }).click();
+  await page.getByRole('button', { name: 'Thao tác' }).click();
+  await page.getByRole('menuitem', { name: 'Nhập vai với AI' }).click();
   await expect
     .poll(() => page.evaluate(() => navigator.clipboard.readText()))
     .toBe('Nhập vai kịch bản Kaiwa "Nghe cả bài" trong sakubun, tôi là B');
@@ -178,6 +179,7 @@ test('"Nhập vai với AI" copies a request for the part the learner plays, and
   ).run('はじめまして。 | Rất vui được gặp.', now, now);
   d.close();
   await page.goto('/kaiwa/kw-mono', { waitUntil: 'networkidle' });
-  await expect(page.getByRole('button', { name: 'Sửa với AI' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Nhập vai với AI' })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Thao tác' }).click();
+  await expect(page.getByRole('menuitem', { name: 'Sửa với AI' })).toBeVisible();
+  await expect(page.getByRole('menuitem', { name: 'Nhập vai với AI' })).toHaveCount(0);
 });
