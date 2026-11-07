@@ -255,6 +255,7 @@ export function KaiwaCanvas({
       onEdit={() => switchTo(true)}
       editCommand={editScriptCommand(script!.title)}
       roleplay={me && savedSpeakers.length > 1 ? roleplayCommand(script!.title, me) : null}
+      voicesHref={savedSpeakers.length > 0 ? `/kaiwa/${script!.id}/voices` : null}
       shortcuts={VIEW_KEYS}
     />
   );

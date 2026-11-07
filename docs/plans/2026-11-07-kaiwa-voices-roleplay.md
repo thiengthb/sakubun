@@ -6,6 +6,9 @@
   (4) câu chưa đúng chưa đưa vào Ôn nhanh.
 - Khi làm c1 (2026-11-07): giọng đã chọn của một vai không còn trong kịch bản (sau khi đổi tên vai) bị bỏ qua khi đọc,
   không xoá khỏi cột.
+- Khi làm c2 (2026-11-07): luật UI (`no-form-dialog`, docs/ui-standard.md) không cho hộp thoại chứa form nhiều ô,
+  nên "Giọng từng vai" trong menu Thao tác mở một trang riêng `/kaiwa/[id]/voices` thay cho hộp thoại. Mỗi vai một
+  hàng: ô chọn giọng và câu đầu tiên của vai, bấm loa nghe bằng giọng đang chọn; Lưu tắt cho tới khi có thay đổi.
 
 Hai việc Kaiwa còn lại theo thứ tự anh chọn (a, b, c, d). (a) Claude tìm và lấy kịch bản chung qua MCP, và (b) karaoke theo âm tiết đã code xong, không đổi schema. (c) và (d) đều thêm cột hoặc bảng, nên theo luật của repo em xin anh duyệt trước khi code.
 

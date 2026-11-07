@@ -12,9 +12,9 @@ Luyện dịch (R1–R4, kế hoạch đã duyệt) và Kaiwa (c) chọn giọng
 
 ## Đang làm
 
-| Bước                                                                                     | Nhánh                          | Phiên                                           |
-| ---------------------------------------------------------------------------------------- | ------------------------------ | ----------------------------------------------- |
-| Kaiwa c1: lưu giọng chọn cho từng vai (`docs/plans/2026-11-07-kaiwa-voices-roleplay.md`) | `claude/project-thread-2ogyjr` | thread "Gom và hoàn thiện việc dang dở Sakubun" |
+| Bước                                                                                                                         | Nhánh                          | Phiên                                           |
+| ---------------------------------------------------------------------------------------------------------------------------- | ------------------------------ | ----------------------------------------------- |
+| Kaiwa c (K10): giọng từng vai, cột `voices` và trang `/kaiwa/[id]/voices` (`docs/plans/2026-11-07-kaiwa-voices-roleplay.md`) | `claude/project-thread-2ogyjr` | thread "Gom và hoàn thiện việc dang dở Sakubun" |
 
 ## Vừa xong
 

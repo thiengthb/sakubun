@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useState } from 'react';
 import {
   AArrowDown,
@@ -10,6 +11,7 @@ import {
   MoreHorizontal,
   Pencil,
   Sparkles,
+  Volume2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -50,6 +52,7 @@ export function KaiwaActionsMenu({
   onEdit,
   editCommand,
   roleplay,
+  voicesHref,
   shortcuts,
 }: {
   scriptId: string;
@@ -58,6 +61,8 @@ export function KaiwaActionsMenu({
   editCommand: string;
   /** "Nhập vai với AI": only with two parts or more. */
   roleplay: string | null;
+  /** "Giọng từng vai" (Kaiwa c): its page, only when the script has a part. */
+  voicesHref: string | null;
   shortcuts: readonly Shortcut[];
 }) {
   const [dialog, setDialog] = useState<'share' | 'keys' | null>(null);
@@ -81,6 +86,14 @@ export function KaiwaActionsMenu({
             <DropdownMenuItem onSelect={() => copyCommand(roleplay)}>
               <Drama aria-hidden />
               Nhập vai với AI
+            </DropdownMenuItem>
+          )}
+          {voicesHref && (
+            <DropdownMenuItem asChild>
+              <Link href={voicesHref}>
+                <Volume2 aria-hidden />
+                Giọng từng vai
+              </Link>
             </DropdownMenuItem>
           )}
           <DropdownMenuSeparator />
