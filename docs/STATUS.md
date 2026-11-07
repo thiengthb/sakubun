@@ -29,10 +29,8 @@ Chưa có bước nào. Nhận bước nào thì ghi bảng `Bước | Nhánh | 
 
 ## Việc nhỏ còn treo
 - Trên điện thoại, nút ⋯ của trang kịch bản nằm riêng một hàng để khớp màn hình đang tải; đổi thì đổi cả hai.
-- e2e: cả bộ xanh sau PR dọn e2e 2026-11-07 (CI không chạy e2e, nên chạy tay trước PR đổi UI). Còn một lần đỏ hiếm ở
+- e2e: cả bộ xanh sau #240 (2026-11-07) (CI không chạy e2e, nên chạy tay trước PR đổi UI). Còn một lần đỏ hiếm ở
   `quick-review` "at 390px" (hai nhãn "Thẻ 1 / 4" cùng lúc, chưa tái hiện lại). Gỡ runner `tnt-laptop-wsl` nếu còn. Kế hoạch phase 6 chưa có trong repo.
-- 109 nhánh cũ đã merge chờ xoá (thien đã duyệt; proxy của Claude không xoá được): chạy
-  `delete-branches.sh` trong thư mục dự án `sakubun/branch-cleanup/`, danh sách SHA để khôi phục nằm cạnh nó.
 
 ## Ghi chú
 - thien là người học (thi N2 tháng 12/2026, yếu nghe và nói): mục 1 của `docs/plans/2026-11-04-feature-candidates.md`.
