@@ -251,6 +251,11 @@ export interface GradedTurn {
   // True when Easy was lowered to Good because the learner had a hint.
   lowered: boolean;
   nextDue: Date;
+  // For the result block (R4): what the learner wrote, the sentence in the language they answered
+  // in, and the feedback as stored.
+  answer: string;
+  reference: string;
+  feedback: string | null;
 }
 
 function parseErrorTags(tags: readonly string[] | undefined): ActionResult<ErrorTag[]> {
@@ -268,7 +273,14 @@ function isRecordNotFound(e: unknown): boolean {
 async function findTurn(db: UserDb, turnId: string) {
   return db.turn.findUnique({
     where: { id: turnId },
-    select: { id: true, status: true, item: { select: { id: true, srs: true } } },
+    select: {
+      id: true,
+      status: true,
+      direction: true,
+      ja: true,
+      vi: true,
+      item: { select: { id: true, srs: true } },
+    },
   });
 }
 
@@ -329,7 +341,14 @@ export async function gradeTurn(
   });
   if (!recordedOrGone) return err('Turn already graded. Call next_turn for a new one.');
   const [recorded] = recordedOrGone;
-  return ok({ rating, lowered: rating !== parsed.data, nextDue: recorded.next.due });
+  return ok({
+    rating,
+    lowered: rating !== parsed.data,
+    nextDue: recorded.next.due,
+    answer,
+    reference: turn.direction === 'JA_VI' ? turn.vi : turn.ja,
+    feedback,
+  });
 }
 
 export async function skipTurn(db: UserDb, turnId: string): Promise<ActionResult<undefined>> {

@@ -144,10 +144,17 @@ describe('MCP v2', () => {
       turnId: field(staged.text, 'turnId'),
       answer: 'Chỉ vì trễ nên lỡ tàu.',
       rating: 3,
+      feedback: 'Có thể nói "không lên được tàu".',
     });
     expect(graded.isError).toBe(false);
-    expect(graded.text).toMatch(/^graded 3 \(Good\) · next review in /);
-    expect(graded.text).toMatch(/next: .*next_turn/);
+    // R4: the block to show, with the reference even for a right answer.
+    expect(graded.text).toMatch(/^graded 3 \(Good\)\. Block:\n\*\*Đúng · Nhớ\*\* · ôn lại sau /);
+    expect(graded.text).toContain('> **Bạn viết:** Chỉ vì trễ nên lỡ tàu.');
+    expect(graded.text).toContain('> **Tham khảo:** Chỉ vì trễ một chút mà không lên được tàu.');
+    expect(graded.text).toContain('**Cách nói khác:** Có thể nói "không lên được tàu".');
+    expect(graded.text).toMatch(
+      /next: show the learner the block as it is, then call next_turn\.$/,
+    );
     expect(await db.reviewLog.count({ where: { channel: 'mcp' } })).toBe(1);
   });
 
