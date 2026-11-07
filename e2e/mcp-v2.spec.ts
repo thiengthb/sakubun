@@ -21,9 +21,11 @@ test('MCP v2: one whole turn through the v2 profile', async ({ request }) => {
   expect(names.sort()).toEqual(
     [
       'add_items',
+      'example_add',
       'grade_turn',
       'kaiwa_get',
       'kaiwa_list',
+      'kaiwa_roleplay',
       'kaiwa_save',
       'library_search',
       'library_take',

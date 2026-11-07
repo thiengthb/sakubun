@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, useTransition } from 'react';
+import { useLayoutEffect, useRef, useState, useTransition } from 'react';
 import Link from 'next/link';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -250,7 +250,10 @@ export function QuickReviewView({
     next();
   };
 
-  useEffect(() => {
+  // A layout effect, so the handler that matches what is on screen is in place before the browser
+  // paints it: with a passive effect a key pressed the moment the grade buttons appear still reached
+  // the previous card's handler and was dropped.
+  useLayoutEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLElement && e.target.closest('input, textarea, select')) return;
       if (!card || e.repeat || e.metaKey || e.ctrlKey || e.altKey) return;

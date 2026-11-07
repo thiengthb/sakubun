@@ -155,7 +155,7 @@ test('Hội thoại lists a saved script and its page reads it line by line', as
   }
   await page.mouse.move(0, 0);
 
-  if (shots)
+  if (shots) {
     for (const width of [1440, 390]) {
       await page.setViewportSize({ width, height: width === 390 ? 844 : 900 });
       await page.screenshot({
@@ -163,6 +163,10 @@ test('Hội thoại lists a saved script and its page reads it line by line', as
         fullPage: true,
       });
     }
+    // The rest of the test runs at the width it started with; on a phone the actions menu is laid
+    // out differently.
+    await page.setViewportSize({ width: 1200, height: 900 });
+  }
 
   // Taking B's part turns the chat around, and the choice survives a reload.
   await page.getByRole('radio', { name: 'B' }).click();

@@ -1,6 +1,6 @@
 # Trạng thái hiện tại
 
-Cập nhật lần cuối: 2026-11-07 · Claude (thread "Xây bộ luật làm việc người–AI chung", tài khoản của thien)
+Cập nhật lần cuối: 2026-11-07 · Claude (thread "Gom và hoàn thiện việc dang dở Sakubun", tài khoản của thien)
 
 Trang này cho mọi phiên (kể cả tài khoản, model khác) biết trong 2 phút: đang ở đâu, ai giữ việc gì, cần thien làm gì.
 Lịch sử nằm trong git, PR và `docs/roadmap.md`, không ghi ở đây. Cả file dưới 40 dòng; quá thì gộp hoặc bỏ, đừng thêm.
@@ -28,10 +28,11 @@ Chưa có bước nào. Nhận bước nào thì ghi bảng `Bước | Nhánh | 
 3. **Thu hồi token MCP `k9`** (Cài đặt > Tài khoản > Token MCP), xoá `token.txt` trong `C:\FPT_Source\sakubun-backups\kaiwa-k9`.
 
 ## Việc nhỏ còn treo
-- Đóng PR #231 (bản K7b làm song song với #229 đã merge; Claude không có quyền đóng).
 - Trên điện thoại, nút ⋯ của trang kịch bản nằm riêng một hàng để khớp màn hình đang tải; đổi thì đổi cả hai.
-- e2e chập chờn: `quick-review` "by keyboard" (đỏ 3/4 lần 28/10, 4/11 xanh 17 lần); `kaiwa.spec.ts` "line by line" chỉ
-  đỏ khi có `SCREENSHOT_DIR`. Gỡ runner `tnt-laptop-wsl` nếu còn (`docs/ci-runner.md`). Kế hoạch phase 6 chưa có trong repo.
+- e2e: cả bộ xanh sau PR dọn e2e 2026-11-07 (CI không chạy e2e, nên chạy tay trước PR đổi UI). Còn một lần đỏ hiếm ở
+  `quick-review` "at 390px" (hai nhãn "Thẻ 1 / 4" cùng lúc, chưa tái hiện lại). Gỡ runner `tnt-laptop-wsl` nếu còn. Kế hoạch phase 6 chưa có trong repo.
+- 109 nhánh cũ đã merge chờ xoá (thien đã duyệt; proxy của Claude không xoá được): chạy
+  `delete-branches.sh` trong thư mục dự án `sakubun/branch-cleanup/`, danh sách SHA để khôi phục nằm cạnh nó.
 
 ## Ghi chú
 - thien là người học (thi N2 tháng 12/2026, yếu nghe và nói): mục 1 của `docs/plans/2026-11-04-feature-candidates.md`.
