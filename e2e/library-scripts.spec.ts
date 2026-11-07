@@ -66,7 +66,8 @@ for (const width of [1440, 390]) {
 
     // Share the learner's own script from its page.
     await page.goto(`/kaiwa/${OWN}`, { waitUntil: 'networkidle' });
-    await page.getByRole('button', { name: 'Chia sẻ', exact: true }).click();
+    await page.getByRole('button', { name: 'Thao tác' }).click();
+    await page.getByRole('menuitem', { name: 'Chia sẻ', exact: true }).click();
     const dialog = page.getByRole('dialog');
     await expect(dialog).toContainText('lấy một bản sao về Hội thoại');
     await shot('k7b-share-dialog');
@@ -129,7 +130,8 @@ for (const width of [1440, 390]) {
     await page.goto(copy, { waitUntil: 'networkidle' });
 
     // Unedited, the copy cannot be shared again.
-    await page.getByRole('button', { name: 'Chia sẻ', exact: true }).click();
+    await page.getByRole('button', { name: 'Thao tác' }).click();
+    await page.getByRole('menuitem', { name: 'Chia sẻ', exact: true }).click();
     await expect(page.getByRole('dialog')).toContainText('giống hệt bản bạn lấy từ Kho chung');
     await expect(page.getByRole('dialog').getByRole('button', { name: 'Công khai' })).toHaveCount(
       0,
@@ -144,7 +146,8 @@ for (const width of [1440, 390]) {
 
     // Unsharing takes it off Kho chung.
     await page.goto(`/kaiwa/${OWN}`, { waitUntil: 'networkidle' });
-    await page.getByRole('button', { name: 'Đang chia sẻ' }).click();
+    await page.getByRole('button', { name: 'Thao tác' }).click();
+    await page.getByRole('menuitem', { name: 'Đang chia sẻ' }).click();
     await page.getByRole('dialog').getByRole('button', { name: 'Gỡ khỏi Kho chung' }).click();
     await expect(page.getByText('Đã gỡ khỏi Kho chung')).toBeVisible();
     await page.goto('/library?tab=scripts', { waitUntil: 'networkidle' });

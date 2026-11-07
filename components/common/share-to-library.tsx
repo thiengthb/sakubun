@@ -39,6 +39,8 @@ function ShareDialog({
   unpublish,
   canPublish,
   pending,
+  open: openProp,
+  onOpenChange,
 }: {
   shared: boolean;
   title: string;
@@ -48,16 +50,23 @@ function ShareDialog({
   unpublish: () => void;
   canPublish: boolean;
   pending: boolean;
+  /** Opened from elsewhere (a menu): no button of its own. */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const [ownOpen, setOwnOpen] = useState(false);
+  const open = openProp ?? ownOpen;
+  const setOpen = onOpenChange ?? setOwnOpen;
   return (
     <>
-      <ExpandingIconButton
-        icon={Globe}
-        label={shared ? 'Đang chia sẻ' : 'Chia sẻ'}
-        onClick={() => setOpen(true)}
-        className={cn(shared && '[&>svg]:text-accent-brand')}
-      />
+      {openProp === undefined && (
+        <ExpandingIconButton
+          icon={Globe}
+          label={shared ? 'Đang chia sẻ' : 'Chia sẻ'}
+          onClick={() => setOpen(true)}
+          className={cn(shared && '[&>svg]:text-accent-brand')}
+        />
+      )}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
           <DialogHeader>
@@ -226,9 +235,14 @@ function ShareLink({ path }: { path: string }) {
 export function ScriptShareButton({
   scriptId,
   status,
+  open,
+  onOpenChange,
 }: {
   scriptId: string;
   status: ScriptShareStatus;
+  /** Opened from Hội thoại's menu instead of a button of its own. */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }) {
   const publish = useServerAction(publishScriptAction, {
     success: (r) => (r.created ? 'Đã công khai lên Kho chung' : 'Đã cập nhật bản chia sẻ'),
@@ -249,6 +263,8 @@ export function ScriptShareButton({
       unpublish={() => unpublish.run(scriptId)}
       canPublish={!shared || shared.changed}
       pending={publish.isPending || unpublish.isPending}
+      open={open}
+      onOpenChange={onOpenChange}
     >
       {shared && <ShareLink path={`/library/script/${shared.entryId}`} />}
       {!blocked && (

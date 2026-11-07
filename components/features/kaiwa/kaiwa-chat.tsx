@@ -154,7 +154,7 @@ export function KaiwaChat({
         setSelected(next);
         document
           .querySelectorAll('[data-slot="kaiwa-line"]')
-          [next]?.scrollIntoView({ block: 'nearest' });
+          [next]?.scrollIntoView({ block: 'center' });
         return;
       }
       if (e.key === 'Enter' && selected !== null) {
