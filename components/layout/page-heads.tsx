@@ -5,6 +5,7 @@ import {
   ClipboardPaste,
   Compass,
   Database,
+  Drama,
   Dumbbell,
   FileSpreadsheet,
   FolderOpen,
@@ -84,6 +85,18 @@ export const LIBRARY_TABS: StoredTabSet = {
   urlKey: 'tab',
 };
 
+// Lịch sử (Kaiwa d2): the translation turns, and the role-plays saved by kaiwa_roleplay_save.
+export const HISTORY_TABS: StoredTabSet = {
+  items: [
+    { value: 'dich', label: 'Luyện dịch', icon: Languages },
+    { value: 'nhap-vai', label: 'Nhập vai', icon: Drama },
+  ],
+  label: 'Chọn loại luyện tập',
+  initial: 'dich',
+  storeKey: 'history.tab',
+  urlKey: 'tab',
+};
+
 export const GROUP_TABS: StoredTabSet = {
   items: [
     { value: 'list', label: 'Danh sách', icon: List },
@@ -137,6 +150,7 @@ export const PAGE_TAB_SETS = {
   settings: SETTINGS_TABS,
   resources: RESOURCE_TABS,
   library: LIBRARY_TABS,
+  history: HISTORY_TABS,
   input: INPUT_TABS,
   item: itemTabs(),
   group: GROUP_TABS,

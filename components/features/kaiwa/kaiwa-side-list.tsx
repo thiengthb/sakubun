@@ -9,7 +9,7 @@ import { EmptyState } from '@/components/common/empty-state';
 import { ExpandingIconButton } from '@/components/common/expanding-icon-button';
 import { SearchInput } from '@/components/common/search-input';
 import { Truncate } from '@/components/ui/truncate';
-import { WRITE_SCRIPT_COMMAND } from '@/components/features/kaiwa/kaiwa-commands';
+import { WRITE_SCRIPT_COMMAND } from '@/lib/kaiwa/commands';
 import type { KaiwaListCard } from '@/components/features/kaiwa/kaiwa-list-view';
 import { cn } from '@/lib/core/utils';
 

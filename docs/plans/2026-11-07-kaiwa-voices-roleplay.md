@@ -9,6 +9,9 @@
 - Khi làm c2 (2026-11-07): luật UI (`no-form-dialog`, docs/ui-standard.md) không cho hộp thoại chứa form nhiều ô,
   nên "Giọng từng vai" trong menu Thao tác mở một trang riêng `/kaiwa/[id]/voices` thay cho hộp thoại. Mỗi vai một
   hàng: ô chọn giọng và câu đầu tiên của vai, bấm loa nghe bằng giọng đang chọn; Lưu tắt cho tới khi có thay đổi.
+- Khi làm d2 (2026-11-07): "thẻ Nhập vai" trong Lịch sử là một tab (Luyện dịch | Nhập vai), để dòng thời gian luyện
+  dịch giữ nguyên bộ lọc và thanh kết quả theo ngày. Buổi nhập vai lưu tên kịch bản lúc chơi; xoá kịch bản thì thẻ vẫn
+  còn, chỉ mất câu mẫu và nút "Mở kịch bản".
 
 Hai việc Kaiwa còn lại theo thứ tự anh chọn (a, b, c, d). (a) Claude tìm và lấy kịch bản chung qua MCP, và (b) karaoke theo âm tiết đã code xong, không đổi schema. (c) và (d) đều thêm cột hoặc bảng, nên theo luật của repo em xin anh duyệt trước khi code.
 
