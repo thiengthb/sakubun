@@ -4,13 +4,15 @@ Trang này trả lời ba câu cho bất kỳ phiên Claude nào (kể cả từ
 việc tiếp theo là gì**. Cập nhật nó **trong cùng PR** với việc làm, và khi nhận một bước mới (xem
 "Bắt đầu phiên" trong `CLAUDE.md`). Lộ trình đầy đủ: `docs/roadmap.md`. Kế hoạch đã duyệt: `docs/plans/`.
 
-Cập nhật lần cuối: 2026-11-07 (hoàn thiện Kaiwa: chia sẻ, bố cục màn hình lớn, menu, cỡ chữ; bàn giao nghiên cứu tính năng, PR #232).
+Cập nhật lần cuối: 2026-11-07 (bàn giao sang tài khoản Claude khác: đợt hoàn thiện Kaiwa #234–#238 đã merge; nghiên cứu tính năng PR #232).
 
 ## Đang làm
 
+Kaiwa: không còn bước nào đang làm, đợt hoàn thiện #234–#238 đã merge (mục 12 bên dưới). Phiên mới hỏi thien chọn việc
+Kaiwa nào làm tiếp (danh sách ở mục 12), ghi bước vào bảng trước khi code.
+
 | Bước | Nhánh | Phiên |
 |---|---|---|
-| Hoàn thiện Kaiwa (thien, 2026-11-07). Mở PR, chờ thien merge theo thứ tự #234 → #235 → #236 → #237 → #238 (xếp chồng): #234 ai có link cũng đọc được kịch bản đã chia sẻ (thien chọn không cần đăng nhập) và đăng nhập xong về đúng trang; #235 thẻ Hội thoại ghi "Đang chia sẻ" / "Từ Kho chung"; #236 từ 1280px mở bài đọc gần nhất, danh sách một cột bên phải; #237 nút gom vào menu Thao tác, ↑ ↓ đưa câu ra giữa màn hình; #238 cỡ chữ hội thoại 5 mức (phím + và −, không Ctrl, theo thien), nhớ theo từng máy. Còn lại để thien chọn thứ tự: MCP tìm và lấy kịch bản chung, karaoke theo âm tiết, chọn giọng từng vai, lưu buổi nhập vai. | `feat/kaiwa-text-size` (và các nhánh dưới) | thread "Hoàn thiện Kaiwa, ưu tiên chia sẻ hội thoại" |
 | Quy trình 1: nghiên cứu học ngôn ngữ và ứng cử viên tính năng. Bản nháp vòng 2 xong, **chờ thien duyệt** (PR #232, chỉ có tài liệu, risk:high, thien merge). Bàn giao 2026-11-07: phiên cũ dừng, tài khoản mới nhận tiếp (xem "Bàn giao nghiên cứu" bên dưới). | `docs/2026-11-04-research` | thread "Nghiên cứu và đề xuất tính năng Sakubun" (đã dừng; ai nhận thì ghi tên phiên vào đây) |
 
 ### Bàn giao nghiên cứu (2026-11-07)
@@ -45,7 +47,8 @@ poller (`sudo`), user `thi3n` không có token ghcr. Xem log: `journalctl -u min
 - Thử Kho chung (#159–#167, đã lên NUC): `/library`, và
   `library_search`, `library_take` trong claude.ai (L5).
 - Thử Kaiwa (#156, đã lên NUC) trong claude.ai: nhờ Claude soạn một đoạn hội thoại ngắn trên canvas, lưu, mở đường dẫn nó trả về; trên web thử chọn vai "Tôi là", rê chuột xem nghĩa, Thêm và Sửa.
-- Thử K7: chia sẻ một kịch bản (nút Chia sẻ cạnh tiêu đề), rồi bằng tài khoản thứ hai (`kai`) mở Kho chung › Kịch bản và Lấy về.
+- Đóng PR #231 (bản K7b làm trùng với #229 đã merge; Claude không đóng được vì bị chặn quyền).
+- Thử Kaiwa mới (#234–#238, merge 2026-11-07): chia sẻ một kịch bản (menu Thao tác › Chia sẻ › Chép đường dẫn), mở link ở cửa sổ ẩn danh (đọc được khi chưa đăng nhập, "Đăng nhập để lấy về" quay lại đúng bài), rồi bằng tài khoản thứ hai (`kai`) Lấy về; trên laptop ≥1280px bấm Hội thoại mở bài gần nhất, cột danh sách bên phải; phím + và − đổi cỡ chữ; ↑ ↓ đưa câu ra giữa màn hình.
 - Thử nhập vai (K8) trong claude.ai: mở một kịch bản có từ hai vai, bấm "Nhập vai với AI", dán câu vào claude.ai.
 - Thu hồi token MCP `k9` (Cài đặt > Tài khoản > Token MCP) và xoá `token.txt` trong `C:\FPT_Source\sakubun-backups\kaiwa-k9` trên laptop: chỉ dùng để nhập K9.
 - Muốn trần khác 50 tài khoản thì đặt `MAX_ACCOUNTS` trên NUC.
@@ -81,8 +84,20 @@ poller (`sudo`), user `thi3n` không có token ghcr. Xem log: `journalctl -u min
     "Nhập vai với AI" trên trang kịch bản #226. Còn: thien thử nhập vai thật trong claude.ai.
 11. K7 xong phần code 2026-11-04 (`docs/plans/2026-10-31-k7-kaiwa-library.md`): schema và logic #227, giao diện #229
     (nút Chia sẻ trên trang kịch bản, tab Kịch bản trên Kho chung, trang `/library/script/[id]`, Lấy về).
+12. Hoàn thiện Kaiwa 2026-11-07 (thien: chia sẻ trước, rồi giao diện), đã merge: #234 ai có link cũng đọc được kịch bản
+    đã chia sẻ (thien chọn không cần đăng nhập; khách không nghe máy đọc, không tra từ, trang `noindex`), `/login?next=`
+    quay lại đúng trang (`lib/auth/login-return.ts`), nút Chép đường dẫn; #235 thẻ Hội thoại ghi "Đang chia sẻ" /
+    "Từ Kho chung"; #236 từ 1280px Hội thoại mở bài đọc gần nhất (nhớ theo máy, `localStorage`), danh sách một cột bên
+    phải (`KaiwaSideList`); #237 menu Thao tác gom Sửa, Sửa với AI, Nhập vai với AI, Chia sẻ, Phím tắt (Tôi là, Nghe cả
+    bài, Ẩn nghĩa, Che câu vẫn ở ngoài), ↑ ↓ đưa câu ra giữa màn hình; #238 cỡ chữ hội thoại 5 mức 100–175% (phím + và −,
+    không Ctrl theo thien; nhớ theo máy). **Còn lại, thien chọn thứ tự**: (a) MCP `library_search`/`library_take` cho
+    kịch bản chung (hiện trả lỗi bảo lấy trên web), (b) karaoke theo âm tiết (K6 để sau), (c) chọn giọng cho từng vai,
+    (d) lưu buổi nhập vai vào Lịch sử (đổi schema, cần kế hoạch trước).
 
 ## Việc nhỏ còn treo
+
+- Trên điện thoại, trang kịch bản có nút ⋯ (Thao tác) nằm riêng một hàng dài dưới tiêu đề: giữ vậy để màn hình đang tải (`app/kaiwa/[id]/loading.tsx`) khớp cả chế độ xem lẫn chế độ sửa (`e2e/skeleton.spec.ts`). Nếu thien thấy vướng thì đổi cả hai cùng lúc.
+- e2e `kaiwa.spec.ts` "line by line" chỉ đỏ khi chạy với `SCREENSHOT_DIR` (cả trên `main` trước đợt này); chạy thường thì xanh.
 
 - e2e `quick-review` "by keyboard" lúc xanh lúc đỏ trên `main` (đỏ 3 trong 4 lần, 2026-10-28): câu trả lời không bị chặn mạng như test muốn. 2026-11-04 không tái hiện được (17 lần chạy đều xanh, riêng lẻ và cả file); chưa sửa, nếu đỏ lại thì ghi lại cách chạy.
 - Kế hoạch phase 6 (UI redo, các bước 6.x như PR #128 "6.9") chưa có trong repo; chỉ còn dấu vết trong
