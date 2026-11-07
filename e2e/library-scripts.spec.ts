@@ -112,10 +112,9 @@ for (const width of [1440, 390]) {
     const kaiwaCards = page.locator('[data-slot="kaiwa-card"]');
     await expect(kaiwaCards.filter({ hasText: 'Ở nhà hàng (e2e)' })).toContainText('Đang chia sẻ');
     await expect(kaiwaCards.filter({ hasText: 'Hỏi đường (e2e)' })).toContainText('Từ Kho chung');
-    await expect(page.getByRole('link', { name: 'Kịch bản trên Kho chung' })).toHaveAttribute(
-      'href',
-      '/library?tab=scripts',
-    );
+    await expect(
+      page.locator('main').getByRole('link', { name: 'Kho chung', exact: true }),
+    ).toHaveAttribute('href', '/library?tab=scripts');
     await shot('kaiwa-list-marks');
     await page.goto(copy, { waitUntil: 'networkidle' });
 
