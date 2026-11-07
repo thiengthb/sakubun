@@ -38,7 +38,8 @@ const wordWidth = (button: Locator) =>
   });
 
 test('header actions fold to icons on a laptop and open on hover', async ({ page }) => {
-  await page.setViewportSize({ width: 1440, height: 900 });
+  // Below 1280px Hội thoại stays the list page (a wider screen opens the last script).
+  await page.setViewportSize({ width: 1200, height: 900 });
   await signIn(page);
   await page.goto('/kaiwa');
   const ai = page.getByRole('button', { name: 'Soạn với AI' });

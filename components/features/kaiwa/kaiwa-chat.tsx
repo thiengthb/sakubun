@@ -5,6 +5,7 @@ import { MessagesSquare, Pause, Play, Square } from 'lucide-react';
 import { EmptyState } from '@/components/common/empty-state';
 import { KaiwaLine, type RubyLine } from '@/components/features/kaiwa/kaiwa-line';
 import { useKaiwaMe } from '@/components/features/kaiwa/use-kaiwa-me';
+import { useKaiwaTextSize } from '@/components/features/kaiwa/use-kaiwa-text-size';
 import { Button } from '@/components/ui/button';
 import { Toggle } from '@/components/ui/toggle';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
@@ -28,6 +29,7 @@ export function KaiwaChat({
   speechRate,
   showFurigana,
   preview,
+  guest = false,
 }: {
   /** Where "Tôi là" is remembered; a new script has none yet. */
   scriptId: string | null;
@@ -36,6 +38,8 @@ export function KaiwaChat({
   speechRate?: number;
   showFurigana: boolean;
   preview?: { row: number | null; onPick: (row: number) => void };
+  /** Someone not signed in reading a shared script: no speech, which needs an account. */
+  guest?: boolean;
 }) {
   const [showMeaning, setShowMeaning] = useState(true);
   const [cover, setCover] = useState(false);
@@ -46,6 +50,7 @@ export function KaiwaChat({
   const [listen, setListen] = useState<ListenState | null>(null);
   const speakers = scriptSpeakers(lines);
   const [me, chooseMe] = useKaiwaMe(scriptId, speakers);
+  const textSize = useKaiwaTextSize();
   const turns = layoutTurns(lines, me);
   // Each part its own voice; the learner's is the one in Cài đặt (K6b).
   const voices = voiceSpeaker === undefined ? null : speakerVoices(speakers, me, voiceSpeaker);
@@ -126,6 +131,13 @@ export function KaiwaChat({
     const onKey = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLElement && e.target.closest('input, textarea, select')) return;
       if (e.ctrlKey || e.metaKey || e.altKey || turns.length === 0) return;
+      // + and − size the chat's text (thien, 2026-11-07); Ctrl + and Ctrl − stay the browser's zoom.
+      if (e.key === '+' || e.key === '=' || e.key === '-' || e.key === '−') {
+        e.preventDefault();
+        if (e.key === '-' || e.key === '−') textSize.shrink();
+        else textSize.grow();
+        return;
+      }
       if (listen && e.key === 'Escape') {
         e.preventDefault();
         stopListening();
@@ -151,7 +163,7 @@ export function KaiwaChat({
         setSelected(next);
         document
           .querySelectorAll('[data-slot="kaiwa-line"]')
-          [next]?.scrollIntoView({ block: 'nearest' });
+          [next]?.scrollIntoView({ block: 'center' });
         return;
       }
       if (e.key === 'Enter' && selected !== null) {
@@ -203,7 +215,7 @@ export function KaiwaChat({
         )}
         {!preview && (
           <div className="flex flex-wrap items-center gap-2">
-            {listen ? (
+            {guest ? null : listen ? (
               <>
                 <Button
                   variant="outline"
@@ -248,6 +260,9 @@ export function KaiwaChat({
         )}
       </div>
       <ol
+        data-slot="kaiwa-lines"
+        // zoom grows the bubbles, their furigana and speaker buttons together (useKaiwaTextSize).
+        style={textSize.scale === 1 ? undefined : { zoom: textSize.scale }}
         className="space-y-2"
         onClick={
           preview &&
@@ -273,7 +288,8 @@ export function KaiwaChat({
             onDone={(heard) => lineDone(i, heard)}
             onManualPlay={() => lineChosen(i)}
             onManualStop={() => lineStopped(i)}
-            lookup={!preview}
+            lookup={!preview && !guest}
+            speak={!guest}
             voiceSpeaker={voiceOf(i)}
             speechRate={speechRate}
           />

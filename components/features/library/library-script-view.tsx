@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Download, MessagesSquare, UserRound } from 'lucide-react';
+import { Download, LogIn, MessagesSquare, UserRound } from 'lucide-react';
 import { ParentCrumbs } from '@/components/layout/app-breadcrumbs';
 import { PageShell } from '@/components/layout/page-shell';
 import { Button } from '@/components/ui/button';
@@ -16,9 +16,11 @@ import { takeScriptAction } from '@/app/library/actions';
 
 // A Kaiwa script a learner shared on Kho chung (K7b): read as a chat, as in Hội thoại, before taking
 // it. "Lấy về" copies it into the learner's Hội thoại and opens the copy; once they have one, the
-// action opens it instead.
+// action opens it instead. A guest (not signed in) reads it without speech or word lookup, and signs
+// in from here to take it.
 export function LibraryScriptView({
   script,
+  login = null,
   admin = false,
   voiceSpeaker,
   speechRate,
@@ -35,6 +37,8 @@ export function LibraryScriptView({
     myScriptId: string | null;
     lines: RubyLine[];
   };
+  /** For a guest, the sign-in link that comes back here; null when signed in. */
+  login?: string | null;
   /** The admin gets Ẩn, in its menu (L6). */
   admin?: boolean;
   voiceSpeaker?: number;
@@ -75,15 +79,24 @@ export function LibraryScriptView({
         </span>
       }
       pageIcons={
-        <LikeButton
-          entryId={script.id}
-          liked={script.liked}
-          likes={script.likes}
-          name={script.title}
-        />
+        !login && (
+          <LikeButton
+            entryId={script.id}
+            liked={script.liked}
+            likes={script.likes}
+            name={script.title}
+          />
+        )
       }
       actions={
-        script.myScriptId ? (
+        login ? (
+          <Button asChild>
+            <Link href={login}>
+              <LogIn aria-hidden />
+              Đăng nhập để lấy về
+            </Link>
+          </Button>
+        ) : script.myScriptId ? (
           <ExpandingIconButton asChild icon={MessagesSquare} label="Kịch bản của bạn">
             <Link href={`/kaiwa/${script.myScriptId}`} />
           </ExpandingIconButton>
@@ -103,7 +116,14 @@ export function LibraryScriptView({
             <LibraryAdminMenu entryId={script.id} name={script.title} back="/library?tab=scripts" />
           </div>
         )}
+        {login && (
+          <p data-slot="guest-note" className="text-sm text-muted-foreground">
+            Bạn đang xem kịch bản được chia sẻ trên Sakubun. Đăng nhập bằng Google để nghe máy đọc,
+            rê chuột xem nghĩa từ và lấy kịch bản về luyện.
+          </p>
+        )}
         <KaiwaChat
+          guest={!!login}
           scriptId={`library:${script.id}`}
           lines={script.lines}
           voiceSpeaker={voiceSpeaker}
