@@ -3,8 +3,10 @@ import { KaiwaCanvas } from '@/components/features/kaiwa/kaiwa-canvas';
 import { KaiwaSideList } from '@/components/features/kaiwa/kaiwa-side-list';
 import { getUserDb } from '@/lib/auth/current-user';
 import { readAnalysis } from '@/lib/kaiwa/furigana';
+import { scriptSpeakers } from '@/lib/kaiwa/layout';
 import { parseScript } from '@/lib/kaiwa/parse';
 import { getScript, listScriptCards } from '@/lib/kaiwa/scripts';
+import { readVoices } from '@/lib/kaiwa/voices';
 import { getSettings } from '@/lib/library/practice';
 import { scriptLibraryMarks, scriptShareStatus } from '@/lib/library/scripts';
 import { furiganaInApp } from '@/lib/settings/schema';
@@ -44,6 +46,7 @@ export default async function KaiwaScriptPage({
           ...line,
           ruby: analysis?.lines[i].ruby ?? line.japanese,
         })),
+        voices: readVoices(script.voices, scriptSpeakers(lines)),
       }}
       share={share}
       startEditing={edit === '1'}

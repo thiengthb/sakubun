@@ -30,6 +30,7 @@ import { deleteScriptAction, saveScriptAction } from '@/app/kaiwa/actions';
 import { toastResult } from '@/lib/core/action-toast';
 import { cn } from '@/lib/core/utils';
 import { scriptSpeakers } from '@/lib/kaiwa/layout';
+import type { ChosenVoices } from '@/lib/kaiwa/voices';
 import type { ScriptShareStatus } from '@/lib/library/scripts';
 import { PUBLIC } from '@/lib/library/shared';
 import {
@@ -49,6 +50,8 @@ export interface CanvasScript {
   updatedAt: Date;
   /** The saved lines with the furigana worked out on save, for reading. */
   lines: RubyLine[];
+  /** The voice the learner chose for a part on this script (Kaiwa c). */
+  voices: ChosenVoices;
 }
 
 const VIEW_KEYS: Shortcut[] = [
@@ -287,6 +290,7 @@ export function KaiwaCanvas({
           scriptId={script.id}
           lines={script.lines}
           voiceSpeaker={voiceSpeaker}
+          chosenVoices={script.voices}
           speechRate={speechRate}
           showFurigana={showFurigana}
         />
@@ -414,6 +418,7 @@ export function KaiwaCanvas({
                 scriptId={script?.id ?? null}
                 lines={draftLines}
                 voiceSpeaker={voiceSpeaker}
+                chosenVoices={script?.voices}
                 speechRate={speechRate}
                 showFurigana={showFurigana}
                 preview={{ row: cursor.row, onPick: jumpTo }}

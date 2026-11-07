@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { speakerVoices } from '@/lib/kaiwa/voices';
+import { checkVoices, readVoices, speakerVoices } from '@/lib/kaiwa/voices';
 
 // Voice ids from VOICE_SPEAKERS: 3 ずんだもん, 2 四国めたん, 8 春日部つむぎ (women);
 // 11 玄野武宏, 13 青山龍星 (men).
@@ -37,5 +37,37 @@ describe('speakerVoices', () => {
     // Ten characters: the learner's, then nine for P1 to P9.
     expect(new Set([...voices.values()].filter((v) => v !== 3)).size).toBe(9);
     expect([voices.get('P10'), voices.get('P11')]).toEqual([3, 3]);
+  });
+});
+
+describe('voices chosen per part (Kaiwa c)', () => {
+  it('win over the voices given in order, and the others avoid their characters', () => {
+    // B chose 青山龍星 (13): C, the next man in turn, cannot be him.
+    const voices = speakerVoices(['A', 'B', 'C'], 'A', 3, { B: 13 });
+    expect(voices.get('A')).toBe(3);
+    expect(voices.get('B')).toBe(13);
+    expect(voices.get('C')).not.toBe(13);
+    expect(voices.get('C')).not.toBe(3);
+  });
+
+  it("win over Cài đặt for the learner's own part", () => {
+    const voices = speakerVoices(['A', 'B'], 'A', 3, { A: 11 });
+    expect(voices.get('A')).toBe(11);
+    // The learner now speaks as a man, so B starts with a woman.
+    expect(voices.get('B')).toBe(3);
+  });
+});
+
+describe('readVoices and checkVoices', () => {
+  it('keeps only parts the script still has and voices that exist', () => {
+    expect(readVoices('{"A":11,"Z":3,"B":999}', ['A', 'B'])).toEqual({ A: 11 });
+    expect(readVoices('not json', ['A'])).toEqual({});
+    expect(readVoices(null, ['A'])).toEqual({});
+  });
+
+  it('names the part that is wrong', () => {
+    expect(checkVoices({ A: 11 }, ['A', 'B'])).toBeNull();
+    expect(checkVoices({ Z: 11 }, ['A', 'B'])).toBe('Kịch bản không có vai "Z".');
+    expect(checkVoices({ A: 999 }, ['A'])).toBe('Giọng cho vai "A" không có trong danh sách.');
   });
 });

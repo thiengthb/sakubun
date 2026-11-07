@@ -133,3 +133,28 @@ describe('listScripts and deleteScript', () => {
     expect((await S.listScripts(mine)).map((s) => s.id)).toEqual([second.id]);
   });
 });
+
+describe('setScriptVoices (Kaiwa c)', () => {
+  it('keeps a voice per part without touching the version or the list order', async () => {
+    const script = await created();
+    const before = await S.getScript(mine, script.id);
+    const saved = await S.setScriptVoices(mine, script.id, { B: 13 });
+    expect(saved).toEqual({ ok: true, data: { B: 13 } });
+    const after = await S.getScript(mine, script.id);
+    expect(after).toMatchObject({ voices: '{"B":13}', version: 1, updatedAt: before!.updatedAt });
+
+    expect(await S.setScriptVoices(mine, script.id, {})).toEqual({ ok: true, data: {} });
+    expect((await S.getScript(mine, script.id))?.voices).toBeNull();
+  });
+
+  it('refuses a part or a voice that does not exist, and another learner’s script', async () => {
+    const script = await created();
+    expect(await S.setScriptVoices(mine, script.id, { Z: 13 })).toEqual({
+      ok: false,
+      error: 'Kịch bản không có vai "Z".',
+    });
+    expect((await S.setScriptVoices(mine, script.id, { A: 4242 })).ok).toBe(false);
+    expect((await S.setScriptVoices(theirs, script.id, { A: 13 })).ok).toBe(false);
+    expect((await S.getScript(mine, script.id))?.voices).toBeNull();
+  });
+});
