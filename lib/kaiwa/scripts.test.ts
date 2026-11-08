@@ -160,8 +160,7 @@ describe('setScriptVoices (Kaiwa c)', () => {
 
   it('writes nothing when the script was saved again after it was read', async () => {
     const script = await created();
-    const stale = new Date(script.updatedAt.getTime() - 60_000);
-    // The script as read before a save that moved updatedAt (an MCP edit in between).
+    // The script as read before a save that bumped its version (an MCP edit in between).
     const raced = new Proxy(mine, {
       get(target, key, receiver) {
         if (key !== 'script') return Reflect.get(target, key, receiver);
@@ -171,7 +170,7 @@ describe('setScriptVoices (Kaiwa c)', () => {
             if (k !== 'findFirst') return Reflect.get(t, k, r);
             return async (args: Parameters<typeof table.findFirst>[0]) => ({
               ...(await table.findFirst(args)),
-              updatedAt: stale,
+              version: script.version - 1,
             });
           },
         });
@@ -181,6 +180,25 @@ describe('setScriptVoices (Kaiwa c)', () => {
     expect(saved).toEqual({ ok: false, error: expect.stringContaining('vừa được sửa') });
     expect(await S.getScript(mine, script.id)).toMatchObject({
       voices: null,
+      updatedAt: script.updatedAt,
+    });
+  });
+
+  it('saves on a script whose updatedAt is stored in another text format', async () => {
+    const script = await created();
+    // As a row seeded or imported outside Prisma: "...Z" where Prisma writes "...+00:00".
+    await prisma.$executeRawUnsafe(
+      `UPDATE Script SET updatedAt = ? WHERE id = ?`,
+      script.updatedAt.toISOString(),
+      script.id,
+    );
+    expect(await S.setScriptVoices(mine, script.id, { B: 13 })).toEqual({
+      ok: true,
+      data: { B: 13 },
+    });
+    expect(await S.getScript(mine, script.id)).toMatchObject({
+      voices: '{"B":13}',
+      version: 1,
       updatedAt: script.updatedAt,
     });
   });

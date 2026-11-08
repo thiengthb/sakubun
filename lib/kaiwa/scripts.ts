@@ -134,17 +134,19 @@ export async function setScriptVoices(
 ): Promise<ActionResult<ChosenVoices>> {
   const script = await db.script.findFirst({
     where: { id },
-    select: { body: true, updatedAt: true },
+    select: { body: true, version: true, updatedAt: true },
   });
   if (!script) return err('Không tìm thấy kịch bản này. Có thể nó đã bị xoá.');
   const speakers = scriptSpeakers(parseScript(script.body));
   const problem = checkVoices(voices, speakers);
   if (problem) return err(problem);
   const chosen = readVoices(JSON.stringify(voices), speakers);
-  // Written only if the script is still the one just checked: a save in between (MCP) would have
-  // moved updatedAt, and writing the old value back would reorder the list.
+  // Written only if the script is still the one just checked: every save bumps the version, so a
+  // save in between (MCP) makes this match nothing. updatedAt is written back as read, so the list
+  // keeps its order. Not matched on updatedAt: SQLite compares the stored text, and a row written in
+  // another format (an ISO "Z" string) would never match, so voices could never be saved on it.
   const { count } = await db.script.updateMany({
-    where: { id, updatedAt: script.updatedAt },
+    where: { id, version: script.version },
     data: {
       voices: Object.keys(chosen).length > 0 ? JSON.stringify(chosen) : null,
       updatedAt: script.updatedAt,
