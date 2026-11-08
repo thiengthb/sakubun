@@ -276,7 +276,6 @@ export function QuickReviewView({
     return () => window.removeEventListener('keydown', onKey);
   });
 
-
   if (cards.length === 0) {
     return (
       <PageShell template="form" title="Ôn nhanh" meta="Không có thẻ đến hạn">
@@ -308,7 +307,6 @@ export function QuickReviewView({
           {retry && !done ? `Làm lại ${retry.cards.length} câu sai` : leftLine(cards.slice(index))}
         </span>
       }
-     
     >
       <div ref={sessionRef} className="flex flex-col gap-6 md:gap-8">
         <div
