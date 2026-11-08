@@ -16,7 +16,12 @@ export interface AccountShare {
   createdAt: Date;
 }
 
-const TYPE_LABEL: Record<string, string> = { GRAMMAR: 'Ngữ pháp', VOCAB: 'Từ vựng', GROUP: 'Nhóm' };
+const TYPE_LABEL: Record<string, string> = {
+  GRAMMAR: 'Ngữ pháp',
+  VOCAB: 'Từ vựng',
+  GROUP: 'Nhóm',
+  SCRIPT: 'Kịch bản',
+};
 const STATUS_LABEL: Record<string, string> = {
   public: 'Đang hiện',
   hidden: 'Tác giả đã gỡ',
@@ -24,11 +29,18 @@ const STATUS_LABEL: Record<string, string> = {
   orphan: 'Tài khoản đã xoá',
 };
 
-// What one account has shared on Kho chung (phase 8, L6), for the admin to hide or show again.
-export function AccountShares({ shares }: { shares: AccountShare[] }) {
+// What one account has shared on Kho chung (phase 8, L6), for the admin to hide or show again. The
+// Quản trị page reuses it for everything the admin has hidden, whoever wrote it.
+export function AccountShares({
+  shares,
+  title = 'Đã chia sẻ lên Kho chung',
+}: {
+  shares: AccountShare[];
+  title?: string;
+}) {
   return (
     <section className="space-y-3">
-      <h2 className="text-sm font-bold">Đã chia sẻ lên Kho chung</h2>
+      <h2 className="text-sm font-bold">{title}</h2>
       <div className="@container">
         <ul className="grid gap-2 @2xl:grid-cols-2 @2xl:gap-3">
           {shares.map((s) => {

@@ -415,6 +415,48 @@ test('the admin hides and shows an entry; a ban hides it too', async ({ page }) 
   }
 });
 
+// thien, 2026-11-08: an OpenJLPT group has no author, so no account page lists it. Once hidden, it
+// comes back from the Quản trị page, which lists everything the admin hid.
+test('the admin shows a hidden OpenJLPT group again from Quản trị', async ({ page }) => {
+  const id = 'lib-e2e-openjlpt-hidden';
+  const db = new Database(path.join(process.cwd(), E2E_DB_FILE));
+  const now = new Date().toISOString();
+  db.exec(`DELETE FROM LibraryEntry WHERE id = '${id}'`);
+  db.prepare(
+    `INSERT INTO LibraryEntry (id, type, name, level, groupKind, notes, origin, status, takeCount,
+       createdAt, updatedAt)
+     VALUES (?, 'GROUP', 'N5 · Ngữ pháp (e2e)', 'N5', 'grammar', '', 'OPENJLPT', 'removed', 0, ?, ?)`,
+  ).run(id, now, now);
+
+  try {
+    await signIn(page);
+    await page.goto(`/library/${id}`);
+    await expect(page.getByText('Không tìm thấy trang')).toBeVisible();
+
+    for (const width of [1440, 390]) {
+      await page.setViewportSize({ width, height: width > 400 ? 900 : 844 });
+      await page.goto('/admin');
+      const hidden = page.locator('section', { hasText: 'Đã ẩn khỏi Kho chung' });
+      await expect(hidden.locator('[data-slot="account-share"]')).toContainText(
+        'N5 · Ngữ pháp (e2e)',
+      );
+      if (process.env.SCREENSHOT_DIR)
+        await page.screenshot({
+          path: path.join(process.env.SCREENSHOT_DIR, `admin-hidden-${width}.png`),
+          fullPage: true,
+        });
+    }
+    await page.getByRole('button', { name: 'Hiện lại N5 · Ngữ pháp (e2e)' }).click();
+    await expect(page.getByText('Đã hiện lại trên Kho chung')).toBeVisible();
+    await expect(page.getByText('N5 · Ngữ pháp (e2e)')).toHaveCount(0);
+    await page.goto(`/library/${id}`);
+    await expect(page.getByRole('heading', { level: 1 })).toContainText('N5 · Ngữ pháp (e2e)');
+  } finally {
+    db.exec(`DELETE FROM LibraryEntry WHERE id = '${id}'`);
+    db.close();
+  }
+});
+
 // thien, 7.4i: Từng mục says how big Kho chung really is, loads more as it scrolls, sorts newest
 // first, and hides what the learner already has.
 test('Từng mục: real totals, more on scroll, newest first, hide owned', async ({ page }) => {

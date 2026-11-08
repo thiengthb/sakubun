@@ -37,22 +37,34 @@ export async function orphanAuthorEntries(db: Db, userId: string): Promise<numbe
   return res.count;
 }
 
+const ADMIN_ROW = {
+  id: true,
+  type: true,
+  expression: true,
+  name: true,
+  meaningVi: true,
+  level: true,
+  status: true,
+  takeCount: true,
+  createdAt: true,
+  _count: { select: { likes: true } },
+} as const;
+
 // Everything an account has shared, whatever its status, for its admin page.
 export function listAuthorEntries(db: Db, userId: string) {
   return db.libraryEntry.findMany({
     where: { authorId: userId },
-    select: {
-      id: true,
-      type: true,
-      expression: true,
-      name: true,
-      meaningVi: true,
-      level: true,
-      status: true,
-      takeCount: true,
-      createdAt: true,
-      _count: { select: { likes: true } },
-    },
+    select: ADMIN_ROW,
+    orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
+  });
+}
+
+// Everything the admin has hidden, whoever wrote it, for the Quản trị page. OpenJLPT's entries and
+// groups have no author, so no account page lists them: without this, hiding one could not be undone.
+export function listRemovedEntries(db: Db) {
+  return db.libraryEntry.findMany({
+    where: { status: REMOVED },
+    select: ADMIN_ROW,
     orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
   });
 }

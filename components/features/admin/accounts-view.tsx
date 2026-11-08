@@ -9,6 +9,7 @@ import { RelativeTime } from '@/components/common/relative-time';
 import { PageShell } from '@/components/layout/page-shell';
 import { UserAvatar } from '@/components/layout/user-avatar';
 import { AccountActions } from '@/components/features/admin/account-actions';
+import { AccountShares, type AccountShare } from '@/components/features/admin/account-shares';
 import { cn } from '@/lib/core/utils';
 
 export type AccountCardRow = {
@@ -23,10 +24,7 @@ export type AccountCardRow = {
 
 const GRID = 'grid grid-cols-1 gap-2 @2xl:grid-cols-2 @2xl:gap-3 @5xl:grid-cols-3';
 
-export function AccountStatusBadge({
-  access,
-  banned,
-}: Pick<AccountCardRow, 'access' | 'banned'>) {
+export function AccountStatusBadge({ access, banned }: Pick<AccountCardRow, 'access' | 'banned'>) {
   if (banned)
     return (
       <Badge variant="destructive" className="px-1.5 py-0 text-xs">
@@ -76,8 +74,17 @@ function AccountCard({ row }: { row: AccountCardRow }) {
   );
 }
 
-/** Every account, oldest first (roadmap 7.2c). Anyone may sign up; the admin bans or deletes. */
-export function AccountsView({ accounts }: { accounts: AccountCardRow[] }) {
+/**
+ * Every account, oldest first (roadmap 7.2c). Anyone may sign up; the admin bans or deletes. Below
+ * them, what the admin has hidden from Kho chung, to show again.
+ */
+export function AccountsView({
+  accounts,
+  removed = [],
+}: {
+  accounts: AccountCardRow[];
+  removed?: AccountShare[];
+}) {
   return (
     <PageShell template="list" title="Quản trị" meta={`${accounts.length} tài khoản`}>
       {accounts.length === 0 ? (
@@ -91,6 +98,7 @@ export function AccountsView({ accounts }: { accounts: AccountCardRow[] }) {
           </ul>
         </div>
       )}
+      {removed.length > 0 && <AccountShares shares={removed} title="Đã ẩn khỏi Kho chung" />}
     </PageShell>
   );
 }
