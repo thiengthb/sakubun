@@ -51,6 +51,18 @@ beforeEach(async () => {
 });
 
 describe('getQueue', () => {
+  it('leaves kanji cards out, new or due, and does not count them as new grammar (KJ2)', async () => {
+    await P.saveSettings(db, { dailyNewGrammar: 1 });
+    const [kanji, due] = await seed('GRAMMAR', 2);
+    await db.item.updateMany({ where: { id: { in: [kanji, due] } }, data: { kind: 'KANJI' } });
+    await review(due, 3, new Date(NOW.getTime() - 30 * 86_400_000));
+    await review(kanji, 3, NOW);
+    const [grammar] = await seed('GRAMMAR', 1);
+    const queue = await Q.getQueue(db, NOW);
+    expect(queue.cards.map((c) => c.id)).toEqual([grammar]);
+    expect(queue.today.newGrammar).toBe(0);
+  });
+
   it('introduces new vocabulary under its own daily cap, not as due', async () => {
     await P.saveSettings(db, { dailyNewVocab: 4 });
     await seed('VOCAB', 9);

@@ -149,6 +149,19 @@ describe('stageTurn', () => {
   });
 });
 
+describe('kanji cards (KJ2)', () => {
+  it('are not translation items: next_turn and stage_turn refuse them', async () => {
+    const { grammar } = await seed();
+    await db.item.update({ where: { id: grammar }, data: { kind: 'KANJI' } });
+    for (const result of [
+      await T.nextTurn(db, { itemId: grammar }, NOW),
+      await T.stageTurn(db, { itemId: grammar, ...SENTENCE }, NOW),
+    ]) {
+      expect(result).toEqual({ ok: false, error: expect.stringContaining('kanji card') });
+    }
+  });
+});
+
 describe('a varied, harder sentence each time (R2, R3)', () => {
   it('refuses a sentence the item already had, and the example on its card', async () => {
     const { grammar } = await seed();

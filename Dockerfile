@@ -68,6 +68,8 @@ COPY --from=build /app/.next/static ./.next/static
 COPY --from=build /app/public ./public
 # The OpenJLPT deck each new learner gets at sign-up (lib/import/starter-deck.ts reads it at runtime).
 COPY --from=build /app/data/openjlpt ./data/openjlpt
+# The Jōyō kanji with their meanings and radicals (lib/kanji/load.ts reads them at runtime).
+COPY --from=build /app/data/kanji ./data/kanji
 # nft prunes better-sqlite3 down to its JS and drops the native .node binding (loaded via a runtime
 # fs lookup nft cannot trace). Copy the FULLY-BUILT module over the pruned one so the binding is
 # present.
