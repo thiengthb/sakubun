@@ -478,3 +478,31 @@
 .page-enter {
   animation: page-fade-in 180ms ease-out both;
 }
+
+/* Kanji strokes drawn one after another in their order (components/common/kanji-strokes.tsx, KJ4).
+   Each path has pathLength 1, so one dash covers it; --i is its place in the order. A stroke not yet
+   begun is hidden: the round cap of its empty dash would show as a dot. */
+@keyframes kanji-stroke {
+  from {
+    stroke-dashoffset: 1;
+    opacity: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+}
+.kanji-stroke-draw {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  opacity: 0;
+  animation: kanji-stroke var(--p-motion-duration-deliberate) var(--ease-standard) forwards;
+  animation-delay: calc(var(--i, 0) * var(--p-motion-duration-deliberate));
+}
+@media (prefers-reduced-motion: reduce) {
+  .kanji-stroke-draw {
+    animation: none;
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+}

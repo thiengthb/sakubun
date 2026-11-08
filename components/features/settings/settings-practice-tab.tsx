@@ -4,6 +4,7 @@ import { useId, useState } from 'react';
 import {
   ArrowLeftRight,
   BookOpen,
+  Brush,
   Languages,
   ChevronDown,
   Gauge,
@@ -24,6 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { SpeakButton } from '@/components/common/speak-button';
 import { Stepper } from '@/components/common/stepper';
@@ -39,7 +41,7 @@ import {
 } from '@/lib/settings/schema';
 import { speechRateOptions } from '@/lib/settings/speech-rates';
 
-// Eight settings (docs/decisions/0001-core-rewrite.md), one row each, in one card: icon, a short
+// The practice settings (docs/decisions/0001-core-rewrite.md), one row each, in one card: icon, a short
 // name, an (i) for the why, the control. How a sentence is built (length, register, topic,
 // difficulty) is derived from the item being studied, so it is no longer a form here.
 
@@ -136,6 +138,17 @@ export function PracticeTab({
           />
         </SettingRow>
         <SettingRow
+          icon={Brush}
+          label="Viết kanji"
+          info="Bật thì cứ hai lần ôn một chữ có một lần viết lại chữ đó theo thứ tự nét, máy chấm từng nét. Tắt thì chỉ nhận mặt chữ."
+        >
+          <Switch
+            aria-label="Viết kanji khi ôn"
+            checked={settings.kanjiHandwriting}
+            onCheckedChange={(v) => set('kanjiHandwriting', v)}
+          />
+        </SettingRow>
+        <SettingRow
           icon={Repeat}
           label="Ôn tối đa"
           unit="/ ngày"
@@ -206,7 +219,7 @@ export function PracticeTab({
           />
         </SettingRow>
 
-        {/* The eighth row of a two-column grid: beside the voice it belongs with. */}
+        {/* The last row of a two-column grid: beside the voice it belongs with. */}
         <SettingRow icon={Gauge} label="Tốc độ" wide>
           <ToggleGroup
             type="single"

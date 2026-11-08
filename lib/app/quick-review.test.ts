@@ -349,4 +349,28 @@ describe('kanji cards (KJ3)', () => {
     const log = await db.reviewLog.findFirstOrThrow({ where: { itemId: card.itemId } });
     expect(log).toMatchObject({ rating: 3, state: 0 });
   });
+
+  it('asks every other review of a met kanji to be written, when handwriting is on (KJ4)', async () => {
+    await P.saveSettings(db, { dailyNewKanji: 1, dailyNewVocab: 0 });
+    const ids = await seed([{ expression: '経済' }]);
+    await makeSeen(ids['経済']);
+    const met = (await Q.getQuickReview(db, NOW)).cards.find((c) => c.mode === 'kanji');
+    if (met?.mode !== 'kanji') throw new Error('no kanji card');
+    expect(met.face.prompt).toBe('recognize');
+
+    const kanjiCard = async (reps: number) => {
+      await makeSeen(met.itemId);
+      await db.srsState.update({ where: { itemId: met.itemId }, data: { reps } });
+      const card = (await Q.getQuickReview(db, NOW)).cards.find((c) => c.itemId === met.itemId);
+      if (card?.mode !== 'kanji') throw new Error('no kanji card');
+      return card.face;
+    };
+    const written = await kanjiCard(1);
+    expect(written).toMatchObject({ prompt: 'write', cue: '□済' });
+    expect(written.paths).toHaveLength(11);
+    expect((await kanjiCard(2)).prompt).toBe('recognize');
+
+    await P.saveSettings(db, { kanjiHandwriting: false });
+    expect((await kanjiCard(3)).prompt).toBe('recognize');
+  });
 });

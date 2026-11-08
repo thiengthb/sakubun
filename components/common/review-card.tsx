@@ -11,6 +11,7 @@ import { cn } from '@/lib/core/utils';
 import { Badge } from '@/components/ui/badge';
 import { choiceLabel } from '@/lib/domain/quiz-class';
 import { buildFuriganaMarkup } from '@/lib/japanese/furigana';
+import type { RatingValue } from '@/lib/srs/srs';
 
 // The one card of quick review (decision 0001, flashcard style B "context first"): the item stands
 // in a real sentence, underlined on a flip card or blanked on a cloze, and the explanation opens
@@ -121,6 +122,8 @@ export function ReviewCard({
   showFurigana,
   tts,
   onPick,
+  suggested = null,
+  onWritten,
 }: {
   card: QuickCard;
   // Met for the first time: the answer is shown at once, and the card asks nothing.
@@ -130,6 +133,9 @@ export function ReviewCard({
   showFurigana: boolean;
   tts: CardTts;
   onPick: (choiceId: string) => void;
+  /** A kanji write card (KJ4): the pad's rating once written, and the callback that gives it. */
+  suggested?: RatingValue | null;
+  onWritten?: (rating: RatingValue) => void;
 }) {
   if (card.mode === 'kanji')
     return (
@@ -139,6 +145,8 @@ export function ReviewCard({
         revealed={revealed}
         showFurigana={showFurigana}
         tts={tts}
+        suggested={suggested}
+        onWritten={onWritten}
       />
     );
   const kind: ItemKind = card.kind === 'VOCAB' ? 'VOCAB' : 'GRAMMAR';
