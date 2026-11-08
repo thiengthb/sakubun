@@ -12,7 +12,7 @@ nghĩa Việt (KJ1b) xong; KJ2–KJ7 xong (#260–#265): kế hoạch kanji đã
 
 ## Đang làm
 
-Không có bước nào đang làm.
+Không có bước nào đang làm. Kế hoạch làm lại UI (UI v2) đang chờ thien chọn D1–D7: `docs/plans/2026-11-08-ui-v2.md`.
 
 ## Vừa xong
 
