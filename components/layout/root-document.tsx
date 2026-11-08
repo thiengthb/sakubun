@@ -1,4 +1,4 @@
-import { Geist_Mono, Inter } from 'next/font/google';
+import { Geist_Mono, Onest } from 'next/font/google';
 import { ThemeProvider } from 'next-themes';
 import { MotionConfig } from 'motion/react';
 import { LucideProvider } from 'lucide-react';
@@ -6,9 +6,13 @@ import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { cn } from '@/lib/core/utils';
 
-const interSans = Inter({
+// Onest, the one UI font of thienui (token font.sans; thien chose it for sakubun as UI v2 D3).
+// next/font's list has no `vietnamese` subset for Onest, but Google serves one: next/font keeps every
+// @font-face block Google returns and only preloads the subsets named here, so ạ, ố, ữ (U+1EA0-1EF9)
+// still load from Onest. e2e/fonts.spec.ts checks they do not fall back to a system font.
+const onestSans = Onest({
   variable: '--font-sans',
-  subsets: ['latin', 'vietnamese'],
+  subsets: ['latin', 'latin-ext'],
 });
 
 const geistMono = Geist_Mono({
@@ -36,7 +40,7 @@ export function RootDocument({
       // data-furigana="off" and shows them all otherwise, with no hover in between.
       data-furigana={furigana === false ? 'off' : 'on'}
       suppressHydrationWarning
-      className={cn(interSans.variable, geistMono.variable, 'h-full antialiased')}
+      className={cn(onestSans.variable, geistMono.variable, 'h-full antialiased')}
     >
       <body className="min-h-full flex flex-col">
         <ThemeProvider
