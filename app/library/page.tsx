@@ -11,6 +11,7 @@ import { likedEntries } from '@/lib/library/likes';
 import { groupProgress } from '@/lib/library/take';
 import { libraryScriptRows } from '@/lib/library/script-rows';
 import { furiganaInApp } from '@/lib/settings/schema';
+import { kanjiLevels } from '@/lib/app/kanji-levels';
 
 export const metadata: Metadata = { title: 'Kho chung — sakubun' };
 export const dynamic = 'force-dynamic';
@@ -29,11 +30,12 @@ export default async function LibraryPage({
 
   const db = await getUserDb();
   await ensureOpenJlptLibrary();
-  const [groups, { rows, counts }, settings, scripts] = await Promise.all([
+  const [groups, { rows, counts }, settings, scripts, kanji] = await Promise.all([
     listGroupEntries(prisma),
     browseEntries(db, query),
     getSettings(db),
     libraryScriptRows(db),
+    kanjiLevels(db),
   ]);
   const [liked, takenGroups, have] = await Promise.all([
     likedEntries(
@@ -65,6 +67,7 @@ export default async function LibraryPage({
       entriesMeta={counts ? browseMeta(counts, query) : `${total} mục`}
       search={query}
       scripts={scripts}
+      kanji={kanji}
       voiceSpeaker={settings.voiceSpeaker}
       speechRate={settings.speechRate}
       showFurigana={furiganaInApp(settings.furiganaMode)}

@@ -7,8 +7,7 @@ import {
   type StudiedToday,
 } from '@/lib/domain/queue';
 import { getSettings } from '@/lib/library/practice';
-import { newSrsFields } from '@/lib/srs/srs';
-import { rankNewKanji } from '@/lib/kanji/introduce';
+import { createKanjiItems, ownedKanji, rankedNewKanji } from '@/lib/app/kanji-items';
 import { kanjiCatalog } from '@/lib/kanji/load';
 import {
   GRAMMAR_KIND,
@@ -106,43 +105,11 @@ async function introduceKanji(
   });
   const need = settings.dailyNewKanji - today.newKanji - waiting;
   if (need <= 0) return;
-  const [catalog, have, started] = await Promise.all([
-    kanjiCatalog(),
-    db.item.findMany({ where: { kind: KANJI_KIND }, select: { expression: true } }),
-    db.item.findMany({
-      where: { kind: VOCAB_KIND, srs: { state: { not: CARD_STATE.NEW } } },
-      select: { expression: true },
-    }),
-  ]);
-  const next = rankNewKanji(
-    catalog,
-    started.map((w) => w.expression),
-    new Set(have.map((k) => k.expression)),
-  ).slice(0, need);
-  if (next.length === 0) return;
-  // One millisecond apart, so the day's new kanji come up in the order they were ranked.
-  const creates = next.map((k, i) =>
-    db.item.create({
-      data: {
-        userId: db.$ownerId(),
-        kind: KANJI_KIND,
-        expression: k.kanji,
-        hanviet: k.hanviet,
-        meaningVi: k.meaningVi || k.hanviet,
-        // A kanji no OpenJLPT word uses is as rare as N1.
-        level: k.level ?? 'N1',
-        source: 'JOYO',
-        createdAt: new Date(now.getTime() + i),
-        srs: { create: { ...newSrsFields(now), userId: db.$ownerId() } },
-      },
-    }),
-  );
-  try {
-    await db.$transaction(creates);
-  } catch (e) {
-    // Two Ôn nhanh pages opened at once both brought them in: the other one's are kept.
-    if (!(e && typeof e === 'object' && 'code' in e && e.code === 'P2002')) throw e;
-  }
+  const catalog = await kanjiCatalog();
+  const have = await ownedKanji(db);
+  const next = (await rankedNewKanji(db, catalog, have)).slice(0, need);
+  // Two Ôn nhanh pages opened at once both bring them in: the other one's are kept.
+  await createKanjiItems(db, next, now);
 }
 
 // The day's new kanji, in the order they were brought in.

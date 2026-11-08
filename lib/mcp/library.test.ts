@@ -102,7 +102,20 @@ describe('MCP Kho chung', () => {
     });
     const found = await call('lookup', { query: '店' });
     expect(found.text).not.toContain('KANJI');
-    expect(found.text).toMatch(/^No item in the learner's library matches "店"/);
+    // Not as an item of the library: as the kanji, with the learner's card (KJ5).
+    expect(found.text).not.toMatch(/ · kanji /);
+    expect(found.text).toMatch(/^kanji 店 \[ĐIẾM\] · .* · card new$/m);
+    expect(found.text).toMatch(/^No item in the learner's library matches "店"/m);
+  });
+
+  it('lookup gives each kanji of the query from the kanji data (KJ5)', async () => {
+    const found = await call('lookup', { query: '経済' });
+    const lines = found.text.split('\n');
+    expect(lines[0]).toMatch(
+      /^kanji 経 \[KINH\] · .+ · N4 · 11 strokes · on ケイ、.* · radical 糸 .+ · parts 糸 \+ 圣 · no card yet$/,
+    );
+    expect(lines[1]).toMatch(/^kanji 済 \[TẾ\]/);
+    expect(lines.at(-1)).toMatch(/^next: /);
   });
 
   it('searches entries and groups, and marks what the learner has', async () => {

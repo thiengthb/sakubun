@@ -20,6 +20,7 @@ import type { LibraryEntryRow } from '@/lib/library/browse';
 import type { BrowseQuery } from '@/lib/library/browse-query';
 import type { LibraryScriptRow } from '@/lib/library/script-rows';
 import { OPENJLPT_ORIGIN } from '@/lib/library/shared';
+import type { KanjiLevelSummary } from '@/lib/app/kanji-levels';
 
 // List template (phase 8, L2): the shared library. Groups first, the way thien shares related items
 // (a whole level, a topic): OpenJLPT's as a table by level, then the learners' (7.4h); single entries
@@ -31,6 +32,7 @@ export function LibraryView({
   entriesMeta,
   search,
   scripts,
+  kanji = [],
   voiceSpeaker,
   speechRate,
   showFurigana,
@@ -43,6 +45,8 @@ export function LibraryView({
   entriesMeta: string;
   search: BrowseQuery;
   scripts: LibraryScriptRow[];
+  /** Kho chung's kanji groups, one per level (KJ5). */
+  kanji?: readonly KanjiLevelSummary[];
   voiceSpeaker?: number;
   speechRate?: number;
   showFurigana: boolean;
@@ -65,7 +69,7 @@ export function LibraryView({
             ? entriesMeta
             : tab === 'scripts'
               ? `${scripts.length} kịch bản`
-              : `${groups.length} nhóm`
+              : `${groups.length + kanji.length} nhóm`
         }
         tabs={<PageTabs items={LIBRARY_TABS.items} label={LIBRARY_TABS.label} />}
       >
@@ -74,9 +78,9 @@ export function LibraryView({
             <section className="space-y-3">
               <SectionHeading
                 title="OpenJLPT theo cấp"
-                hint="Toàn bộ ngữ pháp và từ vựng của mỗi cấp. Bấm một ô để xem nhóm và lấy về kho."
+                hint="Toàn bộ ngữ pháp, từ vựng và kanji của mỗi cấp. Bấm một ô để xem nhóm và lấy về kho."
               />
-              <LibraryLevels groups={openJlpt} />
+              <LibraryLevels groups={openJlpt} kanji={kanji} />
             </section>
           )}
           <section className="space-y-3">

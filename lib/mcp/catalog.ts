@@ -16,7 +16,8 @@ export const MCP_CATALOG: CatalogEntry[] = [
   {
     name: 'lookup',
     kind: 'tool',
-    summary: 'Tìm mẫu hoặc từ trong kho của bạn; không có thì báo Kho chung có không',
+    summary:
+      'Tìm mẫu hoặc từ trong kho của bạn, kèm âm Hán Việt và nghĩa của từng chữ kanji; không có thì báo Kho chung có không',
   },
   { name: 'add_items', kind: 'tool', summary: 'Thêm mẫu hoặc từ khi bạn đồng ý' },
   {

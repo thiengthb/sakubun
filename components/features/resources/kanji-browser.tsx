@@ -3,18 +3,13 @@
 import { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { CloudOff, SearchX } from 'lucide-react';
 import { EmptyState } from '@/components/common/empty-state';
-import { LIST_CARD } from '@/components/common/list-card';
 import { ScrollMoreStatus } from '@/components/common/scroll-more-status';
 import { SearchInput } from '@/components/common/search-input';
 import { useScrollMore } from '@/components/common/use-scroll-more';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { KanjiDetail } from '@/components/common/kanji-detail';
+import { KANJI_GRID, KanjiTile } from '@/components/common/kanji-tile';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import {
@@ -24,7 +19,6 @@ import {
   type KanjiLevelFilter,
 } from '@/lib/kanji/browse';
 import type { KanjiEntry } from '@/lib/kanji/catalog';
-import { cn } from '@/lib/core/utils';
 
 // Tài nguyên › Kanji (KJ2, docs/plans/2026-11-08-kanji.md): the 2,136 Jōyō kanji as tiles, easiest
 // level first, each opening its meaning, readings, radical and parts. The list comes from
@@ -32,8 +26,6 @@ import { cn } from '@/lib/core/utils';
 
 /** One step of tiles: about 15 rows on a laptop, past the bottom of any screen. */
 const TILE_STEP = 120;
-const GRID =
-  'grid grid-cols-4 gap-2 @md:grid-cols-6 @2xl:grid-cols-8 @4xl:grid-cols-10 @6xl:grid-cols-12';
 
 type Load =
   { status: 'loading' } | { status: 'error' } | { status: 'ready'; entries: KanjiEntry[] };
@@ -118,7 +110,7 @@ export function KanjiBrowser() {
 
       {load.status === 'loading' ? (
         <div className="@container" role="status" aria-label="Đang tải kanji">
-          <div className={GRID}>
+          <div className={KANJI_GRID}>
             {Array.from({ length: 24 }, (_, i) => (
               <Skeleton key={i} className="aspect-square rounded-xl" />
             ))}
@@ -132,25 +124,9 @@ export function KanjiBrowser() {
         />
       ) : (
         <div className="@container">
-          <ul className={GRID}>
+          <ul className={KANJI_GRID}>
             {items.map((k) => (
-              <li key={k.kanji} data-slot="kanji-tile" className="flex">
-                <button
-                  type="button"
-                  onClick={() => setOpen(k)}
-                  className={cn(
-                    LIST_CARD.base,
-                    'flex aspect-square w-full min-w-0 flex-col items-center justify-center gap-1 p-1 hover:bg-muted/40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
-                  )}
-                >
-                  <span lang="ja" className="text-3xl leading-none">
-                    {k.kanji}
-                  </span>
-                  <span className="max-w-full truncate text-xs text-muted-foreground">
-                    [{k.hanviet}]
-                  </span>
-                </button>
-              </li>
+              <KanjiTile key={k.kanji} kanji={k} onOpen={() => setOpen(k)} />
             ))}
           </ul>
           <ScrollMoreStatus ref={sentinelRef} hasMore={hasMore} className="mt-2" />
@@ -163,40 +139,5 @@ export function KanjiBrowser() {
         </DialogContent>
       </Dialog>
     </div>
-  );
-}
-
-function KanjiDetail({ kanji: k }: { kanji: KanjiEntry }) {
-  const rows: { label: string; value: string; ja?: boolean }[] = [
-    { label: 'Cấp', value: k.level ?? 'Ngoài JLPT' },
-    { label: 'Số nét', value: String(k.strokes) },
-    { label: 'Âm On', value: k.on.join('、'), ja: true },
-    { label: 'Âm Kun', value: k.kun.join('、'), ja: true },
-    { label: 'Bộ', value: `${k.radical.radical} ${k.radical.nameVi} (bộ số ${k.radical.number})` },
-    { label: 'Thành phần', value: k.parts.join(' + '), ja: true },
-    { label: 'Phần chỉ âm', value: k.phon ?? '', ja: true },
-  ].filter((r) => r.value);
-  return (
-    <>
-      <DialogHeader className="items-center text-center sm:items-center sm:text-center">
-        <DialogTitle className="flex flex-col items-center gap-2">
-          <span lang="ja" className="text-6xl leading-none font-normal">
-            {k.kanji}
-          </span>{' '}
-          <span>[{k.hanviet}]</span>
-        </DialogTitle>
-        <DialogDescription>{k.meaningVi || 'Chưa có nghĩa tiếng Việt.'}</DialogDescription>
-      </DialogHeader>
-      <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
-        {rows.map((r) => (
-          <div key={r.label} className="contents">
-            <dt className="text-muted-foreground">{r.label}</dt>
-            <dd lang={r.ja ? 'ja' : undefined} className="min-w-0 break-words">
-              {r.value}
-            </dd>
-          </div>
-        ))}
-      </dl>
-    </>
   );
 }
