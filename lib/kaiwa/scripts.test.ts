@@ -157,4 +157,31 @@ describe('setScriptVoices (Kaiwa c)', () => {
     expect((await S.setScriptVoices(theirs, script.id, { A: 13 })).ok).toBe(false);
     expect((await S.getScript(mine, script.id))?.voices).toBeNull();
   });
+
+  it('writes nothing when the script was saved again after it was read', async () => {
+    const script = await created();
+    const stale = new Date(script.updatedAt.getTime() - 60_000);
+    // The script as read before a save that moved updatedAt (an MCP edit in between).
+    const raced = new Proxy(mine, {
+      get(target, key, receiver) {
+        if (key !== 'script') return Reflect.get(target, key, receiver);
+        const table = target.script;
+        return new Proxy(table, {
+          get(t, k, r) {
+            if (k !== 'findFirst') return Reflect.get(t, k, r);
+            return async (args: Parameters<typeof table.findFirst>[0]) => ({
+              ...(await table.findFirst(args)),
+              updatedAt: stale,
+            });
+          },
+        });
+      },
+    });
+    const saved = await S.setScriptVoices(raced, script.id, { B: 13 });
+    expect(saved).toEqual({ ok: false, error: expect.stringContaining('vừa được sửa') });
+    expect(await S.getScript(mine, script.id)).toMatchObject({
+      voices: null,
+      updatedAt: script.updatedAt,
+    });
+  });
 });

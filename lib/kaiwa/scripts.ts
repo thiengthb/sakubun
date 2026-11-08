@@ -141,12 +141,16 @@ export async function setScriptVoices(
   const problem = checkVoices(voices, speakers);
   if (problem) return err(problem);
   const chosen = readVoices(JSON.stringify(voices), speakers);
-  await db.script.update({
-    where: { id },
+  // Written only if the script is still the one just checked: a save in between (MCP) would have
+  // moved updatedAt, and writing the old value back would reorder the list.
+  const { count } = await db.script.updateMany({
+    where: { id, updatedAt: script.updatedAt },
     data: {
       voices: Object.keys(chosen).length > 0 ? JSON.stringify(chosen) : null,
       updatedAt: script.updatedAt,
     },
   });
+  if (count === 0)
+    return err('Kịch bản vừa được sửa ở nơi khác. Tải lại trang rồi chọn giọng lại.');
   return ok(chosen);
 }
