@@ -23,6 +23,7 @@ beforeAll(async () => {
   routes.tts = (await import('@/app/api/tts/route')).GET;
   routes.mine = (await import('@/app/api/export/mine/route')).GET;
   routes.lookup = (await import('@/app/api/lookup/route')).POST;
+  routes.kanji = (await import('@/app/api/kanji/route')).GET;
 });
 beforeEach(() => vi.stubEnv('ALLOWED_EMAIL', 'owner@example.test'));
 afterEach(() => {
@@ -41,7 +42,7 @@ describe('API route gates', () => {
     expect(await res.json()).toEqual({ ok: false, error: 'Chỉ quản trị dùng được.' });
   });
 
-  it.each(['backup', 'system', 'tts', 'mine', 'lookup'])(
+  it.each(['backup', 'system', 'tts', 'mine', 'lookup', 'kanji'])(
     '%s: chưa đăng nhập hoặc bị chặn thì 401',
     async (name) => {
       expect((await call(name)).status).toBe(401);
@@ -55,6 +56,17 @@ describe('API route gates', () => {
     const res = await call('lookup');
     expect(res.status).toBe(400);
     expect((await res.json()).error).toMatch(/texts/);
+  });
+
+  it('kanji: người học nhận cả bảng Jōyō, dễ trước, giữ một giờ', async () => {
+    session.user = LEARNER;
+    const res = await call('kanji');
+    expect(res.status).toBe(200);
+    expect(res.headers.get('Cache-Control')).toBe('private, max-age=3600');
+    const catalog = (await res.json()) as { kanji: string; level: string | null }[];
+    expect(catalog).toHaveLength(2136);
+    expect(catalog[0]).toMatchObject({ level: 'N5' });
+    expect(catalog.at(-1)).toMatchObject({ level: null });
   });
 
   it('quản trị qua được cửa của backup', async () => {

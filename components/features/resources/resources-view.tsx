@@ -11,12 +11,14 @@ import { ResourceAddButton } from '@/components/features/resources/resource-add-
 import { useSessionState } from '@/components/common/use-session-state';
 import { RESOURCE_TABS } from '@/components/layout/page-heads';
 import { GroupsView } from '@/components/features/groups/groups-view';
+import { KanjiBrowser } from '@/components/features/resources/kanji-browser';
 import type { GroupSummary } from '@/lib/library/groups';
 
 export function ResourcesView({
   grammar,
   vocab,
   groups,
+  kanjiCount,
   voiceSpeaker,
   speechRate,
   showFurigana = false,
@@ -24,6 +26,8 @@ export function ResourcesView({
   grammar: ResourceRow[];
   vocab: ResourceRow[];
   groups: GroupSummary[];
+  /** The Jōyō kanji the Kanji tab lists; the list itself loads when the tab opens. */
+  kanjiCount: number;
   voiceSpeaker?: number;
   speechRate?: number;
   showFurigana?: boolean;
@@ -40,9 +44,12 @@ export function ResourcesView({
       ? `${groups.length} nhóm`
       : tab === 'vocab'
         ? `${vocab.length} từ vựng`
-        : `${grammar.length} mẫu ngữ pháp`;
+        : tab === 'kanji'
+          ? `${new Intl.NumberFormat('vi-VN').format(kanjiCount)} chữ Jōyō`
+          : `${grammar.length} mẫu ngữ pháp`;
+  // The kanji are the Jōyō list, not something a learner adds.
   const action =
-    tab === 'groups' ? (
+    tab === 'kanji' ? null : tab === 'groups' ? (
       <AddButton href="/groups/new" />
     ) : (
       <ResourceAddButton kind={tab === 'vocab' ? 'vocab' : 'grammar'} />
@@ -101,6 +108,9 @@ export function ResourcesView({
               showFurigana={showFurigana}
             />
           )}
+        </TabsContent>
+        <TabsContent value="kanji">
+          <KanjiBrowser />
         </TabsContent>
         <TabsContent value="groups">
           <GroupsView groups={groups} />

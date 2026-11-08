@@ -32,6 +32,7 @@ const DISPLAY_ALLOW = [
   'components/ui/', // shadcn primitive sizing tokens (button, calendar, …)
   'components/common/review-card.tsx', // quick-review card: the sentence and word on show
   'components/features/groups/group-cards.tsx', // flashcard face: the word alone, centred, as the hero
+  'components/features/resources/kanji-browser.tsx', // the kanji glyph on its tile and in its dialog is the content
 ];
 
 const allowed = (path: string) =>

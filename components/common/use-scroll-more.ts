@@ -7,12 +7,13 @@ import { useEffect, useRef, useState } from 'react';
 export const SCROLL_STEP = 20;
 
 /**
- * The first `shown` of `all`, growing by SCROLL_STEP whenever the sentinel nears the viewport. The
- * list starts over whenever `listKey` changes: a new search, sort or filter.
+ * The first `shown` of `all`, growing by `step` (SCROLL_STEP for cards) whenever the sentinel nears
+ * the viewport. The list starts over whenever `listKey` changes: a new search, sort or filter. A grid
+ * of small tiles passes a larger step, so that one step reaches past the viewport.
  */
-export function useScrollMore<T>(all: readonly T[], listKey: string) {
-  const [more, setMore] = useState({ key: listKey, shown: SCROLL_STEP });
-  const shown = more.key === listKey ? more.shown : SCROLL_STEP;
+export function useScrollMore<T>(all: readonly T[], listKey: string, step: number = SCROLL_STEP) {
+  const [more, setMore] = useState({ key: listKey, shown: step });
+  const shown = more.key === listKey ? more.shown : step;
   const hasMore = shown < all.length;
   const sentinelRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -23,13 +24,13 @@ export function useScrollMore<T>(all: readonly T[], listKey: string) {
         if (!entries.some((e) => e.isIntersecting)) return;
         setMore((m) => ({
           key: listKey,
-          shown: (m.key === listKey ? m.shown : SCROLL_STEP) + SCROLL_STEP,
+          shown: (m.key === listKey ? m.shown : step) + step,
         }));
       },
       { rootMargin: '400px 0px' },
     );
     io.observe(el);
     return () => io.disconnect();
-  }, [hasMore, listKey]);
+  }, [hasMore, listKey, step]);
   return { items: all.slice(0, shown), hasMore, sentinelRef };
 }
