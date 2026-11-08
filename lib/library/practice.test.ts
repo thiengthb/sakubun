@@ -162,6 +162,20 @@ describe('saveSettings direction', () => {
   });
 });
 
+describe('saveSettings patch', () => {
+  it('a one-field save keeps every other setting (the sidebar あ saves only furiganaMode)', async () => {
+    await resetData();
+    await P.saveSettings(db, { vocabLevel: 'N3', grammarLevel: 'N2', dailyNewVocab: 8 });
+    await P.saveSettings(db, { furiganaMode: 'both' });
+    expect(await P.getSettings(db)).toMatchObject({
+      vocabLevel: 'N3',
+      grammarLevel: 'N2',
+      dailyNewVocab: 8,
+      furiganaMode: 'both',
+    });
+  });
+});
+
 describe('listItems quality filter — the sweep needs a target list', () => {
   const OK = JSON.stringify({
     v: CURRENT_ENRICHMENT_VERSION,

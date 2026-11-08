@@ -87,6 +87,8 @@ export type Direction = (typeof DIRECTIONS)[number];
 export type DirectionMode = (typeof DIRECTION_MODES)[number];
 export type SentenceSize = (typeof SENTENCE_SIZES)[number];
 
+export type Settings = z.infer<typeof settingsSchema>;
+
 export const settingsSchema = z.object({
   // The level being studied, one per kind (plan 2026-11-07-translation-difficulty, D): new items
   // come mostly from it and some from the easier levels not finished yet, never from harder ones.
@@ -120,9 +122,20 @@ export const settingsSchema = z.object({
     .default({ vocab: false, enrichPatch: false }),
 });
 
-export const settingsPatchSchema = settingsSchema.partial();
+// A patch holds only the keys the caller sent. `.partial()` alone keeps each field's default in Zod 4,
+// so `{ furiganaMode }` from the sidebar parsed into a full default object and the save reset every
+// other setting (levels back to N5). Strip the top-level defaults; nested ones (autoCapture) stay.
+// The types stay those of `.partial()`: every key optional, values as in Settings.
+const patchShape = Object.fromEntries(
+  Object.entries(settingsSchema.shape).map(([key, field]) => [
+    key,
+    (field instanceof z.ZodDefault ? field.unwrap() : field).optional(),
+  ]),
+);
+export const settingsPatchSchema = z.object(patchShape) as unknown as ReturnType<
+  typeof settingsSchema.partial
+>;
 
-export type Settings = z.infer<typeof settingsSchema>;
 export type SettingsPatch = z.input<typeof settingsPatchSchema>;
 
 export const DEFAULT_SETTINGS: Settings = settingsSchema.parse({});

@@ -99,6 +99,12 @@ describe('settingsSchema', () => {
     expect(result.success).toBe(true);
     expect(result.success && result.data.register).toBe('keigo');
   });
+
+  it('a patch holds only the keys sent, so a save of one field leaves the rest alone', () => {
+    expect(settingsPatchSchema.parse({ sessionGoal: 15 })).toEqual({ sessionGoal: 15 });
+    expect(settingsPatchSchema.parse({})).toEqual({});
+    expect(settingsPatchSchema.safeParse({ sessionGoal: 99 }).success).toBe(false);
+  });
 });
 
 describe('direction setting', () => {
