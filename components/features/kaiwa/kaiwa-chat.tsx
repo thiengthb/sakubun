@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Toggle } from '@/components/ui/toggle';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { layoutTurns, scriptSpeakers } from '@/lib/kaiwa/layout';
-import { speakerVoices } from '@/lib/kaiwa/voices';
+import { type ChosenVoices, speakerVoices } from '@/lib/kaiwa/voices';
 import { enterLine, nextStep, speakingPauseMs, type ListenState } from '@/lib/kaiwa/listen';
 import { plainJapanese } from '@/lib/kaiwa/parse';
 import { loadMoraStarts } from '@/lib/japanese/karaoke-timing';
@@ -27,6 +27,7 @@ export function KaiwaChat({
   scriptId,
   lines,
   voiceSpeaker,
+  chosenVoices,
   speechRate,
   showFurigana,
   preview,
@@ -36,6 +37,8 @@ export function KaiwaChat({
   scriptId: string | null;
   lines: RubyLine[];
   voiceSpeaker?: number;
+  /** The voices chosen per part on this script (Kaiwa c); they win over the ones worked out. */
+  chosenVoices?: ChosenVoices;
   speechRate?: number;
   showFurigana: boolean;
   preview?: { row: number | null; onPick: (row: number) => void };
@@ -53,8 +56,9 @@ export function KaiwaChat({
   const [me, chooseMe] = useKaiwaMe(scriptId, speakers);
   const textSize = useKaiwaTextSize();
   const turns = layoutTurns(lines, me);
-  // Each part its own voice; the learner's is the one in Cài đặt (K6b).
-  const voices = voiceSpeaker === undefined ? null : speakerVoices(speakers, me, voiceSpeaker);
+  // Each part its own voice; the learner's is the one in Cài đặt (K6b), unless chosen on the script.
+  const voices =
+    voiceSpeaker === undefined ? null : speakerVoices(speakers, me, voiceSpeaker, chosenVoices);
   const covering = cover && !preview;
   const isCovered = (i: number) => {
     const turn = turns[i];

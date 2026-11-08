@@ -6,6 +6,7 @@ import { err, ok, type ActionResult } from '@/lib/core/action-result';
 import {
   deleteScript,
   saveScript,
+  setScriptVoices,
   type SaveScriptInput,
   type ScriptSummary,
 } from '@/lib/kaiwa/scripts';
@@ -32,6 +33,16 @@ export async function saveScriptAction(
     revalidatePath(`/kaiwa/${saved.data.id}`);
   }
   return saved;
+}
+
+// "Giọng từng vai" (Kaiwa c): the voice chosen for each part of one script.
+export async function setVoicesAction(
+  scriptId: string,
+  voices: Record<string, number>,
+): Promise<ActionResult<Record<string, number>>> {
+  const saved = await setScriptVoices(await getUserDb(), scriptId, voices);
+  if (saved.ok) revalidatePath(`/kaiwa/${scriptId}`);
+  return saved.ok ? ok({ ...saved.data }) : saved;
 }
 
 // "Thêm vào kho" on a word looked up in a script (K5): the OpenJLPT entry becomes the learner's item.

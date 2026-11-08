@@ -530,6 +530,8 @@ model Script {
   version   Int      @default(1)
   // The shared-library script this was taken from (K7), as on Item: a plain column, no foreign key.
   libraryEntryId String?
+  // A voice chosen per part (Kaiwa c), JSON {"A": 3}: wins over the voices given in order.
+  voices    String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

@@ -133,3 +133,55 @@ describe('listScripts and deleteScript', () => {
     expect((await S.listScripts(mine)).map((s) => s.id)).toEqual([second.id]);
   });
 });
+
+describe('setScriptVoices (Kaiwa c)', () => {
+  it('keeps a voice per part without touching the version or the list order', async () => {
+    const script = await created();
+    const before = await S.getScript(mine, script.id);
+    const saved = await S.setScriptVoices(mine, script.id, { B: 13 });
+    expect(saved).toEqual({ ok: true, data: { B: 13 } });
+    const after = await S.getScript(mine, script.id);
+    expect(after).toMatchObject({ voices: '{"B":13}', version: 1, updatedAt: before!.updatedAt });
+
+    expect(await S.setScriptVoices(mine, script.id, {})).toEqual({ ok: true, data: {} });
+    expect((await S.getScript(mine, script.id))?.voices).toBeNull();
+  });
+
+  it('refuses a part or a voice that does not exist, and another learner’s script', async () => {
+    const script = await created();
+    expect(await S.setScriptVoices(mine, script.id, { Z: 13 })).toEqual({
+      ok: false,
+      error: 'Kịch bản không có vai "Z".',
+    });
+    expect((await S.setScriptVoices(mine, script.id, { A: 4242 })).ok).toBe(false);
+    expect((await S.setScriptVoices(theirs, script.id, { A: 13 })).ok).toBe(false);
+    expect((await S.getScript(mine, script.id))?.voices).toBeNull();
+  });
+
+  it('writes nothing when the script was saved again after it was read', async () => {
+    const script = await created();
+    const stale = new Date(script.updatedAt.getTime() - 60_000);
+    // The script as read before a save that moved updatedAt (an MCP edit in between).
+    const raced = new Proxy(mine, {
+      get(target, key, receiver) {
+        if (key !== 'script') return Reflect.get(target, key, receiver);
+        const table = target.script;
+        return new Proxy(table, {
+          get(t, k, r) {
+            if (k !== 'findFirst') return Reflect.get(t, k, r);
+            return async (args: Parameters<typeof table.findFirst>[0]) => ({
+              ...(await table.findFirst(args)),
+              updatedAt: stale,
+            });
+          },
+        });
+      },
+    });
+    const saved = await S.setScriptVoices(raced, script.id, { B: 13 });
+    expect(saved).toEqual({ ok: false, error: expect.stringContaining('vừa được sửa') });
+    expect(await S.getScript(mine, script.id)).toMatchObject({
+      voices: null,
+      updatedAt: script.updatedAt,
+    });
+  });
+});

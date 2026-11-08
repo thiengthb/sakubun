@@ -3,7 +3,8 @@ import { err, ok, type ActionResult } from '@/lib/core/action-result';
 import { analyzeLines, type Tokenize } from '@/lib/kaiwa/furigana';
 import { checkScript, describeProblems, normalizeBody, parseScript } from '@/lib/kaiwa/parse';
 import { japaneseTokenizer } from '@/lib/kaiwa/tokenizer';
-import { digestScript } from '@/lib/kaiwa/layout';
+import { digestScript, scriptSpeakers } from '@/lib/kaiwa/layout';
+import { checkVoices, readVoices, type ChosenVoices } from '@/lib/kaiwa/voices';
 
 // A learner's Kaiwa scripts (phase 8, K1). Every write goes through saveScript, so the web page and
 // the AI over MCP (K2) get the same format check and the same guard against overwriting newer work.
@@ -20,6 +21,8 @@ export interface ScriptSummary {
 export interface ScriptRecord extends ScriptSummary {
   body: string;
   analysis: string | null;
+  /** The voices chosen per part as JSON (Kaiwa c); read with readVoices. */
+  voices: string | null;
   createdAt: Date;
 }
 
@@ -120,4 +123,34 @@ export async function saveScript(
 export async function deleteScript(db: UserDb, id: string): Promise<boolean> {
   const { count } = await db.script.deleteMany({ where: { id } });
   return count > 0;
+}
+
+// The voices chosen per part on one script (Kaiwa c). Not an edit of the script: its version and
+// its place on the list stay as they are. A part not named goes back to the voice given in order.
+export async function setScriptVoices(
+  db: UserDb,
+  id: string,
+  voices: Record<string, unknown>,
+): Promise<ActionResult<ChosenVoices>> {
+  const script = await db.script.findFirst({
+    where: { id },
+    select: { body: true, updatedAt: true },
+  });
+  if (!script) return err('Không tìm thấy kịch bản này. Có thể nó đã bị xoá.');
+  const speakers = scriptSpeakers(parseScript(script.body));
+  const problem = checkVoices(voices, speakers);
+  if (problem) return err(problem);
+  const chosen = readVoices(JSON.stringify(voices), speakers);
+  // Written only if the script is still the one just checked: a save in between (MCP) would have
+  // moved updatedAt, and writing the old value back would reorder the list.
+  const { count } = await db.script.updateMany({
+    where: { id, updatedAt: script.updatedAt },
+    data: {
+      voices: Object.keys(chosen).length > 0 ? JSON.stringify(chosen) : null,
+      updatedAt: script.updatedAt,
+    },
+  });
+  if (count === 0)
+    return err('Kịch bản vừa được sửa ở nơi khác. Tải lại trang rồi chọn giọng lại.');
+  return ok(chosen);
 }
