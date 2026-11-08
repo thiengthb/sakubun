@@ -13,12 +13,16 @@ export const kanjiHref = (kanji: string) => `/resources/kanji/${encodeURICompone
 
 /** Level, strokes, readings, radical and parts as a two-column list. */
 export function KanjiFacts({ kanji: k }: { kanji: KanjiEntry }) {
-  const rows: { label: string; value: string; ja?: boolean }[] = [
+  const rows: { label: string; value: string; ja?: boolean; href?: string }[] = [
     { label: 'Cấp', value: k.level ?? 'Ngoài JLPT' },
     { label: 'Số nét', value: String(k.strokes) },
     { label: 'Âm On', value: k.on.join('、'), ja: true },
     { label: 'Âm Kun', value: k.kun.join('、'), ja: true },
-    { label: 'Bộ', value: `${k.radical.radical} ${k.radical.nameVi} (bộ số ${k.radical.number})` },
+    {
+      label: 'Bộ',
+      value: `${k.radical.radical} ${k.radical.nameVi} (bộ số ${k.radical.number})`,
+      href: `/resources/radicals/${k.radical.number}`,
+    },
     { label: 'Thành phần', value: k.parts.join(' + '), ja: true },
     { label: 'Phần chỉ âm', value: k.phon ?? '', ja: true },
   ].filter((r) => r.value);
@@ -28,7 +32,13 @@ export function KanjiFacts({ kanji: k }: { kanji: KanjiEntry }) {
         <div key={r.label} className="contents">
           <dt className="text-muted-foreground">{r.label}</dt>
           <dd lang={r.ja ? 'ja' : undefined} className="min-w-0 break-words">
-            {r.value}
+            {r.href ? (
+              <Link href={r.href} className="underline underline-offset-4 hover:text-accent-brand">
+                {r.value}
+              </Link>
+            ) : (
+              r.value
+            )}
           </dd>
         </div>
       ))}

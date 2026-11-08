@@ -1,8 +1,10 @@
 'use client';
 
-import { BookText, Languages } from 'lucide-react';
+import Link from 'next/link';
+import { BookText, Languages, Shapes } from 'lucide-react';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { PageTabs } from '@/components/common/page-tabs';
+import { ExpandingIconButton } from '@/components/common/expanding-icon-button';
 import { EmptyState } from '@/components/common/empty-state';
 import { ResourceTable, type ResourceRow } from '@/components/features/resources/resource-table';
 import { PageShell } from '@/components/layout/page-shell';
@@ -47,9 +49,13 @@ export function ResourcesView({
         : tab === 'kanji'
           ? `${new Intl.NumberFormat('vi-VN').format(kanjiCount)} chữ Jōyō`
           : `${grammar.length} mẫu ngữ pháp`;
-  // The kanji are the Jōyō list, not something a learner adds.
+  // The kanji are the Jōyō list, not something a learner adds; their tab opens the radicals (KJ7).
   const action =
-    tab === 'kanji' ? null : tab === 'groups' ? (
+    tab === 'kanji' ? (
+      <ExpandingIconButton asChild icon={Shapes} label="Bộ thủ">
+        <Link href="/resources/radicals" />
+      </ExpandingIconButton>
+    ) : tab === 'groups' ? (
       <AddButton href="/groups/new" />
     ) : (
       <ResourceAddButton kind={tab === 'vocab' ? 'vocab' : 'grammar'} />

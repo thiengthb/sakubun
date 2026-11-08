@@ -32,7 +32,8 @@ export interface KanjiPage {
   parts: KanjiPagePart[];
 }
 
-const studyOf = (state: number | undefined): KanjiStudy =>
+/** What the learner has done with a kanji, from its card's FSRS state (none: no card). */
+export const studyOf = (state: number | undefined): KanjiStudy =>
   state === undefined
     ? 'none'
     : state === CARD_STATE.REVIEW

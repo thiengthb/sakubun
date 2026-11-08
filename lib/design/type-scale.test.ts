@@ -35,6 +35,7 @@ const DISPLAY_ALLOW = [
   'components/common/kanji-review-card.tsx', // quick-review kanji card: the glyph alone is the question
   'components/common/kanji-tile.tsx', // the kanji glyph on its tile is the content
   'components/common/kanji-detail.tsx', // the kanji glyph heading its dialog is the content
+  'components/features/resources/radicals-view.tsx', // the radical glyph on its tile is the content
 ];
 
 const allowed = (path: string) =>
