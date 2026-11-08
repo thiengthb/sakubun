@@ -1,6 +1,6 @@
 # Trạng thái hiện tại
 
-Cập nhật lần cuối: 2026-11-08 · Claude (thread "Gom và hoàn thiện việc dang dở Sakubun", tài khoản của thien)
+Cập nhật lần cuối: 2026-11-08 · Claude (thread "Làm lại UI/UX v2", tài khoản của thien)
 
 Trang này cho mọi phiên (kể cả tài khoản, model khác) biết trong 2 phút: đang ở đâu, ai giữ việc gì, cần thien làm gì.
 Lịch sử nằm trong git, PR và `docs/roadmap.md`, không ghi ở đây. Cả file dưới 40 dòng; quá thì gộp hoặc bỏ, đừng thêm.
@@ -12,7 +12,9 @@ nghĩa Việt (KJ1b) xong; KJ2–KJ7 xong (#260–#265): kế hoạch kanji đã
 
 ## Đang làm
 
-Không có bước nào đang làm.
+| Bước                                                                                                  | Nhánh                          | Phiên                     |
+| ----------------------------------------------------------------------------------------------------- | ------------------------------ | ------------------------- |
+| UI v2 giai đoạn U0 (nền móng), `docs/plans/2026-11-08-ui-v2.md` đã duyệt; D6 (Kho) còn chờ nghiên cứu | `claude/project-thread-6inpk6` | thread "Làm lại UI/UX v2" |
 
 ## Vừa xong
 
