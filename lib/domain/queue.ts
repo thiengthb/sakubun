@@ -1,7 +1,9 @@
 import type { ItemKind } from '@/lib/library/item-kinds';
+import { KANJI_KIND } from '@/lib/library/item-kinds';
 
 // What to study next, as pure logic: the data layer reads candidates and today's counts, this file
-// decides. Grammar and vocabulary are equal items, each with its own daily cap for new items.
+// decides. Grammar and vocabulary are equal items, each with its own daily cap for new items; Ôn
+// nhanh adds kanji with a third cap (KJ3).
 // Decision: docs/decisions/0001-core-rewrite.md.
 
 export type { ItemKind };
@@ -9,9 +11,12 @@ export type { ItemKind };
 // ts-fsrs State values.
 export const CARD_STATE = { NEW: 0, LEARNING: 1, REVIEW: 2, RELEARNING: 3 } as const;
 
+/** What a queue card can be: a grammar or vocab item, or a kanji in Ôn nhanh (KJ3). */
+export type QueueKind = ItemKind | typeof KANJI_KIND;
+
 export interface QueueCandidate {
   id: string;
-  kind: ItemKind;
+  kind: QueueKind;
   state: number;
   due: Date;
 }
@@ -19,6 +24,8 @@ export interface QueueCandidate {
 export interface DailyCaps {
   newGrammar: number;
   newVocab: number;
+  /** Only Ôn nhanh serves kanji (KJ3); left out, as in the translation loop, it is 0. */
+  newKanji?: number;
   maxReviews: number;
 }
 
@@ -26,6 +33,7 @@ export interface DailyCaps {
 export interface StudiedToday {
   newGrammar: number;
   newVocab: number;
+  newKanji: number;
   reviews: number;
 }
 
@@ -41,7 +49,7 @@ export interface QueueInput {
 export interface QueuePlan {
   cards: QueueCandidate[];
   // Allowance remaining today before any card of this plan is answered.
-  left: { newGrammar: number; newVocab: number; reviews: number };
+  left: { newGrammar: number; newVocab: number; newKanji: number; reviews: number };
   // Earliest due date still ahead among started items: the "come back at" hint when cards is empty.
   nextDueAt: Date | null;
 }
@@ -88,15 +96,26 @@ export function planQueue(input: QueueInput): QueuePlan {
   const fresh = candidates.filter(isNew);
   const newGrammar = fresh.filter((c) => c.kind === 'GRAMMAR').slice(0, newGrammarLeft);
   const newVocab = fresh.filter((c) => c.kind === 'VOCAB').slice(0, newVocabLeft);
+  const newKanjiLeft = Math.max(0, (caps.newKanji ?? 0) - today.newKanji);
+  const newKanji = fresh.filter((c) => c.kind === KANJI_KIND).slice(0, newKanjiLeft);
 
-  const ordered = [...learning, ...reviews, ...interleave(newGrammar, newVocab)];
+  const ordered = [
+    ...learning,
+    ...reviews,
+    ...interleave(interleave(newGrammar, newVocab), newKanji),
+  ];
   const cards = input.limit === undefined ? ordered : ordered.slice(0, input.limit);
 
   const ahead = candidates.filter((c) => !isNew(c) && c.due.getTime() > now.getTime()).sort(byDue);
 
   return {
     cards,
-    left: { newGrammar: newGrammarLeft, newVocab: newVocabLeft, reviews: reviewsLeft },
+    left: {
+      newGrammar: newGrammarLeft,
+      newVocab: newVocabLeft,
+      newKanji: newKanjiLeft,
+      reviews: reviewsLeft,
+    },
     nextDueAt: ahead[0]?.due ?? null,
   };
 }
@@ -106,14 +125,16 @@ export interface ReadyCount {
   due: number;
   newGrammar: number;
   newVocab: number;
+  newKanji: number;
 }
 
 // What a plan's cards are, so `status` can say "3 due" apart from the daily allowance.
 export function countReady(cards: readonly QueueCandidate[]): ReadyCount {
-  const count: ReadyCount = { due: 0, newGrammar: 0, newVocab: 0 };
+  const count: ReadyCount = { due: 0, newGrammar: 0, newVocab: 0, newKanji: 0 };
   for (const c of cards) {
     if (!isNew(c)) count.due++;
     else if (c.kind === 'GRAMMAR') count.newGrammar++;
+    else if (c.kind === KANJI_KIND) count.newKanji++;
     else count.newVocab++;
   }
   return count;

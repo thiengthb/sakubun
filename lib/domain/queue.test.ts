@@ -14,7 +14,7 @@ const MINUTE = 60_000;
 const at = (minutes: number) => new Date(NOW.getTime() + minutes * MINUTE);
 
 const CAPS: DailyCaps = { newGrammar: 5, newVocab: 15, maxReviews: 200 };
-const NONE: StudiedToday = { newGrammar: 0, newVocab: 0, reviews: 0 };
+const NONE: StudiedToday = { newGrammar: 0, newVocab: 0, newKanji: 0, reviews: 0 };
 
 let seq = 0;
 function card(kind: QueueCandidate['kind'], state: number, dueInMinutes = 0): QueueCandidate {
@@ -51,12 +51,12 @@ describe('planQueue', () => {
     const plan = planQueue({
       candidates: [...newGrammar(8), ...newVocab(30)],
       caps: CAPS,
-      today: { newGrammar: 5, newVocab: 10, reviews: 0 },
+      today: { newGrammar: 5, newVocab: 10, newKanji: 0, reviews: 0 },
       now: NOW,
     });
     expect(plan.cards.filter((c) => c.kind === 'GRAMMAR')).toHaveLength(0);
     expect(plan.cards.filter((c) => c.kind === 'VOCAB')).toHaveLength(5);
-    expect(plan.left).toEqual({ newGrammar: 0, newVocab: 5, reviews: 200 });
+    expect(plan.left).toEqual({ newGrammar: 0, newVocab: 5, newKanji: 0, reviews: 200 });
   });
 
   it('serves learning steps first, then reviews by due date, then new items', () => {
@@ -142,9 +142,33 @@ describe('planQueue', () => {
   it('an empty library gives an empty plan with nothing ahead', () => {
     expect(planQueue({ candidates: [], caps: CAPS, today: NONE, now: NOW })).toEqual({
       cards: [],
-      left: { newGrammar: 5, newVocab: 15, reviews: 200 },
+      left: { newGrammar: 5, newVocab: 15, newKanji: 0, reviews: 200 },
       nextDueAt: null,
     });
+  });
+});
+
+describe('planQueue with kanji (KJ3)', () => {
+  const newKanji = (n: number) => Array.from({ length: n }, () => card('KANJI', CARD_STATE.NEW));
+
+  it('serves no new kanji unless a kanji cap is given, as in the translation loop', () => {
+    const plan = planQueue({ candidates: newKanji(3), caps: CAPS, today: NONE, now: NOW });
+    expect(plan.cards).toEqual([]);
+    expect(plan.left.newKanji).toBe(0);
+  });
+
+  it('caps new kanji on their own, spread among the new items, after what is due', () => {
+    const due = card('KANJI', CARD_STATE.REVIEW, -5);
+    const plan = planQueue({
+      candidates: [...newKanji(6), ...newVocab(2), due],
+      caps: { ...CAPS, newKanji: 5 },
+      today: { ...NONE, newKanji: 3 },
+      now: NOW,
+    });
+    expect(plan.cards[0]).toBe(due);
+    expect(plan.cards.map((c) => c.kind)).toEqual(['KANJI', 'VOCAB', 'KANJI', 'VOCAB', 'KANJI']);
+    expect(plan.left.newKanji).toBe(2);
+    expect(countReady(plan.cards)).toEqual({ due: 1, newGrammar: 0, newVocab: 2, newKanji: 2 });
   });
 });
 
@@ -162,10 +186,10 @@ describe('countReady', () => {
       today: NONE,
       now: NOW,
     });
-    expect(countReady(plan.cards)).toEqual({ due: 2, newGrammar: 2, newVocab: 1 });
+    expect(countReady(plan.cards)).toEqual({ due: 2, newGrammar: 2, newVocab: 1, newKanji: 0 });
   });
 
   it('counts nothing for an empty store, whatever the allowance', () => {
-    expect(countReady([])).toEqual({ due: 0, newGrammar: 0, newVocab: 0 });
+    expect(countReady([])).toEqual({ due: 0, newGrammar: 0, newVocab: 0, newKanji: 0 });
   });
 });

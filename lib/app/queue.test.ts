@@ -89,7 +89,7 @@ describe('getQueue', () => {
     await review(vocab[0], 3, NOW);
 
     const queue = await Q.getQueue(db, new Date(NOW.getTime() + MINUTE));
-    expect(queue.today).toEqual({ newGrammar: 1, newVocab: 1, reviews: 0 });
+    expect(queue.today).toEqual({ newGrammar: 1, newVocab: 1, newKanji: 0, reviews: 0 });
     expect(queue.cards.filter((c) => c.kind === 'GRAMMAR' && c.state === 0)).toHaveLength(1);
   });
 
@@ -187,5 +187,54 @@ describe('getQueue', () => {
     const queue = await Q.getQueue(db, new Date(NOW.getTime() + MINUTE));
     expect(queue.cards).toEqual([]);
     expect(queue.nextDueAt).not.toBeNull();
+  });
+});
+
+describe('getQueue with kanji (KJ3)', () => {
+  const kanjiCards = (queue: Awaited<ReturnType<App['getQueue']>>) =>
+    queue.cards.filter((c) => c.kind === 'KANJI').map((c) => c.expression);
+
+  it('brings in the kanji of started words first, up to the daily cap, and only in Ôn nhanh', async () => {
+    await P.saveSettings(db, { dailyNewKanji: 3, dailyNewVocab: 0 });
+    const [word] = await seed('VOCAB', 1);
+    await db.item.update({ where: { id: word }, data: { expression: '経済' } });
+    await review(word, 3, new Date(NOW.getTime() - 3 * 86_400_000));
+
+    expect(kanjiCards(await Q.getQueue(db, NOW))).toEqual([]);
+    expect(await db.item.count({ where: { kind: 'KANJI' } })).toBe(0);
+
+    const queue = await Q.getQueue(db, NOW, undefined, { kanji: true });
+    expect(kanjiCards(queue)).toEqual(['経', '済', '日']);
+    expect(queue.left.newKanji).toBe(3);
+    const made = await db.item.findMany({
+      where: { kind: 'KANJI' },
+      orderBy: { createdAt: 'asc' },
+    });
+    expect(made.map((k) => k.expression)).toEqual(['経', '済', '日']);
+    expect(made[0]).toMatchObject({ hanviet: 'KINH', source: 'JOYO', level: 'N4' });
+
+    // Asking again the same day brings in nothing more while those wait.
+    await Q.getQueue(db, NOW, undefined, { kanji: true });
+    expect(await db.item.count({ where: { kind: 'KANJI' } })).toBe(3);
+  });
+
+  it('counts the kanji met today against the cap, and brings in none past it', async () => {
+    await P.saveSettings(db, { dailyNewKanji: 2 });
+    const first = await Q.getQueue(db, NOW, undefined, { kanji: true });
+    for (const c of first.cards) await review(c.id, 3, NOW);
+
+    const later = await Q.getQueue(db, new Date(NOW.getTime() + MINUTE), undefined, {
+      kanji: true,
+    });
+    expect(later.today.newKanji).toBe(2);
+    expect(kanjiCards(later).length).toBeLessThanOrEqual(2);
+    expect(later.cards.every((c) => c.state !== 0)).toBe(true);
+    expect(await db.item.count({ where: { kind: 'KANJI' } })).toBe(2);
+  });
+
+  it('brings in no kanji when the daily cap is 0', async () => {
+    await P.saveSettings(db, { dailyNewKanji: 0 });
+    expect(kanjiCards(await Q.getQueue(db, NOW, undefined, { kanji: true }))).toEqual([]);
+    expect(await db.item.count({ where: { kind: 'KANJI' } })).toBe(0);
   });
 });

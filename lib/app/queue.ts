@@ -7,13 +7,23 @@ import {
   type StudiedToday,
 } from '@/lib/domain/queue';
 import { getSettings } from '@/lib/library/practice';
-import { GRAMMAR_KIND, ITEM_KINDS, KANJI_KIND, VOCAB_KIND, asItemKind } from '@/lib/library/item-kinds';
+import { newSrsFields } from '@/lib/srs/srs';
+import { rankNewKanji } from '@/lib/kanji/introduce';
+import { kanjiCatalog } from '@/lib/kanji/load';
+import {
+  GRAMMAR_KIND,
+  ITEM_KINDS,
+  KANJI_KIND,
+  VOCAB_KIND,
+  asItemKind,
+  isKanji,
+} from '@/lib/library/item-kinds';
 import { levelsFrom, pickNewItems } from '@/lib/domain/new-items';
 import type { JlptLevel, Settings } from '@/lib/settings/schema';
 import { studyDayStart } from '@/lib/srs/select';
 
-// Reads what the queue needs from the database and lets lib/domain/queue decide. Nothing calls this
-// yet; quick review (roadmap 2.3) and next_turn (3.1) will.
+// Reads what the queue needs from the database and lets lib/domain/queue decide: for Ôn nhanh
+// (lib/app/quick-review.ts), next_turn (lib/app/turn.ts) and `status`.
 
 export interface QueueCard extends QueueCandidate {
   expression: string;
@@ -52,7 +62,7 @@ type Row = {
 function toCard(row: Row): QueueCard {
   return {
     id: row.item.id,
-    kind: asItemKind(row.item.kind),
+    kind: isKanji(row.item.kind) ? KANJI_KIND : asItemKind(row.item.kind),
     state: row.state,
     due: row.due,
     expression: row.item.expression,
@@ -71,14 +81,79 @@ export async function studiedToday(
     where: { reviewedAt: { gte: studyDayStart(now, settings.dayCutoffHour) } },
     select: { state: true, item: { select: { kind: true } } },
   });
-  const counts: StudiedToday = { newGrammar: 0, newVocab: 0, reviews: 0 };
+  const counts: StudiedToday = { newGrammar: 0, newVocab: 0, newKanji: 0, reviews: 0 };
   for (const log of logs) {
     if (log.state === CARD_STATE.REVIEW) counts.reviews++;
-    if (log.state !== 0 || !log.item || log.item.kind === KANJI_KIND) continue;
-    if (log.item.kind === VOCAB_KIND) counts.newVocab++;
+    if (log.state !== 0 || !log.item) continue;
+    if (log.item.kind === KANJI_KIND) counts.newKanji++;
+    else if (log.item.kind === VOCAB_KIND) counts.newVocab++;
     else counts.newGrammar++;
   }
   return counts;
+}
+
+// Ôn nhanh brings in new kanji itself (KJ3): every Jōyō kanji is waiting, and an Item is made for
+// the next ones only when today's allowance has room, so the library holds the kanji met so far.
+// Ranked by lib/kanji/introduce: the kanji of the words being learned come first.
+async function introduceKanji(
+  db: UserDb,
+  settings: Settings,
+  today: StudiedToday,
+  now: Date,
+): Promise<void> {
+  const waiting = await db.srsState.count({
+    where: { state: CARD_STATE.NEW, item: { kind: KANJI_KIND, suspended: false } },
+  });
+  const need = settings.dailyNewKanji - today.newKanji - waiting;
+  if (need <= 0) return;
+  const [catalog, have, started] = await Promise.all([
+    kanjiCatalog(),
+    db.item.findMany({ where: { kind: KANJI_KIND }, select: { expression: true } }),
+    db.item.findMany({
+      where: { kind: VOCAB_KIND, srs: { state: { not: CARD_STATE.NEW } } },
+      select: { expression: true },
+    }),
+  ]);
+  const next = rankNewKanji(
+    catalog,
+    started.map((w) => w.expression),
+    new Set(have.map((k) => k.expression)),
+  ).slice(0, need);
+  if (next.length === 0) return;
+  // One millisecond apart, so the day's new kanji come up in the order they were ranked.
+  const creates = next.map((k, i) =>
+    db.item.create({
+      data: {
+        userId: db.$ownerId(),
+        kind: KANJI_KIND,
+        expression: k.kanji,
+        hanviet: k.hanviet,
+        meaningVi: k.meaningVi || k.hanviet,
+        // A kanji no OpenJLPT word uses is as rare as N1.
+        level: k.level ?? 'N1',
+        source: 'JOYO',
+        createdAt: new Date(now.getTime() + i),
+        srs: { create: { ...newSrsFields(now), userId: db.$ownerId() } },
+      },
+    }),
+  );
+  try {
+    await db.$transaction(creates);
+  } catch (e) {
+    // Two Ôn nhanh pages opened at once both brought them in: the other one's are kept.
+    if (!(e && typeof e === 'object' && 'code' in e && e.code === 'P2002')) throw e;
+  }
+}
+
+// The day's new kanji, in the order they were brought in.
+async function newKanji(db: UserDb, take: number): Promise<Row[]> {
+  if (take <= 0) return [];
+  return db.srsState.findMany({
+    where: { state: CARD_STATE.NEW, item: { kind: KANJI_KIND, suspended: false } },
+    orderBy: { item: { createdAt: 'asc' } },
+    take,
+    select: { state: true, due: true, item: { select: ITEM_FIELDS } },
+  });
 }
 
 // The next new items of one kind (plan 2026-11-07-translation-difficulty, D): every unstarted item
@@ -121,21 +196,32 @@ async function newItems(db: UserDb, kind: string, level: JlptLevel, take: number
   return rows.sort((a, b) => at.get(a.item.id)! - at.get(b.item.id)!);
 }
 
-export async function getQueue(db: UserDb, now: Date = new Date(), limit?: number): Promise<Queue> {
+/**
+ * The cards to study now. Grammar and vocabulary only, as next_turn and `status` want; Ôn nhanh
+ * passes `kanji` to add the kanji cards (KJ3), bringing in today's new ones first.
+ */
+export async function getQueue(
+  db: UserDb,
+  now: Date = new Date(),
+  limit?: number,
+  { kanji = false }: { kanji?: boolean } = {},
+): Promise<Queue> {
   const settings = await getSettings(db);
   const today = await studiedToday(db, settings, now);
+  if (kanji) await introduceKanji(db, settings, today, now);
   const caps = {
     newGrammar: settings.dailyNewGrammar,
     newVocab: settings.dailyNewVocab,
+    newKanji: kanji ? settings.dailyNewKanji : 0,
     maxReviews: settings.maxReviewsPerDay,
   };
-  // Grammar and vocabulary only: kanji cards have their own queue in Ôn nhanh (KJ3).
-  const live = { suspended: false, kind: { in: [...ITEM_KINDS] } };
+  const kinds: string[] = kanji ? [...ITEM_KINDS, KANJI_KIND] : [...ITEM_KINDS];
+  const live = { suspended: false, kind: { in: kinds } };
   const select = { state: true, due: true, item: { select: ITEM_FIELDS } } as const;
 
   // Learning steps are fetched whole and reviews only up to today's allowance, so a backlog of
   // overdue reviews can never push a card that is mid-step out of the fetch.
-  const [learning, reviews, newGrammar, newVocab, ahead] = await Promise.all([
+  const [learning, reviews, newGrammar, newVocab, kanjiNew, ahead] = await Promise.all([
     db.srsState.findMany({
       where: {
         state: { in: [CARD_STATE.LEARNING, CARD_STATE.RELEARNING] },
@@ -153,6 +239,7 @@ export async function getQueue(db: UserDb, now: Date = new Date(), limit?: numbe
     }),
     newItems(db, GRAMMAR_KIND, settings.grammarLevel, caps.newGrammar - today.newGrammar),
     newItems(db, VOCAB_KIND, settings.vocabLevel, caps.newVocab - today.newVocab),
+    newKanji(db, caps.newKanji - today.newKanji),
     db.srsState.findFirst({
       where: { state: { not: 0 }, due: { gt: now }, item: live },
       orderBy: { due: 'asc' },
@@ -160,7 +247,14 @@ export async function getQueue(db: UserDb, now: Date = new Date(), limit?: numbe
     }),
   ]);
 
-  const rows = [...learning, ...reviews, ...newGrammar, ...newVocab, ...(ahead ? [ahead] : [])];
+  const rows = [
+    ...learning,
+    ...reviews,
+    ...newGrammar,
+    ...newVocab,
+    ...kanjiNew,
+    ...(ahead ? [ahead] : []),
+  ];
   const byId = new Map(rows.map((r) => [r.item.id, toCard(r)]));
   const plan = planQueue({ candidates: [...byId.values()], caps, today, now, limit });
   return { ...plan, cards: plan.cards.map((c) => byId.get(c.id)!), today };

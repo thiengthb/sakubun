@@ -1,6 +1,12 @@
 import type { UserDb } from '@/lib/db/user-db';
 import { sameExpression, stripDecoration } from '@/lib/core/normalize';
-import { asItemKind, GRAMMAR_KIND, VOCAB_KIND, type ItemKind } from '@/lib/library/item-kinds';
+import {
+  asItemKind,
+  GRAMMAR_KIND,
+  ITEM_KINDS,
+  VOCAB_KIND,
+  type ItemKind,
+} from '@/lib/library/item-kinds';
 import { addItems, type ItemInput } from '@/lib/library/practice';
 
 // Library reads and writes for the v2 MCP tools: find an item by what the learner typed, and add new
@@ -26,7 +32,8 @@ export async function findItems(db: UserDb, query: string, kind?: ItemKind): Pro
   if (!needle) return [];
   const rows = await db.item.findMany({
     where: {
-      ...(kind ? { kind } : {}),
+      // Kanji cards (KJ3) are not listed here; KJ5 gives them their own lookup.
+      kind: kind ?? { in: [...ITEM_KINDS] },
       OR: [
         { expression: { contains: needle } },
         { reading: { contains: needle } },

@@ -44,14 +44,24 @@ function retryCard(card: QuickCard): QuickCard {
   return card.mode === 'cloze' ? { ...card, choices: [...card.choices].reverse() } : card;
 }
 
+/** A flip card or a kanji card: answered by showing the back, then graded 1-4. */
+const flips = (card: QuickCard | undefined) => card?.mode === 'flip' || card?.mode === 'kanji';
+
+const KIND_WORDS: [QuickCard['kind'], string][] = [
+  ['GRAMMAR', 'ngữ pháp'],
+  ['VOCAB', 'từ vựng'],
+  ['KANJI', 'kanji'],
+];
+
 /** "Còn 4 thẻ: 1 ngữ pháp, 3 từ vựng", naming only the kinds left. */
 function leftLine(left: QuickCard[]): string {
-  const grammar = left.filter((c) => c.kind === 'GRAMMAR').length;
-  const vocab = left.length - grammar;
   if (left.length === 0) return 'Đã ôn hết thẻ đến hạn';
-  if (grammar === 0) return `Còn ${vocab} thẻ từ vựng`;
-  if (vocab === 0) return `Còn ${grammar} thẻ ngữ pháp`;
-  return `Còn ${left.length} thẻ: ${grammar} ngữ pháp, ${vocab} từ vựng`;
+  const kinds = KIND_WORDS.map(([kind, word]) => ({
+    word,
+    n: left.filter((c) => c.kind === kind).length,
+  })).filter((k) => k.n > 0);
+  if (kinds.length === 1) return `Còn ${left.length} thẻ ${kinds[0].word}`;
+  return `Còn ${left.length} thẻ: ${kinds.map((k) => `${k.n} ${k.word}`).join(', ')}`;
 }
 
 // Laptop: the keys for what can be done now, at the left end of the answer bar. A phone has no
@@ -113,6 +123,7 @@ function Summary({ results: all, nextDueAt }: { results: Result[]; nextDueAt: Da
   const tiles = [
     ...byKind('GRAMMAR', 'Ngữ pháp'),
     ...byKind('VOCAB', 'Từ vựng'),
+    ...byKind('KANJI', 'Kanji'),
     ['Khó', count(2)],
     ['Quên', count(1)],
   ];
@@ -183,7 +194,7 @@ export function QuickReviewView({
   const card = deck[at] as QuickCard | undefined;
   const done = at >= deck.length;
   // A new item is met before it is tested: read, then "Đã xem" records Good, as it always has.
-  const intro = !practice && card?.mode === 'flip' && card.isNew;
+  const intro = !practice && flips(card) && !!card?.isNew;
 
   const send = (payload: CardAnswer, rating: RatingValue, advance: boolean) => {
     if (!card || isPending) return;
@@ -240,12 +251,12 @@ export function QuickReviewView({
   };
 
   const graded = card?.mode === 'cloze' && picked !== null && (practice || results.length > index);
-  const showReveal = card?.mode === 'flip' && !revealed && !intro;
-  const showGrade = card?.mode === 'flip' && revealed && !practice && !intro;
+  const showReveal = flips(card) && !revealed && !intro;
+  const showGrade = flips(card) && revealed && !practice && !intro;
   // A practice flip is not graded: once its answer is shown, the learner moves on.
-  const showNext = graded || (card?.mode === 'flip' && revealed && practice);
+  const showNext = graded || (flips(card) && revealed && practice);
   const practiceNext = () => {
-    if (retry && card?.mode === 'flip') setRetry({ ...retry, right: [...retry.right, true] });
+    if (retry && flips(card)) setRetry({ ...retry, right: [...retry.right, true] });
     next();
   };
 

@@ -90,6 +90,21 @@ describe('MCP Kho chung', () => {
     expect(none.text).toContain('No item matches');
   });
 
+  it('lookup leaves out the kanji cards of Ôn nhanh (KJ3)', async () => {
+    await db.item.create({
+      data: {
+        userId: db.$ownerId(),
+        kind: 'KANJI',
+        expression: '店',
+        meaningVi: 'tiệm',
+        srs: { create: { userId: db.$ownerId(), due: new Date() } },
+      },
+    });
+    const found = await call('lookup', { query: '店' });
+    expect(found.text).not.toContain('KANJI');
+    expect(found.text).toMatch(/^No item in the learner's library matches "店"/);
+  });
+
   it('searches entries and groups, and marks what the learner has', async () => {
     const P = await import('@/lib/library/practice');
     await P.addItems(db, [{ expression: '店', meaningVi: 'tiệm' }], 'MANUAL', 'VOCAB');

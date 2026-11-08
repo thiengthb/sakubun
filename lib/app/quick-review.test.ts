@@ -1,6 +1,7 @@
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import type { UserDb } from '@/lib/db/user-db';
 import { createTestUser, createTestDb, resetLearningData } from '@/lib/db/test-db';
+import type { QuickCard, QuickSentence } from '@/lib/app/quick-review';
 
 createTestDb('sakubun-app-quick-');
 
@@ -64,7 +65,13 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   await resetLearningData(prisma);
+  // These are about grammar and vocab cards; the kanji cards Ôn nhanh brings in (KJ3) are tested
+  // on their own below.
+  await P.saveSettings(db, { dailyNewKanji: 0 });
 });
+
+const sentenceOf = (card: QuickCard | undefined): QuickSentence | null | undefined =>
+  card && card.mode !== 'kanji' ? card.sentence : undefined;
 
 describe('getQuickReview', () => {
   it('meets a new item on a flip card, its example sentence underlining it', async () => {
@@ -78,8 +85,8 @@ describe('getQuickReview', () => {
       structure: 'N + を約束する',
       note: 'Không dùng cho lịch hẹn khám bệnh.',
     });
-    expect(card.sentence?.translation).toBe('Tôi đã hẹn với bạn.');
-    expect(card.sentence?.segments).toContainEqual({
+    expect(sentenceOf(card)?.translation).toBe('Tôi đã hẹn với bạn.');
+    expect(sentenceOf(card)?.segments).toContainEqual({
       text: '約束',
       reading: 'やくそく',
       mark: 'target',
@@ -143,8 +150,8 @@ describe('getQuickReview', () => {
     const card = (await Q.getQuickReview(db, NOW)).cards.find((c) => c.itemId === ids['書き直す'])!;
     expect(card.mode).toBe('flip');
     // The conjugated form is still found and underlined; a bare sentence has no translation.
-    expect(card.sentence?.segments).toContainEqual({ text: '書き直', mark: 'target' });
-    expect(card.sentence?.translation).toBeNull();
+    expect(sentenceOf(card)?.segments).toContainEqual({ text: '書き直', mark: 'target' });
+    expect(sentenceOf(card)?.translation).toBeNull();
   });
 
   it('takes the translation, furigana, place and formation of an OpenJLPT sentence', async () => {
@@ -152,7 +159,7 @@ describe('getQuickReview', () => {
     const ids = await seed([{ expression: '〜は' }], 'GRAMMAR');
     const [card] = (await Q.getQuickReview(db, NOW)).cards;
     expect(card).toMatchObject({ mode: 'flip', isNew: true, structure: 'Danh từ + は' });
-    expect(card.sentence).toEqual({
+    expect(sentenceOf(card)).toEqual({
       translation: 'Tôi là sinh viên.',
       segments: [
         { text: '私', reading: 'わたし' },
@@ -188,10 +195,10 @@ describe('getQuickReview', () => {
     const au = cards.cards.find((c) => c.itemId === ids['会う'])!;
     // 会わ is not 会う as the choices would show it, so the card stays a flip card.
     expect(au.mode).toBe('flip');
-    expect(au.sentence?.translation).toBe('Anh đã gặp anh Smith rồi nhỉ.');
-    expect(au.sentence?.segments).toContainEqual({ text: '会', reading: 'あ', mark: 'target' });
-    expect(au.sentence?.segments).toContainEqual({ text: 'わ', mark: 'target' });
-    expect(cards.cards.find((c) => c.itemId === ids['拝む'])?.sentence).toBeNull();
+    expect(sentenceOf(au)?.translation).toBe('Anh đã gặp anh Smith rồi nhỉ.');
+    expect(sentenceOf(au)?.segments).toContainEqual({ text: '会', reading: 'あ', mark: 'target' });
+    expect(sentenceOf(au)?.segments).toContainEqual({ text: 'わ', mark: 'target' });
+    expect(sentenceOf(cards.cards.find((c) => c.itemId === ids['拝む']))).toBeNull();
   });
 
   it("meets a word in a line of the learner's own Kaiwa script, then takes its sentences in turn", async () => {
@@ -217,9 +224,9 @@ describe('getQuickReview', () => {
     const ids = await seed([
       { expression: '書き直す', notes: 'Ví dụ: 書類を書き直してください。 (Please rewrite it.)' },
     ]);
-    const target = (card: { sentence: { segments: { text: string; mark?: string }[] } | null }) =>
-      card.sentence?.segments
-        .filter((s) => s.mark === 'target')
+    const target = (card: QuickCard) =>
+      sentenceOf(card)
+        ?.segments.filter((s) => s.mark === 'target')
         .map((s) => s.text)
         .join('');
 
@@ -229,7 +236,7 @@ describe('getQuickReview', () => {
       await db.srsState.update({ where: { itemId: ids['書き直す'] }, data: { reps } });
       const [card] = (await Q.getQuickReview(db, NOW)).cards;
       expect(card.mode).toBe('flip');
-      sentences.push([target(card), card.sentence?.translation]);
+      sentences.push([target(card), sentenceOf(card)?.translation]);
     }
     expect(sentences).toContainEqual(['書き直し', 'Tôi đã viết lại tên.']);
     expect(sentences).toContainEqual(['書き直', null]);
@@ -313,5 +320,33 @@ describe('getItemCards', () => {
       mark: 'target',
     });
     expect(await db.reviewLog.count()).toBe(0);
+  });
+});
+
+describe('kanji cards (KJ3)', () => {
+  it('brings in new kanji as kanji cards, with the learner’s words that use them', async () => {
+    await P.saveSettings(db, { dailyNewKanji: 1, dailyNewVocab: 0 });
+    const ids = await seed([{ expression: '経済' }, { expression: '経験' }]);
+    await makeSeen(ids['経済']);
+
+    const review = await Q.getQuickReview(db, NOW);
+    const card = review.cards.find((c) => c.mode === 'kanji');
+    if (card?.mode !== 'kanji') throw new Error('no kanji card');
+    expect(card).toMatchObject({
+      kind: 'KANJI',
+      expression: '経',
+      hanviet: 'KINH',
+      level: 'N4',
+      isNew: true,
+    });
+    expect(card.face).toMatchObject({ strokes: 11, radical: { radical: '糸' } });
+    expect(card.face.on).toContain('ケイ');
+    // The started word first.
+    expect(card.face.words.map((w) => w.expression)).toEqual(['経済', '経験']);
+
+    const graded = await Q.answerCard(db, { itemId: card.itemId, mode: 'flip', rating: 3 }, NOW);
+    expect(graded.ok).toBe(true);
+    const log = await db.reviewLog.findFirstOrThrow({ where: { itemId: card.itemId } });
+    expect(log).toMatchObject({ rating: 3, state: 0 });
   });
 });

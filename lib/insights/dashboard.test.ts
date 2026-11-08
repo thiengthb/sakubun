@@ -52,6 +52,23 @@ describe('getDashboard reads the database once for the whole Phân tích page', 
     expect(await S.getStreak(db)).toEqual(d.streak);
   });
 
+  it('leaves the kanji cards of Ôn nhanh (KJ3) out of the library counts', async () => {
+    await reset();
+    await studied('DASH_one', 3);
+    await db.item.create({
+      data: {
+        userId: db.$ownerId(),
+        kind: 'KANJI',
+        expression: '経',
+        meaningVi: 'đi qua',
+        srs: { create: { userId: db.$ownerId(), due: new Date() } },
+      },
+    });
+    const d = await D.getDashboard(db);
+    expect(d.grammarTotal).toBe(1);
+    expect(d.mastery.new + d.mastery.learning + d.mastery.review + d.mastery.relearning).toBe(1);
+  });
+
   it('no reviews: a zero streak and empty activity', async () => {
     await reset();
     const d = await D.getDashboard(db);

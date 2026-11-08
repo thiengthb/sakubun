@@ -18,7 +18,7 @@ import { GroupItemTable } from '@/components/features/groups/group-item-table';
 import { GROUP_KIND_LABELS } from '@/lib/library/group-kinds';
 import type { GroupDetail } from '@/lib/library/groups';
 import type { GroupShareStatus } from '@/lib/library/publish';
-import type { QuickCard } from '@/lib/app/quick-review';
+import type { SentenceCard } from '@/lib/app/quick-review';
 
 // List template: the group's name is the h1, its kind, size and note the meta; Thêm opens the
 // add-items page, Sửa the edit page, and Luyện nhóm (once there is something to practise) copies
@@ -32,7 +32,7 @@ export function GroupDetailView({
   showFurigana = false,
 }: {
   group: GroupDetail;
-  cards: QuickCard[];
+  cards: SentenceCard[];
   share: GroupShareStatus | null;
   voiceSpeaker?: number;
   speechRate?: number;
