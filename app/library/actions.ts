@@ -26,6 +26,7 @@ import {
   type TakeScriptResult,
 } from '@/lib/library/scripts';
 import { libraryScriptRows, type LibraryScriptRow } from '@/lib/library/script-rows';
+import { isKanjiLevel, takeKanjiLevel, type TakeKanjiLevelResult } from '@/lib/app/kanji-levels';
 
 // "Lấy" on Kho chung (phase 8, L2): the copy itself and its rules live in lib/library/take.ts.
 export async function takeEntryAction(entryId: string): Promise<ActionResult<TakeEntryResult>> {
@@ -40,6 +41,16 @@ export async function takeGroupAction(
   const taken = await takeGroup(await getUserDb(), groupEntryId);
   if (taken.ok) revalidatePath('/library', 'layout');
   return taken;
+}
+
+// A level's kanji (KJ5): a card for each one the learner lacks, met in Ôn nhanh at their own pace.
+export async function takeKanjiLevelAction(
+  level: string,
+): Promise<ActionResult<TakeKanjiLevelResult>> {
+  if (!isKanjiLevel(level)) return { ok: false, error: 'Không có nhóm kanji này.' };
+  const taken = await takeKanjiLevel(await getUserDb(), level);
+  revalidatePath('/library', 'layout');
+  return { ok: true, data: taken };
 }
 
 // The next page of "Từng mục" as the list scrolls (7.4i). The search comes back from the page as

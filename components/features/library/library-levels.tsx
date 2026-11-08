@@ -12,15 +12,24 @@ import { LIST_CARD } from '@/components/common/list-card';
 import { HaveBar, haveText } from '@/components/features/library/have-bar';
 import type { LibraryGroupRow } from '@/components/features/library/library-group-card';
 import { GROUP_KIND_LABELS } from '@/lib/library/group-kinds';
+import type { KanjiLevelSummary } from '@/lib/app/kanji-levels';
 import { JLPT_LEVELS } from '@/lib/settings/schema';
 import { cn } from '@/lib/core/utils';
 
 const KINDS = ['grammar', 'vocab'] as const;
 
 // OpenJLPT's level groups as one table (thien, 7.4h): a row per level, a cell per kind with its size
-// and how much of it the learner has; a cell opens the group.
-export function LibraryLevels({ groups }: { groups: LibraryGroupRow[] }) {
+// and how much of it the learner has; a cell opens the group. The Kanji column (KJ5) is the catalog's
+// kanji of that level, opened on its own page.
+export function LibraryLevels({
+  groups,
+  kanji = [],
+}: {
+  groups: LibraryGroupRow[];
+  kanji?: readonly KanjiLevelSummary[];
+}) {
   const at = new Map(groups.map((g) => [`${g.level}:${g.groupKind}`, g]));
+  const kanjiAt = new Map(kanji.map((k) => [k.level, k]));
   return (
     <div data-slot="library-levels" className={cn(LIST_CARD.base, 'p-0')}>
       <Table className="table-fixed">
@@ -32,6 +41,7 @@ export function LibraryLevels({ groups }: { groups: LibraryGroupRow[] }) {
                 {GROUP_KIND_LABELS[kind]}
               </TableHead>
             ))}
+            {kanji.length > 0 && <TableHead className="px-3">Kanji</TableHead>}
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -48,6 +58,21 @@ export function LibraryLevels({ groups }: { groups: LibraryGroupRow[] }) {
                   </TableCell>
                 );
               })}
+              {kanji.length > 0 && (
+                <TableCell className="p-0">
+                  {kanjiAt.has(level) && (
+                    <LevelCell
+                      group={{
+                        id: `kanji/${level}`,
+                        name: `${level} · Kanji`,
+                        size: kanjiAt.get(level)!.size,
+                        have: kanjiAt.get(level)!.have,
+                      }}
+                      unit="chữ"
+                    />
+                  )}
+                </TableCell>
+              )}
             </TableRow>
           ))}
         </TableBody>
@@ -56,16 +81,25 @@ export function LibraryLevels({ groups }: { groups: LibraryGroupRow[] }) {
   );
 }
 
-function LevelCell({ group }: { group: LibraryGroupRow }) {
+function LevelCell({
+  group,
+  unit = 'mục',
+}: {
+  group: Pick<LibraryGroupRow, 'id' | 'name' | 'size' | 'have'>;
+  unit?: string;
+}) {
   const have = haveText(group.have, group.size);
   return (
     <Link
       href={`/library/${group.id}`}
-      aria-label={`Mở ${group.name}: ${group.size} mục, ${have.toLowerCase()}`}
+      aria-label={`Mở ${group.name}: ${group.size} ${unit}, ${have.toLowerCase()}`}
       className="block space-y-1.5 px-3 py-2.5 transition-colors hover:bg-muted/40 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
     >
-      <span className="flex min-w-0 items-baseline justify-between gap-2">
-        <span className="font-medium tabular-nums">{group.size} mục</span>
+      {/* Phone: three kinds share the row, so the size and how much the learner has stack. */}
+      <span className="flex min-w-0 flex-col gap-0.5 sm:flex-row sm:items-baseline sm:justify-between sm:gap-2">
+        <span className="font-medium tabular-nums">
+          {group.size} {unit}
+        </span>
         <span
           className={cn(
             'truncate text-xs tabular-nums',

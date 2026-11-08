@@ -33,7 +33,8 @@ const DISPLAY_ALLOW = [
   'components/common/review-card.tsx', // quick-review card: the sentence and word on show
   'components/features/groups/group-cards.tsx', // flashcard face: the word alone, centred, as the hero
   'components/common/kanji-review-card.tsx', // quick-review kanji card: the glyph alone is the question
-  'components/features/resources/kanji-browser.tsx', // the kanji glyph on its tile and in its dialog is the content
+  'components/common/kanji-tile.tsx', // the kanji glyph on its tile is the content
+  'components/common/kanji-detail.tsx', // the kanji glyph heading its dialog is the content
 ];
 
 const allowed = (path: string) =>

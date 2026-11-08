@@ -2,6 +2,7 @@ import { z } from 'zod';
 import type { ActionResult } from '@/lib/core/action-result';
 import { addExample } from '@/lib/app/examples';
 import { addLibraryItems, findItems, type FoundItem } from '@/lib/app/library';
+import { lookupKanji, type FoundKanji } from '@/lib/app/kanji-lookup';
 import { getStatus, type StudyStatus } from '@/lib/app/status';
 import {
   gradeTurn,
@@ -117,6 +118,26 @@ export function renderNotFound(query: string, shared: string[]) {
   ]);
 }
 
+/** One line a kanji (KJ5): what it is, then whether the learner has its card in Ôn nhanh. */
+export function renderKanjiLines(found: readonly FoundKanji[]): string[] {
+  return found.map(({ kanji: k, state }) => {
+    const learner = state === null ? 'no card yet' : `card ${STATE_NAMES[state] ?? 'new'}`;
+    return [
+      `kanji ${k.kanji} [${k.hanviet}]`,
+      k.meaningVi || null,
+      k.level ?? 'beyond N1',
+      `${k.strokes} strokes`,
+      k.on.length > 0 ? `on ${k.on.join('、')}` : null,
+      k.kun.length > 0 ? `kun ${k.kun.join('、')}` : null,
+      `radical ${k.radical.radical} ${k.radical.nameVi}`.trim(),
+      k.parts.length > 0 ? `parts ${k.parts.join(' + ')}` : null,
+      learner,
+    ]
+      .filter(Boolean)
+      .join(' · ');
+  });
+}
+
 export function renderFound(query: string, items: FoundItem[]) {
   if (items.length === 0) return renderNotFound(query, []);
   return text(
@@ -218,17 +239,25 @@ export function registerV2Tools(server: McpServer) {
 
   server.tool(
     'lookup',
-    "Find a grammar pattern or word in the learner's library.",
+    "Find a grammar pattern or word in the learner's library; each kanji in the query also comes with its Hán Việt, meaning, readings and parts.",
     { query: z.string().min(1), kind: KIND.optional() },
     guard(
       'lookup',
       async ({ query, kind }: { query: string; kind?: 'GRAMMAR' | 'VOCAB' }, extra: ToolExtra) => {
         const db = learnerDb(extra);
-        const items = await findItems(db, query, kind);
+        const [items, kanji] = await Promise.all([
+          findItems(db, query, kind),
+          lookupKanji(db, query),
+        ]);
         // Not the learner's yet: say whether Kho chung has it (phase 8, L5).
-        return items.length > 0
-          ? renderFound(query, items)
-          : renderNotFound(query, await findShared(db, query, { kind, take: 3 }));
+        const answer =
+          items.length > 0
+            ? renderFound(query, items)
+            : renderNotFound(query, await findShared(db, query, { kind, take: 3 }));
+        if (kanji.length === 0) return answer;
+        // The kanji in it (KJ5) come first, so the `next:` line stays last.
+        const [first] = answer.content;
+        return text([...renderKanjiLines(kanji), first.text]);
       },
     ),
   );
