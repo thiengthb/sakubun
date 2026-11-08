@@ -19,7 +19,7 @@ export async function getDashboard(db: UserDb, now: Date = new Date()): Promise<
         state: true,
         errorTags: true,
         itemId: true,
-        item: { select: { expression: true } },
+        item: { select: { expression: true, kind: true } },
       },
     }),
     db.sentence.findMany({
@@ -54,7 +54,11 @@ export async function getDashboard(db: UserDb, now: Date = new Date()): Promise<
   return buildDashboard({
     now,
     settings,
-    logs: logs.map(({ item, ...l }) => ({ ...l, expression: item?.expression ?? null })),
+    logs: logs.map(({ item, ...l }) => ({
+      ...l,
+      expression: item?.expression ?? null,
+      kind: item?.kind ?? null,
+    })),
     sentences,
     items: items.map((i) => ({ ...i, enrichment: enrichment.get(i.id) ?? null })),
     streak,

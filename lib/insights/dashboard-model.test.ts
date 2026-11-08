@@ -132,13 +132,17 @@ describe('windows', () => {
     }
   });
 
-  it('weak spots look back 30 days and skip deleted items', () => {
+  it('weak spots look back 30 days and skip deleted items and kanji cards', () => {
     const logs = [
       log({ rating: 1, errorTags: '["particle"]', reviewedAt: ago(2) }),
       log({ rating: 2, errorTags: '["particle"]', reviewedAt: ago(3) }),
       log({ rating: 1, errorTags: '["register"]', reviewedAt: ago(45) }),
       log({ rating: 1, errorTags: '["register"]', itemId: null, expression: null }),
       log({ rating: 3, errorTags: '["register"]' }),
+      // A kanji card missed: study, but it has no item page to list (review of #261).
+      log({ rating: 1, itemId: 'k1', expression: '経', kind: 'KANJI' }),
+      log({ rating: 2, itemId: 'k1', expression: '経', kind: 'KANJI' }),
+      log({ rating: 1, itemId: 'k1', expression: '経', kind: 'KANJI' }),
     ];
     const d = buildDashboard(input({ logs }));
     expect(d.weak.tagCounts).toEqual([{ tag: 'particle', count: 2 }]);

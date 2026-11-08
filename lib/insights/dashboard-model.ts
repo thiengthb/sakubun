@@ -1,5 +1,5 @@
 import { needsWork, scoreEnrichment } from '@/lib/library/enrichment-quality';
-import { GRAMMAR_KIND, VOCAB_KIND } from '@/lib/library/item-kinds';
+import { GRAMMAR_KIND, KANJI_KIND, VOCAB_KIND } from '@/lib/library/item-kinds';
 import {
   breakdownByLevelAndLength,
   validAnswerSec,
@@ -41,6 +41,8 @@ export interface LogRow {
   errorTags: string | null;
   itemId: string | null; // null once the item is deleted
   expression: string | null;
+  /** The item's kind; a kanji card (KJ3) counts as study but has no page to list it on. */
+  kind?: string | null;
 }
 
 export interface ItemRow {
@@ -218,6 +220,8 @@ function weakReport(input: DashboardInput, live: readonly ItemRow[]): WeakReport
   const perItem = new Map<string, { expression: string; misses: number; tags: Set<ErrorTag> }>();
   for (const miss of input.logs) {
     if (miss.rating > 2 || miss.itemId == null || miss.reviewedAt.getTime() < since) continue;
+    // A kanji card has no item page for "Sai nhiều nhất" to open (review of #261).
+    if (miss.kind === KANJI_KIND) continue;
     const entry = perItem.get(miss.itemId) ?? {
       expression: miss.expression ?? '(đã xoá)',
       misses: 0,
