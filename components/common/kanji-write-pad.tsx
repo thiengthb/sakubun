@@ -30,6 +30,8 @@ export function KanjiWritePad({
   const expected = useMemo(() => paths.map((d) => pathPoints(d)), [paths]);
   const [done, setDone] = useState(0);
   const [drawing, setDrawing] = useState<Point[] | null>(null);
+  // The pointer drawing the current stroke; a second finger or another button is ignored.
+  const pointer = useRef<number | null>(null);
   const [miss, setMiss] = useState<Point[] | null>(null);
   const [misses, setMisses] = useState(0);
   const tally = useRef({ mistakes: 0, hinted: false, startedAt: 0 });
@@ -46,22 +48,29 @@ export function KanjiWritePad({
   };
 
   const down = (e: PointerEvent<SVGSVGElement>) => {
-    if (finished) return;
+    if (finished || pointer.current !== null) return;
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    pointer.current = e.pointerId;
     e.currentTarget.setPointerCapture(e.pointerId);
     if (tally.current.startedAt === 0) tally.current.startedAt = performance.now();
     setMiss(null);
     setDrawing([toBox(e)]);
   };
   const move = (e: PointerEvent<SVGSVGElement>) => {
-    if (!drawing) return;
+    if (!drawing || e.pointerId !== pointer.current) return;
     setDrawing([...drawing, toBox(e)]);
   };
-  const up = () => {
+  const up = (e: PointerEvent<SVGSVGElement>) => {
+    if (e.pointerId !== pointer.current) return;
+    pointer.current = null;
     if (!drawing) return;
     const stroke = drawing;
     setDrawing(null);
     if (stroke.length < 2) return;
-    const verdict = matchStroke(stroke, expected[done], showHint ? 1.4 : 1);
+    const verdict = matchStroke(stroke, expected[done], {
+      leniency: showHint ? 1.4 : 1,
+      rest: expected.slice(done + 1),
+    });
     if (verdict.ok) {
       const next = done + 1;
       setDone(next);
@@ -99,7 +108,11 @@ export function KanjiWritePad({
         onPointerDown={down}
         onPointerMove={move}
         onPointerUp={up}
-        onPointerCancel={() => setDrawing(null)}
+        onPointerCancel={(e) => {
+          if (e.pointerId !== pointer.current) return;
+          pointer.current = null;
+          setDrawing(null);
+        }}
       >
         <g className="text-border" stroke="currentColor" strokeWidth={0.6} strokeDasharray="2 2">
           <line x1={54.5} y1={0} x2={54.5} y2={109} />

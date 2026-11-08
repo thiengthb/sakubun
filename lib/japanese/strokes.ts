@@ -110,17 +110,21 @@ function meanDistance(a: readonly Point[], b: readonly Point[]): number {
 }
 
 export type StrokeVerdict =
-  { ok: true } | { ok: false; why: 'too-short' | 'far' | 'reversed' | 'shape' };
+  { ok: true } | { ok: false; why: 'too-short' | 'far' | 'reversed' | 'shape' | 'order' };
 
 /**
  * Whether a drawn stroke is the expected one: it starts and ends near the stroke's ends, runs the
  * same way, and keeps close to it on average. A dot (a short stroke) is judged by place alone.
  * `leniency` above 1 loosens every distance, for a hint already shown or a small screen.
+ *
+ * The distances alone are wide enough to let a neighbouring stroke through (書's parallel
+ * horizontals, 主's dot and the bar under it), so with `rest`, the strokes still to come, a stroke
+ * that lies closer to one of them than to the expected one is the wrong order.
  */
 export function matchStroke(
   drawn: readonly Point[],
   expected: readonly Point[],
-  leniency = 1,
+  { leniency = 1, rest = [] }: { leniency?: number; rest?: readonly (readonly Point[])[] } = {},
 ): StrokeVerdict {
   const drawnLength = pathLength(drawn);
   const expectedLength = pathLength(expected);
@@ -130,19 +134,23 @@ export function matchStroke(
   const near = 22 * leniency;
   const mean = meanDistance(a, b);
   const backwards = meanDistance(a, [...b].reverse());
-  const isDot = expectedLength < 18;
-  if (isDot) {
-    const centre = (p: readonly Point[]) => p[Math.floor(p.length / 2)];
-    return dist(centre(a), centre(b)) <= near ? { ok: true } : { ok: false, why: 'far' };
-  }
-  if (backwards + 4 < mean && backwards <= near) return { ok: false, why: 'reversed' };
-  if (dist(a[0], b[0]) > near * 1.2 || dist(a.at(-1)!, b.at(-1)!) > near * 1.2)
-    return { ok: false, why: 'far' };
-  if (mean > near) return { ok: false, why: 'shape' };
-  // A short stroke's drawn length is mostly the hand's wobble, so only a long one is held to it.
-  const ratio = drawnLength / expectedLength;
-  if (expectedLength >= 30 && (ratio < 0.35 || ratio > 2.5)) return { ok: false, why: 'shape' };
-  return { ok: true };
+  const verdict = ((): StrokeVerdict => {
+    if (expectedLength < 18) {
+      const centre = (p: readonly Point[]) => p[Math.floor(p.length / 2)];
+      return dist(centre(a), centre(b)) <= near ? { ok: true } : { ok: false, why: 'far' };
+    }
+    if (backwards + 4 < mean && backwards <= near) return { ok: false, why: 'reversed' };
+    if (dist(a[0], b[0]) > near * 1.2 || dist(a.at(-1)!, b.at(-1)!) > near * 1.2)
+      return { ok: false, why: 'far' };
+    if (mean > near) return { ok: false, why: 'shape' };
+    // A short stroke's drawn length is mostly the hand's wobble, so only a long one is held to it.
+    const ratio = drawnLength / expectedLength;
+    if (expectedLength >= 30 && (ratio < 0.35 || ratio > 2.5)) return { ok: false, why: 'shape' };
+    return { ok: true };
+  })();
+  if (!verdict.ok) return verdict;
+  const later = rest.some((r) => meanDistance(a, resample(r, SAMPLES)) < mean);
+  return later ? { ok: false, why: 'order' } : verdict;
 }
 
 export type HandwritingRating = 1 | 2 | 3 | 4;

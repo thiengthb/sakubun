@@ -82,7 +82,53 @@ describe('matchStroke', () => {
   it('lets a wider leniency take a sloppier stroke', () => {
     const sloppy = shift(stroke('一', 0), 0, 24);
     expect(matchStroke(sloppy, stroke('一', 0)).ok).toBe(false);
-    expect(matchStroke(sloppy, stroke('一', 0), 1.5).ok).toBe(true);
+    expect(matchStroke(sloppy, stroke('一', 0), { leniency: 1.5 }).ok).toBe(true);
+  });
+});
+
+describe('matchStroke with the strokes still to come', () => {
+  const rest = (kanji: string, n: number) => STROKES[kanji].slice(n + 1).map((d) => pathPoints(d));
+
+  it('rejects the next stroke written in place of this one', () => {
+    // 書's and 言's parallel horizontals, 量's, and 主's dot over its bar pass on distance alone.
+    for (const [kanji, n] of [
+      ['書', 1],
+      ['書', 2],
+      ['主', 0],
+      ['言', 1],
+      ['量', 6],
+    ] as const) {
+      const swapped = byHand(stroke(kanji, n + 1));
+      expect(matchStroke(swapped, stroke(kanji, n)).ok, `${kanji} ${n}`).toBe(true);
+      expect(
+        matchStroke(swapped, stroke(kanji, n), { rest: rest(kanji, n) }),
+        `${kanji} ${n}`,
+      ).toEqual({ ok: false, why: 'order' });
+    }
+  });
+
+  it('still takes every right stroke of every kanji', () => {
+    const missed: string[] = [];
+    for (const [kanji, paths] of Object.entries(STROKES))
+      paths.forEach((_, n) => {
+        if (!matchStroke(byHand(stroke(kanji, n)), stroke(kanji, n), { rest: rest(kanji, n) }).ok)
+          missed.push(`${kanji} ${n}`);
+      });
+    expect(missed).toEqual([]);
+  });
+
+  it('finds almost every swap of neighbouring strokes', () => {
+    let pairs = 0;
+    let taken = 0;
+    for (const [kanji, paths] of Object.entries(STROKES))
+      for (let n = 0; n + 1 < paths.length; n++) {
+        pairs++;
+        if (
+          matchStroke(byHand(stroke(kanji, n + 1)), stroke(kanji, n), { rest: rest(kanji, n) }).ok
+        )
+          taken++;
+      }
+    expect(taken / pairs).toBeLessThan(0.01);
   });
 });
 

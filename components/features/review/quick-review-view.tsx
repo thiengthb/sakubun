@@ -273,7 +273,9 @@ export function QuickReviewView({
   // A practice flip is not graded: once its answer is shown, the learner moves on.
   const showNext = graded || (flips(card) && revealed && practice);
   const practiceNext = () => {
-    if (retry && flips(card)) setRetry({ ...retry, right: [...retry.right, true] });
+    // A practice flip counts as right; a written one as the pad found it.
+    const right = !writes(card) || (suggested ?? 1) > 1;
+    if (retry && flips(card)) setRetry({ ...retry, right: [...retry.right, right] });
     next();
   };
 
