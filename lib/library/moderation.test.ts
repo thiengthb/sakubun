@@ -161,3 +161,40 @@ describe('listAuthorEntries', () => {
     ).toEqual(expect.arrayContaining(['Quán nước', '紅茶']));
   });
 });
+
+describe('listRemovedEntries', () => {
+  it("lists what the admin hid, OpenJLPT's ownerless groups too, so each can be shown again", async () => {
+    const { entryId } = await setUp();
+    const grammar = {
+      id: 'GRAMMAR-〜てから',
+      kind: 'GRAMMAR',
+      expression: '〜てから',
+      reading: null,
+      hanviet: null,
+      meaningVi: 'sau khi',
+      level: 'N5',
+      notes: '',
+      tags: '[]',
+      source: 'OPENJLPT',
+      suspended: false,
+      starred: false,
+    } as const;
+    await S.seedOpenJlpt(prisma, [grammar]);
+    const n5 = await prisma.libraryEntry.findFirstOrThrow({ where: { name: 'N5 · Ngữ pháp' } });
+    expect(n5.authorId).toBeNull();
+    await M.setEntryRemoved(prisma, n5.id, true);
+    await M.setEntryRemoved(prisma, entryId, true);
+    await Pub.unpublishGroup(
+      curator,
+      (await curator.group.findFirstOrThrow({ where: { name: 'Quán nước' } })).id,
+    );
+
+    const rows = await M.listRemovedEntries(prisma);
+    expect(rows.map((r) => r.name ?? r.expression).sort()).toEqual(['N5 · Ngữ pháp', '喫茶店']);
+    expect(rows.every((r) => r.status === 'removed')).toBe(true);
+
+    expect((await M.setEntryRemoved(prisma, n5.id, false)).ok).toBe(true);
+    expect((await S.listGroupEntries(prisma)).map((g) => g.name)).toContain('N5 · Ngữ pháp');
+    expect((await M.listRemovedEntries(prisma)).map((r) => r.expression)).toEqual(['喫茶店']);
+  });
+});
