@@ -1,5 +1,4 @@
 import type { UserDb } from '@/lib/db/user-db';
-import { ownedKanji } from '@/lib/app/kanji-items';
 import { CARD_STATE } from '@/lib/domain/queue';
 import { compareKanji } from '@/lib/kanji/catalog';
 import type { RadicalRow } from '@/lib/kanji/data';
@@ -19,7 +18,7 @@ export interface RadicalSummary {
   nameVi: string;
   meaningVi: string;
   strokes: number;
-  /** Jōyō kanji filed under it (KANJIDIC2), and how many of them the learner has a card for. */
+  /** Jōyō kanji filed under it (KANJIDIC2), and how many of them the learner has met in Ôn nhanh. */
   joyo: number;
   met: number;
 }
@@ -35,11 +34,23 @@ const summary = (r: RadicalRow, joyo: number, met: number): RadicalSummary => ({
   met,
 });
 
+/**
+ * The kanji the learner has met: a card that has left NEW. One only waiting (hundreds of them right
+ * after "Lấy cả nhóm" in Kho chung) has not been shown yet.
+ */
+async function metKanji(db: UserDb): Promise<Set<string>> {
+  const met = await db.item.findMany({
+    where: { kind: KANJI_KIND, srs: { state: { not: CARD_STATE.NEW } } },
+    select: { expression: true },
+  });
+  return new Set(met.map((k) => k.expression));
+}
+
 export async function listRadicals(db: UserDb): Promise<RadicalSummary[]> {
   const [radicals, catalog, have] = await Promise.all([
     kanjiRadicals(),
     kanjiCatalog(),
-    ownedKanji(db),
+    metKanji(db),
   ]);
   const joyo = new Map<number, number>();
   const met = new Map<number, number>();
@@ -69,7 +80,11 @@ export async function getRadicalPage(db: UserDb, number: number): Promise<Radica
   });
   const state = new Map(cards.map((c) => [c.expression, c.srs?.state ?? CARD_STATE.NEW]));
   return {
-    radical: summary(row, kanji.length, cards.length),
+    radical: summary(
+      row,
+      kanji.length,
+      [...state.values()].filter((s) => s !== CARD_STATE.NEW).length,
+    ),
     kanji: kanji.map((k) => ({
       kanji: k.kanji,
       hanviet: k.hanviet,

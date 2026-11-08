@@ -32,6 +32,8 @@ const kanjiCard = (expression: string, state: number) =>
 describe('radicals (KJ7)', () => {
   it('lists the 214 radicals by stroke count, each with its Jōyō kanji and the ones met', async () => {
     await kanjiCard('海', 2);
+    // Waiting as new (taken from Kho chung, never shown): not met yet.
+    await kanjiCard('池', 0);
     const list = await R.listRadicals(db);
     expect(list).toHaveLength(214);
     expect(list[0]).toMatchObject({ number: 1, radical: '一', strokes: 1 });
@@ -47,7 +49,8 @@ describe('radicals (KJ7)', () => {
     await kanjiCard('海', 2);
     await kanjiCard('池', 0);
     const page = await R.getRadicalPage(db, 85);
-    expect(page?.radical).toMatchObject({ number: 85, met: 2 });
+    // 池 waits as new: coloured "đang chờ học", but not counted as met.
+    expect(page?.radical).toMatchObject({ number: 85, met: 1 });
     expect(page?.kanji.find((k) => k.kanji === '海')).toEqual({
       kanji: '海',
       hanviet: 'HẢI',
