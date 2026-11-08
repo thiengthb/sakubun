@@ -11,6 +11,9 @@
   xoá luôn số lần "vượt trần". Ở chế độ tự động, chiều dịch đổi sang Việt → Nhật từ bậc 3 (thay cho luật độ ổn định
   21 ngày). Từ vựng xung quanh lấy cấp dễ hơn giữa cấp của mục và cấp từ vựng đang học, cho tới khi mục vượt trần.
   Cảnh và lỗi trùng câu viết bằng tiếng Anh cho Claude, như các dòng khác của MCP.
+- Khi làm R4 (2026-11-07): bỏ dấu ✓ ✗ vì luật repo cấm emoji (`lib/design/no-emoji.test.ts`), dòng đầu chỉ ghi chữ
+  ("Đúng · Nhớ", "Chưa đúng · Quên"). Khó (2) hiện "Đúng ý, còn lỗi · Khó" kèm dòng Lỗi chính. `feedback` giữ giới hạn 300 ký
+  tự sẵn có thay vì 120, để Claude không bị từ chối vì một câu hơi dài; mô tả tool vẫn dặn một dòng.
 
 ## Tóm tắt
 

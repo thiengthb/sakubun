@@ -152,7 +152,21 @@ describe('stageTurn', () => {
 describe('a varied, harder sentence each time (R2, R3)', () => {
   it('refuses a sentence the item already had, and the example on its card', async () => {
     const { grammar } = await seed();
-    await staged(grammar);
+    const answered = await staged(grammar);
+    const graded = await T.gradeTurn(db, { turnId: answered, answer: 'x', rating: 3 }, NOW);
+    if (!graded.ok) throw new Error(graded.error);
+    // A skipped turn counts too: the learner saw that sentence.
+    await staged(grammar, '寝坊したばかりに、試験に遅れた。');
+    await staged(grammar, '傘を忘れたばかりに、ぬれてしまった。');
+    expect(
+      (
+        await T.stageTurn(
+          db,
+          { itemId: grammar, ...SENTENCE, ja: '寝坊したばかりに試験に遅れた' },
+          NOW,
+        )
+      ).ok,
+    ).toBe(false);
     const again = await T.stageTurn(
       db,
       { itemId: grammar, ...SENTENCE, ja: '少し遅れたばかりに 電車に乗れなかった' },
@@ -161,9 +175,20 @@ describe('a varied, harder sentence each time (R2, R3)', () => {
     expect(again).toEqual({
       ok: false,
       error: expect.stringMatching(
-        /^This item already had this sentence\. Write a new one, set in: work;/,
+        /^This item already had this sentence\. Write a new one, set in: travel;/,
       ),
     });
+  });
+
+  it('lets the sentence still staged be staged again, in the other direction the learner asked for', async () => {
+    const { grammar } = await seed();
+    await staged(grammar);
+    const flipped = await T.stageTurn(
+      db,
+      { itemId: grammar, ...SENTENCE, direction: 'VI_JA', hint: 'cho mình dịch Việt→Nhật' },
+      NOW,
+    );
+    expect(flipped).toMatchObject({ ok: true, data: { direction: 'VI_JA' } });
   });
 
   it('names the last sentences to avoid and turns the scene', async () => {

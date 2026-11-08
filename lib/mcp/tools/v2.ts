@@ -13,6 +13,7 @@ import {
   type StagedTurn,
 } from '@/lib/app/turn';
 import { CARD_STATE } from '@/lib/domain/queue';
+import { resultBlock } from '@/lib/domain/result-block';
 import { guard, learnerDb, mcpError, type McpServer, type ToolExtra } from '@/lib/mcp/tool-kit';
 import { findShared } from '@/lib/mcp/tools/library';
 import { ERROR_TAGS } from '@/lib/session/error-tags';
@@ -86,11 +87,19 @@ export function renderStaged(data: StagedTurn) {
   ]);
 }
 
+// R4: the result block the learner sees, made here so a right answer gets its reference too.
 export function renderGraded(data: GradedTurn, now: Date) {
   return text([
-    `graded ${data.rating} (${RATING_NAMES[data.rating]}) · next review in ${until(data.nextDue, now)}`,
-    data.lowered ? 'Easy became Good because the learner had a hint.' : null,
-    'next: give one or two lines of feedback in Vietnamese, then call next_turn.',
+    `graded ${data.rating} (${RATING_NAMES[data.rating]})${data.lowered ? ', Easy lowered to Good: hinted' : ''}. Block:`,
+    ...resultBlock({
+      rating: data.rating,
+      nextDue: data.nextDue,
+      now,
+      answer: data.answer,
+      reference: data.reference,
+      feedback: data.feedback,
+    }),
+    'next: show the learner the block as it is, then call next_turn.',
   ]);
 }
 
@@ -183,7 +192,10 @@ export function registerV2Tools(server: McpServer) {
       rating: z.number().int().min(1).max(4),
       hinted: z.boolean().optional().describe('You gave a hint'),
       errorTags: z.array(z.enum(ERROR_TAGS)).optional().describe('Required for 1-2'),
-      feedback: z.string().optional(),
+      feedback: z
+        .string()
+        .optional()
+        .describe('One line, Vietnamese: the main mistake for 1-2, another way to say it for 3-4'),
     },
     guard('grade_turn', async (args: Parameters<typeof gradeTurn>[1], extra: ToolExtra) => {
       const now = new Date();

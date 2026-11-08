@@ -91,12 +91,19 @@ async function specFor(db: UserDb, item: ItemRow, settings: Settings): Promise<C
   });
 }
 
-// The item's sentences so far, newest first (R3), and the scene for the next one.
-async function pastSentences(db: UserDb, itemId: string, settings: Settings) {
+// The item's sentences so far, newest first (R3), and the scene for the next one. stage_turn leaves
+// out the turn still staged: the new one replaces it, so the same sentence may come back (the
+// learner asked for the other direction, or Claude fixed a typo).
+async function pastSentences(
+  db: UserDb,
+  itemId: string,
+  settings: Settings,
+  { exceptStaged = false } = {},
+) {
   const [count, recent] = await Promise.all([
     db.turn.count({ where: { itemId } }),
     db.turn.findMany({
-      where: { itemId },
+      where: exceptStaged ? { itemId, status: { not: 'staged' } } : { itemId },
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       take: AVOID_CHECKED,
       select: { ja: true },
@@ -198,7 +205,7 @@ export async function stageTurn(
   const settings = await getSettings(db);
   const [spec, past] = await Promise.all([
     specFor(db, item, settings),
-    pastSentences(db, item.id, settings),
+    pastSentences(db, item.id, settings, { exceptStaged: true }),
   ]);
   const hint = cleanHint(input.hint);
   if (input.direction && input.direction !== spec.direction && !hint) {
@@ -251,6 +258,11 @@ export interface GradedTurn {
   // True when Easy was lowered to Good because the learner had a hint.
   lowered: boolean;
   nextDue: Date;
+  // For the result block (R4): what the learner wrote, the sentence in the language they answered
+  // in, and the feedback as stored.
+  answer: string;
+  reference: string;
+  feedback: string | null;
 }
 
 function parseErrorTags(tags: readonly string[] | undefined): ActionResult<ErrorTag[]> {
@@ -268,7 +280,14 @@ function isRecordNotFound(e: unknown): boolean {
 async function findTurn(db: UserDb, turnId: string) {
   return db.turn.findUnique({
     where: { id: turnId },
-    select: { id: true, status: true, item: { select: { id: true, srs: true } } },
+    select: {
+      id: true,
+      status: true,
+      direction: true,
+      ja: true,
+      vi: true,
+      item: { select: { id: true, srs: true } },
+    },
   });
 }
 
@@ -329,7 +348,14 @@ export async function gradeTurn(
   });
   if (!recordedOrGone) return err('Turn already graded. Call next_turn for a new one.');
   const [recorded] = recordedOrGone;
-  return ok({ rating, lowered: rating !== parsed.data, nextDue: recorded.next.due });
+  return ok({
+    rating,
+    lowered: rating !== parsed.data,
+    nextDue: recorded.next.due,
+    answer,
+    reference: turn.direction === 'JA_VI' ? turn.vi : turn.ja,
+    feedback,
+  });
 }
 
 export async function skipTurn(db: UserDb, turnId: string): Promise<ActionResult<undefined>> {
