@@ -13,7 +13,7 @@ import { LIST_CARD } from '@/components/common/list-card';
 import { RelativeTime } from '@/components/common/relative-time';
 import { SearchInput } from '@/components/common/search-input';
 import { Truncate } from '@/components/ui/truncate';
-import { WRITE_SCRIPT_COMMAND } from '@/components/features/kaiwa/kaiwa-commands';
+import { WRITE_SCRIPT_COMMAND } from '@/lib/kaiwa/commands';
 import { KAIWA_WIDE, LAST_SCRIPT_KEY } from '@/components/features/kaiwa/kaiwa-side-list';
 import type { ScriptCard } from '@/lib/kaiwa/scripts';
 import { cn } from '@/lib/core/utils';

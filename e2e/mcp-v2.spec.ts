@@ -26,6 +26,7 @@ test('MCP v2: one whole turn through the v2 profile', async ({ request }) => {
       'kaiwa_get',
       'kaiwa_list',
       'kaiwa_roleplay',
+      'kaiwa_roleplay_save',
       'kaiwa_save',
       'library_search',
       'library_take',

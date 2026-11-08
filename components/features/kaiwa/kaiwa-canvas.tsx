@@ -22,7 +22,7 @@ import { useServerAction } from '@/components/common/use-server-action';
 import { KaiwaActionsMenu } from '@/components/features/kaiwa/kaiwa-actions-menu';
 import { KaiwaChat } from '@/components/features/kaiwa/kaiwa-chat';
 import { ScriptEditor, type EditorStatus } from '@/components/features/kaiwa/script-editor';
-import { editScriptCommand, roleplayCommand } from '@/components/features/kaiwa/kaiwa-commands';
+import { editScriptCommand, roleplayCommand } from '@/lib/kaiwa/commands';
 import { useKaiwaMe } from '@/components/features/kaiwa/use-kaiwa-me';
 import type { RubyLine } from '@/components/features/kaiwa/kaiwa-line';
 import { LAST_SCRIPT_KEY } from '@/components/features/kaiwa/kaiwa-side-list';

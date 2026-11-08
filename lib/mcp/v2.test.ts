@@ -95,6 +95,7 @@ describe('MCP v2', () => {
         'kaiwa_get',
         'kaiwa_list',
         'kaiwa_roleplay',
+        'kaiwa_roleplay_save',
         'kaiwa_save',
         'library_search',
         'library_take',

@@ -49,7 +49,7 @@ export function roleplayScript(
       'Say SCENE lines in one short Vietnamese sentence. Say only your own turns, one at a time, then stop and wait.',
       "Never write the learner's line before they try. When they answer, compare it with the model line: same meaning, go on; otherwise correct it briefly in Vietnamese and let them try again once.",
       'If they ask for a hint, give the first few words of the model line. If they say "tự do", improvise in the same scene instead of following the lines.',
-      'At the end, name the lines they said well and the ones to practise again.',
+      'At the end, name the lines they said well and the ones to practise again, then call kaiwa_roleplay_save with each learner turn.',
     ].join('\n'),
   };
 }

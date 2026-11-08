@@ -207,6 +207,7 @@ model User {
   groupMembers GroupMember[]
   settings     Settings?
   scripts      Script[]
+  roleplays    Roleplay[]
   libraryEntries LibraryEntry[]
   libraryLikes   LibraryLike[]
 
@@ -536,6 +537,27 @@ model Script {
   updatedAt DateTime @updatedAt
 
   @@index([userId, updatedAt])
+}
+
+// One role-play of a Kaiwa script with the AI (Kaiwa d, docs/plans/2026-11-07-kaiwa-voices-roleplay.md),
+// saved by kaiwa_roleplay_save at the end. Not an Item: it never touches FSRS or ReviewLog.
+model Roleplay {
+  id          String   @id @default(cuid())
+  // Owner (roadmap 7.1, docs/decisions/0006). Every query goes through userDb(userId).
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // The script played, as a plain column: deleting the script keeps the role-play and its title.
+  scriptId    String
+  scriptTitle String
+  // The learner's speaker label.
+  part        String
+  // The learner's turns, JSON [{"turn": 2, "said": "…", "ok": true, "note": "…"}] (lib/kaiwa/roleplay-log.ts).
+  turns       String
+  total       Int
+  correct     Int
+  createdAt   DateTime @default(now())
+
+  @@index([userId, createdAt])
 }
 
 // The shared library (kho chung, phase 8 L1, docs/plans/2026-10-27-phase-8-kaiwa-kho-chung.md): a
