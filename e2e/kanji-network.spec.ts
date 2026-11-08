@@ -90,6 +90,26 @@ for (const [width, height] of [
     );
     expect(overflow, 'no horizontal scroll').toBeLessThanOrEqual(0);
   });
+
+  test(`a kanji of five parts draws without a hydration error (${width}px)`, async ({ page }) => {
+    await page.setViewportSize({ width, height });
+    const errors: string[] = [];
+    page.on('console', (m) => {
+      if (m.type() === 'error') errors.push(m.text());
+    });
+    await signIn(page);
+    // 寝 has five parts, and its nodes sit off the axes, where Math.cos differs in its last digit.
+    await page.goto(`/resources/kanji/${encodeURIComponent('寝')}`, { waitUntil: 'networkidle' });
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('寝 [TẨM]');
+    const drawing = page.locator('[data-slot="kanji-network"]');
+    if (width >= 768) {
+      await expect(drawing).toBeVisible();
+      // Five parts share the ring, so each shows five kanji; the list below has the rest.
+      expect(await drawing.getByRole('link').count()).toBeLessThanOrEqual(5 * 6);
+    }
+    await shot(page, `kanji-mang-luoi-dam-${width}`);
+    expect(errors, 'no console error').toEqual([]);
+  });
 }
 
 test('a part with many kanji shows twelve, then the rest on "Xem thêm"', async ({ page }) => {

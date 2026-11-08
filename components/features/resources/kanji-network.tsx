@@ -13,7 +13,7 @@ import { cn } from '@/lib/core/utils';
 
 // The component network of a kanji (KJ6, docs/plans/2026-11-08-kanji.md › Bộ thủ và mạng lưới). A
 // laptop draws it: the kanji in the middle, its parts on the inner ring, and on the outer ring the
-// kanji built with each part, the part that gives the sound marked. Below, and alone on a phone, the
+// first kanji built with each part, the part that gives the sound marked. Below, and alone on a phone, the
 // same network as a list by part, each part's kanji past the first twelve behind "Xem thêm". Every
 // kanji opens its own page, so the learner walks the network. Colours follow what they studied.
 
@@ -108,14 +108,14 @@ function PartList({ part: p }: { part: KanjiPagePart }) {
                 aria-label={`${withHanviet(k.kanji, k.hanviet)}, ${STUDY_LABEL[k.study]}`}
                 className={cn(
                   LIST_CARD.base,
-                  'flex w-16 flex-col items-center gap-0.5 px-1 py-1.5 hover:bg-muted/40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
+                  'flex min-w-16 flex-col items-center gap-0.5 px-1.5 py-1.5 hover:bg-muted/40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
                   TILE_TONE[k.study],
                 )}
               >
                 <span lang="ja" className="text-lg leading-none">
                   {k.kanji}
                 </span>
-                <span className="max-w-full truncate text-xs">[{k.hanviet}]</span>
+                <span className="text-xs whitespace-nowrap">[{k.hanviet}]</span>
               </Link>
             </li>
           ))}
@@ -130,30 +130,39 @@ function PartList({ part: p }: { part: KanjiPagePart }) {
   );
 }
 
-// The drawing, in a 640 × 640 box: the kanji at the centre, parts at radius 130, the kanji built with
-// each part at radius 255 (two staggered rows when a part has many), within the part's own sector.
+// The drawing, in a 640 × 640 box: the kanji at the centre, parts at radius 130, and on one ring at
+// radius 265 the kanji built with each part, spaced so neither circles nor [HÁN VIỆT] labels touch:
+// as many as the part's sector holds (12 for one or two parts, 5 for five), the rest in the list.
 const C = 320;
 const R_PART = 130;
-const R_OUT = [240, 285];
+const R_OUT = 265;
+/** The angle between two neighbouring outer kanji: 62 units of arc on the outer ring. */
+const STEP = 62 / R_OUT;
 
-const polar = (r: number, a: number) => ({ x: C + r * Math.cos(a), y: C + r * Math.sin(a) });
+// Rounded, so the server's and the browser's Math.cos give the same attribute and hydration matches.
+const round = (v: number) => Math.round(v * 100) / 100;
+const polar = (r: number, a: number) => ({
+  x: round(C + r * Math.cos(a)),
+  y: round(C + r * Math.sin(a)),
+});
+
+/** How many of a part's kanji the drawing shows when the parts share the ring `n` ways. */
+const drawnPerPart = (n: number) =>
+  Math.min(NETWORK_PER_PART, Math.floor((((2 * Math.PI) / n) * 0.85) / STEP) + 1);
 
 function NetworkDrawing({ page }: { page: KanjiPage }) {
   const n = page.parts.length;
   const sector = (2 * Math.PI) / n;
   const layout = page.parts.map((p, i) => {
     const angle = -Math.PI / 2 + i * sector;
-    const outer = p.kanji.slice(0, NETWORK_PER_PART);
-    const spread = Math.min(sector * 0.85, (outer.length - 1) * 0.16);
+    const outer = p.kanji.slice(0, drawnPerPart(n));
+    const spread = (outer.length - 1) * STEP;
     return {
       part: p,
       at: polar(R_PART, angle),
       outer: outer.map((k, j) => ({
         node: k,
-        at: polar(
-          R_OUT[outer.length > 6 ? j % 2 : 0],
-          angle + (outer.length > 1 ? -spread / 2 + (j * spread) / (outer.length - 1) : 0),
-        ),
+        at: polar(R_OUT, angle - spread / 2 + j * STEP),
       })),
     };
   });
