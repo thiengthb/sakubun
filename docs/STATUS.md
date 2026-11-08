@@ -25,7 +25,6 @@ nghĩa Việt (KJ1b) xong; KJ2–KJ6 xong (#260–#264); KJ7 ở PR, là bước
 
 1. **Hiện lại "N5 · Ngữ pháp"**: trang Quản trị, mục "Đã ẩn khỏi Kho chung", bấm Hiện.
 2. **Thử chia sẻ kịch bản** trên NUC: chia sẻ, mở link ở cửa sổ ẩn danh, Lấy về bằng tài khoản thứ hai (`kai`); phần MCP Claude đã thử, chạy đúng.
-3. **Kanji mới theo cấp?** Hiện chữ mới đi theo từ đang học, hết thì từ N5 lên; có nên bắt đầu ở cấp đang học (N2)?
 
 ## Việc nhỏ còn treo
 
