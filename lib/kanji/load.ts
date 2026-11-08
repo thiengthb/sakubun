@@ -2,6 +2,8 @@
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { buildKanjiCatalog, type KanjiEntry } from '@/lib/kanji/catalog';
+import type { RadicalRow } from '@/lib/kanji/data';
+import { partIndex } from '@/lib/kanji/network';
 
 let cached: Promise<KanjiEntry[]> | null = null;
 
@@ -24,4 +26,22 @@ export function kanjiStrokes(): Promise<Record<string, string[]>> {
     (text) => JSON.parse(text) as Record<string, string[]>,
   );
   return strokes;
+}
+
+let radicals: Promise<RadicalRow[]> | null = null;
+
+/** The 214 Kangxi radicals with their Vietnamese names and variant forms (KJ6, KJ7). */
+export function kanjiRadicals(): Promise<RadicalRow[]> {
+  radicals ??= readFile(path.join(process.cwd(), 'data/kanji/radicals.json'), 'utf8').then(
+    (text) => JSON.parse(text) as RadicalRow[],
+  );
+  return radicals;
+}
+
+let parts: Promise<Map<string, KanjiEntry[]>> | null = null;
+
+/** Which kanji each visible part appears in (KJ6), built once. */
+export function kanjiPartIndex(): Promise<Map<string, KanjiEntry[]>> {
+  parts ??= kanjiCatalog().then(partIndex);
+  return parts;
 }
