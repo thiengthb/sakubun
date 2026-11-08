@@ -83,6 +83,9 @@ const ENTRY_CONTENT = {
   takeCount: true,
 } as const;
 
+// Only grammar and vocab are shared; a kanji card (KJ3) is made from the catalog, the same for all.
+const SHAREABLE = { kind: { in: [GRAMMAR_KIND, VOCAB_KIND] } };
+
 type ItemRow = SharedContent & { id: string; kind: string; libraryEntryId: string | null };
 // The shared tables and whose shares these are (a transaction client has no $ownerId).
 type Author = { db: Pick<LibraryClient, 'libraryEntry'>; me: string };
@@ -155,7 +158,7 @@ export interface ItemShareStatus {
 }
 
 export async function itemShareStatus(db: UserDb, itemId: string): Promise<ItemShareStatus | null> {
-  const item = await db.item.findFirst({ where: { id: itemId }, select: ITEM_FIELDS });
+  const item = await db.item.findFirst({ where: { id: itemId, ...SHAREABLE }, select: ITEM_FIELDS });
   if (!item) return null;
   const ctx = (await shareContext(author(db), [item]))(item);
   const { own, source } = ctx;
@@ -185,7 +188,7 @@ export async function publishItem(
   db: UserDb,
   itemId: string,
 ): Promise<ActionResult<PublishResult>> {
-  const item = await db.item.findFirst({ where: { id: itemId }, select: ITEM_FIELDS });
+  const item = await db.item.findFirst({ where: { id: itemId, ...SHAREABLE }, select: ITEM_FIELDS });
   if (!item) return err(NO_ITEM);
   const plan = planFor(item, (await shareContext(author(db), [item]))(item));
   if (plan.kind === 'same-as-source') return err(SAME_AS_SOURCE);

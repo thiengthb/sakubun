@@ -25,6 +25,10 @@ function seed() {
       'Settings',
     ])
       db.exec(`DELETE FROM "${t}"`);
+    // This session is about grammar and vocab cards; e2e/review-kanji.spec.ts covers kanji (KJ3).
+    db.prepare(
+      `INSERT INTO Settings (userId, data, updatedAt) VALUES (${E2E_OWNER}, '{"dailyNewKanji":0}', ?)`,
+    ).run(new Date().toISOString());
     const item = db.prepare(
       `INSERT INTO Item (userId, id, kind, expression, reading, hanviet, meaningVi, level, notes, source,
          captureReason, suspended, starred, createdAt, enrichment)

@@ -13,7 +13,7 @@ import {
   shuffleIds,
   type DeckProgress,
 } from '@/lib/library/flashcard-deck';
-import type { QuickCard } from '@/lib/app/quick-review';
+import type { SentenceCard } from '@/lib/app/quick-review';
 import { speakable } from '@/lib/core/format';
 import { cn } from '@/lib/core/utils';
 import { buildFuriganaMarkup, parseFurigana, type FuriganaSegment } from '@/lib/japanese/furigana';
@@ -32,7 +32,7 @@ function Expression({
   showFurigana,
   className,
 }: {
-  card: QuickCard;
+  card: SentenceCard;
   showFurigana: boolean;
   className?: string;
 }) {
@@ -83,7 +83,7 @@ function Progress({ index, total }: { index: number; total: number }) {
   );
 }
 
-function Back({ card, showFurigana }: { card: QuickCard; showFurigana: boolean }) {
+function Back({ card, showFurigana }: { card: SentenceCard; showFurigana: boolean }) {
   const segments = card.sentence?.segments ?? null;
   return (
     <span className="flex w-full flex-col items-center gap-3 text-center">
@@ -130,7 +130,7 @@ export function GroupCards({
   tts,
 }: {
   groupId: string;
-  cards: QuickCard[];
+  cards: SentenceCard[];
   showFurigana: boolean;
   tts: CardTts;
 }) {

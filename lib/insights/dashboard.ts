@@ -1,6 +1,6 @@
 import type { UserDb } from '@/lib/db/user-db';
 import { getSettings } from '@/lib/library/practice';
-import { GRAMMAR_KIND } from '@/lib/library/item-kinds';
+import { GRAMMAR_KIND, ITEM_KINDS } from '@/lib/library/item-kinds';
 import { STUDY_DAYS, buildDashboard, type Dashboard } from '@/lib/insights/dashboard-model';
 import { studyStreak } from '@/lib/insights/streak';
 
@@ -19,7 +19,7 @@ export async function getDashboard(db: UserDb, now: Date = new Date()): Promise<
         state: true,
         errorTags: true,
         itemId: true,
-        item: { select: { expression: true } },
+        item: { select: { expression: true, kind: true } },
       },
     }),
     db.sentence.findMany({
@@ -32,7 +32,9 @@ export async function getDashboard(db: UserDb, now: Date = new Date()): Promise<
         reviews: { select: { role: true, item: { select: { level: true } } } },
       },
     }),
+    // Grammar and vocab: kanji cards (KJ3) have no place on Phân tích yet.
     db.item.findMany({
+      where: { kind: { in: [...ITEM_KINDS] } },
       select: {
         id: true,
         kind: true,
@@ -52,7 +54,11 @@ export async function getDashboard(db: UserDb, now: Date = new Date()): Promise<
   return buildDashboard({
     now,
     settings,
-    logs: logs.map(({ item, ...l }) => ({ ...l, expression: item?.expression ?? null })),
+    logs: logs.map(({ item, ...l }) => ({
+      ...l,
+      expression: item?.expression ?? null,
+      kind: item?.kind ?? null,
+    })),
     sentences,
     items: items.map((i) => ({ ...i, enrichment: enrichment.get(i.id) ?? null })),
     streak,

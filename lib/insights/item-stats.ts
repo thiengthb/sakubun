@@ -1,7 +1,7 @@
 import type { UserDb } from '@/lib/db/user-db';
 import { parseEnrichment } from '@/lib/library/enrichment';
 import { parseErrorTags, type ErrorTag } from '@/lib/session/error-tags';
-import { GRAMMAR_KIND } from '@/lib/library/item-kinds';
+import { GRAMMAR_KIND, ITEM_KINDS } from '@/lib/library/item-kinds';
 import { getSettings } from '@/lib/library/practice';
 import { forgettingCurve, retrievability, type SrsFields } from '@/lib/srs/srs';
 
@@ -66,8 +66,9 @@ export async function getItemStats(
   itemId: string,
   now: Date = new Date(),
 ): Promise<ItemStats | null> {
-  const item = await db.item.findUnique({
-    where: { id: itemId },
+  // A kanji card (KJ3) has no item page: it is studied in Ôn nhanh and read in Tài nguyên › Kanji.
+  const item = await db.item.findFirst({
+    where: { id: itemId, kind: { in: [...ITEM_KINDS] } },
     include: {
       srs: true,
       reviews: {

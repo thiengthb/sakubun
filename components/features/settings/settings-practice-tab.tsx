@@ -9,6 +9,7 @@ import {
   Gauge,
   ListPlus,
   Moon,
+  PenLine,
   Repeat,
   SlidersHorizontal,
   SquarePlus,
@@ -118,6 +119,20 @@ export function PracticeTab({
             step={5}
             value={settings.dailyNewVocab}
             onChange={(v) => set('dailyNewVocab', v)}
+          />
+        </SettingRow>
+        <SettingRow
+          icon={PenLine}
+          label="Kanji mới"
+          unit="/ ngày"
+          info="Chữ có trong từ bạn đang học ra trước. Đặt 0 để Ôn nhanh không đưa kanji vào."
+        >
+          <Stepper
+            label="Kanji mới / ngày"
+            min={0}
+            max={20}
+            value={settings.dailyNewKanji}
+            onChange={(v) => set('dailyNewKanji', v)}
           />
         </SettingRow>
         <SettingRow

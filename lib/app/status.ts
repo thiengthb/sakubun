@@ -14,7 +14,7 @@ export interface StudyStatus {
   // Cards the queue would serve now (learning steps, due reviews within the cap, new within the caps).
   ready: number;
   readyBy: ReadyCount;
-  left: { newGrammar: number; newVocab: number; reviews: number };
+  left: { newGrammar: number; newVocab: number; newKanji: number; reviews: number };
   today: StudiedToday;
   streakDays: number;
   nextDueAt: Date | null;

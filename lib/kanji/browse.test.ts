@@ -53,6 +53,9 @@ describe('filterKanji', () => {
 
   it('matches On and Kun readings, the okurigana dot ignored', () => {
     expect(ids(filterKanji(ALL, { level: 'all', query: 'ケイ' }))).toEqual(['経']);
+    // Typed in the other script (review of #260): けい finds the On ケイ, ヘル the Kun へ.る.
+    expect(ids(filterKanji(ALL, { level: 'all', query: 'けい' }))).toEqual(['経']);
+    expect(ids(filterKanji(ALL, { level: 'all', query: 'ヘル' }))).toEqual(['経']);
     expect(ids(filterKanji(ALL, { level: 'all', query: 'いく' }))).toEqual(['行']);
   });
 });

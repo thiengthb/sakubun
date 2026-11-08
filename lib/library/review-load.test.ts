@@ -61,11 +61,13 @@ describe('getReviewLoad', () => {
     await item('GRAMMAR', 'n2', { reps: 0, state: 0, due: at(0) });
     await item('GRAMMAR', 'n3', { reps: 0, state: 0, due: at(0) });
     await item('GRAMMAR', 'n4', { reps: 0, state: 0, due: at(0) });
+    await item('KANJI', '経', { reps: 1, state: 2, due: at(1) }); // its own count, not grammar (KJ3)
 
     const load = await getReviewLoad(db, 3, NOW);
     expect(load.days.map((d) => d.date)).toEqual(['2026-10-10', '2026-10-11', '2026-10-12']);
     expect(load.days.map((d) => d.grammarDue)).toEqual([1, 2, 0]);
     expect(load.days.map((d) => d.vocabDue)).toEqual([0, 1, 0]);
+    expect(load.days.map((d) => d.kanjiDue)).toEqual([0, 1, 0]);
     // default dailyNewGrammar = 3, four new patterns left
     expect(load.days.map((d) => d.newGrammarPlanned)).toEqual([3, 1, 0]);
     expect(load.newGrammarRemaining).toBe(4);

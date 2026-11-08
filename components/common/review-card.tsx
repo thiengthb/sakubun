@@ -4,6 +4,8 @@ import type { ReactNode } from 'react';
 import { SpeakButton } from '@/components/common/speak-button';
 import { SpokenLine } from '@/components/common/spoken-line';
 import type { QuickCard } from '@/lib/app/quick-review';
+import type { ItemKind } from '@/lib/library/item-kinds';
+import { KanjiReviewCard } from '@/components/common/kanji-review-card';
 import type { Segment } from '@/lib/domain/sentence';
 import { cn } from '@/lib/core/utils';
 import { Badge } from '@/components/ui/badge';
@@ -20,7 +22,7 @@ export interface CardTts {
   speechRate?: number;
 }
 
-const QUESTION: Record<'intro' | 'flip' | 'bare' | 'cloze', Record<QuickCard['kind'], string>> = {
+const QUESTION: Record<'intro' | 'flip' | 'bare' | 'cloze', Record<ItemKind, string>> = {
   intro: { VOCAB: 'Từ mới: đọc câu và nghĩa', GRAMMAR: 'Mẫu mới: đọc câu và cách dùng' },
   flip: { VOCAB: 'Từ gạch chân nghĩa là gì?', GRAMMAR: 'Mẫu gạch chân nói lên điều gì?' },
   // A flip card with no example sentence: the item stands alone.
@@ -129,6 +131,17 @@ export function ReviewCard({
   tts: CardTts;
   onPick: (choiceId: string) => void;
 }) {
+  if (card.mode === 'kanji')
+    return (
+      <KanjiReviewCard
+        card={card}
+        intro={intro}
+        revealed={revealed}
+        showFurigana={showFurigana}
+        tts={tts}
+      />
+    );
+  const kind: ItemKind = card.kind === 'VOCAB' ? 'VOCAB' : 'GRAMMAR';
   const answered = card.mode === 'cloze' ? picked !== null : revealed || intro;
   const segments = card.sentence?.segments ?? null;
   const ruby = buildFuriganaMarkup(card.expression, card.reading);
@@ -149,11 +162,7 @@ export function ReviewCard({
           {card.isNew && <Badge variant="secondary">Mới</Badge>}
         </div>
         <p className="text-base font-bold">
-          {
-            QUESTION[intro ? 'intro' : card.mode === 'flip' && !segments ? 'bare' : card.mode][
-              card.kind
-            ]
-          }
+          {QUESTION[intro ? 'intro' : card.mode === 'flip' && !segments ? 'bare' : card.mode][kind]}
         </p>
       </div>
 

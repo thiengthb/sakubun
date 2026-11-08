@@ -9,7 +9,9 @@ import {
   type OpenJlptExample,
 } from '@/lib/app/openjlpt-examples';
 import { answerSurface, buildCloze, type ClozeChoice, type ClozeExample } from '@/lib/domain/cloze';
-import { CARD_STATE } from '@/lib/domain/queue';
+import { CARD_STATE, type QueueKind } from '@/lib/domain/queue';
+import type { KanjiEntry } from '@/lib/kanji/catalog';
+import { kanjiCatalog } from '@/lib/kanji/load';
 import {
   isRemembered,
   ratingForAnswer,
@@ -19,7 +21,7 @@ import {
 import { markSpan, markSpans, type Segment } from '@/lib/domain/sentence';
 import { exampleFromNotes } from '@/lib/import/openjlpt';
 import { kaiwaExamples, kaiwaLines, type KaiwaLine } from '@/lib/kaiwa/examples';
-import { asItemKind, VOCAB_KIND, type ItemKind } from '@/lib/library/item-kinds';
+import { asItemKind, isKanji, KANJI_KIND, VOCAB_KIND } from '@/lib/library/item-kinds';
 import { parseEnrichment } from '@/lib/library/enrichment';
 import { getSettings } from '@/lib/library/practice';
 import { searchForms } from '@/lib/session/staging-checks';
@@ -38,7 +40,7 @@ export interface QuickSentence {
 
 interface QuickCardBase {
   itemId: string;
-  kind: ItemKind;
+  kind: QueueKind;
   level: string;
   expression: string;
   reading: string | null;
@@ -51,8 +53,21 @@ interface QuickCardBase {
   dueBy: Record<RatingValue, Date>;
 }
 
+/** The back of a kanji card (KJ3): the readings for reference, and the words that use it. */
+export interface KanjiFace {
+  strokes: number;
+  on: string[];
+  kun: string[];
+  radical: { radical: string; nameVi: string };
+  parts: string[];
+  /** Words in the learner's library written with it, started ones first. */
+  words: { expression: string; reading: string | null; meaningVi: string }[];
+}
+
 export type QuickCard =
   | (QuickCardBase & { mode: 'flip'; sentence: QuickSentence | null })
+  // A kanji: the glyph alone in front, graded with the four FSRS ratings like a flip.
+  | (QuickCardBase & { mode: 'kanji'; face: KanjiFace })
   | (QuickCardBase & {
       mode: 'cloze';
       sentence: QuickSentence;
@@ -60,6 +75,9 @@ export type QuickCard =
       answer: string;
       choices: ClozeChoice[];
     });
+
+/** A grammar or vocab card: what a group's flashcards show (getItemCards). */
+export type SentenceCard = Exclude<QuickCard, { mode: 'kanji' }>;
 
 export interface QuickReview {
   cards: QuickCard[];
@@ -148,7 +166,7 @@ function baseCard(
   const formation = openJlpt && !openJlpt.skip ? openJlpt.formationVi : null;
   return {
     itemId: item.id,
-    kind: asItemKind(item.kind),
+    kind: isKanji(item.kind) ? KANJI_KIND : asItemKind(item.kind),
     level: item.level,
     expression: item.expression,
     reading: item.reading,
@@ -169,7 +187,7 @@ export async function getItemCards(
   db: UserDb,
   ids: string[],
   now: Date = new Date(),
-): Promise<QuickCard[]> {
+): Promise<SentenceCard[]> {
   const [settings, items, examples, kaiwa] = await Promise.all([
     getSettings(db),
     db.item.findMany({ where: { id: { in: ids } }, include: { srs: true } }),
@@ -191,15 +209,67 @@ export async function getItemCards(
   });
 }
 
+const KANJI_WORDS = 4;
+
+// The back of each kanji card: the catalog's readings, radical and parts, and up to four words of
+// the learner's that use it, the started ones first.
+async function kanjiFaces(db: UserDb, chars: string[]): Promise<Map<string, KanjiFace>> {
+  if (chars.length === 0) return new Map();
+  const [catalog, words] = await Promise.all([
+    kanjiCatalog(),
+    db.item.findMany({
+      where: {
+        kind: VOCAB_KIND,
+        suspended: false,
+        OR: chars.map((c) => ({ expression: { contains: c } })),
+      },
+      select: {
+        expression: true,
+        reading: true,
+        meaningVi: true,
+        srs: { select: { state: true } },
+      },
+      orderBy: { createdAt: 'asc' },
+    }),
+  ]);
+  const byKanji = new Map<string, KanjiEntry>(catalog.map((k) => [k.kanji, k]));
+  const started = (w: (typeof words)[number]) => (w.srs?.state ?? 0) !== CARD_STATE.NEW;
+  return new Map(
+    chars.flatMap((char): [string, KanjiFace][] => {
+      const k = byKanji.get(char);
+      if (!k) return [];
+      const using = words
+        .filter((w) => w.expression.includes(char))
+        .sort((a, b) => Number(started(b)) - Number(started(a)))
+        .slice(0, KANJI_WORDS)
+        .map(({ expression, reading, meaningVi }) => ({ expression, reading, meaningVi }));
+      return [
+        [
+          char,
+          {
+            strokes: k.strokes,
+            on: k.on,
+            kun: k.kun,
+            radical: { radical: k.radical.radical, nameVi: k.radical.nameVi },
+            parts: k.parts,
+            words: using,
+          },
+        ],
+      ];
+    }),
+  );
+}
+
 export async function getQuickReview(
   db: UserDb,
   now: Date = new Date(),
   limit = 20,
 ): Promise<QuickReview> {
   const settings = await getSettings(db);
-  const queue = await getQueue(db, now, limit);
+  const queue = await getQueue(db, now, limit, { kanji: true });
   const ids = queue.cards.map((c) => c.id);
-  const [items, states, pool, openJlpt, kaiwa] = await Promise.all([
+  const kanjiChars = queue.cards.filter((c) => c.kind === KANJI_KIND).map((c) => c.expression);
+  const [items, states, pool, openJlpt, kaiwa, faces] = await Promise.all([
     db.item.findMany({
       where: { id: { in: ids } },
       select: { id: true, hanviet: true, enrichment: true, notes: true },
@@ -208,35 +278,45 @@ export async function getQuickReview(
     quizPool(),
     openJlptExamples(),
     learnerKaiwa(db),
+    kanjiFaces(db, kanjiChars),
   ]);
   const itemById = new Map(items.map((i) => [i.id, i]));
   const srsById = new Map(states.map((s) => [s.itemId, s]));
 
-  const cards = queue.cards.map((queued): QuickCard => {
+  const cards = queue.cards.flatMap((queued): QuickCard[] => {
     const item = itemById.get(queued.id)!;
     const srs = srsById.get(queued.id)!;
-    const found = openJlptExample(openJlpt, queued.kind, queued.expression);
+    if (queued.kind === KANJI_KIND) {
+      const face = faces.get(queued.expression);
+      if (!face) return [];
+      const base = baseCard({ ...queued, ...item }, srs, settings.desiredRetention, now, null);
+      return [{ ...base, mode: 'kanji', face }];
+    }
+    const kind = queued.kind;
+    const found = openJlptExample(openJlpt, kind, queued.expression);
     const base = baseCard({ ...queued, ...item }, srs, settings.desiredRetention, now, found);
     const examples = examplesOf({ ...queued, ...item }, found, kaiwa);
     // A new item is met first as a flip card; a cloze tests one already seen.
     if (!base.isNew) {
       const cloze = buildCloze({
-        target: { ...queued, cls: classOf(pool, queued.kind, queued.expression) },
+        target: { ...queued, kind, cls: classOf(pool, kind, queued.expression) },
         examples,
-        pool: pool.items[queued.kind],
+        pool: pool.items[kind],
         seed: seedFor(`${queued.id}:${srs.reps}`),
       });
       if (cloze) {
-        return {
-          ...base,
-          mode: 'cloze',
-          sentence: { segments: cloze.sentence, translation: cloze.translation },
-          answer: cloze.answer,
-          choices: cloze.choices,
-        };
+        return [
+          {
+            ...base,
+            mode: 'cloze',
+            sentence: { segments: cloze.sentence, translation: cloze.translation },
+            answer: cloze.answer,
+            choices: cloze.choices,
+          },
+        ];
       }
     }
-    return { ...base, mode: 'flip', sentence: underlined(queued, examples, srs.reps) };
+    return [{ ...base, mode: 'flip', sentence: underlined(queued, examples, srs.reps) }];
   });
 
   return { cards, nextDueAt: queue.nextDueAt };
