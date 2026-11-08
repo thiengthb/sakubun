@@ -310,6 +310,12 @@ export async function gradeTurn(
     return err(`rating ${parsed.data} needs errorTags (one or more of: ${ERROR_TAGS.join(', ')}).`);
   }
   const feedback = input.feedback?.trim() || null;
+  // R4: the block of a wrong answer leads with the main mistake, so it cannot be left out.
+  if (parsed.data <= 2 && !feedback) {
+    return err(
+      `rating ${parsed.data} needs feedback: one line naming the main mistake, shown as Lỗi chính.`,
+    );
+  }
   if (feedback && feedback.length > MAX_FEEDBACK) {
     return err(`feedback is ${feedback.length} characters; keep it under ${MAX_FEEDBACK}.`);
   }

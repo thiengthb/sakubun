@@ -284,7 +284,7 @@ describe('gradeTurn', () => {
     expect((await db.srsState.findUniqueOrThrow({ where: { itemId: grammar } })).reps).toBe(1);
   });
 
-  it('asks for error tags on a wrong answer and rejects unknown ones', async () => {
+  it('asks for error tags and feedback on a wrong answer and rejects unknown tags', async () => {
     const { grammar } = await seed();
     const turnId = await staged(grammar);
     const bare = await T.gradeTurn(db, { turnId, answer: 'x', rating: 1 }, NOW);
@@ -296,11 +296,23 @@ describe('gradeTurn', () => {
       NOW,
     );
     expect(unknown.ok).toBe(false);
+    const silent = await T.gradeTurn(
+      db,
+      { turnId, answer: 'x', rating: 1, errorTags: ['comprehension'] },
+      NOW,
+    );
+    expect(silent).toEqual({ ok: false, error: expect.stringContaining('needs feedback') });
     expect(await db.reviewLog.count()).toBe(0);
 
     const tagged = await T.gradeTurn(
       db,
-      { turnId, answer: 'x', rating: 1, errorTags: ['comprehension', 'comprehension'] },
+      {
+        turnId,
+        answer: 'x',
+        rating: 1,
+        errorTags: ['comprehension', 'comprehension'],
+        feedback: '「ばかりに」 là "chỉ vì", không phải "vừa mới".',
+      },
       NOW,
     );
     expect(tagged.ok).toBe(true);

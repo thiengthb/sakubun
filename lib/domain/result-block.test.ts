@@ -50,6 +50,19 @@ describe('resultBlock', () => {
 });
 
 describe('untilVi', () => {
+  it('keeps each line of the block whole when the answer has line breaks', () => {
+    const block = resultBlock({
+      rating: 3,
+      nextDue: new Date(NOW.getTime() + 86_400_000),
+      now: NOW,
+      answer: 'Chỉ vì trễ\n  nên lỡ tàu.',
+      reference: 'Chỉ vì trễ một chút mà lỡ tàu.',
+      feedback: null,
+    });
+    expect(block).toContain('> **Bạn viết:** Chỉ vì trễ nên lỡ tàu.');
+    expect(block.every((line) => !line.includes('\n'))).toBe(true);
+  });
+
   it('says minutes, hours or days', () => {
     expect(untilVi(later(0), NOW)).toBe('1 phút');
     expect(untilVi(later(59), NOW)).toBe('59 phút');
