@@ -91,12 +91,19 @@ async function specFor(db: UserDb, item: ItemRow, settings: Settings): Promise<C
   });
 }
 
-// The item's sentences so far, newest first (R3), and the scene for the next one.
-async function pastSentences(db: UserDb, itemId: string, settings: Settings) {
+// The item's sentences so far, newest first (R3), and the scene for the next one. stage_turn leaves
+// out the turn still staged: the new one replaces it, so the same sentence may come back (the
+// learner asked for the other direction, or Claude fixed a typo).
+async function pastSentences(
+  db: UserDb,
+  itemId: string,
+  settings: Settings,
+  { exceptStaged = false } = {},
+) {
   const [count, recent] = await Promise.all([
     db.turn.count({ where: { itemId } }),
     db.turn.findMany({
-      where: { itemId },
+      where: exceptStaged ? { itemId, status: { not: 'staged' } } : { itemId },
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       take: AVOID_CHECKED,
       select: { ja: true },
@@ -198,7 +205,7 @@ export async function stageTurn(
   const settings = await getSettings(db);
   const [spec, past] = await Promise.all([
     specFor(db, item, settings),
-    pastSentences(db, item.id, settings),
+    pastSentences(db, item.id, settings, { exceptStaged: true }),
   ]);
   const hint = cleanHint(input.hint);
   if (input.direction && input.direction !== spec.direction && !hint) {
