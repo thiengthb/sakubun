@@ -195,7 +195,9 @@ export function registerV2Tools(server: McpServer) {
       feedback: z
         .string()
         .optional()
-        .describe('One line, Vietnamese: the main mistake for 1-2, another way to say it for 3-4'),
+        .describe(
+          'One line, Vietnamese: the main mistake (required for 1-2), another way to say it for 3-4',
+        ),
     },
     guard('grade_turn', async (args: Parameters<typeof gradeTurn>[1], extra: ToolExtra) => {
       const now = new Date();

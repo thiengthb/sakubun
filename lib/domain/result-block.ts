@@ -24,13 +24,16 @@ export interface ResultInput {
   feedback: string | null;
 }
 
+// One line each: a line break in an answer would end the quote and break the block.
+const oneLine = (text: string) => text.replace(/\s*\n\s*/g, ' ').trim();
+
 export function resultBlock(r: ResultInput): string[] {
   const label = r.rating <= 2 ? 'Lỗi chính' : 'Cách nói khác';
   return [
     `**${VERDICT[r.rating]} · ${RATING_VI[r.rating]}** · ôn lại sau ${untilVi(r.nextDue, r.now)}`,
     '',
-    `> **Bạn viết:** ${r.answer}`,
-    `> **Tham khảo:** ${r.reference}`,
-    ...(r.feedback ? ['', `**${label}:** ${r.feedback}`] : []),
+    `> **Bạn viết:** ${oneLine(r.answer)}`,
+    `> **Tham khảo:** ${oneLine(r.reference)}`,
+    ...(r.feedback ? ['', `**${label}:** ${oneLine(r.feedback)}`] : []),
   ];
 }
