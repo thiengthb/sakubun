@@ -268,6 +268,46 @@ describe('v2 turns survive a backup', () => {
     await prisma.user.delete({ where: { id: live.id } });
   });
 
+  it('system restore keeps scripts and role-plays, owned by the matching live account (Kaiwa d)', async () => {
+    await resetLearningData(prisma);
+    const live = await prisma.user.create({
+      data: { id: 'live-owner', name: 'thien', email: 'owner@example.com' },
+    });
+    const file = path.join(mkdtempSync(path.join(os.tmpdir(), 'sakubun-sysbak-rp-')), 'backup.db');
+    applyMigrations(file);
+    const db = new Database(file);
+    db.prepare(
+      `INSERT INTO user (id, name, email, emailVerified, createdAt, updatedAt, role)
+       VALUES ('old-owner', 'thien', 'owner@example.com', 1, '2026-08-01T00:00:00.000+00:00',
+               '2026-08-01T00:00:00.000+00:00', 'admin')`,
+    ).run();
+    db.prepare(
+      `INSERT INTO Script (id, userId, title, body, version, createdAt, updatedAt)
+       VALUES ('kw-1', 'old-owner', 'Ở quán', 'A: こんにちは。 | Chào.', 1,
+               '2026-08-01T00:00:00.000+00:00', '2026-08-01T00:00:00.000+00:00')`,
+    ).run();
+    db.prepare(
+      `INSERT INTO Roleplay (id, userId, scriptId, scriptTitle, part, turns, total, correct, createdAt)
+       VALUES ('rp-1', 'old-owner', 'kw-1', 'Ở quán', 'A', '[{"turn":1,"said":"こんにちは","ok":true}]',
+               1, 1, '2026-08-02T00:00:00.000+00:00')`,
+    ).run();
+    db.close();
+
+    const res = await I.importSystemBackup(file, { dryRun: false });
+    expect(res.tables.find((t) => t.table === 'Roleplay')).toMatchObject({ create: 1 });
+    expect(await unguardedPrisma.script.findUniqueOrThrow({ where: { id: 'kw-1' } })).toMatchObject(
+      { userId: live.id, title: 'Ở quán' },
+    );
+    expect(
+      await unguardedPrisma.roleplay.findUniqueOrThrow({ where: { id: 'rp-1' } }),
+    ).toMatchObject({ userId: live.id, scriptId: 'kw-1', total: 1, correct: 1 });
+
+    const again = await I.importSystemBackup(file, { dryRun: false });
+    expect(again.tables.find((t) => t.table === 'Roleplay')).toMatchObject({ create: 0, skip: 1 });
+    expect(await unguardedPrisma.roleplay.count()).toBe(1);
+    await prisma.user.delete({ where: { id: live.id } });
+  });
+
   it('matches the backup account by email whatever its case, so no second account appears', async () => {
     await resetLearningData(prisma);
     const live = await prisma.user.create({

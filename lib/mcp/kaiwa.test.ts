@@ -127,7 +127,13 @@ describe('MCP Kaiwa', () => {
       correct: 1,
     });
     expect(JSON.parse(row.turns)).toEqual([
-      { turn: 2, said: '二人です', ok: true, note: 'Đúng ý.' },
+      {
+        turn: 2,
+        said: '二人です',
+        ok: true,
+        note: 'Đúng ý.',
+        model: expect.objectContaining({ japanese: expect.any(String) }),
+      },
     ]);
     // FSRS is not touched.
     expect(await db.reviewLog.count()).toBe(0);

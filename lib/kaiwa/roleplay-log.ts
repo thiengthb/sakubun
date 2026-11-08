@@ -1,5 +1,5 @@
 import { scriptSpeakers } from '@/lib/kaiwa/layout';
-import type { ScriptLine } from '@/lib/kaiwa/parse';
+import { plainJapanese, type ScriptLine } from '@/lib/kaiwa/parse';
 import { findPart } from '@/lib/kaiwa/roleplay';
 
 // A finished role-play as kaiwa_roleplay_save hands it in (Kaiwa d,
@@ -12,6 +12,17 @@ export interface RoleplayTurn {
   said: string;
   ok: boolean;
   note?: string;
+}
+
+/** The model line as the script had it when the role-play was saved; a later edit does not change it. */
+export interface RoleplayModelLine {
+  japanese: string;
+  translation: string | null;
+}
+
+/** A turn as stored on a row: what was checked, with its model line taken at save time. */
+export interface SavedRoleplayTurn extends RoleplayTurn {
+  model: RoleplayModelLine | null;
 }
 
 export const ROLEPLAY_LIMITS = { turns: 60, said: 500, note: 300 } as const;
@@ -63,19 +74,45 @@ export function checkRoleplay(
   return { ok: true, part: me, turns: clean, correct: clean.filter((t) => t.ok).length };
 }
 
+// Each checked turn with its model line from the script being saved against, so that Lịch sử shows
+// the line the learner was answering even after the script is edited or deleted.
+export function withModelLines(
+  lines: readonly ScriptLine[],
+  turns: readonly RoleplayTurn[],
+): SavedRoleplayTurn[] {
+  return turns.map((t) => {
+    const line = lines[t.turn - 1];
+    return {
+      ...t,
+      model: line
+        ? { japanese: plainJapanese(line.japanese), translation: line.translation || null }
+        : null,
+    };
+  });
+}
+
+const isModel = (m: unknown): m is RoleplayModelLine =>
+  !!m &&
+  typeof m === 'object' &&
+  typeof (m as RoleplayModelLine).japanese === 'string' &&
+  ((m as RoleplayModelLine).translation === null ||
+    typeof (m as RoleplayModelLine).translation === 'string');
+
 // The turns stored on a row; anything unreadable is left out rather than breaking Lịch sử.
-export function readRoleplayTurns(raw: string): RoleplayTurn[] {
+export function readRoleplayTurns(raw: string): SavedRoleplayTurn[] {
   try {
     const parsed: unknown = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
-    return parsed.filter(
-      (t): t is RoleplayTurn =>
-        !!t &&
-        typeof t === 'object' &&
-        typeof (t as RoleplayTurn).turn === 'number' &&
-        typeof (t as RoleplayTurn).said === 'string' &&
-        typeof (t as RoleplayTurn).ok === 'boolean',
-    );
+    return parsed
+      .filter(
+        (t): t is RoleplayTurn & { model?: unknown } =>
+          !!t &&
+          typeof t === 'object' &&
+          typeof (t as RoleplayTurn).turn === 'number' &&
+          typeof (t as RoleplayTurn).said === 'string' &&
+          typeof (t as RoleplayTurn).ok === 'boolean',
+      )
+      .map(({ model, ...t }) => ({ ...t, model: isModel(model) ? model : null }));
   } catch {
     return [];
   }

@@ -61,8 +61,14 @@ describe('checkRoleplay', () => {
 
 describe('readRoleplayTurns', () => {
   it('reads what was stored and drops what it cannot read', () => {
-    expect(readRoleplayTurns('[{"turn":3,"said":"x","ok":true},{"turn":"4"}]')).toEqual([
-      { turn: 3, said: 'x', ok: true },
+    expect(
+      readRoleplayTurns(
+        '[{"turn":3,"said":"x","ok":true,"model":{"japanese":"です","translation":null}},' +
+          '{"turn":5,"said":"y","ok":false,"model":{"japanese":1}},{"turn":"4"}]',
+      ),
+    ).toEqual([
+      { turn: 3, said: 'x', ok: true, model: { japanese: 'です', translation: null } },
+      { turn: 5, said: 'y', ok: false, model: null },
     ]);
     expect(readRoleplayTurns('nope')).toEqual([]);
     expect(readRoleplayTurns('{}')).toEqual([]);

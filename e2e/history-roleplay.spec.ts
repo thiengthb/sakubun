@@ -33,17 +33,25 @@ function seed({ roleplays }: { roleplays: boolean }) {
       `INSERT INTO Roleplay (id, userId, scriptId, scriptTitle, part, turns, total, correct, createdAt)
        VALUES (?, ${E2E_OWNER}, ?, ?, 'B', ?, ?, ?, ?)`,
     );
+    // Saved under the script's old title: the card shows the title it has now.
     insert.run(
       'rp-1',
       'kw-played',
-      'Ở quán',
+      'Quán cũ',
       JSON.stringify([
-        { turn: 2, said: '二人です', ok: true, note: 'Đúng ý, tự nhiên.' },
+        {
+          turn: 2,
+          said: '二人です',
+          ok: true,
+          note: 'Đúng ý, tự nhiên.',
+          model: { japanese: '二人です。', translation: 'Hai người.' },
+        },
         {
           turn: 4,
           said: 'ありがとう',
           ok: false,
           note: 'Ở quán nên nói lịch sự: ありがとうございます。',
+          model: { japanese: 'ありがとうございます。', translation: 'Cảm ơn.' },
         },
       ]),
       2,
@@ -116,7 +124,8 @@ for (const [width, height] of [
     ).toBeVisible();
     await page.keyboard.press('Escape');
 
-    // A role-play whose script is gone still opens, without its model lines or the link.
+    // A role-play whose script is gone still opens, under its saved title, without the link; a
+    // turn stored without its model line shows none.
     await cards.nth(1).getByRole('button').first().click();
     const gone = page.getByRole('dialog', { name: 'Kịch bản đã xoá' });
     await expect(gone.locator('[data-slot="roleplay-turn"]')).toContainText('Bạn nói: すみません');

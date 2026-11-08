@@ -1,6 +1,12 @@
 import type { UserDb } from '@/lib/db/user-db';
-import { parseScript, plainJapanese } from '@/lib/kaiwa/parse';
-import { checkRoleplay, readRoleplayTurns, type RoleplayTurn } from '@/lib/kaiwa/roleplay-log';
+import { parseScript } from '@/lib/kaiwa/parse';
+import {
+  checkRoleplay,
+  readRoleplayTurns,
+  withModelLines,
+  type RoleplayTurn,
+  type SavedRoleplayTurn,
+} from '@/lib/kaiwa/roleplay-log';
 import { getScript } from '@/lib/kaiwa/scripts';
 
 // Role-plays saved to Lịch sử (Kaiwa d). Checked by lib/kaiwa/roleplay-log.ts; never touches FSRS.
@@ -15,7 +21,8 @@ export async function saveRoleplay(
 ): Promise<SaveRoleplayResult> {
   const script = await getScript(db, input.scriptId);
   if (!script) return { ok: false, error: 'Unknown scriptId. Call kaiwa_list for a current one.' };
-  const checked = checkRoleplay(parseScript(script.body), input.part, input.turns);
+  const lines = parseScript(script.body);
+  const checked = checkRoleplay(lines, input.part, input.turns);
   if (!checked.ok) return checked;
   const row = await db.roleplay.create({
     data: {
@@ -23,7 +30,7 @@ export async function saveRoleplay(
       scriptId: script.id,
       scriptTitle: script.title,
       part: checked.part,
-      turns: JSON.stringify(checked.turns),
+      turns: JSON.stringify(withModelLines(lines, checked.turns)),
       total: checked.turns.length,
       correct: checked.correct,
     },
@@ -38,47 +45,40 @@ export async function saveRoleplay(
   };
 }
 
-/** A saved role-play on Lịch sử (Kaiwa d2): each turn with its model line, while the script lasts. */
+/** A saved role-play on Lịch sử (Kaiwa d2): each turn with the model line it had when saved. */
 export interface RoleplayRow {
   id: string;
   scriptId: string;
+  /** The script's current title while it exists (so Nhập vai lại names it right), else the saved one. */
   scriptTitle: string;
-  /** False once the script is deleted: the row stays, without its model lines. */
+  /** False once the script is deleted: the row stays, with its saved title and model lines. */
   scriptExists: boolean;
   part: string;
   total: number;
   correct: number;
   createdAt: Date;
-  turns: (RoleplayTurn & { model: { japanese: string; translation: string | null } | null })[];
+  turns: SavedRoleplayTurn[];
 }
 
 export async function listRoleplays(db: UserDb): Promise<RoleplayRow[]> {
   const rows = await db.roleplay.findMany({ orderBy: [{ createdAt: 'desc' }, { id: 'desc' }] });
   const scripts = await db.script.findMany({
     where: { id: { in: [...new Set(rows.map((r) => r.scriptId))] } },
-    select: { id: true, body: true },
+    select: { id: true, title: true },
   });
-  const lines = new Map(scripts.map((s) => [s.id, parseScript(s.body)]));
+  const titles = new Map(scripts.map((s) => [s.id, s.title]));
   return rows.map((row) => {
-    const script = lines.get(row.scriptId);
+    const title = titles.get(row.scriptId);
     return {
       id: row.id,
       scriptId: row.scriptId,
-      scriptTitle: row.scriptTitle,
-      scriptExists: !!script,
+      scriptTitle: title ?? row.scriptTitle,
+      scriptExists: title !== undefined,
       part: row.part,
       total: row.total,
       correct: row.correct,
       createdAt: row.createdAt,
-      turns: readRoleplayTurns(row.turns).map((turn) => {
-        const line = script?.[turn.turn - 1];
-        return {
-          ...turn,
-          model: line
-            ? { japanese: plainJapanese(line.japanese), translation: line.translation }
-            : null,
-        };
-      }),
+      turns: readRoleplayTurns(row.turns),
     };
   });
 }
