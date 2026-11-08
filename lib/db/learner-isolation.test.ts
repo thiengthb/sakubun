@@ -44,7 +44,7 @@ beforeAll(async () => {
   Q = await import('@/lib/app/quick-review');
 
   // A: settings, grammar and vocab, a group, one graded turn, one quick-review answer.
-  await P.saveSettings(a, { grammarLevels: ['N2'], dailyNewGrammar: 5, dailyNewVocab: 5 });
+  await P.saveSettings(a, { grammarLevel: 'N2', vocabLevel: 'N2', dailyNewGrammar: 5, dailyNewVocab: 5 });
   await P.addItems(
     a,
     [{ expression: '〜ばかりに', meaningVi: 'chỉ vì', level: 'N2', notes: 'ghi chú của A' }],
@@ -76,7 +76,7 @@ beforeAll(async () => {
   if (!answered.ok) throw new Error(answered.error);
 
   // B: one item of its own, so empty results are not the only thing tested.
-  await P.saveSettings(b, { grammarLevels: ['N2'], dailyNewGrammar: 5, dailyNewVocab: 5 });
+  await P.saveSettings(b, { grammarLevel: 'N2', vocabLevel: 'N2', dailyNewGrammar: 5, dailyNewVocab: 5 });
   await P.addItems(b, [{ expression: '〜からには', meaningVi: 'một khi', level: 'N2' }], 'MCP');
 
   const srsA = await a.srsState.findMany({ select: { id: true } });

@@ -5,7 +5,8 @@ describe('settings save round-trip clears dirty', () => {
   const edits: Partial<Settings>[] = [
     { sessionGoal: 15 },
     { difficulty: 4 },
-    { grammarLevels: ['N5', 'N4'] },
+    { grammarLevel: 'N4' },
+    { vocabLevel: 'N2' },
     { topics: ['anime', 'công việc'] },
     { desiredRetention: 0.85 },
     { furiganaMode: 'both' },

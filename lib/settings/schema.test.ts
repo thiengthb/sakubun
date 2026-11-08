@@ -6,7 +6,6 @@ import {
   legacyDirection,
   migrateSettingsInput,
   parseStoredSettings,
-  resolveVocabCeiling,
   settingsPatchSchema,
   settingsSchema,
   syncDirection,
@@ -17,8 +16,8 @@ import {
 describe('settingsSchema', () => {
   it('fills every default from an empty object', () => {
     expect(DEFAULT_SETTINGS.direction).toBe('ALTERNATING');
-    expect(DEFAULT_SETTINGS.grammarLevels).toEqual(['N5']);
-    expect(DEFAULT_SETTINGS.vocabCeiling).toBe(null);
+    expect(DEFAULT_SETTINGS.grammarLevel).toBe('N5');
+    expect(DEFAULT_SETTINGS.vocabLevel).toBe('N5');
     expect(DEFAULT_SETTINGS.desiredRetention).toBe(0.9);
     expect(DEFAULT_SETTINGS.dayCutoffHour).toBe(4);
     expect(DEFAULT_SETTINGS.vocabPerSentence).toBe(2);
@@ -29,7 +28,7 @@ describe('settingsSchema', () => {
   it('rejects out-of-range values', () => {
     expect(settingsSchema.safeParse({ difficulty: 6 }).success).toBe(false);
     expect(settingsSchema.safeParse({ desiredRetention: 0.5 }).success).toBe(false);
-    expect(settingsSchema.safeParse({ grammarLevels: [] }).success).toBe(false);
+    expect(settingsSchema.safeParse({ grammarLevel: 'N6' }).success).toBe(false);
   });
 
   it('maxNewPerSentence defaults to 1 and cannot be switched off', () => {
@@ -49,29 +48,50 @@ describe('settingsSchema', () => {
     expect(parsed.dailyNewGrammar).toBe(5);
   });
 
-  it('the PRE-split `levels` blob migrates to grammarLevels with identical behaviour', () => {
+  it('the PRE-split `levels` blob becomes one level per kind: the hardest one ticked', () => {
     const preSplit = JSON.stringify({ levels: ['N3', 'N2'], register: 'keigo' });
     const parsed = parseStoredSettings(preSplit);
-    expect(parsed.grammarLevels).toEqual(['N3', 'N2']);
+    expect(parsed.grammarLevel).toBe('N2');
+    expect(parsed.vocabLevel).toBe('N2');
     expect(parsed.register).toBe('keigo');
-    expect(parsed.vocabCeiling).toBe(null);
-    expect(resolveVocabCeiling(parsed)).toBe('N2');
+    expect('levels' in parsed || 'grammarLevels' in parsed).toBe(false);
   });
 
-  it('an explicit vocabCeiling decouples vocabulary from the grammar levels', () => {
-    const settings = settingsSchema.parse({ grammarLevels: ['N3'], vocabCeiling: 'N2' });
-    expect(resolveVocabCeiling(settings)).toBe('N2');
-    expect(hardestLevel(settings.grammarLevels)).toBe('N3');
+  it('ticked grammarLevels become the level studied for both kinds; the old hidden ceiling is dropped', () => {
+    const parsed = parseStoredSettings(
+      JSON.stringify({ grammarLevels: ['N5', 'N4', 'N3'], vocabCeiling: 'N1', dailyNewVocab: 15 }),
+    );
+    expect(parsed.grammarLevel).toBe('N3');
+    expect(parsed.vocabLevel).toBe('N3');
+    expect(parsed.dailyNewVocab).toBe(15);
+    expect('vocabCeiling' in parsed || 'grammarLevels' in parsed).toBe(false);
+    // Nothing usable ticked: the defaults, and the rest of the blob survives.
+    expect(
+      parseStoredSettings(JSON.stringify({ grammarLevels: ['N9'], register: 'casual' })),
+    ).toMatchObject({
+      grammarLevel: 'N5',
+      vocabLevel: 'N5',
+      register: 'casual',
+    });
+  });
+
+  it('a level already chosen per kind wins over old keys in the same object', () => {
+    const migrated = migrateSettingsInput({
+      levels: ['N5'],
+      grammarLevels: ['N1'],
+      grammarLevel: 'N4',
+      vocabLevel: 'N2',
+    });
+    expect(settingsPatchSchema.parse(migrated)).toMatchObject({
+      grammarLevel: 'N4',
+      vocabLevel: 'N2',
+    });
+    expect(hardestLevel(['N5', 'N3', 'N4'])).toBe('N3');
   });
 
   it('a patch still naming `levels` is accepted (older client / habit)', () => {
     const migrated = settingsPatchSchema.parse(migrateSettingsInput({ levels: ['N4'] }));
-    expect(migrated.grammarLevels).toEqual(['N4']);
-  });
-
-  it('an explicit grammarLevels wins over a stale `levels` in the same object', () => {
-    const migrated = migrateSettingsInput({ levels: ['N5'], grammarLevels: ['N1'] });
-    expect(settingsPatchSchema.parse(migrated).grammarLevels).toEqual(['N1']);
+    expect(migrated.grammarLevel).toBe('N4');
   });
 
   it('patch schema accepts a single field', () => {

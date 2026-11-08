@@ -1,9 +1,10 @@
 'use client';
 
-import { useId, useState, type Dispatch, type SetStateAction } from 'react';
+import { useId, useState } from 'react';
 import {
   ArrowLeftRight,
   BookOpen,
+  Languages,
   ChevronDown,
   Gauge,
   ListPlus,
@@ -54,49 +55,51 @@ const SEGMENT = 'flex-1 px-3 @md:flex-none';
 export function PracticeTab({
   settings,
   set,
-  setSettings,
 }: {
   settings: Settings;
   set: <K extends keyof Settings>(key: K, value: Settings[K]) => void;
-  setSettings: Dispatch<SetStateAction<Settings>>;
 }) {
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const advancedId = useId();
   const retention = Math.round(settings.desiredRetention * 100);
   const rates = speechRateOptions(settings.speechRate);
 
-  const setLevels = (levels: string[]) => {
-    if (levels.length === 0) return; // keep at least one level
-    setSettings((s) => ({
-      ...s,
-      grammarLevels: JLPT_LEVELS.filter((l) => levels.includes(l)),
-    }));
+  const setLevel = (key: 'grammarLevel' | 'vocabLevel', value: string) => {
+    const level = JLPT_LEVELS.find((l) => l === value);
+    if (level) set(key, level); // a press on the chosen level keeps it
   };
+  const levelRow = (key: 'grammarLevel' | 'vocabLevel', label: string, info: string) => (
+    <SettingRow icon={key === 'grammarLevel' ? BookOpen : Languages} label={label} info={info} wide>
+      <ToggleGroup
+        type="single"
+        variant="choice"
+        aria-label={label}
+        value={settings[key]}
+        onValueChange={(v) => setLevel(key, v)}
+        className="grid w-full grid-cols-5 gap-1.5 @md:flex @md:w-auto"
+      >
+        {JLPT_LEVELS.map((level) => (
+          <ToggleGroupItem key={level} value={level} className="px-3">
+            {level}
+          </ToggleGroupItem>
+        ))}
+      </ToggleGroup>
+    </SettingRow>
+  );
 
   return (
     <SettingsTab value="practice" surface="bare">
       <SettingsSection>
-        <SettingRow
-          icon={BookOpen}
-          label="Cấp JLPT"
-          info="Mẫu và từ mới chỉ lấy từ các cấp được chọn; từ mới không khó hơn cấp cao nhất. Mục đã học vẫn ôn bất kể cấp."
-          wide
-        >
-          <ToggleGroup
-            type="multiple"
-            variant="choice"
-            aria-label="Cấp JLPT"
-            value={settings.grammarLevels}
-            onValueChange={setLevels}
-            className="grid w-full grid-cols-5 gap-1.5 @md:flex @md:w-auto"
-          >
-            {JLPT_LEVELS.map((level) => (
-              <ToggleGroupItem key={level} value={level} className="px-3">
-                {level}
-              </ToggleGroupItem>
-            ))}
-          </ToggleGroup>
-        </SettingRow>
+        {levelRow(
+          'grammarLevel',
+          'Ngữ pháp đang học',
+          'Mẫu mới: 3 trong 4 lấy ở cấp này, mẫu thứ 4 lấy ở cấp dễ hơn còn chưa học hết. Không lấy cấp khó hơn. Mục đã học vẫn ôn bất kể cấp.',
+        )}
+        {levelRow(
+          'vocabLevel',
+          'Từ vựng đang học',
+          'Từ mới: 3 trong 4 lấy ở cấp này, từ thứ 4 lấy ở cấp dễ hơn còn chưa học hết. Từ quanh câu dịch cũng không khó hơn cấp này.',
+        )}
 
         <SettingRow icon={ListPlus} label="Mẫu mới" unit="/ ngày">
           <Stepper
@@ -188,8 +191,8 @@ export function PracticeTab({
           />
         </SettingRow>
 
-        {/* The seventh row of a two-column grid: it takes the whole line, no empty half beside it. */}
-        <SettingRow icon={Gauge} label="Tốc độ" wide className="col-span-full">
+        {/* The eighth row of a two-column grid: beside the voice it belongs with. */}
+        <SettingRow icon={Gauge} label="Tốc độ" wide>
           <ToggleGroup
             type="single"
             variant="choice"

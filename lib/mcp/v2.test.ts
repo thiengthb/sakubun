@@ -70,7 +70,7 @@ afterAll(async () => {
 beforeEach(async () => {
   await resetLearningData(prisma);
   const P = await import('@/lib/library/practice');
-  await P.saveSettings(db, { grammarLevels: ['N2'], dailyNewGrammar: 2, dailyNewVocab: 0 });
+  await P.saveSettings(db, { grammarLevel: 'N2', vocabLevel: 'N2', dailyNewGrammar: 2, dailyNewVocab: 0 });
   await P.addItems(
     db,
     [{ expression: '〜ばかりに', meaningVi: 'chỉ vì... (kết quả xấu)', level: 'N2' }],
