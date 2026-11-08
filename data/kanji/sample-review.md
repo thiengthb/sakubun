@@ -1,5 +1,7 @@
 # Duyệt dữ liệu kanji: 50 chữ mẫu và 214 bộ thủ
 
+thien đã duyệt ngày 2026-11-08, không sửa chữ nào.
+
 Anh đọc lướt và ghi chữ nào sai ở cột cuối (hoặc nhắn em). Nghĩa Việt là em viết; Hán Việt, bộ, thành phần lấy từ dữ liệu.
 Khi anh duyệt mẫu này, em viết nghĩa cho cả 2.136 chữ theo cùng cách.
 
