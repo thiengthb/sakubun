@@ -48,7 +48,7 @@ export function KanjiNetwork({ page }: { page: KanjiPage }) {
   return (
     <div className="space-y-6">
       <NetworkDrawing page={page} />
-      <Legend />
+      <StudyLegend />
       <div className="space-y-5">
         {page.parts.map((p) => (
           <PartList key={p.part} part={p} />
@@ -58,7 +58,8 @@ export function KanjiNetwork({ page }: { page: KanjiPage }) {
   );
 }
 
-function Legend() {
+/** What the tile colours mean. */
+export function StudyLegend() {
   return (
     <ul className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
       {(Object.keys(STUDY_LABEL) as KanjiStudy[]).map((s) => (
@@ -75,9 +76,6 @@ const partLabel = (p: KanjiPagePart) =>
   `${p.node ? withHanviet(p.part, p.node.hanviet) : p.name ? `${p.part} ${p.name}` : p.part}${p.sound ? ', phần chỉ âm' : ''}`;
 
 function PartList({ part: p }: { part: KanjiPagePart }) {
-  const [all, setAll] = useState(false);
-  const shown = all ? p.kanji : p.kanji.slice(0, NETWORK_PER_PART);
-  const more = p.kanji.length - shown.length;
   return (
     <section className="space-y-2" aria-label={`Chữ có thành phần ${partLabel(p)}`}>
       <h3 className="flex flex-wrap items-baseline gap-x-2 text-sm font-semibold">
@@ -100,33 +98,51 @@ function PartList({ part: p }: { part: KanjiPagePart }) {
       {p.kanji.length === 0 ? (
         <p className="text-sm text-muted-foreground">Không chữ Jōyō nào khác có thành phần này.</p>
       ) : (
-        <ul className="flex flex-wrap gap-1.5">
-          {shown.map((k) => (
-            <li key={k.kanji}>
-              <Link
-                href={kanjiHref(k.kanji)}
-                aria-label={`${withHanviet(k.kanji, k.hanviet)}, ${STUDY_LABEL[k.study]}`}
-                className={cn(
-                  LIST_CARD.base,
-                  'flex min-w-16 flex-col items-center gap-0.5 px-1.5 py-1.5 hover:bg-muted/40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
-                  TILE_TONE[k.study],
-                )}
-              >
-                <span lang="ja" className="text-lg leading-none">
-                  {k.kanji}
-                </span>
-                <span className="text-xs whitespace-nowrap">[{k.hanviet}]</span>
-              </Link>
-            </li>
-          ))}
-        </ul>
+        <KanjiNodeList nodes={p.kanji} />
       )}
+    </section>
+  );
+}
+
+/** Kanji as small tiles coloured by study, each opening its page; past `limit`, "Xem thêm". */
+export function KanjiNodeList({
+  nodes,
+  limit = NETWORK_PER_PART,
+}: {
+  nodes: readonly NetworkNode[];
+  limit?: number;
+}) {
+  const [all, setAll] = useState(false);
+  const shown = all ? nodes : nodes.slice(0, limit);
+  const more = nodes.length - shown.length;
+  return (
+    <>
+      <ul className="flex flex-wrap gap-1.5">
+        {shown.map((k) => (
+          <li key={k.kanji}>
+            <Link
+              href={kanjiHref(k.kanji)}
+              aria-label={`${withHanviet(k.kanji, k.hanviet)}, ${STUDY_LABEL[k.study]}`}
+              className={cn(
+                LIST_CARD.base,
+                'flex min-w-16 flex-col items-center gap-0.5 px-1.5 py-1.5 hover:bg-muted/40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
+                TILE_TONE[k.study],
+              )}
+            >
+              <span lang="ja" className="text-lg leading-none">
+                {k.kanji}
+              </span>
+              <span className="text-xs whitespace-nowrap">[{k.hanviet}]</span>
+            </Link>
+          </li>
+        ))}
+      </ul>
       {more > 0 && (
         <Button variant="outline" size="sm" onClick={() => setAll(true)}>
           Xem thêm {more} chữ
         </Button>
       )}
-    </section>
+    </>
   );
 }
 
