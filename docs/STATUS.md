@@ -12,14 +12,14 @@ Luyện dịch (R1–R4, kế hoạch đã duyệt) và Kaiwa (c) chọn giọng
 
 ## Đang làm
 
-| Bước                                                                                         | Nhánh                          | Phiên                                           |
-| -------------------------------------------------------------------------------------------- | ------------------------------ | ----------------------------------------------- |
-| R1 luyện dịch: mỗi loại một cấp đang học (`docs/plans/2026-11-07-translation-difficulty.md`) | `claude/project-thread-2ogyjr` | thread "Gom và hoàn thiện việc dang dở Sakubun" |
+| Bước                                                                                                                               | Nhánh                          | Phiên                                           |
+| ---------------------------------------------------------------------------------------------------------------------------------- | ------------------------------ | ----------------------------------------------- |
+| R2 + R3 luyện dịch: bậc câu 1–5 từ lịch sử ôn, cảnh luân phiên, chặn câu trùng (`docs/plans/2026-11-07-translation-difficulty.md`) | `claude/project-thread-2ogyjr` | thread "Gom và hoàn thiện việc dang dở Sakubun" |
 
 ## Vừa xong
 
-- KJ1 #246: dữ liệu kanji 2.136 chữ Jōyō; Codex viết nghĩa Việt theo `docs/codex/2026-11-08-kanji-meanings-brief.md`.
-- Kaiwa (a) #243 MCP lấy kịch bản chung, (b) #245 karaoke theo âm tiết; Quản trị hiện lại mục đã ẩn trên Kho chung (#244).
+- R1 #247: mỗi loại một cấp đang học, mục mới 3:1 từ cấp đó và cấp dễ hơn; #248 sửa lỗi bấm あ làm cài đặt về mặc định.
+- Kaiwa (a) #243, (b) #245; Kho chung #244. KJ1 #246: dữ liệu kanji 2.136 chữ Jōyō; Codex viết nghĩa Việt theo `docs/codex/2026-11-08-kanji-meanings-brief.md`.
 
 ## Đang chờ thien (tối đa 3)
 

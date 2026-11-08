@@ -20,7 +20,12 @@ const SENTENCE = {
 };
 
 async function seed(): Promise<{ grammar: string; vocab: string }> {
-  await P.saveSettings(db, { grammarLevel: 'N2', vocabLevel: 'N2', dailyNewGrammar: 5, dailyNewVocab: 5 });
+  await P.saveSettings(db, {
+    grammarLevel: 'N2',
+    vocabLevel: 'N2',
+    dailyNewGrammar: 5,
+    dailyNewVocab: 5,
+  });
   await P.addItems(
     db,
     [{ expression: '〜ばかりに', meaningVi: 'chỉ vì... (kết quả xấu)', level: 'N2' }],
@@ -40,8 +45,8 @@ async function seed(): Promise<{ grammar: string; vocab: string }> {
   };
 }
 
-async function staged(itemId: string): Promise<string> {
-  const result = await T.stageTurn(db, { itemId, ...SENTENCE }, NOW);
+async function staged(itemId: string, ja = SENTENCE.ja): Promise<string> {
+  const result = await T.stageTurn(db, { itemId, ...SENTENCE, ja }, NOW);
   if (!result.ok) throw new Error(result.error);
   return result.data.turnId;
 }
@@ -68,8 +73,10 @@ describe('nextTurn', () => {
       expression: '〜ばかりに',
       isNew: true,
     });
-    // New N2 item: Japanese to Vietnamese, pitched one level easier (N3 length).
-    expect(result.data.spec).toMatchObject({ direction: 'JA_VI', lengthJa: [16, 28] });
+    // New item: step 1, Japanese to Vietnamese, the shortest sentences (R2).
+    expect(result.data.spec).toMatchObject({ step: 1, direction: 'JA_VI', lengthJa: [8, 16] });
+    expect(result.data.scene).toBe('daily life');
+    expect(result.data.avoid).toEqual([]);
     expect(result.data.card.meaning).toBe('chỉ vì... (kết quả xấu)');
     expect(result.data.hint).toBe('chủ đề du lịch');
   });
@@ -132,13 +139,63 @@ describe('stageTurn', () => {
   it('replaces a turn that was staged but never answered', async () => {
     const { grammar } = await seed();
     const first = await staged(grammar);
-    await staged(grammar);
+    await staged(grammar, '寝坊したばかりに、試験に遅れた。');
     const statuses = await db.turn.findMany({
       orderBy: { createdAt: 'asc' },
       select: { id: true, status: true },
     });
     expect(statuses.map((t) => t.status).sort()).toEqual(['skipped', 'staged']);
     expect(statuses.find((t) => t.id === first)?.status).toBe('skipped');
+  });
+});
+
+describe('a varied, harder sentence each time (R2, R3)', () => {
+  it('refuses a sentence the item already had, and the example on its card', async () => {
+    const { grammar } = await seed();
+    await staged(grammar);
+    const again = await T.stageTurn(
+      db,
+      { itemId: grammar, ...SENTENCE, ja: '少し遅れたばかりに 電車に乗れなかった' },
+      NOW,
+    );
+    expect(again).toEqual({
+      ok: false,
+      error: expect.stringMatching(
+        /^This item already had this sentence\. Write a new one, set in: work;/,
+      ),
+    });
+  });
+
+  it('names the last sentences to avoid and turns the scene', async () => {
+    const { grammar } = await seed();
+    await staged(grammar);
+    const next = await T.nextTurn(db, { itemId: grammar }, NOW);
+    if (!next.ok || next.data.done) throw new Error('expected an item');
+    expect(next.data.avoid).toEqual([SENTENCE.ja]);
+    expect(next.data.scene).toBe('work');
+  });
+
+  it('climbs a step after Easy, and the direction turns at step 3', async () => {
+    const { grammar } = await seed();
+    const steps: number[] = [];
+    const sentences = [
+      '少し遅れたばかりに、電車に乗れなかった。',
+      '寝坊したばかりに、試験に遅れた。',
+      '傘を忘れたばかりに、ぬれてしまった。',
+    ];
+    for (const [i, ja] of sentences.entries()) {
+      const next = await T.nextTurn(db, { itemId: grammar }, NOW);
+      if (!next.ok || next.data.done) throw new Error('expected an item');
+      steps.push(next.data.spec.step);
+      const turnId = await staged(grammar, ja);
+      const later = new Date(NOW.getTime() + (i + 1) * 86_400_000);
+      const graded = await T.gradeTurn(db, { turnId, answer: 'x', rating: 4 }, later);
+      if (!graded.ok) throw new Error(graded.error);
+    }
+    const last = await T.nextTurn(db, { itemId: grammar }, NOW);
+    if (!last.ok || last.data.done) throw new Error('expected an item');
+    expect([...steps, last.data.spec.step]).toEqual([1, 2, 3, 4]);
+    expect(last.data.spec.direction).toBe('VI_JA');
   });
 });
 

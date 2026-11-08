@@ -7,6 +7,10 @@
 - Khi làm R1 (2026-11-07): danh sách OpenJLPT xếp mỗi cấp theo thứ tự あいうえお, không theo độ thường gặp, nên
   trong một cấp mục được xếp theo một thứ tự trộn cố định (mục người học tự thêm vẫn đi trước). Ô `vocabCeiling` cũ
   đã bị bỏ qua từ 7.x, nên khi đọc cài đặt cũ, từ vựng đang học lấy bằng cấp ngữ pháp đang học, không đọc ô đó.
+- Khi làm R2 + R3 (2026-11-07): bậc câu đếm mọi lần chấm mục đó trong `ReviewLog` (cả Ôn nhanh trên web), lần Quên
+  xoá luôn số lần "vượt trần". Ở chế độ tự động, chiều dịch đổi sang Việt → Nhật từ bậc 3 (thay cho luật độ ổn định
+  21 ngày). Từ vựng xung quanh lấy cấp dễ hơn giữa cấp của mục và cấp từ vựng đang học, cho tới khi mục vượt trần.
+  Cảnh và lỗi trùng câu viết bằng tiếng Anh cho Claude, như các dòng khác của MCP.
 
 ## Tóm tắt
 

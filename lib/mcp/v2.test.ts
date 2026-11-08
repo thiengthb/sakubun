@@ -70,7 +70,12 @@ afterAll(async () => {
 beforeEach(async () => {
   await resetLearningData(prisma);
   const P = await import('@/lib/library/practice');
-  await P.saveSettings(db, { grammarLevel: 'N2', vocabLevel: 'N2', dailyNewGrammar: 2, dailyNewVocab: 0 });
+  await P.saveSettings(db, {
+    grammarLevel: 'N2',
+    vocabLevel: 'N2',
+    dailyNewGrammar: 2,
+    dailyNewVocab: 0,
+  });
   await P.addItems(
     db,
     [{ expression: '〜ばかりに', meaningVi: 'chỉ vì... (kết quả xấu)', level: 'N2' }],
@@ -115,7 +120,7 @@ describe('MCP v2', () => {
     expect(text).toContain('3 right (the usual grade)');
     expect(text).toContain('4 only if instant and flawless');
     // A learner's wish (longer, other direction) must reach stage_turn too, or its checks refuse it.
-    expect(text).toContain('Call stage_turn,\n   passing the same hint if there is one.');
+    expect(text).toContain('Call stage_turn, passing the same hint if there is one.');
   });
 
   it('runs one whole turn and each result names the next call', async () => {
@@ -144,6 +149,18 @@ describe('MCP v2', () => {
     expect(graded.text).toMatch(/^graded 3 \(Good\) · next review in /);
     expect(graded.text).toMatch(/next: .*next_turn/);
     expect(await db.reviewLog.count({ where: { channel: 'mcp' } })).toBe(1);
+  });
+
+  it("leaves the card's example out of next_turn and names a step and a scene instead (R2, R3)", async () => {
+    const first = await call('next_turn');
+    const itemId = field(first.text, 'item').split('itemId ')[1];
+    const ja = '寝坊したばかりに、試験に遅れた。';
+    const added = await call('example_add', { itemId, ja, vi: 'Chỉ vì ngủ quên mà trễ giờ thi.' });
+    expect(added.isError).toBe(false);
+    const next = await call('next_turn');
+    expect(next.text).not.toContain(ja);
+    expect(next.text).toMatch(/step 1\/5: /);
+    expect(next.text).toMatch(/^scene: /m);
   });
 
   it('returns a rule break as a tool error naming the fix, and writes nothing', async () => {

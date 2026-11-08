@@ -16,7 +16,7 @@ import { CARD_STATE } from '@/lib/domain/queue';
 import { guard, learnerDb, mcpError, type McpServer, type ToolExtra } from '@/lib/mcp/tool-kit';
 import { findShared } from '@/lib/mcp/tools/library';
 import { ERROR_TAGS } from '@/lib/session/error-tags';
-import { JLPT_LEVELS } from '@/lib/settings/schema';
+import { DIFFICULTY_ANCHORS, JLPT_LEVELS } from '@/lib/settings/schema';
 
 // MCP v2 (roadmap 3.1): seven tools, server-led. Every result is a few plain lines ending in a
 // `next:` line that tells Claude the one call to make, so the protocol stays short and a weaker
@@ -63,16 +63,18 @@ export function renderNextTurn(data: NextTurn, now: Date) {
   }
   const { item, spec, card } = data;
   const reading = item.reading ? ` (${item.reading})` : '';
+  // R2 + R3: the step sets the shape; the scene and the sentences to avoid keep it varied. The
+  // card's own example is left out on purpose: copied, it made the same sentence every time.
   return text([
     `item ${item.expression}${reading} · ${item.kind.toLowerCase()} ${item.level} · ${item.isNew ? 'new' : 'seen'} · itemId ${item.itemId}`,
     `write ${DIRECTION_TEXT[spec.direction]}: ja ${spec.lengthJa[0]}-${spec.lengthJa[1]} chars, ${spec.register}, other words at most ${spec.backgroundLevel}`,
+    `step ${spec.step}/5: ${DIFFICULTY_ANCHORS[spec.step].en}`,
     `meaning: ${card.meaning}`,
     card.structure ? `structure: ${card.structure}` : null,
-    card.example
-      ? `example: ${card.example.ja}${card.example.vi ? ` = ${card.example.vi}` : ''}`
-      : null,
+    `scene: ${data.scene}`,
+    data.avoid.length > 0 ? `avoid (already used): ${data.avoid.join(' / ')}` : null,
     data.hint ? `hint: ${data.hint}` : null,
-    'next: write one sentence (ja and vi) that uses the item, then call stage_turn.',
+    'next: write one new sentence (ja and vi) that uses the item, then call stage_turn.',
   ]);
 }
 
