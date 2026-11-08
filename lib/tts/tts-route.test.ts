@@ -66,3 +66,31 @@ describe('/api/tts audio cache', () => {
     expect(readdirSync(dir).filter((n) => n.endsWith('.wav'))).toHaveLength(6);
   });
 });
+
+describe('/api/tts mora timing', () => {
+  it('answers when each mora starts, once per sentence and voice', async () => {
+    engine.mockImplementationOnce(
+      async () =>
+        new Response(
+          JSON.stringify({
+            prePhonemeLength: 0.1,
+            postPhonemeLength: 0.5,
+            accent_phrases: [
+              { moras: [{ vowel_length: 0.2 }, { consonant_length: 0.1, vowel_length: 0.1 }] },
+            ],
+          }),
+        ),
+    );
+    const calls = engine.mock.calls.length;
+    const res = await play('text=あか&speaker=3&timing=1');
+    expect(res.status).toBe(200);
+    const { starts } = (await res.json()) as { starts: number[] };
+    expect(starts.map((s) => +s.toFixed(3))).toEqual([0.1, 0.3]);
+    expect(engine.mock.calls.length).toBe(calls + 1);
+    expect(String(engine.mock.calls.at(-1)![0])).toContain('/audio_query?speaker=3');
+
+    await play('text=あか&speaker=3&timing=1&rate=0.6');
+    expect(engine.mock.calls.length).toBe(calls + 1);
+    expect(readdirSync(dir).filter((n) => n.endsWith('.json'))).toHaveLength(0);
+  });
+});

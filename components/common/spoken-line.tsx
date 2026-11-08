@@ -1,9 +1,11 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { SpeakButton } from '@/components/common/speak-button';
 import { Truncate } from '@/components/ui/truncate';
 import { hasFurigana, parseFurigana } from '@/lib/japanese/furigana';
+import { karaokeLit } from '@/lib/japanese/karaoke';
+import { loadMoraStarts } from '@/lib/japanese/karaoke-timing';
 import { cn } from '@/lib/core/utils';
 
 export function SpokenLine({
@@ -60,11 +62,37 @@ export function SpokenLine({
   /** Off for a guest reading a shared script: the speech server needs an account. */
   speak?: boolean;
 }) {
-  const [ratio, setRatio] = useState(0);
+  const [progress, setProgress] = useState({ ratio: 0, audio: false });
+  const setRatio = (ratio: number, audio = false) => setProgress({ ratio, audio });
+  const ratio = progress.ratio;
 
   const segments = showFurigana && ruby && hasFurigana(ruby) ? parseFurigana(ruby) : [{ text }];
   const total = segments.reduce((n, s) => n + [...s.text].length, 0);
-  const lit = Math.round(ratio * total);
+
+  // Karaoke by the syllable (Kaiwa b): while the server's voice plays, each character lights as its
+  // mora is read. The line's furigana says which morae are whose, shown or not; until the timing
+  // arrives, or when it does not fit the line, the light moves at an even pace.
+  const spoken = speakText ?? text;
+  const playing = progress.audio && ratio > 0;
+  const [timing, setTiming] = useState<{ key: string; starts: number[] | null } | null>(null);
+  const timingKey = `${speaker ?? ''}:${spoken}`;
+  useEffect(() => {
+    if (!playing || timing?.key === timingKey) return;
+    let live = true;
+    void loadMoraStarts(spoken, speaker).then((starts) => {
+      if (live) setTiming({ key: timingKey, starts });
+    });
+    return () => {
+      live = false;
+    };
+  }, [playing, timing, timingKey, spoken, speaker]);
+  const moraStarts = timing?.key === timingKey ? timing.starts : null;
+  const read = ruby && hasFurigana(ruby) ? parseFurigana(ruby) : [{ text }];
+  const karaoke =
+    moraStarts && read.reduce((n, s) => n + [...s.text].length, 0) === total
+      ? karaokeLit(moraStarts, read)
+      : null;
+  const lit = progress.audio && karaoke ? karaoke(ratio) : Math.round(ratio * total);
 
   const starts = segments.map((_, i) =>
     segments.slice(0, i).reduce((n, s) => n + [...s.text].length, 0),
