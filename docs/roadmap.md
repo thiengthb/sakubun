@@ -80,7 +80,7 @@ words being learned, handwriting graded stroke by stroke; network per kanji, no 
 
 | #    | PR                                                                              | Done when                   | Risk   | Status                                                                                              |
 | ---- | ------------------------------------------------------------------------------- | --------------------------- | ------ | --------------------------------------------------------------------------------------------------- |
-| KJ1  | Kanji data: KANJIDIC2, KanjiVG strokes and parts, Hán Việt, level, 214 radicals | data checks pass in CI      | low    | In progress (data built)                                                                            |
+| KJ1  | Kanji data: KANJIDIC2, KanjiVG strokes and parts, Hán Việt, level, 214 radicals | data checks pass in CI      | low    | Done 2026-11-08 (data checked in CI)                                                                |
 | KJ1b | Vietnamese meaning per kanji, sample page for thien                             | thien approves the sample   | low    | Sample approved 2026-11-08; Codex writes the rest (`docs/codex/2026-11-08-kanji-meanings-brief.md`) |
 | KJ2  | `KANJI` item kind, `dailyNewKanji`, handwriting switch, Kanji tab               | e2e + screenshots           | medium | Not started                                                                                         |
 | KJ3  | Recognition cards in Ôn nhanh                                                   | e2e + screenshots           | medium | Not started                                                                                         |
