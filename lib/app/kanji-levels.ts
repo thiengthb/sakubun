@@ -55,9 +55,13 @@ export async function takeKanjiLevel(
   level: KanjiLevel,
   now = new Date(),
 ): Promise<TakeKanjiLevelResult> {
-  const [catalog, have] = await Promise.all([kanjiCatalog(), ownedKanji(db)]);
-  const kanji = ofLevel(catalog, level);
-  const missing = await rankedNewKanji(db, kanji, have);
-  const added = await createKanjiItems(db, missing, now);
-  return { added, had: kanji.length - missing.length };
+  const kanji = ofLevel(await kanjiCatalog(), level);
+  // Ôn nhanh in another tab can bring one of them in between the read and the write, and then the
+  // whole insert is dropped; read again once, so the rest still get their cards.
+  for (let attempt = 0; ; attempt++) {
+    const missing = await rankedNewKanji(db, kanji, await ownedKanji(db));
+    const added = await createKanjiItems(db, missing, now);
+    if (added > 0 || missing.length === 0 || attempt > 0)
+      return { added, had: kanji.length - missing.length };
+  }
 }

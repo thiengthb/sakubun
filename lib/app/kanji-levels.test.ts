@@ -1,4 +1,4 @@
-import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { UserDb } from '@/lib/db/user-db';
 import { createTestDb, createTestUser, resetLearningData } from '@/lib/db/test-db';
 
@@ -6,8 +6,10 @@ createTestDb('sakubun-app-kanji-levels-');
 
 type Levels = typeof import('@/lib/app/kanji-levels');
 type Practice = typeof import('@/lib/library/practice');
+type KanjiItems = typeof import('@/lib/app/kanji-items');
 let L: Levels;
 let P: Practice;
+let Items: KanjiItems;
 let prisma: (typeof import('@/lib/db/db'))['prisma'];
 let db: UserDb;
 
@@ -16,6 +18,7 @@ const NOW = new Date('2030-01-15T03:00:00.000Z');
 beforeAll(async () => {
   L = await import('@/lib/app/kanji-levels');
   P = await import('@/lib/library/practice');
+  Items = await import('@/lib/app/kanji-items');
   ({ prisma } = await import('@/lib/db/db'));
   db = (await import('@/lib/db/user-db')).userDb(await createTestUser(prisma, 'learner'));
 });
@@ -73,6 +76,23 @@ describe('Kho chung kanji levels (KJ5)', () => {
     expect(made.every((k) => k.srs?.state === 0)).toBe(true);
 
     expect(await L.takeKanjiLevel(db, 'N4', NOW)).toEqual({ added: 0, had: size });
+  });
+
+  it('reads again when another request made one of the cards a moment before', async () => {
+    const level = await L.kanjiLevel(db, 'N5');
+    const first = level.kanji[0].kanji;
+    // The read sees no card; by the write, Ôn nhanh in another tab has made one.
+    const stale = vi.spyOn(Items, 'ownedKanji').mockImplementationOnce(async () => {
+      await Items.createKanjiItems(db, [level.kanji[0]], NOW);
+      return new Set();
+    });
+    expect(await L.takeKanjiLevel(db, 'N5', NOW)).toEqual({
+      added: level.kanji.length - 1,
+      had: 1,
+    });
+    expect(stale).toHaveBeenCalledTimes(2);
+    expect(await db.item.count({ where: { kind: 'KANJI', expression: first } })).toBe(1);
+    stale.mockRestore();
   });
 
   it('tells a level apart from anything else', () => {
