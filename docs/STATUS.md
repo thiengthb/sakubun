@@ -8,13 +8,13 @@ Lịch sử nằm trong git, PR và `docs/roadmap.md`, không ghi ở đây. C�
 ## Đang ở đâu
 
 Luyện dịch R1–R4 và Kaiwa (a)–(d) đã xong. Kanji (`docs/plans/2026-11-08-kanji.md`, đã duyệt): KJ1 và
-nghĩa Việt (KJ1b) xong; KJ2 xong (#260); KJ3 ở PR, KJ4 và KJ5 đã làm xong, mở PR lần lượt; còn KJ6–KJ7.
+nghĩa Việt (KJ1b) xong; KJ2 (#260) và KJ3 (#261) xong; KJ4 ở PR; KJ5–KJ7 đã làm xong, mở PR lần lượt.
 
 ## Đang làm
 
-| Bước                                                                | Nhánh                          | Phiên                                           |
-| ------------------------------------------------------------------- | ------------------------------ | ----------------------------------------------- |
-| KJ3: thẻ kanji trong Ôn nhanh (nhận diện), chữ mới theo từ đang học | `claude/project-thread-2ogyjr` | thread "Gom và hoàn thiện việc dang dở Sakubun" |
+| Bước                                             | Nhánh                          | Phiên                                           |
+| ------------------------------------------------ | ------------------------------ | ----------------------------------------------- |
+| KJ4: viết kanji từng nét, máy chấm gợi ý mức nhớ | `claude/project-thread-2ogyjr` | thread "Gom và hoàn thiện việc dang dở Sakubun" |
 
 ## Vừa xong
 

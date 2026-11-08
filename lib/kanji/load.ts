@@ -15,3 +15,13 @@ export function kanjiCatalog(): Promise<KanjiEntry[]> {
   ]).then(([rows, meanings, radicals]) => buildKanjiCatalog(rows, meanings, radicals));
   return cached;
 }
+
+let strokes: Promise<Record<string, string[]>> | null = null;
+
+/** KanjiVG's strokes of each Jōyō kanji, in order, as SVG path data in a 109 × 109 box (KJ4). */
+export function kanjiStrokes(): Promise<Record<string, string[]>> {
+  strokes ??= readFile(path.join(process.cwd(), 'data/kanji/strokes.json'), 'utf8').then(
+    (text) => JSON.parse(text) as Record<string, string[]>,
+  );
+  return strokes;
+}

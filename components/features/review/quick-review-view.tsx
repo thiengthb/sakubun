@@ -47,6 +47,10 @@ function retryCard(card: QuickCard): QuickCard {
 /** A flip card or a kanji card: answered by showing the back, then graded 1-4. */
 const flips = (card: QuickCard | undefined) => card?.mode === 'flip' || card?.mode === 'kanji';
 
+/** A kanji write card (KJ4): answered by writing it on the pad, which then shows the back. */
+const writes = (card: QuickCard | undefined) =>
+  card?.mode === 'kanji' && card.face.prompt === 'write';
+
 const KIND_WORDS: [QuickCard['kind'], string][] = [
   ['GRAMMAR', 'ngữ pháp'],
   ['VOCAB', 'từ vựng'],
@@ -72,13 +76,18 @@ function KeyHints({
   picked,
   revealed,
   practice,
+  suggested,
 }: {
   card: QuickCard;
   intro: boolean;
   picked: string | null;
   revealed: boolean;
   practice: boolean;
+  /** The write pad's rating, which Enter then gives. */
+  suggested: RatingValue | null;
 }) {
+  // Writing on the pad has no key.
+  if (!intro && !revealed && writes(card)) return null;
   const keys: [string, string][] = intro
     ? [['Enter', 'đã xem']]
     : card.mode === 'cloze'
@@ -93,7 +102,7 @@ function KeyHints({
               ['2', 'Khó'],
               ['3', 'Nhớ'],
               ['4', 'Dễ'],
-              ['Enter', 'Nhớ'],
+              ['Enter', GRADES.find((g) => g.rating === (suggested ?? 3))!.label],
             ]
           : [['Space', 'xem đáp án']];
   return (
@@ -172,6 +181,8 @@ export function QuickReviewView({
   const [index, setIndex] = useState(0);
   const [picked, setPicked] = useState<string | null>(null);
   const [revealed, setRevealed] = useState(false);
+  // A write card's rating from the pad: the grade Enter gives and the one the bar puts first.
+  const [suggested, setSuggested] = useState<RatingValue | null>(null);
   // A cloze pick the server never recorded. The answer is already on screen, so the same pick is
   // sent again rather than reopening the choices (a second pick would grade with the answer known).
   const [unsent, setUnsent] = useState<CardAnswer | null>(null);
@@ -228,6 +239,7 @@ export function QuickReviewView({
     }
     setPicked(null);
     setRevealed(false);
+    setSuggested(null);
     setUnsent(null);
   };
 
@@ -251,12 +263,19 @@ export function QuickReviewView({
   };
 
   const graded = card?.mode === 'cloze' && picked !== null && (practice || results.length > index);
-  const showReveal = flips(card) && !revealed && !intro;
+  const showReveal = flips(card) && !writes(card) && !revealed && !intro;
+  const written = (rating: RatingValue) => {
+    setSuggested(rating);
+    setRevealed(true);
+  };
+  const good = suggested ?? 3;
   const showGrade = flips(card) && revealed && !practice && !intro;
   // A practice flip is not graded: once its answer is shown, the learner moves on.
   const showNext = graded || (flips(card) && revealed && practice);
   const practiceNext = () => {
-    if (retry && flips(card)) setRetry({ ...retry, right: [...retry.right, true] });
+    // A practice flip counts as right; a written one as the pad found it.
+    const right = !writes(card) || (suggested ?? 1) > 1;
+    if (retry && flips(card)) setRetry({ ...retry, right: [...retry.right, right] });
     next();
   };
 
@@ -277,8 +296,9 @@ export function QuickReviewView({
         else if (showReveal) setRevealed(true);
         else if (showNext) practiceNext();
         else if (unsent) resend();
-        // A focused grade button handles its own Enter; otherwise Enter means "Nhớ".
-        else if (showGrade && !(e.target instanceof HTMLButtonElement)) grade(3);
+        // A focused grade button handles its own Enter; otherwise Enter means "Nhớ", or the pad's
+        // rating on a write card.
+        else if (showGrade && !(e.target instanceof HTMLButtonElement)) grade(good);
         else return;
       } else return;
       e.preventDefault();
@@ -354,6 +374,8 @@ export function QuickReviewView({
               showFurigana={showFurigana}
               tts={tts}
               onPick={pick}
+              suggested={suggested}
+              onWritten={written}
             />
           )}
         </div>
@@ -367,6 +389,7 @@ export function QuickReviewView({
               picked={picked}
               revealed={revealed}
               practice={practice}
+              suggested={suggested}
             />
           )}
           {intro && (
@@ -396,10 +419,10 @@ export function QuickReviewView({
                 <Button
                   key={rating}
                   size="lg"
-                  variant={rating === 3 ? 'default' : 'outline'}
-                  className={cn('sm:min-w-32', tone)}
+                  variant={rating === good ? 'default' : 'outline'}
+                  className={cn('sm:min-w-32', rating !== good && tone)}
                   disabled={isPending}
-                  aria-keyshortcuts={rating === 3 ? '3 Enter' : String(rating)}
+                  aria-keyshortcuts={rating === good ? `${rating} Enter` : String(rating)}
                   onClick={() => grade(rating)}
                 >
                   {label}

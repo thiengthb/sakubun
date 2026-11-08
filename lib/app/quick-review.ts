@@ -11,7 +11,7 @@ import {
 import { answerSurface, buildCloze, type ClozeChoice, type ClozeExample } from '@/lib/domain/cloze';
 import { CARD_STATE, type QueueKind } from '@/lib/domain/queue';
 import type { KanjiEntry } from '@/lib/kanji/catalog';
-import { kanjiCatalog } from '@/lib/kanji/load';
+import { kanjiCatalog, kanjiStrokes } from '@/lib/kanji/load';
 import {
   isRemembered,
   ratingForAnswer,
@@ -55,6 +55,16 @@ interface QuickCardBase {
 
 /** The back of a kanji card (KJ3): the readings for reference, and the words that use it. */
 export interface KanjiFace {
+  /**
+   * What the front asks (KJ4): to recognise the glyph, or to write it from its Hán Việt, meaning
+   * and a word with the kanji left blank. Writing takes turns with recognising once the kanji has
+   * been met, when Cài đặt keeps handwriting on.
+   */
+  prompt: 'recognize' | 'write';
+  /** KanjiVG's strokes in order (SVG path data, 109 × 109), drawn on the back and graded on the pad. */
+  paths: string[];
+  /** One of the learner's words with this kanji as a blank (□済), to cue the writing; null if none. */
+  cue: string | null;
   strokes: number;
   on: string[];
   kun: string[];
@@ -213,10 +223,17 @@ const KANJI_WORDS = 4;
 
 // The back of each kanji card: the catalog's readings, radical and parts, and up to four words of
 // the learner's that use it, the started ones first.
-async function kanjiFaces(db: UserDb, chars: string[]): Promise<Map<string, KanjiFace>> {
-  if (chars.length === 0) return new Map();
-  const [catalog, words] = await Promise.all([
+async function kanjiFaces(
+  db: UserDb,
+  cards: { expression: string; reps: number }[],
+  handwriting: boolean,
+): Promise<Map<string, KanjiFace>> {
+  if (cards.length === 0) return new Map();
+  const chars = cards.map((c) => c.expression);
+  const repsOf = new Map(cards.map((c) => [c.expression, c.reps]));
+  const [catalog, paths, words] = await Promise.all([
     kanjiCatalog(),
+    kanjiStrokes(),
     db.item.findMany({
       where: {
         kind: VOCAB_KIND,
@@ -243,10 +260,18 @@ async function kanjiFaces(db: UserDb, chars: string[]): Promise<Map<string, Kanj
         .sort((a, b) => Number(started(b)) - Number(started(a)))
         .slice(0, KANJI_WORDS)
         .map(({ expression, reading, meaningVi }) => ({ expression, reading, meaningVi }));
+      const strokes = paths[char] ?? [];
+      const reps = repsOf.get(char) ?? 0;
+      // A kanji is met first by sight; after that writing takes every other turn.
+      const write = handwriting && reps > 0 && reps % 2 === 1 && strokes.length > 0;
+      const cueWord = using.find((w) => w.expression.length > 1);
       return [
         [
           char,
           {
+            prompt: write ? 'write' : 'recognize',
+            paths: strokes,
+            cue: cueWord ? cueWord.expression.replaceAll(char, '□') : null,
             strokes: k.strokes,
             on: k.on,
             kun: k.kun,
@@ -268,8 +293,7 @@ export async function getQuickReview(
   const settings = await getSettings(db);
   const queue = await getQueue(db, now, limit, { kanji: true });
   const ids = queue.cards.map((c) => c.id);
-  const kanjiChars = queue.cards.filter((c) => c.kind === KANJI_KIND).map((c) => c.expression);
-  const [items, states, pool, openJlpt, kaiwa, faces] = await Promise.all([
+  const [items, states, pool, openJlpt, kaiwa] = await Promise.all([
     db.item.findMany({
       where: { id: { in: ids } },
       select: { id: true, hanviet: true, enrichment: true, notes: true },
@@ -278,10 +302,16 @@ export async function getQuickReview(
     quizPool(),
     openJlptExamples(),
     learnerKaiwa(db),
-    kanjiFaces(db, kanjiChars),
   ]);
   const itemById = new Map(items.map((i) => [i.id, i]));
   const srsById = new Map(states.map((s) => [s.itemId, s]));
+  const faces = await kanjiFaces(
+    db,
+    queue.cards
+      .filter((c) => c.kind === KANJI_KIND)
+      .map((c) => ({ expression: c.expression, reps: srsById.get(c.id)?.reps ?? 0 })),
+    settings.kanjiHandwriting,
+  );
 
   const cards = queue.cards.flatMap((queued): QuickCard[] => {
     const item = itemById.get(queued.id)!;
