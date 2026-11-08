@@ -13,6 +13,7 @@ import {
   Languages,
   List,
   MessagesSquare,
+  PenLine,
   TextCursorInput,
   TrendingUp,
   UserRound,
@@ -65,6 +66,7 @@ export const RESOURCE_TABS: StoredTabSet = {
   items: [
     { value: 'grammar', label: 'Ngữ pháp', icon: BookText },
     { value: 'vocab', label: 'Từ vựng', icon: Languages },
+    { value: 'kanji', label: 'Kanji', icon: PenLine },
     { value: 'groups', label: 'Nhóm', icon: FolderOpen },
   ],
   label: 'Chọn kho',

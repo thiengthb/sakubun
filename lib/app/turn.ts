@@ -10,7 +10,7 @@ import { AVOID_CHECKED, AVOID_SHOWN, sceneFor, usedBefore } from '@/lib/domain/v
 import { checkStage, finalRating, nextTurnStatus, parseRating } from '@/lib/domain/turn';
 import { exampleFromNotes } from '@/lib/import/openjlpt';
 import { parseEnrichment } from '@/lib/library/enrichment';
-import { asItemKind, type ItemKind } from '@/lib/library/item-kinds';
+import { asItemKind, isKanji, type ItemKind } from '@/lib/library/item-kinds';
 import { getSettings } from '@/lib/library/practice';
 import { ERROR_TAGS, type ErrorTag } from '@/lib/session/error-tags';
 import { JLPT_LEVELS, type JlptLevel, type Settings } from '@/lib/settings/schema';
@@ -134,6 +134,9 @@ async function findItem(
   const item = await db.item.findUnique({ where: { id: itemId }, select: ITEM_WITH_SRS });
   if (!item || !item.srs) return err('Unknown itemId. Call next_turn, or lookup to find the item.');
   if (item.suspended) return err('This item is suspended. Call next_turn for another one.');
+  if (isKanji(item.kind)) {
+    return err('This is a kanji card; it is reviewed in Ôn nhanh. Call next_turn for a sentence item.');
+  }
   return ok({ ...item, srs: item.srs });
 }
 

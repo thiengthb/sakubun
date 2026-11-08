@@ -94,6 +94,11 @@ describe('settingsSchema', () => {
     expect(migrated.grammarLevel).toBe('N4');
   });
 
+  it('starts with 5 new kanji a day and handwriting on (KJ2)', () => {
+    expect(DEFAULT_SETTINGS).toMatchObject({ dailyNewKanji: 5, kanjiHandwriting: true });
+    expect(settingsPatchSchema.safeParse({ dailyNewKanji: 21 }).success).toBe(false);
+  });
+
   it('patch schema accepts a single field', () => {
     const result = settingsPatchSchema.safeParse({ register: 'keigo' });
     expect(result.success).toBe(true);

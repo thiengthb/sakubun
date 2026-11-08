@@ -7,7 +7,7 @@ import {
   type StudiedToday,
 } from '@/lib/domain/queue';
 import { getSettings } from '@/lib/library/practice';
-import { GRAMMAR_KIND, VOCAB_KIND, asItemKind } from '@/lib/library/item-kinds';
+import { GRAMMAR_KIND, ITEM_KINDS, KANJI_KIND, VOCAB_KIND, asItemKind } from '@/lib/library/item-kinds';
 import { levelsFrom, pickNewItems } from '@/lib/domain/new-items';
 import type { JlptLevel, Settings } from '@/lib/settings/schema';
 import { studyDayStart } from '@/lib/srs/select';
@@ -74,7 +74,7 @@ export async function studiedToday(
   const counts: StudiedToday = { newGrammar: 0, newVocab: 0, reviews: 0 };
   for (const log of logs) {
     if (log.state === CARD_STATE.REVIEW) counts.reviews++;
-    if (log.state !== 0 || !log.item) continue;
+    if (log.state !== 0 || !log.item || log.item.kind === KANJI_KIND) continue;
     if (log.item.kind === VOCAB_KIND) counts.newVocab++;
     else counts.newGrammar++;
   }
@@ -129,7 +129,8 @@ export async function getQueue(db: UserDb, now: Date = new Date(), limit?: numbe
     newVocab: settings.dailyNewVocab,
     maxReviews: settings.maxReviewsPerDay,
   };
-  const live = { suspended: false };
+  // Grammar and vocabulary only: kanji cards have their own queue in Ôn nhanh (KJ3).
+  const live = { suspended: false, kind: { in: [...ITEM_KINDS] } };
   const select = { state: true, due: true, item: { select: ITEM_FIELDS } } as const;
 
   // Learning steps are fetched whole and reviews only up to today's allowance, so a backlog of

@@ -103,6 +103,9 @@ export const settingsSchema = z.object({
   topics: z.array(z.string().trim().min(1)).max(20).default([]),
   dailyNewGrammar: z.number().int().min(0).max(20).default(3),
   dailyNewVocab: z.number().int().min(0).max(50).default(15),
+  // KJ2: new kanji a day, and whether a kanji card may ask for the character to be drawn.
+  dailyNewKanji: z.number().int().min(0).max(20).default(5),
+  kanjiHandwriting: z.boolean().default(true),
   maxNewPerSentence: z.number().int().min(1).max(5).default(1),
   maxReviewsPerDay: z.number().int().min(10).max(500).default(100),
   vocabPerSentence: z.number().int().min(0).max(5).default(2),
