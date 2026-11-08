@@ -118,7 +118,9 @@
   --text-footnote--line-height: 1.4;
   --text-subhead--line-height: 1.4;
   --text-callout--line-height: 1.45;
-  --text-body--line-height: 1.47;
+  /* 25px, the thienui 1.47 at 17px as a whole pixel: 17 x 1.47 = 24.99 left every content block a
+     fraction off and pinned footers and equal rows a pixel apart. */
+  --text-body--line-height: 1.5625rem;
   --text-title3--line-height: 1.3;
   --text-title2--line-height: 1.25;
   --text-title1--line-height: 1.18;
@@ -343,50 +345,54 @@
    Japanese; a role names a decision (what the text is), not a size. Sizes come from the thienui
    Dynamic Type scale above (D5: body 17px straight from thienui), so sakubun follows when it moves.
    Three roles are plain scale classes: body = text-body (17px), ui = text-sm (14px, controls, table
-   cells), caption = text-xs (12px, meta). The rest are utilities here. */
+   cells), caption = text-xs (12px, meta). The rest are utilities here. Every line height is a whole
+   pixel: a ratio such as 28 x 1.18 = 33.04px leaves the rest of the page a fraction off. */
 @utility text-display {
   font-size: var(--text-large-title);
-  line-height: var(--leading-large-title);
+  line-height: 2.25rem;
   font-weight: 700;
   letter-spacing: var(--tracking-tight);
 }
 @utility text-title {
   font-size: var(--text-title3);
-  line-height: var(--leading-title3);
+  /* Phone: one 20px line, so the title block (trail over title) fits the 36px header row. */
+  line-height: 1.25rem;
   font-weight: 700;
   letter-spacing: var(--tracking-snug);
   @media (width >= 48rem) {
     font-size: var(--text-title1);
-    line-height: var(--leading-title1);
+    line-height: 2.0625rem;
     letter-spacing: var(--tracking-tight);
   }
 }
 @utility text-heading {
   font-size: var(--text-body);
-  line-height: 1.4;
+  line-height: 1.5rem;
   font-weight: 600;
 }
 /* Japanese reads larger than Vietnamese in the same role: a many-stroke kanji fills the box of one
    Latin letter. jp-body keeps a tall line so furigana has room. */
 @utility text-jp-hero {
   font-size: 2rem;
-  line-height: 1.6;
+  line-height: 3.25rem;
   font-weight: 500;
   @media (width >= 48rem) {
     font-size: 2.5rem;
+    line-height: 4rem;
   }
 }
 @utility text-jp-title {
   font-size: 1.5rem;
-  line-height: 1.4;
+  line-height: 2.125rem;
   font-weight: 600;
   @media (width >= 48rem) {
     font-size: 1.75rem;
+    line-height: 2.5rem;
   }
 }
 @utility text-jp-body {
   font-size: 1.125rem;
-  line-height: 1.9;
+  line-height: 2.125rem;
 }
 
 /* The hover lookup (components/common/word-lookup.tsx): words with a meaning get a dotted underline,

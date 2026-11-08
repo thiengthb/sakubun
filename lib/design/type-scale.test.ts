@@ -120,5 +120,13 @@ describe('Typography type scale (nuc-platform/12-ui-layout-standard.md §typogra
     const missing = roles.filter((r) => !new RegExp(`@utility text-${r} \\{`).test(css));
     expect(missing).toEqual([]);
     expect(css, 'body role = the thienui 17px token').toMatch(/--text-body: 1\.0625rem;/);
+    // A ratio line height (1.47 at 17px = 24.99px) leaves every block below it a fraction of a pixel
+    // off: pinned footers and equal rows then miss by one. Roles set whole-pixel rem values.
+    const roleBlocks = css.match(/@utility text-[a-z-]+ \{[\s\S]*?\n\}/g) ?? [];
+    const ratio = roleBlocks.flatMap((b) =>
+      [...b.matchAll(/line-height: ([^;]+);/g)].map((m) => m[1]).filter((v) => !/rem$/.test(v)),
+    );
+    expect(ratio, 'role line heights must be rem').toEqual([]);
+    expect(css).toMatch(/--text-body--line-height: 1\.5625rem;/);
   });
 });
