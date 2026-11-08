@@ -188,6 +188,8 @@ describe('MCP v2 token targets', () => {
     await call('kaiwa_list');
     await call('library_search', { query: 'N5' });
     await call('lookup', { query: 'ために' });
+    // Four kanji in the query, the most lookup describes (KJ5).
+    await call('lookup', { query: '経済政策' });
 
     const largest = Math.max(...sizes.values());
     report.push(

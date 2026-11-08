@@ -57,7 +57,7 @@ export function LibraryKanjiLevelView({
         missing > 0 && (
           <Button onClick={() => take.run(level)} disabled={take.isPending}>
             <Download aria-hidden />
-            {owned.size > 0 ? 'Lấy phần còn thiếu' : 'Lấy cả nhóm'}
+            {owned.size > 0 ? `Lấy ${missing} chữ còn thiếu` : `Lấy cả ${missing} chữ`}
           </Button>
         )
       }

@@ -62,10 +62,10 @@ for (const [width, height] of [
     await page.getByRole('searchbox', { name: 'Tìm trong N5 · Kanji' }).fill('');
     await shot(page, `kho-chung-kanji-n5-${width}`);
 
-    await page.getByRole('button', { name: 'Lấy cả nhóm' }).click();
+    await page.getByRole('button', { name: /^Lấy cả \d+ chữ$/ }).click();
     await expect(page.getByText(/^Đã thêm \d+ chữ/)).toBeVisible();
     await expect(page.locator('[data-slot="group-have"]')).toContainText('Đã có đủ');
-    await expect(page.getByRole('button', { name: 'Lấy cả nhóm' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: /^Lấy / })).toHaveCount(0);
     await expect(page.locator('[data-slot="kanji-tile"][data-owned]').first()).toBeVisible();
     await shot(page, `kho-chung-kanji-n5-da-lay-${width}`);
 

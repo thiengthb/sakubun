@@ -11,6 +11,7 @@ import {
   Layers,
   Library,
   MessagesSquare,
+  PenLine,
   Pencil,
   Plus,
   Settings,
@@ -58,6 +59,12 @@ const CRUMBS = {
     href: '/resources?tab=vocab',
     icon: Languages,
     description: 'Các từ vựng đã lưu.',
+  },
+  kanji: {
+    label: 'Kanji',
+    href: '/resources?tab=kanji',
+    icon: PenLine,
+    description: 'Các chữ kanji Jōyō: nghĩa, cách đọc, thành phần.',
   },
   groups: {
     label: 'Nhóm',
@@ -121,6 +128,7 @@ const PARENT: Partial<Record<BreadcrumbSection, BreadcrumbSection>> = {
   grammar: 'resources',
   vocab: 'resources',
   groups: 'resources',
+  kanji: 'resources',
 };
 
 /** A template page's trail above its h1: parents only, the page itself is the h1. */
