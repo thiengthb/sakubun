@@ -80,35 +80,45 @@ describe('Typography type scale (nuc-platform/12-ui-layout-standard.md §typogra
     ).toEqual([]);
   });
 
-  it('content reads at one size, 14px, the same as the controls', () => {
-    // thien's call (2026-10-24, reversing the 17px trial): content text is text-sm, like buttons,
-    // tabs and labels, so a page reads at one size. The baseline is set once, on the page shell and
-    // its skeleton, and the containers that hold content (card, table, dialog, sheet, accordion,
-    // tab panel) carry the same size.
+  it('content reads at 17px (text-body), controls and table cells at 14px', () => {
+    // UI v2 D5 (thien, 2026-11-08, reversing the 2026-10-24 14px call): content takes the thienui
+    // body size straight from the shared scale, so sakubun moves when thienui does. The baseline is
+    // set once, on the page shell and its skeleton, and on the containers that hold content (card,
+    // dialog, sheet, accordion, tab panel). Tables, breadcrumbs and controls stay at the ui role, 14px.
     const must: [string, RegExp][] = [
-      ['components/layout/page-shell.tsx', /pt-6 pb-6 text-sm'/],
-      ['components/layout/page-skeleton.tsx', /pt-6 pb-6 text-sm'/],
-      ['components/layout/page-chrome.ts', /page: '[^']*\btext-sm\b/],
+      ['components/layout/page-shell.tsx', /pt-6 pb-6 text-body'/],
+      ['components/layout/page-skeleton.tsx', /pt-6 pb-6 text-body'/],
+      ['components/layout/page-chrome.ts', /page: '[^']*\btext-body\b/],
+      ['components/layout/page-chrome.ts', /title: 'text-title\b/],
+      ['components/ui/card.tsx', /'group\/card [^']*\btext-body\b/],
+      ['components/ui/dialog.tsx', /bg-popover p-4 text-body /],
+      ['components/ui/sheet.tsx', /bg-clip-padding text-body /],
+      ['components/ui/accordion.tsx', /overflow-hidden text-body /],
+      ['components/ui/tabs.tsx', /'flex-1 text-body outline-none'/],
       ['components/layout/breadcrumbs.tsx', /<ol className="[^"]*\btext-sm\b/],
-      ['components/ui/card.tsx', /'group\/card [^']*\btext-sm\b/],
       ['components/ui/table.tsx', /'w-full caption-bottom text-sm'/],
-      ['components/ui/dialog.tsx', /bg-popover p-4 text-sm /],
-      ['components/ui/sheet.tsx', /bg-clip-padding text-sm /],
-      ['components/ui/accordion.tsx', /overflow-hidden text-sm /],
-      ['components/ui/tabs.tsx', /'flex-1 text-sm outline-none'/],
     ];
     const missing = must
       .filter(([file, re]) => !re.test(readFileSync(file, 'utf8')))
       .map(([f, re]) => `${f}  ${re}`);
-    expect(missing, 'These set the 14px content size; keep text-sm there:').toEqual([]);
+    expect(missing, 'These set the type roles (docs/ui-standard.md › Chữ); keep them:').toEqual([]);
   });
 
-  it('no 17px or 15px text (text-body, text-subhead) in the app', () => {
-    // The theme still defines these sizes; using them brings back two content sizes on one page.
-    const offenders = scan(/\btext-(?:body|subhead)\b/);
+  it('no off-role sizes: 15px and 16px theme sizes (text-subhead, text-callout) are not roles', () => {
+    // Roles: display, title, heading, body (text-body), ui (text-sm), caption (text-xs) and the three
+    // jp-* roles (app/globals.css). 15 and 16px sit between body and ui and read as a mistake.
+    const offenders = scan(/\btext-(?:subhead|callout)\b/);
     expect(
       offenders,
-      `Content is text-sm, headings text-base, meta text-xs. Replace:\n${offenders.join('\n')}`,
+      `Use a type role (docs/ui-standard.md › Chữ) instead:\n${offenders.join('\n')}`,
     ).toEqual([]);
+  });
+
+  it('every type role exists in app/globals.css', () => {
+    const css = readFileSync('app/globals.css', 'utf8');
+    const roles = ['display', 'title', 'heading', 'jp-hero', 'jp-title', 'jp-body'];
+    const missing = roles.filter((r) => !new RegExp(`@utility text-${r} \\{`).test(css));
+    expect(missing).toEqual([]);
+    expect(css, 'body role = the thienui 17px token').toMatch(/--text-body: 1\.0625rem;/);
   });
 });

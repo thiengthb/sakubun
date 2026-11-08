@@ -339,6 +339,56 @@
   }
 }
 
+/* Type roles (UI v2, docs/plans/2026-11-08-ui-v2.md › Chữ). Six for the interface, three for
+   Japanese; a role names a decision (what the text is), not a size. Sizes come from the thienui
+   Dynamic Type scale above (D5: body 17px straight from thienui), so sakubun follows when it moves.
+   Three roles are plain scale classes: body = text-body (17px), ui = text-sm (14px, controls, table
+   cells), caption = text-xs (12px, meta). The rest are utilities here. */
+@utility text-display {
+  font-size: var(--text-large-title);
+  line-height: var(--leading-large-title);
+  font-weight: 700;
+  letter-spacing: var(--tracking-tight);
+}
+@utility text-title {
+  font-size: var(--text-title3);
+  line-height: var(--leading-title3);
+  font-weight: 700;
+  letter-spacing: var(--tracking-snug);
+  @media (width >= 48rem) {
+    font-size: var(--text-title1);
+    line-height: var(--leading-title1);
+    letter-spacing: var(--tracking-tight);
+  }
+}
+@utility text-heading {
+  font-size: var(--text-body);
+  line-height: 1.4;
+  font-weight: 600;
+}
+/* Japanese reads larger than Vietnamese in the same role: a many-stroke kanji fills the box of one
+   Latin letter. jp-body keeps a tall line so furigana has room. */
+@utility text-jp-hero {
+  font-size: 2rem;
+  line-height: 1.6;
+  font-weight: 500;
+  @media (width >= 48rem) {
+    font-size: 2.5rem;
+  }
+}
+@utility text-jp-title {
+  font-size: 1.5rem;
+  line-height: 1.4;
+  font-weight: 600;
+  @media (width >= 48rem) {
+    font-size: 1.75rem;
+  }
+}
+@utility text-jp-body {
+  font-size: 1.125rem;
+  line-height: 1.9;
+}
+
 /* The hover lookup (components/common/word-lookup.tsx): words with a meaning get a dotted underline,
    the one whose card is open a brand tint. Drawn by the CSS Custom Highlight API, no extra DOM. */
 ::highlight(word-lookup) {

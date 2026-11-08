@@ -9,7 +9,7 @@
 // page, title over meta on a top page).
 export const PAGE_CHROME = {
   // A flex column, not space-y: a tab's hidden panels after the open one would each keep a margin.
-  page: 'flex w-full min-w-0 max-w-6xl flex-col gap-6 pt-4 pb-10 text-sm md:gap-8 md:pt-6 md:pb-8',
+  page: 'flex w-full min-w-0 max-w-6xl flex-col gap-6 pt-4 pb-10 text-body md:gap-8 md:pt-6 md:pb-8',
   header: 'space-y-3',
   /** Laptop only, nested pages: the trail line above the title. */
   trail: 'flex h-4 min-w-0 items-center max-md:hidden',
@@ -19,7 +19,7 @@ export const PAGE_CHROME = {
   block: 'min-w-0 flex-1',
   /** Phone only: the trail inside the title block, above the title. */
   phoneTrail: 'mb-1 flex h-4 min-w-0 items-center md:hidden',
-  title: 'text-lg leading-5 font-extrabold break-words md:text-2xl md:leading-tight',
+  title: 'text-title break-words',
   meta: 'text-xs leading-4 text-muted-foreground md:mt-2',
   /** Phone, nested page: the trail holds the block's small line, so the meta drops below the row. */
   phoneMeta: 'text-xs leading-4 text-muted-foreground md:hidden',
@@ -46,8 +46,8 @@ export const DETAIL_CHROME = {
   phoneTrail: 'flex min-w-0 flex-1 items-center',
   titleRow: 'flex items-start gap-4',
   titleBlock: 'min-w-0 flex-1 space-y-2 md:space-y-3',
-  title: 'text-2xl leading-tight font-extrabold break-words md:text-3xl',
-  subtitle: 'space-y-1 text-base',
+  title: 'text-jp-title break-words',
+  subtitle: 'space-y-1 text-body',
   /** Laptop only: actions and page icons beside the title. */
   side: 'flex shrink-0 items-center gap-2 max-md:hidden',
   facts:
