@@ -1,6 +1,7 @@
 import type { UserDb } from '@/lib/db/user-db';
 import { loadStarterDeck, type StarterItem } from '@/lib/import/starter-deck';
 import { addItems, VOCAB_KIND } from '@/lib/library/practice';
+import { ITEM_KINDS } from '@/lib/library/item-kinds';
 
 // Vietnamese meanings for the words of a Kaiwa script (phase 8, K5): the learner's own items first,
 // then OpenJLPT's Vietnamese meanings from data/openjlpt. No outside service. Once the shared library
@@ -50,7 +51,8 @@ export async function lookupWords(
   if (keys.length === 0) return {};
   const [mine, vocab] = await Promise.all([
     db.item.findMany({
-      where: { expression: { in: [...keys] } },
+      // A kanji card (KJ3) is not a word: 日 alone is looked up in OpenJLPT.
+      where: { expression: { in: [...keys] }, kind: { in: [...ITEM_KINDS] } },
       select: {
         id: true,
         expression: true,

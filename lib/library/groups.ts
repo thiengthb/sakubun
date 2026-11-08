@@ -1,5 +1,5 @@
 import type { UserDb } from '@/lib/db/user-db';
-import { GRAMMAR_KIND, VOCAB_KIND } from '@/lib/library/item-kinds';
+import { GRAMMAR_KIND, ITEM_KINDS, VOCAB_KIND } from '@/lib/library/item-kinds';
 import { cleanText, cleanTextOrNull } from '@/lib/core/text';
 import { groupTextError } from '@/lib/library/group-limits';
 import { MAX_LISTED_ITEMS } from '@/lib/library/item-limits';
@@ -208,8 +208,9 @@ export async function getItemGroupPicker(
   db: UserDb,
   itemId: string,
 ): Promise<{ member: GroupSummary[]; addable: GroupSummary[] } | null> {
+  // Groups hold grammar and vocab; a kanji card (KJ3) joins none.
   const item = await db.item.findFirst({
-    where: { id: itemId },
+    where: { id: itemId, kind: { in: [...ITEM_KINDS] } },
     select: { kind: true },
   });
   if (!item) return null;

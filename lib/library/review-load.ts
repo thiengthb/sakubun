@@ -1,5 +1,5 @@
 import type { UserDb } from '@/lib/db/user-db';
-import { GRAMMAR_KIND, VOCAB_KIND } from '@/lib/library/item-kinds';
+import { GRAMMAR_KIND, KANJI_KIND, VOCAB_KIND } from '@/lib/library/item-kinds';
 import { getSettings } from '@/lib/library/practice';
 import { studyDayKey } from '@/lib/srs/streak';
 import { studyDayStart } from '@/lib/srs/select';
@@ -8,6 +8,7 @@ export interface ReviewLoadDay {
   date: string; // study day (the day starts at settings.dayCutoffHour, local time)
   grammarDue: number; // reviews coming due that day (overdue ones are counted on day 1)
   vocabDue: number;
+  kanjiDue: number; // kanji cards of Ôn nhanh (KJ3)
   newGrammarPlanned: number; // new patterns the daily limit will introduce that day
 }
 
@@ -46,6 +47,7 @@ export async function getReviewLoad(
     date: studyDayKey(new Date(start.getTime() + i * DAY + cutoff * 3_600_000), cutoff),
     grammarDue: 0,
     vocabDue: 0,
+    kanjiDue: 0,
     newGrammarPlanned: 0,
   }));
   const index = new Map(out.map((d, i) => [d.date, i]));
@@ -53,6 +55,7 @@ export async function getReviewLoad(
     const i = s.due < start ? 0 : (index.get(studyDayKey(s.due, cutoff)) ?? -1);
     if (i < 0) continue;
     if (s.item.kind === VOCAB_KIND) out[i].vocabDue++;
+    else if (s.item.kind === KANJI_KIND) out[i].kanjiDue++;
     else out[i].grammarDue++;
   }
   let left = newGrammarRemaining;

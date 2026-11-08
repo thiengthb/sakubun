@@ -21,11 +21,16 @@ const fold = (text: string) =>
   text.normalize('NFD').replace(/\p{M}/gu, '').replace(/đ/gi, 'd').toLowerCase();
 const hasTone = (text: string) => fold(text) !== text.toLowerCase();
 const KANJI_CHAR = /\p{Script=Han}/u;
+// On readings are written in katakana and Kun in hiragana; a learner types either for both.
+const shiftKana = (text: string, from: RegExp, by: number) =>
+  text.replace(from, (c) => String.fromCharCode(c.charCodeAt(0) + by));
+const toKatakana = (text: string) => shiftKana(text, /[\u3041-\u3096]/g, 0x60);
+const toHiragana = (text: string) => shiftKana(text, /[\u30a1-\u30f6]/g, -0x60);
 
 /**
  * Typing kanji finds each one typed (経済 shows 経 and 済). Otherwise the text is looked for in the
  * Hán Việt, the Vietnamese meaning and the readings; typed without tones it matches any tone, typed
- * with tones it matches only those.
+ * with tones it matches only those. Readings match in hiragana or katakana alike.
  */
 export function filterKanji(
   entries: readonly KanjiEntry[],
@@ -46,7 +51,7 @@ export function filterKanji(
     (e) =>
       keep(e.hanviet) ||
       keep(e.meaningVi) ||
-      e.on.some((r) => r.includes(q)) ||
-      e.kun.some((r) => r.replace(/[.-]/g, '').includes(q)),
+      e.on.some((r) => r.includes(toKatakana(q))) ||
+      e.kun.some((r) => r.replace(/[.-]/g, '').includes(toHiragana(q))),
   );
 }
