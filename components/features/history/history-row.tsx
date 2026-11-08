@@ -61,11 +61,13 @@ function Answer({
   rate?: number;
 }) {
   if (sentence.status === 'PENDING') {
-    return <span className="text-xs text-muted-foreground">Chưa trả lời</span>;
+    return <span className="h-4 text-xs text-muted-foreground">Chưa trả lời</span>;
   }
   if (!sentence.userAnswer) return null;
   return (
-    <span className="flex min-w-0 items-center gap-1 text-xs text-muted-foreground">
+    // One 16px line whatever the font: Japanese draws in the device's JP font, whose taller ascent and
+    // descent mixed with the Vietnamese label grew this line by a pixel, and rows must stay equal.
+    <span className="flex h-4 min-w-0 items-center gap-1 text-xs text-muted-foreground">
       <span className="shrink-0">Bạn:</span>
       {sentence.direction === 'VI_JA' ? (
         <SpokenLine
