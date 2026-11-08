@@ -4,6 +4,7 @@ import type { KanjiEntry } from '@/lib/kanji/catalog';
 import { rankNewKanji } from '@/lib/kanji/introduce';
 import { KANJI_KIND, VOCAB_KIND } from '@/lib/library/item-kinds';
 import { newSrsFields } from '@/lib/srs/srs';
+import type { JlptLevel } from '@/lib/settings/schema';
 
 // A learner's kanji cards (KJ3, KJ5): made from the catalog when Ôn nhanh brings a kanji in, or when
 // a whole level is taken from Kho chung. Either way they wait as new cards, and Ôn nhanh meets them
@@ -11,15 +12,22 @@ import { newSrsFields } from '@/lib/srs/srs';
 
 /** The kanji the learner already has a card for. */
 export async function ownedKanji(db: UserDb): Promise<Set<string>> {
-  const have = await db.item.findMany({ where: { kind: KANJI_KIND }, select: { expression: true } });
+  const have = await db.item.findMany({
+    where: { kind: KANJI_KIND },
+    select: { expression: true },
+  });
   return new Set(have.map((k) => k.expression));
 }
 
-/** The catalog ranked for this learner: kanji of the words they have started first. */
+/**
+ * The catalog ranked for this learner: kanji of the words they have started first, then from their
+ * vocabulary level (`from`).
+ */
 export async function rankedNewKanji(
   db: UserDb,
   catalog: readonly KanjiEntry[],
   have: ReadonlySet<string>,
+  from?: JlptLevel,
 ): Promise<KanjiEntry[]> {
   const started = await db.item.findMany({
     where: { kind: VOCAB_KIND, srs: { state: { not: CARD_STATE.NEW } } },
@@ -29,6 +37,7 @@ export async function rankedNewKanji(
     catalog,
     started.map((w) => w.expression),
     have,
+    from,
   );
 }
 

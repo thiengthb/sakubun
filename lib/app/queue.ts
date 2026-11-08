@@ -93,7 +93,8 @@ export async function studiedToday(
 
 // Ôn nhanh brings in new kanji itself (KJ3): every Jōyō kanji is waiting, and an Item is made for
 // the next ones only when today's allowance has room, so the library holds the kanji met so far.
-// Ranked by lib/kanji/introduce: the kanji of the words being learned come first.
+// Ranked by lib/kanji/introduce: the kanji of the words being learned come first, then the kanji
+// from the learner's vocabulary level.
 async function introduceKanji(
   db: UserDb,
   settings: Settings,
@@ -107,7 +108,7 @@ async function introduceKanji(
   if (need <= 0) return;
   const catalog = await kanjiCatalog();
   const have = await ownedKanji(db);
-  const next = (await rankedNewKanji(db, catalog, have)).slice(0, need);
+  const next = (await rankedNewKanji(db, catalog, have, settings.vocabLevel)).slice(0, need);
   // Two Ôn nhanh pages opened at once both bring them in: the other one's are kept.
   await createKanjiItems(db, next, now);
 }

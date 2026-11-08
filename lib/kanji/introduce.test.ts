@@ -36,6 +36,21 @@ describe('rankNewKanji', () => {
     expect(order(ranked)).toBe('経済験日一璽');
   });
 
+  it("starts from the learner's level, then the easier levels, then the harder ones", () => {
+    const levels = [
+      entry('日', 'N5', 1),
+      entry('冊', 'N4', 5),
+      entry('経', 'N3', 200),
+      entry('締', 'N2', 900),
+      entry('璽', null, null),
+      entry('勅', 'N1', 1500),
+    ];
+    expect(order(rankNewKanji(levels, [], new Set(), 'N3'))).toBe('経冊日締勅璽');
+    expect(order(rankNewKanji(levels, [], new Set(), 'N5'))).toBe('日冊経締勅璽');
+    // A started word still comes before the level.
+    expect(order(rankNewKanji(levels, ['日本'], new Set(), 'N2'))).toBe('日締経冊勅璽');
+  });
+
   it('leaves out kanji the learner already has', () => {
     expect(order(rankNewKanji(CATALOG, ['経済'], new Set(['経', '日'])))).toBe('済一験璽');
   });

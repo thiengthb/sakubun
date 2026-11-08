@@ -232,6 +232,13 @@ describe('getQueue with kanji (KJ3)', () => {
     expect(await db.item.count({ where: { kind: 'KANJI' } })).toBe(2);
   });
 
+  it("brings in kanji from the learner's vocabulary level once started words are covered", async () => {
+    await P.saveSettings(db, { dailyNewKanji: 2, dailyNewVocab: 0, vocabLevel: 'N2' });
+    await Q.getQueue(db, NOW, undefined, { kanji: true });
+    const made = await db.item.findMany({ where: { kind: 'KANJI' }, select: { level: true } });
+    expect(made.map((k) => k.level)).toEqual(['N2', 'N2']);
+  });
+
   it('brings in no kanji when the daily cap is 0', async () => {
     await P.saveSettings(db, { dailyNewKanji: 0 });
     expect(kanjiCards(await Q.getQueue(db, NOW, undefined, { kanji: true }))).toEqual([]);

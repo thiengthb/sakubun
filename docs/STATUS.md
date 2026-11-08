@@ -8,13 +8,13 @@ Lịch sử nằm trong git, PR và `docs/roadmap.md`, không ghi ở đây. C�
 ## Đang ở đâu
 
 Luyện dịch R1–R4 và Kaiwa (a)–(d) đã xong. Kanji (`docs/plans/2026-11-08-kanji.md`, đã duyệt): KJ1 và
-nghĩa Việt (KJ1b) xong; KJ2–KJ6 xong (#260–#264); KJ7 ở PR, là bước cuối của kế hoạch kanji.
+nghĩa Việt (KJ1b) xong; KJ2–KJ7 xong (#260–#265): kế hoạch kanji đã xong; chữ mới theo cấp từ vựng ở PR.
 
 ## Đang làm
 
-| Bước                       | Nhánh                          | Phiên                                           |
-| -------------------------- | ------------------------------ | ----------------------------------------------- |
-| KJ7: trang Bộ thủ (214 bộ) | `claude/project-thread-2ogyjr` | thread "Gom và hoàn thiện việc dang dở Sakubun" |
+| Bước                                           | Nhánh                          | Phiên                                           |
+| ---------------------------------------------- | ------------------------------ | ----------------------------------------------- |
+| Kanji mới bắt đầu từ cấp từ vựng trong Cài đặt | `claude/project-thread-2ogyjr` | thread "Gom và hoàn thiện việc dang dở Sakubun" |
 
 ## Vừa xong
 
@@ -25,7 +25,6 @@ nghĩa Việt (KJ1b) xong; KJ2–KJ6 xong (#260–#264); KJ7 ở PR, là bước
 
 1. **Hiện lại "N5 · Ngữ pháp"**: trang Quản trị, mục "Đã ẩn khỏi Kho chung", bấm Hiện.
 2. **Thử chia sẻ kịch bản** trên NUC: chia sẻ, mở link ở cửa sổ ẩn danh, Lấy về bằng tài khoản thứ hai (`kai`); phần MCP Claude đã thử, chạy đúng.
-3. **Kanji mới theo cấp?** Hiện chữ mới đi theo từ đang học, hết thì từ N5 lên; có nên bắt đầu ở cấp đang học (N2)?
 
 ## Việc nhỏ còn treo
 
