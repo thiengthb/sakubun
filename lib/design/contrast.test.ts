@@ -73,6 +73,15 @@ const TEXT_PAIRS: [string, string, string][] = [
   ['info', 'card', 'easy/mastered text in a card'],
   ['destructive', 'background', 'destructive action text'],
   ['destructive', 'card', 'destructive action text in a card'],
+  ['kind-grammar', 'background', 'the Ngữ pháp kind chip on the page'],
+  ['kind-grammar', 'card', 'the Ngữ pháp kind chip in a card'],
+  ['kind-grammar', 'kind-grammar-wash', 'the Ngữ pháp label on its own wash'],
+  ['kind-vocab', 'background', 'the Từ vựng kind chip on the page'],
+  ['kind-vocab', 'card', 'the Từ vựng kind chip in a card'],
+  ['kind-vocab', 'kind-vocab-wash', 'the Từ vựng label on its own wash'],
+  ['kind-kanji', 'background', 'the Kanji kind chip on the page'],
+  ['kind-kanji', 'card', 'the Kanji kind chip in a card'],
+  ['kind-kanji', 'kind-kanji-wash', 'the Kanji label on its own wash'],
 ];
 
 const GRAPHIC_PAIRS: [string, string, string][] = [

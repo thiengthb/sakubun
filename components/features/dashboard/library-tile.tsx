@@ -24,11 +24,11 @@ export function LibraryTile({
       note={
         <span className="inline-flex flex-wrap items-center gap-x-3">
           <span className="inline-flex items-center gap-1.5">
-            <span className="size-2 rounded-full bg-info" aria-hidden />
+            <span className="size-2 rounded-full bg-kind-grammar" aria-hidden />
             {grammar} ngữ pháp
           </span>
           <span className="inline-flex items-center gap-1.5">
-            <span className="size-2 rounded-full bg-accent-brand/70" aria-hidden />
+            <span className="size-2 rounded-full bg-kind-vocab" aria-hidden />
             {vocab} từ vựng
           </span>
         </span>
@@ -36,8 +36,8 @@ export function LibraryTile({
       explain={explain}
     >
       <div className="flex h-1.5 overflow-hidden rounded-full bg-muted" aria-hidden>
-        <div className="bg-info" style={{ width: `${share(grammar)}%` }} />
-        <div className="bg-accent-brand/70" style={{ width: `${share(vocab)}%` }} />
+        <div className="bg-kind-grammar" style={{ width: `${share(grammar)}%` }} />
+        <div className="bg-kind-vocab" style={{ width: `${share(vocab)}%` }} />
       </div>
     </StatTile>
   );

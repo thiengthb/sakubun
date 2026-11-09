@@ -3,9 +3,10 @@ import { cn } from '@/lib/core/utils';
 import { GROUP_KIND_LABELS, type GroupKind } from '@/lib/library/group-kinds';
 
 // The same chip as an item's level and state on its detail page: Badge's outline, in the kind's colour.
+// Kind colours are their own tokens (--kind-*), never the ok/info status colours a grade uses.
 const KIND_CLASS: Record<GroupKind, string> = {
-  vocab: 'border-info/60 text-info',
-  grammar: 'border-ok/60 text-ok',
+  vocab: 'border-kind-vocab/60 text-kind-vocab',
+  grammar: 'border-kind-grammar/60 text-kind-grammar',
   mixed: 'text-muted-foreground',
 };
 
