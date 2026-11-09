@@ -94,8 +94,8 @@ words being learned, handwriting graded stroke by stroke; network per kanji, no 
 ## Phase 10: UI v2
 
 Plan approved by thien 2026-11-08 (`docs/plans/2026-11-08-ui-v2.md`): home is "Hôm nay" with one lead area,
-phone bottom tab bar, Onest, keep Clay, body 17px straight from thienui, Radix to Base UI all in U1. D6 (Kho chung
-vs own kho, the "Tài nguyên" name) is not decided: research first, thien picks before U4. Each phase ends with
+phone bottom tab bar, Onest, keep Clay, body 17px straight from thienui, Radix to Base UI all in U1. D6 decided after
+research: one "Kho" menu, Kho chung shown inside each screen, a copy only on study, edit or role-play. Each phase ends with
 thien reviewing before/after screenshots at 390 and 1440.
 
 | #   | Phase                                                                                      | Done when                                                  | Risk   | Status                   |
@@ -104,7 +104,7 @@ thien reviewing before/after screenshots at 390 and 1440.
 | U1  | Shell: `components/ui` to Base UI via thienui registry, AppShell, BottomNav, `/progress`   | thien walks 5 tabs on a real phone; thienui debt goes down | medium | Not started              |
 | U2  | Study session: card, answer options, grade bar, summary, prefetch, undo                    | keyboard e2e; next card under 400ms                        | high   | Not started              |
 | U3  | Hôm nay: hero, next step, newcomer level pick                                              | one lead area; newcomer reaches first card in 3 taps       | medium | Not started              |
-| U4  | Kho (after D6 research), Nhóm, review by group                                             | 0 hit areas under 24px; ui-standard debt goes down         | medium | Not started (D6 open)    |
+| U4  | Kho (D6: own + Kho chung in one place), Nhóm, review by group                              | 0 hit areas under 24px; ui-standard debt goes down         | medium | Not started              |
 | U5  | Hội thoại: list, reader with sticky player, edit, voices                                   | kaiwa e2e green; thien approves shots                      | medium | Not started              |
 | U6  | Kho chung, Ctrl K search                                                                   | search under 200ms on N5-N1 data                           | medium | Not started              |
 | U7  | Tiến độ, Cài đặt (autosave), sign-in, 404 and errors, Admin                                | thien approves shots, dark mode shot on every page         | medium | Not started              |
