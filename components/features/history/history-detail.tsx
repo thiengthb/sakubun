@@ -229,7 +229,11 @@ export function HistoryDetailPanel({
           // A click on another row of the timeline shows that turn instead of closing the panel.
           onInteractOutside={(e) => {
             const target = e.target instanceof Element ? e.target : null;
-            if (target?.closest('[data-history-row], [data-radix-popper-content-wrapper]'))
+            if (
+              target?.closest(
+                '[data-history-row], [data-floating], [data-radix-popper-content-wrapper]',
+              )
+            )
               e.preventDefault();
           }}
         >

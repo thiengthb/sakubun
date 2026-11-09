@@ -53,7 +53,7 @@ export function RootDocument({
             {/* Icons draw at 1.5, not lucide's 2: at 16px the default stroke read heavier than the
                 600-weight text beside it (thien, item detail round 2, docs/ui-standard.md). */}
             <LucideProvider strokeWidth={1.5}>
-              <TooltipProvider delayDuration={300}>{children}</TooltipProvider>
+              <TooltipProvider delay={300}>{children}</TooltipProvider>
             </LucideProvider>
           </MotionConfig>
           <Toaster position="bottom-center" />

@@ -3,7 +3,7 @@
 import { useRef, useState } from 'react';
 import { CircleHelp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/popover';
+import { Popover, PopoverContent } from '@/components/ui/popover';
 
 const CLOSE_DELAY = 150;
 
@@ -16,6 +16,7 @@ export type Shortcut = { keys: string[]; does: string };
 export function ShortcutsHelp({ shortcuts }: { shortcuts: readonly Shortcut[] }) {
   const [open, setOpen] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const button = useRef<HTMLButtonElement>(null);
   const show = (next: boolean) => {
     clearTimeout(timer.current);
     if (next) setOpen(true);
@@ -30,27 +31,27 @@ export function ShortcutsHelp({ shortcuts }: { shortcuts: readonly Shortcut[] })
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverAnchor asChild>
-        <Button
-          variant="outline"
-          size="icon"
-          aria-label="Phím tắt"
-          aria-expanded={open}
-          onPointerEnter={enter}
-          onPointerLeave={leave}
-          onFocus={() => show(true)}
-          onBlur={() => show(false)}
-          onClick={() => setOpen((o) => !o)}
-          // A phone has no keyboard to press them on, and its row of actions has no room to spare.
-          className="max-md:hidden"
-        >
-          <CircleHelp />
-        </Button>
-      </PopoverAnchor>
+      <Button
+        ref={button}
+        variant="outline"
+        size="icon"
+        aria-label="Phím tắt"
+        aria-expanded={open}
+        onPointerEnter={enter}
+        onPointerLeave={leave}
+        onFocus={() => show(true)}
+        onBlur={() => show(false)}
+        onClick={() => setOpen((o) => !o)}
+        // A phone has no keyboard to press them on, and its row of actions has no room to spare.
+        className="max-md:hidden"
+      >
+        <CircleHelp />
+      </Button>
       <PopoverContent
+        anchor={button}
         align="end"
         className="w-auto max-w-xs"
-        onOpenAutoFocus={(e) => e.preventDefault()}
+        initialFocus={false}
         onPointerEnter={enter}
         onPointerLeave={leave}
       >

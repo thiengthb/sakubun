@@ -454,7 +454,7 @@ test('mobile: a tap opens the (i) explanations and the ring tooltips', async ({ 
   const page = await context.newPage();
   await signIn(page);
   // The tooltip that is open now; one closing from the previous tap is still in the DOM.
-  const open = page.locator('[data-slot="tooltip-content"]:not([data-state="closed"])');
+  const open = page.locator('[data-slot="tooltip-content"][data-open]');
   await page.goto('/', { waitUntil: 'networkidle' });
 
   // Radix Tooltip alone opens on hover/focus only, so on a phone these were unreachable.

@@ -15,7 +15,6 @@ const STILL_ON_RADIX = [
   'components/ui/dialog.tsx',
   'components/ui/dropdown-menu.tsx',
   'components/ui/label.tsx',
-  'components/ui/popover.tsx',
   'components/ui/select.tsx',
   'components/ui/separator.tsx',
   'components/ui/sheet.tsx',
@@ -25,7 +24,6 @@ const STILL_ON_RADIX = [
   'components/ui/tabs.tsx',
   'components/ui/toggle-group.tsx',
   'components/ui/toggle.tsx',
-  'components/ui/tooltip.tsx',
 ];
 
 function sources(dir: string): string[] {
