@@ -13,8 +13,6 @@ const STILL_ON_RADIX = [
   'components/ui/select.tsx',
   'components/ui/sidebar.tsx',
   'components/ui/tabs.tsx',
-  'components/ui/toggle-group.tsx',
-  'components/ui/toggle.tsx',
 ];
 
 function sources(dir: string): string[] {
