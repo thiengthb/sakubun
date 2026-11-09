@@ -201,7 +201,7 @@ export function WordLookup() {
     const observer = new MutationObserver((records) => {
       const outside = records.some((r) => {
         const el = r.target instanceof Element ? r.target : r.target.parentElement;
-        return !el?.closest('[data-floating], [data-radix-popper-content-wrapper]');
+        return !el?.closest('[data-floating]');
       });
       if (outside) queueScan();
     });
