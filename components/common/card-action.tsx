@@ -1,10 +1,9 @@
 'use client';
 
 import type { ComponentProps, MouseEvent } from 'react';
-import Link from 'next/link';
 import type { LucideIcon } from 'lucide-react';
 import { Explain } from '@/components/common/explain';
-import { Button } from '@/components/ui/button';
+import { Button, ButtonLink } from '@/components/ui/button';
 import { cn } from '@/lib/core/utils';
 
 // A button on a card in a list (thien, 7.4): only its icon, so the card keeps its room for the
@@ -35,11 +34,16 @@ export function CardAction({
   return (
     <Explain text={label}>
       {href ? (
-        <Button variant="ghost" size="icon" className={classes} asChild>
-          <Link href={href} aria-label={label} onClick={(e) => e.stopPropagation()}>
-            <Icon aria-hidden />
-          </Link>
-        </Button>
+        <ButtonLink
+          href={href}
+          aria-label={label}
+          onClick={(e) => e.stopPropagation()}
+          variant="ghost"
+          size="icon"
+          className={classes}
+        >
+          <Icon aria-hidden />
+        </ButtonLink>
       ) : (
         <Button
           type="button"

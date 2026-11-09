@@ -1,6 +1,7 @@
 import * as React from 'react';
+import Link from 'next/link';
+import { Button as ButtonPrimitive } from '@base-ui/react/button';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { Slot } from 'radix-ui';
 
 import { cn } from '@/lib/core/utils';
 
@@ -66,20 +67,19 @@ const buttonVariants = cva(
   },
 );
 
+type ButtonVariantProps = VariantProps<typeof buttonVariants>;
+
+// Base UI's Button: a native <button> that defaults to type="button" (a form's send button says
+// type="submit"). A link that looks like a button is ButtonLink, never a Button rendered as <a>:
+// Base UI gives a Button button semantics, which a link must not have.
 function Button({
   className,
   variant = 'default',
   size = 'default',
-  asChild = false,
   ...props
-}: React.ComponentProps<'button'> &
-  VariantProps<typeof buttonVariants> & {
-    asChild?: boolean;
-  }) {
-  const Comp = asChild ? Slot.Root : 'button';
-
+}: ButtonPrimitive.Props & ButtonVariantProps) {
   return (
-    <Comp
+    <ButtonPrimitive
       data-slot="button"
       data-variant={variant}
       data-size={size}
@@ -89,4 +89,32 @@ function Button({
   );
 }
 
-export { Button, buttonVariants };
+/**
+ * A link that looks like a button. `disabled` keeps it in place but takes it out of reach of the
+ * pointer and the Tab key (a form's "Huỷ" while it saves): an <a> has no disabled state of its own.
+ * No click handler, so a server component can render it.
+ */
+function ButtonLink({
+  className,
+  variant = 'default',
+  size = 'default',
+  disabled = false,
+  ...props
+}: React.ComponentProps<typeof Link> & ButtonVariantProps & { disabled?: boolean }) {
+  return (
+    <Link
+      data-slot="button"
+      data-variant={variant}
+      data-size={size}
+      aria-disabled={disabled || undefined}
+      tabIndex={disabled ? -1 : undefined}
+      className={cn(
+        buttonVariants({ variant, size, className }),
+        'aria-disabled:pointer-events-none aria-disabled:opacity-50',
+      )}
+      {...props}
+    />
+  );
+}
+
+export { Button, ButtonLink, buttonVariants };

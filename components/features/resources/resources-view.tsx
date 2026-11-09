@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { BookText, Languages, Shapes } from 'lucide-react';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { PageTabs } from '@/components/common/page-tabs';
@@ -52,9 +51,7 @@ export function ResourcesView({
   // The kanji are the Jōyō list, not something a learner adds; their tab opens the radicals (KJ7).
   const action =
     tab === 'kanji' ? (
-      <ExpandingIconButton asChild icon={Shapes} label="Bộ thủ">
-        <Link href="/resources/radicals" />
-      </ExpandingIconButton>
+      <ExpandingIconButton href="/resources/radicals" icon={Shapes} label="Bộ thủ" />
     ) : tab === 'groups' ? (
       <AddButton href="/groups/new" />
     ) : (

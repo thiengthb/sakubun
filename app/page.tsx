@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import {
   Activity,
   ArrowRight,
@@ -20,7 +19,7 @@ import {
   StatTile,
 } from '@/components/features/dashboard/dashboard-charts';
 import { PageShell } from '@/components/layout/page-shell';
-import { Button } from '@/components/ui/button';
+import { ButtonLink } from '@/components/ui/button';
 import { EmptyState } from '@/components/common/empty-state';
 import { StateNotice } from '@/components/common/state-notice';
 import { AnalyticsTabs } from '@/components/features/dashboard/analytics-tabs';
@@ -66,11 +65,9 @@ export default async function HomePage() {
       icon={Plug}
       title="Kết nối Claude để bắt đầu luyện"
       action={
-        <Button asChild variant="outline" size="sm" className="shrink-0">
-          <Link href="/settings?tab=guide">
-            Xem hướng dẫn <ArrowRight aria-hidden />
-          </Link>
-        </Button>
+        <ButtonLink href="/settings?tab=guide" variant="outline" size="sm" className="shrink-0">
+          Xem hướng dẫn <ArrowRight aria-hidden />
+        </ButtonLink>
       }
     >
       Claude hoặc ChatGPT soạn câu và chấm bài; sakubun giữ kho và lịch ôn.

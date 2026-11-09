@@ -23,6 +23,7 @@
     "format": "prettier --write"
   },
   "dependencies": {
+    "@base-ui/react": "^1.9.0",
     "@better-auth/mcp": "^1.7.12",
     "@better-auth/oauth-provider": "^1.7.12",
     "@codemirror/autocomplete": "^6.20.3",

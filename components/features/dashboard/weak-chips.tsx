@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { Brain, RotateCcw, Tag, X, type LucideIcon } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { Badge, badgeVariants } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/core/utils';
 import { mergeWeakRows } from '@/lib/insights/weak-rows';
@@ -50,11 +50,14 @@ function Chip({ c, count }: { c: WeakChip; count: string }) {
     </>
   );
   return c.href ? (
-    <Badge asChild variant="outline" className={CHIP}>
-      <Link href={c.href} title={c.title}>
-        {body}
-      </Link>
-    </Badge>
+    <Link
+      href={c.href}
+      title={c.title}
+      data-slot="badge"
+      className={cn(badgeVariants({ variant: 'outline' }), CHIP)}
+    >
+      {body}
+    </Link>
   ) : (
     <Badge variant="outline" title={c.title} className={CHIP}>
       {body}
@@ -64,16 +67,19 @@ function Chip({ c, count }: { c: WeakChip; count: string }) {
 
 function More({ hidden, label, onOpen }: { hidden: number; label: string; onOpen: () => void }) {
   return (
-    <Badge asChild variant="outline" className={cn(CHIP, 'border-dashed')}>
-      <button
-        type="button"
-        onClick={onOpen}
-        aria-label={`Xem thêm ${hidden} mục: ${label}`}
-        className="text-muted-foreground tabular-nums"
-      >
-        +{hidden}
-      </button>
-    </Badge>
+    <button
+      type="button"
+      onClick={onOpen}
+      aria-label={`Xem thêm ${hidden} mục: ${label}`}
+      data-slot="badge"
+      className={cn(
+        badgeVariants({ variant: 'outline' }),
+        CHIP,
+        'border-dashed text-muted-foreground tabular-nums',
+      )}
+    >
+      +{hidden}
+    </button>
   );
 }
 

@@ -1,9 +1,8 @@
 'use client';
 
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowRight, Download } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button, ButtonLink } from '@/components/ui/button';
 import { useServerAction } from '@/components/common/use-server-action';
 import { takeGroupAction } from '@/app/library/actions';
 
@@ -26,11 +25,9 @@ export function StartFromLibrary({
           Lấy bộ {starter.name}
         </Button>
       )}
-      <Button asChild variant="outline">
-        <Link href="/library">
-          Mở Kho chung <ArrowRight aria-hidden />
-        </Link>
-      </Button>
+      <ButtonLink href="/library" variant="outline">
+        Mở Kho chung <ArrowRight aria-hidden />
+      </ButtonLink>
     </div>
   );
 }

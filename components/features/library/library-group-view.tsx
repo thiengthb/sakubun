@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
 import { Download, FolderOpen, SearchX, UserRound } from 'lucide-react';
 import { ParentCrumbs } from '@/components/layout/app-breadcrumbs';
 import { PageShell } from '@/components/layout/page-shell';
@@ -111,9 +110,11 @@ export function LibraryGroupView({
       }
       actions={
         group.myGroupId ? (
-          <ExpandingIconButton asChild icon={FolderOpen} label="Nhóm của bạn">
-            <Link href={`/groups/${group.myGroupId}`} />
-          </ExpandingIconButton>
+          <ExpandingIconButton
+            href={`/groups/${group.myGroupId}`}
+            icon={FolderOpen}
+            label="Nhóm của bạn"
+          />
         ) : (
           <Button onClick={() => take.run(group.id)} disabled={take.isPending}>
             <Download aria-hidden />

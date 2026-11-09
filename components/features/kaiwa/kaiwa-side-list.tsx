@@ -41,9 +41,7 @@ export function KaiwaSideList({
       <div className="flex items-center justify-between gap-2">
         <span className="text-sm text-muted-foreground">{scripts.length} kịch bản</span>
         <div className="flex items-center gap-1">
-          <ExpandingIconButton asChild icon={Globe} label="Kho chung">
-            <Link href="/library?tab=scripts" />
-          </ExpandingIconButton>
+          <ExpandingIconButton href="/library?tab=scripts" icon={Globe} label="Kho chung" />
           <CopyCommandButton
             command={WRITE_SCRIPT_COMMAND}
             label="Soạn với AI"

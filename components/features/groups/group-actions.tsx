@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { Pencil } from 'lucide-react';
 import type { GroupSummary } from '@/lib/library/groups';
 import { ExpandingIconButton } from '@/components/common/expanding-icon-button';
@@ -10,9 +9,5 @@ import { ExpandingIconButton } from '@/components/common/expanding-icon-button';
 
 /** The group page's secondary header action. */
 export function GroupEditButton({ group }: { group: GroupSummary }) {
-  return (
-    <ExpandingIconButton asChild icon={Pencil} label="Sửa">
-      <Link href={`/groups/${group.id}/edit`} />
-    </ExpandingIconButton>
-  );
+  return <ExpandingIconButton href={`/groups/${group.id}/edit`} icon={Pencil} label="Sửa" />;
 }

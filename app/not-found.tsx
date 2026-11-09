@@ -1,6 +1,5 @@
-import Link from 'next/link';
 import { BookOpen, FileQuestion, House } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { ButtonLink } from '@/components/ui/button';
 import { PageState } from '@/components/layout/page-state';
 
 export const metadata = { title: 'Không tìm thấy trang — sakubun' };
@@ -13,18 +12,14 @@ export default function NotFound() {
       description="Liên kết có thể đã cũ."
       action={
         <>
-          <Button size="lg" asChild>
-            <Link href="/">
-              <House />
-              Về trang chính
-            </Link>
-          </Button>
-          <Button size="lg" variant="outline" asChild>
-            <Link href="/resources">
-              <BookOpen />
-              Mở Tài nguyên
-            </Link>
-          </Button>
+          <ButtonLink href="/" size="lg">
+            <House />
+            Về trang chính
+          </ButtonLink>
+          <ButtonLink href="/resources" size="lg" variant="outline">
+            <BookOpen />
+            Mở Tài nguyên
+          </ButtonLink>
         </>
       }
     />

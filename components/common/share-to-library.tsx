@@ -1,10 +1,9 @@
 'use client';
 
 import { useState, type ReactNode } from 'react';
-import Link from 'next/link';
 import { Check, Copy, ExternalLink, Globe, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
+import { Button, ButtonLink } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -219,12 +218,10 @@ function ShareLink({ path }: { path: string }) {
           <Icon className={cn(copied && 'text-ok')} aria-hidden />
           {copied ? 'Đã chép' : 'Chép đường dẫn'}
         </Button>
-        <Button variant="outline" size="sm" asChild>
-          <Link href={path}>
-            <ExternalLink aria-hidden />
-            Mở trang chung
-          </Link>
-        </Button>
+        <ButtonLink href={path} variant="outline" size="sm">
+          <ExternalLink aria-hidden />
+          Mở trang chung
+        </ButtonLink>
       </div>
     </div>
   );
