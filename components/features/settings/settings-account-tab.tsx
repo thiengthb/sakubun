@@ -459,9 +459,7 @@ export function AccountTab({
           </div>
 
           <DialogFooter>
-            <DialogClose asChild>
-              <Button>Tôi đã lưu token</Button>
-            </DialogClose>
+            <DialogClose render={<Button />}>Tôi đã lưu token</DialogClose>
           </DialogFooter>
         </DialogContent>
       </Dialog>
