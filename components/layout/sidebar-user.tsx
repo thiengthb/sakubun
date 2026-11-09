@@ -69,6 +69,9 @@ export function SidebarUser({
       <DropdownMenuContent
         side={folded ? 'right' : 'top'}
         align={folded ? 'end' : 'start'}
+        // The block sits 8px from the window's edge, inside the usual 16px gutter: with the gutter
+        // the menu was pushed 8px right of the block it opens from (thien, U1 gate).
+        collisionPadding={8}
         className="min-w-56"
       >
         {/* On a phone the menu sits in the sidebar sheet, which closes with it, as the nav links do. */}

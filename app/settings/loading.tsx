@@ -1,8 +1,4 @@
-import {
-  FormFooterSkeleton,
-  PageSkeleton,
-  PageTabsSkeleton,
-} from '@/components/layout/page-skeleton';
+import { PageSkeleton, PageTabsSkeleton } from '@/components/layout/page-skeleton';
 import { Skeleton } from '@/components/ui/skeleton';
 
 // The Luyện tập tab is one card of rows (components/features/settings/setting-row.tsx): icon tile,
@@ -12,7 +8,7 @@ const CONTROL_WIDTHS = [220, 104, 104, 104, 260, 32, 280, 220];
 
 export default function Loading() {
   return (
-    <PageSkeleton template="form" title="Cài đặt" tabs={<PageTabsSkeleton set="settings" />}>
+    <PageSkeleton template="form" title="Cài đặt" meta tabs={<PageTabsSkeleton set="settings" />}>
       <div className="@container overflow-hidden rounded-xl ring-2 ring-border ring-inset">
         <div className="grid gap-px bg-border @4xl:grid-cols-2 [&>*]:bg-card">
           {CONTROL_WIDTHS.map((width, i) => (
@@ -29,7 +25,6 @@ export default function Loading() {
           </div>
         </div>
       </div>
-      <FormFooterSkeleton />
     </PageSkeleton>
   );
 }

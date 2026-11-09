@@ -9,12 +9,13 @@ Lịch sử nằm trong git, PR và `docs/roadmap.md`, không ghi ở đây. C�
 
 Luyện dịch R1–R4, Kaiwa (a)–(d), kanji KJ1–KJ7 đã xong. UI v2 (`docs/plans/2026-11-08-ui-v2.md`): U0 xong và thien đã duyệt
 ảnh. U1 (khung app): Base UI #276–#282, sidebar 3 nhóm #283, thanh 5 tab #284 (kèm sửa số thẻ đến hạn sau buổi ôn);
-Lịch sử thành Tiến độ ở `/progress` (PR này; `/history` chuyển hướng giữ query, tab "Luyện dịch" đổi thành "Lịch sử dịch").
+Lịch sử thành Tiến độ ở `/progress` #285. Góp ý cổng U1 của thien (PR này): Cài đặt tự lưu, bỏ nút Lưu dính đáy, dòng
+"Đã lưu · Hoàn tác" dưới tiêu đề (phần tự lưu của U7 làm sớm); menu tài khoản thẳng mép với thẻ người dùng.
 Phân tích vẫn ở `/`: Tổng quan và Thống kê vào Tiến độ ở U7, Hôm nay thay `/` ở U3.
 
 ## U1 còn lại
 
-1. Cổng U1: thien duyệt ảnh trên https://claude.ai/artifact/9Hd8pSLPK63CUFMcX4Tshx (làm lại 09/11 ở tài khoản này, trang cũ đã mất) và đi thử 5 tab
+1. Cổng U1: thien duyệt lại sau PR này (Cài đặt, menu tài khoản), ảnh trên https://claude.ai/artifact/9Hd8pSLPK63CUFMcX4Tshx (làm lại 09/11 ở tài khoản này, trang cũ đã mất) và đi thử 5 tab
    trên điện thoại thật. Duyệt xong thì đánh U1 Done trong roadmap và nhận U2 (Phiên học, risk:high).
 
 ## Đang chờ thien (tối đa 3)

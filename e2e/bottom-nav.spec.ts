@@ -86,14 +86,11 @@ test('the phone shows five named tabs, and the edge rail is gone', async ({ page
   await expect(bar.getByRole('link', { name: 'Kho' })).toHaveAttribute('aria-current', 'page');
   await expect(bar.locator('[aria-current="page"]')).toHaveCount(1);
 
-  // The form's sticky Lưu bar rides above the tab bar, and the page's last line clears it too.
+  // The page's last line clears the tab bar once scrolled to the end.
   await page.goto('/settings', { waitUntil: 'networkidle' });
-  const sticky = (await page.getByRole('button', { name: 'Lưu', exact: true }).boundingBox())!;
-  expect(sticky.y + sticky.height).toBeLessThanOrEqual((await bar.boundingBox())!.y);
   await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
-  const save = (await page.getByRole('button', { name: 'Lưu', exact: true }).boundingBox())!;
-  const top = (await bar.boundingBox())!.y;
-  expect(save.y + save.height).toBeLessThanOrEqual(top);
+  const last = (await page.getByRole('button', { name: /Nâng cao/ }).boundingBox())!;
+  expect(last.y + last.height).toBeLessThanOrEqual((await bar.boundingBox())!.y);
 });
 
 test('the laptop has no tab bar', async ({ page }) => {

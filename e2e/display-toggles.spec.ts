@@ -37,6 +37,12 @@ test('the user menu switches the theme and furigana', async ({ page }) => {
   await account.click();
   const menu = page.getByRole('menu');
   await expect(menu.getByRole('menuitem')).toHaveText(['Cài đặt', 'Đăng xuất']);
+  // The menu lines up with the block it opens from: same left edge, same width (thien, U1 gate).
+  await expect(async () => {
+    const [b, m] = [(await account.boundingBox())!, (await menu.boundingBox())!];
+    expect(Math.abs(m.x - b.x)).toBeLessThanOrEqual(1);
+    expect(Math.abs(m.width - b.width)).toBeLessThanOrEqual(1);
+  }).toPass();
   await expect(menu.getByRole('menuitemcheckbox')).toHaveCount(2);
   for (const name of ['Giao diện tối', 'Hiện furigana'])
     await expect(menu.getByRole('menuitemcheckbox', { name, exact: true })).toBeVisible();
