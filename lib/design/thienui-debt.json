@@ -3,7 +3,6 @@
   "debt": {
     "button-size-by-prop": {
       "components/layout/scroll-to-top.tsx": 1,
-      "components/layout/sidebar-user.tsx": 1,
       "components/ui/data-pagination.tsx": 3
     },
     "explain-is-the-only-tooltip": {
@@ -66,7 +65,6 @@
       "components/common/item-detail-dialog.tsx": 1,
       "components/features/settings/settings-data-tab.tsx": 1,
       "components/layout/scroll-to-top.tsx": 1,
-      "components/layout/sidebar-user.tsx": 1,
       "components/ui/data-pagination.tsx": 2
     },
     "no-raw-durations": {

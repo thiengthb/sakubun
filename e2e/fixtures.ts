@@ -1,3 +1,5 @@
+import { expect, type Page } from '@playwright/test';
+
 export const E2E_PORT = 3799; // NOT 3789 — that port is shared by the local dev + prod containers; a
 export const E2E_BASE_URL = `http://localhost:${E2E_PORT}`;
 export const E2E_EMAIL = 'e2e@example.test';
@@ -24,3 +26,18 @@ export async function seedE2eAccount(): Promise<void> {
 // Roadmap 7.1: every learning row has an owner. Seeds write raw SQL, so their INSERTs put this
 // subquery in the userId column: the e2e account, which seedE2eAccount creates first.
 export const E2E_OWNER = `(SELECT id FROM user WHERE email = '${E2E_EMAIL}')`;
+
+/**
+ * Turns furigana on or off from the sidebar's user menu (UI v2 moved the あ toggle into it) and
+ * waits for the server to keep it.
+ */
+export async function setFurigana(page: Page, on: boolean): Promise<void> {
+  await page.getByRole('button', { name: /^Tài khoản:/ }).click();
+  const item = page.getByRole('menuitemcheckbox', { name: 'Hiện furigana' });
+  await expect(item).toBeVisible();
+  if ((await item.getAttribute('aria-checked')) !== String(on)) await item.click();
+  await expect(item).toHaveAttribute('aria-checked', String(on));
+  await expect(item).not.toHaveAttribute('aria-disabled', 'true');
+  await page.keyboard.press('Escape');
+  await expect(item).toBeHidden();
+}
