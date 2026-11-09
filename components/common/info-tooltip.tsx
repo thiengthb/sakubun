@@ -5,9 +5,10 @@ import { Info } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/core/utils';
 
-// A tooltip that a tap also opens. Radix Tooltip opens on hover and keyboard focus only, and its
-// trigger CLOSES it on click — so on a phone an explanation behind it could never be read. Here a
-// click opens it (and stops Radix from closing it); a tap outside closes it as before.
+// A tooltip that a tap also opens. A tooltip opens on hover and keyboard focus only (Base UI turns
+// it off for touch), and its trigger CLOSES it on click — so on a phone an explanation behind it
+// could never be read. Here the open state is ours: a click opens it and does not close it; a tap
+// outside closes it as before.
 export function TapTooltip({
   content,
   children,
@@ -23,14 +24,13 @@ export function TapTooltip({
   return (
     <Tooltip open={open} onOpenChange={setOpen}>
       <TooltipTrigger
-        asChild
+        render={children}
+        closeOnClick={false}
         onClick={(e: MouseEvent) => {
           e.preventDefault();
           setOpen(true);
         }}
-      >
-        {children}
-      </TooltipTrigger>
+      />
       <TooltipContent
         side={side}
         className={cn(

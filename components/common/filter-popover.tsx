@@ -189,7 +189,7 @@ export function FilterPopover({
           </BottomSheet>
         ) : (
           <Popover>
-            <PopoverTrigger asChild>{trigger}</PopoverTrigger>
+            <PopoverTrigger render={trigger} />
             <PopoverContent align={align} className="max-h-[70vh] w-80 gap-3 overflow-y-auto">
               <div className="flex items-center justify-between">
                 <span className="flex items-center gap-2 text-sm font-bold">

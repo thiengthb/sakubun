@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/popover';
+import { Popover, PopoverContent } from '@/components/ui/popover';
 import { WordCard } from '@/components/common/word-card';
 import {
   LOOKUP_BATCH,
@@ -201,7 +201,7 @@ export function WordLookup() {
     const observer = new MutationObserver((records) => {
       const outside = records.some((r) => {
         const el = r.target instanceof Element ? r.target : r.target.parentElement;
-        return !el?.closest('[data-radix-popper-content-wrapper]');
+        return !el?.closest('[data-floating], [data-radix-popper-content-wrapper]');
       });
       if (outside) queueScan();
     });
@@ -231,7 +231,6 @@ export function WordLookup() {
 
   return (
     <Popover open={!!active} onOpenChange={(open) => !open && setActive(null)}>
-      <PopoverAnchor virtualRef={anchor} />
       {active && (
         <PopoverContent
           key={active.id}
@@ -240,8 +239,9 @@ export function WordLookup() {
           align="start"
           sideOffset={6}
           className="w-72"
-          onOpenAutoFocus={(e) => e.preventDefault()}
-          onCloseAutoFocus={(e) => e.preventDefault()}
+          anchor={() => anchor.current}
+          initialFocus={false}
+          finalFocus={false}
         >
           <WordCard meaning={active.meaning} surface={active.surface} />
         </PopoverContent>
