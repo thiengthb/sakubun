@@ -57,6 +57,10 @@ export function SortSheet({
           <Select
             value={columnId ?? NONE}
             onValueChange={(v) => onChange(v === NONE ? null : { id: v, desc })}
+            items={[
+              { value: NONE, label: 'Thứ tự mặc định' },
+              ...options.map((o) => ({ value: o.id, label: o.label })),
+            ]}
           >
             <SelectTrigger size="sm" className="w-full">
               <SelectValue />

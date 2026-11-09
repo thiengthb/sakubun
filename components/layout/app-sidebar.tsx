@@ -16,6 +16,7 @@ import {
   SidebarMenuItem,
   SidebarRail,
   SidebarTrigger,
+  useSidebar,
 } from '@/components/ui/sidebar';
 
 export interface AppSidebarItem {
@@ -55,6 +56,10 @@ function isActive(pathname: string, item: AppSidebarItem): boolean {
 export function AppSidebar({ brand, groups, footer, activePath, className }: AppSidebarProps) {
   const routerPathname = usePathname();
   const pathname = activePath ?? routerPathname;
+  // On a phone the sidebar is a sheet over the page: a tap on a link closes it, or it would stay
+  // open over the page the link opened.
+  const { isMobile, setOpenMobile } = useSidebar();
+  const closeSheet = isMobile ? () => setOpenMobile(false) : undefined;
 
   return (
     <Sidebar collapsible="icon" className={className}>
@@ -62,6 +67,7 @@ export function AppSidebar({ brand, groups, footer, activePath, className }: App
         <div className="flex items-center gap-1 group-data-[collapsible=icon]:flex-col group-data-[collapsible=icon]:gap-2">
           <Link
             href={brand.href ?? '/'}
+            onClick={closeSheet}
             className="flex min-w-0 flex-1 items-center gap-2 rounded-md px-2 py-1.5 font-semibold group-data-[collapsible=icon]:flex-none group-data-[collapsible=icon]:p-0"
           >
             {brand.logo && (
@@ -92,18 +98,20 @@ export function AppSidebar({ brand, groups, footer, activePath, className }: App
                 const Icon = item.icon;
                 return (
                   <SidebarMenuItem key={item.href}>
-                    <SidebarMenuButton asChild isActive={active} tooltip={item.label}>
-                      {item.external ? (
-                        <a href={item.href} target="_blank" rel="noreferrer">
-                          <Icon className="size-4" />
-                          <span>{item.label}</span>
-                        </a>
-                      ) : (
-                        <Link href={item.href} aria-current={active ? 'page' : undefined}>
-                          <Icon className="size-4" />
-                          <span>{item.label}</span>
-                        </Link>
-                      )}
+                    <SidebarMenuButton
+                      isActive={active}
+                      tooltip={item.label}
+                      onClick={closeSheet}
+                      render={
+                        item.external ? (
+                          <a href={item.href} target="_blank" rel="noreferrer" />
+                        ) : (
+                          <Link href={item.href} aria-current={active ? 'page' : undefined} />
+                        )
+                      }
+                    >
+                      <Icon className="size-4" />
+                      <span>{item.label}</span>
                     </SidebarMenuButton>
                     {item.badge != null && <SidebarMenuBadge>{item.badge}</SidebarMenuBadge>}
                   </SidebarMenuItem>

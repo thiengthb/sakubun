@@ -53,7 +53,7 @@ export function SelectFilterRow({
 }) {
   return (
     <FilterRow label={label} className={className}>
-      <Select value={value} onValueChange={onValueChange}>
+      <Select value={value} onValueChange={onValueChange} items={options}>
         <SelectTrigger size="sm" className="w-full">
           <SelectValue />
         </SelectTrigger>

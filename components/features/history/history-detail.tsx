@@ -227,9 +227,7 @@ export function HistoryDetailPanel({
         const target = details.event.target instanceof Element ? details.event.target : null;
         if (
           details.reason === 'outside-press' &&
-          target?.closest(
-            '[data-history-row], [data-floating], [data-radix-popper-content-wrapper]',
-          )
+          target?.closest('[data-history-row], [data-floating]')
         ) {
           details.cancel();
           return;

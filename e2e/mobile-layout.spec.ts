@@ -433,7 +433,7 @@ test('switching tabs raises no client error — the state the page sweep never e
       const label = (await tab.textContent())?.trim() ?? `#${i}`;
       await expect(async () => {
         await tab.click();
-        await expect(tab).toHaveAttribute('data-state', 'active', { timeout: 2000 });
+        await expect(tab).toHaveAttribute('aria-selected', 'true', { timeout: 2000 });
       }).toPass({ timeout: 20_000 });
       await page.waitForTimeout(400);
       if (problems.length) {

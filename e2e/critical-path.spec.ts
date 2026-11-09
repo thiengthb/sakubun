@@ -19,8 +19,8 @@ test('login → dashboard → a settings change persists across reload', async (
   // Nội dung + Nhịp học + Nghe & nói are one "Luyện tập" tab now, and it is the default — the daily
   // cap is reachable without touching the tab rail.
   await expect(page.getByRole('tab', { name: 'Luyện tập' })).toHaveAttribute(
-    'data-state',
-    'active',
+    'aria-selected',
+    'true',
   );
   await page.getByRole('textbox', { name: 'Mẫu ngữ pháp mới / ngày', exact: true }).fill('11');
   await page.getByRole('button', { name: 'Lưu', exact: true }).click();
