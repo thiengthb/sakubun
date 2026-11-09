@@ -146,7 +146,7 @@ export function EnrichmentCard({
           </span>
         </p>
       )}
-      <Accordion type="multiple" {...accordionProps} className="w-full">
+      <Accordion multiple {...accordionProps} className="w-full">
         {enrichment.structure.length > 0 && (
           <Section
             value="structure"

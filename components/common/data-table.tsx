@@ -607,7 +607,7 @@ export function DataTable<T>({
                           <Checkbox
                             className="relative z-10 mt-1 shrink-0"
                             checked={selected}
-                            onCheckedChange={(v) => row.toggleSelected(v === true)}
+                            onCheckedChange={(v) => row.toggleSelected(v)}
                             aria-label="Chọn mục này"
                           />
                         )}
@@ -636,14 +636,11 @@ export function DataTable<T>({
                     {enableRowSelection && (
                       <TableHead style={{ width: 44 }} className="px-2">
                         <Checkbox
-                          checked={
-                            table.getIsAllPageRowsSelected()
-                              ? true
-                              : table.getIsSomePageRowsSelected()
-                                ? 'indeterminate'
-                                : false
+                          checked={table.getIsAllPageRowsSelected()}
+                          indeterminate={
+                            !table.getIsAllPageRowsSelected() && table.getIsSomePageRowsSelected()
                           }
-                          onCheckedChange={(v) => table.toggleAllPageRowsSelected(v === true)}
+                          onCheckedChange={(v) => table.toggleAllPageRowsSelected(v)}
                           aria-label="Chọn tất cả dòng trên trang"
                         />
                       </TableHead>
@@ -783,7 +780,7 @@ export function DataTable<T>({
                       <TableCell style={{ width: 44 }} className="px-2">
                         <Checkbox
                           checked={row.getIsSelected()}
-                          onCheckedChange={(v) => row.toggleSelected(v === true)}
+                          onCheckedChange={(v) => row.toggleSelected(v)}
                           aria-label="Chọn dòng"
                         />
                       </TableCell>
