@@ -7,12 +7,6 @@ import { describe, expect, it } from 'vitest';
 // components/ui may import a primitive library, so the next change of primitive stays inside it.
 const PRIMITIVE = /from '(?:radix-ui|@base-ui\/react[^']*)'/;
 
-// The files still on Radix. Only ever shrinks: a file that leaves Radix comes off this list, and
-// nothing new may join it. Empty at the end of phase 1, when radix-ui leaves package.json.
-const STILL_ON_RADIX = [
-  'components/ui/sidebar.tsx',
-];
-
 function sources(dir: string): string[] {
   return readdirSync(dir).flatMap((name) => {
     const path = join(dir, name);
@@ -32,10 +26,17 @@ describe('UI primitives', () => {
     expect(outside, 'wrap the primitive in components/ui and import that').toEqual([]);
   });
 
-  it('leave Radix one file at a time, never back', () => {
-    const onRadix = FILES.filter((f) => /from 'radix-ui'/.test(readFileSync(f, 'utf8'))).sort();
-    expect(onRadix, 'move the file to Base UI, or take it off STILL_ON_RADIX').toEqual(
-      [...STILL_ON_RADIX].sort(),
+  // Phase 1 moved every file off Radix and took radix-ui out of package.json; it must not return.
+  it('do not include Radix', () => {
+    const onRadix = FILES.filter((f) =>
+      /from '(?:radix-ui|@radix-ui\/[^']+)'/.test(readFileSync(f, 'utf8')),
     );
+    expect(onRadix, 'build it on Base UI (@base-ui/react) instead').toEqual([]);
+    const pkg = JSON.parse(readFileSync('package.json', 'utf8')) as Record<
+      string,
+      Record<string, string> | undefined
+    >;
+    const deps = Object.keys({ ...pkg.dependencies, ...pkg.devDependencies });
+    expect(deps.filter((d) => d === 'radix-ui' || d.startsWith('@radix-ui/'))).toEqual([]);
   });
 });
