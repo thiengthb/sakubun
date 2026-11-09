@@ -2,13 +2,20 @@
 
 import * as React from 'react';
 import { type VariantProps } from 'class-variance-authority';
-import { ToggleGroup as ToggleGroupPrimitive } from 'radix-ui';
+import { Radio as RadioPrimitive } from '@base-ui/react/radio';
+import { RadioGroup as RadioGroupPrimitive } from '@base-ui/react/radio-group';
 
 import { cn } from '@/lib/core/utils';
 import { toggleVariants } from '@/components/ui/toggle';
 
-// thienui registry/base/toggle-group.tsx, on Radix. type="single" renders a radiogroup of radios,
-// type="multiple" a toolbar of pressed buttons, which is what the a11y queries in e2e look for.
+// A row of chips where exactly one is chosen. thienui builds it on Base UI's ToggleGroup, which is a
+// group of pressed buttons; sakubun keeps what Radix gave it, a radiogroup of radios (the e2e and a
+// screen reader find the choice by role="radio" and aria-checked). So it sits on Base UI's
+// RadioGroup, each radio a real <button>. Arrow keys move and choose, as radios do; a chosen chip
+// cannot be cleared by clicking it again.
+// Base UI puts the tab stop on the chosen radio once, at mount. When the value arrives later (Tôi là
+// reads it from storage after hydration), Tab would land on the old chip, so a keyboard focus that
+// enters the group on an unchosen chip moves on to the chosen one.
 const ToggleGroupContext = React.createContext<VariantProps<typeof toggleVariants>>({
   size: 'default',
   variant: 'default',
@@ -19,13 +26,37 @@ function ToggleGroup({
   variant,
   size,
   children,
+  value,
+  defaultValue,
+  onValueChange,
+  type: _type,
+  onFocus,
   ...props
-}: React.ComponentProps<typeof ToggleGroupPrimitive.Root> & VariantProps<typeof toggleVariants>) {
+}: Omit<RadioGroupPrimitive.Props<string>, 'value' | 'defaultValue' | 'onValueChange'> &
+  VariantProps<typeof toggleVariants> & {
+    /** Radix's name for a single-choice group; the only kind sakubun uses. */
+    type?: 'single';
+    value?: string;
+    defaultValue?: string;
+    onValueChange?: (value: string) => void;
+  }) {
   return (
-    <ToggleGroupPrimitive.Root
+    <RadioGroupPrimitive
       data-slot="toggle-group"
       data-variant={variant}
       data-size={size}
+      value={value}
+      defaultValue={defaultValue}
+      onValueChange={(next) => onValueChange?.(next as string)}
+      onFocus={(event) => {
+        onFocus?.(event);
+        const group = event.currentTarget;
+        const target = event.target as HTMLElement;
+        if (group.contains(event.relatedTarget as Node | null)) return;
+        if (target.getAttribute('aria-checked') !== 'false' || !target.matches(':focus-visible'))
+          return;
+        group.querySelector<HTMLElement>('[role="radio"][aria-checked="true"]')?.focus();
+      }}
       className={cn(
         'group/toggle-group flex w-fit items-center gap-0.5 rounded-sm data-[variant=choice]:gap-1.5',
         className,
@@ -35,7 +66,7 @@ function ToggleGroup({
       <ToggleGroupContext.Provider value={{ variant, size }}>
         {children}
       </ToggleGroupContext.Provider>
-    </ToggleGroupPrimitive.Root>
+    </RadioGroupPrimitive>
   );
 }
 
@@ -44,15 +75,20 @@ function ToggleGroupItem({
   children,
   variant,
   size,
+  value,
   ...props
-}: React.ComponentProps<typeof ToggleGroupPrimitive.Item> & VariantProps<typeof toggleVariants>) {
+}: Omit<RadioPrimitive.Root.Props<string>, 'value' | 'nativeButton' | 'render'> &
+  VariantProps<typeof toggleVariants> & { value: string }) {
   const context = React.useContext(ToggleGroupContext);
 
   return (
-    <ToggleGroupPrimitive.Item
+    <RadioPrimitive.Root
       data-slot="toggle-group-item"
       data-variant={context.variant || variant}
       data-size={context.size || size}
+      value={value}
+      nativeButton
+      render={<button type="button" />}
       className={cn(
         'shrink-0 focus:z-10 focus-visible:z-10',
         toggleVariants({
@@ -64,7 +100,7 @@ function ToggleGroupItem({
       {...props}
     >
       {children}
-    </ToggleGroupPrimitive.Item>
+    </RadioPrimitive.Root>
   );
 }
 
