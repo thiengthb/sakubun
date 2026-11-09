@@ -5,6 +5,7 @@ import { RootDocument } from '@/components/layout/root-document';
 import { getSessionAccess } from '@/lib/auth/current-user';
 import { userDb } from '@/lib/db/user-db';
 import { getSettings } from '@/lib/library/practice';
+import { countDue } from '@/lib/app/queue';
 import { furiganaInApp } from '@/lib/settings/schema';
 import './globals.css';
 
@@ -34,14 +35,16 @@ export default async function RootLayout({
   const sidebarOpen = (await cookies()).get('sidebar_state')?.value !== 'false';
   // The sidebar's あ shows the learner's furigana setting (7.4a); nobody signed in, no switch.
   const session = await getSessionAccess();
-  const furigana =
-    session && session.access !== 'none'
-      ? furiganaInApp((await getSettings(userDb(session.userId))).furiganaMode)
-      : null;
+  const signedIn = session && session.access !== 'none';
+  const db = signedIn ? userDb(session.userId) : null;
+  // The furigana setting and the due count for the phone's Ôn nhanh tab (B2), read side by side.
+  const [furigana, due] = db
+    ? await Promise.all([getSettings(db).then((s) => furiganaInApp(s.furiganaMode)), countDue(db)])
+    : [null, 0];
 
   return (
     <RootDocument furigana={furigana}>
-      <AppShell defaultSidebarOpen={sidebarOpen} furigana={furigana}>
+      <AppShell defaultSidebarOpen={sidebarOpen} furigana={furigana} due={due}>
         {children}
       </AppShell>
     </RootDocument>

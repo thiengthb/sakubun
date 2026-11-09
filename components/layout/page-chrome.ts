@@ -57,9 +57,10 @@ export const DETAIL_CHROME = {
   factValue: 'flex items-center gap-1 truncate text-sm font-bold [&>svg]:size-3.5',
 } as const;
 
-/** Form template footer: save state left, actions right; sticks to the bottom while the form scrolls. */
+/** Form template footer: save state left, actions right; sticks to the bottom while the form scrolls,
+ * above the phone's tab bar when it shows. */
 export const FORM_FOOTER = {
-  bar: 'sticky bottom-0 z-10 -mx-4 flex items-center gap-3 border-t border-border bg-background px-4 py-3 sm:mx-0 sm:px-0',
+  bar: 'sticky bottom-(--bottom-nav-space) z-10 -mx-4 flex items-center gap-3 border-t border-border bg-background px-4 py-3 sm:mx-0 sm:px-0',
   status: 'min-w-0 flex-1 truncate text-xs text-muted-foreground',
   actions: 'ml-auto flex items-center gap-2 max-sm:flex-1 max-sm:[&>*]:flex-1',
 } as const;

@@ -6,6 +6,7 @@ import { Button, ButtonLink } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useFillWindow } from '@/components/ui/use-fit-rows';
 import { PageShell } from '@/components/layout/page-shell';
+import { HideBottomNav } from '@/components/layout/bottom-nav';
 import { EmptyState } from '@/components/common/empty-state';
 import { ReviewCard, type CardTts } from '@/components/common/review-card';
 import type { CardAnswer, QuickCard, QuickReview } from '@/lib/app/quick-review';
@@ -338,6 +339,8 @@ export function QuickReviewView({
         </span>
       }
     >
+      {/* A study session has the screen to itself: the phone's tab bar steps aside until the summary. */}
+      {card && !done && <HideBottomNav />}
       <div ref={sessionRef} className="flex flex-col gap-6 md:gap-8">
         <div
           className="flex gap-1.5"
