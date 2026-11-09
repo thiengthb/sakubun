@@ -74,6 +74,9 @@ describe('ui standard: each check goes red on a bad sample', () => {
   it('control-weight', () => {
     expect(check('control-weight', '<Button className="font-bold">Lưu</Button>')).toHaveLength(1);
     expect(
+      check('control-weight', '<ButtonLink href="/" className="font-bold">Mở</ButtonLink>'),
+    ).toHaveLength(1);
+    expect(
       check('control-weight', '<Badge variant="outline" className="h-6 font-semibold">N2</Badge>'),
     ).toHaveLength(1);
     expect(check('control-weight', '<Button>Lưu</Button><span className="font-bold" />')).toEqual(
@@ -114,6 +117,9 @@ describe('ui standard: each check goes red on a bad sample', () => {
       ),
     ).toHaveLength(1);
     expect(check('icon-only-plain', `${imp}<Button size="icon-sm"><X /></Button>`)).toHaveLength(1);
+    expect(
+      check('icon-only-plain', `${imp}<ButtonLink href="/" size="icon"><X /></ButtonLink>`),
+    ).toHaveLength(1);
     expect(
       check('icon-only-plain', `${imp}<Button size="icon" aria-label="Đóng"><X /></Button>`),
     ).toEqual([]);
