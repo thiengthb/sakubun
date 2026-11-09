@@ -316,6 +316,17 @@ test('"Tôi là" carries the last part over to a script with the same name', asy
 
   await page.goto('/kaiwa/kw-two', { waitUntil: 'networkidle' });
   await expect(page.getByRole('radio', { name: 'グエン' })).toHaveAttribute('aria-checked', 'true');
+  // The choice arrives from storage after the page has drawn; Tab still lands on it.
+  await page.getByRole('radiogroup', { name: 'Tôi là' }).evaluate((group) => {
+    const tabbable = [
+      ...document.querySelectorAll<HTMLElement>('a[href], button, input, select, textarea'),
+    ].filter(
+      (el) => el.tabIndex >= 0 && !el.hasAttribute('disabled') && el.getClientRects().length,
+    );
+    tabbable[tabbable.findIndex((el) => group.contains(el)) - 1].focus();
+  });
+  await page.keyboard.press('Tab');
+  await expect(page.getByRole('radio', { name: 'グエン' })).toBeFocused();
   await expect(page.locator('[data-slot="kaiwa-line"]').nth(1)).toHaveAttribute(
     'data-side',
     'mine',

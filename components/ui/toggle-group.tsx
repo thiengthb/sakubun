@@ -13,6 +13,9 @@ import { toggleVariants } from '@/components/ui/toggle';
 // screen reader find the choice by role="radio" and aria-checked). So it sits on Base UI's
 // RadioGroup, each radio a real <button>. Arrow keys move and choose, as radios do; a chosen chip
 // cannot be cleared by clicking it again.
+// Base UI puts the tab stop on the chosen radio once, at mount. When the value arrives later (Tôi là
+// reads it from storage after hydration), Tab would land on the old chip, so a keyboard focus that
+// enters the group on an unchosen chip moves on to the chosen one.
 const ToggleGroupContext = React.createContext<VariantProps<typeof toggleVariants>>({
   size: 'default',
   variant: 'default',
@@ -27,6 +30,7 @@ function ToggleGroup({
   defaultValue,
   onValueChange,
   type: _type,
+  onFocus,
   ...props
 }: Omit<RadioGroupPrimitive.Props<string>, 'value' | 'defaultValue' | 'onValueChange'> &
   VariantProps<typeof toggleVariants> & {
@@ -44,6 +48,15 @@ function ToggleGroup({
       value={value}
       defaultValue={defaultValue}
       onValueChange={(next) => onValueChange?.(next as string)}
+      onFocus={(event) => {
+        onFocus?.(event);
+        const group = event.currentTarget;
+        const target = event.target as HTMLElement;
+        if (group.contains(event.relatedTarget as Node | null)) return;
+        if (target.getAttribute('aria-checked') !== 'false' || !target.matches(':focus-visible'))
+          return;
+        group.querySelector<HTMLElement>('[role="radio"][aria-checked="true"]')?.focus();
+      }}
       className={cn(
         'group/toggle-group flex w-fit items-center gap-0.5 rounded-sm data-[variant=choice]:gap-1.5',
         className,
