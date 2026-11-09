@@ -12,7 +12,6 @@ const PRIMITIVE = /from '(?:radix-ui|@base-ui\/react[^']*)'/;
 const STILL_ON_RADIX = [
   'components/ui/select.tsx',
   'components/ui/sidebar.tsx',
-  'components/ui/tabs.tsx',
 ];
 
 function sources(dir: string): string[] {
