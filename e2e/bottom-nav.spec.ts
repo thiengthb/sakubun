@@ -125,6 +125,52 @@ test('Ôn nhanh shows how many cards are due, and the bar steps aside in the ses
   await expect(nav(page).locator('[data-badge]')).toHaveCount(0);
 });
 
+test('the due count follows the session once it ends', async ({ page }) => {
+  seedDue(2);
+  await page.setViewportSize(PHONE);
+  await logIn(page);
+  await page.goto('/settings', { waitUntil: 'networkidle' });
+  await expect(nav(page).locator('[data-badge]')).toHaveText('2');
+
+  await nav(page).getByRole('link', { name: /^Ôn nhanh/ }).click();
+  await page.waitForURL((u) => u.pathname === '/review');
+  // The session may add new kanji after the two due words; answer whatever comes until the end.
+  const end = page.getByText('Xong buổi ôn');
+  for (let n = 0; n < 20 && !(await end.isVisible()); n++) {
+    const reveal = page.getByRole('button', { name: 'Xem đáp án' });
+    const seen = page.getByRole('button', { name: 'Đã xem' });
+    const choices = page.getByRole('group', { name: 'Chọn đáp án' });
+    await expect(reveal.or(seen).or(choices).or(end)).toBeVisible();
+    if (await end.isVisible()) break;
+    const before = await page.locator('[aria-label^="Thẻ "]').getAttribute('aria-label');
+    if (await seen.isVisible()) await seen.click();
+    else if (await reveal.isVisible()) {
+      await reveal.click();
+      await page.getByRole('button', { name: /^Nhớ/ }).click();
+    } else {
+      await choices.getByRole('button').first().click();
+      await page.getByRole('button', { name: 'Tiếp' }).click();
+    }
+    await expect(async () => {
+      const now = await page.locator('[aria-label^="Thẻ "]').getAttribute('aria-label');
+      expect((await end.isVisible()) || now !== before).toBe(true);
+    }).toPass();
+  }
+  await expect(end).toBeVisible();
+
+  // The root layout does not re-render on a client-side move, so the count is fetched again
+  // when the session ends: no stale "2" on the tab after both cards were answered.
+  await expect(nav(page)).toBeVisible();
+  await expect(nav(page).locator('[data-badge]')).toHaveCount(0);
+  // The summary's main button rests above the bar that came back, not under it.
+  const home = (await page.getByRole('link', { name: 'Về trang chính' }).boundingBox())!;
+  expect(home.y + home.height).toBeLessThanOrEqual((await nav(page).boundingBox())!.y);
+  // (Hội thoại, not Phân tích: the dev server's own badge sits over the leftmost tab.)
+  await nav(page).getByRole('link', { name: 'Hội thoại' }).click();
+  await page.waitForURL((u) => u.pathname.startsWith('/kaiwa'));
+  await expect(nav(page).locator('[data-badge]')).toHaveCount(0);
+});
+
 test('the bar steps aside while the keyboard is up', async ({ page }) => {
   seedDue(0);
   await page.setViewportSize(PHONE);
