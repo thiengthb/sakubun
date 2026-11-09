@@ -10,7 +10,6 @@ const PRIMITIVE = /from '(?:radix-ui|@base-ui\/react[^']*)'/;
 // The files still on Radix. Only ever shrinks: a file that leaves Radix comes off this list, and
 // nothing new may join it. Empty at the end of phase 1, when radix-ui leaves package.json.
 const STILL_ON_RADIX = [
-  'components/ui/select.tsx',
   'components/ui/sidebar.tsx',
 ];
 
