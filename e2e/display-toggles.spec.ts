@@ -84,13 +84,18 @@ test('folded, the user menu opens beside the avatar', async ({ page }) => {
   await page.keyboard.press('Enter');
   const menu = page.getByRole('menu');
   await expect(menu).toBeVisible();
-  const a = (await account.boundingBox())!;
-  // Polled: the menu zooms in, so its box settles a moment after it shows.
+  // Polled: the menu zooms in and the sidebar may still be settling, so both boxes are read
+  // afresh until they agree.
   await expect
-    .poll(async () => (await menu.boundingBox())!.x, {
-      message: 'the menu opens to the right of the folded sidebar',
-    })
-    .toBeGreaterThanOrEqual(a.x + a.width);
+    .poll(
+      async () => {
+        const a = (await account.boundingBox())!;
+        const m = (await menu.boundingBox())!;
+        return m.x - (a.x + a.width);
+      },
+      { message: 'the menu opens to the right of the folded sidebar' },
+    )
+    .toBeGreaterThanOrEqual(0);
 });
 
 test('Đăng xuất in the user menu signs out', async ({ page }) => {
@@ -101,4 +106,19 @@ test('Đăng xuất in the user menu signs out', async ({ page }) => {
   await page.waitForURL((u) => u.pathname.startsWith('/login'), { timeout: 30_000 });
   await page.goto('/settings');
   await page.waitForURL((u) => u.pathname.startsWith('/login'), { timeout: 30_000 });
+});
+
+// On a phone the user menu sits in the sidebar sheet: Cài đặt opens the page and closes both.
+test("Cài đặt in the phone sheet's user menu closes the sheet", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await logIn(page);
+  await page.goto('/library', { waitUntil: 'networkidle' });
+  await page.getByRole('button', { name: 'Mở menu' }).first().click();
+  const sheet = page.locator('[data-mobile="true"][data-sidebar="sidebar"]');
+  await expect(sheet).toBeVisible();
+  await sheet.getByRole('button', { name: /^Tài khoản:/ }).click();
+  await page.getByRole('menuitem', { name: 'Cài đặt' }).click();
+  await page.waitForURL((u) => u.pathname === '/settings');
+  await expect(page.getByRole('menu')).toBeHidden();
+  await expect(sheet).toBeHidden();
 });

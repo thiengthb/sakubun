@@ -78,7 +78,7 @@ export function AppShell({
         }}
         groups={groups}
         footer={
-          session?.user && furigana !== null ? (
+          session?.user ? (
             <SidebarUser
               user={{
                 name: session.user.name,

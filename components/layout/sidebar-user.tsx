@@ -33,14 +33,15 @@ export function SidebarUser({
   furigana,
 }: {
   user: { name: string; email: string; image?: string | null };
-  furigana: boolean;
+  /** The learner's furigana setting; null leaves the switch out (an account with no access). */
+  furigana: boolean | null;
 }) {
   const router = useRouter();
-  const { state, isMobile } = useSidebar();
+  const { state, isMobile, setOpenMobile } = useSidebar();
   const folded = state === 'collapsed' && !isMobile;
   const [leaving, setLeaving] = useState(false);
   const theme = useDarkTheme();
-  const reading = useFurigana(furigana);
+  const reading = useFurigana(furigana ?? false);
 
   async function logout() {
     setLeaving(true);
@@ -70,7 +71,11 @@ export function SidebarUser({
         align={folded ? 'end' : 'start'}
         className="min-w-56"
       >
-        <DropdownMenuLinkItem render={<Link href="/settings" />}>
+        {/* On a phone the menu sits in the sidebar sheet, which closes with it, as the nav links do. */}
+        <DropdownMenuLinkItem
+          render={<Link href="/settings" />}
+          onClick={isMobile ? () => setOpenMobile(false) : undefined}
+        >
           <Settings aria-hidden />
           Cài đặt
         </DropdownMenuLinkItem>
@@ -80,16 +85,18 @@ export function SidebarUser({
             <Moon aria-hidden />
             Giao diện tối
           </DropdownMenuCheckboxItem>
-          <DropdownMenuCheckboxItem
-            checked={reading.on}
-            onCheckedChange={reading.set}
-            disabled={reading.pending}
-          >
-            <span aria-hidden lang="ja" className="flex size-4 items-center justify-center">
-              あ
-            </span>
-            Hiện furigana
-          </DropdownMenuCheckboxItem>
+          {furigana !== null && (
+            <DropdownMenuCheckboxItem
+              checked={reading.on}
+              onCheckedChange={reading.set}
+              disabled={reading.pending}
+            >
+              <span aria-hidden lang="ja" className="flex size-4 items-center justify-center">
+                あ
+              </span>
+              Hiện furigana
+            </DropdownMenuCheckboxItem>
+          )}
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={logout} disabled={leaving}>
