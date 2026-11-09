@@ -217,7 +217,26 @@ export function HistoryDetailPanel({
   }, [sentence, prev, next, onOpen]);
 
   return (
-    <Sheet open={sentence != null} onOpenChange={(o) => !o && onClose()} modal={false}>
+    <Sheet
+      open={sentence != null}
+      modal={false}
+      onOpenChange={(open, details) => {
+        if (open) return;
+        // A click on another row of the timeline, or in a popup over the panel, shows that turn
+        // or uses that popup instead of closing the panel.
+        const target = details.event.target instanceof Element ? details.event.target : null;
+        if (
+          details.reason === 'outside-press' &&
+          target?.closest(
+            '[data-history-row], [data-floating], [data-radix-popper-content-wrapper]',
+          )
+        ) {
+          details.cancel();
+          return;
+        }
+        onClose();
+      }}
+    >
       {sentence && (
         <SheetContent
           overlay={false}
@@ -225,17 +244,7 @@ export function HistoryDetailPanel({
           className={cn(
             'gap-3 overflow-y-auto p-4 data-[side=right]:w-full data-[side=right]:sm:max-w-md',
           )}
-          onOpenAutoFocus={(e) => e.preventDefault()}
-          // A click on another row of the timeline shows that turn instead of closing the panel.
-          onInteractOutside={(e) => {
-            const target = e.target instanceof Element ? e.target : null;
-            if (
-              target?.closest(
-                '[data-history-row], [data-floating], [data-radix-popper-content-wrapper]',
-              )
-            )
-              e.preventDefault();
-          }}
+          initialFocus={false}
         >
           <div className="flex items-center gap-1.5">
             <IconAction
@@ -260,9 +269,7 @@ export function HistoryDetailPanel({
               {sentence.kind === 'sentence' && (
                 <StarButton id={sentence.id} starred={sentence.starred} kind="sentence" />
               )}
-              <SheetClose asChild>
-                <IconAction icon={X} label="Đóng" />
-              </SheetClose>
+              <SheetClose render={<IconAction icon={X} label="Đóng" />} />
             </span>
           </div>
           <SheetTitle className="sr-only">Chi tiết lượt dịch</SheetTitle>

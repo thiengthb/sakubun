@@ -203,6 +203,8 @@ test('Hội thoại lists a saved script and its page reads it line by line', as
   await page.getByRole('menuitem', { name: 'Phím tắt' }).click();
   await expect(page.locator('[data-slot="shortcuts"]')).toContainText('Sửa kịch bản');
   await page.keyboard.press('Escape');
+  // The keys reach the page once the dialog has finished closing (Base UI animates it out).
+  await expect(page.getByRole('dialog')).toHaveCount(0);
   await page.keyboard.press('ArrowDown');
   await page.keyboard.press('ArrowDown');
   await expect(lines.nth(1).locator('.ring-2')).toHaveCount(1);

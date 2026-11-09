@@ -60,39 +60,43 @@ export function ItemDetailDialog({
 
   return (
     <Dialog>
-      <DialogTrigger asChild>
-        {triggerVariant === 'icon' ? (
-          <button
-            type="button"
-            aria-label="Xem nhanh"
-            title={enrichment ? 'Xem nhanh (có thẻ enrichment)' : 'Xem nhanh'}
-            className="inline-flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-          >
-            {enrichment ? (
-              <Sparkles className="size-3.5 text-accent-brand" aria-hidden />
-            ) : (
-              <Info className="size-3.5" aria-hidden />
-            )}
-          </button>
-        ) : (
-          <button
-            type="button"
-            className="flex max-w-full items-center gap-1.5 text-left font-medium hover:text-accent-brand hover:underline"
-          >
-            {readingOnTop && showReading ? (
-              <ruby lang="ja" className="leading-tight">
-                {item.expression}
-                <rt className="text-xs font-normal text-muted-foreground">{item.reading}</rt>
-              </ruby>
-            ) : (
-              <span lang="ja" className="min-w-0 truncate">
-                {item.expression}
-              </span>
-            )}
-            {enrichment && <Sparkles className="size-3.5 shrink-0 text-accent-brand" aria-hidden />}
-          </button>
-        )}
-      </DialogTrigger>
+      <DialogTrigger
+        render={
+          triggerVariant === 'icon' ? (
+            <button
+              type="button"
+              aria-label="Xem nhanh"
+              title={enrichment ? 'Xem nhanh (có thẻ enrichment)' : 'Xem nhanh'}
+              className="inline-flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            >
+              {enrichment ? (
+                <Sparkles className="size-3.5 text-accent-brand" aria-hidden />
+              ) : (
+                <Info className="size-3.5" aria-hidden />
+              )}
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="flex max-w-full items-center gap-1.5 text-left font-medium hover:text-accent-brand hover:underline"
+            >
+              {readingOnTop && showReading ? (
+                <ruby lang="ja" className="leading-tight">
+                  {item.expression}
+                  <rt className="text-xs font-normal text-muted-foreground">{item.reading}</rt>
+                </ruby>
+              ) : (
+                <span lang="ja" className="min-w-0 truncate">
+                  {item.expression}
+                </span>
+              )}
+              {enrichment && (
+                <Sparkles className="size-3.5 shrink-0 text-accent-brand" aria-hidden />
+              )}
+            </button>
+          )
+        }
+      />
       <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle className="flex flex-wrap items-center gap-2">

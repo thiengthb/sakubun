@@ -12,12 +12,10 @@ const PRIMITIVE = /from '(?:radix-ui|@base-ui\/react[^']*)'/;
 const STILL_ON_RADIX = [
   'components/ui/accordion.tsx',
   'components/ui/checkbox.tsx',
-  'components/ui/dialog.tsx',
   'components/ui/dropdown-menu.tsx',
   'components/ui/label.tsx',
   'components/ui/select.tsx',
   'components/ui/separator.tsx',
-  'components/ui/sheet.tsx',
   'components/ui/sidebar.tsx',
   'components/ui/slider.tsx',
   'components/ui/switch.tsx',

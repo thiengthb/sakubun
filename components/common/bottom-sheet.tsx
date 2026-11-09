@@ -1,6 +1,6 @@
 'use client';
 
-import { type ReactNode } from 'react';
+import { type ReactElement, type ReactNode } from 'react';
 import { RotateCcw, type LucideIcon } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -26,7 +26,7 @@ export function BottomSheet({
   children,
   className,
 }: {
-  trigger: ReactNode;
+  trigger: ReactElement;
   title: ReactNode;
   /** The trigger's icon, beside the title: says which tool this sheet is. */
   icon?: LucideIcon;
@@ -38,7 +38,7 @@ export function BottomSheet({
 }) {
   return (
     <Sheet>
-      <SheetTrigger asChild>{trigger}</SheetTrigger>
+      <SheetTrigger render={trigger} />
       <SheetContent
         side="bottom"
         showCloseButton={false}
@@ -62,11 +62,7 @@ export function BottomSheet({
         <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 pb-2">{children}</div>
 
         <SheetFooter className="shrink-0 border-t border-border/70 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-          <SheetClose asChild>
-            <Button size="lg" className="w-full">
-              {closeLabel}
-            </Button>
-          </SheetClose>
+          <SheetClose render={<Button size="lg" className="w-full" />}>{closeLabel}</SheetClose>
         </SheetFooter>
       </SheetContent>
     </Sheet>
