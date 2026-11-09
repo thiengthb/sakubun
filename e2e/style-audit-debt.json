@@ -1,0 +1,118 @@
+{
+  "/@1440": {
+    "offRoleSizes": [11, 12.8, 16, 22],
+    "offGridGaps": [6],
+    "smallTargets": []
+  },
+  "/review@1440": {
+    "offRoleSizes": [16, 30],
+    "offGridGaps": [6, 10],
+    "smallTargets": []
+  },
+  "/resources?tab=grammar@1440": {
+    "offRoleSizes": [],
+    "offGridGaps": [2, 6, 10, 14],
+    "smallTargets": [
+      "Chọn dòng 16x16",
+      "Chọn tất cả dòng trên tr 16x16",
+      "Cấp 44x20",
+      "Kéo để đổi vị trí cột 14x14",
+      "Mẫu ngữ pháp 113x20",
+      "Nghĩa 56x20",
+      "Ngày thêm 90x20",
+      "Phím tắt của bảng 14x20",
+      "Trạng thái 84x20",
+      "Đến hạn 73x20"
+    ]
+  },
+  "/resources?tab=vocab@1440": {
+    "offRoleSizes": [],
+    "offGridGaps": [2, 6, 10, 14],
+    "smallTargets": [
+      "Chọn dòng 16x16",
+      "Chọn tất cả dòng trên tr 16x16",
+      "Kéo để đổi vị trí cột 14x14",
+      "Lý do 55x20",
+      "Nghĩa 56x20",
+      "Ngày thêm 90x20",
+      "Phím tắt của bảng 14x20",
+      "Trạng thái 84x20",
+      "Từ 36x20",
+      "Ví dụ 51x20",
+      "Đến hạn 73x20"
+    ]
+  },
+  "/library@1440": {
+    "offRoleSizes": [],
+    "offGridGaps": [6],
+    "smallTargets": ["Tài nguyên › Nhóm 121x18"]
+  },
+  "/kaiwa@1440": {
+    "offRoleSizes": [],
+    "offGridGaps": [],
+    "smallTargets": ["Kho chung › Kịch bản 138x18"]
+  },
+  "/history@1440": {
+    "offRoleSizes": [],
+    "offGridGaps": [6],
+    "smallTargets": []
+  },
+  "/settings@1440": {
+    "offRoleSizes": [],
+    "offGridGaps": [1, 2, 6],
+    "smallTargets": [
+      "Giảm Kanji mới / ngày 22x22",
+      "Giảm Mẫu ngữ pháp mới /  22x22",
+      "Giảm Tối đa lượt ôn / ng 22x22",
+      "Giảm Từ vựng mới / ngày 22x22",
+      "Kanji mới / ngày 40x22",
+      "Mẫu ngữ pháp mới / ngày 40x22",
+      "Tăng Kanji mới / ngày 22x22",
+      "Tăng Mẫu ngữ pháp mới /  22x22",
+      "Tăng Tối đa lượt ôn / ng 22x22",
+      "Tăng Từ vựng mới / ngày 22x22",
+      "Tối đa lượt ôn / ngày 40x22",
+      "Từ vựng mới / ngày 40x22"
+    ]
+  },
+  "/@390": {
+    "offRoleSizes": [11, 12.8, 16, 22],
+    "offGridGaps": [6],
+    "smallTargets": []
+  },
+  "/review@390": {
+    "offRoleSizes": [16],
+    "offGridGaps": [6, 10],
+    "smallTargets": []
+  },
+  "/resources?tab=grammar@390": {
+    "offRoleSizes": [],
+    "offGridGaps": [2, 6, 10, 14],
+    "smallTargets": []
+  },
+  "/resources?tab=vocab@390": {
+    "offRoleSizes": [],
+    "offGridGaps": [2, 6, 10, 14],
+    "smallTargets": []
+  },
+  "/library@390": {
+    "offRoleSizes": [],
+    "offGridGaps": [2, 6],
+    "smallTargets": ["Tài nguyên › Nhóm 121x18"]
+  },
+  "/kaiwa@390": {
+    "offRoleSizes": [],
+    "offGridGaps": [],
+    "smallTargets": []
+  },
+  "/history@390": {
+    "offRoleSizes": [],
+    "offGridGaps": [6],
+    "smallTargets": []
+  },
+  "/settings@390": {
+    "offRoleSizes": [],
+    "offGridGaps": [1, 2, 6],
+    "smallTargets": []
+  }
+}
