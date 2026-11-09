@@ -1,74 +1,104 @@
 import { expect, test } from '@playwright/test';
 import { E2E_EMAIL, E2E_LOGIN, seedE2eAccount } from './fixtures';
 
-// thien, 7.4: the sidebar's display switches are two icon toggles of one kind, あ (furigana) and
-// the theme, raised like every choice chip; furigana is the learner's setting, kept on the server.
+// UI v2, phase 1 (docs/plans/2026-11-08-ui-v2.md › Khung điều hướng): the user block at the foot of
+// the sidebar opens one menu with Cài đặt, the dark theme, furigana and Đăng xuất; the loose あ and
+// sun toggles are gone. Furigana is the learner's setting, kept on the server.
 
 test.beforeAll(async () => {
   await seedE2eAccount();
 });
 
-test('the sidebar toggles furigana and the theme', async ({ page }) => {
-  await page.setViewportSize({ width: 1440, height: 900 });
+async function logIn(page: import('@playwright/test').Page) {
   await page.goto('/login');
   await page.getByLabel('Email').fill(E2E_EMAIL);
   await page.getByLabel('Mật khẩu').fill(E2E_LOGIN);
   await page.getByRole('button', { name: 'Đăng nhập' }).click();
   await page.waitForURL((u) => !u.pathname.startsWith('/login'), { timeout: 30_000 });
+}
 
-  const theme = page.getByRole('button', { name: /^Chuyển sang giao diện/ });
-  const furigana = page.getByRole('button', { name: /furigana$/ });
-  await expect(theme).toBeVisible();
-  await expect(furigana).toBeVisible();
-  for (const toggle of [theme, furigana]) {
-    const look = await toggle.evaluate((el) => {
-      const cs = getComputedStyle(el);
-      const box = el.getBoundingClientRect();
-      return { edge: cs.borderTopWidth, lip: cs.boxShadow, h: box.height, w: box.width };
-    });
-    expect(look.edge).toBe('2px');
-    expect(look.lip).toMatch(/0px 2px 0px/);
-    // 26px of box and a 2px lip: 28px to the eye, like every control from 768px.
-    expect(look.h).toBe(26);
-  }
-  const t = (await theme.boundingBox())!;
-  const f = (await furigana.boundingBox())!;
-  expect(Math.abs(t.y - f.y)).toBeLessThan(1);
+test('the user menu switches the theme and furigana', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await logIn(page);
 
+  // The loose toggles left the sidebar.
+  await expect(page.getByRole('button', { name: /^Chuyển sang giao diện/ })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: /furigana$/ })).toHaveCount(0);
+
+  const account = page.getByRole('button', { name: /^Tài khoản:/ });
+  // The block keeps sakubun's button language: a 2px edge and a 2px lip.
+  const look = await account.evaluate((el) => {
+    const cs = getComputedStyle(el);
+    return { edge: cs.borderTopWidth, lip: cs.boxShadow };
+  });
+  expect(look.edge).toBe('2px');
+  expect(look.lip).toMatch(/0px 2px 0px/);
+
+  await account.click();
+  const menu = page.getByRole('menu');
+  await expect(menu.getByRole('menuitem')).toHaveText(['Cài đặt', 'Đăng xuất']);
+  await expect(menu.getByRole('menuitemcheckbox')).toHaveCount(2);
+  for (const name of ['Giao diện tối', 'Hiện furigana'])
+    await expect(menu.getByRole('menuitemcheckbox', { name, exact: true })).toBeVisible();
+
+  // The theme flips and the menu stays open for the next switch.
+  const theme = menu.getByRole('menuitemcheckbox', { name: 'Giao diện tối' });
   const before = await page.evaluate(() => document.documentElement.classList.contains('dark'));
+  await expect(theme).toHaveAttribute('aria-checked', String(before));
   await theme.click();
   await expect
     .poll(() => page.evaluate(() => document.documentElement.classList.contains('dark')))
     .toBe(!before);
+  await expect(theme).toHaveAttribute('aria-checked', String(!before));
 
   // Furigana is on for a new learner; off survives a reload, and on again restores it.
-  await expect(furigana).toHaveAttribute('aria-pressed', 'true');
-  // Pressed looks chosen (brand ink) even inside its tooltip, whose trigger takes over data-state.
-  const brand = await page.evaluate(() => {
-    const probe = document.body.appendChild(document.createElement('span'));
-    probe.className = 'text-accent-brand';
-    const color = getComputedStyle(probe).color;
-    probe.remove();
-    return color;
-  });
-  await page.mouse.move(700, 450);
-  await expect.poll(() => furigana.evaluate((el) => getComputedStyle(el).color)).toBe(brand);
+  const furigana = menu.getByRole('menuitemcheckbox', { name: 'Hiện furigana' });
+  await expect(furigana).toHaveAttribute('aria-checked', 'true');
   await furigana.click();
-  await expect(page.getByRole('button', { name: 'Hiện furigana' })).toHaveAttribute(
-    'aria-pressed',
-    'false',
-  );
-  await expect(page.getByRole('button', { name: 'Hiện furigana' })).toBeEnabled();
+  await expect(furigana).toHaveAttribute('aria-checked', 'false');
+  await expect(furigana).not.toHaveAttribute('aria-disabled', 'true');
   await page.reload();
-  await expect(page.getByRole('button', { name: 'Hiện furigana' })).toHaveAttribute(
-    'aria-pressed',
-    'false',
-  );
-  await page.getByRole('button', { name: 'Hiện furigana' }).click();
-  await expect(page.getByRole('button', { name: 'Ẩn furigana' })).toBeEnabled();
+  await account.click();
+  await expect(furigana).toHaveAttribute('aria-checked', 'false');
+  await furigana.click();
+  await expect(furigana).not.toHaveAttribute('aria-disabled', 'true');
   await page.reload();
-  await expect(page.getByRole('button', { name: 'Ẩn furigana' })).toHaveAttribute(
-    'aria-pressed',
-    'true',
-  );
+  await account.click();
+  await expect(furigana).toHaveAttribute('aria-checked', 'true');
+
+  // Cài đặt goes to the page and closes the menu.
+  await menu.getByRole('menuitem', { name: 'Cài đặt' }).click();
+  await page.waitForURL((u) => u.pathname === '/settings');
+  await expect(menu).toBeHidden();
+});
+
+test('folded, the user menu opens beside the avatar', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await logIn(page);
+  await page.locator('[data-sidebar="trigger"]').first().click();
+  await expect(page.locator('[data-collapsible="icon"]').first()).toBeAttached();
+  const account = page.getByRole('button', { name: /^Tài khoản:/ });
+  await expect.poll(async () => (await account.boundingBox())?.width).toBe(32);
+  // In dev the Next.js badge sits over the bottom-left corner, so open it from the keyboard.
+  await account.focus();
+  await page.keyboard.press('Enter');
+  const menu = page.getByRole('menu');
+  await expect(menu).toBeVisible();
+  const a = (await account.boundingBox())!;
+  // Polled: the menu zooms in, so its box settles a moment after it shows.
+  await expect
+    .poll(async () => (await menu.boundingBox())!.x, {
+      message: 'the menu opens to the right of the folded sidebar',
+    })
+    .toBeGreaterThanOrEqual(a.x + a.width);
+});
+
+test('Đăng xuất in the user menu signs out', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await logIn(page);
+  await page.getByRole('button', { name: /^Tài khoản:/ }).click();
+  await page.getByRole('menuitem', { name: 'Đăng xuất' }).click();
+  await page.waitForURL((u) => u.pathname.startsWith('/login'), { timeout: 30_000 });
+  await page.goto('/settings');
+  await page.waitForURL((u) => u.pathname.startsWith('/login'), { timeout: 30_000 });
 });

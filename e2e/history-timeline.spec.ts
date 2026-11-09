@@ -1,7 +1,14 @@
 import path from 'node:path';
 import Database from 'better-sqlite3';
 import { expect, test, type Page } from '@playwright/test';
-import { E2E_DB_FILE, E2E_EMAIL, E2E_LOGIN, E2E_OWNER, seedE2eAccount } from './fixtures';
+import {
+  E2E_DB_FILE,
+  E2E_EMAIL,
+  E2E_LOGIN,
+  E2E_OWNER,
+  seedE2eAccount,
+  setFurigana,
+} from './fixtures';
 
 // Lịch sử as a timeline (thien, 7.4 History B, Detail B): turns grouped under their day, a side
 // panel that keeps the list in sight and steps through it with the arrow keys, and readings shown
@@ -118,8 +125,7 @@ test('with furigana on, Lịch sử shows the readings without a hover, in the p
       .filter({ hasText: 'おんがく' })
       .first()
       .evaluate((rt) => getComputedStyle(rt).visibility);
-  const toggle = page.getByRole('button', { name: /furigana$/ });
-  if ((await toggle.getAttribute('aria-pressed')) !== 'true') await toggle.click();
+  await setFurigana(page, true);
   await expect.poll(() => reading('main [data-history-row]')).toBe('visible');
 
   await page.locator('[data-history-row]').filter({ hasText: 'Nghe nhạc.' }).click();

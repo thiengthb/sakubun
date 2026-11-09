@@ -17,7 +17,6 @@ import { WordLookup } from '@/components/common/word-lookup';
 import { ScrollToTop } from '@/components/layout/scroll-to-top';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import { StreakBeacon } from '@/components/features/dashboard/streak-beacon';
-import { DisplayToggles } from '@/components/layout/display-toggles';
 import { SidebarUser } from '@/components/layout/sidebar-user';
 import { useSession } from '@/lib/auth/auth-client';
 
@@ -25,14 +24,32 @@ import { useSession } from '@/lib/auth/auth-client';
 // /privacy and /terms that Google's consent screen links to.
 const CHROMELESS = ['/login', '/consent', '/privacy', '/terms'];
 
-const NAV_ITEMS = [
-  { href: '/', label: 'Phân tích', icon: LayoutDashboard, exact: true },
-  { href: '/review', label: 'Ôn nhanh', icon: Layers },
-  { href: '/kaiwa', label: 'Hội thoại', icon: MessagesSquare },
-  { href: '/resources', label: 'Tài nguyên', icon: Library },
-  { href: '/library', label: 'Kho chung', icon: Globe },
-  { href: '/history', label: 'Lịch sử', icon: History },
-  { href: '/settings', label: 'Cài đặt', icon: Settings },
+// UI v2 (docs/plans/2026-11-08-ui-v2.md › Bản đồ mới): three groups by what the learner does. Until
+// the later phases land, Phân tích still holds / and Lịch sử its own page (phase 1 merges it into
+// Tiến độ), and the two stores keep their own items (D6 makes them one "Kho" in phase 4).
+const NAV_GROUPS: AppSidebarGroup[] = [
+  {
+    label: 'Học',
+    items: [
+      { href: '/', label: 'Phân tích', icon: LayoutDashboard, exact: true },
+      { href: '/review', label: 'Ôn nhanh', icon: Layers },
+      { href: '/kaiwa', label: 'Hội thoại', icon: MessagesSquare },
+    ],
+  },
+  {
+    label: 'Kho',
+    items: [
+      { href: '/resources', label: 'Tài nguyên', icon: Library },
+      { href: '/library', label: 'Kho chung', icon: Globe },
+    ],
+  },
+  {
+    label: 'Bạn',
+    items: [
+      { href: '/history', label: 'Lịch sử', icon: History },
+      { href: '/settings', label: 'Cài đặt', icon: Settings },
+    ],
+  },
 ];
 
 export function AppShell({
@@ -49,7 +66,7 @@ export function AppShell({
   const { data: session } = useSession();
   if (CHROMELESS.includes(pathname)) return <>{children}</>;
 
-  const groups: AppSidebarGroup[] = [{ items: NAV_ITEMS }];
+  const groups = NAV_GROUPS;
 
   return (
     <SidebarProvider defaultOpen={defaultSidebarOpen}>
@@ -61,18 +78,16 @@ export function AppShell({
         }}
         groups={groups}
         footer={
-          <>
-            <DisplayToggles furigana={session?.user ? furigana : null} />
-            {session?.user && (
-              <SidebarUser
-                user={{
-                  name: session.user.name,
-                  email: session.user.email,
-                  image: session.user.image,
-                }}
-              />
-            )}
-          </>
+          session?.user && furigana !== null ? (
+            <SidebarUser
+              user={{
+                name: session.user.name,
+                email: session.user.email,
+                image: session.user.image,
+              }}
+              furigana={furigana}
+            />
+          ) : null
         }
       />
       <SidebarInset className="min-w-0">
