@@ -14,7 +14,7 @@ Phân tích vẫn ở `/`: Tổng quan và Thống kê vào Tiến độ ở U7,
 
 ## U1 còn lại
 
-1. Cổng U1: thien duyệt ảnh trên https://claude.ai/artifact/TedjKZtwMf2QQhZ5msNexj (15 cặp trước/sau) và đi thử 5 tab
+1. Cổng U1: thien duyệt ảnh trên https://claude.ai/artifact/9Hd8pSLPK63CUFMcX4Tshx (làm lại 09/11 ở tài khoản này, trang cũ đã mất) và đi thử 5 tab
    trên điện thoại thật. Duyệt xong thì đánh U1 Done trong roadmap và nhận U2 (Phiên học, risk:high).
 
 ## Đang chờ thien (tối đa 3)
