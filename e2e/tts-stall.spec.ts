@@ -34,7 +34,7 @@ test('TTS treo thì nút tự thoát khỏi trạng thái đang phát, không qu
 
   await page.setViewportSize({ width: 390, height: 844 });
   await login(page);
-  await page.goto('/history');
+  await page.goto('/progress');
 
   const speak = page.locator('button[aria-label*="phát âm"]').first();
   await expect(speak).toBeVisible();

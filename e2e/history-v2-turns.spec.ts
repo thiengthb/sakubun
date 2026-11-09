@@ -29,7 +29,7 @@ test('History shows a v2 turn with its grade beside an old sentence', async ({ p
   await page.getByLabel('Mật khẩu').fill(E2E_LOGIN);
   await page.getByRole('button', { name: 'Đăng nhập' }).click();
   await page.waitForURL((u) => !u.pathname.startsWith('/login'), { timeout: 30_000 });
-  await page.goto('/history', { waitUntil: 'networkidle' });
+  await page.goto('/progress', { waitUntil: 'networkidle' });
 
   // One row per turn on the timeline (thien, 7.4 History B).
   const rows = page.locator('[data-history-row]');
@@ -85,7 +85,7 @@ test('History loads more turns as it scrolls at every width, and a new search st
   await page.getByLabel('Mật khẩu').fill(E2E_LOGIN);
   await page.getByRole('button', { name: 'Đăng nhập' }).click();
   await page.waitForURL((u) => !u.pathname.startsWith('/login'), { timeout: 30_000 });
-  await page.goto('/history', { waitUntil: 'networkidle' });
+  await page.goto('/progress', { waitUntil: 'networkidle' });
 
   const rows = page.locator('[data-history-row]');
   await expect(rows).toHaveCount(20);
@@ -151,7 +151,7 @@ test.describe('on a phone', () => {
     await page.getByLabel('Mật khẩu').fill(E2E_LOGIN);
     await page.getByRole('button', { name: 'Đăng nhập' }).click();
     await page.waitForURL((u) => !u.pathname.startsWith('/login'), { timeout: 30_000 });
-    await page.goto('/history', { waitUntil: 'networkidle' });
+    await page.goto('/progress', { waitUntil: 'networkidle' });
 
     const rows = page.locator('[data-history-row]');
     await expect(rows).toHaveCount(3);
@@ -197,7 +197,7 @@ test.describe('on a phone', () => {
     await page.getByLabel('Mật khẩu').fill(E2E_LOGIN);
     await page.getByRole('button', { name: 'Đăng nhập' }).click();
     await page.waitForURL((u) => !u.pathname.startsWith('/login'), { timeout: 30_000 });
-    await page.goto('/history', { waitUntil: 'networkidle' });
+    await page.goto('/progress', { waitUntil: 'networkidle' });
 
     const rows = page.locator('[data-history-row]');
     await expect(rows).toHaveCount(20);

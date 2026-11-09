@@ -5,7 +5,7 @@ import { PageSkeleton, TimelineSkeleton, ToolbarSkeleton } from '@/components/la
 // The count is the only thing in the header that waits for data.
 export default function Loading() {
   return (
-    <PageSkeleton template="list" title="Lịch sử" meta tabs={<PageTabsSkeleton set="history" />}>
+    <PageSkeleton template="list" title="Tiến độ" meta tabs={<PageTabsSkeleton set="history" />}>
       <ToolbarSkeleton filters={1} />
       <TimelineSkeleton />
     </PageSkeleton>

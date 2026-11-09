@@ -187,7 +187,7 @@ export async function setSentenceStarredAction(
   const db = await getUserDb();
   if (!sentenceId) return err('Thiếu sentenceId');
   await setSentenceStarred(db, sentenceId, starred);
-  revalidatePath('/history');
+  revalidatePath('/progress');
   return ok(undefined);
 }
 

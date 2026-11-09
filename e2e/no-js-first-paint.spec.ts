@@ -28,7 +28,7 @@ test('không có JS, mọi ô chọn trong HTML đầu tiên đã có chữ', as
   const empty: string[] = [];
   let total = 0;
 
-  for (const path of ['/', '/resources', '/history', '/settings']) {
+  for (const path of ['/', '/resources', '/progress', '/settings']) {
     await page.goto(path);
     const texts = await page.locator('[data-slot="select-value"]').allTextContents();
     total += texts.length;

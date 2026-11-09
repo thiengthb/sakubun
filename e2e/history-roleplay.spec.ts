@@ -85,8 +85,8 @@ for (const [width, height] of [
     seed({ roleplays: true });
     await page.setViewportSize({ width, height });
     await signIn(page);
-    await page.goto('/history', { waitUntil: 'networkidle' });
-    await expect(page.getByRole('tab', { name: 'Luyện dịch' })).toHaveAttribute(
+    await page.goto('/progress', { waitUntil: 'networkidle' });
+    await expect(page.getByRole('tab', { name: 'Lịch sử dịch' })).toHaveAttribute(
       'aria-selected',
       'true',
     );
@@ -137,7 +137,16 @@ for (const [width, height] of [
 test('Nhập vai says how to start when nothing is saved yet', async ({ page }) => {
   seed({ roleplays: false });
   await signIn(page);
-  await page.goto('/history?tab=nhap-vai', { waitUntil: 'networkidle' });
+  await page.goto('/progress?tab=nhap-vai', { waitUntil: 'networkidle' });
   await expect(page.getByText('Chưa có buổi nhập vai nào')).toBeVisible();
   await expect(page.getByText('0 buổi nhập vai')).toBeVisible();
+});
+
+test('old Lịch sử links land on Tiến độ with their query', async ({ page }) => {
+  seed({ roleplays: false });
+  await signIn(page);
+  await page.goto('/history?tab=nhap-vai', { waitUntil: 'networkidle' });
+  await expect(page).toHaveURL(/\/progress\?tab=nhap-vai$/);
+  await expect(page.getByRole('heading', { level: 1, name: 'Tiến độ' })).toBeVisible();
+  await expect(page.getByRole('tab', { name: 'Nhập vai' })).toHaveAttribute('aria-selected', 'true');
 });

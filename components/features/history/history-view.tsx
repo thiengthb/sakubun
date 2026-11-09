@@ -38,7 +38,7 @@ export function HistoryView({
     <Tabs value={tab} onValueChange={setTab}>
       <PageShell
         template="list"
-        title="Lịch sử"
+        title="Tiến độ"
         meta={
           tab === 'nhap-vai' ? `${roleplays.length} buổi nhập vai` : `${sentences.length} lượt dịch`
         }

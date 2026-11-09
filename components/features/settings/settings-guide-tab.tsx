@@ -4,7 +4,7 @@ import {
   Bot,
   CalendarClock,
   Globe,
-  History,
+  TrendingUp,
   KeyRound,
   Layers,
   LayoutDashboard,
@@ -190,8 +190,8 @@ export function GuideTab({
             nhóm; bấm Chia sẻ ở trang một mục hay một nhóm của bạn để đưa nó lên cho người khác.
           </p>
         </GuideRow>
-        <GuideRow icon={History} title="Lịch sử">
-          <p>Những câu đã dịch, điểm và nhận xét của AI.</p>
+        <GuideRow icon={TrendingUp} title="Tiến độ">
+          <p>Những câu đã dịch, điểm và nhận xét của AI, và các buổi nhập vai đã lưu.</p>
         </GuideRow>
       </SettingsSection>
 

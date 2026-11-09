@@ -111,7 +111,7 @@ export function HistoryList({
     if (!openParam) return;
     const next = new URLSearchParams(searchParams.toString());
     next.delete('open');
-    router.replace(next.size ? `/history?${next}` : '/history', { scroll: false });
+    router.replace(next.size ? `/progress?${next}` : '/progress', { scroll: false });
   }, [openParam, searchParams, router]);
 
   // A turn that turns GRADED while the page is open opens by itself.

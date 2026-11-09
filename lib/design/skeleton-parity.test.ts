@@ -110,7 +110,7 @@ describe('loading skeletons match their routes', () => {
 
   it('a page with no tabs has no tab rail in its skeleton', () => {
     const pairs: [string, string][] = [
-      ['components/features/history/history-view.tsx', 'app/history/loading.tsx'],
+      ['components/features/history/history-view.tsx', 'app/progress/loading.tsx'],
       ['components/features/resources/item-analytics.tsx', 'app/resources/[id]/loading.tsx'],
     ];
     const offenders: string[] = [];

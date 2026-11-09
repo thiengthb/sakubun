@@ -27,7 +27,7 @@ const PAGES = [
   '/resources?tab=vocab',
   '/library',
   '/kaiwa',
-  '/history',
+  '/progress',
   '/settings',
 ];
 const WIDTHS = [1440, 390] as const;
