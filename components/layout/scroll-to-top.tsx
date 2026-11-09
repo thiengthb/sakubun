@@ -26,7 +26,7 @@ export function ScrollToTop() {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 12 }}
           transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
-          className="fixed right-4 bottom-[max(1rem,env(safe-area-inset-bottom))] z-40"
+          className="fixed right-4 bottom-(--float-bottom) z-40"
         >
           <Explain side="left" text="Lên đầu trang">
             <Button

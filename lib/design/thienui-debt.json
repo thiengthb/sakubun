@@ -13,7 +13,6 @@
     "focus-visible-never-removed": {
       "components/common/data-table.tsx": 1,
       "components/common/filter-popover.tsx": 2,
-      "components/layout/edge-nav-rail.tsx": 2,
       "components/ui/input.tsx": 1
     },
     "icon-size-scale": {

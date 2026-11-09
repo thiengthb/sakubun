@@ -101,7 +101,7 @@ thien reviewing before/after screenshots at 390 and 1440.
 | #   | Phase                                                                                      | Done when                                                  | Risk   | Status            |
 | --- | ------------------------------------------------------------------------------------------ | ---------------------------------------------------------- | ------ | ----------------- |
 | U0  | Foundation: type roles 6+3, spacing, kind and grade colours, Onest, `lang="ja"`, audit e2e | audit: at most 9 font sizes, 0 off-grid gaps on done pages | medium | Done (2026-11-09) |
-| U1  | Shell: `components/ui` to Base UI via thienui registry, AppShell, BottomNav, `/progress`   | thien walks 5 tabs on a real phone; thienui debt goes down | medium | Not started       |
+| U1  | Shell: `components/ui` to Base UI via thienui registry, AppShell, BottomNav, `/progress`   | thien walks 5 tabs on a real phone; thienui debt goes down | medium | In progress       |
 | U2  | Study session: card, answer options, grade bar, summary, prefetch, undo                    | keyboard e2e; next card under 400ms                        | high   | Not started       |
 | U3  | Hôm nay: hero, next step, newcomer level pick                                              | one lead area; newcomer reaches first card in 3 taps       | medium | Not started       |
 | U4  | Kho (D6: own + Kho chung in one place), Nhóm, review by group                              | 0 hit areas under 24px; ui-standard debt goes down         | medium | Not started       |

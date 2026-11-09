@@ -1,11 +1,13 @@
 'use client';
 
-import { useLayoutEffect, useRef, useState, useTransition } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { Button, ButtonLink } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useFillWindow } from '@/components/ui/use-fit-rows';
 import { PageShell } from '@/components/layout/page-shell';
+import { HideBottomNav } from '@/components/layout/bottom-nav';
 import { EmptyState } from '@/components/common/empty-state';
 import { ReviewCard, type CardTts } from '@/components/common/review-card';
 import type { CardAnswer, QuickCard, QuickReview } from '@/lib/app/quick-review';
@@ -196,13 +198,22 @@ export function QuickReviewView({
   const [isPending, startTransition] = useTransition();
   // The answer bar rests on the window bottom while the card is short, and sticks there when long.
   const sessionRef = useRef<HTMLDivElement>(null);
-  useFillWindow(sessionRef);
 
   const practice = retry !== null;
   const deck = retry ? retry.cards : cards;
   const at = retry ? retry.index : index;
   const card = deck[at] as QuickCard | undefined;
   const done = at >= deck.length;
+  // The root layout reads the due count for the phone's Ôn nhanh tab, and layouts do not re-render
+  // on a client-side move, so the count is fetched again once the session ends. The session's own
+  // state survives: it keeps the cards it opened with (above).
+  const router = useRouter();
+  const answered = results.length > 0;
+  useEffect(() => {
+    if (done && answered) router.refresh();
+  }, [done, answered, router]);
+  // The tab bar comes back with the summary; the session's height leaves room for it.
+  useFillWindow(sessionRef, done);
   // A new item is met before it is tested: read, then "Đã xem" records Good, as it always has.
   const intro = !practice && flips(card) && !!card?.isNew;
 
@@ -338,6 +349,8 @@ export function QuickReviewView({
         </span>
       }
     >
+      {/* A study session has the screen to itself: the phone's tab bar steps aside until the summary. */}
+      {card && !done && <HideBottomNav />}
       <div ref={sessionRef} className="flex flex-col gap-6 md:gap-8">
         <div
           className="flex gap-1.5"

@@ -277,6 +277,20 @@
   --p-motion-easing-decelerate: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
+/* The phone's tab bar (components/layout/bottom-nav.tsx) is fixed over the foot of the page. While
+   it shows, the page leaves room under its last line, and floating things (the scroll-to-top
+   button, toasts) sit above it; it has the safe area inside it. */
+:root {
+  --bottom-nav-space: 0px;
+  --float-bottom: max(1rem, env(safe-area-inset-bottom));
+}
+@media (width < 48rem) {
+  :root:has([data-bottom-nav]) {
+    --bottom-nav-space: calc(var(--spacing) * 14 + env(safe-area-inset-bottom));
+    --float-bottom: calc(var(--bottom-nav-space) + 1rem);
+  }
+}
+
 @layer base {
   /* Hit area: the visible control keeps its size; ::before grows to 24px (mouse) or 44px (touch). */
   .target-44 {

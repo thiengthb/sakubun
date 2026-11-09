@@ -227,3 +227,19 @@ export async function getQueue(
   const plan = planQueue({ candidates: [...byId.values()], caps, today, now, limit });
   return { ...plan, cards: plan.cards.map((c) => byId.get(c.id)!), today };
 }
+
+/**
+ * How many cards are due now, for the dot on the Ôn nhanh tab (UI v2, B2). It runs on every page,
+ * so it is one count: cards already met (learning, review, relearning) whose time has come, of
+ * every kind Ôn nhanh shows, suspended items left out. New cards are not counted: they wait on the
+ * daily allowance, not on a date.
+ */
+export async function countDue(db: UserDb, now: Date = new Date()): Promise<number> {
+  return db.srsState.count({
+    where: {
+      state: { not: CARD_STATE.NEW },
+      due: { lte: now },
+      item: { suspended: false, kind: { in: [...ITEM_KINDS, KANJI_KIND] } },
+    },
+  });
+}

@@ -245,3 +245,21 @@ describe('getQueue with kanji (KJ3)', () => {
     expect(await db.item.count({ where: { kind: 'KANJI' } })).toBe(0);
   });
 });
+
+describe('countDue (B2)', () => {
+  it('counts the met cards whose time has come, kanji too, and leaves out new and suspended ones', async () => {
+    const [due, later, fresh, paused, kanji] = await seed('GRAMMAR', 5);
+    const month = 30 * 86_400_000;
+    await review(due, 3, new Date(NOW.getTime() - month));
+    await review(later, 3, new Date(NOW.getTime() - MINUTE));
+    await review(paused, 3, new Date(NOW.getTime() - month));
+    await db.item.update({ where: { id: paused }, data: { suspended: true } });
+    await db.item.update({ where: { id: kanji }, data: { kind: 'KANJI' } });
+    await review(kanji, 3, new Date(NOW.getTime() - month));
+    void fresh;
+
+    expect(await Q.countDue(db, NOW)).toBe(2);
+    const dueAt = (await db.srsState.findUniqueOrThrow({ where: { itemId: later } })).due;
+    expect(await Q.countDue(db, dueAt)).toBe(3);
+  });
+});

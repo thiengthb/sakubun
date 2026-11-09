@@ -378,7 +378,7 @@ export function KaiwaCanvas({
               <div
                 aria-label="Chèn nhanh"
                 role="toolbar"
-                className="sticky bottom-0 flex gap-1.5 overflow-x-auto bg-background py-2 md:hidden"
+                className="sticky bottom-(--bottom-nav-space) flex gap-1.5 overflow-x-auto bg-background py-2 md:hidden"
               >
                 {speakers.map((s) => (
                   <Button key={s} variant="outline" onClick={() => insert(`${s}: `)}>

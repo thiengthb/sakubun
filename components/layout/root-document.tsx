@@ -56,7 +56,12 @@ export function RootDocument({
               <TooltipProvider delay={300}>{children}</TooltipProvider>
             </LucideProvider>
           </MotionConfig>
-          <Toaster position="bottom-center" />
+          {/* Above the phone's tab bar while it shows (--float-bottom, globals.css). */}
+          <Toaster
+            position="bottom-center"
+            offset={{ bottom: 'max(24px, var(--float-bottom))' }}
+            mobileOffset={{ bottom: 'var(--float-bottom)' }}
+          />
         </ThemeProvider>
       </body>
     </html>
