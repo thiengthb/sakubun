@@ -108,7 +108,7 @@ describe('MCP Kaiwa', () => {
     expect(unknown).toEqual({ isError: true, text: expect.stringContaining('Unknown scriptId') });
   });
 
-  it('saves a finished role-play to Lịch sử, checked against the script', async () => {
+  it('saves a finished role-play to Tiến độ, checked against the script', async () => {
     const id = scriptIdIn((await call('kaiwa_save', { title: 'Ở nhà hàng', body: BODY })).text);
     const saved = await call('kaiwa_roleplay_save', {
       scriptId: id,
@@ -117,7 +117,7 @@ describe('MCP Kaiwa', () => {
     });
     expect(saved.isError).toBe(false);
     expect(saved.text).toMatch(/^saved roleplayId \S+ · part B · 1\/1 right$/m);
-    expect(saved.text).toContain('view: http://localhost:3789/history');
+    expect(saved.text).toContain('view: http://localhost:3789/progress?tab=nhap-vai');
     const row = await db.roleplay.findFirstOrThrow();
     expect(row).toMatchObject({
       scriptId: id,

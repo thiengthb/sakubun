@@ -52,7 +52,7 @@
     "offGridGaps": [],
     "smallTargets": ["Kho chung › Kịch bản 138x18"]
   },
-  "/history@1440": {
+  "/progress@1440": {
     "offRoleSizes": [],
     "offGridGaps": [6],
     "smallTargets": []
@@ -105,7 +105,7 @@
     "offGridGaps": [],
     "smallTargets": []
   },
-  "/history@390": {
+  "/progress@390": {
     "offRoleSizes": [],
     "offGridGaps": [6],
     "smallTargets": []

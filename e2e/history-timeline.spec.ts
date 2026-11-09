@@ -71,7 +71,7 @@ test('Lịch sử groups turns by day, and the side panel steps through them wit
   seed();
   await page.setViewportSize({ width: 1440, height: 900 });
   await login(page);
-  await page.goto('/history', { waitUntil: 'networkidle' });
+  await page.goto('/progress', { waitUntil: 'networkidle' });
 
   const days = page.locator('[data-slot="history-day"]');
   await expect(days).toHaveCount(2);
@@ -117,7 +117,7 @@ test('with furigana on, Lịch sử shows the readings without a hover, in the p
   seed();
   await page.setViewportSize({ width: 1440, height: 900 });
   await login(page);
-  await page.goto('/history', { waitUntil: 'networkidle' });
+  await page.goto('/progress', { waitUntil: 'networkidle' });
 
   const reading = (scope: string) =>
     page

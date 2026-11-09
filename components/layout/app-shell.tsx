@@ -3,13 +3,13 @@
 import { usePathname } from 'next/navigation';
 import {
   Globe,
-  History,
   CircleUserRound,
   Layers,
   LayoutDashboard,
   Library,
   MessagesSquare,
   Settings,
+  TrendingUp,
 } from 'lucide-react';
 import { AppLogo } from '@/components/layout/app-logo';
 import { AppSidebar, type AppSidebarGroup } from '@/components/layout/app-sidebar';
@@ -26,8 +26,8 @@ import { useSession } from '@/lib/auth/auth-client';
 const CHROMELESS = ['/login', '/consent', '/privacy', '/terms'];
 
 // UI v2 (docs/plans/2026-11-08-ui-v2.md › Bản đồ mới): three groups by what the learner does. Until
-// the later phases land, Phân tích still holds / and Lịch sử its own page (phase 1 merges it into
-// Tiến độ), and the two stores keep their own items (D6 makes them one "Kho" in phase 4).
+// the later phases land, Phân tích still holds / (Hôm nay replaces it in phase 3; its charts move to
+// Tiến độ in phase 7), and the two stores keep their own items (D6 makes them one "Kho" in phase 4).
 const NAV_GROUPS: AppSidebarGroup[] = [
   {
     label: 'Học',
@@ -47,7 +47,7 @@ const NAV_GROUPS: AppSidebarGroup[] = [
   {
     label: 'Bạn',
     items: [
-      { href: '/history', label: 'Lịch sử', icon: History },
+      { href: '/progress', label: 'Tiến độ', icon: TrendingUp },
       { href: '/settings', label: 'Cài đặt', icon: Settings },
     ],
   },
@@ -113,15 +113,14 @@ const under =
     roots.some((r) => pathname === r || pathname.startsWith(`${r}/`));
 
 // The phone's five tabs (docs/plans/2026-11-08-ui-v2.md › Bản đồ mới). Kho holds both stores and
-// Bạn the learner's own pages; until Hôm nay and Tiến độ exist, tab 1 is Phân tích and Bạn opens
-// Lịch sử.
+// Bạn the learner's own pages, opening on Tiến độ; until Hôm nay exists, tab 1 is Phân tích.
 const PHONE_TABS = [
   { href: '/', label: 'Phân tích', icon: LayoutDashboard, match: (p: string) => p === '/' },
   { href: '/review', label: 'Ôn nhanh', icon: Layers, match: under('/review'), due: true },
   { href: '/kaiwa', label: 'Hội thoại', icon: MessagesSquare, match: under('/kaiwa') },
   { href: '/resources', label: 'Kho', icon: Library, match: under('/resources', '/library') },
   {
-    href: '/history',
+    href: '/progress',
     label: 'Bạn',
     icon: CircleUserRound,
     match: under('/history', '/progress', '/settings', '/admin'),

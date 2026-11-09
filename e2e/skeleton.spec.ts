@@ -30,7 +30,7 @@ const PAIRS: Pair[] = [
     skeleton: 'item-edit?kind=grammar',
   },
   { name: 'resources/new', page: '/resources/new?kind=grammar', skeleton: 'resources-new' },
-  { name: 'history', page: '/history', skeleton: 'history' },
+  { name: 'history', page: '/progress', skeleton: 'history' },
   { name: 'review', page: '/review', skeleton: 'review' },
   { name: 'settings', page: '/settings', skeleton: 'settings' },
   { name: 'group detail', page: '/groups/grp-sk/', skeleton: 'group', asideTol: 260 },

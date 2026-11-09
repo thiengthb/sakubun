@@ -293,7 +293,7 @@ test('phần RIÊNG của mỗi bảng: thẻ chi tiết (ngữ pháp) · lý do
   await expect(body.getByText('bả ác', { exact: true })).toBeVisible();
 });
 
-test('ô tìm mirror ra URL cùng một kiểu ở /resources và /history', async ({ page }) => {
+test('ô tìm mirror ra URL cùng một kiểu ở /resources và /progress', async ({ page }) => {
   await seed();
   await login(page);
 
@@ -301,7 +301,7 @@ test('ô tìm mirror ra URL cùng một kiểu ở /resources và /history', asy
   await page.getByPlaceholder('Tìm mẫu / cách đọc / nghĩa…').fill('vừa');
   await expect.poll(() => new URL(page.url()).searchParams.get('q')).toBe('vừa');
 
-  await page.goto('/history', { waitUntil: 'networkidle' });
+  await page.goto('/progress', { waitUntil: 'networkidle' });
   await page.getByPlaceholder('Tìm trong đề / bài dịch…').fill('vừa');
   await expect.poll(() => new URL(page.url()).searchParams.get('q')).toBe('vừa');
 

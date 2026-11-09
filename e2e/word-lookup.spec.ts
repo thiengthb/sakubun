@@ -57,7 +57,7 @@ test('the mouse resting on a word opens its card, in the list and in the dialog'
 
   await page.setViewportSize({ width: 1440, height: 900 });
   await login(page);
-  await page.goto('/history');
+  await page.goto('/progress');
   await expect(page.locator('main [data-lookup]:visible').first()).toBeVisible();
   // The words with a meaning are underlined once the server has answered.
   await expect

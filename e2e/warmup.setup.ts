@@ -6,7 +6,7 @@ const ROUTES = [
   '/items',
   '/vocab',
   '/resources',
-  '/history',
+  '/progress',
   '/review',
   '/settings',
   '/groups',

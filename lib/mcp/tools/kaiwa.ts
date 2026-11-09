@@ -109,7 +109,7 @@ export function registerKaiwaTools(server: McpServer): void {
 
   server.tool(
     'kaiwa_roleplay_save',
-    "At the end of a role-play, save the learner's turns to their Lịch sử.",
+    "At the end of a role-play, save the learner's turns to their Tiến độ › Nhập vai.",
     {
       scriptId: z.string(),
       part: z.string(),
@@ -138,8 +138,8 @@ export function registerKaiwaTools(server: McpServer): void {
         if (!saved.ok) return mcpError(saved.error);
         return text([
           `saved roleplayId ${saved.id} · part ${saved.part} · ${saved.correct}/${saved.total} right`,
-          `view: ${appLink('/history')}`,
-          'next: tell the learner it is in Lịch sử, with the view link.',
+          `view: ${appLink('/progress?tab=nhap-vai')}`,
+          'next: tell the learner it is in Tiến độ › Nhập vai, with the view link.',
         ]);
       },
     ),

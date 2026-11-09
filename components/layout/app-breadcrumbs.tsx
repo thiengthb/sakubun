@@ -5,7 +5,7 @@ import {
   ChartColumn,
   FolderOpen,
   Globe,
-  History,
+  TrendingUp,
   LayoutDashboard,
   Languages,
   Layers,
@@ -81,9 +81,9 @@ const CRUMBS = {
       'Ngữ pháp và từ vựng chung của mọi người, khởi đầu từ OpenJLPT: lấy từng mục hoặc cả một nhóm về kho của bạn, kèm lịch ôn mới.',
   },
   history: {
-    label: 'Lịch sử',
-    href: '/history',
-    icon: History,
+    label: 'Tiến độ',
+    href: '/progress',
+    icon: TrendingUp,
     description:
       'Mọi lượt dịch đã chấm — bấm một thẻ để xem bài dịch, bản tham khảo, nhận xét và điểm từng mẫu.',
   },

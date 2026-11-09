@@ -163,7 +163,7 @@ const PAGES: [string, string][] = [
   ['resources', '/resources'],
   ['vocab', '/vocab'],
   ['items', '/items'],
-  ['history', '/history'],
+  ['history', '/progress'],
   ['settings', '/settings'],
   ['resources/new', '/resources/new?kind=grammar'],
   ['resources/new (vocab)', '/resources/new?kind=vocab'],
@@ -192,7 +192,7 @@ test('the header row stays one line at 360px', async ({ page }) => {
   const CASES: [string, string, string | null][] = [
     ['dashboard', '/', null],
     ['resources', '/resources', null],
-    ['history', '/history', null],
+    ['history', '/progress', null],
     ['settings', '/settings', null],
     ['new (grammar)', '/resources/new?kind=grammar', 'Dán danh sách'],
     ['new (vocab)', '/resources/new?kind=vocab', 'Dán danh sách'],

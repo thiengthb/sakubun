@@ -90,7 +90,7 @@ export const LIBRARY_TABS: StoredTabSet = {
 // Lịch sử (Kaiwa d2): the translation turns, and the role-plays saved by kaiwa_roleplay_save.
 export const HISTORY_TABS: StoredTabSet = {
   items: [
-    { value: 'dich', label: 'Luyện dịch', icon: Languages },
+    { value: 'dich', label: 'Lịch sử dịch', icon: Languages },
     { value: 'nhap-vai', label: 'Nhập vai', icon: Drama },
   ],
   label: 'Chọn loại luyện tập',

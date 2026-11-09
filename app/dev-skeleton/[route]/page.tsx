@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import DashboardLoading from '@/app/loading';
-import HistoryLoading from '@/app/history/loading';
+import HistoryLoading from '@/app/progress/loading';
 import ReviewLoading from '@/app/review/loading';
 import SettingsLoading from '@/app/settings/loading';
 import ResourcesLoading from '@/app/resources/loading';

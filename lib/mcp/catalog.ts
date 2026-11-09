@@ -41,7 +41,7 @@ export const MCP_CATALOG: CatalogEntry[] = [
   {
     name: 'kaiwa_roleplay_save',
     kind: 'tool',
-    summary: 'Hết buổi nhập vai, lưu từng câu bạn nói và nhận xét vào Lịch sử',
+    summary: 'Hết buổi nhập vai, lưu từng câu bạn nói và nhận xét vào Tiến độ',
   },
   {
     name: 'library_search',

@@ -68,7 +68,7 @@ test('mỗi kiểu luyện được gọi đúng tên trong ngăn chi tiết l�
   db.close();
 
   await login(page);
-  await page.goto('/history');
+  await page.goto('/progress');
 
   const cases = [
     { open: 'ここで写真を撮っ', prompt: 'Câu hỏi', answer: 'Bạn chọn', reference: 'Đáp án' },
