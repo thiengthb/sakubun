@@ -1,6 +1,6 @@
 # Trạng thái hiện tại
 
-Cập nhật lần cuối: 2026-11-08 · Claude (thread "Làm lại UI/UX v2", tài khoản của thien)
+Cập nhật lần cuối: 2026-11-09 · Claude (thread "Làm lại UI/UX v2", tài khoản của thien)
 
 Trang này cho mọi phiên (kể cả tài khoản, model khác) biết trong 2 phút: đang ở đâu, ai giữ việc gì, cần thien làm gì.
 Lịch sử nằm trong git, PR và `docs/roadmap.md`, không ghi ở đây. Cả file dưới 40 dòng; quá thì gộp hoặc bỏ, đừng thêm.
@@ -9,12 +9,14 @@ Lịch sử nằm trong git, PR và `docs/roadmap.md`, không ghi ở đây. C�
 
 Luyện dịch R1–R4 và Kaiwa (a)–(d) đã xong. Kanji (`docs/plans/2026-11-08-kanji.md`, đã duyệt): KJ1 và
 nghĩa Việt (KJ1b) xong; KJ2–KJ7 xong (#260–#265): kế hoạch kanji đã xong; chữ mới theo cấp từ vựng trong Cài đặt (#266).
+UI v2 (`docs/plans/2026-11-08-ui-v2.md`): giai đoạn U0 xong (#270 Onest, #271 vai chữ 17px, #273 đo kiểu chữ, #274 màu loại
+mục, B10 lỗi server action); thien đã duyệt ảnh U0 hai vòng. Tiếp theo: U1 (khung app, Base UI, thanh tab điện thoại).
 
 ## Đang làm
 
-| Bước                                                                                                  | Nhánh                          | Phiên                     |
-| ----------------------------------------------------------------------------------------------------- | ------------------------------ | ------------------------- |
-| UI v2 giai đoạn U0 (nền móng), `docs/plans/2026-11-08-ui-v2.md` đã duyệt; D6 (Kho) còn chờ nghiên cứu | `claude/project-thread-6inpk6` | thread "Làm lại UI/UX v2" |
+| Bước                                                                      | Nhánh                          | Phiên                     |
+| ------------------------------------------------------------------------- | ------------------------------ | ------------------------- |
+| UI v2 giai đoạn U1 (khung app), `docs/plans/2026-11-08-ui-v2.md` đã duyệt | `claude/project-thread-6inpk6` | thread "Làm lại UI/UX v2" |
 
 ## Vừa xong
 

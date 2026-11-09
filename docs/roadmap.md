@@ -98,14 +98,14 @@ phone bottom tab bar, Onest, keep Clay, body 17px straight from thienui, Radix t
 research: one "Kho" menu, Kho chung shown inside each screen, a copy only on study, edit or role-play. Each phase ends with
 thien reviewing before/after screenshots at 390 and 1440.
 
-| #   | Phase                                                                                      | Done when                                                  | Risk   | Status                   |
-| --- | ------------------------------------------------------------------------------------------ | ---------------------------------------------------------- | ------ | ------------------------ |
-| U0  | Foundation: type roles 6+3, spacing, kind and grade colours, Onest, `lang="ja"`, audit e2e | audit: at most 9 font sizes, 0 off-grid gaps on done pages | medium | In progress (2026-11-08) |
-| U1  | Shell: `components/ui` to Base UI via thienui registry, AppShell, BottomNav, `/progress`   | thien walks 5 tabs on a real phone; thienui debt goes down | medium | Not started              |
-| U2  | Study session: card, answer options, grade bar, summary, prefetch, undo                    | keyboard e2e; next card under 400ms                        | high   | Not started              |
-| U3  | Hôm nay: hero, next step, newcomer level pick                                              | one lead area; newcomer reaches first card in 3 taps       | medium | Not started              |
-| U4  | Kho (D6: own + Kho chung in one place), Nhóm, review by group                              | 0 hit areas under 24px; ui-standard debt goes down         | medium | Not started              |
-| U5  | Hội thoại: list, reader with sticky player, edit, voices                                   | kaiwa e2e green; thien approves shots                      | medium | Not started              |
-| U6  | Kho chung, Ctrl K search                                                                   | search under 200ms on N5-N1 data                           | medium | Not started              |
-| U7  | Tiến độ, Cài đặt (autosave), sign-in, 404 and errors, Admin                                | thien approves shots, dark mode shot on every page         | medium | Not started              |
-| U8  | Clean up and lock: rewrite `docs/ui-standard.md`, decision 0009, harvest to thienui        | both debt lists at 0 or the rest written down              | low    | Not started              |
+| #   | Phase                                                                                      | Done when                                                  | Risk   | Status            |
+| --- | ------------------------------------------------------------------------------------------ | ---------------------------------------------------------- | ------ | ----------------- |
+| U0  | Foundation: type roles 6+3, spacing, kind and grade colours, Onest, `lang="ja"`, audit e2e | audit: at most 9 font sizes, 0 off-grid gaps on done pages | medium | Done (2026-11-09) |
+| U1  | Shell: `components/ui` to Base UI via thienui registry, AppShell, BottomNav, `/progress`   | thien walks 5 tabs on a real phone; thienui debt goes down | medium | Not started       |
+| U2  | Study session: card, answer options, grade bar, summary, prefetch, undo                    | keyboard e2e; next card under 400ms                        | high   | Not started       |
+| U3  | Hôm nay: hero, next step, newcomer level pick                                              | one lead area; newcomer reaches first card in 3 taps       | medium | Not started       |
+| U4  | Kho (D6: own + Kho chung in one place), Nhóm, review by group                              | 0 hit areas under 24px; ui-standard debt goes down         | medium | Not started       |
+| U5  | Hội thoại: list, reader with sticky player, edit, voices                                   | kaiwa e2e green; thien approves shots                      | medium | Not started       |
+| U6  | Kho chung, Ctrl K search                                                                   | search under 200ms on N5-N1 data                           | medium | Not started       |
+| U7  | Tiến độ, Cài đặt (autosave), sign-in, 404 and errors, Admin                                | thien approves shots, dark mode shot on every page         | medium | Not started       |
+| U8  | Clean up and lock: rewrite `docs/ui-standard.md`, decision 0009, harvest to thienui        | both debt lists at 0 or the rest written down              | low    | Not started       |
