@@ -355,13 +355,14 @@
 }
 @utility text-title {
   font-size: var(--text-title3);
-  /* Phone: one 20px line, so the title block (trail over title) fits the 36px header row. */
-  line-height: 1.25rem;
+  /* Phone: a 24px line. A wrapped Vietnamese title stacks marks (Ấ, Ổ) over capitals; on a 20px line they
+     touched the line above (thien, U0 review 2026-11-09). A one-line title still fits the header row. */
+  line-height: 1.5rem;
   font-weight: 700;
   letter-spacing: var(--tracking-snug);
   @media (width >= 48rem) {
     font-size: var(--text-title1);
-    line-height: 2.0625rem;
+    line-height: 2.125rem;
     letter-spacing: var(--tracking-tight);
   }
 }

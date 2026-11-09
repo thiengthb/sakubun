@@ -129,4 +129,20 @@ describe('Typography type scale (nuc-platform/12-ui-layout-standard.md §typogra
     expect(ratio, 'role line heights must be rem').toEqual([]);
     expect(css).toMatch(/--text-body--line-height: 1\.5625rem;/);
   });
+
+  it('page titles leave room for stacked Vietnamese marks when they wrap', () => {
+    // Ấ, Ổ, Ỷ put a second mark over a capital. Below 1.2x the font size the marks of line 2 touch line 1
+    // (thien, U0 review 2026-11-09). Checks the phone and the desktop size of text-title.
+    const css = readFileSync('app/globals.css', 'utf8');
+    const rem = (name: string) => Number(css.match(new RegExp(`--${name}: ([0-9.]+)rem;`))![1]);
+    const block = css.match(/@utility text-title \{[\s\S]*?\n\}/)![0];
+    const sizes = [...block.matchAll(/font-size: var\(--([a-z0-9-]+)\);/g)].map((m) => rem(m[1]));
+    const lines = [...block.matchAll(/line-height: ([0-9.]+)rem;/g)].map((m) => Number(m[1]));
+    expect(sizes.length, 'phone and desktop sizes').toBe(2);
+    expect(lines.length, 'phone and desktop line heights').toBe(2);
+    const tight = sizes.flatMap((size, i) =>
+      lines[i] < size * 1.2 ? [`${size * 16}px on a ${lines[i] * 16}px line`] : [],
+    );
+    expect(tight).toEqual([]);
+  });
 });
