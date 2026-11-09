@@ -1,8 +1,7 @@
 'use client';
 
-import Link from 'next/link';
 import { House, RotateCcw, TriangleAlert } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button, ButtonLink } from '@/components/ui/button';
 import { PageState } from '@/components/layout/page-state';
 import {
   ErrorDigest,
@@ -25,12 +24,10 @@ export default function RouteError({ error, reset }: ErrorBoundaryProps) {
             <RotateCcw />
             Thử lại
           </Button>
-          <Button size="lg" variant="outline" asChild>
-            <Link href="/">
-              <House />
-              Về trang chính
-            </Link>
-          </Button>
+          <ButtonLink href="/" size="lg" variant="outline">
+            <House />
+            Về trang chính
+          </ButtonLink>
         </>
       }
     >

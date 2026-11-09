@@ -1,13 +1,12 @@
 'use client';
 
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { Field, FormActions, SubmitButton } from '@/components/common/field';
 import { SpokenLine } from '@/components/common/spoken-line';
 import { useServerAction } from '@/components/common/use-server-action';
 import { useKaiwaMe } from '@/components/features/kaiwa/use-kaiwa-me';
-import { Button } from '@/components/ui/button';
+import { ButtonLink } from '@/components/ui/button';
 import {
   Select,
   SelectContent,
@@ -140,9 +139,9 @@ export function KaiwaVoicesForm({
         );
       })}
       <FormActions note={false}>
-        <Button variant="outline" asChild disabled={isPending}>
-          <Link href={backHref}>Huỷ</Link>
-        </Button>
+        <ButtonLink href={backHref} variant="outline" disabled={isPending}>
+          Huỷ
+        </ButtonLink>
         <SubmitButton ready={dirty} pending={isPending}>
           {isPending ? 'Đang lưu…' : 'Lưu'}
         </SubmitButton>

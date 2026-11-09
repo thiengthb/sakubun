@@ -2,8 +2,7 @@
 
 import * as React from 'react';
 import { type LucideIcon } from 'lucide-react';
-import { Slot } from 'radix-ui';
-import { Button } from '@/components/ui/button';
+import { Button, ButtonLink } from '@/components/ui/button';
 import { isPlainIcon } from '@/lib/design/plain-icons';
 import { cn } from '@/lib/core/utils';
 
@@ -23,6 +22,10 @@ const OPENS = cn(
  * - on a phone, where nothing hovers, an icon anyone reads (PLAIN_ICONS: add, filter, sort...)
  *   stands alone and any other icon keeps its word.
  */
+type ButtonProps = React.ComponentProps<typeof Button> & { href?: undefined };
+type LinkProps = React.ComponentProps<typeof ButtonLink> & { href: string };
+
+/** With `href` it is a link that looks the same (a page of its own, such as "Thêm"). */
 export function ExpandingIconButton({
   icon: Icon,
   label,
@@ -30,10 +33,8 @@ export function ExpandingIconButton({
   className,
   variant = 'outline',
   size = 'default',
-  ref,
-  children,
-  ...props
-}: React.ComponentProps<typeof Button> & {
+  ...rest
+}: (ButtonProps | LinkProps) & {
   icon: LucideIcon;
   label: string;
   badge?: React.ReactNode;
@@ -47,21 +48,24 @@ export function ExpandingIconButton({
             ? 'max-md:hidden'
             : 'max-md:ml-1.5 max-md:max-w-none max-md:opacity-100',
         );
-  return (
-    <Button
-      ref={ref}
-      variant={variant}
-      size={size}
-      aria-label={label}
-      className={cn('gap-0', className)}
-      {...props}
-    >
-      <Slot.Slottable>{children}</Slot.Slottable>
-      <Icon className="size-4 shrink-0" aria-hidden />
+  // A caller's aria-label (a count, say) wins over the plain label.
+  const shared = { variant, size, 'aria-label': label, className: cn('gap-0', className) };
+  const inner = (
+    <>
+      <Icon className="shrink-0" aria-hidden />
       <span aria-hidden className={cn(word, 'group-data-[collapsible=icon]:hidden')}>
         {label}
       </span>
       {badge != null && <span className="ml-1 shrink-0">{badge}</span>}
+    </>
+  );
+  return rest.href !== undefined ? (
+    <ButtonLink {...shared} {...(rest as Omit<LinkProps, 'variant' | 'size'>)}>
+      {inner}
+    </ButtonLink>
+  ) : (
+    <Button {...shared} {...(rest as Omit<ButtonProps, 'variant' | 'size'>)}>
+      {inner}
     </Button>
   );
 }

@@ -15,12 +15,11 @@ import {
   Users,
   X,
 } from 'lucide-react';
-import Link from 'next/link';
 import { toast } from 'sonner';
 import { authClient } from '@/lib/auth/auth-client';
 import { createMcpKeyAction, revokeMcpKeyAction } from '@/app/settings/actions';
 import { UserAvatar } from '@/components/layout/user-avatar';
-import { Button } from '@/components/ui/button';
+import { Button, ButtonLink } from '@/components/ui/button';
 import {
   Dialog,
   DialogClose,
@@ -305,9 +304,9 @@ export function AccountTab({
               info="Mọi tài khoản đã đăng ký: chặn, bỏ chặn hoặc xoá."
               className="col-span-full"
             >
-              <Button asChild variant="outline">
-                <Link href="/admin">Mở</Link>
-              </Button>
+              <ButtonLink href="/admin" variant="outline">
+                Mở
+              </ButtonLink>
             </SettingRow>
           )}
           {hasPassword && passwordOpen && (

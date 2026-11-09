@@ -119,9 +119,11 @@ export function LibraryItemView({
       ]}
       actions={
         entry.itemId ? (
-          <ExpandingIconButton asChild icon={BookCheck} label="Mục của bạn">
-            <Link href={`/resources/${entry.itemId}`} />
-          </ExpandingIconButton>
+          <ExpandingIconButton
+            href={`/resources/${entry.itemId}`}
+            icon={BookCheck}
+            label="Mục của bạn"
+          />
         ) : (
           <Button onClick={() => take.run(entry.id)} disabled={take.isPending}>
             <Download aria-hidden />

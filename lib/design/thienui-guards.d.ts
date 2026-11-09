@@ -14,9 +14,12 @@ declare module '@/tooling/thienui-guards/src/pattern-lock.mjs' {
     skipped?: string;
     error?: string;
   }
+  export interface Registry {
+    patterns: { id: string; check?: Record<string, unknown> }[];
+  }
   export function runPatternLock(
     root: string,
-    registry: unknown,
+    registry: Registry,
   ): { pass: boolean; total: number; byPattern: PatternResult[] };
-  export function loadRegistry(file: string): unknown;
+  export function loadRegistry(file: string): Registry;
 }

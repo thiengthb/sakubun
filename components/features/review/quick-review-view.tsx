@@ -1,9 +1,8 @@
 'use client';
 
 import { useLayoutEffect, useRef, useState, useTransition } from 'react';
-import Link from 'next/link';
 import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
+import { Button, ButtonLink } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useFillWindow } from '@/components/ui/use-fit-rows';
 import { PageShell } from '@/components/layout/page-shell';
@@ -319,9 +318,9 @@ export function QuickReviewView({
           }
           action={
             nextDueAt ? undefined : (
-              <Button variant="outline" asChild>
-                <Link href="/resources">Mở Tài nguyên</Link>
-              </Button>
+              <ButtonLink href="/resources" variant="outline">
+                Mở Tài nguyên
+              </ButtonLink>
             )
           }
         />
@@ -442,9 +441,9 @@ export function QuickReviewView({
             </Button>
           )}
           {done && (
-            <Button size="lg" asChild>
-              <Link href="/">Về trang chính</Link>
-            </Button>
+            <ButtonLink href="/" size="lg">
+              Về trang chính
+            </ButtonLink>
           )}
         </div>
       </div>

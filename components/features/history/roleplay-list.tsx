@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { useState } from 'react';
 import { Drama } from 'lucide-react';
 import { toast } from 'sonner';
@@ -9,7 +8,7 @@ import { LIST_CARD } from '@/components/common/list-card';
 import { RelativeTime } from '@/components/common/relative-time';
 import { roleplayCommand } from '@/lib/kaiwa/commands';
 import { TONE } from '@/components/features/history/history-shared';
-import { Button } from '@/components/ui/button';
+import { Button, ButtonLink } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -125,9 +124,9 @@ function RoleplayDetail({ roleplay: r }: { roleplay: RoleplayRow }) {
       </ol>
       <DialogFooter>
         {r.scriptExists && (
-          <Button variant="outline" asChild>
-            <Link href={`/kaiwa/${r.scriptId}`}>Mở kịch bản</Link>
-          </Button>
+          <ButtonLink href={`/kaiwa/${r.scriptId}`} variant="outline">
+            Mở kịch bản
+          </ButtonLink>
         )}
         <Button onClick={() => copyCommand(roleplayCommand(r.scriptTitle, r.part))}>
           Nhập vai lại

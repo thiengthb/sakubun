@@ -1,9 +1,8 @@
 'use client';
 
-import Link from 'next/link';
 import { ArrowUpRight, Info, Sparkles } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { ButtonLink } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -162,12 +161,10 @@ export function ItemDetailDialog({
 
         {detailHref && (
           <div className="flex justify-end border-t border-border/60 pt-3">
-            <Button asChild variant="outline" size="sm">
-              <Link href={detailHref}>
-                <ArrowUpRight className="size-4" aria-hidden />
-                Mở trang chi tiết
-              </Link>
-            </Button>
+            <ButtonLink href={detailHref} variant="outline" size="sm">
+              <ArrowUpRight className="size-4" aria-hidden />
+              Mở trang chi tiết
+            </ButtonLink>
           </div>
         )}
       </DialogContent>

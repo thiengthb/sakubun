@@ -58,9 +58,7 @@ export function KaiwaListView({ scripts }: { scripts: KaiwaListCard[] }) {
       meta={`${scripts.length} kịch bản`}
       actions={
         <>
-          <ExpandingIconButton asChild icon={Globe} label="Kho chung">
-            <Link href="/library?tab=scripts" />
-          </ExpandingIconButton>
+          <ExpandingIconButton href="/library?tab=scripts" icon={Globe} label="Kho chung" />
           <CopyCommandButton
             command={WRITE_SCRIPT_COMMAND}
             label="Soạn với AI"

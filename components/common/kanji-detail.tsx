@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { Network } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { ButtonLink } from '@/components/ui/button';
 import { DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import type { KanjiEntry } from '@/lib/kanji/catalog';
 
@@ -59,12 +59,10 @@ export function KanjiDetail({ kanji: k }: { kanji: KanjiEntry }) {
         <DialogDescription>{k.meaningVi || 'Chưa có nghĩa tiếng Việt.'}</DialogDescription>
       </DialogHeader>
       <KanjiFacts kanji={k} />
-      <Button variant="outline" asChild>
-        <Link href={kanjiHref(k.kanji)}>
-          <Network aria-hidden />
-          Mạng lưới thành phần
-        </Link>
-      </Button>
+      <ButtonLink href={kanjiHref(k.kanji)} variant="outline">
+        <Network aria-hidden />
+        Mạng lưới thành phần
+      </ButtonLink>
     </>
   );
 }

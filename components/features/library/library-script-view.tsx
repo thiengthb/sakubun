@@ -1,11 +1,10 @@
 'use client';
 
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Download, LogIn, MessagesSquare, UserRound } from 'lucide-react';
 import { ParentCrumbs } from '@/components/layout/app-breadcrumbs';
 import { PageShell } from '@/components/layout/page-shell';
-import { Button } from '@/components/ui/button';
+import { Button, ButtonLink } from '@/components/ui/button';
 import { ExpandingIconButton } from '@/components/common/expanding-icon-button';
 import { useServerAction } from '@/components/common/use-server-action';
 import { KaiwaChat } from '@/components/features/kaiwa/kaiwa-chat';
@@ -90,16 +89,16 @@ export function LibraryScriptView({
       }
       actions={
         login ? (
-          <Button asChild>
-            <Link href={login}>
-              <LogIn aria-hidden />
-              Đăng nhập để lấy về
-            </Link>
-          </Button>
+          <ButtonLink href={login}>
+            <LogIn aria-hidden />
+            Đăng nhập để lấy về
+          </ButtonLink>
         ) : script.myScriptId ? (
-          <ExpandingIconButton asChild icon={MessagesSquare} label="Kịch bản của bạn">
-            <Link href={`/kaiwa/${script.myScriptId}`} />
-          </ExpandingIconButton>
+          <ExpandingIconButton
+            href={`/kaiwa/${script.myScriptId}`}
+            icon={MessagesSquare}
+            label="Kịch bản của bạn"
+          />
         ) : (
           <Button onClick={() => take.run(script.id)} disabled={take.isPending}>
             <Download aria-hidden />

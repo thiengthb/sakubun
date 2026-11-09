@@ -17,6 +17,15 @@ const DEBT_FILE = 'lib/design/thienui-debt.json';
 const LOWER = `UPDATE_THIENUI_DEBT=1 npx vitest run lib/design/thienui-guards.test.ts`;
 
 const registry = loadRegistry('tooling/thienui-guards/ui-patterns.json');
+// ButtonLink (components/ui/button.tsx) is a Button drawn as a link, since Base UI keeps links out
+// of Button. A rule that watches Button watches it too, or moving a link off `asChild` would hide
+// it from the rule.
+for (const pattern of registry.patterns) {
+  const check = pattern.check as { inside?: string[]; tags?: string[] } | undefined;
+  for (const key of ['inside', 'tags'] as const) {
+    if (check?.[key]?.includes('Button')) check[key] = [...check[key], 'ButtonLink'];
+  }
+}
 const result = runPatternLock('.', registry);
 const found = countViolations(result.byPattern);
 const record = JSON.parse(readFileSync(DEBT_FILE, 'utf8')) as { $doc: string; debt: Debt };

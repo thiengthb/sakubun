@@ -1,9 +1,8 @@
 'use client';
 
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useServerAction } from '@/components/common/use-server-action';
-import { Button } from '@/components/ui/button';
+import { Button, ButtonLink } from '@/components/ui/button';
 import { FormActions, SubmitButton } from '@/components/common/field';
 import type { EditableItem } from '@/components/features/resources/row-actions';
 import {
@@ -63,9 +62,9 @@ export function ItemEditForm({
             Huỷ
           </Button>
         ) : (
-          <Button variant="outline" asChild disabled={isPending}>
-            <Link href={backHref}>Huỷ</Link>
-          </Button>
+          <ButtonLink href={backHref} variant="outline" disabled={isPending}>
+            Huỷ
+          </ButtonLink>
         )}
         <SubmitButton ready={ready} pending={isPending}>
           {isPending ? 'Đang lưu…' : 'Lưu'}

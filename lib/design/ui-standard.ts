@@ -95,6 +95,7 @@ function iconsOf(el: Element, lucide: Set<string>): string[] {
 
 const CONTROLS = [
   'Button',
+  'ButtonLink',
   'button',
   'Link',
   'a',
@@ -103,8 +104,10 @@ const CONTROLS = [
   'SelectTrigger',
   'Input',
 ];
+// ButtonLink is a Button drawn as a link (components/ui/button.tsx): every rule on Button covers it.
 const WEIGHTED_CONTROLS = [
   'Button',
+  'ButtonLink',
   'Badge',
   'DropdownMenuItem',
   'DropdownMenuCheckboxItem',
@@ -209,7 +212,7 @@ export const UI_RULES: UiRule[] = [
     check: ({ src }) => {
       const lucide = lucideNames(src);
       if (!lucide.has('Plus')) return [];
-      return elements(src, ['Button', 'ExpandingIconButton'])
+      return elements(src, ['Button', 'ButtonLink', 'ExpandingIconButton'])
         .filter((el) => iconsOf(el, lucide).includes('Plus'))
         .flatMap((el) => {
           const prop = /(?<![\w-])label=(?:"([^"]*)"|\{([^}]*)\})/.exec(el.open);
@@ -233,7 +236,7 @@ export const UI_RULES: UiRule[] = [
       'needed) or a CardAction (whose tooltip always says it).',
     check: ({ src }) => {
       const lucide = lucideNames(src);
-      return elements(src, ['Button'])
+      return elements(src, ['Button', 'ButtonLink'])
         .filter((el) => ICON_SIZE.test(el.open))
         .flatMap((el) => {
           const out: Omit<Violation, 'file'>[] = [];
@@ -270,7 +273,7 @@ export const UI_RULES: UiRule[] = [
     check: ({ path, src }) =>
       !isListCard(path)
         ? []
-        : elements(src, ['Button', 'button']).flatMap((el) => {
+        : elements(src, ['Button', 'ButtonLink', 'button']).flatMap((el) => {
             const words = wordsOf(el);
             return words
               ? [{ line: lineAt(src, el.index), excerpt: `button says "${excerpt(words)}"` }]
@@ -297,7 +300,7 @@ export const UI_RULES: UiRule[] = [
       'CopyCommandButton with expandOnHover; only the primary (orange) action keeps a worded Button.',
     check: ({ src }) =>
       propBodies(src, 'actions').flatMap(({ body, index }) => [
-        ...elements(body, ['Button'])
+        ...elements(body, ['Button', 'ButtonLink'])
           .filter((el) => /\bvariant=/.test(el.open) && !/\bvariant="default"/.test(el.open))
           .filter((el) => wordsOf(el))
           .map((el) => ({
