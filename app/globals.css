@@ -41,6 +41,12 @@
   --color-warn-wash: var(--warn-wash);
   --color-alert-wash: var(--alert-wash);
   --color-info-wash: var(--info-wash);
+  --color-kind-grammar: var(--kind-grammar);
+  --color-kind-vocab: var(--kind-vocab);
+  --color-kind-kanji: var(--kind-kanji);
+  --color-kind-grammar-wash: var(--kind-grammar-wash);
+  --color-kind-vocab-wash: var(--kind-vocab-wash);
+  --color-kind-kanji-wash: var(--kind-kanji-wash);
   --color-brand-wash: var(--brand-wash);
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
@@ -161,6 +167,14 @@
   --warn-wash: oklch(0.955 0.03 85);
   --alert-wash: oklch(0.952 0.023 20);
   --info-wash: oklch(0.955 0.022 245);
+  /* Item kinds (thien, palette A, 2026-11-09): their own hues, so a kind chip never reads as a status.
+     ok/warn/alert/info stay for grades and states only. */
+  --kind-grammar: oklch(0.52 0.14 300);
+  --kind-vocab: oklch(0.52 0.09 195);
+  --kind-kanji: oklch(0.55 0.15 350);
+  --kind-grammar-wash: oklch(0.955 0.025 300);
+  --kind-vocab-wash: oklch(0.955 0.022 195);
+  --kind-kanji-wash: oklch(0.955 0.025 350);
   --brand-wash: oklch(0.955 0.02 39);
   --press: oklch(0.55 0.12 39);
   --control-edge: oklch(0.86 0.012 94);
@@ -220,6 +234,12 @@
   --warn-wash: oklch(0.292 0.042 85);
   --alert-wash: oklch(0.292 0.055 20);
   --info-wash: oklch(0.295 0.045 245);
+  --kind-grammar: oklch(0.76 0.12 300);
+  --kind-vocab: oklch(0.76 0.1 195);
+  --kind-kanji: oklch(0.77 0.13 350);
+  --kind-grammar-wash: oklch(0.3 0.05 300);
+  --kind-vocab-wash: oklch(0.3 0.04 195);
+  --kind-kanji-wash: oklch(0.3 0.05 350);
   --brand-wash: oklch(0.3 0.03 39);
   --press: oklch(0.5 0.11 39);
   --control-edge: oklch(0.43 0.006 107);
