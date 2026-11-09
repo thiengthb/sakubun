@@ -32,18 +32,20 @@ export function LibraryAdminMenu({
   });
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label={`Quản trị ${name}`}
-          disabled={hide.isPending}
-        >
-          <MoreHorizontal aria-hidden />
-        </Button>
-      </DropdownMenuTrigger>
+      <DropdownMenuTrigger
+        render={
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label={`Quản trị ${name}`}
+            disabled={hide.isPending}
+          >
+            <MoreHorizontal aria-hidden />
+          </Button>
+        }
+      />
       <DropdownMenuContent align="start" className="min-w-44">
-        <DropdownMenuItem onSelect={() => hide.run(entryId, true)}>
+        <DropdownMenuItem onClick={() => hide.run(entryId, true)}>
           <EyeOff aria-hidden />
           Ẩn khỏi Kho chung
         </DropdownMenuItem>

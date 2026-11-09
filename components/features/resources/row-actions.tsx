@@ -11,6 +11,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLinkItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
@@ -57,59 +58,49 @@ export function RowActions({
     <>
       <DropdownMenu>
         <Explain text="Tác vụ">
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label="Tác vụ"
-              className="text-muted-foreground hover:text-foreground"
-            >
-              <MoreHorizontal className="size-4" />
-            </Button>
-          </DropdownMenuTrigger>
+          <DropdownMenuTrigger
+            render={
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label="Tác vụ"
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <MoreHorizontal aria-hidden />
+              </Button>
+            }
+          />
         </Explain>
         <DropdownMenuContent align="end" className="min-w-40">
           {!hideDetail && (
             <>
-              <DropdownMenuItem asChild>
-                <Link href={`/resources/${item.itemId}`}>
-                  <ChartColumn className="size-4" /> Chi tiết
-                </Link>
-              </DropdownMenuItem>
+              <DropdownMenuLinkItem render={<Link href={`/resources/${item.itemId}`} />}>
+                <ChartColumn aria-hidden /> Chi tiết
+              </DropdownMenuLinkItem>
               <DropdownMenuSeparator />
             </>
           )}
           {/* Editing is a page at every width (docs/ui-standard.md: no form in a dialog). */}
-          <DropdownMenuItem asChild>
-            <Link href={`/resources/${item.itemId}/edit?kind=${kind}`}>
-              <Pencil className="size-4" /> Sửa
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            onSelect={(e) => {
-              e.preventDefault();
-              toggleSuspend();
-            }}
+          <DropdownMenuLinkItem
+            render={<Link href={`/resources/${item.itemId}/edit?kind=${kind}`} />}
           >
+            <Pencil aria-hidden /> Sửa
+          </DropdownMenuLinkItem>
+          {/* Stays open, so the learner sees the label flip. */}
+          <DropdownMenuItem closeOnClick={false} onClick={toggleSuspend}>
             {item.suspended ? (
               <>
-                <CirclePlay className="size-4" /> Cho học lại
+                <CirclePlay aria-hidden /> Cho học lại
               </>
             ) : (
               <>
-                <CirclePause className="size-4" /> Tạm ngưng
+                <CirclePause aria-hidden /> Tạm ngưng
               </>
             )}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem
-            variant="destructive"
-            onSelect={(e) => {
-              e.preventDefault();
-              setDeleteOpen(true);
-            }}
-          >
-            <Trash2 className="size-4" /> Xoá
+          <DropdownMenuItem variant="destructive" onClick={() => setDeleteOpen(true)}>
+            <Trash2 aria-hidden /> Xoá
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

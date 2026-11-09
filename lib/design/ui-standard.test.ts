@@ -77,6 +77,12 @@ describe('ui standard: each check goes red on a bad sample', () => {
       check('control-weight', '<ButtonLink href="/" className="font-bold">Mở</ButtonLink>'),
     ).toHaveLength(1);
     expect(
+      check(
+        'control-weight',
+        '<DropdownMenuLinkItem render={<Link href="/" />} className="font-bold">Mở</DropdownMenuLinkItem>',
+      ),
+    ).toHaveLength(1);
+    expect(
       check('control-weight', '<Badge variant="outline" className="h-6 font-semibold">N2</Badge>'),
     ).toHaveLength(1);
     expect(check('control-weight', '<Button>Lưu</Button><span className="font-bold" />')).toEqual(

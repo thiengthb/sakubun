@@ -104,12 +104,14 @@ const CONTROLS = [
   'SelectTrigger',
   'Input',
 ];
-// ButtonLink is a Button drawn as a link (components/ui/button.tsx): every rule on Button covers it.
+// ButtonLink is a Button drawn as a link (components/ui/button.tsx), DropdownMenuLinkItem a menu item
+// drawn as a link (components/ui/dropdown-menu.tsx): every rule on the one covers the other.
 const WEIGHTED_CONTROLS = [
   'Button',
   'ButtonLink',
   'Badge',
   'DropdownMenuItem',
+  'DropdownMenuLinkItem',
   'DropdownMenuCheckboxItem',
   'DropdownMenuRadioItem',
   'SelectTrigger',
