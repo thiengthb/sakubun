@@ -8,6 +8,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLinkItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
@@ -67,20 +68,22 @@ export function ItemGroups({
       )}
 
       <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="dashed"
-            size="icon"
-            aria-label="Thêm vào nhóm"
-            title="Thêm vào nhóm"
-            disabled={isPending}
-          >
-            <Plus aria-hidden />
-          </Button>
-        </DropdownMenuTrigger>
+        <DropdownMenuTrigger
+          render={
+            <Button
+              variant="dashed"
+              size="icon"
+              aria-label="Thêm vào nhóm"
+              title="Thêm vào nhóm"
+              disabled={isPending}
+            >
+              <Plus aria-hidden />
+            </Button>
+          }
+        />
         <DropdownMenuContent align="start" className="max-w-72 min-w-56">
           {addable.map((g) => (
-            <DropdownMenuItem key={g.id} onSelect={() => add(g.id)}>
+            <DropdownMenuItem key={g.id} onClick={() => add(g.id)}>
               <span className="min-w-0 truncate">{g.name}</span>
               <span className="ml-auto pl-3 text-xs whitespace-nowrap text-muted-foreground">
                 {GROUP_KIND_LABELS[g.kind]}
@@ -88,12 +91,10 @@ export function ItemGroups({
             </DropdownMenuItem>
           ))}
           {addable.length > 0 && <DropdownMenuSeparator />}
-          <DropdownMenuItem asChild>
-            <Link href="/groups/new">
-              <Plus aria-hidden />
-              Nhóm mới
-            </Link>
-          </DropdownMenuItem>
+          <DropdownMenuLinkItem render={<Link href="/groups/new" />}>
+            <Plus aria-hidden />
+            Nhóm mới
+          </DropdownMenuLinkItem>
         </DropdownMenuContent>
       </DropdownMenu>
     </div>

@@ -64,7 +64,6 @@
     "no-icon-size-in-components": {
       "components/common/data-table.tsx": 2,
       "components/common/item-detail-dialog.tsx": 1,
-      "components/features/resources/row-actions.tsx": 6,
       "components/features/settings/settings-data-tab.tsx": 1,
       "components/layout/scroll-to-top.tsx": 1,
       "components/layout/sidebar-user.tsx": 1,

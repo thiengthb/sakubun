@@ -56,24 +56,26 @@ export function AccountActions({
   return (
     <>
       <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="text-muted-foreground"
-            aria-label={`Tác vụ cho ${email}`}
-            disabled={pending}
-          >
-            <MoreHorizontal aria-hidden />
-          </Button>
-        </DropdownMenuTrigger>
+        <DropdownMenuTrigger
+          render={
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-muted-foreground"
+              aria-label={`Tác vụ cho ${email}`}
+              disabled={pending}
+            >
+              <MoreHorizontal aria-hidden />
+            </Button>
+          }
+        />
         <DropdownMenuContent align="end" className="min-w-40">
-          <DropdownMenuItem onSelect={() => setBanOpen(true)}>
+          <DropdownMenuItem onClick={() => setBanOpen(true)}>
             {banned ? <ShieldCheck aria-hidden /> : <Ban aria-hidden />}
             {banned ? 'Bỏ chặn' : 'Chặn'}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem variant="destructive" onSelect={() => setDeleteOpen(true)}>
+          <DropdownMenuItem variant="destructive" onClick={() => setDeleteOpen(true)}>
             <Trash2 aria-hidden /> Xoá tài khoản
           </DropdownMenuItem>
         </DropdownMenuContent>

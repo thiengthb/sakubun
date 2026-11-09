@@ -44,12 +44,12 @@ function BulkGroupButton({
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <BulkActionButton icon={Icon} label={label} pending={isPending} />
-      </DropdownMenuTrigger>
+      <DropdownMenuTrigger
+        render={<BulkActionButton icon={Icon} label={label} pending={isPending} />}
+      />
       <DropdownMenuContent side="left" align="start" className="max-w-72 min-w-56">
         {groups.map((g) => (
-          <DropdownMenuItem key={g.id} onSelect={() => run(g.id)}>
+          <DropdownMenuItem key={g.id} onClick={() => run(g.id)}>
             <span className="min-w-0 truncate">{g.name}</span>
             <span className="ml-auto pl-3 text-xs whitespace-nowrap text-muted-foreground">
               {GROUP_KIND_LABELS[g.kind]}

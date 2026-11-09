@@ -25,6 +25,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLinkItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
@@ -70,40 +71,36 @@ export function KaiwaActionsMenu({
   return (
     <>
       <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <ExpandingIconButton icon={MoreHorizontal} label="Thao tác" />
-        </DropdownMenuTrigger>
+        <DropdownMenuTrigger
+          render={<ExpandingIconButton icon={MoreHorizontal} label="Thao tác" />}
+        />
         <DropdownMenuContent align="end" className="min-w-52">
-          <DropdownMenuItem onSelect={onEdit}>
+          <DropdownMenuItem onClick={onEdit}>
             <Pencil aria-hidden />
             Sửa
           </DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => copyCommand(editCommand)}>
+          <DropdownMenuItem onClick={() => copyCommand(editCommand)}>
             <Sparkles aria-hidden />
             Sửa với AI
           </DropdownMenuItem>
           {roleplay && (
-            <DropdownMenuItem onSelect={() => copyCommand(roleplay)}>
+            <DropdownMenuItem onClick={() => copyCommand(roleplay)}>
               <Drama aria-hidden />
               Nhập vai với AI
             </DropdownMenuItem>
           )}
           {voicesHref && (
-            <DropdownMenuItem asChild>
-              <Link href={voicesHref}>
-                <Volume2 aria-hidden />
-                Giọng từng vai
-              </Link>
-            </DropdownMenuItem>
+            <DropdownMenuLinkItem render={<Link href={voicesHref} />}>
+              <Volume2 aria-hidden />
+              Giọng từng vai
+            </DropdownMenuLinkItem>
           )}
           <DropdownMenuSeparator />
           {/* The menu stays open, so the learner sees the chat grow step by step. */}
           <DropdownMenuItem
             disabled={!textSize.canGrow}
-            onSelect={(e) => {
-              e.preventDefault();
-              textSize.grow();
-            }}
+            closeOnClick={false}
+            onClick={() => textSize.grow()}
           >
             <AArrowUp aria-hidden />
             Chữ to hơn
@@ -111,20 +108,18 @@ export function KaiwaActionsMenu({
           </DropdownMenuItem>
           <DropdownMenuItem
             disabled={!textSize.canShrink}
-            onSelect={(e) => {
-              e.preventDefault();
-              textSize.shrink();
-            }}
+            closeOnClick={false}
+            onClick={() => textSize.shrink()}
           >
             <AArrowDown aria-hidden />
             Chữ nhỏ hơn
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onSelect={() => setDialog('share')}>
+          <DropdownMenuItem onClick={() => setDialog('share')}>
             <Globe aria-hidden className={share.shared ? 'text-accent-brand' : undefined} />
             {share.shared ? 'Đang chia sẻ' : 'Chia sẻ'}
           </DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => setDialog('keys')} className="max-md:hidden">
+          <DropdownMenuItem onClick={() => setDialog('keys')} className="max-md:hidden">
             <Keyboard aria-hidden />
             Phím tắt
           </DropdownMenuItem>
@@ -137,7 +132,9 @@ export function KaiwaActionsMenu({
         onOpenChange={(open) => setDialog(open ? 'share' : null)}
       />
       <Dialog open={dialog === 'keys'} onOpenChange={(open) => setDialog(open ? 'keys' : null)}>
-        <DialogContent className="sm:max-w-sm">
+        {/* Focus goes back to the page, not to the menu button: the learner closes the list to use
+            the keys on it, and ↓ on a menu button opens the menu. */}
+        <DialogContent className="sm:max-w-sm" finalFocus={false}>
           <DialogHeader>
             <DialogTitle>Phím tắt</DialogTitle>
             <DialogDescription>Trên trang một kịch bản.</DialogDescription>

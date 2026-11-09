@@ -49,6 +49,7 @@ import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
@@ -510,52 +511,54 @@ export function DataTable<T>({
         )}
         {showColumnMenu && (
           <DropdownMenu open={colMenuOpen} onOpenChange={setColMenuOpen}>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="outline"
-                className="gap-0 max-lg:hidden"
-                aria-label="Hiển thị cột"
-                title="Hiển thị cột"
-              >
-                <Columns3 className="size-4 shrink-0" aria-hidden />
-                <span
-                  aria-hidden
-                  className="max-w-0 overflow-hidden whitespace-nowrap opacity-0 transition-all duration-200 ease-out group-hover/button:ml-1.5 group-hover/button:max-w-24 group-hover/button:opacity-100 group-focus-visible/button:ml-1.5 group-focus-visible/button:max-w-24 group-focus-visible/button:opacity-100 group-aria-expanded/button:ml-1.5 group-aria-expanded/button:max-w-24 group-aria-expanded/button:opacity-100 motion-reduce:transition-none"
+            <DropdownMenuTrigger
+              render={
+                <Button
+                  variant="outline"
+                  className="gap-0 max-lg:hidden"
+                  aria-label="Hiển thị cột"
+                  title="Hiển thị cột"
                 >
-                  Cột
-                </span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>Hiển thị trường</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {enableRowNumbers && (
-                <DropdownMenuCheckboxItem
-                  checked={showRowNumbers}
-                  onCheckedChange={(v) => setShowRowNumbers(v === true)}
-                  onSelect={(e) => e.preventDefault()}
-                >
-                  {rowNumberHeader}
-                </DropdownMenuCheckboxItem>
-              )}
-              {hideableColumns.map((column) => {
-                const meta = column.columnDef.meta as DataTableColumnMeta | undefined;
-                const label =
-                  meta?.label ??
-                  (typeof column.columnDef.header === 'string'
-                    ? column.columnDef.header
-                    : column.id);
-                return (
-                  <DropdownMenuCheckboxItem
-                    key={column.id}
-                    checked={column.getIsVisible()}
-                    onCheckedChange={(v) => column.toggleVisibility(v === true)}
-                    onSelect={(e) => e.preventDefault()}
+                  <Columns3 className="size-4 shrink-0" aria-hidden />
+                  <span
+                    aria-hidden
+                    className="max-w-0 overflow-hidden whitespace-nowrap opacity-0 transition-all duration-200 ease-out group-hover/button:ml-1.5 group-hover/button:max-w-24 group-hover/button:opacity-100 group-focus-visible/button:ml-1.5 group-focus-visible/button:max-w-24 group-focus-visible/button:opacity-100 group-aria-expanded/button:ml-1.5 group-aria-expanded/button:max-w-24 group-aria-expanded/button:opacity-100 motion-reduce:transition-none"
                   >
-                    {label}
+                    Cột
+                  </span>
+                </Button>
+              }
+            />
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuGroup>
+                <DropdownMenuLabel>Hiển thị trường</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {enableRowNumbers && (
+                  <DropdownMenuCheckboxItem
+                    checked={showRowNumbers}
+                    onCheckedChange={(v) => setShowRowNumbers(v === true)}
+                  >
+                    {rowNumberHeader}
                   </DropdownMenuCheckboxItem>
-                );
-              })}
+                )}
+                {hideableColumns.map((column) => {
+                  const meta = column.columnDef.meta as DataTableColumnMeta | undefined;
+                  const label =
+                    meta?.label ??
+                    (typeof column.columnDef.header === 'string'
+                      ? column.columnDef.header
+                      : column.id);
+                  return (
+                    <DropdownMenuCheckboxItem
+                      key={column.id}
+                      checked={column.getIsVisible()}
+                      onCheckedChange={(v) => column.toggleVisibility(v === true)}
+                    >
+                      {label}
+                    </DropdownMenuCheckboxItem>
+                  );
+                })}
+              </DropdownMenuGroup>
             </DropdownMenuContent>
           </DropdownMenu>
         )}

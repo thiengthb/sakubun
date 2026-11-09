@@ -18,12 +18,18 @@ const LOWER = `UPDATE_THIENUI_DEBT=1 npx vitest run lib/design/thienui-guards.te
 
 const registry = loadRegistry('tooling/thienui-guards/ui-patterns.json');
 // ButtonLink (components/ui/button.tsx) is a Button drawn as a link, since Base UI keeps links out
-// of Button. A rule that watches Button watches it too, or moving a link off `asChild` would hide
-// it from the rule.
+// of Button; DropdownMenuLinkItem is the same for a menu item. A rule that watches the one watches
+// the other too, or moving a link off `asChild` would hide it from the rule.
+const LINK_TWINS: Record<string, string> = {
+  Button: 'ButtonLink',
+  DropdownMenuItem: 'DropdownMenuLinkItem',
+};
 for (const pattern of registry.patterns) {
   const check = pattern.check as { inside?: string[]; tags?: string[] } | undefined;
   for (const key of ['inside', 'tags'] as const) {
-    if (check?.[key]?.includes('Button')) check[key] = [...check[key], 'ButtonLink'];
+    for (const [tag, twin] of Object.entries(LINK_TWINS)) {
+      if (check?.[key]?.includes(tag)) check[key] = [...check[key], twin];
+    }
   }
 }
 const result = runPatternLock('.', registry);
