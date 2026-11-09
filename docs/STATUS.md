@@ -1,27 +1,23 @@
 # Trạng thái hiện tại
 
-Cập nhật lần cuối: 2026-11-09 · Claude (thread "Làm lại UI/UX v2", tài khoản của thien)
+Cập nhật lần cuối: 2026-11-09 11:30 UTC · Claude (thread "Làm lại UI/UX v2", bàn giao vì hết usage tuần)
 
 Trang này cho mọi phiên (kể cả tài khoản, model khác) biết trong 2 phút: đang ở đâu, ai giữ việc gì, cần thien làm gì.
 Lịch sử nằm trong git, PR và `docs/roadmap.md`, không ghi ở đây. Cả file dưới 40 dòng; quá thì gộp hoặc bỏ, đừng thêm.
 
 ## Đang ở đâu
 
-Luyện dịch R1–R4 và Kaiwa (a)–(d) đã xong. Kanji (`docs/plans/2026-11-08-kanji.md`, đã duyệt): KJ1 và
-nghĩa Việt (KJ1b) xong; KJ2–KJ7 xong (#260–#265): kế hoạch kanji đã xong; chữ mới theo cấp từ vựng trong Cài đặt (#266).
-UI v2 (`docs/plans/2026-11-08-ui-v2.md`): giai đoạn U0 xong (#270 Onest, #271 vai chữ 17px, #273 đo kiểu chữ, #274 màu loại
-mục, B10 lỗi server action); thien đã duyệt ảnh U0 hai vòng. Tiếp theo: U1 (khung app, Base UI, thanh tab điện thoại).
+Luyện dịch R1–R4, Kaiwa (a)–(d), kanji KJ1–KJ7 đã xong. UI v2 (`docs/plans/2026-11-08-ui-v2.md`): U0 xong và thien đã duyệt
+ảnh. U1 (khung app) đang làm: #276–#282 đưa mọi `components/ui` sang Base UI và bỏ `radix-ui`; #283 sidebar 3 nhóm
+Học/Kho/Bạn + menu tài khoản đã merge; PR thanh 5 tab trên điện thoại (PR này) chờ review. Phiên giữ U1 đã bàn giao: phiên nào cũng nhận được.
 
-## Đang làm
+## U1 còn lại (theo thứ tự)
 
-| Bước                                                                      | Nhánh                          | Phiên                     |
-| ------------------------------------------------------------------------- | ------------------------------ | ------------------------- |
-| UI v2 giai đoạn U1 (khung app), `docs/plans/2026-11-08-ui-v2.md` đã duyệt | `claude/project-thread-6inpk6` | thread "Làm lại UI/UX v2" |
-
-## Vừa xong
-
-- R1 #247: mỗi loại một cấp đang học (#248 sửa lỗi bấm あ làm cài đặt về mặc định). R2 + R3 #249: bậc câu 1–5, cảnh luân phiên, chặn câu trùng. R4 #255, #257: khối kết quả mỗi lượt.
-- Kaiwa (a) #243, (b) #245, (c) #258 giọng từng vai, (d) #259 lưu nhập vai vào Lịch sử; Kho chung #244. KJ1 #246: dữ liệu kanji 2.136 chữ Jōyō; nghĩa Việt cả 2.136 chữ do Codex viết (#250–#256).
+1. PR thanh 5 tab trên điện thoại + số thẻ đến hạn ở Ôn nhanh (B2), bỏ `edge-nav-rail` (risk:medium): merge khi review OK, CI xanh.
+2. Lịch sử thành Tiến độ ở `/progress`, `/history` chuyển hướng: đã code, verify và e2e xanh, nằm ở patch
+   `/mnt/project-files/sakubun/pending-patches/u1/0002-*.patch`; `git am` lên main sau bước 1, một PR risk:medium.
+   Không thấy thư mục đó thì làm lại theo mục U1 của kế hoạch.
+3. Cổng U1: thien duyệt ảnh trên https://claude.ai/artifact/TedjKZtwMf2QQhZ5msNexj (15 cặp trước/sau) và đi thử 5 tab trên điện thoại thật.
 
 ## Đang chờ thien (tối đa 3)
 
@@ -31,7 +27,8 @@ mục, B10 lỗi server action); thien đã duyệt ảnh U0 hai vòng. Tiếp t
 ## Việc nhỏ còn treo
 
 - Trên điện thoại, nút ⋯ của trang kịch bản nằm riêng một hàng để khớp màn hình đang tải; đổi thì đổi cả hai.
-- e2e không chạy trong CI, chạy tay trước PR đổi UI; còn một lần đỏ hiếm ở `quick-review` "at 390px" (chưa tái hiện).
+- e2e không chạy trong CI, chạy tay trước PR đổi UI; `style-audit` đỏ trên main khi chạy sau kaiwa/quick-review (cần PR riêng);
+  `quick-review` "lost answer" đỏ tuỳ thứ tự, chạy riêng thì xanh. Tabs Base UI không tự chọn khi di phím (thêm `activateOnFocus` nếu thien muốn).
 
 ## Ghi chú
 
