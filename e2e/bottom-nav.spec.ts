@@ -91,6 +91,19 @@ test('the phone shows five named tabs, and the edge rail is gone', async ({ page
   await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
   const last = (await page.getByRole('button', { name: /Nâng cao/ }).boundingBox())!;
   expect(last.y + last.height).toBeLessThanOrEqual((await bar.boundingBox())!.y);
+
+  // A setting saves itself and its Hoàn tác bar floats above the tab bar, in reach of the thumb
+  // wherever the page is scrolled (thien, U1 gate).
+  await page.getByRole('button', { name: 'Tăng Từ vựng mới / ngày' }).click();
+  const saved = page.locator('[data-sonner-toast]').filter({ hasText: 'Đã lưu' });
+  await expect(saved.getByRole('button', { name: 'Hoàn tác' })).toBeVisible();
+  // Polled: the bar slides up into place.
+  await expect(async () => {
+    const box = (await saved.boundingBox())!;
+    expect(box.y + box.height).toBeLessThanOrEqual((await bar.boundingBox())!.y);
+  }).toPass();
+  await saved.getByRole('button', { name: 'Hoàn tác' }).click();
+  await expect(page.getByText('Đã hoàn tác')).toBeVisible();
 });
 
 test('the laptop has no tab bar', async ({ page }) => {

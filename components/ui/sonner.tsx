@@ -35,6 +35,9 @@ const Toaster = ({ ...props }: ToasterProps) => {
       toastOptions={{
         classNames: {
           toast: 'cn-toast',
+          // A toast's action (Hoàn tác, Thử lại) speaks sakubun's button language: raised, 2px edge.
+          actionButton:
+            '!h-8 !rounded-sm !border-2 !border-control-edge !bg-card !px-3 !text-sm !font-semibold !text-foreground !shadow-lift active:!translate-y-0.5 active:!shadow-none',
         },
       }}
       {...props}

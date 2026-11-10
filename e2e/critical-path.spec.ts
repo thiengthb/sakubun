@@ -23,8 +23,8 @@ test('login → dashboard → a settings change persists across reload', async (
     'true',
   );
   await page.getByRole('textbox', { name: 'Mẫu ngữ pháp mới / ngày', exact: true }).fill('11');
-  // Settings save themselves (thien, U1 gate): no Lưu button, a status line under the title.
-  await expect(page.getByRole('status').filter({ hasText: /^Đã lưu$/ })).toBeVisible();
+  // Settings save themselves (thien, U1 gate): no Lưu button, a bar floats up with Hoàn tác.
+  await expect(page.getByText('Đã lưu', { exact: true })).toBeVisible();
 
   await page.reload();
   await expect(
@@ -33,18 +33,14 @@ test('login → dashboard → a settings change persists across reload', async (
 
   // Hoàn tác puts the last change back, and that is saved too.
   await expect(page.getByRole('button', { name: 'Lưu', exact: true })).toHaveCount(0);
-  const tabsTop = async () => (await page.getByRole('tablist').first().boundingBox())!.y;
-  const before = await tabsTop();
   await page.getByRole('textbox', { name: 'Mẫu ngữ pháp mới / ngày', exact: true }).fill('12');
-  await expect(page.getByRole('status').filter({ hasText: /^Đã lưu$/ })).toBeVisible();
-  // Hoàn tác appearing does not push the page down.
-  expect(await tabsTop()).toBe(before);
+  await page.getByRole('textbox', { name: 'Mẫu ngữ pháp mới / ngày', exact: true }).blur();
+  await expect(page.getByText('Đã lưu', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Hoàn tác' }).click();
   await expect(
     page.getByRole('textbox', { name: 'Mẫu ngữ pháp mới / ngày', exact: true }),
   ).toHaveValue('11');
-  await expect(page.getByRole('status').filter({ hasText: 'Đã hoàn tác' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Hoàn tác' })).toHaveCount(0);
+  await expect(page.getByText('Đã hoàn tác')).toBeVisible();
   await page.reload();
   await expect(
     page.getByRole('textbox', { name: 'Mẫu ngữ pháp mới / ngày', exact: true }),
@@ -72,8 +68,8 @@ test('Luyện tập shows only the eight settings; sentence-shape fields are gon
   await expect(page.getByRole('slider', { name: 'Độ phức tạp của câu' })).toHaveCount(0);
 
   await page.getByRole('textbox', { name: 'Từ vựng mới / ngày', exact: true }).fill('9');
-  // Settings save themselves (thien, U1 gate): no Lưu button, a status line under the title.
-  await expect(page.getByRole('status').filter({ hasText: /^Đã lưu$/ })).toBeVisible();
+  // Settings save themselves (thien, U1 gate): no Lưu button, a bar floats up with Hoàn tác.
+  await expect(page.getByText('Đã lưu', { exact: true })).toBeVisible();
   await page.reload();
   await expect(page.getByRole('textbox', { name: 'Từ vựng mới / ngày', exact: true })).toHaveValue(
     '9',
@@ -109,8 +105,8 @@ test('Luyện tập rows: stepper, segmented choice and the folded Nâng cao all
   await page.getByRole('button', { name: 'Giảm Mục tiêu ghi nhớ (FSRS)' }).click();
   const target = await retention.inputValue();
 
-  // Settings save themselves (thien, U1 gate): no Lưu button, a status line under the title.
-  await expect(page.getByRole('status').filter({ hasText: /^Đã lưu$/ })).toBeVisible();
+  // Settings save themselves (thien, U1 gate): no Lưu button, a bar floats up with Hoàn tác.
+  await expect(page.getByText('Đã lưu', { exact: true })).toBeVisible();
   await page.reload();
 
   await expect(
