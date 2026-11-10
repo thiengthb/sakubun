@@ -29,7 +29,7 @@ Phân tích vẫn ở `/`: Tổng quan và Thống kê vào Tiến độ ở U7,
 
 - Trên điện thoại, nút ⋯ của trang kịch bản nằm riêng một hàng để khớp màn hình đang tải; đổi thì đổi cả hai.
 - e2e không chạy trong CI, chạy tay trước PR đổi UI; `style-audit` đỏ trên main khi chạy sau kaiwa/quick-review (cần PR riêng);
-  `quick-review` "lost answer" đỏ tuỳ thứ tự, chạy riêng thì xanh; `mcp-connect-recipe` đỏ cả trên main. Tabs Base UI không tự chọn khi di phím (thêm `activateOnFocus` nếu thien muốn).
+  `quick-review` "lost answer" đỏ tuỳ thứ tự, chạy riêng thì xanh. Tabs Base UI không tự chọn khi di phím (thêm `activateOnFocus` nếu thien muốn).
 
 ## Ghi chú
 
