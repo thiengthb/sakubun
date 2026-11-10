@@ -127,6 +127,10 @@ test('Ôn nhanh shows how many cards are due, and the bar steps aside in the ses
   await review.click();
   await page.waitForURL((u) => u.pathname === '/review');
   await expect(nav(page)).toHaveCount(0);
+  // With the bar away, an X is the way out, on screen from the first card.
+  await page.getByRole('button', { name: 'Dừng ôn' }).click();
+  await page.waitForURL((u) => u.pathname === '/');
+  await expect(nav(page)).toBeVisible();
 
   // With nothing due the tab has no count.
   seedDue(0);
