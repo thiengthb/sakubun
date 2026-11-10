@@ -99,12 +99,27 @@ function isTyping(): boolean {
   return el instanceof HTMLElement && el.isContentEditable;
 }
 
+// The bar comes back a moment after a field loses focus, not at once: a tap on a button under the
+// field blurs it on press, and a bar that came back right then would take the release, so the
+// button's click would land on a tab instead.
+const RETURN_DELAY_MS = 250;
+
 function subscribeFocus(onChange: () => void): () => void {
-  document.addEventListener('focusin', onChange);
-  document.addEventListener('focusout', onChange);
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const onFocusIn = () => {
+    clearTimeout(timer);
+    onChange();
+  };
+  const onFocusOut = () => {
+    clearTimeout(timer);
+    timer = setTimeout(onChange, RETURN_DELAY_MS);
+  };
+  document.addEventListener('focusin', onFocusIn);
+  document.addEventListener('focusout', onFocusOut);
   return () => {
-    document.removeEventListener('focusin', onChange);
-    document.removeEventListener('focusout', onChange);
+    clearTimeout(timer);
+    document.removeEventListener('focusin', onFocusIn);
+    document.removeEventListener('focusout', onFocusOut);
   };
 }
 

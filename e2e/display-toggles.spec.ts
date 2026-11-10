@@ -114,17 +114,32 @@ test('Đăng xuất in the user menu signs out', async ({ page }) => {
   await page.waitForURL((u) => u.pathname.startsWith('/login'), { timeout: 30_000 });
 });
 
-// On a phone the user menu sits in the sidebar sheet: Cài đặt opens the page and closes both.
-test("Cài đặt in the phone sheet's user menu closes the sheet", async ({ page }) => {
+// On a phone there is no user menu: Bạn › Cài đặt › Tài khoản holds the theme, furigana and
+// Đăng xuất (thien, U1 gate), and Bạn switches between Tiến độ and Cài đặt.
+test('the phone reaches the display switches and Đăng xuất through Bạn', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await logIn(page);
   await page.goto('/library', { waitUntil: 'networkidle' });
-  await page.getByRole('button', { name: 'Mở menu' }).first().click();
-  const sheet = page.locator('[data-mobile="true"][data-sidebar="sidebar"]');
-  await expect(sheet).toBeVisible();
-  await sheet.getByRole('button', { name: /^Tài khoản:/ }).click();
-  await page.getByRole('menuitem', { name: 'Cài đặt' }).click();
+  await page
+    .getByRole('navigation', { name: 'Điều hướng chính' })
+    .getByRole('link', { name: 'Bạn' })
+    .click();
+  await page.waitForURL((u) => u.pathname === '/progress');
+  const pages = page.getByRole('navigation', { name: 'Chuyển trang' });
+  await expect(pages.getByRole('link', { name: 'Tiến độ' })).toHaveAttribute(
+    'aria-current',
+    'page',
+  );
+  await pages.getByRole('link', { name: 'Cài đặt' }).click();
   await page.waitForURL((u) => u.pathname === '/settings');
-  await expect(page.getByRole('menu')).toBeHidden();
-  await expect(sheet).toBeHidden();
+  await page.getByRole('tab', { name: 'Tài khoản' }).click();
+  const dark = page.getByRole('switch', { name: 'Giao diện tối' });
+  const before = await page.evaluate(() => document.documentElement.classList.contains('dark'));
+  await dark.click();
+  await expect
+    .poll(() => page.evaluate(() => document.documentElement.classList.contains('dark')))
+    .toBe(!before);
+  await expect(page.getByRole('switch', { name: 'Hiện furigana' })).toBeVisible();
+  await page.getByRole('button', { name: 'Đăng xuất' }).click();
+  await page.waitForURL((u) => u.pathname.startsWith('/login'), { timeout: 30_000 });
 });

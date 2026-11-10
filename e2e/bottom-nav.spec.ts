@@ -82,7 +82,14 @@ test('the phone shows five named tabs, and the edge rail is gone', async ({ page
   await bar.getByRole('link', { name: 'Kho' }).click();
   await page.waitForURL((u) => u.pathname === '/resources');
   await expect(bar.getByRole('link', { name: 'Kho' })).toHaveAttribute('aria-current', 'page');
-  await page.goto('/library', { waitUntil: 'networkidle' });
+  // Kho holds both stores: a switch at the top goes between them.
+  const pages = page.getByRole('navigation', { name: 'Chuyển trang' });
+  await expect(pages.getByRole('link', { name: 'Của bạn' })).toHaveAttribute(
+    'aria-current',
+    'page',
+  );
+  await pages.getByRole('link', { name: 'Kho chung' }).click();
+  await page.waitForURL((u) => u.pathname === '/library');
   await expect(bar.getByRole('link', { name: 'Kho' })).toHaveAttribute('aria-current', 'page');
   await expect(bar.locator('[aria-current="page"]')).toHaveCount(1);
 
@@ -146,7 +153,9 @@ test('the due count follows the session once it ends', async ({ page }) => {
   await page.goto('/settings', { waitUntil: 'networkidle' });
   await expect(nav(page).locator('[data-badge]')).toHaveText('2');
 
-  await nav(page).getByRole('link', { name: /^Ôn nhanh/ }).click();
+  await nav(page)
+    .getByRole('link', { name: /^Ôn nhanh/ })
+    .click();
   await page.waitForURL((u) => u.pathname === '/review');
   // The session may add new kanji after the two due words; answer whatever comes until the end.
   const end = page.getByText('Xong buổi ôn');

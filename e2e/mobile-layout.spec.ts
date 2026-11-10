@@ -236,7 +236,7 @@ test('item detail: star on the top row; title, meaning, level and actions below 
   // has a line of its own under it, then the meaning, the labelled facts and the two actions.
   const header = page.locator('[data-template] header');
   const box = async (l: import('@playwright/test').Locator) => l.boundingBox();
-  const logo = await box(header.getByRole('button', { name: 'Mở menu' }));
+  const logo = await box(header.locator('[data-app-logo]'));
   const title = await box(header.locator('h1'));
   const star = await box(page.getByRole('button', { name: /đánh dấu sao/i }));
   const level = await box(header.getByText('N3', { exact: true }).locator('visible=true'));

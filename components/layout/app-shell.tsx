@@ -14,6 +14,7 @@ import {
 import { AppLogo } from '@/components/layout/app-logo';
 import { AppSidebar, type AppSidebarGroup } from '@/components/layout/app-sidebar';
 import { BottomNav, type BottomNavTab } from '@/components/layout/bottom-nav';
+import { SectionSwitch } from '@/components/layout/section-switch';
 import { WordLookup } from '@/components/common/word-lookup';
 import { ScrollToTop } from '@/components/layout/scroll-to-top';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
@@ -96,6 +97,7 @@ export function AppShell({
       />
       <SidebarInset className="min-w-0">
         <main className="mx-auto w-full max-w-7xl min-w-0 flex-1 px-4 pb-(--bottom-nav-space) sm:px-6">
+          {session?.user && <SectionSwitch pathname={pathname} />}
           {children}
         </main>
       </SidebarInset>
@@ -118,7 +120,12 @@ const PHONE_TABS = [
   { href: '/', label: 'Phân tích', icon: LayoutDashboard, match: (p: string) => p === '/' },
   { href: '/review', label: 'Ôn nhanh', icon: Layers, match: under('/review'), due: true },
   { href: '/kaiwa', label: 'Hội thoại', icon: MessagesSquare, match: under('/kaiwa') },
-  { href: '/resources', label: 'Kho', icon: Library, match: under('/resources', '/library') },
+  {
+    href: '/resources',
+    label: 'Kho',
+    icon: Library,
+    match: under('/resources', '/library', '/groups'),
+  },
   {
     href: '/progress',
     label: 'Bạn',

@@ -15,7 +15,7 @@ import type { ConnectedAppRow } from '@/components/features/settings/connected-a
 import type { ToolUsageReport } from '@/lib/mcp/usage';
 import { useSessionState } from '@/components/common/use-session-state';
 import { saveSettingsAction } from '@/app/actions';
-import { type Settings } from '@/lib/settings/schema';
+import { furiganaInApp, type Settings } from '@/lib/settings/schema';
 
 interface SettingsFormProps {
   initial: Settings;
@@ -65,7 +65,7 @@ export function SettingsForm({ initial, account, isAdmin, mcpUrl }: SettingsForm
       >
         <PracticeTab settings={settings} set={set} />
         <DataTab isAdmin={isAdmin} />
-        <AccountTab {...account} isAdmin={isAdmin} />
+        <AccountTab {...account} isAdmin={isAdmin} furigana={furiganaInApp(initial.furiganaMode)} />
         <GuideTab mcpUrl={mcpUrl} openTab={setTab} />
       </PageShell>
     </Tabs>
