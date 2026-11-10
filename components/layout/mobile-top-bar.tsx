@@ -6,7 +6,10 @@ import { AppLogo } from '@/components/layout/app-logo';
 export function MobileTopBar() {
   return (
     <div className="flex items-center gap-2 md:hidden">
-      <AppLogo />
+      {/* The slot the menu button used to fill: the logo and its 2px lip, 36px tall. */}
+      <span data-app-logo="" className="flex">
+        <AppLogo />
+      </span>
     </div>
   );
 }

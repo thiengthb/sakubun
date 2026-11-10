@@ -5,7 +5,6 @@ export function AppLogo({ className }: { className?: string }) {
     <span
       lang="ja"
       aria-hidden
-      data-app-logo=""
       className={cn(
         'mb-0.5 flex h-8.5 w-9 items-center justify-center rounded-sm bg-primary text-xs leading-none font-extrabold tracking-tighter text-primary-foreground shadow-lift-primary',
         className,

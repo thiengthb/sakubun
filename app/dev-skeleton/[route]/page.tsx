@@ -18,6 +18,7 @@ import LibraryLoading from '@/app/library/loading';
 import LibraryGroupLoading from '@/app/library/[id]/loading';
 import LibraryItemLoading from '@/app/library/item/[id]/loading';
 import LibraryScriptLoading from '@/app/library/script/[id]/loading';
+import { SectionSwitch } from '@/components/layout/section-switch';
 
 const SKELETONS: Record<string, () => React.ReactElement> = {
   dashboard: DashboardLoading,
@@ -41,6 +42,15 @@ const SKELETONS: Record<string, () => React.ReactElement> = {
   'library-script': LibraryScriptLoading,
 };
 
+// While these pages load on a phone, the shell already shows their tab's page switch above the
+// skeleton (it follows the address, not the page), so the preview draws it too.
+const SWITCHED: Record<string, string> = {
+  resources: '/resources',
+  history: '/progress',
+  settings: '/settings',
+  library: '/library',
+};
+
 export default async function DevSkeletonPage({ params }: { params: Promise<{ route: string }> }) {
   if (process.env.NODE_ENV === 'production') notFound();
   const { route } = await params;
@@ -48,5 +58,10 @@ export default async function DevSkeletonPage({ params }: { params: Promise<{ ro
   if (route === 'error') throw new Error('dev-skeleton: a page that failed to load');
   const Skeleton = SKELETONS[route];
   if (!Skeleton) notFound();
-  return <Skeleton />;
+  return (
+    <>
+      {SWITCHED[route] && <SectionSwitch pathname={SWITCHED[route]} />}
+      <Skeleton />
+    </>
+  );
 }
