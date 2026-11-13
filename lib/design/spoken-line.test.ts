@@ -100,6 +100,10 @@ describe('invariant #9 — Japanese content renders through SpokenLine', () => {
         'edit page header names the item being edited; the editing surface, not study content',
       ],
       [
+        'components/features/review/session-summary.tsx',
+        'the end-of-session list of cards to look at again; each row links to the item page, which is playable, like weak-chips',
+      ],
+      [
         'components/features/resources/row-actions.tsx',
         'delete-confirmation prose («X» sẽ bị xoá…) — a warning sentence, not study content',
       ],

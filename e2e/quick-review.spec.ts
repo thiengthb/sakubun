@@ -265,6 +265,27 @@ async function runSession(page: Page, { keyboard = false } = {}) {
   await expect(
     page.getByText(keyboard ? /Nhớ 1 trên 3 thẻ\. Đã làm quen 1 mục mới/ : /Nhớ 3 trên 3 thẻ\./),
   ).toBeVisible();
+  // U2d: three figures, the cards to look at again, each a link to its page.
+  const tiles = page.locator('main dl');
+  await expect(tiles.getByText('Đã ôn', { exact: true }).locator('xpath=..')).toContainText(
+    '4 thẻ',
+  );
+  await expect(tiles.getByText('Nhớ', { exact: true }).locator('xpath=..')).toContainText(
+    keyboard ? '33%' : '100%',
+  );
+  // The streak is read once the session is over; every answer here was today.
+  await expect(tiles.getByText('Chuỗi ngày', { exact: true }).locator('xpath=..')).toContainText(
+    '1 ngày',
+  );
+  const again = page.getByRole('region', { name: 'Xem lại thẻ chưa nhớ' });
+  if (keyboard) {
+    // The wrong cloze and the flip graded Quên; the remembered ones and the intro are not listed.
+    await expect(again.getByRole('link')).toHaveCount(2);
+    await expect(again.getByRole('link').first()).toContainText('約束');
+    await expect(again.getByRole('link').first()).toHaveAttribute('href', '/resources/q1');
+  } else {
+    await expect(again).toHaveCount(0);
+  }
   expect(ratings()).toEqual(keyboard ? [1, 1, 3, 4] : [3, 3, 3, 3]);
   expect(sawCloze, 'the seen word is tested as a cloze').toBe(true);
   expect(sawIntro, 'a new word is met on an intro card').toBe(true);
