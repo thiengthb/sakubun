@@ -65,7 +65,7 @@ meta-analysis, 1 = kinh nghiệm sản phẩm); **Khớp** (với thien và ngư
 | Mã | Tính năng | Tác động | Bằng chứng | Khớp | Nhẹ | An toàn |
 |---|---|---|---|---|---|---|
 | R6 | **Bước thử lại** khi dịch với AI: AI chỉ ra vùng lỗi, người học sửa một lần rồi mới xem câu mẫu | 4 | 4 | 5 | 5 | 5 |
-| R7 | **Sửa những chỗ "chưa ổn" của vòng dịch** (chờ thien liệt kê, mục 6) | ? | ? | 5 | ? | ? |
+| R7 | **Sửa những chỗ "chưa ổn" của vòng dịch**: đã làm ở luyện dịch R1–R4 (mục 6b); phần "giống gia sư" còn lại là R6 | 5 | 3 | 5 | đã làm | đã làm |
 | R3 | **Đối chiếu mẫu dễ nhầm** (は/が, そうだ/ようだ/らしい, たら/ば/と/なら, các mẫu N2 gần nghĩa) | 4 | 4 | 5 | 3 | 4 |
 | R2 | **Gõ hoặc nói đáp án** trong Ôn nhanh (gõ romaji tự thành kana) | 4 | 5 | 4 | 3 | 4 |
 | R1 | **Tối ưu tham số FSRS theo từng người**; cho thấy đánh đổi mức nhớ và khối lượng ôn | 3 | 5 | 3 | 4 | 4 |
@@ -128,7 +128,7 @@ giúp. Đề xuất một **kế hoạch học 4 tuần riêng** dùng thứ đ�
 và bài nghe dạng N2 (bằng prompt, chưa cần code); đề mẫu chính thức trên jlpt.jp; R3 bằng prompt. Code nhỏ nhất đáng
 làm trong đường này: **S6** (vài ngày, giúp nghe ngay).
 
-**Đợt 1 (sau hoặc song song với kỳ thi): sửa lõi và thói quen.** N1, R7, R6, T1, T2, S6, S1, M1.
+**Đợt 1 (sau hoặc song song với kỳ thi): sửa lõi và thói quen.** N1, R6, T1, T2, S6, S1, M1 (R7 đã làm, mục 6b).
 
 **Đợt 2: nghe, nói, đọc trên web.** S2, S3, I1, R3 (bản có code), R2, T3, P1.
 
@@ -147,14 +147,14 @@ xếp hạng) trước khi có người dùng.
 2. **Kế hoạch N2 cấp tốc**: không cần. Bỏ đường A ở mục 5.
 3. **Viết tay kanji**: có. Đã làm trong `docs/plans/2026-11-08-kanji.md` (KJ1–KJ7, khung viết tay và chấm từng nét ở KJ4).
 
-## 6b. Đã làm từ danh sách này (tính đến 2026-11-13)
+## 6b. Đã làm hoặc đã lên lịch từ danh sách này (tính đến 2026-11-13)
 
 | Ứng cử viên | Đã làm ở đâu |
 |---|---|
 | R7 Sửa vòng dịch | Luyện dịch R1–R4 (`2026-11-07-translation-difficulty.md`) |
 | V2 Chữ Hán là một loại mục, luyện viết tay | Kanji KJ1–KJ7 (`2026-11-08-kanji.md`) |
 | S5 (một phần) Nhập vai | Kaiwa (a)–(d), lưu buổi nhập vai (`2026-11-07-kaiwa-voices-roleplay.md`) |
-| T4 Màn "Hôm nay" | Nằm trong UI v2, bước U3 (`2026-11-08-ui-v2.md`) |
+| T4 Màn "Hôm nay" | **Chưa làm, đã lên lịch** trong UI v2, bước U3 (`2026-11-08-ui-v2.md`) |
 | Quy trình 3 (UI/UX và style) | Đang làm dưới tên UI v2 (U0 xong, U1 chờ thien duyệt) |
 
 **Chưa làm, mình đề xuất làm trước khi chọn thêm**: R6 (gia sư: gợi ý, thử lại, giải thích, vì thien vẫn thấy
