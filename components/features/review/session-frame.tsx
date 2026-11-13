@@ -70,3 +70,42 @@ export function SessionProgress({ steps, label }: { steps: Step[]; label: string
     </div>
   );
 }
+
+/**
+ * Layout C's side panel (thien, 2026-11-13): from 1280px only, beside the card, staying in view while
+ * the card scrolls. The counts of the round so far, then whatever the session puts under them (the
+ * keys for the step on screen).
+ */
+export function SessionPanel({
+  remembered,
+  missed,
+  left,
+  children,
+}: {
+  remembered: number;
+  missed: number;
+  left: number;
+  children?: ReactNode;
+}) {
+  const counts: [string, number, string?][] = [
+    ['Nhớ', remembered, 'text-ok'],
+    ['Chưa nhớ', missed, 'text-destructive'],
+    ['Còn', left],
+  ];
+  return (
+    <aside
+      aria-label="Buổi ôn này"
+      className="sticky top-6 space-y-4 self-start rounded-lg border border-border bg-card p-4 max-xl:hidden"
+    >
+      <dl className="grid grid-cols-3 gap-2 text-center">
+        {counts.map(([label, n, tone]) => (
+          <div key={label} className="flex flex-col-reverse">
+            <dt className="text-xs text-muted-foreground">{label}</dt>
+            <dd className={cn('text-title tabular-nums', tone)}>{n}</dd>
+          </div>
+        ))}
+      </dl>
+      {children}
+    </aside>
+  );
+}
