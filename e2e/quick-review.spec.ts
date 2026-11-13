@@ -165,6 +165,18 @@ async function runSession(page: Page, { keyboard = false } = {}) {
       await expect(choices.getByRole('button')).toHaveCount(4);
       await expect(page.getByLabel('chỗ trống')).toBeVisible();
       await expect(page.locator('main p[lang="ja"]').first()).not.toContainText('約束');
+      // U2b: the translation would give the answer away, so it waits for the pick.
+      const translation = page.locator('main p[lang="vi"]');
+      await expect(translation).toHaveCount(0);
+      // On a phone the four answers sit at the foot of the screen, under the thumb; on a laptop
+      // they follow the question.
+      const viewport = page.viewportSize()!;
+      const group = (await choices.boundingBox())!;
+      if (viewport.width < 640) expect(group.y).toBeGreaterThan(viewport.height / 2);
+      else {
+        const question = (await page.locator('main p[lang="ja"]').first().boundingBox())!;
+        expect(group.y - (question.y + question.height)).toBeLessThan(120);
+      }
       const next = page.getByRole('button', { name: 'Tiếp' });
       if (keyboard) {
         const labels = await choices.getByRole('button').allTextContents();
@@ -183,6 +195,12 @@ async function runSession(page: Page, { keyboard = false } = {}) {
       } else {
         await choices.getByRole('button', { name: /約束/ }).click();
         await expect(choices.getByRole('button', { name: /約束/ })).toBeDisabled();
+        // Answered: the translation sits right under the sentence it translates.
+        const sentence = (await page.locator('main p[lang="ja"]').first().boundingBox())!;
+        await expect(translation).toHaveCount(1);
+        const under = (await translation.boundingBox())!;
+        expect(under.y).toBeGreaterThan(sentence.y);
+        expect(under.y - (sentence.y + sentence.height)).toBeLessThan(48);
         await next.click();
       }
     } else if (await seen.isVisible()) {

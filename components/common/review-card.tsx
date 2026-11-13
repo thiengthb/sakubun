@@ -6,6 +6,7 @@ import { SpokenLine } from '@/components/common/spoken-line';
 import type { QuickCard } from '@/lib/app/quick-review';
 import type { ItemKind } from '@/lib/library/item-kinds';
 import { KanjiReviewCard } from '@/components/common/kanji-review-card';
+import { AnswerOption } from '@/components/common/answer-option';
 import type { Segment } from '@/lib/domain/sentence';
 import { cn } from '@/lib/core/utils';
 import { Badge } from '@/components/ui/badge';
@@ -161,8 +162,12 @@ export function ReviewCard({
   // A cloze puts back the text it blanked (より), not the pattern's name (〜より).
   const fill = card.mode === 'cloze' ? card.answer : card.expression;
 
+  const translation = answered ? (card.sentence?.translation ?? null) : null;
+
+  // U2b: the question in the upper part, the four answers at the foot of the screen on a phone,
+  // where the thumb is; on a laptop right under the question.
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-1 flex-col gap-6">
       <div className="space-y-2">
         <div className="flex flex-wrap items-center gap-1.5">
           <Badge variant="outline">{card.kind === 'VOCAB' ? 'Từ vựng' : 'Ngữ pháp'}</Badge>
@@ -175,30 +180,40 @@ export function ReviewCard({
       </div>
 
       {segments ? (
-        // The sentence plays when tapped; its button sits left, centred on the first line. A cloze
-        // stays silent until answered, since the sentence read aloud would give the answer away.
-        <TapToHear
-          active={card.mode === 'flip' || answered}
-          className="flex items-start justify-center gap-2 py-8 text-2xl leading-loose sm:text-3xl md:py-16"
-        >
-          {(card.mode === 'flip' || answered) && (
-            <span className="flex h-lh shrink-0 items-center">
-              <SpeakButton
-                text={spokenText(segments, fill)}
-                label="Nghe câu"
-                speaker={tts.voiceSpeaker}
-                rate={tts.speechRate}
-              />
-            </span>
+        <div>
+          {/* The sentence plays when tapped; its button sits left, centred on the first line. A
+              cloze stays silent until answered, since the sentence read aloud would give the
+              answer away. */}
+          <TapToHear
+            active={card.mode === 'flip' || answered}
+            className="flex items-start justify-center gap-2 py-8 text-2xl leading-loose sm:text-3xl md:py-16"
+          >
+            {(card.mode === 'flip' || answered) && (
+              <span className="flex h-lh shrink-0 items-center">
+                <SpeakButton
+                  text={spokenText(segments, fill)}
+                  label="Nghe câu"
+                  speaker={tts.voiceSpeaker}
+                  rate={tts.speechRate}
+                />
+              </span>
+            )}
+            <Sentence
+              segments={segments}
+              fill={card.mode === 'cloze' && answered ? fill : null}
+              showFurigana={showFurigana}
+              lookup
+              hideTarget={!answered}
+            />
+          </TapToHear>
+          {/* Once answered, the translation sits under the sentence it translates. Never before:
+              it would give the answer away. */}
+          {translation && (
+            <p lang="vi" className="-mt-4 text-center text-muted-foreground md:-mt-10">
+              {translation}
+            </p>
           )}
-          <Sentence
-            segments={segments}
-            fill={card.mode === 'cloze' && answered ? fill : null}
-            showFurigana={showFurigana}
-            lookup
-            hideTarget={!answered}
-          />
-        </TapToHear>
+        </div>
       ) : (
         // No example sentence yet: the item alone in the middle of the free space, unframed; only
         // the answer below is a card.
@@ -217,38 +232,26 @@ export function ReviewCard({
       )}
 
       {card.mode === 'cloze' && (
-        <div className="grid gap-3 sm:grid-cols-2" role="group" aria-label="Chọn đáp án">
+        <div
+          // Once answered they move up under the sentence, making room for the answer card
+          // (thien approved this in the U2b review, 2026-11-14).
+          className={cn('grid gap-3 sm:grid-cols-2', !answered && 'max-sm:mt-auto')}
+          role="group"
+          aria-label="Chọn đáp án"
+        >
           {card.choices.map((choice, i) => {
             const isAnswer = choice.itemId === card.itemId;
             const isPicked = choice.itemId === picked;
             return (
-              <button
+              <AnswerOption
                 key={choice.itemId}
-                type="button"
-                disabled={answered}
-                onClick={() => onPick(choice.itemId)}
-                // A Duolingo answer tile: a thick bottom edge that a press sinks into (the margin
-                // takes the 2px it loses, so nothing below moves); once answered, the right one
-                // turns green, a wrong pick red, and the rest step back.
-                className={cn(
-                  'relative flex min-h-16 items-center justify-center rounded-xl border-2 border-b-4 px-12 py-3 text-center transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
-                  !answered &&
-                    'border-control-edge bg-card hover:bg-muted active:mt-0.5 active:border-b-2',
-                  answered && isAnswer && 'border-ok bg-ok-wash text-ok',
-                  answered &&
-                    isPicked &&
-                    !isAnswer &&
-                    'border-destructive bg-alert-wash text-destructive',
-                  answered && !isAnswer && !isPicked && 'border-control-edge bg-card opacity-50',
-                )}
-              >
-                <span className="absolute left-3 flex size-7 items-center justify-center rounded-md border-2 border-current/20 text-xs font-semibold opacity-80">
-                  {i + 1}
-                </span>
-                <span lang="ja" className="text-lg font-semibold">
-                  {choice.expression}
-                </span>
-              </button>
+                index={i}
+                label={choice.expression}
+                answered={answered}
+                isAnswer={isAnswer}
+                isPicked={isPicked}
+                onPick={() => onPick(choice.itemId)}
+              />
             );
           })}
         </div>
@@ -274,12 +277,6 @@ export function ReviewCard({
             )}
           </div>
           <p className="text-lg font-semibold">{card.meaningVi}</p>
-          {/* Only here, never on the question: the translation would give the answer away. */}
-          {card.sentence?.translation && (
-            <p>
-              <span className="font-semibold">Dịch câu</span> {card.sentence.translation}
-            </p>
-          )}
           {card.structure && (
             <p>
               <span className="font-semibold">Cấu trúc</span>{' '}

@@ -398,7 +398,7 @@ export function QuickReviewView({
         className="flex flex-col xl:grid xl:grid-cols-[minmax(0,1fr)_16rem] xl:gap-8"
       >
         <div className="flex flex-1 flex-col gap-6 md:gap-8">
-          <div className="flex-1 xl:flex-none">
+          <div className="flex flex-1 flex-col xl:flex-none">
             {done || !card ? (
               <Summary results={results} nextDueAt={nextDueAt} />
             ) : (
