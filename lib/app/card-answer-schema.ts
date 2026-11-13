@@ -22,10 +22,11 @@ export const cardAnswerSchema = z.discriminatedUnion('mode', [
   cloze.extend({ clientId: clientId.optional() }),
 ]);
 
+/** The most grades one closing request carries; the page splits more into several. */
+export const CLOSING_GRADES_MAX = 50;
+
 /** What the page hands the browser as it closes: every grade carries its id, so none lands twice. */
 export const closingGradesSchema = z
-  .array(
-    z.discriminatedUnion('mode', [flip.extend({ clientId }), cloze.extend({ clientId })]),
-  )
+  .array(z.discriminatedUnion('mode', [flip.extend({ clientId }), cloze.extend({ clientId })]))
   .min(1)
-  .max(50);
+  .max(CLOSING_GRADES_MAX);

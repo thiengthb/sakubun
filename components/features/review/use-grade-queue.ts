@@ -7,12 +7,15 @@ import {
   type SenderState,
   type Sent,
 } from '@/lib/session/grade-sender';
+import { CLOSING_GRADES_MAX } from '@/lib/app/card-answer-schema';
 
 // U2e: the session moves to the next card the moment a grade is given, and the grade goes to the
 // server behind it (lib/session/grade-sender.ts). U2f: the last grade can be held back for undo.
 
 /** Where the grades still on the device go as the page is closed or reloaded (sendBeacon). */
 export const GRADE_BEACON_URL = '/api/review/answer';
+/** The most grades one request to it may carry (closingGradesSchema). */
+const BEACON_BATCH = CLOSING_GRADES_MAX;
 
 export interface GradeQueue<P> {
   /** Queue a grade; it is sent behind the session. With `hold`, it waits for the next one (undo). */
@@ -51,8 +54,16 @@ export function useGradeQueue<P extends object>(
     const leaving = () => {
       const left: Sent<P>[] = sender.current?.unsent() ?? [];
       if (left.length === 0) return;
-      const body = new Blob([JSON.stringify(left)], { type: 'application/json' });
-      if (navigator.sendBeacon?.(GRADE_BEACON_URL, body)) sender.current?.release();
+      // The route takes at most BEACON_BATCH grades a request: a long offline session goes in
+      // several, in order. The held grade is let go only if the browser queued every one.
+      let queued = true;
+      for (let i = 0; i < left.length; i += BEACON_BATCH) {
+        const body = new Blob([JSON.stringify(left.slice(i, i + BEACON_BATCH))], {
+          type: 'application/json',
+        });
+        queued = (navigator.sendBeacon?.(GRADE_BEACON_URL, body) ?? false) && queued;
+      }
+      if (queued) sender.current?.release();
     };
     window.addEventListener('online', online);
     window.addEventListener('pagehide', leaving);
