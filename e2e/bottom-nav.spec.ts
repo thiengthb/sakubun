@@ -142,6 +142,8 @@ test('Ôn nhanh shows how many cards are due, and the bar stays in the session',
     const box = (await answers.boundingBox())!;
     expect(box.y + box.height).toBeLessThanOrEqual(tabTop);
   }).toPass();
+  // Layout C: a phone has one column, without the laptop's side panel.
+  await expect(page.getByRole('complementary', { name: 'Buổi ôn này' })).toBeHidden();
   await page.getByRole('button', { name: 'Dừng ôn' }).click();
   await page.waitForURL((u) => u.pathname === '/');
   await expect(nav(page)).toBeVisible();
@@ -176,6 +178,24 @@ test('on a laptop the session keeps the sidebar and the page frame', async ({ pa
   expect((await close.boundingBox())!.x).toBeGreaterThan((await title.boundingBox())!.x);
   const progress = page.getByRole('progressbar', { name: /^Thẻ 1 \/ \d+$/ });
   await expect(progress).toHaveAttribute('aria-valuenow', '0');
+  const deck = await progress.getAttribute('aria-label');
+
+  // Layout C (thien, 2026-11-13): the card on the left, a panel on the right with the counts so
+  // far and the keys for the step on screen.
+  const panel = page.getByRole('complementary', { name: 'Buổi ôn này' });
+  await expect(panel).toBeVisible();
+  await expect(panel.getByText('Phím tắt')).toBeVisible();
+  for (const label of ['Nhớ', 'Chưa nhớ'])
+    await expect(panel.locator(`dt:text-is("${label}") + dd`)).toHaveText('0');
+  const bar = (await progress.boundingBox())!;
+  expect((await panel.boundingBox())!.x).toBeGreaterThan(bar.x + bar.width / 2);
+
+  // Enter on the focused X leaves the session; it does not answer the card on screen.
+  await close.focus();
+  await page.keyboard.press('Enter');
+  await page.waitForURL((u) => u.pathname === '/');
+  await page.goto('/review', { waitUntil: 'networkidle' });
+  await expect(page.getByRole('progressbar')).toHaveAttribute('aria-label', deck!);
 
   // Enter on a focused sidebar link follows the link; it does not answer the card.
   await page.locator('[data-sidebar="menu-button"]', { hasText: 'Cài đặt' }).focus();
