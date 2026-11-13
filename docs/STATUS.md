@@ -1,24 +1,24 @@
 # Trạng thái hiện tại
 
-Cập nhật lần cuối: 2026-11-10 · Claude (thread "Đọc bàn giao và làm tiếp Sakubun", tài khoản của thien)
+Cập nhật lần cuối: 2026-11-13 · Claude (thread "Đọc bàn giao và làm tiếp Sakubun", tài khoản của thien)
 
 Trang này cho mọi phiên (kể cả tài khoản, model khác) biết trong 2 phút: đang ở đâu, ai giữ việc gì, cần thien làm gì.
 Lịch sử nằm trong git, PR và `docs/roadmap.md`, không ghi ở đây. Cả file dưới 40 dòng; quá thì gộp hoặc bỏ, đừng thêm.
 
 ## Đang ở đâu
 
-Luyện dịch R1–R4, Kaiwa (a)–(d), kanji KJ1–KJ7 đã xong. UI v2 (`docs/plans/2026-11-08-ui-v2.md`): U0 xong và thien đã duyệt
-ảnh. U1 (khung app): Base UI #276–#282, sidebar 3 nhóm #283, thanh 5 tab #284 (kèm sửa số thẻ đến hạn sau buổi ôn);
-Lịch sử thành Tiến độ ở `/progress` #285. Góp ý cổng U1 của thien (#287): Cài đặt tự lưu, thông báo "Đã lưu · Hoàn tác"
-nổi trên thanh tab (phần tự lưu của U7 làm sớm); menu tài khoản thẳng mép với thẻ người dùng; Ôn nhanh có nút X "Dừng ôn";
-trên điện thoại chỉ còn thanh tab (bỏ menu ngang), Kho chuyển Của bạn / Kho chung, Bạn chuyển Tiến độ / Cài đặt, và
-giao diện tối, furigana, Đăng xuất nằm ở Cài đặt › Tài khoản.
+Luyện dịch R1–R4, Kaiwa (a)–(d), kanji KJ1–KJ7 đã xong. UI v2 (`docs/plans/2026-11-08-ui-v2.md`): U0 và U1 xong (khung app
+Base UI, sidebar 3 nhóm, thanh 5 tab là điều hướng duy nhất trên điện thoại, `/progress`, Cài đặt tự lưu; #276–#287).
 Phân tích vẫn ở `/`: Tổng quan và Thống kê vào Tiến độ ở U7, Hôm nay thay `/` ở U3.
 
-## U1 còn lại
+## Đang làm
 
-1. Cổng U1: thien duyệt lại sau #287 (Cài đặt, menu tài khoản, điều hướng điện thoại), ảnh trên https://claude.ai/artifact/9Hd8pSLPK63CUFMcX4Tshx (làm lại 09/11 ở tài khoản này, trang cũ đã mất) và đi thử 5 tab
-   trên điện thoại thật. Duyệt xong thì đánh U1 Done trong roadmap và nhận U2 (Phiên học, risk:high).
+| Bước                                                       | Nhánh                         | Phiên                                                           |
+| ---------------------------------------------------------- | ----------------------------- | --------------------------------------------------------------- |
+| U2 Phiên học (`docs/plans/2026-11-13-u2-study-session.md`) | `feat/u2a-…` đến `feat/u2f-…` | Claude, thread "Làm lại màn phiên ôn (U2)", tài khoản của thien |
+
+U1 xong 13/11 (thien bỏ bước thử trên điện thoại). U2a–U2d làm trước; U2e (ghi điểm chạy nền) và U2f (hoàn tác) chờ
+thien duyệt mục "Cần bạn chọn" của kế hoạch U2.
 
 ## Đang chờ thien (tối đa 3)
 
