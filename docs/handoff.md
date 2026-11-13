@@ -1,44 +1,23 @@
-# Bàn giao cho phiên ở tài khoản khác
+# Cách thien làm việc ở Sakubun
 
-Viết ngày 2026-11-13 bởi Claude (project "Sakubun" trên claude.ai, tài khoản chính của thien). Phiên ở tài khoản khác
-không thấy thread, bộ nhớ dự án, artifact hay thư mục project files của tài khoản này, nên mọi thứ cần biết nằm ở đây.
-Đọc theo thứ tự: `CLAUDE.md` → `docs/STATUS.md` → file này → `docs/roadmap.md` → kế hoạch của bước định làm.
+Phần không đổi theo ngày, cho mọi nick Claude và Codex: cách thien làm việc, những luật UI thien đã nói mà chưa có test giữ,
+và những điều trước đây chỉ nằm trong bộ nhớ của từng nick. Trạng thái (đang ở đâu, ai giữ việc gì) chỉ nằm ở
+`docs/STATUS.md` và PR đang mở, không ghi ở đây. Khi file này lệch với code, test hay `docs/ui-standard.md`, cái kia đúng.
+Đọc theo thứ tự: `AGENTS.md` → `CLAUDE.md` → `docs/STATUS.md` → file này → `docs/roadmap.md` → kế hoạch của bước định làm.
 
-Trạng thái đúng nhất luôn là `docs/STATUS.md` và PR đang mở; file này giữ phần không đổi theo ngày: cách thien làm việc
-và những luật thien đã nói mà chưa có test nào giữ. Khi file này lệch với code, test hay `docs/ui-standard.md`, cái kia đúng.
+## 1. Những điều trước đây chỉ có trong bộ nhớ của từng nick
 
-## 1. Đang ở đâu (2026-11-13)
-
-- `main` ở #287. Xong: lõi FSRS, nhiều người học (phase 7), Kaiwa và Kho chung (phase 8), kanji KJ1–KJ7 (phase 9),
-  luyện dịch R1–R4, UI v2 U0. U1 (khung app) code đã merge hết (#276–#287); thien bỏ bước đi thử trên điện thoại
-  (13/11). Mục "U1 còn lại" trong STATUS còn ghi chờ duyệt và thử điện thoại cho tới khi #288 merge: bỏ qua mục đó.
-- PR đang mở lúc viết, cả hai do phiên ở tài khoản khác mở hôm nay:
-  - #288 `docs/u2-plan`: đánh U1 Done, nhận U2 (Phiên học), kế hoạch `docs/plans/2026-11-13-u2-study-session.md`
-    với ba câu hỏi cho thien. Không merge trước khi thien đọc mục "Cần bạn chọn". U2a–U2d làm trước; U2e, U2f chờ.
-  - #289 `docs/2026-11-13-research-answers`: đóng câu hỏi nghiên cứu, mục 6b của
-    `docs/plans/2026-11-04-feature-candidates.md` là danh sách chọn việc sau UI v2.
-- Sau U2: U3 Hôm nay → U4 Kho (D6 đã chốt: một menu "Kho" có tab Ngữ pháp/Từ vựng/Kanji, mỗi tab và Hội thoại có công tắc
-  "Của bạn | Kho chung"; chép về kho riêng chỉ khi bấm Học/Sửa/nhập vai) → U5 Hội thoại → U6 Kho chung + Ctrl K → U7
-  Tiến độ, Cài đặt, đăng nhập, lỗi, Admin → U8 dọn và khoá luật. Chi tiết ở `docs/plans/2026-11-08-ui-v2.md`.
-- Cỡ chữ nội dung 17px (D5) chờ làm theo từng trang ở U4–U7, không làm một PR quét cả app (thien chốt 2026-11-09).
-
-### Những mục cũ đã xong, đừng làm lại
-
-Các ghi chú cũ có thể nhắc tới chúng; tất cả đã xong hoặc không còn đúng:
-
-- #284 (thanh 5 tab) và patch `/progress` (thành #285) đã merge. Không còn patch nào chờ đẩy.
-- Nhánh `kj2` "chờ #259": KJ2–KJ7 đã merge từ 08/11.
-- Trang duyệt ảnh U1 cũ (artifact `TedjKZtwMf2QQhZ5msNexj`) đã thay bằng `9Hd8pSLPK63CUFMcX4Tshx`, và thien đã cho qua cổng U1.
-
-### Việc treo đã biết
-
-- e2e không chạy trong CI. `e2e/style-audit.spec.ts` đỏ trên main khi chạy sau kaiwa/quick-review (nợ ghi trên dữ liệu
-  rỗng, cần PR riêng). `quick-review` "mất kết nối" / "lost answer" đỏ tuỳ thứ tự khi chạy cả bộ, chạy riêng thì xanh.
-- Tabs Base UI cần Enter hoặc Space mới chọn khi di bằng phím mũi tên (`activateOnFocus` tắt). Chưa hỏi thien; nếu thien
-  muốn chọn ngay khi di phím thì bật `activateOnFocus` trong `components/ui/tabs.tsx`.
-- Khoảng 14 component còn gọi server action thẳng, không qua `callAction`, nên mất mạng thì vỡ (settings, groups,
-  resources, kaiwa-canvas, admin). Đổi dần theo trang ở U4–U7.
-- Chờ thien (cũng có trong STATUS): bấm Hiện "N5 · Ngữ pháp" ở Quản trị; thử chia sẻ kịch bản với tài khoản thứ hai.
+- **Hướng sản phẩm**: Sakubun cho nhiều người học tiếng Nhật người Việt, có thể thu phí sau này. Không dùng AI phía server
+  (tốn phí API) cho tới khi có gói trả phí; AI là thầy qua MCP. Không có dữ liệu nào bắt buộc phải giữ (dựng lại được).
+- **thien là người học**: đỗ N3 tháng 7/2026 (117/180), thi N2 tháng 12/2026, yếu nghe và nói, học thất thường, Hán Việt rất
+  mạnh. Phần dùng nhiều nhất là luyện dịch. Chi tiết ở mục 1 của `docs/plans/2026-11-04-feature-candidates.md`.
+- **Đăng ký và chặn** (7.2): tài khoản Google nào cũng đăng ký được, không cần duyệt; chủ chặn được bất cứ lúc nào. Chặn là
+  khoá, xoá là một thao tác riêng có xác nhận. Quản trị là tài khoản khớp `ALLOWED_EMAIL` trên NUC (`/admin`).
+- **Kaiwa còn lại** (thien chọn thứ tự, chưa vào lộ trình): tìm kịch bản qua MCP, karaoke theo âm tiết, giọng riêng từng vai,
+  lưu buổi nhập vai.
+- **Repo công khai** từ 27/10 vì GitHub Actions bị chặn thanh toán khi để riêng tư; CI chạy trên `ubuntu-latest`. Không bao
+  giờ dùng runner tự host khi repo công khai.
+- **Merge**: chế độ tự động của Claude chặn merge nếu thien chưa nói rõ trong thread (ví dụ "merge đi"). Đó là chủ ý.
 
 ## 2. Cách thien làm việc
 
@@ -68,6 +47,7 @@ thien duyệt từng cặp ảnh trên một trang HTML (artifact claude.ai). M�
   ghi vào db của artifact (`reviews/<trang>-rN`). Nháp giữ trong localStorage.
 - Lưới dùng ảnh thu nhỏ JPEG (tối đa 800px); bấm vào mở trình xem toàn màn: đổi Trước/Sau tại chỗ, Vừa màn/100%/200%,
   OK/Cần sửa đồng bộ với thẻ, trước/sau, Esc.
+- Trang duyệt và db của nó chỉ nick tạo ra đọc được. Kết quả thien chọn (OK / Cần sửa, ghi chú) phải chép vào PR ngay khi nhận.
 - **Mỗi vòng là một trang mới** chỉ chứa ảnh của vòng đó; không nối vòng mới vào trang cũ.
 - Dữ liệu chụp phải giống kho thật (cách đọc, Hán Việt, có mục ngữ pháp); nhãn ảnh nói đúng cái ảnh cho thấy.
 
@@ -122,3 +102,6 @@ màu đầy đủ bị chê "quá xấu", thien muốn bản gọn ban đầu).
   mở từ menu trả focus về nút menu; dialog đóng có hoạt ảnh giữ focus, e2e phải chờ dialog biến mất rồi mới gõ phím.
 - Chiều cao dòng phải là số px tròn (rem), nếu không các e2e "chân bảng" / "hàng đều" lệch 1px.
 - Hoạt ảnh CSS dùng token `--p-motion-duration-*`; vẽ vòng dữ liệu bằng `conic-gradient`, không vẽ `<svg>` tay.
+- Nợ đã biết: khoảng 14 component còn gọi server action thẳng, không qua `callAction`, nên mất mạng thì vỡ (settings,
+  groups, resources, kaiwa-canvas, admin); đổi dần theo trang ở U4–U7. Tabs Base UI cần Enter hoặc Space mới chọn khi di
+  phím mũi tên (`activateOnFocus` tắt), chưa hỏi thien. Cỡ thân chữ 17px (D5) làm theo từng trang ở U4–U7, không quét cả app.
