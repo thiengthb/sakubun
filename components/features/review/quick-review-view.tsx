@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useEffectEvent, useLayoutEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Undo2, X } from 'lucide-react';
 import { IconAction } from '@/components/common/icon-action';
@@ -28,6 +28,9 @@ import type { RatingValue } from '@/lib/srs/srs';
 type Answer = (answer: CardAnswer) => Promise<ActionResult<unknown>>;
 
 type Result = SessionResult;
+
+/** How long a right cloze answer stays on screen before the next card comes (U2g). */
+const AUTO_NEXT_MS = 1200;
 
 // A missed card comes back at the end of the session for practice, ungraded: its schedule already took
 // the miss. A cloze shows its choices in another order, so the place of the answer is not what is
@@ -227,7 +230,8 @@ export function QuickReviewView({
     setSuggested(null);
   };
 
-  // A cloze is graded the moment a choice is picked; the card stays until "Tiếp".
+  // A cloze is graded the moment a choice is picked; the card stays until "Tiếp", or moves on by
+  // itself when the pick was right (U2g, below).
   const pick = (choiceId: string) => {
     if (!card || card.mode !== 'cloze' || picked) return;
     setPicked(choiceId);
@@ -273,6 +277,16 @@ export function QuickReviewView({
     if (retry && flips(card)) setRetry((r) => (r ? { ...r, right: [...r.right, right] } : r));
     next();
   };
+  // U2g (thien, 14/11): a right cloze pick moves on by itself after a moment, long enough to see
+  // it marked right; a wrong one stays, its answer open, until "Tiếp". Enter or Tiếp still move on
+  // at once, and the timer goes with the card.
+  const rightPick = card?.mode === 'cloze' && picked === card.itemId && showNext;
+  const moveOn = useEffectEvent(practiceNext);
+  useEffect(() => {
+    if (!rightPick) return;
+    const timer = setTimeout(moveOn, AUTO_NEXT_MS);
+    return () => clearTimeout(timer);
+  }, [rightPick, at, practice]);
 
   // A layout effect, so the handler that matches what is on screen is in place before the browser
   // paints it: with a passive effect a key pressed the moment the grade buttons appear still reached
