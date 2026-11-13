@@ -1,41 +1,36 @@
 import { type ReactNode } from 'react';
 import { cn } from '@/lib/core/utils';
 import { PAGE_CHROME } from '@/components/layout/page-chrome';
+import { MobileTopBar } from '@/components/layout/mobile-top-bar';
 
-// UI v2, phase 2 (docs/plans/2026-11-13-u2-study-session.md, U2a): a study session's page. While a
-// session runs the app's way-finding steps aside (StudyFocus), so the header starts with the way
-// out, an X, where other pages have the phone's logo; the title and the count of cards left follow;
-// the end of the row is kept for the session's own actions. Under it, the progress bar. The column
-// is 640px on a laptop: a card and its four answers read as one, and a line of text stays short.
-// The loading screen draws the same frame, so nothing moves when the cards arrive.
-export const SESSION_COLUMN = 'mx-auto max-w-160';
-
+// UI v2, phase 2 (docs/plans/2026-11-13-u2-study-session.md, U2a): a study session's page. It keeps
+// the frame every other page has (thien, 2026-11-13): the sidebar on a laptop, the tab bar on a
+// phone, the same width, and the same header row, with the phone's logo at the start and the
+// session's way out (an X) at the end. Under the header, the progress bar. The loading screen draws
+// the same frame, so nothing moves when the cards arrive.
 export function SessionFrame({
-  close,
   meta,
-  aside,
+  actions,
   progress,
   children,
 }: {
-  /** The way out (Dừng ôn) or its placeholder; once over, the phone's logo as on other pages. */
-  close?: ReactNode;
   /** The count of cards left, under the title. */
   meta?: ReactNode;
-  /** End of the title's row: the session's own actions. */
-  aside?: ReactNode;
+  /** End of the title's row: the way out (Dừng ôn) or its placeholder. */
+  actions?: ReactNode;
   progress: ReactNode;
   children: ReactNode;
 }) {
   return (
-    <div className={cn(PAGE_CHROME.page, SESSION_COLUMN)} data-template="form">
+    <div className={PAGE_CHROME.page} data-template="form">
       <header className={PAGE_CHROME.header}>
         <div className={PAGE_CHROME.row}>
-          {close}
+          <MobileTopBar />
           <div className={PAGE_CHROME.block}>
             <h1 className={PAGE_CHROME.title}>Ôn nhanh</h1>
             {meta && <div className={PAGE_CHROME.meta}>{meta}</div>}
           </div>
-          {aside && <div className={PAGE_CHROME.actions}>{aside}</div>}
+          {actions && <div className={PAGE_CHROME.actions}>{actions}</div>}
         </div>
         {progress}
       </header>

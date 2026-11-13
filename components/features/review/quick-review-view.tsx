@@ -9,8 +9,6 @@ import { Button, ButtonLink } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useFillWindow } from '@/components/ui/use-fit-rows';
 import { PageShell } from '@/components/layout/page-shell';
-import { StudyFocus } from '@/components/layout/study-focus';
-import { MobileTopBar } from '@/components/layout/mobile-top-bar';
 import {
   SessionFrame,
   SessionProgress,
@@ -359,14 +357,11 @@ export function QuickReviewView({
 
   return (
     <SessionFrame
-      // The tab bar and the sidebar step aside during a session, so the way out is always on
-      // screen (thien, U1 gate): a plain X, where learning apps put it.
-      close={
+      // The way out of a session (thien, U1 gate): a plain X at the end of the title's row.
+      actions={
         card && !done ? (
           <IconAction icon={X} label="Dừng ôn" onClick={() => router.push('/')} />
-        ) : (
-          <MobileTopBar />
-        )
+        ) : undefined
       }
       meta={
         <span className="tabular-nums">
@@ -385,8 +380,6 @@ export function QuickReviewView({
         />
       }
     >
-      {/* A study session has the screen to itself until the summary. */}
-      {card && !done && <StudyFocus />}
       <div ref={sessionRef} className="flex flex-col gap-6 md:gap-8">
         <div className="flex-1">
           {done || !card ? (
@@ -408,7 +401,7 @@ export function QuickReviewView({
         </div>
 
         {/* Phone: the bar's buttons share the width; laptop: they keep their own size, at the right. */}
-        <div className="sticky bottom-0 flex gap-2 bg-background pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] max-sm:[&>*]:flex-1 sm:justify-end sm:[&>*]:min-w-32">
+        <div className="sticky bottom-(--bottom-nav-space) flex gap-2 bg-background pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] max-md:pb-2 max-sm:[&>*]:flex-1 sm:justify-end sm:[&>*]:min-w-32">
           {card && !done && (
             <KeyHints
               card={card}
