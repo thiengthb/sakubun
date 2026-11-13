@@ -148,5 +148,8 @@ test('old Lịch sử links land on Tiến độ with their query', async ({ pag
   await page.goto('/history?tab=nhap-vai', { waitUntil: 'networkidle' });
   await expect(page).toHaveURL(/\/progress\?tab=nhap-vai$/);
   await expect(page.getByRole('heading', { level: 1, name: 'Tiến độ' })).toBeVisible();
-  await expect(page.getByRole('tab', { name: 'Nhập vai' })).toHaveAttribute('aria-selected', 'true');
+  await expect(page.getByRole('tab', { name: 'Nhập vai' })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  );
 });

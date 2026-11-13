@@ -1,11 +1,9 @@
 'use client';
 
-import { useState, useSyncExternalStore, useTransition } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useTheme } from 'next-themes';
 import { ChevronsUpDown, LogOut, Moon, Settings } from 'lucide-react';
-import { toast } from 'sonner';
 import { signOut } from '@/lib/auth/auth-client';
 import {
   DropdownMenu,
@@ -19,9 +17,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useSidebar } from '@/components/ui/sidebar';
 import { UserAvatar } from '@/components/layout/user-avatar';
-import { setAppFuriganaAction } from '@/app/actions';
-
-const emptySubscribe = () => () => {};
+import { useDarkTheme, useFurigana } from '@/components/layout/display-prefs';
 
 // UI v2, phase 1 (docs/plans/2026-11-08-ui-v2.md › Khung điều hướng): the user block at the foot of
 // the sidebar opens one menu: Cài đặt, the dark theme, furigana, Đăng xuất. The あ and theme
@@ -69,6 +65,9 @@ export function SidebarUser({
       <DropdownMenuContent
         side={folded ? 'right' : 'top'}
         align={folded ? 'end' : 'start'}
+        // The block sits 8px from the window's edge, inside the usual 16px gutter: with the gutter
+        // the menu was pushed 8px right of the block it opens from (thien, U1 gate).
+        collisionPadding={8}
         className="min-w-56"
       >
         {/* On a phone the menu sits in the sidebar sheet, which closes with it, as the nav links do. */}
@@ -106,43 +105,4 @@ export function SidebarUser({
       </DropdownMenuContent>
     </DropdownMenu>
   );
-}
-
-function useDarkTheme() {
-  const { resolvedTheme, setTheme } = useTheme();
-  const mounted = useSyncExternalStore(
-    emptySubscribe,
-    () => true,
-    () => false,
-  );
-  return {
-    dark: mounted && resolvedTheme === 'dark',
-    set: (dark: boolean) => setTheme(dark ? 'dark' : 'light'),
-  };
-}
-
-function useFurigana(initial: boolean) {
-  const router = useRouter();
-  const [on, setOn] = useState(initial);
-  const [pending, startTransition] = useTransition();
-
-  // The page follows at once through the html element's data-furigana; the server copy and the
-  // refresh follow.
-  const show = (value: boolean) => {
-    setOn(value);
-    document.documentElement.dataset.furigana = value ? 'on' : 'off';
-  };
-  const set = (next: boolean) => {
-    show(next);
-    startTransition(async () => {
-      const result = await setAppFuriganaAction(next);
-      if (!result.ok) {
-        show(!next);
-        toast.error(result.error);
-        return;
-      }
-      router.refresh();
-    });
-  };
-  return { on, set, pending };
 }

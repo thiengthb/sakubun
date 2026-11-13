@@ -2,6 +2,8 @@
 
 import { useEffect, useLayoutEffect, useRef, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
+import { X } from 'lucide-react';
+import { IconAction } from '@/components/common/icon-action';
 import { toast } from 'sonner';
 import { Button, ButtonLink } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -343,6 +345,13 @@ export function QuickReviewView({
     <PageShell
       template="form"
       title="Ôn nhanh"
+      // The tab bar steps aside during a session, so the way out is always on screen (thien, U1
+      // gate): a plain X, as learning apps put it.
+      actions={
+        card && !done ? (
+          <IconAction icon={X} label="Dừng ôn" onClick={() => router.push('/')} />
+        ) : undefined
+      }
       meta={
         <span className="tabular-nums">
           {retry && !done ? `Làm lại ${retry.cards.length} câu sai` : leftLine(cards.slice(index))}

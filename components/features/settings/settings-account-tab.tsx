@@ -7,8 +7,11 @@ import {
   Check,
   Copy,
   KeyRound,
+  Languages,
   Loader2,
   LogIn,
+  LogOut,
+  Moon,
   Pencil,
   Plus,
   Trash2,
@@ -19,6 +22,9 @@ import { toast } from 'sonner';
 import { authClient } from '@/lib/auth/auth-client';
 import { createMcpKeyAction, revokeMcpKeyAction } from '@/app/settings/actions';
 import { UserAvatar } from '@/components/layout/user-avatar';
+import { useDarkTheme, useFurigana } from '@/components/layout/display-prefs';
+import { Switch } from '@/components/ui/switch';
+import { signOut } from '@/lib/auth/auth-client';
 import { Button, ButtonLink } from '@/components/ui/button';
 import {
   Dialog,
@@ -94,6 +100,7 @@ export function AccountTab({
   apps,
   mcpUsage,
   isAdmin,
+  furigana,
 }: {
   name: string;
   email: string;
@@ -106,8 +113,19 @@ export function AccountTab({
   // Whole-app tool statistics: admin only (roadmap 7.2), null for a learner.
   mcpUsage: ToolUsageReport | null;
   isAdmin: boolean;
+  /** Furigana in the app, as the learner last set it. */
+  furigana: boolean;
 }) {
   const router = useRouter();
+  const theme = useDarkTheme();
+  const reading = useFurigana(furigana);
+  const [leaving, setLeaving] = useState(false);
+  async function logout() {
+    setLeaving(true);
+    await signOut();
+    router.push('/login');
+    router.refresh();
+  }
 
   const [label, setLabel] = useState('');
   const [creating, setCreating] = useState(false);
@@ -309,6 +327,11 @@ export function AccountTab({
               </ButtonLink>
             </SettingRow>
           )}
+          <SettingRow icon={LogOut} label="Đăng xuất" className="col-span-full">
+            <Button variant="outline" onClick={logout} disabled={leaving}>
+              Đăng xuất
+            </Button>
+          </SettingRow>
           {hasPassword && passwordOpen && (
             <form
               onSubmit={onChangePassword}
@@ -341,6 +364,25 @@ export function AccountTab({
               </Button>
             </form>
           )}
+        </SettingsSection>
+
+        {/* On a phone these live only here: the tab bar replaced the sidebar's user menu. */}
+        <SettingsSection title="Hiển thị">
+          <SettingRow icon={Moon} label="Giao diện tối">
+            <Switch
+              aria-label="Giao diện tối"
+              checked={theme.dark}
+              onCheckedChange={(on) => theme.set(on)}
+            />
+          </SettingRow>
+          <SettingRow icon={Languages} label="Hiện furigana">
+            <Switch
+              aria-label="Hiện furigana"
+              checked={reading.on}
+              disabled={reading.pending}
+              onCheckedChange={(on) => reading.set(on)}
+            />
+          </SettingRow>
         </SettingsSection>
 
         <SettingsSection

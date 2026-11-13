@@ -21,7 +21,7 @@ export interface BottomNavTab {
 // sidebar takes over. It steps aside while the keyboard is up and while a study session asks it
 // to (<HideBottomNav />).
 export function BottomNav({ tabs }: { tabs: readonly BottomNavTab[] }) {
-  const typing = useSyncExternalStore(subscribeFocus, isTyping, () => false);
+  const typing = useSyncExternalStore(subscribeFocus, typingNow, () => false);
   const hidden = useSyncExternalStore(
     subscribeHide,
     () => hiders > 0,
@@ -92,19 +92,45 @@ const NOT_TEXT = new Set([
   'submit',
 ]);
 
-function isTyping(): boolean {
+function focusTypes(): boolean {
   const el = document.activeElement;
   if (el instanceof HTMLTextAreaElement) return true;
   if (el instanceof HTMLInputElement) return !NOT_TEXT.has(el.type);
   return el instanceof HTMLElement && el.isContentEditable;
 }
 
+// The bar comes back a moment after a field loses focus, not at once: a tap on a button under the
+// field blurs it on press, and a bar that came back right then would take the release, so the
+// button's click would land on a tab instead. The button takes focus on that same press, so the
+// state is kept here and only a text field's focus changes it at once.
+const RETURN_DELAY_MS = 250;
+
+let typing = false;
+const typingNow = () => typing;
+
 function subscribeFocus(onChange: () => void): () => void {
-  document.addEventListener('focusin', onChange);
-  document.addEventListener('focusout', onChange);
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const settle = () => {
+    if (typing === focusTypes()) return;
+    typing = !typing;
+    onChange();
+  };
+  typing = focusTypes();
+  const onFocusIn = () => {
+    if (!focusTypes()) return;
+    clearTimeout(timer);
+    settle();
+  };
+  const onFocusOut = () => {
+    clearTimeout(timer);
+    timer = setTimeout(settle, RETURN_DELAY_MS);
+  };
+  document.addEventListener('focusin', onFocusIn);
+  document.addEventListener('focusout', onFocusOut);
   return () => {
-    document.removeEventListener('focusin', onChange);
-    document.removeEventListener('focusout', onChange);
+    clearTimeout(timer);
+    document.removeEventListener('focusin', onFocusIn);
+    document.removeEventListener('focusout', onFocusOut);
   };
 }
 

@@ -82,18 +82,35 @@ test('the phone shows five named tabs, and the edge rail is gone', async ({ page
   await bar.getByRole('link', { name: 'Kho' }).click();
   await page.waitForURL((u) => u.pathname === '/resources');
   await expect(bar.getByRole('link', { name: 'Kho' })).toHaveAttribute('aria-current', 'page');
-  await page.goto('/library', { waitUntil: 'networkidle' });
+  // Kho holds both stores: a switch at the top goes between them.
+  const pages = page.getByRole('navigation', { name: 'Chuyển trang' });
+  await expect(pages.getByRole('link', { name: 'Của bạn' })).toHaveAttribute(
+    'aria-current',
+    'page',
+  );
+  await pages.getByRole('link', { name: 'Kho chung' }).click();
+  await page.waitForURL((u) => u.pathname === '/library');
   await expect(bar.getByRole('link', { name: 'Kho' })).toHaveAttribute('aria-current', 'page');
   await expect(bar.locator('[aria-current="page"]')).toHaveCount(1);
 
-  // The form's sticky Lưu bar rides above the tab bar, and the page's last line clears it too.
+  // The page's last line clears the tab bar once scrolled to the end.
   await page.goto('/settings', { waitUntil: 'networkidle' });
-  const sticky = (await page.getByRole('button', { name: 'Lưu', exact: true }).boundingBox())!;
-  expect(sticky.y + sticky.height).toBeLessThanOrEqual((await bar.boundingBox())!.y);
   await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
-  const save = (await page.getByRole('button', { name: 'Lưu', exact: true }).boundingBox())!;
-  const top = (await bar.boundingBox())!.y;
-  expect(save.y + save.height).toBeLessThanOrEqual(top);
+  const last = (await page.getByRole('button', { name: /Nâng cao/ }).boundingBox())!;
+  expect(last.y + last.height).toBeLessThanOrEqual((await bar.boundingBox())!.y);
+
+  // A setting saves itself and its Hoàn tác bar floats above the tab bar, in reach of the thumb
+  // wherever the page is scrolled (thien, U1 gate).
+  await page.getByRole('button', { name: 'Tăng Từ vựng mới / ngày' }).click();
+  const saved = page.locator('[data-sonner-toast]').filter({ hasText: 'Đã lưu' });
+  await expect(saved.getByRole('button', { name: 'Hoàn tác' })).toBeVisible();
+  // Polled: the bar slides up into place.
+  await expect(async () => {
+    const box = (await saved.boundingBox())!;
+    expect(box.y + box.height).toBeLessThanOrEqual((await bar.boundingBox())!.y);
+  }).toPass();
+  await saved.getByRole('button', { name: 'Hoàn tác' }).click();
+  await expect(page.getByText('Đã hoàn tác')).toBeVisible();
 });
 
 test('the laptop has no tab bar', async ({ page }) => {
@@ -117,6 +134,10 @@ test('Ôn nhanh shows how many cards are due, and the bar steps aside in the ses
   await review.click();
   await page.waitForURL((u) => u.pathname === '/review');
   await expect(nav(page)).toHaveCount(0);
+  // With the bar away, an X is the way out, on screen from the first card.
+  await page.getByRole('button', { name: 'Dừng ôn' }).click();
+  await page.waitForURL((u) => u.pathname === '/');
+  await expect(nav(page)).toBeVisible();
 
   // With nothing due the tab has no count.
   seedDue(0);
@@ -132,7 +153,9 @@ test('the due count follows the session once it ends', async ({ page }) => {
   await page.goto('/settings', { waitUntil: 'networkidle' });
   await expect(nav(page).locator('[data-badge]')).toHaveText('2');
 
-  await nav(page).getByRole('link', { name: /^Ôn nhanh/ }).click();
+  await nav(page)
+    .getByRole('link', { name: /^Ôn nhanh/ })
+    .click();
   await page.waitForURL((u) => u.pathname === '/review');
   // The session may add new kanji after the two due words; answer whatever comes until the end.
   const end = page.getByText('Xong buổi ôn');

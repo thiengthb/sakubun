@@ -1,8 +1,4 @@
-import {
-  FormFooterSkeleton,
-  PageSkeleton,
-  PageTabsSkeleton,
-} from '@/components/layout/page-skeleton';
+import { PageSkeleton, PageTabsSkeleton } from '@/components/layout/page-skeleton';
 import { Skeleton } from '@/components/ui/skeleton';
 
 // The Luyện tập tab is one card of rows (components/features/settings/setting-row.tsx): icon tile,
@@ -29,7 +25,6 @@ export default function Loading() {
           </div>
         </div>
       </div>
-      <FormFooterSkeleton />
     </PageSkeleton>
   );
 }

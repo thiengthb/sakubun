@@ -64,15 +64,13 @@ test('only the current page is marked active in the sidebar', async ({ page }) =
   await expect(page.locator('[data-sidebar="menu-button"][data-active]')).toHaveText('Cài đặt');
 });
 
-// On a phone the sidebar is a sheet: a tap on a link opens the page and closes the sheet.
-test('a link in the phone sidebar closes the sheet', async ({ page }) => {
+// On a phone the tab bar is the one way around (thien, U1 gate): the logo opens nothing, and no
+// sheet of links is left to open.
+test('the phone has no sidebar sheet, only the tab bar', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await logIn(page);
   await page.goto('/settings', { waitUntil: 'networkidle' });
-  await page.getByRole('button', { name: 'Mở menu' }).first().click();
-  const sheet = page.locator('[data-mobile="true"][data-sidebar="sidebar"]');
-  await expect(sheet).toBeVisible();
-  await sheet.getByRole('link', { name: 'Hội thoại' }).click();
-  await page.waitForURL((u) => u.pathname === '/kaiwa');
-  await expect(sheet).toBeHidden();
+  await expect(page.getByRole('button', { name: 'Mở menu' })).toHaveCount(0);
+  await expect(page.locator('[data-mobile="true"][data-sidebar="sidebar"]')).toHaveCount(0);
+  await expect(page.getByRole('navigation', { name: 'Điều hướng chính' })).toBeVisible();
 });

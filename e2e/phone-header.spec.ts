@@ -50,7 +50,7 @@ test('detail headers keep logo, trail and star on one row, the title under it, a
     await page.goto(path, { waitUntil: 'networkidle' });
     const m = await page.evaluate(() => {
       const shell = document.querySelector('[data-template]');
-      const logo = shell?.querySelector('header button[aria-label="Mở menu"]');
+      const logo = shell?.querySelector('header [data-app-logo]');
       const rowEl = logo?.parentElement?.parentElement;
       const h1 = shell?.querySelector('header h1');
       // The middle child holds the trail; it must render something.
@@ -97,7 +97,7 @@ test('template pages keep logo, title and actions on one row at 390px', async ({
     await page.goto(path, { waitUntil: 'networkidle' });
     const row = await page.evaluate(() => {
       const shell = document.querySelector('[data-template]');
-      const logo = shell?.querySelector('header button[aria-label="Mở menu"]');
+      const logo = shell?.querySelector('header [data-app-logo]');
       const h1 = shell?.querySelector('header h1');
       const rowEl = logo?.parentElement?.parentElement;
       if (!logo || !h1 || !rowEl) return null;
