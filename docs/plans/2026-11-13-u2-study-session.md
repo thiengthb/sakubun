@@ -9,9 +9,9 @@ Thuộc [UI v2](2026-11-08-ui-v2.md), giai đoạn 2 (mục "Từng màn hình �
 
 ## Đang ở đâu
 
-- Đang ở: checkpoint 1, làm bố cục C trong #291.
-- Còn thiếu: ảnh duyệt bố cục C; #292 đến #294 chuyển về `main` lần lượt sau khi PR trước merge.
-- thien cần làm: duyệt ảnh của #291 khi có; trả lời thẻ chọn U2e/U2f (mục "Cần thien chọn").
+- Đang ở: checkpoint 2, U2b trong #292 (đã chuyển về `main`, sửa theo bố cục C).
+- Còn thiếu: ảnh duyệt U2b; #293, #294 chuyển về `main` lần lượt sau khi PR trước merge.
+- thien cần làm: duyệt ảnh của #292 khi có; trả lời thẻ chọn U2e/U2f (mục "Cần thien chọn").
 
 ## Mục tiêu
 
@@ -44,10 +44,10 @@ C thẻ trái và bảng phải).
 
 Xong khi: thien duyệt ảnh 390 và 1440 (trước và sau), thấy sidebar hoặc thanh tab vẫn còn và bảng bên phải đúng số.
 
-- [ ] Đầu trang chuẩn, thanh tiến độ có `aria-valuenow`, nút X (#291)
-- [ ] Bảng bên phải: nhớ, chưa nhớ, còn, phím tắt; ẩn dưới 1280px (#291)
-- [ ] Enter trên một nút đang được chọn (như "Dừng ôn") không chấm thẻ giới thiệu (#291, góp ý CodeRabbit)
-- [ ] e2e: laptop có sidebar và bảng, điện thoại có thanh tab và thanh nút nằm trên nó
+- [x] Đầu trang chuẩn, thanh tiến độ có `aria-valuenow`, nút X (#291)
+- [x] Bảng bên phải: nhớ, chưa nhớ, còn, phím tắt; ẩn dưới 1280px (#291)
+- [x] Enter trên một nút đang được chọn (như "Dừng ôn") không chấm thẻ giới thiệu (#291, góp ý CodeRabbit)
+- [x] e2e: laptop có sidebar và bảng, điện thoại có thanh tab và thanh nút nằm trên nó (#291; thien duyệt ảnh vòng 2 và 3 ngày 14/11, merge cùng ngày)
 
 ### 2. U2b: đáp án trong tầm ngón cái, câu dịch dưới câu
 
