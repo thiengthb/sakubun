@@ -21,6 +21,7 @@ import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import { StreakBeacon } from '@/components/features/dashboard/streak-beacon';
 import { SidebarUser } from '@/components/layout/sidebar-user';
 import { useSession } from '@/lib/auth/auth-client';
+import { useStudyFocus } from '@/components/layout/study-focus';
 
 // Auth pages: /login, and /consent where claude.ai or ChatGPT asks for access; and the public
 // /privacy and /terms that Google's consent screen links to.
@@ -69,32 +70,36 @@ export function AppShell({
 }) {
   const pathname = usePathname();
   const { data: session } = useSession();
+  // A study session has the screen to itself: no sidebar on a laptop (the session's X leads out).
+  const focus = useStudyFocus();
   if (CHROMELESS.includes(pathname)) return <>{children}</>;
 
   const groups = NAV_GROUPS;
 
   return (
     <SidebarProvider defaultOpen={defaultSidebarOpen}>
-      <AppSidebar
-        brand={{
-          title: 'Sakubun',
-          subtitle: 'Luyện dịch Nhật–Việt',
-          logo: <AppLogo />,
-        }}
-        groups={groups}
-        footer={
-          session?.user ? (
-            <SidebarUser
-              user={{
-                name: session.user.name,
-                email: session.user.email,
-                image: session.user.image,
-              }}
-              furigana={furigana}
-            />
-          ) : null
-        }
-      />
+      {!focus && (
+        <AppSidebar
+          brand={{
+            title: 'Sakubun',
+            subtitle: 'Luyện dịch Nhật–Việt',
+            logo: <AppLogo />,
+          }}
+          groups={groups}
+          footer={
+            session?.user ? (
+              <SidebarUser
+                user={{
+                  name: session.user.name,
+                  email: session.user.email,
+                  image: session.user.image,
+                }}
+                furigana={furigana}
+              />
+            ) : null
+          }
+        />
+      )}
       <SidebarInset className="min-w-0">
         <main className="mx-auto w-full max-w-7xl min-w-0 flex-1 px-4 pb-(--bottom-nav-space) sm:px-6">
           {session?.user && <SectionSwitch pathname={pathname} />}

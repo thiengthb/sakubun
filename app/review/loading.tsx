@@ -1,29 +1,32 @@
-import { PageSkeleton } from '@/components/layout/page-skeleton';
 import { Skeleton } from '@/components/ui/skeleton';
+import { StudyFocus } from '@/components/layout/study-focus';
+import { SessionFrame } from '@/components/features/review/session-frame';
 
-// The session as it opens: the count waits on the cards, then the progress bar and a card with
-// its two chips, the question and the sentence; the answer bar rests on the window bottom.
+// The session as it opens, in the session's own frame (no sidebar, no tab bar): the X, the count
+// waiting on the cards, the progress bar, then a card with its two chips, the question and the
+// sentence.
 export default function Loading() {
   return (
-    <PageSkeleton
-      template="form"
-      title="Ôn nhanh"
-      meta
-      pageIcons={<Skeleton className="size-9 rounded-sm md:size-7" />}
-    >
-      <div className="flex max-w-3xl flex-col gap-6">
-        <Skeleton className="h-2 w-full rounded-full" />
-        <div className="space-y-5">
-          <div className="space-y-2">
-            <div className="flex gap-1.5">
-              <Skeleton className="h-5 w-16 rounded-full" />
-              <Skeleton className="h-5 w-9 rounded-full" />
-            </div>
-            <Skeleton className="h-4 w-56" />
-          </div>
-          <Skeleton className="h-10 w-72 max-w-full" />
+    <SessionFrame
+      close={<Skeleton className="size-9 rounded-sm md:size-7" />}
+      meta={
+        <div className="flex h-4 items-center">
+          <Skeleton className="h-3 w-20" />
         </div>
+      }
+      progress={<Skeleton className="h-2 w-full rounded-full" />}
+    >
+      <StudyFocus />
+      <div className="space-y-5">
+        <div className="space-y-2">
+          <div className="flex gap-1.5">
+            <Skeleton className="h-5 w-16 rounded-full" />
+            <Skeleton className="h-5 w-9 rounded-full" />
+          </div>
+          <Skeleton className="h-4 w-56" />
+        </div>
+        <Skeleton className="h-10 w-72 max-w-full" />
       </div>
-    </PageSkeleton>
+    </SessionFrame>
   );
 }

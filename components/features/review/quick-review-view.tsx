@@ -9,7 +9,12 @@ import { Button, ButtonLink } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useFillWindow } from '@/components/ui/use-fit-rows';
 import { PageShell } from '@/components/layout/page-shell';
-import { HideBottomNav } from '@/components/layout/bottom-nav';
+import { StudyFocus } from '@/components/layout/study-focus';
+import {
+  SessionFrame,
+  SessionProgress,
+  type Step,
+} from '@/components/features/review/session-frame';
 import { EmptyState } from '@/components/common/empty-state';
 import { ReviewCard, type CardTts } from '@/components/common/review-card';
 import type { CardAnswer, QuickCard, QuickReview } from '@/lib/app/quick-review';
@@ -341,13 +346,20 @@ export function QuickReviewView({
     );
   }
 
+  const answeredAt = retry ? retry.right.length : results.length;
+  const steps = deck.map((_, i): Step => {
+    if (i < answeredAt) {
+      const right = retry ? retry.right[i] : isRemembered(results[i].rating);
+      return right ? 'right' : 'wrong';
+    }
+    return i === at ? 'current' : 'todo';
+  });
+
   return (
-    <PageShell
-      template="form"
-      title="Ôn nhanh"
-      // The tab bar steps aside during a session, so the way out is always on screen (thien, U1
-      // gate): a plain X, as learning apps put it.
-      actions={
+    <SessionFrame
+      // The tab bar and the sidebar step aside during a session, so the way out is always on
+      // screen (thien, U1 gate): a plain X, where learning apps put it.
+      close={
         card && !done ? (
           <IconAction icon={X} label="Dừng ôn" onClick={() => router.push('/')} />
         ) : undefined
@@ -357,31 +369,16 @@ export function QuickReviewView({
           {retry && !done ? `Làm lại ${retry.cards.length} câu sai` : leftLine(cards.slice(index))}
         </span>
       }
+      progress={
+        <SessionProgress
+          steps={steps}
+          label={`${retry ? 'Làm lại' : 'Thẻ'} ${Math.min(at + 1, deck.length)} / ${deck.length}`}
+        />
+      }
     >
-      {/* A study session has the screen to itself: the phone's tab bar steps aside until the summary. */}
-      {card && !done && <HideBottomNav />}
+      {/* A study session has the screen to itself until the summary. */}
+      {card && !done && <StudyFocus />}
       <div ref={sessionRef} className="flex flex-col gap-6 md:gap-8">
-        <div
-          className="flex gap-1.5"
-          role="img"
-          aria-label={`${retry ? 'Làm lại' : 'Thẻ'} ${Math.min(at + 1, deck.length)} / ${deck.length}`}
-        >
-          {deck.map((c, i) => {
-            const right = retry ? retry.right[i] : results[i] && isRemembered(results[i].rating);
-            const answeredAt = retry ? retry.right.length : results.length;
-            return (
-              <div
-                key={c.itemId}
-                className={cn(
-                  'h-2 flex-1 rounded-full bg-muted',
-                  i < answeredAt && (right ? 'bg-ok' : 'bg-destructive'),
-                  i === at && i >= answeredAt && 'bg-accent-brand',
-                )}
-              />
-            );
-          })}
-        </div>
-
         <div className="flex-1">
           {done || !card ? (
             <Summary results={results} nextDueAt={nextDueAt} />
@@ -469,6 +466,6 @@ export function QuickReviewView({
           )}
         </div>
       </div>
-    </PageShell>
+    </SessionFrame>
   );
 }
