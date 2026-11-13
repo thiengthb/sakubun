@@ -148,8 +148,14 @@ async function runSession(page: Page, { keyboard = false } = {}) {
   let sawIntro = false;
   let sawBare = 0;
   const flipKeys = ['1', '4'];
+  // Layout C: a laptop shows the side panel with the round's counts; a phone has none.
+  const panel = page.getByRole('complementary', { name: 'Buổi ôn này' });
+  const count = (label: string) => panel.locator(`dt:text-is("${label}") + dd`);
+  const laptop = (page.viewportSize()?.width ?? 0) >= 768;
   for (let n = 0; n < 4; n++) {
     await expect(page.getByLabel(`Thẻ ${n + 1} / 4`)).toBeVisible();
+    if (laptop) await expect(count('Còn')).toHaveText(String(4 - n));
+    else await expect(panel).toBeHidden();
     const choices = page.getByRole('group', { name: 'Chọn đáp án' });
     const reveal = page.getByRole('button', { name: 'Xem đáp án' });
     const seen = page.getByRole('button', { name: 'Đã xem' });
@@ -239,6 +245,12 @@ async function runSession(page: Page, { keyboard = false } = {}) {
   expect(sawIntro, 'a new word is met on an intro card').toBe(true);
   expect(sawBare, 'a word with no sentence says so').toBe(2);
   expect(reviewLogCount()).toBe(4);
+  if (laptop) {
+    // The intro card is left out of the panel's counts too.
+    await expect(count('Nhớ')).toHaveText(keyboard ? '1' : '3');
+    await expect(count('Chưa nhớ')).toHaveText(keyboard ? '2' : '0');
+    await expect(count('Còn')).toHaveText('0');
+  }
 
   const overflow = await page.evaluate(
     () => document.documentElement.scrollWidth - document.documentElement.clientWidth,

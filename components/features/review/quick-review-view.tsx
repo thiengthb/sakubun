@@ -475,7 +475,7 @@ export function QuickReviewView({
         <SessionPanel
           remembered={tested.filter((r) => isRemembered(r.rating)).length}
           missed={tested.filter((r) => !isRemembered(r.rating)).length}
-          left={done ? 0 : deck.length - at}
+          left={done ? 0 : deck.length - answeredAt}
         >
           {card && !done && (
             <KeyHints
