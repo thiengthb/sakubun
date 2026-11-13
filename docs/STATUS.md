@@ -33,6 +33,7 @@ Phân tích vẫn ở `/`: Tổng quan và Thống kê vào Tiến độ ở U7,
 
 ## Ghi chú
 
-- thien là người học (thi N2 tháng 12/2026, yếu nghe và nói): mục 1 của `docs/plans/2026-11-04-feature-candidates.md`.
+- thien là người học (thi N2 tháng 12/2026, yếu nghe và nói): mục 1 của `docs/plans/2026-11-04-feature-candidates.md`;
+  câu hỏi nghiên cứu đã đóng 2026-11-13, tính năng còn lại để chọn sau UI v2 ở mục 6b của file đó.
 - NUC tự cập nhật khi `main` xanh CI (`nuc-infra/runbooks/02-add-app.md`); kéo tay cần `sudo`. Log:
   `journalctl -u miniserver-deploy-poll --since "-10 min" | grep sakubun`. Trần tài khoản: `MAX_ACCOUNTS` (mặc định 50).
