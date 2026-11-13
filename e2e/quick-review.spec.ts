@@ -255,6 +255,11 @@ async function runSession(page: Page, { keyboard = false } = {}) {
       await page.keyboard.press('Enter');
     }
     expect(reviewLogCount(), 'practice answers are not graded').toBe(4);
+    // Both retry answers count, the flip one included (it used to be dropped by a stale update).
+    await expect(page.getByRole('progressbar', { name: 'Làm lại 2 / 2' })).toHaveAttribute(
+      'aria-valuenow',
+      '2',
+    );
   }
 
   await expect(page.getByText('Xong buổi ôn')).toBeVisible();
