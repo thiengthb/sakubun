@@ -366,7 +366,12 @@ export function QuickReviewView({
       }
       meta={
         <span className="tabular-nums">
-          {retry && !done ? `Làm lại ${retry.cards.length} câu sai` : leftLine(cards.slice(index))}
+          {/* Once over, nothing is left: after the retry round `index` still points at the last card. */}
+          {done
+            ? leftLine([])
+            : retry
+              ? `Làm lại ${retry.cards.length} câu sai`
+              : leftLine(cards.slice(index))}
         </span>
       }
       progress={

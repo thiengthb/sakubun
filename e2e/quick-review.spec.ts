@@ -222,6 +222,9 @@ async function runSession(page: Page, { keyboard = false } = {}) {
   }
 
   await expect(page.getByText('Xong buổi ôn')).toBeVisible();
+  // Over, after a retry round or not, the count under the title says nothing is left (it used to
+  // keep "Còn 1 thẻ" after the retry round).
+  await expect(page.getByText('Đã ôn hết thẻ đến hạn')).toBeVisible();
   // The intro card is not counted as remembered: it was read, not tested.
   await expect(
     page.getByText(keyboard ? /Nhớ 1 trên 3 thẻ\. Đã làm quen 1 mục mới/ : /Nhớ 3 trên 3 thẻ\./),
