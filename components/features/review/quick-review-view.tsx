@@ -390,13 +390,15 @@ export function QuickReviewView({
     >
       {/* Layout C (thien, 2026-11-13): the card and its bar on the left; from 1280px a small panel
           on the right with the counts and the keys. Narrower, beside the sidebar, the four grade
-          buttons need the whole width, so the session keeps one column and no panel. */}
+          buttons need the whole width, so the session keeps one column and no panel. From 1280px the
+          bar follows the card instead of resting at the window bottom (thien, 2026-11-14: a bar far
+          below a short card looked detached); a card taller than the window still keeps it sticky. */}
       <div
         ref={sessionRef}
         className="flex flex-col xl:grid xl:grid-cols-[minmax(0,1fr)_16rem] xl:gap-8"
       >
         <div className="flex flex-1 flex-col gap-6 md:gap-8">
-          <div className="flex-1">
+          <div className="flex-1 xl:flex-none">
             {done || !card ? (
               <Summary results={results} nextDueAt={nextDueAt} />
             ) : (
@@ -416,7 +418,10 @@ export function QuickReviewView({
           </div>
 
           {/* Phone: the bar's buttons share the width; laptop: they keep their own size, at the right. */}
-          <div className="sticky bottom-(--bottom-nav-space) flex gap-2 bg-background pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] max-md:pb-2 max-sm:[&>*]:flex-1 sm:justify-end sm:[&>*]:min-w-32">
+          <div
+            data-session-bar
+            className="sticky bottom-(--bottom-nav-space) flex gap-2 bg-background pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] max-md:pb-2 max-sm:[&>*]:flex-1 sm:justify-end sm:[&>*]:min-w-32"
+          >
             {intro && (
               <Button
                 size="lg"

@@ -190,6 +190,13 @@ test('on a laptop the session keeps the sidebar and the page frame', async ({ pa
   const bar = (await progress.boundingBox())!;
   expect((await panel.boundingBox())!.x).toBeGreaterThan(bar.x + bar.width / 2);
 
+  // The bar follows the card instead of resting at the window bottom (thien, 2026-11-14).
+  const sessionBar = page.locator('[data-session-bar]');
+  const cardBox = (await sessionBar.locator('xpath=preceding-sibling::div[1]').boundingBox())!;
+  const barBox = (await sessionBar.boundingBox())!;
+  expect(barBox.y - (cardBox.y + cardBox.height)).toBeLessThan(48);
+  expect(barBox.y + barBox.height).toBeLessThan(900 - 48);
+
   // Beside the sidebar on a narrower laptop the grade buttons need the whole width: no panel.
   await page.setViewportSize({ width: 1024, height: 900 });
   await expect(panel).toBeHidden();
