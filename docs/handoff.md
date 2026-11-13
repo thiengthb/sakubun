@@ -10,7 +10,8 @@ và những luật thien đã nói mà chưa có test nào giữ. Khi file này 
 ## 1. Đang ở đâu (2026-11-13)
 
 - `main` ở #287. Xong: lõi FSRS, nhiều người học (phase 7), Kaiwa và Kho chung (phase 8), kanji KJ1–KJ7 (phase 9),
-  luyện dịch R1–R4, UI v2 U0. U1 (khung app) code đã merge hết (#276–#287); thien bỏ bước đi thử trên điện thoại.
+  luyện dịch R1–R4, UI v2 U0. U1 (khung app) code đã merge hết (#276–#287); thien bỏ bước đi thử trên điện thoại
+  (13/11). Mục "U1 còn lại" trong STATUS còn ghi chờ duyệt và thử điện thoại cho tới khi #288 merge: bỏ qua mục đó.
 - PR đang mở lúc viết, cả hai do phiên ở tài khoản khác mở hôm nay:
   - #288 `docs/u2-plan`: đánh U1 Done, nhận U2 (Phiên học), kế hoạch `docs/plans/2026-11-13-u2-study-session.md`
     với ba câu hỏi cho thien. Không merge trước khi thien đọc mục "Cần bạn chọn". U2a–U2d làm trước; U2e, U2f chờ.
