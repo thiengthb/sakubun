@@ -41,7 +41,8 @@ và những điều trước đây chỉ nằm trong bộ nhớ của từng nic
 
 Dựng bằng mẫu so sánh chung ở thienai-workflow, không tự viết trang mới:
 [`artifacts/compare/`](https://github.com/thiengthb/thienai-workflow/blob/main/artifacts/compare/README.md). Gắn repo
-thienai-workflow vào phiên, viết `round.json` cạnh ảnh, chạy `node artifacts/compare/make-round.mjs round.json out`, rồi
+thienai-workflow vào phiên, viết `round.json` cạnh ảnh, rồi chạy lệnh trong bản clone của thienai-workflow (đường dẫn
+`round.json` và `out` là đường dẫn tới thư mục ảnh của vòng): `node artifacts/compare/make-round.mjs <round.json> <out>`, rồi
 đăng `out/index.html` theo đúng README đó. Mẫu đã có sẵn: danh sách kịch bản ở đầu trang, Trước/Sau cạnh nhau hoặc trượt,
 Vừa màn/100%/200%, OK / Cần sửa từng màn, ghim comment đúng chỗ trên ảnh, ghi chú chung, "Chép kết quả", "Gửi cho Claude",
 kết quả lưu ở db của trang (`reviews/<id vòng>`) và nháp trong máy.
