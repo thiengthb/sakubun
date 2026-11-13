@@ -296,10 +296,13 @@ export function QuickReviewView({
     );
   }
 
-  const answeredAt = retry ? retry.right.length : results.length;
-  const steps = deck.map((_, i): Step => {
+  // Once over, the bar shows the graded round again, not the retry round: a card missed stays red
+  // on the summary even if it was right the second time.
+  const shownRetry = done ? null : retry;
+  const answeredAt = shownRetry ? shownRetry.right.length : results.length;
+  const steps = (done ? cards : deck).map((_, i): Step => {
     if (i < answeredAt) {
-      const right = retry ? retry.right[i] : isRemembered(results[i].rating);
+      const right = shownRetry ? shownRetry.right[i] : isRemembered(results[i].rating);
       return right ? 'right' : 'wrong';
     }
     return i === at ? 'current' : 'todo';
@@ -329,7 +332,11 @@ export function QuickReviewView({
       progress={
         <SessionProgress
           steps={steps}
-          label={`${retry ? 'Làm lại' : 'Thẻ'} ${Math.min(at + 1, deck.length)} / ${deck.length}`}
+          label={
+            done
+              ? `Thẻ ${cards.length} / ${cards.length}`
+              : `${retry ? 'Làm lại' : 'Thẻ'} ${Math.min(at + 1, deck.length)} / ${deck.length}`
+          }
         />
       }
     >

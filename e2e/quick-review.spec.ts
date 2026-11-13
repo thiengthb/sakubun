@@ -267,6 +267,10 @@ async function runSession(page: Page, { keyboard = false } = {}) {
       keyboard ? /Nhớ 1 trên 3 thẻ từ vựng\. Đã làm quen 1 mục mới/ : /Nhớ 3 trên 3 thẻ từ vựng\./,
     ),
   ).toBeVisible();
+  // Over, the bar shows the graded round again: a card missed there stays red after the retry.
+  const bar = page.getByRole('progressbar', { name: 'Thẻ 4 / 4' });
+  await expect(bar).toHaveAttribute('aria-valuenow', '4');
+  await expect(bar.locator('.bg-destructive')).toHaveCount(keyboard ? 2 : 0);
   // U2d: three figures, the cards to look at again, each a link to its page.
   const tiles = page.locator('main dl');
   await expect(tiles.getByText('Đã ôn', { exact: true }).locator('xpath=..')).toContainText(
