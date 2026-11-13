@@ -10,6 +10,7 @@ import { Card } from '@/components/ui/card';
 import { useFillWindow } from '@/components/ui/use-fit-rows';
 import { PageShell } from '@/components/layout/page-shell';
 import { StudyFocus } from '@/components/layout/study-focus';
+import { MobileTopBar } from '@/components/layout/mobile-top-bar';
 import {
   SessionFrame,
   SessionProgress,
@@ -362,7 +363,9 @@ export function QuickReviewView({
       close={
         card && !done ? (
           <IconAction icon={X} label="Dừng ôn" onClick={() => router.push('/')} />
-        ) : undefined
+        ) : (
+          <MobileTopBar />
+        )
       }
       meta={
         <span className="tabular-nums">

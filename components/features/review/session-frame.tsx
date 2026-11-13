@@ -17,7 +17,7 @@ export function SessionFrame({
   progress,
   children,
 }: {
-  /** The way out (Dừng ôn), or its placeholder; nothing once the session is over. */
+  /** The way out (Dừng ôn) or its placeholder; once over, the phone's logo as on other pages. */
   close?: ReactNode;
   /** The count of cards left, under the title. */
   meta?: ReactNode;
@@ -30,7 +30,7 @@ export function SessionFrame({
     <div className={cn(PAGE_CHROME.page, SESSION_COLUMN)} data-template="form">
       <header className={PAGE_CHROME.header}>
         <div className={PAGE_CHROME.row}>
-          {close && <div className="flex shrink-0 items-center">{close}</div>}
+          {close}
           <div className={PAGE_CHROME.block}>
             <h1 className={PAGE_CHROME.title}>Ôn nhanh</h1>
             {meta && <div className={PAGE_CHROME.meta}>{meta}</div>}
