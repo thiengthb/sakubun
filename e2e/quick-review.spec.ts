@@ -264,11 +264,7 @@ async function runSession(page: Page, { keyboard = false } = {}) {
       await page.keyboard.press('Enter');
     }
     expect(reviewLogCount(), 'practice answers are not graded').toBe(4);
-    // Both retry answers count, the flip one included (it used to be dropped by a stale update).
-    await expect(page.getByRole('progressbar', { name: 'Làm lại 2 / 2' })).toHaveAttribute(
-      'aria-valuenow',
-      '2',
-    );
+    // (Once over, the bar shows the graded round, checked below, not the retry round.)
   }
 
   await expect(page.getByText('Xong buổi ôn')).toBeVisible();
@@ -277,8 +273,37 @@ async function runSession(page: Page, { keyboard = false } = {}) {
   await expect(page.getByText('Đã ôn hết thẻ đến hạn')).toBeVisible();
   // The intro card is not counted as remembered: it was read, not tested.
   await expect(
-    page.getByText(keyboard ? /Nhớ 1 trên 3 thẻ\. Đã làm quen 1 mục mới/ : /Nhớ 3 trên 3 thẻ\./),
+    page.getByText(
+      keyboard ? /Nhớ 1 trên 3 thẻ từ vựng\. Đã làm quen 1 mục mới/ : /Nhớ 3 trên 3 thẻ từ vựng\./,
+    ),
   ).toBeVisible();
+  // Over, the bar shows the graded round again: a card missed there stays red after the retry.
+  const bar = page.getByRole('progressbar', { name: 'Thẻ 4 / 4' });
+  await expect(bar).toHaveAttribute('aria-valuenow', '4');
+  await expect(bar.locator('.bg-destructive')).toHaveCount(keyboard ? 2 : 0);
+  // U2d: three figures, the cards to look at again, each a link to its page.
+  // The side panel (layout C, from 1280px) has its own Nhớ: read the summary's figures only.
+  const tiles = page.locator('main dl').filter({ hasText: 'Đã ôn' });
+  // The intro was read, not tested: Đã ôn counts the three tested cards, as the sentence does.
+  await expect(tiles.getByText('Đã ôn', { exact: true }).locator('xpath=..')).toContainText(
+    '3 thẻ',
+  );
+  await expect(tiles.getByText('Nhớ', { exact: true }).locator('xpath=..')).toContainText(
+    keyboard ? '33%' : '100%',
+  );
+  // The streak is read once the session is over; every answer here was today.
+  await expect(tiles.getByText('Chuỗi', { exact: true }).locator('xpath=..')).toContainText(
+    '1 ngày',
+  );
+  const again = page.getByRole('region', { name: 'Xem lại thẻ chưa nhớ' });
+  if (keyboard) {
+    // The wrong cloze and the flip graded Quên; the remembered ones and the intro are not listed.
+    await expect(again.getByRole('link')).toHaveCount(2);
+    await expect(again.getByRole('link').first()).toContainText('約束');
+    await expect(again.getByRole('link').first()).toHaveAttribute('href', '/resources/q1');
+  } else {
+    await expect(again).toHaveCount(0);
+  }
   expect(ratings()).toEqual(keyboard ? [1, 1, 3, 4] : [3, 3, 3, 3]);
   expect(sawCloze, 'the seen word is tested as a cloze').toBe(true);
   expect(sawIntro, 'a new word is met on an intro card').toBe(true);

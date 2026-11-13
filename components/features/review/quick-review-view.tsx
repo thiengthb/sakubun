@@ -6,7 +6,6 @@ import { X } from 'lucide-react';
 import { IconAction } from '@/components/common/icon-action';
 import { toast } from 'sonner';
 import { Button, ButtonLink } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 import { useFillWindow } from '@/components/ui/use-fit-rows';
 import { PageShell } from '@/components/layout/page-shell';
 import {
@@ -16,6 +15,7 @@ import {
   type Step,
 } from '@/components/features/review/session-frame';
 import { GradeBar, GRADES } from '@/components/features/review/grade-bar';
+import { SessionSummary, type SessionResult } from '@/components/features/review/session-summary';
 import { EmptyState } from '@/components/common/empty-state';
 import { ReviewCard, type CardTts } from '@/components/common/review-card';
 import type { CardAnswer, QuickCard, QuickReview } from '@/lib/app/quick-review';
@@ -26,12 +26,7 @@ import type { RatingValue } from '@/lib/srs/srs';
 
 type Answer = (answer: CardAnswer) => Promise<ActionResult<unknown>>;
 
-interface Result {
-  kind: QuickCard['kind'];
-  rating: RatingValue;
-  // An intro card was read, not tested, so it does not count towards what was remembered.
-  intro: boolean;
-}
+type Result = SessionResult;
 
 // A missed card comes back at the end of the session for practice, ungraded: its schedule already took
 // the miss. A cloze shows its choices in another order, so the place of the answer is not what is
@@ -116,50 +111,6 @@ function KeyHints({
   );
 }
 
-function Summary({ results: all, nextDueAt }: { results: Result[]; nextDueAt: Date | null }) {
-  const results = all.filter((r) => !r.intro);
-  const met = all.length - results.length;
-  const remembered = (of: Result[]) => of.filter((r) => isRemembered(r.rating)).length;
-  const byKind = (kind: QuickCard['kind'], label: string) => {
-    const of = results.filter((r) => r.kind === kind);
-    return of.length === 0 ? [] : [[label, `${remembered(of)}/${of.length} nhớ`]];
-  };
-  const count = (rating: RatingValue) => String(results.filter((r) => r.rating === rating).length);
-  const tiles = [
-    ...byKind('GRAMMAR', 'Ngữ pháp'),
-    ...byKind('VOCAB', 'Từ vựng'),
-    ...byKind('KANJI', 'Kanji'),
-    ['Khó', count(2)],
-    ['Quên', count(1)],
-  ];
-  return (
-    <div className="flex flex-col gap-6">
-      <div className="space-y-1">
-        <h2 className="text-lg font-bold">Xong buổi ôn</h2>
-        <p className="text-muted-foreground tabular-nums">
-          {results.length > 0 && `Nhớ ${remembered(results)} trên ${results.length} thẻ. `}
-          {met > 0 && `Đã làm quen ${met} mục mới. `}
-          {nextDueAt && `Thẻ tiếp theo đến hạn ${humanizeUntil(nextDueAt)}.`}
-        </p>
-      </div>
-      <dl className="flex flex-wrap gap-3">
-        {tiles.map(([label, value]) => (
-          <Card key={label} size="sm" className="min-w-32 flex-1 gap-1 px-4">
-            <dt className="text-muted-foreground">{label}</dt>
-            <dd className="text-lg font-bold tabular-nums">{value}</dd>
-          </Card>
-        ))}
-      </dl>
-      <div className="space-y-1 rounded-lg bg-muted p-4">
-        <p className="font-semibold">Còn sức? Dịch một câu với Claude</p>
-        <p className="text-muted-foreground">
-          Mở Claude, gõ “học”. Claude lấy đúng một mẫu đến hạn để bạn dịch.
-        </p>
-      </div>
-    </div>
-  );
-}
-
 export function QuickReviewView({
   initial,
   answer,
@@ -228,7 +179,17 @@ export function QuickReviewView({
         return;
       }
       setUnsent(null);
-      setResults((r) => [...r, { kind, rating, intro: met }]);
+      setResults((r) => [
+        ...r,
+        {
+          itemId: answered.itemId,
+          kind,
+          expression: answered.expression,
+          meaningVi: answered.meaningVi,
+          rating,
+          intro: met,
+        },
+      ]);
       if (rating === 1) missed.current.push(retryCard(answered));
       if (advance) next();
     });
@@ -340,12 +301,15 @@ export function QuickReviewView({
     );
   }
 
-  const answeredAt = retry ? retry.right.length : results.length;
+  // Once over, the bar shows the graded round again, not the retry round: a card missed stays red
+  // on the summary even if it was right the second time.
+  const shownRetry = done ? null : retry;
+  const answeredAt = shownRetry ? shownRetry.right.length : results.length;
   // An intro card was read, not tested: the panel's counts leave it out, like the summary.
   const tested = results.filter((r) => !r.intro);
-  const steps = deck.map((_, i): Step => {
+  const steps = (done ? cards : deck).map((_, i): Step => {
     if (i < answeredAt) {
-      const right = retry ? retry.right[i] : isRemembered(results[i].rating);
+      const right = shownRetry ? shownRetry.right[i] : isRemembered(results[i].rating);
       return right ? 'right' : 'wrong';
     }
     return i === at ? 'current' : 'todo';
@@ -372,7 +336,11 @@ export function QuickReviewView({
       progress={
         <SessionProgress
           steps={steps}
-          label={`${retry ? 'Làm lại' : 'Thẻ'} ${Math.min(at + 1, deck.length)} / ${deck.length}`}
+          label={
+            done
+              ? `Thẻ ${cards.length} / ${cards.length}`
+              : `${retry ? 'Làm lại' : 'Thẻ'} ${Math.min(at + 1, deck.length)} / ${deck.length}`
+          }
         />
       }
     >
@@ -388,7 +356,7 @@ export function QuickReviewView({
         <div className="flex flex-1 flex-col gap-6 md:gap-8">
           <div className="flex flex-1 flex-col xl:flex-none">
             {done || !card ? (
-              <Summary results={results} nextDueAt={nextDueAt} />
+              <SessionSummary results={results} nextDueAt={nextDueAt} />
             ) : (
               <ReviewCard
                 key={`${practice ? 'retry' : 'main'}-${card.itemId}`}

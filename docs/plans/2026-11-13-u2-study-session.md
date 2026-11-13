@@ -9,9 +9,9 @@ Thuộc [UI v2](2026-11-08-ui-v2.md), giai đoạn 2 (mục "Từng màn hình �
 
 ## Đang ở đâu
 
-- Đang ở: checkpoint 3, U2c trong #293 (đã chuyển về `main`); giao diện giống hệt `main` vì U2a, U2b đã gồm phần nhìn của U2c, PR chỉ còn tách GradeBar và thêm e2e.
-- Còn thiếu: thien merge #293; #294 chuyển về `main` sau đó.
-- thien cần làm: merge #293; trả lời thẻ chọn U2e/U2f (mục "Cần thien chọn").
+- Đang ở: checkpoint 4 xong (U2d, #294, thien đã duyệt ảnh); U2a–U2d xong khi #294 merge. Checkpoint 5 (U2e, U2f) chờ thien chọn.
+- Còn thiếu: thien merge #294; điểm 1–5 cho màn tổng kết (chưa có).
+- thien cần làm: merge #294; trả lời thẻ chọn U2e/U2f (mục "Cần thien chọn").
 
 ## Mục tiêu
 
@@ -65,7 +65,7 @@ Xong khi: thien duyệt ảnh 390 và 1440.
 
 Xong khi: thien chấm màn tổng kết trên ảnh 390 và 1440.
 
-- [ ] Chuyển #294 về `main` sau khi #293 merge; bảng bên phải ở màn tổng kết hiện kết quả cuối
+- [x] Chuyển #294 về `main` sau khi #293 merge; bảng bên phải ở màn tổng kết hiện kết quả cuối (thien duyệt 6/6 ngày 14/11)
 
 ### 5. U2e, U2f: chấm chạy nền và hoàn tác (chỉ khi thien đồng ý)
 
