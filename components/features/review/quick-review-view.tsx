@@ -15,13 +15,13 @@ import {
   SessionProgress,
   type Step,
 } from '@/components/features/review/session-frame';
+import { GradeBar, GRADES } from '@/components/features/review/grade-bar';
 import { EmptyState } from '@/components/common/empty-state';
 import { ReviewCard, type CardTts } from '@/components/common/review-card';
 import type { CardAnswer, QuickCard, QuickReview } from '@/lib/app/quick-review';
 import { isRemembered } from '@/lib/domain/quick-review';
 import type { ActionResult } from '@/lib/core/action-result';
 import { humanizeUntil } from '@/lib/core/format';
-import { cn } from '@/lib/core/utils';
 import type { RatingValue } from '@/lib/srs/srs';
 
 type Answer = (answer: CardAnswer) => Promise<ActionResult<unknown>>;
@@ -32,18 +32,6 @@ interface Result {
   // An intro card was read, not tested, so it does not count towards what was remembered.
   intro: boolean;
 }
-
-// "10 phút", "8 ngày": the wait on a grade button, without "nữa" and never "dưới 1 phút".
-const shortUntil = (due: Date) =>
-  humanizeUntil(due).replace(/ nữa$/, '').replace('dưới 1 phút', '1 phút');
-
-// The four FSRS buttons of a flip card (decision 0005), each with when the item comes back.
-const GRADES: { rating: RatingValue; label: string; tone?: string }[] = [
-  { rating: 1, label: 'Quên', tone: 'text-destructive' },
-  { rating: 2, label: 'Khó' },
-  { rating: 3, label: 'Nhớ' },
-  { rating: 4, label: 'Dễ', tone: 'text-ok' },
-];
 
 // A missed card comes back at the end of the session for practice, ungraded: its schedule already took
 // the miss. A cloze shows its choices in another order, so the place of the answer is not what is
@@ -438,28 +426,7 @@ export function QuickReviewView({
               </Button>
             )}
             {showGrade && card && (
-              // Phone: two columns, the misses (Quên, Khó) on the left and the hits (Nhớ, Dễ) on the
-              // right, so a thumb finds each side without reading.
-              <div
-                className="grid w-full grid-flow-col grid-cols-2 grid-rows-2 gap-2 sm:grid-flow-row sm:grid-cols-4 sm:grid-rows-1"
-                role="group"
-                aria-label="Chấm thẻ"
-              >
-                {GRADES.map(({ rating, label, tone }) => (
-                  <Button
-                    key={rating}
-                    size="lg"
-                    variant={rating === good ? 'default' : 'outline'}
-                    className={cn(rating !== good && tone)}
-                    disabled={isPending}
-                    aria-keyshortcuts={rating === good ? `${rating} Enter` : String(rating)}
-                    onClick={() => grade(rating)}
-                  >
-                    {label}
-                    <span className="text-xs opacity-75">{shortUntil(card.dueBy[rating])}</span>
-                  </Button>
-                ))}
-              </div>
+              <GradeBar dueBy={card.dueBy} good={good} disabled={isPending} onGrade={grade} />
             )}
             {card?.mode === 'cloze' && picked && unsent && (
               <Button size="lg" disabled={isPending} onClick={resend}>

@@ -7,26 +7,26 @@ Cho mọi nick Claude, Codex và thien biết project đang ở đâu. Lịch s�
 ## Đang ở đâu
 
 Đã áp quy trình chung (#297). UI v2: U0, U1 xong; U2 (buổi ôn) theo bố cục C thien chọn ngày 13/11 (thẻ trái,
-bảng nhỏ phải, giữ sidebar và thanh tab): U2a xong (#291, 14/11), U2b đã duyệt (#292, chờ merge). Mọi phần trước UI v2 đã xong.
+bảng nhỏ phải, giữ sidebar và thanh tab): U2a xong (#291, 14/11), U2b xong (#292), đang U2c (#293). Mọi phần trước UI v2 đã xong.
 
 ## Kế hoạch đang chạy
 
-| Kế hoạch                                           | Đang ở checkpoint       | Đã tick        |
-| -------------------------------------------------- | ----------------------- | -------------- |
-| [UI v2](plans/2026-11-08-ui-v2.md)                 | U2 Buổi ôn              | U0, U1 / U0–U8 |
-| [U2 buổi ôn](plans/2026-11-13-u2-study-session.md) | 2. U2b đáp án, câu dịch | 2 / 5          |
+| Kế hoạch                                           | Đang ở checkpoint        | Đã tick        |
+| -------------------------------------------------- | ------------------------ | -------------- |
+| [UI v2](plans/2026-11-08-ui-v2.md)                 | U2 Buổi ôn               | U0, U1 / U0–U8 |
+| [U2 buổi ôn](plans/2026-11-13-u2-study-session.md) | 3. U2c nút chấm dưới thẻ | 3 / 5          |
 
 ## Việc dở
 
-| Việc                    | Nhánh hoặc PR | Dở từ | Còn thiếu gì                                                                    |
-| ----------------------- | ------------- | ----- | ------------------------------------------------------------------------------- |
-| U2b–U2d buổi ôn         | #292 → #294   | 13/11 | #292 thien đã duyệt ảnh, chờ merge; #293, #294 về `main` sau khi PR trước merge |
-| Đóng câu hỏi nghiên cứu | #289          | 13/11 | Chỉ tài liệu, chờ thien merge                                                   |
-| Bản tóm tắt hai nick    | #296          | 13/11 | Tạm, của nick kia; đóng khi thien so xong                                       |
+| Việc                    | Nhánh hoặc PR | Dở từ | Còn thiếu gì                                                                         |
+| ----------------------- | ------------- | ----- | ------------------------------------------------------------------------------------ |
+| U2c–U2d buổi ôn         | #293 → #294   | 13/11 | #293 đã về `main`, giao diện không đổi, chờ merge; #294 về `main` sau khi #293 merge |
+| Đóng câu hỏi nghiên cứu | #289          | 13/11 | Chỉ tài liệu, chờ thien merge                                                        |
+| Bản tóm tắt hai nick    | #296          | 13/11 | Tạm, của nick kia; đóng khi thien so xong                                            |
 
 ## Việc tiếp theo
 
-1. Sau khi #292 merge: #293 (U2c) rồi #294 (U2d) về `main`, gửi ảnh duyệt (kế hoạch U2).
+1. Sau khi #293 merge: #294 (U2d) về `main`, gửi ảnh duyệt (kế hoạch U2).
 
 ## Đang chờ thien
 
