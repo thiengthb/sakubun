@@ -17,18 +17,42 @@ function newId(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
 }
 
+export interface SenderState {
+  /** Grades not yet on the server, the held one included. */
+  left: number;
+  /** The last send failed for want of an answer; cleared by the next one that gets through. */
+  stalled: boolean;
+  /** A grade is held back for undo (U2f). */
+  held: boolean;
+}
+
 export interface SenderIo<P> {
   send: (payload: P & { clientId: string }) => Promise<ActionResult<unknown>>;
   refused: (error: string) => void;
-  changed: (left: number, stalled: boolean) => void;
+  changed: (state: SenderState) => void;
 }
 
-/** The queue itself, outside React: it outlives renders and calls `io` as it is when it runs. */
+/** A grade as it goes to the server, with the id it keeps across retries. */
+export type Sent<P> = P & { clientId: string };
+
+/**
+ * The queue itself, outside React: it outlives renders, and the page too, so a grade still waiting
+ * when the learner leaves the session in-app keeps trying. It calls `ref.current` as it is when it
+ * runs.
+ *
+ * U2f: a grade given with `hold` waits here, not sent, until the next grade, `release()` or the
+ * page going away, so `undo()` can take it back without the server ever seeing it.
+ */
 export function createSender<P extends object>(ref: { current: SenderIo<P> }) {
   const queue: { id: string; payload: P }[] = [];
+  let held: { id: string; payload: P } | null = null;
   let busy = false;
+  let stalled = false;
   let attempt = 0;
   let timer: ReturnType<typeof setTimeout> | undefined;
+
+  const changed = () =>
+    ref.current.changed({ left: queue.length + (held ? 1 : 0), stalled, held: held !== null });
 
   async function pump(): Promise<void> {
     if (busy) return;
@@ -42,13 +66,15 @@ export function createSender<P extends object>(ref: { current: SenderIo<P> }) {
           result = await ref.current.send({ ...head.payload, clientId: head.id });
         } catch {
           // The request never got an answer: keep the grade and try again later.
-          ref.current.changed(queue.length, true);
+          stalled = true;
+          changed();
           timer = setTimeout(() => void pump(), retryDelay(attempt++));
           return;
         }
         attempt = 0;
+        stalled = false;
         queue.shift();
-        ref.current.changed(queue.length, false);
+        changed();
         if (!result.ok) ref.current.refused(result.error);
       }
     } finally {
@@ -56,19 +82,41 @@ export function createSender<P extends object>(ref: { current: SenderIo<P> }) {
     }
   }
 
+  function release() {
+    if (!held) return;
+    queue.push(held);
+    held = null;
+    changed();
+    void pump();
+  }
+
   return {
-    enqueue(payload: P) {
-      queue.push({ id: newId(), payload });
-      ref.current.changed(queue.length, false);
+    enqueue(payload: P, options: { hold?: boolean } = {}) {
+      release();
+      const grade = { id: newId(), payload };
+      if (options.hold) held = grade;
+      else queue.push(grade);
+      changed();
       void pump();
+    },
+    /** Take back the held grade, unsent; null if there is none. */
+    undo(): P | null {
+      if (!held) return null;
+      const { payload } = held;
+      held = null;
+      changed();
+      return payload;
+    },
+    /** Send the held grade now: the session is over, or the learner is leaving it. */
+    release,
+    /** Every grade not yet known to be in, for a last send as the page goes away. */
+    unsent(): Sent<P>[] {
+      return [...queue, ...(held ? [held] : [])].map((g) => ({ ...g.payload, clientId: g.id }));
     },
     /** Back online: try at once rather than wait out the delay. */
     retryNow() {
       attempt = 0;
       void pump();
-    },
-    stop() {
-      clearTimeout(timer);
     },
   };
 }

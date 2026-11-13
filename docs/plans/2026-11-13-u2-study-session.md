@@ -9,10 +9,10 @@ Thuộc [UI v2](2026-11-08-ui-v2.md), giai đoạn 2 (mục "Từng màn hình �
 
 ## Đang ở đâu
 
-- Đang ở: U2a–U2d đã merge (#291–#294). Checkpoint 5: thien đồng ý cả ba đề xuất (14/11). U2e code xong ở #302, chờ
-  review và thien merge; sau đó U2f (hoàn tác) và tự sang thẻ khi chọn đúng.
+- Đang ở: U2a–U2e đã merge (#291–#294, #302). Checkpoint 5: U2f (hoàn tác, #303) thien duyệt ảnh 4/4 ngày 14/11, chờ merge; sau đó tự
+  sang thẻ khi chọn đúng.
 - Còn thiếu: điểm 1–5 cho màn tổng kết (chưa có).
-- thien cần làm: merge #302 sau khi có review.
+- thien cần làm: merge #303 (U2f).
 
 ## Mục tiêu
 
@@ -72,8 +72,10 @@ Xong khi: thien chấm màn tổng kết trên ảnh 390 và 1440.
 
 Xong khi: e2e đi hết một phiên chỉ bằng bàn phím, kể cả hoàn tác; thẻ sau hiện dưới 400ms sau khi chấm, đo trong e2e.
 
-- [ ] U2e chấm chạy nền (risk:high, có migration cộng thêm): code xong ở #302
-- [ ] U2f hoàn tác một bước (risk:high)
+- [x] U2e chấm chạy nền (risk:high, có migration cộng thêm): #302, thien merge 14/11; review sau merge nêu hai điểm, sửa ở U2f
+- [ ] U2f hoàn tác một bước (risk:high): giữ lần chấm cuối trên máy, nút Hoàn tác cạnh nút X, phím Z; đóng trang thì
+      gửi bằng `sendBeacon`; rời phiên trong app thì gửi nốt; câu điền chỗ trống không hoàn tác được (đáp án đã hiện).
+      #303, thien duyệt ảnh 390 và 1440 (trước, sau khi bấm Hoàn tác) 4/4 OK ngày 14/11
 - [ ] Tự sang thẻ khi chọn đúng ở câu điền chỗ trống (mục 3 bên dưới)
 
 ## Đã chọn: chấm chạy nền, hoàn tác, tự sang thẻ

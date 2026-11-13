@@ -382,14 +382,21 @@ export async function answerCard(
     include: { item: { select: { suspended: true } } },
   });
   if (!srs) return err('Không tìm thấy mục này. Tải lại trang để lấy thẻ mới.');
-  // The same grade sent again (its first reply was lost): it is in already, so say so again.
-  const saved = answer.clientId
-    ? await db.reviewLog.findFirst({ where: { clientId: answer.clientId }, select: { rating: true } })
-    : null;
-  if (saved) {
+  // The same grade sent again (its first reply was lost, or the page sent it as it closed): it is
+  // in already, so say so again rather than refuse it as a second grade.
+  const savedCopy = async (): Promise<ActionResult<AnsweredCard> | null> => {
+    if (!answer.clientId) return null;
+    const saved = await db.reviewLog.findFirst({
+      where: { clientId: answer.clientId },
+      select: { rating: true },
+    });
+    if (!saved) return null;
     const rating = saved.rating as RatingValue;
-    return ok({ rating, correct: isRemembered(rating), nextDue: srs.due });
-  }
+    const after = await db.srsState.findFirstOrThrow({ where: { itemId: answer.itemId } });
+    return ok({ rating, correct: isRemembered(rating), nextDue: after.due });
+  };
+  const copy = await savedCopy();
+  if (copy) return copy;
   if (srs.item.suspended) return err('Mục này đang tạm dừng ôn.');
   // A second tap on the same card arrives after it was rescheduled: refuse instead of rating twice.
   if (srs.state !== CARD_STATE.NEW && srs.due.getTime() > now.getTime()) {
@@ -411,10 +418,11 @@ export async function answerCard(
     );
     return ok({ rating, correct, nextDue: recorded.next.due });
   } catch (e) {
-    // Two copies of one grade raced, and the other one went in first.
-    if (answer.clientId && isPrismaCode(e, 'P2002')) {
-      const after = await db.srsState.findFirstOrThrow({ where: { itemId: answer.itemId } });
-      return ok({ rating, correct, nextDue: after.due });
+    // Two copies of one grade raced (the page's send and its closing beacon): the other one went
+    // in first, either by its id (P2002) or by moving the schedule this one read (P2025).
+    if (isPrismaCode(e, 'P2002') || isPrismaCode(e, 'P2025')) {
+      const raced = await savedCopy();
+      if (raced) return raced;
     }
     // The card was graded elsewhere (another tab) between the read above and this write.
     if (isPrismaCode(e, 'P2025')) {
