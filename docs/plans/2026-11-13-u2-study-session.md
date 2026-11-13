@@ -46,6 +46,13 @@ Thứ tự: U2a đến U2d làm trước, không đổi lịch FSRS hay cách gh
 
 - Bấm chấm là sang thẻ sau ngay. Lần chấm được gửi lên server ở phía sau.
 - Gửi lỗi thì lần chấm được giữ trên máy và tự gửi lại. Màn hình báo nhỏ "Chưa lưu 2 thẻ".
+- Gửi lại phải an toàn khi lần trước thật ra đã lưu, chỉ mất câu trả lời. Mỗi lần chấm mang một mã do máy tạo. Server
+  thấy thẻ đã được chấm, và lần ghi mới nhất của thẻ đó mang đúng mã ấy, thì trả lại kết quả cũ như một lần lưu thành
+  công, không báo lỗi. Mã nằm trong `ReviewLog` (một cột tuỳ chọn mới, migration chỉ cộng thêm). Đây là thay đổi schema
+  duy nhất của U2.
+- Hai lần gửi chồng nhau cho cùng một thẻ hiện vẫn có thể cùng được ghi: `answerCard()` đọc thẻ rồi mới ghi, và
+  bước ghi trong `recordReviews()` không kiểm tra lại. U2e sửa chỗ này trước: bước ghi lịch chỉ chạy khi `due` và
+  `state` của thẻ còn đúng như lúc đọc; lệch thì không ghi gì và trả về "đã chấm rồi".
 - Khi bạn rời trang, mọi lần chấm còn giữ được gửi nốt.
 - Lịch FSRS vẫn tính ở server, qua `recordReviews()` như cũ.
 - Chỗ yếu: nếu cả mạng lẫn lần gửi nốt khi đóng trang đều hỏng, những lần chấm chưa gửi sẽ mất. Thẻ đó vẫn đến hạn như chưa ôn, nên không làm sai lịch, chỉ phải ôn lại.
@@ -54,7 +61,8 @@ Thứ tự: U2a đến U2d làm trước, không đổi lịch FSRS hay cách gh
 
 - Lần chấm gần nhất được giữ trên máy cho tới khi bạn chấm thẻ kế tiếp, hoặc kết thúc hay rời phiên. Hết lúc đó mới gửi.
 - Nút hoàn tác ở `SessionHeader`, phím tắt Z. Bấm vào thì bỏ lần chấm đang giữ và quay về thẻ trước.
-- Server không bao giờ sửa `ReviewLog`, nên không có thẻ nào bị chấm hai lần.
+- Hoàn tác chỉ bỏ lần chấm chưa gửi, nên server không bao giờ phải sửa `ReviewLog` hay lùi lịch của thẻ. Chống chấm
+  hai lần là việc của bước ghi có điều kiện ở U2e.
 - Chỉ hoàn tác được một bước.
 - Lần chấm cuối được gửi bằng `sendBeacon` khi trang đóng. Việc này cần một route POST mới (`/api/review/answer`), dùng chung kiểm tra và `answerCard()` với server action hiện có.
 
@@ -62,7 +70,8 @@ Thứ tự: U2a đến U2d làm trước, không đổi lịch FSRS hay cách gh
 
 - Mình đề nghị tự qua sau 1,2 giây khi đúng, như kế hoạch UI v2.
 - Chọn sai thì đứng lại, chờ "Tiếp", để bạn đọc đáp án và câu dịch.
-- Bấm hay nhấn phím bất kỳ trong 1,2 giây đó thì sang luôn.
+- Trong 1,2 giây đó: Enter, Space hay chạm vào thẻ thì sang luôn; Z thì hoàn tác lần chọn vừa rồi, không sang thẻ;
+  Tab và các phím khác giữ việc bình thường của chúng, không sang thẻ.
 
 Mình đề nghị đồng ý cả ba.
 
