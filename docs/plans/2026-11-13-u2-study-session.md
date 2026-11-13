@@ -32,6 +32,9 @@ C thẻ trái và bảng phải).
   "Dừng ôn" ở cuối hàng; dưới đó là thanh tiến độ chia đoạn, trải hết chiều ngang.
 - Màn từ 1280px: hai cột. Trái là thẻ và các nút trả lời hoặc chấm. Phải là một bảng rộng 256px, dính khi cuộn:
   số thẻ đã nhớ, chưa nhớ, còn lại, rồi phím tắt của bước đang làm.
+- Nút trả lời và nút chấm ở màn từ 1280px nằm ngay dưới thẻ, canh mép phải, không dính đáy cửa sổ; thẻ dài hơn
+  màn thì nút vẫn dính đáy (thien chọn cách 1 ngày 14/11 sau khi duyệt U2a vòng 2: nút ở góc dưới bên phải trông lệch;
+  so sánh: https://claude.ai/artifact/56oMmdZhHEuP4DwqZdXtrt).
 - Laptop hẹp hơn 1280px: một cột như điện thoại, không có bảng, vì cạnh sidebar bốn nút chấm cần cả chiều ngang.
 - Điện thoại: một cột, không có bảng; nút trả lời và nút chấm nằm cuối màn, ngay trên thanh tab.
 
