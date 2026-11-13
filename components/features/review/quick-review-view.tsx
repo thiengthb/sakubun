@@ -249,7 +249,8 @@ export function QuickReviewView({
 
   const next = () => {
     if (retry) {
-      setRetry({ ...retry, index: retry.index + 1 });
+      // Functional: practiceNext() may have just added this card's result to the same state.
+      setRetry((r) => (r ? { ...r, index: r.index + 1 } : r));
     } else if (index + 1 >= cards.length && missed.current.length > 0) {
       setRetry({ cards: missed.current, index: 0, right: [] });
     } else {
@@ -293,7 +294,7 @@ export function QuickReviewView({
   const practiceNext = () => {
     // A practice flip counts as right; a written one as the pad found it.
     const right = !writes(card) || (suggested ?? 1) > 1;
-    if (retry && flips(card)) setRetry({ ...retry, right: [...retry.right, right] });
+    if (retry && flips(card)) setRetry((r) => (r ? { ...r, right: [...r.right, right] } : r));
     next();
   };
 
