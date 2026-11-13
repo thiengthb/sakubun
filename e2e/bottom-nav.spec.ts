@@ -180,8 +180,8 @@ test('on a laptop the session keeps the sidebar and the page frame', async ({ pa
   await expect(progress).toHaveAttribute('aria-valuenow', '0');
   const deck = await progress.getAttribute('aria-label');
 
-  // Layout C (thien, 2026-11-13): the card on the left, a panel on the right with the counts so
-  // far and the keys for the step on screen.
+  // Layout C (thien, 2026-11-13): the card on the left, from 1280px a panel on the right with the
+  // counts so far and the keys for the step on screen.
   const panel = page.getByRole('complementary', { name: 'Buổi ôn này' });
   await expect(panel).toBeVisible();
   await expect(panel.getByText('Phím tắt')).toBeVisible();
@@ -189,6 +189,12 @@ test('on a laptop the session keeps the sidebar and the page frame', async ({ pa
     await expect(panel.locator(`dt:text-is("${label}") + dd`)).toHaveText('0');
   const bar = (await progress.boundingBox())!;
   expect((await panel.boundingBox())!.x).toBeGreaterThan(bar.x + bar.width / 2);
+
+  // Beside the sidebar on a narrower laptop the grade buttons need the whole width: no panel.
+  await page.setViewportSize({ width: 1024, height: 900 });
+  await expect(panel).toBeHidden();
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await expect(panel).toBeVisible();
 
   // Enter on the focused X leaves the session; it does not answer the card on screen.
   await close.focus();

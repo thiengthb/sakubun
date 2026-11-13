@@ -148,10 +148,10 @@ async function runSession(page: Page, { keyboard = false } = {}) {
   let sawIntro = false;
   let sawBare = 0;
   const flipKeys = ['1', '4'];
-  // Layout C: a laptop shows the side panel with the round's counts; a phone has none.
+  // Layout C: from 1280px the side panel shows the round's counts; narrower screens have none.
   const panel = page.getByRole('complementary', { name: 'Buổi ôn này' });
   const count = (label: string) => panel.locator(`dt:text-is("${label}") + dd`);
-  const laptop = (page.viewportSize()?.width ?? 0) >= 768;
+  const laptop = (page.viewportSize()?.width ?? 0) >= 1280;
   for (let n = 0; n < 4; n++) {
     await expect(page.getByLabel(`Thẻ ${n + 1} / 4`)).toBeVisible();
     if (laptop) await expect(count('Còn')).toHaveText(String(4 - n));

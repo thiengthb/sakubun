@@ -77,7 +77,7 @@ function leftLine(left: QuickCard[]): string {
 }
 
 // Laptop: the keys for what can be done now, in the side panel, one to a line. A phone has no
-// keyboard, and below 1024px the panel keeps only the counts.
+// keyboard, and neither has the panel's room.
 function KeyHints({
   card,
   intro,
@@ -114,7 +114,7 @@ function KeyHints({
             ]
           : [['Space', 'xem đáp án']];
   return (
-    <div className="space-y-2 border-t border-border pt-4 text-xs text-muted-foreground max-lg:hidden">
+    <div className="space-y-2 border-t border-border pt-4 text-xs text-muted-foreground">
       <p>Phím tắt</p>
       {keys.map(([key, what]) => (
         <span key={key + what} className="flex items-center gap-1.5">
@@ -388,13 +388,14 @@ export function QuickReviewView({
         />
       }
     >
-      {/* Layout C (thien, 2026-11-13): the card and its bar on the left; on a laptop a small panel
-          on the right with the counts and the keys. A phone has one column and no panel. */}
+      {/* Layout C (thien, 2026-11-13): the card and its bar on the left; from 1280px a small panel
+          on the right with the counts and the keys. Narrower, beside the sidebar, the four grade
+          buttons need the whole width, so the session keeps one column and no panel. */}
       <div
         ref={sessionRef}
-        className="flex flex-col md:grid md:grid-cols-[minmax(0,1fr)_16rem] md:gap-8"
+        className="flex flex-col xl:grid xl:grid-cols-[minmax(0,1fr)_16rem] xl:gap-8"
       >
-        <div className="flex flex-col gap-6 max-md:flex-1 md:gap-8">
+        <div className="flex flex-1 flex-col gap-6 md:gap-8">
           <div className="flex-1">
             {done || !card ? (
               <Summary results={results} nextDueAt={nextDueAt} />

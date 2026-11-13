@@ -72,7 +72,7 @@ export function SessionProgress({ steps, label }: { steps: Step[]; label: string
 }
 
 /**
- * Layout C's side panel (thien, 2026-11-13): laptop only, beside the card, staying in view while
+ * Layout C's side panel (thien, 2026-11-13): from 1280px only, beside the card, staying in view while
  * the card scrolls. The counts of the round so far, then whatever the session puts under them (the
  * keys for the step on screen).
  */
@@ -95,7 +95,7 @@ export function SessionPanel({
   return (
     <aside
       aria-label="Buổi ôn này"
-      className="sticky top-6 space-y-4 self-start rounded-lg border border-border bg-card p-4 max-md:hidden"
+      className="sticky top-6 space-y-4 self-start rounded-lg border border-border bg-card p-4 max-xl:hidden"
     >
       <dl className="grid grid-cols-3 gap-2 text-center">
         {counts.map(([label, n, tone]) => (
