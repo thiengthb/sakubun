@@ -9,9 +9,9 @@ Thuộc [UI v2](2026-11-08-ui-v2.md), giai đoạn 2 (mục "Từng màn hình �
 
 ## Đang ở đâu
 
-- Đang ở: checkpoint 2, U2b trong #292 (đã chuyển về `main`, sửa theo bố cục C).
-- Còn thiếu: ảnh duyệt U2b; #293, #294 chuyển về `main` lần lượt sau khi PR trước merge.
-- thien cần làm: duyệt ảnh của #292 khi có; trả lời thẻ chọn U2e/U2f (mục "Cần thien chọn").
+- Đang ở: checkpoint 2 xong (U2b, #292, thien đã duyệt ảnh); tiếp theo checkpoint 3, U2c trong #293.
+- Còn thiếu: thien merge #292; #293, #294 chuyển về `main` lần lượt sau khi PR trước merge.
+- thien cần làm: merge #292; trả lời thẻ chọn U2e/U2f (mục "Cần thien chọn").
 
 ## Mục tiêu
 
@@ -53,7 +53,7 @@ Xong khi: thien duyệt ảnh 390 và 1440 (trước và sau), thấy sidebar ho
 
 Xong khi: thien duyệt ảnh 390 và 1440.
 
-- [ ] Chuyển #292 về `main` sau khi #291 merge, sửa theo bố cục C, chụp lại ảnh
+- [x] Chuyển #292 về `main` sau khi #291 merge, sửa theo bố cục C, chụp lại ảnh (thien duyệt 8/8 ngày 14/11; chọn xong thì đáp án dời lên dưới câu)
 
 ### 3. U2c: nút chấm dưới thẻ
 

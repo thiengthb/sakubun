@@ -233,7 +233,9 @@ export function ReviewCard({
 
       {card.mode === 'cloze' && (
         <div
-          className="grid gap-3 max-sm:mt-auto sm:grid-cols-2"
+          // Once answered they move up under the sentence, making room for the answer card
+          // (thien approved this in the U2b review, 2026-11-14).
+          className={cn('grid gap-3 sm:grid-cols-2', !answered && 'max-sm:mt-auto')}
           role="group"
           aria-label="Chọn đáp án"
         >
