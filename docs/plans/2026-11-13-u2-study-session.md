@@ -1,82 +1,99 @@
-# Kế hoạch U2: phiên học
+# Kế hoạch U2: buổi ôn
 
-- Ngày: 2026-11-13. Thuộc `docs/plans/2026-11-08-ui-v2.md` (giai đoạn 2, mục "Từng màn hình › 2. Phiên ôn" và B4, B5, B7).
-- thien bỏ qua bước thử U1 trên điện thoại (13/11) và cho làm U2 luôn.
-- Phần giao diện đã nằm trong kế hoạch UI v2 thien duyệt ngày 8/11. Phần cần thien duyệt riêng là mục "Cần bạn chọn" ở
-  dưới, vì nó đổi cách ghi điểm (risk:high theo `CLAUDE.md`).
+Trạng thái: đang chạy · Duyệt: 2026-11-13 (bố cục C) · Cập nhật: 2026-11-13 · Thread: Claude, project `chan_0145cot…`,
+"Đọc bàn giao và làm tiếp Sakubun"
 
-## Hiện có gì
+Thuộc [UI v2](2026-11-08-ui-v2.md), giai đoạn 2 (mục "Từng màn hình › 2. Phiên ôn" và B4, B5, B7). Luật ghi file này ở
+`profile/PLANNING.md` của repo thienai-workflow. Tick khi có bằng chứng; đổi bước thì ghi vào "Đã đổi"; lỗi thì ghi vào
+"Lỗi gặp".
 
-`/review` đã có:
+## Đang ở đâu
 
-- Nút X "Dừng ôn".
-- Thanh tiến độ chia đoạn.
-- Dòng "Còn N thẻ".
-- Vòng làm lại các câu sai.
-- Phím tắt.
-- Màn "Xong buổi ôn": các ô số theo loại, Khó, Quên.
+- Đang ở: checkpoint 1, làm bố cục C trong #291.
+- Còn thiếu: ảnh duyệt bố cục C; #292 đến #294 chuyển về `main` lần lượt sau khi PR trước merge.
+- thien cần làm: duyệt ảnh của #291 khi có; trả lời thẻ chọn U2e/U2f (mục "Cần thien chọn").
 
-Phiên tải sẵn tối đa 20 thẻ ngay khi mở, nên phần "tải trước" của B4 gần như đã có.
+## Mục tiêu
 
-Chỗ còn thiếu:
+Buổi ôn dễ nhìn và nhanh tay trên cả laptop lẫn điện thoại, mà vẫn nằm trong khung app như mọi trang khác.
 
-| Chỗ thiếu                                                  | Vì sao nó là vấn đề                                                              |
-| ---------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| Mỗi lần chấm phải chờ server trả lời rồi mới sang thẻ sau. | Thường mất 100–300ms. Mạng yếu thì cả phiên đứng lại.                            |
-| Không hoàn tác được khi lỡ bấm.                            | Bấm nhầm thì không sửa được.                                                     |
-| Màn kết thúc chỉ có số.                                    | Không có chuỗi ngày, không có thẻ sai để xem lại, không có gợi ý việc tiếp theo. |
-| Trên laptop sidebar vẫn hiện và cột học rộng theo trang.   | Chưa tách khỏi khung app như kế hoạch UI v2 muốn.                                |
+## Không làm
 
-## Các PR
+- Buổi ôn toàn màn (ẩn sidebar, ẩn thanh tab, cột giữa màn): thien bác ngày 13/11.
+- Đổi lịch FSRS hay cách tính điểm trong U2a đến U2d.
+- Hoàn tác nhiều bước.
 
-| #   | Làm gì                                                                                                                                                                                             | Rủi ro |
-| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
-| U2a | `SessionHeader` (X, thanh tiến độ có `aria-valuenow`, "còn N", chỗ cho nút hoàn tác); laptop ẩn sidebar trong phiên, cột 640px giữa màn                                                            | medium |
-| U2b | `StudyCard` và `AnswerOption`: câu hỏi to ở khoảng 1/3 trên; điện thoại 4 đáp án xếp dọc sát đáy trong tầm ngón cái, laptop lưới 2×2 ngay dưới câu; chọn xong đáp án đúng sáng xanh, câu dịch hiện | medium |
-| U2c | `GradeBar` cho thẻ lật (giữ 4 nút và thời gian chờ), dòng phím tắt dưới cùng                                                                                                                       | medium |
-| U2d | Màn tổng kết: đã ôn, tỉ lệ nhớ, chuỗi ngày, tối đa 3 thẻ sai bấm vào xem lại, một việc gợi ý tiếp. Số liệu lấy từ chính phiên trên máy và `getStreak()`, không đụng schema (B7)                    | medium |
-| U2e | Ghi điểm chạy nền (B4), nếu bạn đồng ý                                                                                                                                                             | high   |
-| U2f | Hoàn tác lần chấm vừa rồi (B5), nếu bạn đồng ý                                                                                                                                                     | high   |
+## Bố cục đã chọn (thien, 13/11, phương án C)
 
-Thứ tự: U2a đến U2d làm trước, không đổi lịch FSRS hay cách ghi điểm; U2e và U2f chờ bạn duyệt mục dưới.
+So sánh ba phương án có ảnh: https://claude.ai/artifact/AcSByXq14dJSa3fogfUBSP (A khung chuẩn, B cột hẹp giữa màn,
+C thẻ trái và bảng phải).
 
-## Cần bạn chọn
+- Giữ sidebar trên laptop, thanh tab trên điện thoại, đầu trang như các trang khác: tên trang, "Còn N thẻ", nút X
+  "Dừng ôn" ở cuối hàng; dưới đó là thanh tiến độ chia đoạn, trải hết chiều ngang.
+- Laptop (từ 768px): hai cột. Trái là thẻ và các nút trả lời hoặc chấm. Phải là một bảng rộng 256px, dính khi cuộn:
+  số thẻ đã nhớ, đã quên, còn lại, rồi phím tắt của bước đang làm (phím tắt chỉ hiện từ 1024px).
+- Điện thoại: một cột, không có bảng; nút trả lời và nút chấm nằm cuối màn, ngay trên thanh tab.
 
-**1. Ghi điểm chạy nền (U2e).**
+## Checkpoint
 
-- Bấm chấm là sang thẻ sau ngay. Lần chấm được gửi lên server ở phía sau.
-- Gửi lỗi thì lần chấm được giữ trên máy và tự gửi lại. Màn hình báo nhỏ "Chưa lưu 2 thẻ".
-- Gửi lại phải an toàn khi lần trước thật ra đã lưu, chỉ mất câu trả lời. Mỗi lần chấm mang một mã do máy tạo. Server
-  thấy thẻ đã được chấm, và lần ghi mới nhất của thẻ đó mang đúng mã ấy, thì trả lại kết quả cũ như một lần lưu thành
-  công, không báo lỗi. Mã nằm trong `ReviewLog` (một cột tuỳ chọn mới, migration chỉ cộng thêm). Đây là thay đổi schema
-  duy nhất của U2.
-- Hai lần gửi chồng nhau cho cùng một thẻ hiện vẫn có thể cùng được ghi: `answerCard()` đọc thẻ rồi mới ghi, và
-  bước ghi trong `recordReviews()` không kiểm tra lại. U2e sửa chỗ này trước: bước ghi lịch chỉ chạy khi `due` và
-  `state` của thẻ còn đúng như lúc đọc; lệch thì không ghi gì và trả về "đã chấm rồi".
-- Khi bạn rời trang, mọi lần chấm còn giữ được gửi nốt.
-- Lịch FSRS vẫn tính ở server, qua `recordReviews()` như cũ.
-- Chỗ yếu: nếu cả mạng lẫn lần gửi nốt khi đóng trang đều hỏng, những lần chấm chưa gửi sẽ mất. Thẻ đó vẫn đến hạn như chưa ôn, nên không làm sai lịch, chỉ phải ôn lại.
+### 1. U2a: khung buổi ôn theo bố cục C
 
-**2. Hoàn tác (U2f), theo cách hoãn ghi đã nêu ở B5.**
+Xong khi: thien duyệt ảnh 390 và 1440 (trước và sau), thấy sidebar hoặc thanh tab vẫn còn và bảng bên phải đúng số.
 
-- Lần chấm gần nhất được giữ trên máy cho tới khi bạn chấm thẻ kế tiếp, hoặc kết thúc hay rời phiên. Hết lúc đó mới gửi.
-- Nút hoàn tác ở `SessionHeader`, phím tắt Z. Bấm vào thì bỏ lần chấm đang giữ và quay về thẻ trước.
-- Hoàn tác chỉ bỏ lần chấm chưa gửi, nên server không bao giờ phải sửa `ReviewLog` hay lùi lịch của thẻ. Chống chấm
-  hai lần là việc của bước ghi có điều kiện ở U2e.
-- Chỉ hoàn tác được một bước.
-- Lần chấm cuối được gửi bằng `sendBeacon` khi trang đóng. Việc này cần một route POST mới (`/api/review/answer`), dùng chung kiểm tra và `answerCard()` với server action hiện có.
+- [ ] Đầu trang chuẩn, thanh tiến độ có `aria-valuenow`, nút X (#291)
+- [ ] Bảng bên phải: nhớ, quên, còn, phím tắt; ẩn dưới 768px (#291)
+- [ ] Enter trên một nút đang được chọn (như "Dừng ôn") không chấm thẻ giới thiệu (#291, góp ý CodeRabbit)
+- [ ] e2e: laptop có sidebar và bảng, điện thoại có thanh tab và thanh nút nằm trên nó
 
-**3. Tự sang thẻ khi chọn đúng ở câu điền chỗ trống.**
+### 2. U2b: đáp án trong tầm ngón cái, câu dịch dưới câu
 
-- Mình đề nghị tự qua sau 1,2 giây khi đúng, như kế hoạch UI v2.
-- Chọn sai thì đứng lại, chờ "Tiếp", để bạn đọc đáp án và câu dịch.
-- Trong 1,2 giây đó: Enter, Space hay chạm vào thẻ thì sang luôn; Z thì hoàn tác lần chọn vừa rồi, không sang thẻ;
-  Tab và các phím khác giữ việc bình thường của chúng, không sang thẻ.
+Xong khi: thien duyệt ảnh 390 và 1440.
 
-Mình đề nghị đồng ý cả ba.
+- [ ] Chuyển #292 về `main` sau khi #291 merge, sửa theo bố cục C, chụp lại ảnh
 
-## Cửa U2 (xong khi)
+### 3. U2c: nút chấm dưới thẻ
 
-- e2e đi hết một phiên chỉ bằng bàn phím: điền chỗ trống, thẻ lật, thẻ kanji, vòng làm lại, hoàn tác, tổng kết.
-- Thẻ sau hiện dưới 400ms sau khi chấm, đo trong e2e.
-- Bạn chấm màn tổng kết theo thang 5 điểm, trên ảnh 390 và 1440.
+Xong khi: thien duyệt ảnh 390 và 1440.
+
+- [ ] Chuyển #293 về `main` sau khi #292 merge; phím tắt chuyển vào bảng bên phải
+
+### 4. U2d: màn tổng kết
+
+Xong khi: thien chấm màn tổng kết trên ảnh 390 và 1440.
+
+- [ ] Chuyển #294 về `main` sau khi #293 merge; bảng bên phải ở màn tổng kết hiện kết quả cuối
+
+### 5. U2e, U2f: chấm chạy nền và hoàn tác (chỉ khi thien đồng ý)
+
+Xong khi: e2e đi hết một phiên chỉ bằng bàn phím, kể cả hoàn tác; thẻ sau hiện dưới 400ms sau khi chấm, đo trong e2e.
+
+- [ ] U2e chấm chạy nền (risk:high, có migration cộng thêm)
+- [ ] U2f hoàn tác một bước (risk:high)
+
+## Cần thien chọn
+
+Thẻ chọn đã gửi trong thread ngày 13/11. Chi tiết:
+
+1. **Chấm chạy nền (U2e).** Bấm chấm là sang thẻ sau ngay, lần chấm gửi lên server ở phía sau. Gửi lỗi thì giữ trên máy,
+   tự gửi lại và báo nhỏ "Chưa lưu 2 thẻ". Mỗi lần chấm mang một mã do máy tạo, lưu trong `ReviewLog` (cột tuỳ chọn
+   mới, migration chỉ cộng thêm), để gửi lại không ghi hai lần. Bước ghi lịch chỉ chạy khi `due` và `state` của thẻ còn
+   như lúc đọc. Lịch FSRS vẫn tính ở server qua `recordReviews()`. Chỗ yếu: mạng hỏng cả lúc đóng trang thì lần chấm
+   chưa gửi mất, thẻ vẫn đến hạn như chưa ôn.
+2. **Hoàn tác một bước (U2f).** Lần chấm gần nhất giữ trên máy tới khi chấm thẻ kế tiếp hoặc rời phiên; nút hoàn tác
+   ở đầu trang, phím Z. Server không phải sửa `ReviewLog`. Lần chấm cuối gửi bằng `sendBeacon` qua route POST mới
+   `/api/review/answer`.
+3. **Tự sang thẻ khi chọn đúng ở câu điền chỗ trống**, sau 1,2 giây; chọn sai thì đứng lại chờ "Tiếp".
+
+## Đã đổi
+
+| Ngày  | Đổi gì                                                               | Vì sao                                                               |
+| ----- | -------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| 13/11 | Bỏ buổi ôn toàn màn; giữ khung app, chọn bố cục C                    | thien bác bố cục toàn màn khi đã có 4 PR, rồi chọn C từ ba phương án |
+| 13/11 | Bỏ xếp chồng #291 → #294; mỗi PR chuyển về `main` khi PR trước merge | Luật "một bước, một nick, một PR" trong `CLAUDE.md` (#297)           |
+| 13/11 | Viết lại kế hoạch theo `PLAN.template.md`; phần U1 đã nằm ở #297     | Áp quy trình chung                                                   |
+
+## Lỗi gặp
+
+| Ngày  | Lỗi                                                                 | Đã xử lý                                       |
+| ----- | ------------------------------------------------------------------- | ---------------------------------------------- |
+| 13/11 | Code U2a đến U2d theo một dòng kế hoạch mà thien chưa thấy bằng ảnh | Thêm luật đưa 2–3 bố cục trước khi code (#297) |
