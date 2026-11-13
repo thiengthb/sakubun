@@ -9,9 +9,9 @@ Thuộc [UI v2](2026-11-08-ui-v2.md), giai đoạn 2 (mục "Từng màn hình �
 
 ## Đang ở đâu
 
-- Đang ở: checkpoint 2 xong (U2b, #292, thien đã duyệt ảnh); tiếp theo checkpoint 3, U2c trong #293.
-- Còn thiếu: thien merge #292; #293, #294 chuyển về `main` lần lượt sau khi PR trước merge.
-- thien cần làm: merge #292; trả lời thẻ chọn U2e/U2f (mục "Cần thien chọn").
+- Đang ở: checkpoint 3, U2c trong #293 (đã chuyển về `main`, phím tắt nằm trong bảng bên phải).
+- Còn thiếu: ảnh duyệt U2c; #294 chuyển về `main` sau khi #293 merge.
+- thien cần làm: duyệt ảnh của #293 khi có; trả lời thẻ chọn U2e/U2f (mục "Cần thien chọn").
 
 ## Mục tiêu
 
