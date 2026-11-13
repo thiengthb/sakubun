@@ -377,7 +377,9 @@ export function QuickReviewView({
       {card && !done && <StudyFocus />}
       <div ref={sessionRef} className="flex flex-col gap-6 md:gap-8">
         {/* Phone: the card fills the screen, so its answers and the bar below rest at the foot, in
-            thumb reach. Laptop: the bar follows the card, and the key hints close the column. */}
+            thumb reach. Laptop: the bar follows the card, and the key hints close the column. A card
+            taller than the screen leaves the bar stuck to the foot on both, so the grades never
+            need a scroll. */}
         <div className="flex flex-col max-sm:flex-1">
           {done || !card ? (
             <Summary results={results} nextDueAt={nextDueAt} />
@@ -398,7 +400,7 @@ export function QuickReviewView({
         </div>
 
         {/* Phone: the bar's buttons share the width; laptop: they keep their own size, at the right. */}
-        <div className="flex gap-2 max-sm:sticky max-sm:bottom-0 max-sm:bg-background max-sm:pt-2 max-sm:pb-[max(0.5rem,env(safe-area-inset-bottom))] max-sm:[&>*]:flex-1 sm:justify-end sm:[&>*]:min-w-32">
+        <div className="sticky bottom-0 flex gap-2 bg-background pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] max-sm:[&>*]:flex-1 sm:justify-end sm:[&>*]:min-w-32">
           {intro && (
             <Button
               size="lg"
