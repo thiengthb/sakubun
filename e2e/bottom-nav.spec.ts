@@ -120,7 +120,7 @@ test('the laptop has no tab bar', async ({ page }) => {
   await expect(nav(page)).toBeHidden();
 });
 
-test('Ôn nhanh shows how many cards are due, and the bar steps aside in the session', async ({
+test('Ôn nhanh shows how many cards are due, and the bar stays in the session', async ({
   page,
 }) => {
   seedDue(3);
@@ -133,8 +133,15 @@ test('Ôn nhanh shows how many cards are due, and the bar steps aside in the ses
 
   await review.click();
   await page.waitForURL((u) => u.pathname === '/review');
-  await expect(nav(page)).toHaveCount(0);
-  // With the bar away, an X is the way out, on screen from the first card.
+  // The session keeps the tab bar like every other page (thien, 2026-11-13); the X still leads out,
+  // and the answer bar rests on top of the tab bar, never under it.
+  await expect(nav(page)).toBeVisible();
+  const tabTop = (await nav(page).boundingBox())!.y;
+  const answers = page.getByRole('button', { name: /^(Xem đáp án|Đã xem|Tiếp)$/ }).first();
+  await expect(async () => {
+    const box = (await answers.boundingBox())!;
+    expect(box.y + box.height).toBeLessThanOrEqual(tabTop);
+  }).toPass();
   await page.getByRole('button', { name: 'Dừng ôn' }).click();
   await page.waitForURL((u) => u.pathname === '/');
   await expect(nav(page)).toBeVisible();
@@ -146,33 +153,32 @@ test('Ôn nhanh shows how many cards are due, and the bar steps aside in the ses
   await expect(nav(page).locator('[data-badge]')).toHaveCount(0);
 });
 
-// U2a (docs/plans/2026-11-13-u2-study-session.md): on a laptop the session takes the screen as well.
-// The sidebar steps aside, the session sits in a 640px column in the middle, and its header opens
-// with the X, left of the title, above a progress bar a screen reader can follow.
-test('on a laptop the session hides the sidebar and opens with the X', async ({ page }) => {
+// U2a (docs/plans/2026-11-13-u2-study-session.md), as thien set it on 2026-11-13: on a laptop the
+// session keeps the sidebar and the width of every other page. The X sits at the end of the
+// title's row, above a progress bar a screen reader can follow.
+test('on a laptop the session keeps the sidebar and the page frame', async ({ page }) => {
   seedDue(2);
   await page.setViewportSize({ width: 1440, height: 900 });
   await logIn(page);
   await page.goto('/settings', { waitUntil: 'networkidle' });
-  const sidebar = page.locator('[data-sidebar="sidebar"]');
-  await expect(sidebar.first()).toBeVisible();
+  const sidebar = page.locator('[data-sidebar="sidebar"]').first();
+  await expect(sidebar).toBeVisible();
+  const settingsBox = (await page.locator('main [data-template]').boundingBox())!;
 
   await page.goto('/review', { waitUntil: 'networkidle' });
-  await expect(sidebar).toHaveCount(0);
-  const shell = page.locator('main [data-template]');
-  const box = (await shell.boundingBox())!;
-  expect(Math.round(box.width)).toBe(640);
-  expect(Math.abs(box.x + box.width / 2 - 720)).toBeLessThanOrEqual(1);
+  await expect(sidebar).toBeVisible();
+  const box = (await page.locator('main [data-template]').boundingBox())!;
+  expect(Math.round(box.x)).toBe(Math.round(settingsBox.x));
+  expect(Math.round(box.width)).toBe(Math.round(settingsBox.width));
   const close = page.getByRole('button', { name: 'Dừng ôn' });
   const title = page.getByRole('heading', { level: 1, name: 'Ôn nhanh' });
-  expect((await close.boundingBox())!.x).toBeLessThan((await title.boundingBox())!.x);
+  expect((await close.boundingBox())!.x).toBeGreaterThan((await title.boundingBox())!.x);
   const progress = page.getByRole('progressbar', { name: /^Thẻ 1 \/ \d+$/ });
   await expect(progress).toHaveAttribute('aria-valuenow', '0');
 
-  // Leaving the session brings the sidebar back.
   await close.click();
   await page.waitForURL((u) => u.pathname === '/');
-  await expect(sidebar.first()).toBeVisible();
+  await expect(sidebar).toBeVisible();
 });
 
 test('the due count follows the session once it ends', async ({ page }) => {
