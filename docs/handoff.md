@@ -39,17 +39,26 @@ và những điều trước đây chỉ nằm trong bộ nhớ của từng nic
 
 ### Trang duyệt ảnh (mỗi vòng duyệt UI)
 
-thien duyệt từng cặp ảnh trên một trang HTML (artifact claude.ai). Mỗi trang phải có:
+Dựng bằng mẫu so sánh chung ở thienai-workflow, không tự viết trang mới:
+[`artifacts/compare/`](https://github.com/thiengthb/thienai-workflow/blob/main/artifacts/compare/README.md). Gắn repo
+thienai-workflow vào phiên, viết `round.json` cạnh ảnh, rồi chạy lệnh trong bản clone của thienai-workflow (đường dẫn
+`round.json` và `out` là đường dẫn tới thư mục ảnh của vòng): `node artifacts/compare/make-round.mjs <round.json> <out>`, rồi
+đăng `out/index.html` theo đúng README đó. Mẫu đã có sẵn: danh sách kịch bản ở đầu trang, Trước/Sau cạnh nhau hoặc trượt,
+Vừa màn/100%/200%, OK / Cần sửa từng màn, ghim comment đúng chỗ trên ảnh, ghi chú chung, "Chép kết quả", "Gửi cho Claude",
+kết quả lưu ở db của trang (`reviews/<id vòng>`) và nháp trong máy.
 
-- Danh sách kịch bản ở đầu trang: rỗng / đầy / một / rất nhiều / chữ rất dài / số 0 / số rất lớn, tìm không thấy, lọc đang
-  bật, chọn nhiều, menu dòng đang mở, mọi tab, sheet lọc trên điện thoại, mọi đường đi từ trang (thêm, sửa, chi tiết).
-- Mỗi cặp ảnh: nút OK / Cần sửa và ô ghi chú. Cuối trang: ghi chú chung, ô kết quả có nút "Chép", nút "Gửi cho Claude"
-  ghi vào db của artifact (`reviews/<trang>-rN`). Nháp giữ trong localStorage.
-- Lưới dùng ảnh thu nhỏ JPEG (tối đa 800px); bấm vào mở trình xem toàn màn: đổi Trước/Sau tại chỗ, Vừa màn/100%/200%,
-  OK/Cần sửa đồng bộ với thẻ, trước/sau, Esc.
-- Trang duyệt và db của nó chỉ nick tạo ra đọc được. Kết quả thien chọn (OK / Cần sửa, ghi chú) phải chép vào PR ngay khi nhận.
-- **Mỗi vòng là một trang mới** chỉ chứa ảnh của vòng đó; không nối vòng mới vào trang cũ.
+Phần riêng của sakubun khi dựng vòng:
+
+- `id` vòng đặt `<trang>-rN` (ví dụ `history-r2`). **Mỗi vòng là một trang mới** chỉ chứa ảnh của vòng đó; không nối vòng
+  mới vào trang cũ.
+- Ảnh ở 1440 và 390 cho mọi màn đổi. `scenarios` liệt kê đủ: rỗng / đầy / một / rất nhiều / chữ rất dài / số 0 / số rất
+  lớn, tìm không thấy, lọc đang bật, chọn nhiều, menu dòng đang mở, mọi tab, sheet lọc trên điện thoại, mọi đường đi từ
+  trang (thêm, sửa, chi tiết).
 - Dữ liệu chụp phải giống kho thật (cách đọc, Hán Việt, có mục ngữ pháp); nhãn ảnh nói đúng cái ảnh cho thấy.
+- Trang duyệt và db của nó chỉ nick tạo ra đọc được. Kết quả thien chọn (OK / Cần sửa, ghi chú, comment ghim) phải chép vào
+  PR ngay khi nhận.
+- Cần thien chọn một trong vài hướng (bố cục, luồng) thay vì duyệt trước/sau: dùng mẫu
+  [`artifacts/decide/`](https://github.com/thiengthb/thienai-workflow/blob/main/artifacts/decide/README.md).
 
 ## 3. Gu và luật UI thien đã nói
 
