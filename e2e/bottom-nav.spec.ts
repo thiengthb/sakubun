@@ -172,12 +172,15 @@ test('on a laptop the session keeps the sidebar and the page frame', async ({ pa
   expect(Math.round(box.width)).toBe(Math.round(settingsBox.width));
   const close = page.getByRole('button', { name: 'Dừng ôn' });
   const title = page.getByRole('heading', { level: 1, name: 'Ôn nhanh' });
+  await expect(close).toBeVisible();
   expect((await close.boundingBox())!.x).toBeGreaterThan((await title.boundingBox())!.x);
   const progress = page.getByRole('progressbar', { name: /^Thẻ 1 \/ \d+$/ });
   await expect(progress).toHaveAttribute('aria-valuenow', '0');
 
-  await close.click();
-  await page.waitForURL((u) => u.pathname === '/');
+  // Enter on a focused sidebar link follows the link; it does not answer the card.
+  await page.locator('[data-sidebar="menu-button"]', { hasText: 'Cài đặt' }).focus();
+  await page.keyboard.press('Enter');
+  await page.waitForURL((u) => u.pathname === '/settings');
   await expect(sidebar).toBeVisible();
 });
 
