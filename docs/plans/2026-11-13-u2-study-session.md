@@ -9,9 +9,10 @@ Thuộc [UI v2](2026-11-08-ui-v2.md), giai đoạn 2 (mục "Từng màn hình �
 
 ## Đang ở đâu
 
-- Đang ở: checkpoint 4 xong (U2d, #294, thien đã duyệt ảnh); U2a–U2d xong khi #294 merge. Checkpoint 5 (U2e, U2f) chờ thien chọn.
-- Còn thiếu: thien merge #294; điểm 1–5 cho màn tổng kết (chưa có).
-- thien cần làm: merge #294; trả lời thẻ chọn U2e/U2f (mục "Cần thien chọn").
+- Đang ở: U2a–U2d đã merge (#291–#294). Checkpoint 5: thien đồng ý cả ba đề xuất (14/11). U2e code xong ở #302, chờ
+  review và thien merge; sau đó U2f (hoàn tác) và tự sang thẻ khi chọn đúng.
+- Còn thiếu: điểm 1–5 cho màn tổng kết (chưa có).
+- thien cần làm: merge #302 sau khi có review.
 
 ## Mục tiêu
 
@@ -71,16 +72,17 @@ Xong khi: thien chấm màn tổng kết trên ảnh 390 và 1440.
 
 Xong khi: e2e đi hết một phiên chỉ bằng bàn phím, kể cả hoàn tác; thẻ sau hiện dưới 400ms sau khi chấm, đo trong e2e.
 
-- [ ] U2e chấm chạy nền (risk:high, có migration cộng thêm)
+- [ ] U2e chấm chạy nền (risk:high, có migration cộng thêm): code xong ở #302
 - [ ] U2f hoàn tác một bước (risk:high)
+- [ ] Tự sang thẻ khi chọn đúng ở câu điền chỗ trống (mục 3 bên dưới)
 
-## Cần thien chọn
+## Đã chọn: chấm chạy nền, hoàn tác, tự sang thẻ
 
-Thẻ chọn đã gửi trong thread ngày 13/11. Chi tiết:
+thien chọn "Đồng ý cả ba đề xuất" trên thẻ chọn ngày 14/11 (gửi lần đầu 13/11, gửi lại 14/11). Chi tiết:
 
 1. **Chấm chạy nền (U2e).** Bấm chấm là sang thẻ sau ngay, lần chấm gửi lên server ở phía sau. Gửi lỗi thì giữ trên máy,
    tự gửi lại và báo nhỏ "Chưa lưu 2 thẻ". Mỗi lần chấm mang một mã do máy tạo, lưu trong `ReviewLog` (cột tuỳ chọn
-   mới, migration chỉ cộng thêm), để gửi lại không ghi hai lần. Bước ghi lịch chỉ chạy khi `due` và `state` của thẻ còn
+   mới, migration chỉ cộng thêm), để gửi lại không ghi hai lần. Bước ghi lịch chỉ chạy khi `reps` và `state` của thẻ còn
    như lúc đọc. Lịch FSRS vẫn tính ở server qua `recordReviews()`. Chỗ yếu: mạng hỏng cả lúc đóng trang thì lần chấm
    chưa gửi mất, thẻ vẫn đến hạn như chưa ôn.
 2. **Hoàn tác một bước (U2f).** Lần chấm gần nhất giữ trên máy tới khi chấm thẻ kế tiếp hoặc rời phiên; nút hoàn tác
@@ -98,6 +100,7 @@ Thẻ chọn đã gửi trong thread ngày 13/11. Chi tiết:
 
 ## Lỗi gặp
 
-| Ngày  | Lỗi                                                                 | Đã xử lý                                       |
-| ----- | ------------------------------------------------------------------- | ---------------------------------------------- |
-| 13/11 | Code U2a đến U2d theo một dòng kế hoạch mà thien chưa thấy bằng ảnh | Thêm luật đưa 2–3 bố cục trước khi code (#297) |
+| Ngày  | Lỗi                                                                                                                      | Đã xử lý                                       |
+| ----- | ------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------- |
+| 13/11 | Code U2a đến U2d theo một dòng kế hoạch mà thien chưa thấy bằng ảnh                                                      | Thêm luật đưa 2–3 bố cục trước khi code (#297) |
+| 14/11 | U2e: điều kiện "`due` còn như lúc đọc" từ chối lần chấm khi ngày trong SQLite viết kiểu khác (e2e `bottom-nav` bắt được) | So `reps` và `state` thay cho `due` (#302)     |

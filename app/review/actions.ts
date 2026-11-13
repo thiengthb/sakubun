@@ -5,13 +5,22 @@ import { answerCard, type AnsweredCard } from '@/lib/app/quick-review';
 import { getUserDb } from '@/lib/auth/current-user';
 import { type ActionResult, parseInput } from '@/lib/core/action-result';
 
+// U2e: the device's id for a grade, sent again unchanged when a reply is lost.
+const clientId = z.string().min(8).max(64).optional();
+
 const answerSchema = z.discriminatedUnion('mode', [
   z.object({
     itemId: z.string().min(1),
     mode: z.literal('flip'),
     rating: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)]),
+    clientId,
   }),
-  z.object({ itemId: z.string().min(1), mode: z.literal('cloze'), choiceId: z.string().min(1) }),
+  z.object({
+    itemId: z.string().min(1),
+    mode: z.literal('cloze'),
+    choiceId: z.string().min(1),
+    clientId,
+  }),
 ]);
 
 export async function answerCardAction(input: unknown): Promise<ActionResult<AnsweredCard>> {

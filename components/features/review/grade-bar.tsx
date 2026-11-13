@@ -25,12 +25,10 @@ export const GRADES: { rating: RatingValue; label: string; tone?: string }[] = [
 export function GradeBar({
   dueBy,
   good,
-  disabled,
   onGrade,
 }: {
   dueBy: Record<RatingValue, Date>;
   good: RatingValue;
-  disabled: boolean;
   onGrade: (rating: RatingValue) => void;
 }) {
   return (
@@ -45,7 +43,6 @@ export function GradeBar({
           size="lg"
           variant={rating === good ? 'default' : 'outline'}
           className={cn(rating !== good && tone)}
-          disabled={disabled}
           aria-keyshortcuts={rating === good ? `${rating} Enter` : String(rating)}
           onClick={() => onGrade(rating)}
         >

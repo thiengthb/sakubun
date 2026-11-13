@@ -124,7 +124,7 @@ function clozeRating(): number | undefined {
 }
 
 // By mouse every card is answered right. By keyboard the cloze gets a wrong pick that is lost on
-// the network and sent again, and the two flips are graded with 1 (Quên) and 4 (Dễ). The intro card
+// the network and sent again on its own (U2e), and the two flips are graded with 1 (Quên) and 4 (Dễ). The intro card
 // asks nothing: "Đã xem" (or Enter) records Nhớ.
 async function runSession(page: Page, { keyboard = false } = {}) {
   await login(page);
@@ -183,14 +183,16 @@ async function runSession(page: Page, { keyboard = false } = {}) {
         const wrong = String(labels.findIndex((t) => !t.includes('約束')) + 1);
         dropNext = true;
         await page.keyboard.press(wrong);
-        await expect(page.getByText('Mất kết nối, chưa lưu được.')).toBeVisible();
-        // The answer is on screen now, so the same pick is sent again; the choices stay shut.
+        // U2e: the answer shows at once; the lost grade waits on the device, says so, and goes
+        // again on its own. The choices stay shut: a second pick would grade with the answer known.
+        const unsaved = page.getByRole('status').filter({ hasText: 'Chưa lưu 1 thẻ' });
+        await expect(unsaved).toBeVisible();
         await expect(choices.getByRole('button').first()).toBeDisabled();
-        expect(reviewLogCount()).toBe(0);
-        await expect(page.getByRole('button', { name: 'Gửi lại' })).toBeEnabled();
-        await page.keyboard.press('Enter');
         await expect(next).toBeEnabled();
+        expect(reviewLogCount()).toBe(0);
+        await expect(unsaved).toHaveCount(0);
         expect(clozeRating(), 'the wrong pick sent again is still Again').toBe(1);
+        expect(reviewLogCount(), 'sent again, recorded once').toBe(1);
         await page.keyboard.press('Enter');
       } else {
         await choices.getByRole('button', { name: /約束/ }).click();
@@ -245,7 +247,7 @@ async function runSession(page: Page, { keyboard = false } = {}) {
         await page.getByRole('button', { name: /^Nhớ/ }).click();
       }
     }
-    // The next card only shows once the server has recorded this answer.
+    // U2e: the next card shows without waiting for the server.
     if (n < 3) await expect(page.getByLabel(`Thẻ ${n + 2} / 4`)).toBeVisible();
   }
 
@@ -263,7 +265,8 @@ async function runSession(page: Page, { keyboard = false } = {}) {
       }
       await page.keyboard.press('Enter');
     }
-    expect(reviewLogCount(), 'practice answers are not graded').toBe(4);
+    // Grades reach the server behind the session; practice answers are never sent.
+    await expect.poll(reviewLogCount, { message: 'practice answers are not graded' }).toBe(4);
     // (Once over, the bar shows the graded round, checked below, not the retry round.)
   }
 
@@ -291,7 +294,7 @@ async function runSession(page: Page, { keyboard = false } = {}) {
   await expect(tiles.getByText('Nhớ', { exact: true }).locator('xpath=..')).toContainText(
     keyboard ? '33%' : '100%',
   );
-  // The streak is read once the session is over; every answer here was today.
+  // The streak is read once the session is over and every grade is in; every answer here was today.
   await expect(tiles.getByText('Chuỗi', { exact: true }).locator('xpath=..')).toContainText(
     '1 ngày',
   );
@@ -334,6 +337,49 @@ test('quick review on desktop: cloze for a seen word, intro for a new one, every
 test('quick review by keyboard, and a lost answer is sent again as it was', async ({ page }) => {
   seed();
   await runSession(page, { keyboard: true });
+});
+
+// U2e: on a slow server every card still follows the grade at once, and the grades arrive behind.
+test('a grade moves on at once and is saved behind the session', async ({ page }) => {
+  seed();
+  await login(page);
+  await page.goto('/review');
+  await page.route('**/review', async (route) => {
+    const req = route.request();
+    if (!isAction(req.method(), req.headers())) return route.continue();
+    await new Promise((r) => setTimeout(r, 1500));
+    return route.continue().catch(() => {});
+  });
+
+  for (let n = 0; n < 4; n++) {
+    await expect(page.getByLabel(`Thẻ ${n + 1} / 4`)).toBeVisible();
+    const choices = page.getByRole('group', { name: 'Chọn đáp án' });
+    const reveal = page.getByRole('button', { name: 'Xem đáp án' });
+    const seen = page.getByRole('button', { name: 'Đã xem' });
+    await expect(choices.or(reveal).or(seen)).toBeVisible();
+    let last;
+    if (await choices.isVisible()) {
+      await choices.getByRole('button', { name: /約束/ }).click();
+      last = page.getByRole('button', { name: 'Tiếp' });
+      // Picked, the next step is open before the server has answered.
+      await expect(last).toBeEnabled({ timeout: 400 });
+    } else if (await seen.isVisible()) {
+      last = seen;
+    } else {
+      await reveal.click();
+      last = page.getByRole('button', { name: /^Nhớ/ });
+    }
+    const before = Date.now();
+    await last.click();
+    const nextShown =
+      n < 3 ? page.getByLabel(`Thẻ ${n + 2} / 4`) : page.getByText('Xong buổi ôn');
+    await expect(nextShown).toBeVisible({ timeout: 400 });
+    expect(Date.now() - before, 'the next card shows under 400ms').toBeLessThan(400);
+  }
+  // Nothing failed, so nothing is said about saving; the grades land in order behind.
+  await expect(page.getByRole('status').filter({ hasText: 'Chưa lưu' })).toHaveCount(0);
+  await expect.poll(reviewLogCount, { timeout: 10_000 }).toBe(4);
+  expect(ratings()).toEqual([3, 3, 3, 3]);
 });
 
 test.describe('on a phone', () => {
