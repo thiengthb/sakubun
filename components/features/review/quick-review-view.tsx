@@ -289,7 +289,10 @@ export function QuickReviewView({
   // the previous card's handler and was dropped.
   useLayoutEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLElement && e.target.closest('input, textarea, select')) return;
+      // A focused link (the sidebar, the tab bar) keeps its own keys: Enter there leaves the session
+      // rather than answering the card.
+      if (e.target instanceof HTMLElement && e.target.closest('input, textarea, select, a[href]'))
+        return;
       if (!card || e.repeat || e.metaKey || e.ctrlKey || e.altKey) return;
       if (card.mode === 'cloze' && !picked && /^[1-4]$/.test(e.key)) {
         const choice = card.choices[Number(e.key) - 1];
