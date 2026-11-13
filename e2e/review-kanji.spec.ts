@@ -140,11 +140,13 @@ for (const [width, height] of [
     await expect(page.getByText('[NHẬT]')).toBeVisible();
     await expect(page.getByText('mặt trời; ngày')).toBeVisible();
     await shot(page, `on-nhanh-kanji-dap-an-${width}`);
-    // A screen shorter than the back of the card: the grades stay on screen, stuck to its foot.
+    // A screen shorter than the back of the card: the grades stay on screen, stuck to its foot, on
+    // top of the phone's tab bar (the session keeps it, thien 2026-11-13).
     await page.setViewportSize({ width, height: 600 });
     await expect(async () => {
       const bar = (await page.getByRole('group', { name: 'Chấm thẻ' }).boundingBox())!;
-      expect(bar.y + bar.height).toBeLessThanOrEqual(600);
+      const tabs = await page.locator('[data-bottom-nav]').boundingBox();
+      expect(bar.y + bar.height).toBeLessThanOrEqual(tabs ? tabs.y : 600);
     }).toPass();
     await page.setViewportSize({ width, height });
     await page.getByRole('button', { name: /^Nhớ/ }).click();
