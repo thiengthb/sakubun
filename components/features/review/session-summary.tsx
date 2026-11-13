@@ -60,16 +60,15 @@ export function SessionSummary({
     const kept = summarizeSession(of).remembered;
     return [[label, `${kept}/${of.length} nhớ`]];
   });
+  // One kind only: named in the sentence ("Nhớ 1 trên 1 thẻ kanji") rather than on a line of its own.
+  const onlyKind = byKind.length === 1 ? ` ${byKind[0][0].toLowerCase()}` : '';
   const tiles: [string, ReactNode][] = [
     ['Đã ôn', `${s.reviewed} thẻ`],
     ...(s.rate === null ? [] : ([['Nhớ', `${s.rate}%`]] as [string, string][])),
     ...(streak === null
       ? []
       : ([
-          [
-            'Chuỗi ngày',
-            streak === undefined ? <Skeleton className="h-7 w-16" /> : `${streak} ngày`,
-          ],
+          ['Chuỗi', streak === undefined ? <Skeleton className="h-7 w-16" /> : `${streak} ngày`],
         ] as [string, ReactNode][])),
   ];
 
@@ -78,12 +77,12 @@ export function SessionSummary({
       <div className="space-y-1">
         <h2 className="text-lg font-bold">Xong buổi ôn</h2>
         <p className="text-muted-foreground tabular-nums">
-          {s.tested > 0 && `Nhớ ${s.remembered} trên ${s.tested} thẻ. `}
+          {s.tested > 0 && `Nhớ ${s.remembered} trên ${s.tested} thẻ${onlyKind}. `}
           {s.met > 0 && `Đã làm quen ${s.met} mục mới. `}
           {nextDueAt && `Thẻ tiếp theo đến hạn ${humanizeUntil(nextDueAt)}.`}
         </p>
       </div>
-      {byKind.length > 0 && (
+      {byKind.length > 1 && (
         <p className="-mt-3 flex flex-wrap gap-x-4 text-sm text-muted-foreground tabular-nums">
           {byKind.map(([label, value]) => (
             <span key={label}>

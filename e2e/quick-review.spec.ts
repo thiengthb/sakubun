@@ -263,7 +263,9 @@ async function runSession(page: Page, { keyboard = false } = {}) {
   await expect(page.getByText('Đã ôn hết thẻ đến hạn')).toBeVisible();
   // The intro card is not counted as remembered: it was read, not tested.
   await expect(
-    page.getByText(keyboard ? /Nhớ 1 trên 3 thẻ\. Đã làm quen 1 mục mới/ : /Nhớ 3 trên 3 thẻ\./),
+    page.getByText(
+      keyboard ? /Nhớ 1 trên 3 thẻ từ vựng\. Đã làm quen 1 mục mới/ : /Nhớ 3 trên 3 thẻ từ vựng\./,
+    ),
   ).toBeVisible();
   // U2d: three figures, the cards to look at again, each a link to its page.
   const tiles = page.locator('main dl');
@@ -274,7 +276,7 @@ async function runSession(page: Page, { keyboard = false } = {}) {
     keyboard ? '33%' : '100%',
   );
   // The streak is read once the session is over; every answer here was today.
-  await expect(tiles.getByText('Chuỗi ngày', { exact: true }).locator('xpath=..')).toContainText(
+  await expect(tiles.getByText('Chuỗi', { exact: true }).locator('xpath=..')).toContainText(
     '1 ngày',
   );
   const again = page.getByRole('region', { name: 'Xem lại thẻ chưa nhớ' });
