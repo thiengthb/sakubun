@@ -30,8 +30,9 @@ C thẻ trái và bảng phải).
 
 - Giữ sidebar trên laptop, thanh tab trên điện thoại, đầu trang như các trang khác: tên trang, "Còn N thẻ", nút X
   "Dừng ôn" ở cuối hàng; dưới đó là thanh tiến độ chia đoạn, trải hết chiều ngang.
-- Laptop (từ 768px): hai cột. Trái là thẻ và các nút trả lời hoặc chấm. Phải là một bảng rộng 256px, dính khi cuộn:
-  số thẻ đã nhớ, đã quên, còn lại, rồi phím tắt của bước đang làm (phím tắt chỉ hiện từ 1024px).
+- Màn từ 1280px: hai cột. Trái là thẻ và các nút trả lời hoặc chấm. Phải là một bảng rộng 256px, dính khi cuộn:
+  số thẻ đã nhớ, chưa nhớ, còn lại, rồi phím tắt của bước đang làm.
+- Laptop hẹp hơn 1280px: một cột như điện thoại, không có bảng, vì cạnh sidebar bốn nút chấm cần cả chiều ngang.
 - Điện thoại: một cột, không có bảng; nút trả lời và nút chấm nằm cuối màn, ngay trên thanh tab.
 
 ## Checkpoint
@@ -41,7 +42,7 @@ C thẻ trái và bảng phải).
 Xong khi: thien duyệt ảnh 390 và 1440 (trước và sau), thấy sidebar hoặc thanh tab vẫn còn và bảng bên phải đúng số.
 
 - [ ] Đầu trang chuẩn, thanh tiến độ có `aria-valuenow`, nút X (#291)
-- [ ] Bảng bên phải: nhớ, quên, còn, phím tắt; ẩn dưới 768px (#291)
+- [ ] Bảng bên phải: nhớ, chưa nhớ, còn, phím tắt; ẩn dưới 1280px (#291)
 - [ ] Enter trên một nút đang được chọn (như "Dừng ôn") không chấm thẻ giới thiệu (#291, góp ý CodeRabbit)
 - [ ] e2e: laptop có sidebar và bảng, điện thoại có thanh tab và thanh nút nằm trên nó
 
