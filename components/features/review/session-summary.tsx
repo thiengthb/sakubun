@@ -63,8 +63,13 @@ export function SessionSummary({
   // One kind only: named in the sentence ("Nhớ 1 trên 1 thẻ kanji") rather than on a line of its own.
   const onlyKind = byKind.length === 1 ? ` ${byKind[0][0].toLowerCase()}` : '';
   const tiles: [string, ReactNode][] = [
-    ['Đã ôn', `${s.reviewed} thẻ`],
-    ...(s.rate === null ? [] : ([['Nhớ', `${s.rate}%`]] as [string, string][])),
+    // Both read the tested cards only, like the sentence above: an intro was read, not tested.
+    ...(s.rate === null
+      ? []
+      : ([
+          ['Đã ôn', `${s.tested} thẻ`],
+          ['Nhớ', `${s.rate}%`],
+        ] as [string, string][])),
     ...(streak === null
       ? []
       : ([

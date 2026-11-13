@@ -255,11 +255,7 @@ async function runSession(page: Page, { keyboard = false } = {}) {
       await page.keyboard.press('Enter');
     }
     expect(reviewLogCount(), 'practice answers are not graded').toBe(4);
-    // Both retry answers count, the flip one included (it used to be dropped by a stale update).
-    await expect(page.getByRole('progressbar', { name: 'Làm lại 2 / 2' })).toHaveAttribute(
-      'aria-valuenow',
-      '2',
-    );
+    // (Once over, the bar shows the graded round, checked below, not the retry round.)
   }
 
   await expect(page.getByText('Xong buổi ôn')).toBeVisible();
@@ -278,8 +274,9 @@ async function runSession(page: Page, { keyboard = false } = {}) {
   await expect(bar.locator('.bg-destructive')).toHaveCount(keyboard ? 2 : 0);
   // U2d: three figures, the cards to look at again, each a link to its page.
   const tiles = page.locator('main dl');
+  // The intro was read, not tested: Đã ôn counts the three tested cards, as the sentence does.
   await expect(tiles.getByText('Đã ôn', { exact: true }).locator('xpath=..')).toContainText(
-    '4 thẻ',
+    '3 thẻ',
   );
   await expect(tiles.getByText('Nhớ', { exact: true }).locator('xpath=..')).toContainText(
     keyboard ? '33%' : '100%',

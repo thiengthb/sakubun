@@ -12,9 +12,7 @@ export interface SessionAnswer {
 }
 
 export interface SessionSummary<A extends SessionAnswer> {
-  /** Every card answered, intros included. */
-  reviewed: number;
-  /** Cards that tested the learner (not intros). */
+  /** Cards that tested the learner: not intros, which were read. "Đã ôn" counts these. */
   tested: number;
   remembered: number;
   /** Share remembered, 0–100, rounded; null when nothing was tested. */
@@ -36,7 +34,6 @@ export function summarizeSession<A extends SessionAnswer>(answers: A[]): Session
     .filter((a) => !seen.has(a.itemId) && seen.add(a.itemId))
     .slice(0, TO_REVIEW_MAX);
   return {
-    reviewed: answers.length,
     tested: tested.length,
     remembered,
     rate: tested.length === 0 ? null : Math.round((remembered / tested.length) * 100),

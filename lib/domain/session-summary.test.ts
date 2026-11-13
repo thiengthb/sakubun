@@ -8,9 +8,9 @@ const a = (itemId: string, rating: SessionAnswer['rating'], intro = false): Sess
 });
 
 describe('summarizeSession', () => {
-  it('counts every card as reviewed but only the tested ones towards the rate', () => {
+  it('counts the tested cards, and the intros apart', () => {
     const s = summarizeSession([a('n1', 3, true), a('v1', 3), a('v2', 4), a('v3', 1), a('v4', 2)]);
-    expect(s).toMatchObject({ reviewed: 5, tested: 4, remembered: 2, rate: 50, met: 1 });
+    expect(s).toMatchObject({ tested: 4, remembered: 2, rate: 50, met: 1 });
   });
 
   it('has no rate when the session only met new items', () => {
