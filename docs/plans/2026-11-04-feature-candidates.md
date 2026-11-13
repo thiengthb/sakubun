@@ -1,6 +1,7 @@
-# Ứng cử viên tính năng cho Sakubun (bản nháp vòng 2)
+# Ứng cử viên tính năng cho Sakubun (vòng 2)
 
-Ngày: 2026-11-04. Trạng thái: **bản nháp, chưa duyệt**. Vòng 2 đã tính 8 câu trả lời của thien (mục 1).
+Ngày: 2026-11-04. Cập nhật 2026-11-13: thien đã trả lời hết câu hỏi (mục 6), phần câu hỏi đã đóng; nhiều ứng cử viên
+đã được làm qua các kế hoạch sau (mục 6b). Danh sách còn lại là nguồn chọn việc sau UI v2.
 
 Cơ sở: nghiên cứu ở `docs/plans/2026-11-04-research/` (A: SLA, B: trí nhớ, C: thói quen, D: đa giác quan, E: đối thủ,
 F: Việt–Nhật, G: nguồn dữ liệu, H: phản biện Sakubun). Ký hiệu như "B8" trỏ tới mục trong các file đó.
@@ -122,7 +123,7 @@ meta-analysis, 1 = kinh nghiệm sản phẩm); **Khớp** (với thien và ngư
 
 ## 5. Thứ tự đề xuất
 
-**Đường A. N2 cấp tốc (từ nay đến kỳ thi đầu tháng 12, gần như không code).** Tính năng mới mất vài tuần sẽ không kịp
+**Đường A. N2 cấp tốc: thien không cần (2026-11-13), bỏ.** Nội dung cũ để tham khảo: Tính năng mới mất vài tuần sẽ không kịp
 giúp. Đề xuất một **kế hoạch học 4 tuần riêng** dùng thứ đã có: luyện dịch với mục N2 trong claude.ai; AI soạn bài đọc
 và bài nghe dạng N2 (bằng prompt, chưa cần code); đề mẫu chính thức trên jlpt.jp; R3 bằng prompt. Code nhỏ nhất đáng
 làm trong đường này: **S6** (vài ngày, giúp nghe ngay).
@@ -133,15 +134,33 @@ làm trong đường này: **S6** (vài ngày, giúp nghe ngay).
 
 **Đợt 3: lớn hơn, cho nhiều người dùng.** I2, S5, T4, P2, P3, V3, V1, V4, R1.
 
-**Để sau hoặc bỏ**: R4, V2, S4 (cao độ), luyện viết tay, hình ảnh cho từ, thêm cơ chế cộng đồng cho Kho chung (thích,
+**Để sau hoặc bỏ**: R4, S4 (cao độ), hình ảnh cho từ, thêm cơ chế cộng đồng cho Kho chung (thích,
 xếp hạng) trước khi có người dùng.
 
-## 6. Còn cần thien trả lời
+## 6. Câu trả lời của thien (đã đóng)
 
-1. **Vòng dịch "chưa ổn" ở đâu?** Kể 2–3 lần cụ thể bạn thấy khó chịu (AI chấm sai, câu quá dễ hay quá khó, phải gõ
-   nhiều, chuyển qua lại claude.ai mệt, phản hồi dài...). Đây là R7, việc quan trọng nhất của đợt 1.
-2. Có muốn kế hoạch **N2 cấp tốc 4 tuần** (đường A) không?
-3. Học viết tay kanji: cần hay không? (Mình mặc định là không, vì JLPT không thi viết.)
+1. **Vòng dịch chưa ổn ở đâu** (2026-11-07 và 2026-11-13): giao diện hơi chán; Claude chưa giống một gia sư; chỉ đưa
+   đáp án tham khảo khi mình sai; câu không khó lên khi mục đã thuộc. Phần lớn đã sửa trong
+   `docs/plans/2026-11-07-translation-difficulty.md` (R1–R4: bậc khó 1–5, khối kết quả cố định luôn có đáp án tham khảo
+   và lỗi chính). Phần **"chưa giống gia sư"** còn mở: xem R6 bên dưới (gợi ý và cho thử lại trước khi đưa đáp án, giải
+   thích vì sao, hỏi tiếp một câu ngắn).
+2. **Kế hoạch N2 cấp tốc**: không cần. Bỏ đường A ở mục 5.
+3. **Viết tay kanji**: có. Đã làm trong `docs/plans/2026-11-08-kanji.md` (KJ1–KJ7, khung viết tay và chấm từng nét ở KJ4).
+
+## 6b. Đã làm từ danh sách này (tính đến 2026-11-13)
+
+| Ứng cử viên | Đã làm ở đâu |
+|---|---|
+| R7 Sửa vòng dịch | Luyện dịch R1–R4 (`2026-11-07-translation-difficulty.md`) |
+| V2 Chữ Hán là một loại mục, luyện viết tay | Kanji KJ1–KJ7 (`2026-11-08-kanji.md`) |
+| S5 (một phần) Nhập vai | Kaiwa (a)–(d), lưu buổi nhập vai (`2026-11-07-kaiwa-voices-roleplay.md`) |
+| T4 Màn "Hôm nay" | Nằm trong UI v2, bước U3 (`2026-11-08-ui-v2.md`) |
+| Quy trình 3 (UI/UX và style) | Đang làm dưới tên UI v2 (U0 xong, U1 chờ thien duyệt) |
+
+**Chưa làm, mình đề xuất làm trước khi chọn thêm**: R6 (gia sư: gợi ý, thử lại, giải thích, vì thien vẫn thấy
+thiếu), T1 (chế độ trở lại sau khi nghỉ), T2 (chuỗi ngày có ân hạn), S6 (nghe và nói lại câu mình đã dịch), S1 (luyện
+tai), N1 (trang nguồn dữ liệu và giấy phép, vẫn chưa có trên giao diện). M1 mới có chiều xuất sang Anki
+(`app/api/export/anki`), chưa có chiều nhập.
 
 ## 7. Cách biết một tính năng có hiệu quả
 
@@ -151,6 +170,7 @@ A/B test được; so trước và sau trên chính thien là đủ để quyế
 
 ## 8. Bước tiếp theo
 
-1. thien trả lời mục 6 và phản biện bản này.
-2. thien duyệt danh sách cuối; mỗi đợt có kế hoạch riêng trong `docs/plans/` như các phase trước.
-3. Rồi mới sang quy trình 2 (luật làm việc) và quy trình 3 (UI/UX và style).
+1. Câu hỏi đã đóng (mục 6). Quy trình 3 đang chạy dưới tên UI v2.
+2. Quy trình 2 (luật làm việc lâu dài giữa thien và Claude) chưa làm; phác thảo ở mục 6 của
+   `docs/plans/2026-11-04-research/00-ke-hoach.md`.
+3. Việc tính năng tiếp theo chọn từ mục 6b, mỗi việc có kế hoạch riêng trong `docs/plans/`.
