@@ -7,6 +7,7 @@ type Grade = { itemId: string };
 function setup(replies: (() => Promise<ActionResult<unknown>>)[]) {
   const sent: (Grade & { clientId: string })[] = [];
   const changes: [number, boolean][] = [];
+  const holds: boolean[] = [];
   const refused: string[] = [];
   const io: SenderIo<Grade> = {
     send: (payload) => {
@@ -15,9 +16,12 @@ function setup(replies: (() => Promise<ActionResult<unknown>>)[]) {
       return reply ? reply() : Promise.resolve({ ok: true, data: null });
     },
     refused: (e) => refused.push(e),
-    changed: (left, stalled) => changes.push([left, stalled]),
+    changed: ({ left, stalled, held }) => {
+      changes.push([left, stalled]);
+      holds.push(held);
+    },
   };
-  return { sender: createSender({ current: io }), sent, changes, refused };
+  return { sender: createSender({ current: io }), sent, changes, holds, refused };
 }
 
 const offline = () => Promise.reject(new TypeError('Failed to fetch'));
@@ -92,5 +96,50 @@ describe('createSender', () => {
     await flush();
     expect(refused).toEqual(['Thẻ này vừa được chấm ở nơi khác.']);
     expect(sent.map((g) => g.itemId)).toEqual(['a', 'b']);
+  });
+
+  it('holds a grade given with hold until the next one, and sends both in order', async () => {
+    const { sender, sent, holds } = setup([]);
+    sender.enqueue({ itemId: 'a' }, { hold: true });
+    await flush();
+    expect(sent).toHaveLength(0);
+    expect(holds.at(-1)).toBe(true);
+    sender.enqueue({ itemId: 'b' }, { hold: true });
+    await flush();
+    expect(sent.map((g) => g.itemId)).toEqual(['a']);
+    sender.release();
+    await flush();
+    expect(sent.map((g) => g.itemId)).toEqual(['a', 'b']);
+    expect(holds.at(-1)).toBe(false);
+  });
+
+  it('takes back the held grade unsent, once', async () => {
+    const { sender, sent, changes } = setup([]);
+    sender.enqueue({ itemId: 'a' }, { hold: true });
+    expect(sender.undo()).toEqual({ itemId: 'a' });
+    expect(sender.undo()).toBeNull();
+    sender.release();
+    await flush();
+    expect(sent).toHaveLength(0);
+    expect(changes.at(-1)).toEqual([0, false]);
+  });
+
+  it('a grade without hold sends the held one first', async () => {
+    const { sender, sent } = setup([]);
+    sender.enqueue({ itemId: 'a' }, { hold: true });
+    sender.enqueue({ itemId: 'b' });
+    await flush();
+    expect(sent.map((g) => g.itemId)).toEqual(['a', 'b']);
+    expect(sender.undo()).toBeNull();
+  });
+
+  it('lists every grade not yet in, held one last, with the ids it will keep', async () => {
+    const { sender, sent } = setup([offline]);
+    sender.enqueue({ itemId: 'a' });
+    sender.enqueue({ itemId: 'b' }, { hold: true });
+    await flush();
+    const unsent = sender.unsent();
+    expect(unsent.map((g) => g.itemId)).toEqual(['a', 'b']);
+    expect(unsent[0].clientId).toBe(sent[0].clientId);
   });
 });

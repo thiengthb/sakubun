@@ -7,7 +7,7 @@ Cho mọi nick Claude, Codex và thien biết project đang ở đâu. Lịch s�
 ## Đang ở đâu
 
 Đã áp quy trình chung (#297). UI v2: U0, U1 xong; U2 (buổi ôn) theo bố cục C thien chọn ngày 13/11 (thẻ trái,
-bảng nhỏ phải, giữ sidebar và thanh tab): U2a xong (#291, 14/11), U2b, U2c, U2d xong (#292–#294); U2e (chấm chạy nền) code xong ở #302 theo lựa chọn của thien ngày 14/11. Mọi phần trước UI v2 đã xong.
+bảng nhỏ phải, giữ sidebar và thanh tab): U2a xong (#291, 14/11), U2b–U2d xong (#292–#294), U2e chấm chạy nền xong (#302); U2f hoàn tác đang chờ duyệt ảnh. Mọi phần trước UI v2 đã xong.
 
 ## Kế hoạch đang chạy
 
@@ -18,20 +18,20 @@ bảng nhỏ phải, giữ sidebar và thanh tab): U2a xong (#291, 14/11), U2b, 
 
 ## Việc dở
 
-| Việc                    | Nhánh hoặc PR | Dở từ | Còn thiếu gì                              |
-| ----------------------- | ------------- | ----- | ----------------------------------------- |
-| U2e chấm chạy nền       | #302          | 14/11 | Chờ review, thien merge                   |
-| Đóng câu hỏi nghiên cứu | #289          | 13/11 | Chỉ tài liệu, chờ thien merge             |
-| Bản tóm tắt hai nick    | #296          | 13/11 | Tạm, của nick kia; đóng khi thien so xong |
+| Việc                    | Nhánh hoặc PR       | Dở từ | Còn thiếu gì                              |
+| ----------------------- | ------------------- | ----- | ----------------------------------------- |
+| U2f hoàn tác            | feat/u2f-undo-grade | 14/11 | Chờ thien duyệt ảnh nút Hoàn tác          |
+| Đóng câu hỏi nghiên cứu | #289                | 13/11 | Chỉ tài liệu, chờ thien merge             |
+| Bản tóm tắt hai nick    | #296                | 13/11 | Tạm, của nick kia; đóng khi thien so xong |
 
 ## Việc tiếp theo
 
-1. Sau #302: U2f (hoàn tác) và tự sang thẻ khi chọn đúng (thien đồng ý 14/11), rồi U3 theo kế hoạch UI v2.
+1. Sau U2f: tự sang thẻ khi chọn đúng (thien đồng ý 14/11), rồi U3 theo kế hoạch UI v2.
 
 ## Đang chờ thien
 
 - Dán dòng hướng dẫn project vào cả hai project Sakubun (nội dung trong mô tả #297).
-- Merge #302 (U2e, risk:high) sau khi có review.
+- Duyệt ảnh nút Hoàn tác (U2f) rồi merge.
 - Trên NUC, không gấp: bấm Hiện "N5 · Ngữ pháp" ở Quản trị; thử chia sẻ kịch bản bằng tài khoản `kai`.
 
 ## Đang vướng

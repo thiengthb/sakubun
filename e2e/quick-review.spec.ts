@@ -220,7 +220,17 @@ async function runSession(page: Page, { keyboard = false } = {}) {
         await expect(page.getByRole('group', { name: 'Chấm thẻ' }).getByRole('button')).toHaveCount(
           4,
         );
-        await page.keyboard.press(flipKeys.shift()!);
+        const key = flipKeys.shift()!;
+        await page.keyboard.press(key);
+        if (key === '1') {
+          // U2f: Z takes the grade back, unsent: the same card with its answer open, to grade again.
+          await page.keyboard.press('z');
+          await expect(page.getByLabel(`Thẻ ${n + 1} / 4`)).toBeVisible();
+          await expect(
+            page.getByRole('group', { name: 'Chấm thẻ' }).getByRole('button'),
+          ).toHaveCount(4);
+          await page.keyboard.press(key);
+        }
       } else {
         await reveal.click();
         // U2c: the grades take the answers' place. Phone: two columns at the foot of the screen,
@@ -380,6 +390,64 @@ test('a grade moves on at once and is saved behind the session', async ({ page }
   await expect(page.getByRole('status').filter({ hasText: 'Chưa lưu' })).toHaveCount(0);
   await expect.poll(reviewLogCount, { timeout: 10_000 }).toBe(4);
   expect(ratings()).toEqual([3, 3, 3, 3]);
+});
+
+// Answers the card on screen right. A flip or an intro is held for undo; a cloze is not.
+async function answerRight(page: Page): Promise<'held' | 'sent'> {
+  const choices = page.getByRole('group', { name: 'Chọn đáp án' });
+  const reveal = page.getByRole('button', { name: 'Xem đáp án' });
+  const seen = page.getByRole('button', { name: 'Đã xem' });
+  await expect(choices.or(reveal).or(seen)).toBeVisible();
+  if (await choices.isVisible()) {
+    await choices.getByRole('button', { name: /約束/ }).click();
+    await page.getByRole('button', { name: 'Tiếp' }).click();
+    return 'sent';
+  }
+  if (await seen.isVisible()) await seen.click();
+  else {
+    await reveal.click();
+    await page.getByRole('button', { name: /^Nhớ/ }).click();
+  }
+  return 'held';
+}
+
+// U2f: the last grade waits on the device until the next one, so it can be taken back.
+test('Hoàn tác takes the last grade back, and one held as the page closes still lands', async ({
+  page,
+}) => {
+  seed();
+  await login(page);
+  await page.goto('/review');
+  const undo = page.getByRole('button', { name: 'Hoàn tác' });
+  let graded = 0;
+  let tookBack = false;
+  for (let n = 0; n < 3; n++) {
+    await expect(page.getByLabel(`Thẻ ${n + 1} / 4`)).toBeVisible();
+    const how = await answerRight(page);
+    graded++;
+    if (how === 'sent') {
+      // A cloze pick is never held: its answer was on screen.
+      await expect(undo).toHaveCount(0);
+      continue;
+    }
+    await expect(undo).toBeVisible();
+    if (!tookBack) {
+      tookBack = true;
+      await undo.click();
+      await expect(page.getByLabel(`Thẻ ${n + 1} / 4`)).toBeVisible();
+      await expect(undo).toHaveCount(0);
+      // Taken back before it was sent: the review log never sees it.
+      await expect.poll(reviewLogCount).toBe(graded - 1);
+      const again = page.getByRole('button', { name: /^Nhớ|^Đã xem/ }).first();
+      await again.click();
+      await expect(undo).toBeVisible();
+    }
+  }
+  // The last grade is still held. Leaving the page hands it to the browser, which sends it.
+  await expect.poll(reviewLogCount).toBe(graded - 1);
+  await page.goto('/');
+  await expect.poll(reviewLogCount, { timeout: 10_000 }).toBe(graded);
+  expect(ratings()).toEqual([3, 3, 3]);
 });
 
 test.describe('on a phone', () => {

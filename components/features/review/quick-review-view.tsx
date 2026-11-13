@@ -2,7 +2,7 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { X } from 'lucide-react';
+import { Undo2, X } from 'lucide-react';
 import { IconAction } from '@/components/common/icon-action';
 import { toast } from 'sonner';
 import { Button, ButtonLink } from '@/components/ui/button';
@@ -69,6 +69,7 @@ function KeyHints({
   revealed,
   practice,
   suggested,
+  canUndo,
 }: {
   card: QuickCard;
   intro: boolean;
@@ -77,26 +78,33 @@ function KeyHints({
   practice: boolean;
   /** The write pad's rating, which Enter then gives. */
   suggested: RatingValue | null;
+  /** The last grade can still be taken back (U2f). */
+  canUndo: boolean;
 }) {
-  // Writing on the pad has no key.
-  if (!intro && !revealed && writes(card)) return null;
-  const keys: [string, string][] = intro
-    ? [['Enter', 'đã xem']]
-    : card.mode === 'cloze'
-      ? picked
-        ? [['Enter', 'thẻ tiếp']]
-        : [['1 2 3 4', 'chọn đáp án theo số trên thẻ']]
-      : revealed && practice
-        ? [['Enter', 'thẻ tiếp']]
-        : revealed
-          ? [
-              ['1', 'Quên'],
-              ['2', 'Khó'],
-              ['3', 'Nhớ'],
-              ['4', 'Dễ'],
-              ['Enter', GRADES.find((g) => g.rating === (suggested ?? 3))!.label],
-            ]
-          : [['Space', 'xem đáp án']];
+  // Writing on the pad has no key of its own; the last grade can still be taken back.
+  const writing = !intro && !revealed && writes(card);
+  const undo: [string, string][] = canUndo ? [['Z', 'hoàn tác lần chấm vừa rồi']] : [];
+  if (writing && !canUndo) return null;
+  const own: [string, string][] = writing
+    ? []
+    : intro
+      ? [['Enter', 'đã xem']]
+      : card.mode === 'cloze'
+        ? picked
+          ? [['Enter', 'thẻ tiếp']]
+          : [['1 2 3 4', 'chọn đáp án theo số trên thẻ']]
+        : revealed && practice
+          ? [['Enter', 'thẻ tiếp']]
+          : revealed
+            ? [
+                ['1', 'Quên'],
+                ['2', 'Khó'],
+                ['3', 'Nhớ'],
+                ['4', 'Dễ'],
+                ['Enter', GRADES.find((g) => g.rating === (suggested ?? 3))!.label],
+              ]
+            : [['Space', 'xem đáp án']];
+  const keys = [...own, ...undo];
   return (
     <div className="space-y-2 border-t border-border pt-4 text-xs text-muted-foreground">
       <p>Phím tắt</p>
@@ -141,6 +149,14 @@ export function QuickReviewView({
   const missed = useRef<QuickCard[]>([]);
   // U2e: a grade moves the session on at once and reaches the server behind it.
   const grades = useGradeQueue<CardAnswer>(answer, (error) => toast.error(error));
+  // U2f: the session as it was before the last grade, while that grade is held for undo.
+  const beforeGrade = useRef<{
+    index: number;
+    retry: typeof retry;
+    results: Result[];
+    missed: QuickCard[];
+    suggested: RatingValue | null;
+  } | null>(null);
   // The answer bar rests on the window bottom while the card is short, and sticks there when long.
   const sessionRef = useRef<HTMLDivElement>(null);
 
@@ -155,6 +171,11 @@ export function QuickReviewView({
   const router = useRouter();
   const answered = results.length > 0;
   const saved = grades.saved;
+  const { release } = grades;
+  // Over: nothing is left to take back, so the held grade goes and the summary can count on it.
+  useEffect(() => {
+    if (done) release();
+  }, [done, release]);
   useEffect(() => {
     if (done && answered && saved) router.refresh();
   }, [done, answered, saved, router]);
@@ -165,7 +186,18 @@ export function QuickReviewView({
 
   const send = (payload: CardAnswer, rating: RatingValue, advance: boolean) => {
     if (!card) return;
-    grades.enqueue(payload);
+    // A grade that moves on (a flip, an intro) is held so it can be taken back; a cloze pick is
+    // not: its answer is on screen, and picking again would grade with the answer known.
+    if (advance) {
+      beforeGrade.current = {
+        index,
+        retry,
+        results,
+        missed: [...missed.current],
+        suggested,
+      };
+    } else beforeGrade.current = null;
+    grades.enqueue(payload, { hold: advance });
     setResults((r) => [
       ...r,
       {
@@ -209,6 +241,21 @@ export function QuickReviewView({
     if (!card) return;
     send({ itemId: card.itemId, mode: 'flip', rating }, rating, true);
   };
+  // U2f (thien, 14/11): one step back, to the card just graded, its answer open to grade again.
+  // The grade never reached the server, so there is nothing to take out of the review log.
+  const canUndo = grades.canUndo && !done;
+  const undo = () => {
+    const before = beforeGrade.current;
+    if (!before || done || !grades.undo()) return;
+    beforeGrade.current = null;
+    missed.current = before.missed;
+    setIndex(before.index);
+    setRetry(before.retry);
+    setResults(before.results);
+    setPicked(null);
+    setRevealed(true);
+    setSuggested(before.suggested);
+  };
 
   const graded = card?.mode === 'cloze' && picked !== null && (practice || results.length > index);
   const showReveal = flips(card) && !writes(card) && !revealed && !intro;
@@ -239,7 +286,10 @@ export function QuickReviewView({
         return;
       if (e.target instanceof HTMLButtonElement && !sessionRef.current?.contains(e.target)) return;
       if (!card || e.repeat || e.metaKey || e.ctrlKey || e.altKey) return;
-      if (card.mode === 'cloze' && !picked && /^[1-4]$/.test(e.key)) {
+      if (e.key === 'z' || e.key === 'Z') {
+        if (!canUndo) return;
+        undo();
+      } else if (card.mode === 'cloze' && !picked && /^[1-4]$/.test(e.key)) {
         const choice = card.choices[Number(e.key) - 1];
         if (choice) pick(choice.itemId);
       } else if (showGrade && /^[1-4]$/.test(e.key)) {
@@ -300,7 +350,10 @@ export function QuickReviewView({
       // The way out of a session (thien, U1 gate): a plain X at the end of the title's row.
       actions={
         card && !done ? (
-          <IconAction icon={X} label="Dừng ôn" onClick={() => router.push('/')} />
+          <>
+            {canUndo && <IconAction icon={Undo2} label="Hoàn tác" onClick={undo} />}
+            <IconAction icon={X} label="Dừng ôn" onClick={() => router.push('/')} />
+          </>
         ) : undefined
       }
       meta={
@@ -372,9 +425,7 @@ export function QuickReviewView({
                 Xem đáp án
               </Button>
             )}
-            {showGrade && card && (
-              <GradeBar dueBy={card.dueBy} good={good} onGrade={grade} />
-            )}
+            {showGrade && card && <GradeBar dueBy={card.dueBy} good={good} onGrade={grade} />}
             {((card?.mode === 'cloze' && picked) || (showNext && practice)) && (
               <Button size="lg" disabled={!showNext} onClick={practiceNext}>
                 Tiếp
@@ -400,6 +451,7 @@ export function QuickReviewView({
               revealed={revealed}
               practice={practice}
               suggested={suggested}
+              canUndo={canUndo}
             />
           )}
         </SessionPanel>

@@ -308,6 +308,15 @@ describe('answerCard', () => {
     expect((await db.srsState.findUniqueOrThrow({ where: { itemId } })).reps).toBe(1);
   });
 
+  it('two copies of one grade at once (the page and its closing beacon): both ok, one row', async () => {
+    const ids = await seed([{ expression: '約束' }]);
+    const itemId = ids['約束'];
+    const grade = { itemId, mode: 'flip', rating: 3, clientId: 'grade-aaaa-0009' } as const;
+    const [a, b] = await Promise.all([Q.answerCard(db, grade, NOW), Q.answerCard(db, grade, NOW)]);
+    expect(a.ok && b.ok).toBe(true);
+    expect(await db.reviewLog.count({ where: { itemId } })).toBe(1);
+  });
+
   it('refuses a new grade of a card already graded, even with its own device id', async () => {
     const ids = await seed([{ expression: '約束' }]);
     const itemId = ids['約束'];
