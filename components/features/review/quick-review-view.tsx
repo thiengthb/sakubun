@@ -9,7 +9,12 @@ import { Button, ButtonLink } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useFillWindow } from '@/components/ui/use-fit-rows';
 import { PageShell } from '@/components/layout/page-shell';
-import { HideBottomNav } from '@/components/layout/bottom-nav';
+import {
+  SessionFrame,
+  SessionPanel,
+  SessionProgress,
+  type Step,
+} from '@/components/features/review/session-frame';
 import { EmptyState } from '@/components/common/empty-state';
 import { ReviewCard, type CardTts } from '@/components/common/review-card';
 import type { CardAnswer, QuickCard, QuickReview } from '@/lib/app/quick-review';
@@ -71,8 +76,8 @@ function leftLine(left: QuickCard[]): string {
   return `Còn ${left.length} thẻ: ${kinds.map((k) => `${k.n} ${k.word}`).join(', ')}`;
 }
 
-// Laptop: the keys for what can be done now, at the left end of the answer bar. A phone has no
-// keyboard, and a narrow laptop page needs the bar's width for the buttons.
+// Laptop: the keys for what can be done now, in the side panel, one to a line. A phone has no
+// keyboard, and neither has the panel's room.
 function KeyHints({
   card,
   intro,
@@ -109,8 +114,8 @@ function KeyHints({
             ]
           : [['Space', 'xem đáp án']];
   return (
-    <p className="mr-auto flex flex-wrap items-center gap-x-4 gap-y-2 self-center text-xs text-muted-foreground max-lg:hidden">
-      <span>Phím tắt</span>
+    <div className="space-y-2 border-t border-border pt-4 text-xs text-muted-foreground">
+      <p>Phím tắt</p>
       {keys.map(([key, what]) => (
         <span key={key + what} className="flex items-center gap-1.5">
           <kbd className="rounded-sm border border-border bg-card px-1.5 py-0.5 font-sans font-semibold text-foreground">
@@ -119,7 +124,7 @@ function KeyHints({
           {what}
         </span>
       ))}
-    </p>
+    </div>
   );
 }
 
@@ -243,7 +248,8 @@ export function QuickReviewView({
 
   const next = () => {
     if (retry) {
-      setRetry({ ...retry, index: retry.index + 1 });
+      // Functional: practiceNext() may have just added this card's result to the same state.
+      setRetry((r) => (r ? { ...r, index: r.index + 1 } : r));
     } else if (index + 1 >= cards.length && missed.current.length > 0) {
       setRetry({ cards: missed.current, index: 0, right: [] });
     } else {
@@ -287,7 +293,7 @@ export function QuickReviewView({
   const practiceNext = () => {
     // A practice flip counts as right; a written one as the pad found it.
     const right = !writes(card) || (suggested ?? 1) > 1;
-    if (retry && flips(card)) setRetry({ ...retry, right: [...retry.right, right] });
+    if (retry && flips(card)) setRetry((r) => (r ? { ...r, right: [...r.right, right] } : r));
     next();
   };
 
@@ -296,7 +302,12 @@ export function QuickReviewView({
   // the previous card's handler and was dropped.
   useLayoutEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLElement && e.target.closest('input, textarea, select')) return;
+      // A focused link (the sidebar, the tab bar) keeps its own keys: Enter there leaves the session
+      // rather than answering the card. So does a button outside the session, like the X (Dừng ôn):
+      // Enter on it stops the session instead of grading the card on screen.
+      if (e.target instanceof HTMLElement && e.target.closest('input, textarea, select, a[href]'))
+        return;
+      if (e.target instanceof HTMLButtonElement && !sessionRef.current?.contains(e.target)) return;
       if (!card || e.repeat || e.metaKey || e.ctrlKey || e.altKey) return;
       if (card.mode === 'cloze' && !picked && /^[1-4]$/.test(e.key)) {
         const choice = card.choices[Number(e.key) - 1];
@@ -341,12 +352,20 @@ export function QuickReviewView({
     );
   }
 
+  const answeredAt = retry ? retry.right.length : results.length;
+  // An intro card was read, not tested: the panel's counts leave it out, like the summary.
+  const tested = results.filter((r) => !r.intro);
+  const steps = deck.map((_, i): Step => {
+    if (i < answeredAt) {
+      const right = retry ? retry.right[i] : isRemembered(results[i].rating);
+      return right ? 'right' : 'wrong';
+    }
+    return i === at ? 'current' : 'todo';
+  });
+
   return (
-    <PageShell
-      template="form"
-      title="Ôn nhanh"
-      // The tab bar steps aside during a session, so the way out is always on screen (thien, U1
-      // gate): a plain X, as learning apps put it.
+    <SessionFrame
+      // The way out of a session (thien, U1 gate): a plain X at the end of the title's row.
       actions={
         card && !done ? (
           <IconAction icon={X} label="Dừng ôn" onClick={() => router.push('/')} />
@@ -354,55 +373,116 @@ export function QuickReviewView({
       }
       meta={
         <span className="tabular-nums">
-          {retry && !done ? `Làm lại ${retry.cards.length} câu sai` : leftLine(cards.slice(index))}
+          {/* Once over, nothing is left: after the retry round `index` still points at the last card. */}
+          {done
+            ? leftLine([])
+            : retry
+              ? `Làm lại ${retry.cards.length} câu sai`
+              : leftLine(cards.slice(index))}
         </span>
       }
+      progress={
+        <SessionProgress
+          steps={steps}
+          label={`${retry ? 'Làm lại' : 'Thẻ'} ${Math.min(at + 1, deck.length)} / ${deck.length}`}
+        />
+      }
     >
-      {/* A study session has the screen to itself: the phone's tab bar steps aside until the summary. */}
-      {card && !done && <HideBottomNav />}
-      <div ref={sessionRef} className="flex flex-col gap-6 md:gap-8">
-        <div
-          className="flex gap-1.5"
-          role="img"
-          aria-label={`${retry ? 'Làm lại' : 'Thẻ'} ${Math.min(at + 1, deck.length)} / ${deck.length}`}
-        >
-          {deck.map((c, i) => {
-            const right = retry ? retry.right[i] : results[i] && isRemembered(results[i].rating);
-            const answeredAt = retry ? retry.right.length : results.length;
-            return (
-              <div
-                key={c.itemId}
-                className={cn(
-                  'h-2 flex-1 rounded-full bg-muted',
-                  i < answeredAt && (right ? 'bg-ok' : 'bg-destructive'),
-                  i === at && i >= answeredAt && 'bg-accent-brand',
-                )}
+      {/* Layout C (thien, 2026-11-13): the card and its bar on the left; from 1280px a small panel
+          on the right with the counts and the keys. Narrower, beside the sidebar, the four grade
+          buttons need the whole width, so the session keeps one column and no panel. From 1280px the
+          bar follows the card instead of resting at the window bottom (thien, 2026-11-14: a bar far
+          below a short card looked detached); a card taller than the window still keeps it sticky. */}
+      <div
+        ref={sessionRef}
+        className="flex flex-col xl:grid xl:grid-cols-[minmax(0,1fr)_16rem] xl:gap-8"
+      >
+        <div className="flex flex-1 flex-col gap-6 md:gap-8">
+          <div className="flex-1 xl:flex-none">
+            {done || !card ? (
+              <Summary results={results} nextDueAt={nextDueAt} />
+            ) : (
+              <ReviewCard
+                key={`${practice ? 'retry' : 'main'}-${card.itemId}`}
+                card={card}
+                intro={intro}
+                picked={picked}
+                revealed={revealed}
+                showFurigana={showFurigana}
+                tts={tts}
+                onPick={pick}
+                suggested={suggested}
+                onWritten={written}
               />
-            );
-          })}
-        </div>
+            )}
+          </div>
 
-        <div className="flex-1">
-          {done || !card ? (
-            <Summary results={results} nextDueAt={nextDueAt} />
-          ) : (
-            <ReviewCard
-              key={`${practice ? 'retry' : 'main'}-${card.itemId}`}
-              card={card}
-              intro={intro}
-              picked={picked}
-              revealed={revealed}
-              showFurigana={showFurigana}
-              tts={tts}
-              onPick={pick}
-              suggested={suggested}
-              onWritten={written}
-            />
-          )}
+          {/* Phone: the bar's buttons share the width; laptop: they keep their own size, at the right. */}
+          <div
+            data-session-bar
+            className="sticky bottom-(--bottom-nav-space) flex gap-2 bg-background pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] max-md:pb-2 max-sm:[&>*]:flex-1 sm:justify-end sm:[&>*]:min-w-32"
+          >
+            {intro && (
+              <Button
+                size="lg"
+                disabled={isPending}
+                aria-keyshortcuts="Enter"
+                onClick={() => grade(3)}
+              >
+                Đã xem
+              </Button>
+            )}
+            {showReveal && (
+              <Button size="lg" onClick={() => setRevealed(true)}>
+                Xem đáp án
+              </Button>
+            )}
+            {showGrade && card && (
+              // Phone: two columns, the misses (Quên, Khó) on the left and the hits (Nhớ, Dễ) on the
+              // right, so a thumb finds each side without reading.
+              <div
+                className="grid w-full grid-flow-col grid-cols-2 grid-rows-2 gap-2 sm:grid-flow-row sm:grid-cols-4 sm:grid-rows-1"
+                role="group"
+                aria-label="Chấm thẻ"
+              >
+                {GRADES.map(({ rating, label, tone }) => (
+                  <Button
+                    key={rating}
+                    size="lg"
+                    variant={rating === good ? 'default' : 'outline'}
+                    className={cn(rating !== good && tone)}
+                    disabled={isPending}
+                    aria-keyshortcuts={rating === good ? `${rating} Enter` : String(rating)}
+                    onClick={() => grade(rating)}
+                  >
+                    {label}
+                    <span className="text-xs opacity-75">{shortUntil(card.dueBy[rating])}</span>
+                  </Button>
+                ))}
+              </div>
+            )}
+            {card?.mode === 'cloze' && picked && unsent && (
+              <Button size="lg" disabled={isPending} onClick={resend}>
+                Gửi lại
+              </Button>
+            )}
+            {((card?.mode === 'cloze' && picked && !unsent) || (showNext && practice)) && (
+              <Button size="lg" disabled={!showNext} onClick={practiceNext}>
+                Tiếp
+              </Button>
+            )}
+            {done && (
+              <ButtonLink href="/" size="lg">
+                Về trang chính
+              </ButtonLink>
+            )}
+          </div>
         </div>
-
-        {/* Phone: the bar's buttons share the width; laptop: they keep their own size, at the right. */}
-        <div className="sticky bottom-0 flex gap-2 bg-background pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] max-sm:[&>*]:flex-1 sm:justify-end sm:[&>*]:min-w-32">
+        <SessionPanel
+          remembered={tested.filter((r) => isRemembered(r.rating)).length}
+          missed={tested.filter((r) => !isRemembered(r.rating)).length}
+          left={done ? 0 : deck.length - answeredAt}
+        >
           {card && !done && (
             <KeyHints
               card={card}
@@ -413,62 +493,8 @@ export function QuickReviewView({
               suggested={suggested}
             />
           )}
-          {intro && (
-            <Button
-              size="lg"
-              disabled={isPending}
-              aria-keyshortcuts="Enter"
-              onClick={() => grade(3)}
-            >
-              Đã xem
-            </Button>
-          )}
-          {showReveal && (
-            <Button size="lg" onClick={() => setRevealed(true)}>
-              Xem đáp án
-            </Button>
-          )}
-          {showGrade && card && (
-            // Phone: two columns, the misses (Quên, Khó) on the left and the hits (Nhớ, Dễ) on the
-            // right, so a thumb finds each side without reading.
-            <div
-              className="grid grid-flow-col grid-cols-2 grid-rows-2 gap-2 sm:flex"
-              role="group"
-              aria-label="Chấm thẻ"
-            >
-              {GRADES.map(({ rating, label, tone }) => (
-                <Button
-                  key={rating}
-                  size="lg"
-                  variant={rating === good ? 'default' : 'outline'}
-                  className={cn('sm:min-w-32', rating !== good && tone)}
-                  disabled={isPending}
-                  aria-keyshortcuts={rating === good ? `${rating} Enter` : String(rating)}
-                  onClick={() => grade(rating)}
-                >
-                  {label}
-                  <span className="text-xs opacity-75">{shortUntil(card.dueBy[rating])}</span>
-                </Button>
-              ))}
-            </div>
-          )}
-          {card?.mode === 'cloze' && picked && unsent && (
-            <Button size="lg" disabled={isPending} onClick={resend}>
-              Gửi lại
-            </Button>
-          )}
-          {((card?.mode === 'cloze' && picked && !unsent) || (showNext && practice)) && (
-            <Button size="lg" disabled={!showNext} onClick={practiceNext}>
-              Tiếp
-            </Button>
-          )}
-          {done && (
-            <ButtonLink href="/" size="lg">
-              Về trang chính
-            </ButtonLink>
-          )}
-        </div>
+        </SessionPanel>
       </div>
-    </PageShell>
+    </SessionFrame>
   );
 }

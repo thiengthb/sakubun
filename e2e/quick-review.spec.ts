@@ -148,8 +148,14 @@ async function runSession(page: Page, { keyboard = false } = {}) {
   let sawIntro = false;
   let sawBare = 0;
   const flipKeys = ['1', '4'];
+  // Layout C: from 1280px the side panel shows the round's counts; narrower screens have none.
+  const panel = page.getByRole('complementary', { name: 'Buổi ôn này' });
+  const count = (label: string) => panel.locator(`dt:text-is("${label}") + dd`);
+  const laptop = (page.viewportSize()?.width ?? 0) >= 1280;
   for (let n = 0; n < 4; n++) {
     await expect(page.getByLabel(`Thẻ ${n + 1} / 4`)).toBeVisible();
+    if (laptop) await expect(count('Còn')).toHaveText(String(4 - n));
+    else await expect(panel).toBeHidden();
     const choices = page.getByRole('group', { name: 'Chọn đáp án' });
     const reveal = page.getByRole('button', { name: 'Xem đáp án' });
     const seen = page.getByRole('button', { name: 'Đã xem' });
@@ -219,9 +225,17 @@ async function runSession(page: Page, { keyboard = false } = {}) {
       await page.keyboard.press('Enter');
     }
     expect(reviewLogCount(), 'practice answers are not graded').toBe(4);
+    // Both retry answers count, the flip one included (it used to be dropped by a stale update).
+    await expect(page.getByRole('progressbar', { name: 'Làm lại 2 / 2' })).toHaveAttribute(
+      'aria-valuenow',
+      '2',
+    );
   }
 
   await expect(page.getByText('Xong buổi ôn')).toBeVisible();
+  // Over, after a retry round or not, the count under the title says nothing is left (it used to
+  // keep "Còn 1 thẻ" after the retry round).
+  await expect(page.getByText('Đã ôn hết thẻ đến hạn')).toBeVisible();
   // The intro card is not counted as remembered: it was read, not tested.
   await expect(
     page.getByText(keyboard ? /Nhớ 1 trên 3 thẻ\. Đã làm quen 1 mục mới/ : /Nhớ 3 trên 3 thẻ\./),
@@ -231,6 +245,12 @@ async function runSession(page: Page, { keyboard = false } = {}) {
   expect(sawIntro, 'a new word is met on an intro card').toBe(true);
   expect(sawBare, 'a word with no sentence says so').toBe(2);
   expect(reviewLogCount()).toBe(4);
+  if (laptop) {
+    // The intro card is left out of the panel's counts too.
+    await expect(count('Nhớ')).toHaveText(keyboard ? '1' : '3');
+    await expect(count('Chưa nhớ')).toHaveText(keyboard ? '2' : '0');
+    await expect(count('Còn')).toHaveText('0');
+  }
 
   const overflow = await page.evaluate(
     () => document.documentElement.scrollWidth - document.documentElement.clientWidth,

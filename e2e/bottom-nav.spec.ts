@@ -120,7 +120,7 @@ test('the laptop has no tab bar', async ({ page }) => {
   await expect(nav(page)).toBeHidden();
 });
 
-test('Ôn nhanh shows how many cards are due, and the bar steps aside in the session', async ({
+test('Ôn nhanh shows how many cards are due, and the bar stays in the session', async ({
   page,
 }) => {
   seedDue(3);
@@ -133,8 +133,17 @@ test('Ôn nhanh shows how many cards are due, and the bar steps aside in the ses
 
   await review.click();
   await page.waitForURL((u) => u.pathname === '/review');
-  await expect(nav(page)).toHaveCount(0);
-  // With the bar away, an X is the way out, on screen from the first card.
+  // The session keeps the tab bar like every other page (thien, 2026-11-13); the X still leads out,
+  // and the answer bar rests on top of the tab bar, never under it.
+  await expect(nav(page)).toBeVisible();
+  const tabTop = (await nav(page).boundingBox())!.y;
+  const answers = page.getByRole('button', { name: /^(Xem đáp án|Đã xem|Tiếp)$/ }).first();
+  await expect(async () => {
+    const box = (await answers.boundingBox())!;
+    expect(box.y + box.height).toBeLessThanOrEqual(tabTop);
+  }).toPass();
+  // Layout C: a phone has one column, without the laptop's side panel.
+  await expect(page.getByRole('complementary', { name: 'Buổi ôn này' })).toBeHidden();
   await page.getByRole('button', { name: 'Dừng ôn' }).click();
   await page.waitForURL((u) => u.pathname === '/');
   await expect(nav(page)).toBeVisible();
@@ -144,6 +153,89 @@ test('Ôn nhanh shows how many cards are due, and the bar steps aside in the ses
   await page.goto('/settings', { waitUntil: 'networkidle' });
   await expect(nav(page).getByRole('link', { name: 'Ôn nhanh', exact: true })).toBeVisible();
   await expect(nav(page).locator('[data-badge]')).toHaveCount(0);
+});
+
+// U2a (docs/plans/2026-11-13-u2-study-session.md), as thien set it on 2026-11-13: on a laptop the
+// session keeps the sidebar and the width of every other page. The X sits at the end of the
+// title's row, above a progress bar a screen reader can follow.
+test('on a laptop the session keeps the sidebar and the page frame', async ({ page }) => {
+  seedDue(2);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await logIn(page);
+  await page.goto('/settings', { waitUntil: 'networkidle' });
+  const sidebar = page.locator('[data-sidebar="sidebar"]').first();
+  await expect(sidebar).toBeVisible();
+  const settingsBox = (await page.locator('main [data-template]').boundingBox())!;
+
+  await page.goto('/review', { waitUntil: 'networkidle' });
+  await expect(sidebar).toBeVisible();
+  const box = (await page.locator('main [data-template]').boundingBox())!;
+  expect(Math.round(box.x)).toBe(Math.round(settingsBox.x));
+  expect(Math.round(box.width)).toBe(Math.round(settingsBox.width));
+  const close = page.getByRole('button', { name: 'Dừng ôn' });
+  const title = page.getByRole('heading', { level: 1, name: 'Ôn nhanh' });
+  await expect(close).toBeVisible();
+  expect((await close.boundingBox())!.x).toBeGreaterThan((await title.boundingBox())!.x);
+  const progress = page.getByRole('progressbar', { name: /^Thẻ 1 \/ \d+$/ });
+  await expect(progress).toHaveAttribute('aria-valuenow', '0');
+  const deck = await progress.getAttribute('aria-label');
+
+  // Layout C (thien, 2026-11-13): the card on the left, from 1280px a panel on the right with the
+  // counts so far and the keys for the step on screen.
+  const panel = page.getByRole('complementary', { name: 'Buổi ôn này' });
+  await expect(panel).toBeVisible();
+  await expect(panel.getByText('Phím tắt')).toBeVisible();
+  for (const label of ['Nhớ', 'Chưa nhớ'])
+    await expect(panel.locator(`dt:text-is("${label}") + dd`)).toHaveText('0');
+  const bar = (await progress.boundingBox())!;
+  expect((await panel.boundingBox())!.x).toBeGreaterThan(bar.x + bar.width / 2);
+
+  // The bar follows the card instead of resting at the window bottom (thien, 2026-11-14).
+  const sessionBar = page.locator('[data-session-bar]');
+  const cardBox = (await sessionBar.locator('xpath=preceding-sibling::div[1]').boundingBox())!;
+  const barBox = (await sessionBar.boundingBox())!;
+  expect(barBox.y - (cardBox.y + cardBox.height)).toBeLessThan(48);
+  expect(barBox.y + barBox.height).toBeLessThan(900 - 48);
+
+  // Beside the sidebar on a narrower laptop the grade buttons need the whole width: no panel.
+  await page.setViewportSize({ width: 1024, height: 900 });
+  await expect(panel).toBeHidden();
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await expect(panel).toBeVisible();
+
+  // Enter on the focused X leaves the session; it does not answer the card on screen.
+  await close.focus();
+  await page.keyboard.press('Enter');
+  await page.waitForURL((u) => u.pathname === '/');
+  await page.goto('/review', { waitUntil: 'networkidle' });
+  await expect(page.getByRole('progressbar')).toHaveAttribute('aria-label', deck!);
+
+  // Enter on a focused sidebar link follows the link; it does not answer the card.
+  await page.locator('[data-sidebar="menu-button"]', { hasText: 'Cài đặt' }).focus();
+  await page.keyboard.press('Enter');
+  await page.waitForURL((u) => u.pathname === '/settings');
+  await expect(sidebar).toBeVisible();
+});
+
+test('beside the sidebar on a narrow laptop the grade row stays in the page', async ({ page }) => {
+  seedDue(1);
+  await page.setViewportSize({ width: 768, height: 900 });
+  await logIn(page);
+  await page.goto('/review', { waitUntil: 'networkidle' });
+  await expect(page.locator('[data-sidebar="sidebar"]').first()).toBeVisible();
+  await page.getByRole('button', { name: 'Xem đáp án' }).click();
+  const grades = page.getByRole('group', { name: 'Chấm thẻ' });
+  await expect(grades.getByRole('button')).toHaveCount(4);
+  const page_ = (await page.locator('main [data-template]').boundingBox())!;
+  for (const button of await grades.getByRole('button').all()) {
+    const box = (await button.boundingBox())!;
+    expect(box.x).toBeGreaterThanOrEqual(page_.x);
+    expect(box.x + box.width).toBeLessThanOrEqual(page_.x + page_.width + 0.5);
+  }
+  const overflow = await page.evaluate(
+    () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+  );
+  expect(overflow).toBeLessThanOrEqual(0);
 });
 
 test('the due count follows the session once it ends', async ({ page }) => {
