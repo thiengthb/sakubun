@@ -387,7 +387,7 @@ export function QuickReviewView({
       {/* A study session has the screen to itself until the summary. */}
       {card && !done && <StudyFocus />}
       <div ref={sessionRef} className="flex flex-col gap-6 md:gap-8">
-        <div className="flex-1">
+        <div className="flex flex-1 flex-col">
           {done || !card ? (
             <Summary results={results} nextDueAt={nextDueAt} />
           ) : (
