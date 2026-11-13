@@ -113,6 +113,55 @@ describe('recordReviews', () => {
   });
 });
 
+describe('recordReviews from the background (U2e)', () => {
+  it('writes nothing when the schedule changed since it was read', async () => {
+    const itemId = await seedOne('約束');
+    const stale = await db.srsState.findUniqueOrThrow({ where: { itemId } });
+    await R.recordReviews(db, [{ itemId, srs: stale, rating: 3 }], { retention: 0.9, now: NOW });
+
+    await expect(
+      R.recordReviews(db, [{ itemId, srs: stale, rating: 1 }], {
+        retention: 0.9,
+        now: NOW,
+        onlyIfUnchanged: true,
+      }),
+    ).rejects.toMatchObject({ code: 'P2025' });
+    expect(await db.reviewLog.count({ where: { itemId } })).toBe(1);
+    expect((await db.srsState.findUniqueOrThrow({ where: { itemId } })).reps).toBe(1);
+  });
+
+  it('writes when the schedule is still the one read', async () => {
+    const itemId = await seedOne('準備');
+    const srs = await db.srsState.findUniqueOrThrow({ where: { itemId } });
+    await R.recordReviews(db, [{ itemId, srs, rating: 3, clientId: 'grade-0001' }], {
+      retention: 0.9,
+      now: NOW,
+      onlyIfUnchanged: true,
+    });
+    expect(await db.reviewLog.findFirstOrThrow({ where: { itemId } })).toMatchObject({
+      clientId: 'grade-0001',
+    });
+  });
+
+  it('refuses a second row with the same device id, and rolls its schedule back', async () => {
+    const a = await seedOne('約束');
+    const b = await seedOne('準備');
+    const srsA = await db.srsState.findUniqueOrThrow({ where: { itemId: a } });
+    const srsB = await db.srsState.findUniqueOrThrow({ where: { itemId: b } });
+    await R.recordReviews(db, [{ itemId: a, srs: srsA, rating: 3, clientId: 'grade-0002' }], {
+      retention: 0.9,
+      now: NOW,
+    });
+    await expect(
+      R.recordReviews(db, [{ itemId: b, srs: srsB, rating: 3, clientId: 'grade-0002' }], {
+        retention: 0.9,
+        now: NOW,
+      }),
+    ).rejects.toMatchObject({ code: 'P2002' });
+    expect((await db.srsState.findUniqueOrThrow({ where: { itemId: b } })).reps).toBe(0);
+  });
+});
+
 describe('recordReviews and the streak', () => {
   it('a review shows in the streak at once, though the streak is cached for a minute', async () => {
     const S = await import('@/lib/insights/streak');

@@ -294,6 +294,33 @@ describe('answerCard', () => {
     expect(log).toMatchObject({ rating: 1, state: 2, channel: 'web', turnId: null });
   });
 
+  it('takes the same grade sent again (its reply was lost) once, and answers ok both times', async () => {
+    const ids = await seed([{ expression: '約束' }]);
+    const itemId = ids['約束'];
+    const grade = { itemId, mode: 'flip', rating: 1, clientId: 'grade-aaaa-0001' } as const;
+
+    const first = await Q.answerCard(db, grade, NOW);
+    const again = await Q.answerCard(db, grade, new Date(NOW.getTime() + 5_000));
+    expect(first).toMatchObject({ ok: true, data: { rating: 1, correct: false } });
+    expect(again).toMatchObject({ ok: true, data: { rating: 1, correct: false } });
+    if (first.ok && again.ok) expect(again.data.nextDue).toEqual(first.data.nextDue);
+    expect(await db.reviewLog.count({ where: { itemId } })).toBe(1);
+    expect((await db.srsState.findUniqueOrThrow({ where: { itemId } })).reps).toBe(1);
+  });
+
+  it('refuses a new grade of a card already graded, even with its own device id', async () => {
+    const ids = await seed([{ expression: '約束' }]);
+    const itemId = ids['約束'];
+    await Q.answerCard(db, { itemId, mode: 'flip', rating: 3, clientId: 'grade-aaaa-0002' }, NOW);
+    const other = await Q.answerCard(
+      db,
+      { itemId, mode: 'flip', rating: 3, clientId: 'grade-aaaa-0003' },
+      NOW,
+    );
+    expect(other.ok).toBe(false);
+    expect(await db.reviewLog.count({ where: { itemId } })).toBe(1);
+  });
+
   it('refuses a suspended item and writes nothing', async () => {
     const ids = await seed([{ expression: '約束' }]);
     await P.setItemSuspended(db, ids['約束'], true);

@@ -18,6 +18,8 @@ export interface ReviewInput {
   turnId?: string | null;
   errorTags?: string[];
   errorDetail?: Confusion[];
+  /** The device's id for this grade (U2e); a second row with the same id is refused (P2002). */
+  clientId?: string | null;
 }
 
 // Where the review happened. Old callers (the pre-v2 MCP tools) leave it unset.
@@ -37,6 +39,14 @@ export async function recordReviews(
     now: Date;
     channel?: ReviewChannel;
     alsoWrite?: Prisma.PrismaPromise<unknown>[];
+    /**
+     * Write a schedule only if it is still the one each review was computed from: same `reps`
+     * (every review adds one) and `state`. A grade sent from the background can arrive after another
+     * one changed the card; then the whole call is refused with P2025 and nothing is written. Not
+     * `due`: SQLite keeps it as text, and rows written by hand or by an older Prisma spell the same
+     * time differently, so an equal date could fail to match.
+     */
+    onlyIfUnchanged?: boolean;
   },
 ): Promise<RecordedReview[]> {
   const { retention, now } = options;
@@ -50,7 +60,12 @@ export async function recordReviews(
   for (const review of reviews) {
     const { next, log } = rateOnce(review.srs, review.rating, { retention, now });
     writes.push(
-      db.srsState.update({ where: { itemId: review.itemId }, data: { ...next } }),
+      db.srsState.update({
+        where: options.onlyIfUnchanged
+          ? { itemId: review.itemId, reps: review.srs.reps, state: review.srs.state }
+          : { itemId: review.itemId },
+        data: { ...next },
+      }),
       db.reviewLog.create({
         data: {
           userId: db.$ownerId(),
@@ -67,6 +82,7 @@ export async function recordReviews(
           channel: options.channel ?? null,
           errorTags: review.errorTags?.length ? JSON.stringify(review.errorTags) : null,
           errorDetail: serializeErrorDetail(review.errorDetail),
+          clientId: review.clientId ?? null,
         },
       }),
     );

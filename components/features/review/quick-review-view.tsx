@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useLayoutEffect, useRef, useState, useTransition } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { X } from 'lucide-react';
 import { IconAction } from '@/components/common/icon-action';
@@ -16,6 +16,7 @@ import {
 } from '@/components/features/review/session-frame';
 import { GradeBar, GRADES } from '@/components/features/review/grade-bar';
 import { SessionSummary, type SessionResult } from '@/components/features/review/session-summary';
+import { useGradeQueue } from '@/components/features/review/use-grade-queue';
 import { EmptyState } from '@/components/common/empty-state';
 import { ReviewCard, type CardTts } from '@/components/common/review-card';
 import type { CardAnswer, QuickCard, QuickReview } from '@/lib/app/quick-review';
@@ -130,9 +131,6 @@ export function QuickReviewView({
   const [revealed, setRevealed] = useState(false);
   // A write card's rating from the pad: the grade Enter gives and the one the bar puts first.
   const [suggested, setSuggested] = useState<RatingValue | null>(null);
-  // A cloze pick the server never recorded. The answer is already on screen, so the same pick is
-  // sent again rather than reopening the choices (a second pick would grade with the answer known).
-  const [unsent, setUnsent] = useState<CardAnswer | null>(null);
   const [results, setResults] = useState<Result[]>([]);
   // The end-of-session round over the cards missed above; null until it starts.
   const [retry, setRetry] = useState<{
@@ -141,7 +139,8 @@ export function QuickReviewView({
     right: boolean[];
   } | null>(null);
   const missed = useRef<QuickCard[]>([]);
-  const [isPending, startTransition] = useTransition();
+  // U2e: a grade moves the session on at once and reaches the server behind it.
+  const grades = useGradeQueue<CardAnswer>(answer, (error) => toast.error(error));
   // The answer bar rests on the window bottom while the card is short, and sticks there when long.
   const sessionRef = useRef<HTMLDivElement>(null);
 
@@ -155,44 +154,31 @@ export function QuickReviewView({
   // state survives: it keeps the cards it opened with (above).
   const router = useRouter();
   const answered = results.length > 0;
+  const saved = grades.saved;
   useEffect(() => {
-    if (done && answered) router.refresh();
-  }, [done, answered, router]);
+    if (done && answered && saved) router.refresh();
+  }, [done, answered, saved, router]);
   // The tab bar comes back with the summary; the session's height leaves room for it.
   useFillWindow(sessionRef, done);
   // A new item is met before it is tested: read, then "Đã xem" records Good, as it always has.
   const intro = !practice && flips(card) && !!card?.isNew;
 
   const send = (payload: CardAnswer, rating: RatingValue, advance: boolean) => {
-    if (!card || isPending) return;
-    const answered = card;
-    const kind = card.kind;
-    const met = intro;
-    startTransition(async () => {
-      const result = await answer(payload).catch((): ActionResult<unknown> => ({
-        ok: false,
-        error: 'Mất kết nối, chưa lưu được.',
-      }));
-      if (!result.ok) {
-        toast.error(result.error);
-        if (payload.mode === 'cloze') setUnsent(payload);
-        return;
-      }
-      setUnsent(null);
-      setResults((r) => [
-        ...r,
-        {
-          itemId: answered.itemId,
-          kind,
-          expression: answered.expression,
-          meaningVi: answered.meaningVi,
-          rating,
-          intro: met,
-        },
-      ]);
-      if (rating === 1) missed.current.push(retryCard(answered));
-      if (advance) next();
-    });
+    if (!card) return;
+    grades.enqueue(payload);
+    setResults((r) => [
+      ...r,
+      {
+        itemId: card.itemId,
+        kind: card.kind,
+        expression: card.expression,
+        meaningVi: card.meaningVi,
+        rating,
+        intro,
+      },
+    ]);
+    if (rating === 1) missed.current.push(retryCard(card));
+    if (advance) next();
   };
 
   const next = () => {
@@ -207,7 +193,6 @@ export function QuickReviewView({
     setPicked(null);
     setRevealed(false);
     setSuggested(null);
-    setUnsent(null);
   };
 
   // A cloze is graded the moment a choice is picked; the card stays until "Tiếp".
@@ -219,10 +204,6 @@ export function QuickReviewView({
       return;
     }
     send({ itemId: card.itemId, mode: 'cloze', choiceId }, choiceId === card.itemId ? 3 : 1, false);
-  };
-  const resend = () => {
-    if (!card || unsent?.mode !== 'cloze') return;
-    send(unsent, unsent.choiceId === card.itemId ? 3 : 1, false);
   };
   const grade = (rating: RatingValue) => {
     if (!card) return;
@@ -267,7 +248,6 @@ export function QuickReviewView({
         if (intro) grade(3);
         else if (showReveal) setRevealed(true);
         else if (showNext) practiceNext();
-        else if (unsent) resend();
         // A focused grade button handles its own Enter; otherwise Enter means "Nhớ", or the pad's
         // rating on a write card.
         else if (showGrade && !(e.target instanceof HTMLButtonElement)) grade(good);
@@ -331,6 +311,10 @@ export function QuickReviewView({
             : retry
               ? `Làm lại ${retry.cards.length} câu sai`
               : leftLine(cards.slice(index))}
+          {/* U2e: grades the network dropped wait on the device and go again on their own. */}
+          <span role="status" className="text-warn">
+            {grades.unsaved > 0 && ` · Chưa lưu ${grades.unsaved} thẻ, đang thử lại`}
+          </span>
         </span>
       }
       progress={
@@ -356,7 +340,7 @@ export function QuickReviewView({
         <div className="flex flex-1 flex-col gap-6 md:gap-8">
           <div className="flex flex-1 flex-col xl:flex-none">
             {done || !card ? (
-              <SessionSummary results={results} nextDueAt={nextDueAt} />
+              <SessionSummary results={results} nextDueAt={nextDueAt} saved={saved} />
             ) : (
               <ReviewCard
                 key={`${practice ? 'retry' : 'main'}-${card.itemId}`}
@@ -379,12 +363,7 @@ export function QuickReviewView({
             className="sticky bottom-(--bottom-nav-space) flex gap-2 bg-background pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] max-md:pb-2 max-sm:[&>*]:flex-1 sm:justify-end sm:[&>*]:min-w-32"
           >
             {intro && (
-              <Button
-                size="lg"
-                disabled={isPending}
-                aria-keyshortcuts="Enter"
-                onClick={() => grade(3)}
-              >
+              <Button size="lg" aria-keyshortcuts="Enter" onClick={() => grade(3)}>
                 Đã xem
               </Button>
             )}
@@ -394,14 +373,9 @@ export function QuickReviewView({
               </Button>
             )}
             {showGrade && card && (
-              <GradeBar dueBy={card.dueBy} good={good} disabled={isPending} onGrade={grade} />
+              <GradeBar dueBy={card.dueBy} good={good} onGrade={grade} />
             )}
-            {card?.mode === 'cloze' && picked && unsent && (
-              <Button size="lg" disabled={isPending} onClick={resend}>
-                Gửi lại
-              </Button>
-            )}
-            {((card?.mode === 'cloze' && picked && !unsent) || (showNext && practice)) && (
+            {((card?.mode === 'cloze' && picked) || (showNext && practice)) && (
               <Button size="lg" disabled={!showNext} onClick={practiceNext}>
                 Tiếp
               </Button>

@@ -31,19 +31,24 @@ const itemHref = (r: SessionResult) =>
  * U2d (docs/plans/2026-11-13-u2-study-session.md): the end of a session, the moment it is
  * remembered by. Three figures (cards done, the share remembered, the streak), at most three cards
  * worth a second look, each a link to its page, and one thing to do next. All of it comes from
- * the session on the device, except the streak, read once the last answer is in.
+ * the session on the device, except the streak, read once the last answer is in: grades go to the
+ * server behind the session (U2e), so the streak waits until `saved`.
  */
 export function SessionSummary({
   results,
   nextDueAt,
+  saved = true,
 }: {
   results: SessionResult[];
   nextDueAt: Date | null;
+  /** Every grade of the session is on the server. */
+  saved?: boolean;
 }) {
   const s = summarizeSession(results);
   // undefined while loading, null if it could not be read: the tile then steps aside.
   const [streak, setStreak] = useState<number | null | undefined>(undefined);
   useEffect(() => {
+    if (!saved) return;
     let alive = true;
     getStreakAction()
       .then((r) => alive && setStreak(r.ok ? r.data.current : null))
@@ -51,7 +56,7 @@ export function SessionSummary({
     return () => {
       alive = false;
     };
-  }, []);
+  }, [saved]);
 
   // Remembered per kind, for a session that mixed them: "Ngữ pháp 2/3 nhớ".
   const byKind = KINDS.flatMap(([kind, label]) => {

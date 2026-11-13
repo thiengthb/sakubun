@@ -352,9 +352,19 @@ export async function getQuickReview(
   return { cards, nextDueAt: queue.nextDueAt };
 }
 
-export type CardAnswer =
+export type CardAnswer = (
   | { itemId: string; mode: 'flip'; rating: RatingValue }
-  | { itemId: string; mode: 'cloze'; choiceId: string };
+  | { itemId: string; mode: 'cloze'; choiceId: string }
+) & {
+  /**
+   * U2e: the device's id for this grade. The session moves on before the server answers and sends
+   * the grade again if the reply is lost, so the same id is recorded at most once.
+   */
+  clientId?: string;
+};
+
+const isPrismaCode = (e: unknown, code: string) =>
+  typeof e === 'object' && e !== null && 'code' in e && e.code === code;
 
 export interface AnsweredCard {
   rating: RatingValue;
@@ -372,6 +382,14 @@ export async function answerCard(
     include: { item: { select: { suspended: true } } },
   });
   if (!srs) return err('Không tìm thấy mục này. Tải lại trang để lấy thẻ mới.');
+  // The same grade sent again (its first reply was lost): it is in already, so say so again.
+  const saved = answer.clientId
+    ? await db.reviewLog.findFirst({ where: { clientId: answer.clientId }, select: { rating: true } })
+    : null;
+  if (saved) {
+    const rating = saved.rating as RatingValue;
+    return ok({ rating, correct: isRemembered(rating), nextDue: srs.due });
+  }
   if (srs.item.suspended) return err('Mục này đang tạm dừng ôn.');
   // A second tap on the same card arrives after it was rescheduled: refuse instead of rating twice.
   if (srs.state !== CARD_STATE.NEW && srs.due.getTime() > now.getTime()) {
@@ -385,10 +403,23 @@ export async function answerCard(
   const rating = ratingForAnswer(quick);
   const correct = isRemembered(rating);
   const { desiredRetention } = await getSettings(db);
-  const [recorded] = await recordReviews(db, [{ itemId: answer.itemId, srs, rating }], {
-    retention: desiredRetention,
-    now,
-    channel: 'web',
-  });
-  return ok({ rating, correct, nextDue: recorded.next.due });
+  try {
+    const [recorded] = await recordReviews(
+      db,
+      [{ itemId: answer.itemId, srs, rating, clientId: answer.clientId }],
+      { retention: desiredRetention, now, channel: 'web', onlyIfUnchanged: true },
+    );
+    return ok({ rating, correct, nextDue: recorded.next.due });
+  } catch (e) {
+    // Two copies of one grade raced, and the other one went in first.
+    if (answer.clientId && isPrismaCode(e, 'P2002')) {
+      const after = await db.srsState.findFirstOrThrow({ where: { itemId: answer.itemId } });
+      return ok({ rating, correct, nextDue: after.due });
+    }
+    // The card was graded elsewhere (another tab) between the read above and this write.
+    if (isPrismaCode(e, 'P2025')) {
+      return err('Thẻ này vừa được chấm ở nơi khác. Tải lại trang để lấy thẻ tiếp theo.');
+    }
+    throw e;
+  }
 }
