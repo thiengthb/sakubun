@@ -215,6 +215,24 @@ async function runSession(page: Page, { keyboard = false } = {}) {
         await page.keyboard.press(flipKeys.shift()!);
       } else {
         await reveal.click();
+        // U2c: the grades take the answers' place. Phone: two columns at the foot of the screen,
+        // the misses left, the hits right. Laptop: one row of four under the card, then the key
+        // hints closing the column.
+        const bar = page.getByRole('group', { name: 'Chấm thẻ' });
+        const boxes = await Promise.all(
+          (await bar.getByRole('button').all()).map(async (b) => (await b.boundingBox())!),
+        );
+        const viewport = page.viewportSize()!;
+        if (viewport.width < 640) {
+          const box = (await bar.boundingBox())!;
+          expect(box.y + box.height).toBeGreaterThan(viewport.height - 80);
+          expect(boxes[0].x).toBe(boxes[1].x);
+          expect(boxes[2].x).toBeGreaterThan(boxes[0].x);
+        } else {
+          expect(new Set(boxes.map((b) => Math.round(b.y))).size).toBe(1);
+          const hints = (await page.getByText('Phím tắt').boundingBox())!;
+          expect(hints.y).toBeGreaterThan(boxes[0].y + boxes[0].height);
+        }
         await page.getByRole('button', { name: /^Nhớ/ }).click();
       }
     }

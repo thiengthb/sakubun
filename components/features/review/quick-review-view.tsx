@@ -16,13 +16,13 @@ import {
   SessionProgress,
   type Step,
 } from '@/components/features/review/session-frame';
+import { GradeBar, GRADES } from '@/components/features/review/grade-bar';
 import { EmptyState } from '@/components/common/empty-state';
 import { ReviewCard, type CardTts } from '@/components/common/review-card';
 import type { CardAnswer, QuickCard, QuickReview } from '@/lib/app/quick-review';
 import { isRemembered } from '@/lib/domain/quick-review';
 import type { ActionResult } from '@/lib/core/action-result';
 import { humanizeUntil } from '@/lib/core/format';
-import { cn } from '@/lib/core/utils';
 import type { RatingValue } from '@/lib/srs/srs';
 
 type Answer = (answer: CardAnswer) => Promise<ActionResult<unknown>>;
@@ -33,18 +33,6 @@ interface Result {
   // An intro card was read, not tested, so it does not count towards what was remembered.
   intro: boolean;
 }
-
-// "10 phút", "8 ngày": the wait on a grade button, without "nữa" and never "dưới 1 phút".
-const shortUntil = (due: Date) =>
-  humanizeUntil(due).replace(/ nữa$/, '').replace('dưới 1 phút', '1 phút');
-
-// The four FSRS buttons of a flip card (decision 0005), each with when the item comes back.
-const GRADES: { rating: RatingValue; label: string; tone?: string }[] = [
-  { rating: 1, label: 'Quên', tone: 'text-destructive' },
-  { rating: 2, label: 'Khó' },
-  { rating: 3, label: 'Nhớ' },
-  { rating: 4, label: 'Dễ', tone: 'text-ok' },
-];
 
 // A missed card comes back at the end of the session for practice, ungraded: its schedule already took
 // the miss. A cloze shows its choices in another order, so the place of the answer is not what is
@@ -115,7 +103,7 @@ function KeyHints({
             ]
           : [['Space', 'xem đáp án']];
   return (
-    <p className="mr-auto flex flex-wrap items-center gap-x-4 gap-y-2 self-center text-xs text-muted-foreground max-lg:hidden">
+    <p className="mt-auto flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground max-lg:hidden">
       <span>Phím tắt</span>
       {keys.map(([key, what]) => (
         <span key={key + what} className="flex items-center gap-1.5">
@@ -387,7 +375,9 @@ export function QuickReviewView({
       {/* A study session has the screen to itself until the summary. */}
       {card && !done && <StudyFocus />}
       <div ref={sessionRef} className="flex flex-col gap-6 md:gap-8">
-        <div className="flex flex-1 flex-col">
+        {/* Phone: the card fills the screen, so its answers and the bar below rest at the foot, in
+            thumb reach. Laptop: the bar follows the card, and the key hints close the column. */}
+        <div className="flex flex-col max-sm:flex-1">
           {done || !card ? (
             <Summary results={results} nextDueAt={nextDueAt} />
           ) : (
@@ -407,17 +397,7 @@ export function QuickReviewView({
         </div>
 
         {/* Phone: the bar's buttons share the width; laptop: they keep their own size, at the right. */}
-        <div className="sticky bottom-0 flex gap-2 bg-background pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] max-sm:[&>*]:flex-1 sm:justify-end sm:[&>*]:min-w-32">
-          {card && !done && (
-            <KeyHints
-              card={card}
-              intro={intro}
-              picked={picked}
-              revealed={revealed}
-              practice={practice}
-              suggested={suggested}
-            />
-          )}
+        <div className="flex gap-2 max-sm:sticky max-sm:bottom-0 max-sm:bg-background max-sm:pt-2 max-sm:pb-[max(0.5rem,env(safe-area-inset-bottom))] max-sm:[&>*]:flex-1 sm:justify-end sm:[&>*]:min-w-32">
           {intro && (
             <Button
               size="lg"
@@ -434,28 +414,7 @@ export function QuickReviewView({
             </Button>
           )}
           {showGrade && card && (
-            // Phone: two columns, the misses (Quên, Khó) on the left and the hits (Nhớ, Dễ) on the
-            // right, so a thumb finds each side without reading.
-            <div
-              className="grid grid-flow-col grid-cols-2 grid-rows-2 gap-2 sm:flex"
-              role="group"
-              aria-label="Chấm thẻ"
-            >
-              {GRADES.map(({ rating, label, tone }) => (
-                <Button
-                  key={rating}
-                  size="lg"
-                  variant={rating === good ? 'default' : 'outline'}
-                  className={cn('sm:min-w-32', rating !== good && tone)}
-                  disabled={isPending}
-                  aria-keyshortcuts={rating === good ? `${rating} Enter` : String(rating)}
-                  onClick={() => grade(rating)}
-                >
-                  {label}
-                  <span className="text-xs opacity-75">{shortUntil(card.dueBy[rating])}</span>
-                </Button>
-              ))}
-            </div>
+            <GradeBar dueBy={card.dueBy} good={good} disabled={isPending} onGrade={grade} />
           )}
           {card?.mode === 'cloze' && picked && unsent && (
             <Button size="lg" disabled={isPending} onClick={resend}>
@@ -473,6 +432,16 @@ export function QuickReviewView({
             </ButtonLink>
           )}
         </div>
+        {card && !done && (
+          <KeyHints
+            card={card}
+            intro={intro}
+            picked={picked}
+            revealed={revealed}
+            practice={practice}
+            suggested={suggested}
+          />
+        )}
       </div>
     </SessionFrame>
   );
