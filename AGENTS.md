@@ -11,6 +11,7 @@ Luật cho mọi AI làm việc trong repo này (Claude, Codex, Gemini...). Ph�
 - AI đề xuất, thien quyết. Đề xuất nào cũng kèm các phương án đã xét và lý do mạnh nhất để không chọn từng cái.
 - Việc làm rồi thì rất khó sửa lại (kiến trúc, dữ liệu, luật làm việc): viết quyết định vào `docs/decisions/` với bảng phương án, thien chọn trước rồi AI mới nói lựa chọn của mình.
 - Quyết định chốt trong chat hay comment trên doc phải ghi vào repo ngay trong phiên đó. Tài khoản khác và model khác không thấy chat.
+- Cần thien duyệt giao diện, chọn một trong vài cách có hình, hay học một buổi: dựng trang từ mẫu trong [`artifacts/`](https://github.com/thiengthb/thienai-workflow/blob/main/artifacts/README.md) của thienai-workflow (so sánh ảnh, chọn phương án, buổi học), không tự viết trang mới. Script dựng trang nằm ở repo đó: gắn repo vào phiên rồi chạy. Kết quả thien gửi về thì chép vào PR hoặc kế hoạch.
 
 ## Thế nào là xong
 - "Xong" phải có bằng chứng: test chạy được, ảnh chụp, hoặc link CI. Không có bằng chứng thì ghi "chưa kiểm".
