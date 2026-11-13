@@ -148,8 +148,14 @@ async function runSession(page: Page, { keyboard = false } = {}) {
   let sawIntro = false;
   let sawBare = 0;
   const flipKeys = ['1', '4'];
+  // Layout C: from 1280px the side panel shows the round's counts; narrower screens have none.
+  const panel = page.getByRole('complementary', { name: 'Buổi ôn này' });
+  const count = (label: string) => panel.locator(`dt:text-is("${label}") + dd`);
+  const laptop = (page.viewportSize()?.width ?? 0) >= 1280;
   for (let n = 0; n < 4; n++) {
     await expect(page.getByLabel(`Thẻ ${n + 1} / 4`)).toBeVisible();
+    if (laptop) await expect(count('Còn')).toHaveText(String(4 - n));
+    else await expect(panel).toBeHidden();
     const choices = page.getByRole('group', { name: 'Chọn đáp án' });
     const reveal = page.getByRole('button', { name: 'Xem đáp án' });
     const seen = page.getByRole('button', { name: 'Đã xem' });
@@ -216,8 +222,8 @@ async function runSession(page: Page, { keyboard = false } = {}) {
       } else {
         await reveal.click();
         // U2c: the grades take the answers' place. Phone: two columns at the foot of the screen,
-        // the misses left, the hits right. Laptop: one row of four under the card, then the key
-        // hints closing the column.
+        // the misses left, the hits right. Laptop: one row of four under the card; the key hints
+        // sit in the side panel from 1280px (layout C).
         const bar = page.getByRole('group', { name: 'Chấm thẻ' });
         const boxes = await Promise.all(
           (await bar.getByRole('button').all()).map(async (b) => (await b.boundingBox())!),
@@ -230,8 +236,11 @@ async function runSession(page: Page, { keyboard = false } = {}) {
           expect(boxes[2].x).toBeGreaterThan(boxes[0].x);
         } else {
           expect(new Set(boxes.map((b) => Math.round(b.y))).size).toBe(1);
-          const hints = (await page.getByText('Phím tắt').boundingBox())!;
-          expect(hints.y).toBeGreaterThan(boxes[0].y + boxes[0].height);
+          const hints = page
+            .getByRole('complementary', { name: 'Buổi ôn này' })
+            .getByText('Phím tắt');
+          if (viewport.width >= 1280) await expect(hints).toBeVisible();
+          else await expect(hints).toBeHidden();
         }
         await page.getByRole('button', { name: /^Nhớ/ }).click();
       }
@@ -299,6 +308,12 @@ async function runSession(page: Page, { keyboard = false } = {}) {
   expect(sawIntro, 'a new word is met on an intro card').toBe(true);
   expect(sawBare, 'a word with no sentence says so').toBe(2);
   expect(reviewLogCount()).toBe(4);
+  if (laptop) {
+    // The intro card is left out of the panel's counts too.
+    await expect(count('Nhớ')).toHaveText(keyboard ? '1' : '3');
+    await expect(count('Chưa nhớ')).toHaveText(keyboard ? '2' : '0');
+    await expect(count('Còn')).toHaveText('0');
+  }
 
   const overflow = await page.evaluate(
     () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
