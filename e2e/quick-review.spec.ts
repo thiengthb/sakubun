@@ -282,7 +282,8 @@ async function runSession(page: Page, { keyboard = false } = {}) {
   await expect(bar).toHaveAttribute('aria-valuenow', '4');
   await expect(bar.locator('.bg-destructive')).toHaveCount(keyboard ? 2 : 0);
   // U2d: three figures, the cards to look at again, each a link to its page.
-  const tiles = page.locator('main dl');
+  // The side panel (layout C, from 1280px) has its own Nhớ: read the summary's figures only.
+  const tiles = page.locator('main dl').filter({ hasText: 'Đã ôn' });
   // The intro was read, not tested: Đã ôn counts the three tested cards, as the sentence does.
   await expect(tiles.getByText('Đã ôn', { exact: true }).locator('xpath=..')).toContainText(
     '3 thẻ',
