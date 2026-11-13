@@ -210,6 +210,27 @@ test('on a laptop the session keeps the sidebar and the page frame', async ({ pa
   await expect(sidebar).toBeVisible();
 });
 
+test('beside the sidebar on a narrow laptop the grade row stays in the page', async ({ page }) => {
+  seedDue(1);
+  await page.setViewportSize({ width: 768, height: 900 });
+  await logIn(page);
+  await page.goto('/review', { waitUntil: 'networkidle' });
+  await expect(page.locator('[data-sidebar="sidebar"]').first()).toBeVisible();
+  await page.getByRole('button', { name: 'Xem đáp án' }).click();
+  const grades = page.getByRole('group', { name: 'Chấm thẻ' });
+  await expect(grades.getByRole('button')).toHaveCount(4);
+  const page_ = (await page.locator('main [data-template]').boundingBox())!;
+  for (const button of await grades.getByRole('button').all()) {
+    const box = (await button.boundingBox())!;
+    expect(box.x).toBeGreaterThanOrEqual(page_.x);
+    expect(box.x + box.width).toBeLessThanOrEqual(page_.x + page_.width + 0.5);
+  }
+  const overflow = await page.evaluate(
+    () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+  );
+  expect(overflow).toBeLessThanOrEqual(0);
+});
+
 test('the due count follows the session once it ends', async ({ page }) => {
   seedDue(2);
   await page.setViewportSize(PHONE);

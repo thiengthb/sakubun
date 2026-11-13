@@ -436,7 +436,7 @@ export function QuickReviewView({
               // Phone: two columns, the misses (Quên, Khó) on the left and the hits (Nhớ, Dễ) on the
               // right, so a thumb finds each side without reading.
               <div
-                className="grid grid-flow-col grid-cols-2 grid-rows-2 gap-2 sm:flex"
+                className="grid w-full grid-flow-col grid-cols-2 grid-rows-2 gap-2 sm:grid-flow-row sm:grid-cols-4 sm:grid-rows-1"
                 role="group"
                 aria-label="Chấm thẻ"
               >
@@ -445,7 +445,7 @@ export function QuickReviewView({
                     key={rating}
                     size="lg"
                     variant={rating === good ? 'default' : 'outline'}
-                    className={cn('sm:min-w-32', rating !== good && tone)}
+                    className={cn(rating !== good && tone)}
                     disabled={isPending}
                     aria-keyshortcuts={rating === good ? `${rating} Enter` : String(rating)}
                     onClick={() => grade(rating)}
