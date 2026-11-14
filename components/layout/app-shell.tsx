@@ -3,6 +3,7 @@
 import { usePathname } from 'next/navigation';
 import {
   Globe,
+  House,
   CircleUserRound,
   Layers,
   LayoutDashboard,
@@ -26,14 +27,14 @@ import { useSession } from '@/lib/auth/auth-client';
 // /privacy and /terms that Google's consent screen links to.
 const CHROMELESS = ['/login', '/consent', '/privacy', '/terms'];
 
-// UI v2 (docs/plans/2026-11-08-ui-v2.md › Bản đồ mới): three groups by what the learner does. Until
-// the later phases land, Phân tích still holds / (Hôm nay replaces it in phase 3; its charts move to
-// Tiến độ in phase 7), and the two stores keep their own items (D6 makes them one "Kho" in phase 4).
+// UI v2 (docs/plans/2026-11-08-ui-v2.md › Bản đồ mới): three groups by what the learner does. Hôm
+// nay holds / since U3b; Phân tích moved under Bạn at /analytics. The two stores keep their own
+// items until D6 makes them one "Kho" in phase 4.
 const NAV_GROUPS: AppSidebarGroup[] = [
   {
     label: 'Học',
     items: [
-      { href: '/', label: 'Phân tích', icon: LayoutDashboard, exact: true },
+      { href: '/', label: 'Hôm nay', icon: House, exact: true },
       { href: '/review', label: 'Ôn nhanh', icon: Layers },
       { href: '/kaiwa', label: 'Hội thoại', icon: MessagesSquare },
     ],
@@ -49,6 +50,7 @@ const NAV_GROUPS: AppSidebarGroup[] = [
     label: 'Bạn',
     items: [
       { href: '/progress', label: 'Tiến độ', icon: TrendingUp },
+      { href: '/analytics', label: 'Phân tích', icon: LayoutDashboard },
       { href: '/settings', label: 'Cài đặt', icon: Settings },
     ],
   },
@@ -115,9 +117,9 @@ const under =
     roots.some((r) => pathname === r || pathname.startsWith(`${r}/`));
 
 // The phone's five tabs (docs/plans/2026-11-08-ui-v2.md › Bản đồ mới). Kho holds both stores and
-// Bạn the learner's own pages, opening on Tiến độ; until Hôm nay exists, tab 1 is Phân tích.
+// Bạn the learner's own pages, opening on Tiến độ.
 const PHONE_TABS = [
-  { href: '/', label: 'Phân tích', icon: LayoutDashboard, match: (p: string) => p === '/' },
+  { href: '/', label: 'Hôm nay', icon: House, match: (p: string) => p === '/' },
   { href: '/review', label: 'Ôn nhanh', icon: Layers, match: under('/review'), due: true },
   { href: '/kaiwa', label: 'Hội thoại', icon: MessagesSquare, match: under('/kaiwa') },
   {
@@ -130,7 +132,7 @@ const PHONE_TABS = [
     href: '/progress',
     label: 'Bạn',
     icon: CircleUserRound,
-    match: under('/history', '/progress', '/settings', '/admin'),
+    match: under('/history', '/progress', '/analytics', '/settings', '/admin'),
   },
 ];
 

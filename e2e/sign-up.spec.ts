@@ -4,7 +4,7 @@ import { expect, test } from '@playwright/test';
 import { E2E_BASE_URL, E2E_DB_FILE, E2E_EMAIL, E2E_OWNER, seedE2eAccount } from './fixtures';
 
 // Roadmap 7.2d: a stranger signs up and sees nothing of the admin's. Since phase 8 (L4) their library
-// starts empty, and Phân tích offers OpenJLPT's N5 grammar from Kho chung in one click.
+// starts empty, and Hôm nay offers OpenJLPT's N5 grammar from Kho chung in one click.
 const EMAIL = 'newcomer@example.test';
 const PASSWORD = ['newcomer', 'login', '12345'].join('-');
 

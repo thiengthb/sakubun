@@ -60,7 +60,7 @@ test('the phone shows five named tabs, and the edge rail is gone', async ({ page
   const bar = nav(page);
   await expect(bar).toBeVisible();
   await expect(bar.getByRole('link')).toHaveText([
-    'Phân tích',
+    'Hôm nay',
     'Ôn nhanh',
     'Hội thoại',
     'Kho',
@@ -285,7 +285,7 @@ test('the due count follows the session once it ends', async ({ page }) => {
   // The summary's main button rests above the bar that came back, not under it.
   const home = (await page.getByRole('link', { name: 'Về trang chính' }).boundingBox())!;
   expect(home.y + home.height).toBeLessThanOrEqual((await nav(page).boundingBox())!.y);
-  // (Hội thoại, not Phân tích: the dev server's own badge sits over the leftmost tab.)
+  // (Hội thoại, not Hôm nay: the dev server's own badge sits over the leftmost tab.)
   await nav(page).getByRole('link', { name: 'Hội thoại' }).click();
   await page.waitForURL((u) => u.pathname.startsWith('/kaiwa'));
   await expect(nav(page).locator('[data-badge]')).toHaveCount(0);

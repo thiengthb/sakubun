@@ -14,7 +14,8 @@ interface Pair {
 }
 
 const PAIRS: Pair[] = [
-  { name: 'dashboard', page: '/', skeleton: 'dashboard' },
+  { name: 'today', page: '/', skeleton: 'today' },
+  { name: 'analytics', page: '/analytics', skeleton: 'analytics' },
   {
     name: 'resources',
     page: '/resources?tab=grammar',

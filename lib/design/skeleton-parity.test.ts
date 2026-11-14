@@ -35,7 +35,7 @@ function pageWithViews(pagePath: string): string {
 describe('loading skeletons match their routes', () => {
   it('every route that renders a PageShell has its own loading.tsx', () => {
     const EXEMPT: Record<string, string> = {
-      app: 'the root loading.tsx IS this route’s (the dashboard) and the fallback for the rest',
+      app: 'the root loading.tsx IS this route’s (Hôm nay) and the fallback for the rest',
       'app/login': 'chromeless auth page — no PageShell, no chrome to placeholder',
       'app/groups': 'redirect stub to /resources?tab=groups — renders no UI',
       'app/items': 'redirect stub to /resources?tab=grammar',
@@ -61,9 +61,9 @@ describe('loading skeletons match their routes', () => {
   // loading screen writes the same tab names and underlines the one that will open.
   const TEMPLATE_TABBED: { name: string; source: string; loading: string }[] = [
     {
-      name: 'dashboard',
+      name: 'analytics',
       source: 'components/features/dashboard/analytics-tabs.tsx',
-      loading: 'app/loading.tsx',
+      loading: 'app/analytics/loading.tsx',
     },
     {
       name: 'resources',

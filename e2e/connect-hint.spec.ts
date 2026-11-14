@@ -4,21 +4,19 @@ import { expect, test } from '@playwright/test';
 import { E2E_DB_FILE, E2E_EMAIL, E2E_LOGIN, E2E_OWNER, seedE2eAccount } from './fixtures';
 
 // Roadmap 7.3b: a learner with no AI app connected and no review yet is sent to the guide from
-// Phân tích; the hint goes away once they connect one.
+// Hôm nay; the hint goes away once they connect one.
 function db() {
   return new Database(path.join(process.cwd(), E2E_DB_FILE));
 }
 
-test('Phân tích points a new learner at the guide until an AI app is connected', async ({
-  page,
-}) => {
+test('Hôm nay points a new learner at the guide until an AI app is connected', async ({ page }) => {
   await seedE2eAccount();
   const d = db();
   // Other specs connect apps, make tokens and review; start from a learner who has done none of it.
   d.exec(`DELETE FROM oauthConsent WHERE userId = ${E2E_OWNER}`);
   d.exec(`DELETE FROM mcp_key WHERE userId = ${E2E_OWNER}`);
   d.exec(`DELETE FROM ReviewLog WHERE userId = ${E2E_OWNER}`);
-  // Phân tích shows its empty state, not the dashboard, until there is a grammar item.
+  // Hôm nay shows its empty state, not the lead area, until there is a grammar or vocab item.
   d.prepare(
     `INSERT OR IGNORE INTO Item (id, userId, kind, expression, meaningVi, level, source, createdAt)
      VALUES ('hint-item', ${E2E_OWNER}, 'GRAMMAR', '〜ている', 'đang', 'N5', 'OPENJLPT', ?)`,
@@ -57,7 +55,7 @@ test('Phân tích points a new learner at the guide until an AI app is connected
   ).run(new Date().toISOString());
   d2.close();
   await page.goto('/', { waitUntil: 'networkidle' });
-  await expect(page.getByRole('region', { name: 'Tổng quan' })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Hôm nay' })).toBeVisible();
   await expect(page.getByText('Kết nối Claude để bắt đầu luyện')).toHaveCount(0);
 
   // Leave the shared e2e DB as other specs expect it: no items, no token.

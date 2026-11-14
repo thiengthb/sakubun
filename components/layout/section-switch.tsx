@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { cn } from '@/lib/core/utils';
 
 // The phone has five tabs and no other menu (thien, U1 gate), so a tab that holds two pages shows a
-// switch between them at the top: Kho holds Của bạn and Kho chung, Bạn holds Tiến độ and Cài đặt.
+// switch between them at the top: Kho holds Của bạn and Kho chung, Bạn holds Tiến độ, Phân tích and Cài đặt.
 // Only on the two pages themselves; a laptop reaches both from the sidebar.
 const SECTIONS = [
   [
@@ -13,6 +13,7 @@ const SECTIONS = [
   ],
   [
     { href: '/progress', label: 'Tiến độ' },
+    { href: '/analytics', label: 'Phân tích' },
     { href: '/settings', label: 'Cài đặt' },
   ],
 ] as const;

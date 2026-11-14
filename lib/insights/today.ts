@@ -9,6 +9,7 @@ import type { Streak } from '@/lib/srs/streak';
 import { studyDayStart } from '@/lib/srs/select';
 import {
   forecast,
+  forecastEnd,
   mostMissed,
   secondsPerCard,
   studyWeek,
@@ -57,7 +58,7 @@ export async function getToday(db: UserDb, now: Date = new Date()): Promise<Toda
     db.srsState.findMany({
       where: {
         state: { not: CARD_STATE.NEW },
-        due: { gt: now, lte: new Date(now.getTime() + FORECAST_DAYS * DAY_MS) },
+        due: { gt: now, lt: forecastEnd(now, FORECAST_DAYS) },
         item: { suspended: false, kind: { in: [...ITEM_KINDS, KANJI_KIND] } },
       },
       select: { due: true },
