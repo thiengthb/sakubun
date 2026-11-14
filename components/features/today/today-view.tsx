@@ -51,7 +51,7 @@ export function TodayHero({ hero, now }: { hero: Hero; now: Date }) {
     return (
       <LeadPanel aria-label="Hôm nay">
         <p className="text-sm font-medium text-accent-brand">Hôm nay</p>
-        <p className="mt-1 text-title">Chưa có thẻ nào đến hạn.</p>
+        <p className="mt-1 text-title">Không có thẻ nào đến hạn.</p>
         <p className="mt-2 text-sm text-muted-foreground">{nextDueText(hero.nextDueAt, now)}</p>
       </LeadPanel>
     );

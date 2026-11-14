@@ -116,7 +116,7 @@ test('with nothing due and nothing studied, the lead area does not praise', asyn
   seedDue(3, { later: true });
   await logIn(page);
   const hero = page.getByRole('region', { name: 'Hôm nay' });
-  await expect(hero).toContainText('Chưa có thẻ nào đến hạn.');
+  await expect(hero).toContainText('Không có thẻ nào đến hạn.');
   await expect(hero).not.toContainText('Xong hết hôm nay');
 });
 
