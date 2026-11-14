@@ -17,7 +17,8 @@ export function LevelPick({ kanjiWaiting }: { kanjiWaiting: number }) {
   const router = useRouter();
   const [picked, setPicked] = useState<string | null>(null);
   const start = useServerAction(startAtLevelAction, {
-    success: (r) => `Đã lấy ${r.grammar} mẫu, ${r.vocab} từ và ${r.kanji} kanji về kho`,
+    // Kanji come in a few a day in Ôn nhanh, so the count of kanji taken is left out.
+    success: (r) => `Đã lấy ${r.grammar} mẫu và ${r.vocab} từ về kho; kanji vào dần mỗi ngày`,
     onSuccess: () => router.refresh(),
   });
   return (

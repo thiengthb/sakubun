@@ -50,7 +50,9 @@ test('a second account signs up, starts from Kho chung and cannot reach admin pa
   if (process.env.SCREENSHOT_DIR)
     await page.screenshot({ path: path.join(process.env.SCREENSHOT_DIR, 'empty-start-1440.png') });
   await hero.getByRole('button', { name: /^N5/ }).click();
-  await expect(page.getByText(/^Đã lấy \d+ mẫu, \d+ từ và \d+ kanji về kho$/)).toBeVisible({
+  await expect(
+    page.getByText(/^Đã lấy \d+ mẫu và \d+ từ về kho; kanji vào dần mỗi ngày$/),
+  ).toBeVisible({
     timeout: 60_000,
   });
   await hero.getByRole('link', { name: 'Bắt đầu ôn' }).click();
