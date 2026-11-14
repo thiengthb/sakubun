@@ -1,6 +1,6 @@
 # Tiến độ
 
-Cập nhật lần cuối: 2026-11-14 · Claude (project `chan_0145cot…`, thread U3 Hôm nay) · Trang tiến độ: https://claude.ai/artifact/GmergauKMVF2n9HT3WSfxo
+Cập nhật lần cuối: 2026-11-14 · Claude (project `chan_0145cot…`, thread UI v2) · Trang tiến độ: https://claude.ai/artifact/GmergauKMVF2n9HT3WSfxo
 
 Cho mọi nick Claude, Codex và thien biết project đang ở đâu. Lịch sử ở git và PR. Tối đa 40 dòng, 3 việc chờ thien.
 
@@ -17,17 +17,19 @@ bảng nhỏ phải, giữ sidebar và thanh tab): U2a xong (#291, 14/11), U2b�
 
 ## Việc dở
 
-| Việc                    | Nhánh hoặc PR | Dở từ | Còn thiếu gì                              |
-| ----------------------- | ------------- | ----- | ----------------------------------------- |
-| Đóng câu hỏi nghiên cứu | #289          | 13/11 | Chỉ tài liệu, chờ thien merge             |
-| Bản tóm tắt hai nick    | #296          | 13/11 | Tạm, của nick kia; đóng khi thien so xong |
+| Việc                    | Nhánh hoặc PR | Dở từ | Còn thiếu gì                                          |
+| ----------------------- | ------------- | ----- | ----------------------------------------------------- |
+| Đóng câu hỏi nghiên cứu | #289          | 13/11 | Chỉ tài liệu, chờ thien merge                         |
+| Bản tóm tắt hai nick    | #296          | 13/11 | Tạm, của nick kia; đóng khi thien so xong             |
+| U4 chọn hướng màn Kho   | #313          | 14/11 | thien chọn ở vòng 2, xem `plans/2026-11-14-u4-kho.md` |
 
 ## Việc tiếp theo
 
-1. U4 Kho của bạn (`plans/2026-11-08-ui-v2.md`): đưa thien 2–3 bố cục trước khi code, rồi viết kế hoạch U4.
+1. U4 Kho: chờ thien chọn hướng vòng 2 (`plans/2026-11-14-u4-kho.md`), rồi viết checkpoint U4 vào file đó.
 
 ## Đang chờ thien
 
+- Chọn hướng màn Kho ở trang vòng 2: https://claude.ai/artifact/CBDMhuJRQebewHhwEfzckp (mở bằng nick 628).
 - Dán dòng hướng dẫn project vào cả hai project Sakubun (nội dung trong mô tả #297).
 - Trên NUC, không gấp: bấm Hiện "N5 · Ngữ pháp" ở Quản trị; thử chia sẻ kịch bản bằng tài khoản `kai`.
 
