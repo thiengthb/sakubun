@@ -7,20 +7,20 @@ Cho mọi nick Claude, Codex và thien biết project đang ở đâu. Lịch s�
 ## Đang ở đâu
 
 Đã áp quy trình chung (#297). UI v2: U0, U1 xong; U2 (buổi ôn) theo bố cục C thien chọn ngày 13/11 (thẻ trái,
-bảng nhỏ phải, giữ sidebar và thanh tab): U2a xong (#291, 14/11), U2b–U2d xong (#292–#294), U2e chấm chạy nền xong (#302), U2f hoàn tác xong (#303), U2g tự sang thẻ khi chọn đúng xong (#304), sửa buổi ôn 390px (#305): U2 xong. U3 Hôm nay: thien chọn bố cục A (14/11), kế hoạch đã merge (#306); đang làm U3a. Mọi phần trước UI v2 đã xong, trừ việc thử thật K2, K8, L5 trong claude.ai (xem `roadmap.md`).
+bảng nhỏ phải, giữ sidebar và thanh tab): U2a xong (#291, 14/11), U2b–U2d xong (#292–#294), U2e chấm chạy nền xong (#302), U2f hoàn tác xong (#303), U2g tự sang thẻ khi chọn đúng xong (#304), sửa buổi ôn 390px (#305): U2 xong. U3 Hôm nay: thien chọn bố cục A (14/11), kế hoạch đã merge (#306); U3a (số liệu) ở #308. Mọi phần trước UI v2 đã xong, trừ việc thử thật K2, K8, L5 trong claude.ai (xem `roadmap.md`).
 
 ## Kế hoạch đang chạy
 
 | Kế hoạch                                   | Đang ở checkpoint | Đã tick       |
 | ------------------------------------------ | ----------------- | ------------- |
 | [UI v2](plans/2026-11-08-ui-v2.md)         | U3 Hôm nay        | U0–U2 / U0–U8 |
-| [U3 Hôm nay](plans/2026-11-14-u3-today.md) | U3a số liệu       | 0 / 4         |
+| [U3 Hôm nay](plans/2026-11-14-u3-today.md) | U3b trang Hôm nay | U3a / U3a–U3d |
 
 ## Việc dở
 
 | Việc                    | Nhánh hoặc PR | Dở từ | Còn thiếu gì                              |
 | ----------------------- | ------------- | ----- | ----------------------------------------- |
-| U3a số liệu Hôm nay     | PR này        | 14/11 | Đang viết `getToday`, chưa nối vào app    |
+| U3a số liệu Hôm nay     | #308          | 14/11 | Code xong, chưa nối vào app; chờ merge    |
 | Đóng câu hỏi nghiên cứu | #289          | 13/11 | Chỉ tài liệu, chờ thien merge             |
 | Bản tóm tắt hai nick    | #296          | 13/11 | Tạm, của nick kia; đóng khi thien so xong |
 

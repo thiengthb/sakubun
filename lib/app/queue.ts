@@ -166,17 +166,18 @@ async function newItems(db: UserDb, kind: string, level: JlptLevel, take: number
 
 /**
  * The cards to study now. Grammar and vocabulary only, as next_turn and `status` want; Ôn nhanh
- * passes `kanji` to add the kanji cards (KJ3), bringing in today's new ones first.
+ * passes `kanji` to add the kanji cards (KJ3), bringing in today's new ones first. A page that only
+ * counts the cards (Hôm nay) passes `introduce: false`: it reads the kanji without creating any.
  */
 export async function getQueue(
   db: UserDb,
   now: Date = new Date(),
   limit?: number,
-  { kanji = false }: { kanji?: boolean } = {},
+  { kanji = false, introduce = true }: { kanji?: boolean; introduce?: boolean } = {},
 ): Promise<Queue> {
   const settings = await getSettings(db);
   const today = await studiedToday(db, settings, now);
-  if (kanji) await introduceKanji(db, settings, today, now);
+  if (kanji && introduce) await introduceKanji(db, settings, today, now);
   const caps = {
     newGrammar: settings.dailyNewGrammar,
     newVocab: settings.dailyNewVocab,
