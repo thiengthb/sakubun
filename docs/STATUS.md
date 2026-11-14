@@ -7,7 +7,7 @@ Cho mọi nick Claude, Codex và thien biết project đang ở đâu. Lịch s�
 ## Đang ở đâu
 
 Đã áp quy trình chung (#297). UI v2: U0, U1 xong; U2 (buổi ôn) theo bố cục C thien chọn ngày 13/11 (thẻ trái,
-bảng nhỏ phải, giữ sidebar và thanh tab): U2a xong (#291, 14/11), U2b–U2d xong (#292–#294), U2e chấm chạy nền xong (#302), U2f hoàn tác xong (#303), U2g tự sang thẻ khi chọn đúng xong (#304), sửa buổi ôn 390px (#305): U2 xong. U3 Hôm nay: thien chọn bố cục A (14/11), kế hoạch đã merge (#306); U3a (số liệu) xong (#308); U3b (trang Hôm nay ở `/`, Phân tích sang `/analytics`) xong (#309); Phân tích cần làm lại bố cục ở giai đoạn 7 (Tiến độ). U3c (người mới chọn cấp) xong phần code ở #310, chờ thien duyệt ảnh. Mọi phần trước UI v2 đã xong, trừ việc thử thật K2, K8, L5 trong claude.ai (xem `roadmap.md`).
+bảng nhỏ phải, giữ sidebar và thanh tab): U2a xong (#291, 14/11), U2b–U2d xong (#292–#294), U2e chấm chạy nền xong (#302), U2f hoàn tác xong (#303), U2g tự sang thẻ khi chọn đúng xong (#304), sửa buổi ôn 390px (#305): U2 xong. U3 Hôm nay: thien chọn bố cục A (14/11), kế hoạch đã merge (#306); U3a (số liệu) xong (#308); U3b (trang Hôm nay ở `/`, Phân tích sang `/analytics`) xong (#309); Phân tích cần làm lại bố cục ở giai đoạn 7 (Tiến độ). U3c (người mới chọn cấp) thien duyệt ảnh 14/11, ở #310. Mọi phần trước UI v2 đã xong, trừ việc thử thật K2, K8, L5 trong claude.ai (xem `roadmap.md`).
 
 ## Kế hoạch đang chạy
 
@@ -20,7 +20,7 @@ bảng nhỏ phải, giữ sidebar và thanh tab): U2a xong (#291, 14/11), U2b�
 
 | Việc                    | Nhánh hoặc PR | Dở từ | Còn thiếu gì                              |
 | ----------------------- | ------------- | ----- | ----------------------------------------- |
-| U3c người mới chọn cấp  | #310          | 14/11 | Chờ thien duyệt ảnh, rồi merge            |
+| U3c người mới chọn cấp  | #310          | 14/11 | Ảnh đã duyệt, review OK; chờ merge        |
 | Đóng câu hỏi nghiên cứu | #289          | 13/11 | Chỉ tài liệu, chờ thien merge             |
 | Bản tóm tắt hai nick    | #296          | 13/11 | Tạm, của nick kia; đóng khi thien so xong |
 
@@ -30,7 +30,6 @@ bảng nhỏ phải, giữ sidebar và thanh tab): U2a xong (#291, 14/11), U2b�
 
 ## Đang chờ thien
 
-- Duyệt ảnh U3c (người mới chọn cấp): https://claude.ai/artifact/HR49egrfQN7gRr7ohuMoL2
 - Dán dòng hướng dẫn project vào cả hai project Sakubun (nội dung trong mô tả #297).
 - Trên NUC, không gấp: bấm Hiện "N5 · Ngữ pháp" ở Quản trị; thử chia sẻ kịch bản bằng tài khoản `kai`.
 
