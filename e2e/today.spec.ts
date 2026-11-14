@@ -22,9 +22,14 @@ function seedDue(count: number, { reviewed = 0, later = false } = {}) {
     ])
       db.exec(`DELETE FROM "${t}"`);
     // Only the seeded words: no kanji brought in by Ôn nhanh.
-    db.prepare(
-      `INSERT INTO Settings (userId, data, updatedAt) VALUES (${E2E_OWNER}, '{"dailyNewKanji":0}', ?)`,
-    ).run(new Date().toISOString());
+    // The study day starts at an hour that is neither this hour nor the next, so a review logged a
+    // minute ago still falls on today when the page reads it (the app and this run share a clock).
+    const hour = new Date(now).getHours();
+    const dayCutoffHour = [0, 3, 6].find((h) => h !== hour && h !== (hour + 1) % 24);
+    db.prepare(`INSERT INTO Settings (userId, data, updatedAt) VALUES (${E2E_OWNER}, ?, ?)`).run(
+      JSON.stringify({ dailyNewKanji: 0, dayCutoffHour }),
+      new Date().toISOString(),
+    );
     for (let i = 0; i < count; i++) {
       db.prepare(
         `INSERT INTO Item (userId, id, kind, expression, reading, hanviet, meaningVi, level, notes, source,

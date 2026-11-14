@@ -97,6 +97,16 @@ describe('getToday reads what the Hôm nay page shows', () => {
     expect(t.missed).toEqual([{ itemId: item.itemId, expression: 'TODAY_hard', misses: 3 }]);
   });
 
+  it('counts a card reviewed twice today once in "đã ôn N thẻ"', async () => {
+    await reset();
+    const item = await grammar('TODAY_twice');
+    await grammar('TODAY_waiting');
+    await review(item.itemId, 1);
+    await review(item.itemId, 3);
+    const t = await T.getToday(db);
+    expect(t.hero).toMatchObject({ kind: 'ready', resume: true, reviewedToday: 1 });
+  });
+
   it('counts grammar studied without an example, and the cards due in the next 14 days', async () => {
     await reset();
     const item = await grammar('TODAY_bare');

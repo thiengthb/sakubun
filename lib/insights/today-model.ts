@@ -48,7 +48,7 @@ export type TodayHero =
   | { kind: 'empty'; kanjiWaiting: number }
   /**
    * Cards to study; `resume` once the learner has already studied today ("Học tiếp"), and
-   * `reviewedToday` says how many reviews that was.
+   * `reviewedToday` says how many cards that was (each card once).
    */
   | ({
       kind: 'ready';
