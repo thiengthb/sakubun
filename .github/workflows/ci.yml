@@ -1,4 +1,4 @@
-name: ci # deploy.yml runs on workflow_run of this name: renaming it stops deploys silently
+name: ci  # deploy.yml runs on workflow_run of this name: renaming it stops deploys silently
 
 on:
   pull_request:
@@ -26,7 +26,6 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run verify
-      - run: node scripts/check-review.test.mjs
       # The runtime image has its own locked Prisma CLI dependency tree; compile it on every
       # PR so Dockerfile/package-lock drift cannot reach GHCR or the miniserver.
       - run: docker build --pull --tag sakubun:ci .

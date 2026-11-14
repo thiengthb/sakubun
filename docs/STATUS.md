@@ -9,7 +9,7 @@ Cho mọi nick Claude, Codex và thien biết project đang ở đâu. Lịch s�
 Đã áp quy trình chung (#297). UI v2: U0, U1 xong; U2 (buổi ôn) theo bố cục C thien chọn ngày 13/11 (thẻ trái,
 bảng nhỏ phải, giữ sidebar và thanh tab): U2a xong (#291, 14/11), U2b–U2d xong (#292–#294), U2e chấm chạy nền xong (#302), U2f hoàn tác xong (#303), U2g tự sang thẻ khi chọn đúng xong (#304), sửa buổi ôn 390px (#305): U2 xong. U3 Hôm nay: thien chọn bố cục A (14/11), kế hoạch đã merge (#306); U3a (số liệu) xong (#308); U3b (trang Hôm nay ở `/`, Phân tích sang `/analytics`) xong (#309); Phân tích cần làm lại bố cục ở giai đoạn 7 (Tiến độ). U3c (người mới chọn cấp) xong (#310). U3d (các trạng thái còn lại) xong (#311): U3 xong ngày 14/11. Mọi phần trước UI v2 đã xong, trừ việc thử thật K2, K8, L5 trong claude.ai (xem `roadmap.md`).
 
-Review PR: agent mới review trong phiên trước khi PR sẵn sàng, check `review-section` báo đỏ khi PR thiếu mục `## Review` (không merge khi đỏ); cần mắt độc lập thì gọi Claude trên GitHub; CodeRabbit chạy thêm tới 24/11 (PR này).
+Review PR: CodeRabbit review một lần khi PR chuyển sẵn sàng, không review lại mỗi lần đẩy (PR này). Hết dùng thử 24/11, sau đó chỉ tóm tắt PR.
 
 ## Kế hoạch đang chạy
 
