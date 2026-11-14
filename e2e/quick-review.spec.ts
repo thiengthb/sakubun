@@ -189,6 +189,10 @@ async function runSession(page: Page, { keyboard = false } = {}) {
             ),
         );
         expect(overflow, 'nothing to scroll').toBeLessThanOrEqual(0);
+        // The page can fit while the fixed tab bar still covers the answers, so check them too.
+        const nav = (await page.locator('[data-bottom-nav]').boundingBox())!;
+        const settled = (await choices.boundingBox())!;
+        expect(settled.y + settled.height, 'answers clear the tab bar').toBeLessThanOrEqual(nav.y);
       } else {
         const question = (await page.locator('main p[lang="ja"]').first().boundingBox())!;
         expect(group.y - (question.y + question.height)).toBeLessThan(120);
@@ -269,6 +273,8 @@ async function runSession(page: Page, { keyboard = false } = {}) {
         if (viewport.width < 640) {
           const box = (await bar.boundingBox())!;
           expect(box.y + box.height).toBeGreaterThan(viewport.height - 80);
+          const nav = (await page.locator('[data-bottom-nav]').boundingBox())!;
+          expect(box.y + box.height, 'grades clear the tab bar').toBeLessThanOrEqual(nav.y);
           expect(boxes[0].x).toBe(boxes[1].x);
           expect(boxes[2].x).toBeGreaterThan(boxes[0].x);
         } else {
