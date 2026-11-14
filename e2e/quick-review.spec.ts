@@ -176,10 +176,19 @@ async function runSession(page: Page, { keyboard = false } = {}) {
         expect(group.y).toBeGreaterThan(viewport.height / 2);
         // ... and the session fits the screen: it does not run on under the tab bar (it did when
         // the bar streamed in after the session was sized).
-        expect(
-          await page.evaluate(() => document.documentElement.scrollHeight - window.innerHeight),
-          'nothing to scroll',
-        ).toBeLessThanOrEqual(0);
+        await expect(page.locator('[data-bottom-nav]')).toBeVisible();
+        const overflow = await page.evaluate(
+          () =>
+            new Promise<number>((done) =>
+              // Two frames: the session sizes itself in one after the bar is in.
+              requestAnimationFrame(() =>
+                requestAnimationFrame(() =>
+                  done(document.documentElement.scrollHeight - window.innerHeight),
+                ),
+              ),
+            ),
+        );
+        expect(overflow, 'nothing to scroll').toBeLessThanOrEqual(0);
       } else {
         const question = (await page.locator('main p[lang="ja"]').first().boundingBox())!;
         expect(group.y - (question.y + question.height)).toBeLessThan(120);
