@@ -1,0 +1,98 @@
+{
+  "id": "sakubun-u4-kho-layout",
+  "question": "Màn Kho (gộp Tài nguyên và Kho chung) nên bố cục thế nào?",
+  "context": "U4 gộp hai mục menu Tài nguyên và Kho chung thành một mục Kho, như quyết định D6. Mỗi ảnh có 4 khung: bên trái là laptop 1440 (trên: Của bạn, dưới: Kho chung hoặc Tất cả), bên phải là điện thoại 390. Ảnh là bản phác dựng bằng dữ liệu thật trong app, chưa phải bản làm xong. Chi tiết mục, kanji và bộ thủ sẽ cho bạn chọn ở vòng sau.",
+  "options": [
+    {
+      "key": "a",
+      "name": "A · Công tắc trên cùng",
+      "summary": "Dưới tiêu đề là công tắc Của bạn | Kho chung, rồi các tab Ngữ pháp, Từ vựng, Kanji, Nhóm. Mỗi bên có một danh sách riêng: Của bạn có lọc theo trạng thái, Kho chung có lọc theo cấp, kèm ô 'Lấy cả N4' và nút Học ở từng dòng.",
+      "image": "a.jpg",
+      "pros": [
+        "Đúng D6: hai nút chuyển dưới tiêu đề",
+        "Không lẫn mục của bạn với mục chưa có",
+        "Điện thoại và laptop giống nhau, dễ làm"
+      ],
+      "cons": [
+        "Muốn lấy thêm phải chuyển sang Kho chung",
+        "Bấm một dòng là rời danh sách để mở trang mục"
+      ]
+    },
+    {
+      "key": "b",
+      "name": "B · Một danh sách, lọc nguồn",
+      "summary": "Không có công tắc. Một danh sách cho mỗi tab, hàng chip Của bạn | Tất cả | Chưa có ngay dưới ô tìm. Chọn Tất cả thì mục chưa có hiện mờ hơn, có nút Học ở cuối dòng. Ô tìm tìm trong cả hai kho.",
+      "image": "b.jpg",
+      "pros": ["Tìm một từ là thấy ngay, dù đã có hay chưa", "Lấy thêm không cần đổi màn"],
+      "cons": [
+        "Khác D6 (bỏ hai nút chuyển)",
+        "Danh sách Tất cả rất dài (hơn 15 000 từ), dễ lẫn",
+        "Làm khó hơn: gộp hai nguồn và phân trang chung"
+      ]
+    },
+    {
+      "key": "c",
+      "name": "C · Danh sách và xem nhanh",
+      "summary": "Như A, nhưng trên laptop danh sách chiếm bên trái, bên phải là khung xem nhanh mục đang chọn: chữ to, cách đọc, nghĩa, ví dụ, một câu về trí nhớ và nút Mở trang hoặc Học. Điện thoại giống A.",
+      "image": "c.jpg",
+      "pros": ["Laptop xem nhanh nhiều mục mà không rời danh sách", "Đúng D6 như A"],
+      "cons": [
+        "Danh sách hẹp lại, nghĩa dài bị cắt",
+        "Làm nhiều nhất: thêm khung xem nhanh ngoài trang mục",
+        "Điện thoại không khác A"
+      ]
+    }
+  ],
+  "criteria": [
+    {
+      "name": "Đúng quyết định D6",
+      "values": {
+        "a": "tốt",
+        "b": "kém",
+        "c": "tốt"
+      }
+    },
+    {
+      "name": "Không lẫn mục của bạn và mục chưa có",
+      "values": {
+        "a": "tốt",
+        "b": "vừa",
+        "c": "tốt"
+      }
+    },
+    {
+      "name": "Lấy thêm từ Kho chung nhanh",
+      "values": {
+        "a": "vừa",
+        "b": "tốt",
+        "c": "vừa"
+      }
+    },
+    {
+      "name": "Xem một mục mà không rời danh sách (laptop)",
+      "values": {
+        "a": "kém",
+        "b": "kém",
+        "c": "tốt"
+      }
+    },
+    {
+      "name": "Công làm",
+      "values": {
+        "a": {
+          "text": "ít",
+          "tone": "good"
+        },
+        "b": "vừa",
+        "c": {
+          "text": "nhiều",
+          "tone": "bad"
+        }
+      }
+    }
+  ],
+  "recommend": {
+    "key": "a",
+    "why": "A đúng D6, không lẫn hai kho, và laptop với điện thoại cùng một khuôn nên làm nhanh và ít lỗi. Trang chi tiết mục cũng được làm lại trong U4, nên bấm một dòng vẫn thấy đủ thông tin; nếu sau này thấy cần xem nhanh, thêm khung của C vào A là được."
+  }
+}

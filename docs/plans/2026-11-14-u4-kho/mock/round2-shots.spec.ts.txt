@@ -1,0 +1,60 @@
+import path from 'node:path';
+import Database from 'better-sqlite3';
+import { expect, test } from '@playwright/test';
+import { E2E_DB_FILE, E2E_EMAIL, E2E_LOGIN, E2E_OWNER, seedE2eAccount } from './fixtures';
+
+const OUT = process.env.SHOT_DIR!;
+const DAY = 86_400_000;
+
+async function open(browser: import('@playwright/test').Browser, w: number) {
+  const ctx = await browser.newContext({ viewport: { width: w, height: w === 390 ? 844 : 900 }, deviceScaleFactor: 2 });
+  const page = await ctx.newPage();
+  await page.addInitScript(() => {
+    const s = document.createElement('style');
+    s.textContent = 'nextjs-portal{display:none!important}';
+    document.addEventListener('DOMContentLoaded', () => document.head.append(s));
+  });
+  await page.goto('/login');
+  await page.getByLabel('Email').fill(E2E_EMAIL);
+  await page.getByLabel('Mật khẩu').fill(E2E_LOGIN);
+  await page.getByRole('button', { name: 'Đăng nhập' }).click();
+  await page.waitForURL((u) => !u.pathname.startsWith('/login'), { timeout: 30_000 });
+  return { ctx, page };
+}
+
+test.beforeAll(seedE2eAccount);
+
+test('u4 layouts', async ({ browser }) => {
+  test.setTimeout(600_000);
+  const db = new Database(path.join(process.cwd(), E2E_DB_FILE));
+  const count = (db.prepare(`SELECT COUNT(*) n FROM Item WHERE userId = ${E2E_OWNER} AND kind='VOCAB'`).get() as { n: number }).n;
+  db.close();
+  if (count < 100) {
+    const { ctx, page } = await open(browser, 1440);
+    const d = new Database(path.join(process.cwd(), E2E_DB_FILE));
+    for (const t of ['GroupMember', 'Group', 'ReviewLog', 'SrsState', 'Sentence', 'Item', 'Settings']) d.exec(`DELETE FROM "${t}"`);
+    d.close();
+    await page.goto('/', { waitUntil: 'networkidle' });
+    await page.getByRole('region', { name: 'Hôm nay' }).getByRole('button', { name: 'N5' }).click();
+    await expect(page.getByRole('link', { name: 'Bắt đầu ôn' })).toBeVisible({ timeout: 90_000 });
+    await ctx.close();
+  }
+  const d = new Database(path.join(process.cwd(), E2E_DB_FILE));
+  const ids = d.prepare(`SELECT id FROM Item WHERE userId = ${E2E_OWNER} AND kind='VOCAB' ORDER BY createdAt DESC LIMIT 14`).all() as { id: string }[];
+  const now = Date.now();
+  const plan: [number, number][] = [[2, -DAY], [2, 12 * DAY], [1, 2 * DAY], [0, 0], [2, 20 * DAY], [2, -DAY], [1, 3 * DAY], [0, 0], [2, 9 * DAY], [2, 30 * DAY], [1, DAY], [0, 0], [2, -DAY], [2, 15 * DAY]];
+  ids.forEach(({ id }, i) => {
+    const [state, off] = plan[i];
+    d.prepare(`UPDATE SrsState SET state = ?, due = ?, reps = ? WHERE itemId = ?`).run(state, new Date(now + off).toISOString(), state ? 3 : 0, id);
+  });
+  d.close();
+  for (const w of [1440, 390]) {
+    const { ctx, page } = await open(browser, w);
+    for (const [v, view] of [['1', 'home'], ['1', 'add'], ['2', 'home'], ['2', 'level'], ['3', 'home'], ['3', 'search']]) {
+      await page.goto(`/zz-u4?v=${v}&view=${view}`, { waitUntil: 'networkidle' });
+      await page.waitForTimeout(800);
+      await page.screenshot({ path: `${OUT}/${v}-${view}-${w}.png` });
+    }
+    await ctx.close();
+  }
+});
