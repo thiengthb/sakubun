@@ -1,0 +1,22 @@
+# Blocks a pull request that is ready for review but has no "## Review" section in its description
+# (thienai-workflow profile/REVIEW.md, decision 003). Runs only this check, in seconds, so editing the description
+# does not re-run the whole test suite.
+name: Review check
+
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize, ready_for_review, converted_to_draft]
+
+permissions:
+  contents: read
+
+jobs:
+  review-section:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: scripts/check-review.mjs
+          sparse-checkout-cone-mode: false
+      - run: node scripts/check-review.mjs
