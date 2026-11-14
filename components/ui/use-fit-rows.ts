@@ -171,8 +171,8 @@ export function usePinnedFooter({
  * Grows `ref` until its bottom meets the page's bottom padding when its content is shorter than the
  * window, so a bar at its end (a review session's answer buttons) rests on the window bottom. Its
  * top does not depend on its height, so measuring never feeds back into itself. The phone's tab bar,
- * when it shows, is left out of the window; pass `refill` a value that changes when the bar may come
- * or go (a session ending), so the height is measured again.
+ * when it shows, is left out of the window through --bottom-nav-space, so the height follows the bar
+ * as it comes or goes; pass `refill` a value that changes when the top may move (a session ending).
  */
 export function useFillWindow(ref: RefObject<HTMLElement | null>, refill?: unknown) {
   useEffect(() => {
@@ -185,8 +185,11 @@ export function useFillWindow(ref: RefObject<HTMLElement | null>, refill?: unkno
         const page = el.closest<HTMLElement>('[data-template]');
         const pad = page ? parseFloat(getComputedStyle(page).paddingBottom) : PAGE_BOTTOM;
         const top = el.getBoundingClientRect().top + window.scrollY;
-        const bar = document.querySelector('[data-bottom-nav]')?.getBoundingClientRect().height ?? 0;
-        el.style.minHeight = `${Math.max(0, Math.floor(window.innerHeight - bar - pad - top))}px`;
+        // The tab bar's room comes from CSS (--bottom-nav-space, set while the bar is on the page),
+        // not from measuring the bar: the bar can stream in after this runs, and a height measured
+        // without it left the session taller than the screen until the next resize.
+        const rest = Math.max(0, Math.floor(window.innerHeight - pad - top));
+        el.style.minHeight = `max(0px, calc(${rest}px - var(--bottom-nav-space)))`;
       });
     };
     fill();

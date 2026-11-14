@@ -22,7 +22,9 @@ export function SessionFrame({
   children: ReactNode;
 }) {
   return (
-    <div className={PAGE_CHROME.page} data-template="form">
+    // Phone: the session's bar rests right on the tab bar, as the U2 screens thien approved show
+    // it; the page's usual bottom padding would leave a gap there (useFillWindow reads it).
+    <div className={cn(PAGE_CHROME.page, 'max-md:pb-0')} data-template="form">
       <header className={PAGE_CHROME.header}>
         <div className={PAGE_CHROME.row}>
           <MobileTopBar />

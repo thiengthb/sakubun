@@ -17,22 +17,22 @@ bảng nhỏ phải, giữ sidebar và thanh tab): U2a xong (#291, 14/11), U2b�
 
 ## Việc dở
 
-| Việc                    | Nhánh hoặc PR      | Dở từ | Còn thiếu gì                              |
-| ----------------------- | ------------------ | ----- | ----------------------------------------- |
-| Sửa e2e 390px           | fix/e2e-review-390 | 14/11 | Đang tìm nguyên nhân                      |
-| Đóng câu hỏi nghiên cứu | #289               | 13/11 | Chỉ tài liệu, chờ thien merge             |
-| Bản tóm tắt hai nick    | #296               | 13/11 | Tạm, của nick kia; đóng khi thien so xong |
+| Việc                    | Nhánh hoặc PR | Dở từ | Còn thiếu gì                              |
+| ----------------------- | ------------- | ----- | ----------------------------------------- |
+| Sửa buổi ôn 390px       | #305          | 14/11 | Chờ thien duyệt ảnh, rồi merge            |
+| Đóng câu hỏi nghiên cứu | #289          | 13/11 | Chỉ tài liệu, chờ thien merge             |
+| Bản tóm tắt hai nick    | #296          | 13/11 | Tạm, của nick kia; đóng khi thien so xong |
 
 ## Việc tiếp theo
 
-1. Sửa e2e "quick review at 390px", rồi U3 theo kế hoạch UI v2 (đưa 2–3 bố cục trước khi code).
+1. Sau #305: U3 theo kế hoạch UI v2 (đưa 2–3 bố cục trước khi code).
 
 ## Đang chờ thien
 
+- Duyệt ảnh sửa buổi ôn trên điện thoại rồi merge #305.
 - Dán dòng hướng dẫn project vào cả hai project Sakubun (nội dung trong mô tả #297).
 - Trên NUC, không gấp: bấm Hiện "N5 · Ngữ pháp" ở Quản trị; thử chia sẻ kịch bản bằng tài khoản `kai`.
 
 ## Đang vướng
 
 - e2e không chạy trong CI; `style-audit` và "lost answer" đỏ tuỳ thứ tự khi chạy cả bộ (`docs/handoff.md` mục 4).
-- e2e "quick review at 390px" đỏ cả khi chạy riêng, 2/2 lần trên `main` (14/11): đáp án dừng ở y=414, chưa sát đáy. Chưa rõ nguyên nhân.

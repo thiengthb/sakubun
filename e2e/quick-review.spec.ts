@@ -172,8 +172,15 @@ async function runSession(page: Page, { keyboard = false } = {}) {
       // they follow the question.
       const viewport = page.viewportSize()!;
       const group = (await choices.boundingBox())!;
-      if (viewport.width < 640) expect(group.y).toBeGreaterThan(viewport.height / 2);
-      else {
+      if (viewport.width < 640) {
+        expect(group.y).toBeGreaterThan(viewport.height / 2);
+        // ... and the session fits the screen: it does not run on under the tab bar (it did when
+        // the bar streamed in after the session was sized).
+        expect(
+          await page.evaluate(() => document.documentElement.scrollHeight - window.innerHeight),
+          'nothing to scroll',
+        ).toBeLessThanOrEqual(0);
+      } else {
         const question = (await page.locator('main p[lang="ja"]').first().boundingBox())!;
         expect(group.y - (question.y + question.height)).toBeLessThan(120);
       }
