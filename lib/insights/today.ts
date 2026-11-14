@@ -76,7 +76,12 @@ export async function getToday(db: UserDb, now: Date = new Date()): Promise<Toda
       ready: { ...ready, newKanji: Math.max(ready.newKanji, queue.left.newKanji) },
       // With no grammar or words, every started card is a kanji Ôn nhanh brought in.
       kanjiWaiting: ready.due + ready.newKanji,
-      reviewedToday: reviewedAt.filter((d) => d.getTime() >= dayStart).length,
+      // Cards, not reviews: a card missed and seen again today counts once ("đã ôn N thẻ").
+      reviewedToday: new Set(
+        logs
+          .filter((l) => l.reviewedAt.getTime() >= dayStart)
+          .map((l, i) => l.itemId ?? `deleted-${i}`),
+      ).size,
       secPerCard: secondsPerCard(reviewedAt),
       nextDueAt: queue.nextDueAt,
     }),

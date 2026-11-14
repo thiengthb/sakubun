@@ -3,8 +3,8 @@ import Database from 'better-sqlite3';
 import { expect, test } from '@playwright/test';
 import { E2E_DB_FILE, E2E_EMAIL, E2E_LOGIN, E2E_OWNER, seedE2eAccount } from './fixtures';
 
-// Roadmap 7.3b: a learner with no AI app connected and no review yet is sent to the guide from
-// Hôm nay; the hint goes away once they connect one.
+// Roadmap 7.3b, moved by U3d: a learner with no AI app connected is sent to the guide from the
+// first row of Việc tiếp theo on Hôm nay; the row turns into "Luyện dịch với Claude" once one is.
 function db() {
   return new Database(path.join(process.cwd(), E2E_DB_FILE));
 }
@@ -34,8 +34,11 @@ test('Hôm nay points a new learner at the guide until an AI app is connected', 
   await page.getByRole('tab', { name: 'Tài khoản' }).click();
 
   await page.goto('/', { waitUntil: 'networkidle' });
-  const hint = page.getByRole('status').filter({ hasText: 'Kết nối Claude để bắt đầu luyện' });
+  // No banner above the page any more (thien, U3c review): the hint is a row with the others.
+  await expect(page.getByText('Kết nối Claude để bắt đầu luyện')).toHaveCount(0);
+  const hint = page.getByRole('link', { name: /^Kết nối Claude để luyện dịch/ });
   await expect(hint).toBeVisible();
+  await expect(page.getByRole('link', { name: /^Luyện dịch với Claude/ })).toHaveCount(0);
 
   const shots = process.env.SCREENSHOT_DIR;
   if (shots)
@@ -44,7 +47,7 @@ test('Hôm nay points a new learner at the guide until an AI app is connected', 
       await page.screenshot({ path: path.join(shots, `connect-hint-${width}.png`) });
     }
 
-  await hint.getByRole('link', { name: 'Xem hướng dẫn' }).click();
+  await hint.click();
   await page.waitForURL(/\/settings\?tab=guide/);
   await expect(page.getByRole('heading', { name: '1. Kết nối Claude' })).toBeVisible();
 
@@ -56,7 +59,8 @@ test('Hôm nay points a new learner at the guide until an AI app is connected', 
   d2.close();
   await page.goto('/', { waitUntil: 'networkidle' });
   await expect(page.getByRole('region', { name: 'Hôm nay' })).toBeVisible();
-  await expect(page.getByText('Kết nối Claude để bắt đầu luyện')).toHaveCount(0);
+  await expect(page.getByRole('link', { name: /^Luyện dịch với Claude/ })).toBeVisible();
+  await expect(page.getByRole('link', { name: /^Kết nối Claude để luyện dịch/ })).toHaveCount(0);
 
   // Leave the shared e2e DB as other specs expect it: no items, no token.
   const d3 = db();

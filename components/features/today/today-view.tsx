@@ -38,18 +38,29 @@ function readyLine(hero: Extract<Hero, { kind: 'ready' }>): string {
     hero.newVocab > 0 && `${hero.newVocab} từ mới`,
     hero.newKanji > 0 && `${hero.newKanji} kanji mới`,
   ].filter(Boolean);
+  const done = hero.resume ? `Đã ôn ${hero.reviewedToday} thẻ hôm nay · ` : '';
   const fresh = parts.length ? `${parts.join(', ')} · ` : '';
-  return `${fresh}khoảng ${hero.minutes} phút`;
+  return `${done}${fresh}khoảng ${hero.minutes} phút`;
 }
 
 /** The lead area: the one place the eye goes first. */
 export function TodayHero({ hero, now }: { hero: Hero; now: Date }) {
   if (hero.kind === 'empty') return null;
+  if (hero.kind === 'done' && hero.reviewedToday === 0) {
+    // Nothing was due and nothing was studied: no praise for a day that has not happened yet.
+    return (
+      <LeadPanel aria-label="Hôm nay">
+        <p className="text-sm font-medium text-accent-brand">Hôm nay</p>
+        <p className="mt-1 text-title">Không có thẻ nào đến hạn.</p>
+        <p className="mt-2 text-sm text-muted-foreground">{nextDueText(hero.nextDueAt, now)}</p>
+      </LeadPanel>
+    );
+  }
   if (hero.kind === 'done') {
     return (
       <LeadPanel aria-label="Hôm nay" tone="ok">
         <p className="text-sm font-medium text-ok">Xong hết hôm nay</p>
-        <p className="mt-1 text-title">Bạn đã ôn đủ, nghỉ thôi.</p>
+        <p className="mt-1 text-title">Hôm nay bạn đã ôn {hero.reviewedToday} thẻ, nghỉ thôi.</p>
         <p className="mt-2 text-sm text-muted-foreground">{nextDueText(hero.nextDueAt, now)}</p>
       </LeadPanel>
     );

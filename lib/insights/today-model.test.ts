@@ -67,7 +67,19 @@ describe('todayHero: what the lead area of Hôm nay says', () => {
 
   it('is done for today when nothing is ready, with the time of the next card', () => {
     const next = at(3600_000);
-    expect(todayHero({ ...base, nextDueAt: next })).toEqual({ kind: 'done', nextDueAt: next });
+    expect(todayHero({ ...base, nextDueAt: next })).toEqual({
+      kind: 'done',
+      reviewedToday: 0,
+      nextDueAt: next,
+    });
+  });
+
+  it('tells a finished day from a day with nothing due by the reviews done today (U3d)', () => {
+    expect(todayHero({ ...base, reviewedToday: 12 })).toEqual({
+      kind: 'done',
+      reviewedToday: 12,
+      nextDueAt: null,
+    });
   });
 
   it('counts every ready card and offers to go on once the learner has started today', () => {
@@ -78,8 +90,12 @@ describe('todayHero: what the lead area of Hôm nay says', () => {
       total: 17,
       minutes: 9,
       resume: false,
+      reviewedToday: 0,
     });
-    expect(todayHero({ ...base, ready, reviewedToday: 4 })).toMatchObject({ resume: true });
+    expect(todayHero({ ...base, ready, reviewedToday: 4 })).toMatchObject({
+      resume: true,
+      reviewedToday: 4,
+    });
   });
 });
 
