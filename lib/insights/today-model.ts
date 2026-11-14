@@ -123,22 +123,29 @@ export function mostMissed(logs: readonly MissLog[], limit = 3): MissedItem[] {
     .slice(0, limit);
 }
 
-/** Cards coming due on each of the next `days` days, bucketed by UTC day as on Phân tích. */
+/** The end (exclusive) of the forecast: midnight UTC after its last day, for the query to stop at. */
+export function forecastEnd(now: Date, days = 14): Date {
+  const start = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  return new Date(start + days * DAY_MS);
+}
+
+/**
+ * Cards coming due on each of the next `days` days, bucketed by UTC day as on Phân tích: today and
+ * the 13 days after, up to `forecastEnd`. A card counts when its day is one of the buckets.
+ */
 export function forecast(
   dues: readonly Date[],
   now: Date,
   days = 14,
 ): { day: string; count: number }[] {
-  const horizon = now.getTime() + days * DAY_MS;
-  const tally = new Map<string, number>();
+  const buckets = Array.from({ length: days }, (_, i) =>
+    new Date(now.getTime() + i * DAY_MS).toISOString().slice(0, 10),
+  );
+  const tally = new Map(buckets.map((day) => [day, 0]));
   for (const due of dues) {
-    const t = due.getTime();
-    if (t <= now.getTime() || t > horizon) continue;
+    if (due.getTime() <= now.getTime()) continue;
     const key = due.toISOString().slice(0, 10);
-    tally.set(key, (tally.get(key) ?? 0) + 1);
+    if (tally.has(key)) tally.set(key, tally.get(key)! + 1);
   }
-  return Array.from({ length: days }, (_, i) => {
-    const day = new Date(now.getTime() + i * DAY_MS).toISOString().slice(0, 10);
-    return { day, count: tally.get(day) ?? 0 };
-  });
+  return buckets.map((day) => ({ day, count: tally.get(day)! }));
 }

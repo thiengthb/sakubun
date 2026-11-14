@@ -3,6 +3,7 @@ import {
   DEFAULT_SEC_PER_CARD,
   estimateMinutes,
   forecast,
+  forecastEnd,
   mostMissed,
   secondsPerCard,
   studyWeek,
@@ -145,5 +146,16 @@ describe('forecast', () => {
     expect(days[0]).toEqual({ day: '2026-11-14', count: 1 });
     expect(days[2]).toEqual({ day: '2026-11-16', count: 2 });
     expect(days.reduce((s, d) => s + d.count, 0)).toBe(3);
+  });
+
+  it('reads up to the end of the last day it shows, no further (review of #308)', () => {
+    const now = new Date(Date.UTC(2026, 10, 14, 10));
+    expect(forecastEnd(now).toISOString()).toBe('2026-11-28T00:00:00.000Z');
+    const days = forecast(
+      [new Date(Date.UTC(2026, 10, 27, 23, 59)), new Date(Date.UTC(2026, 10, 28, 9))],
+      now,
+    );
+    expect(days.at(-1)).toEqual({ day: '2026-11-27', count: 1 });
+    expect(days.reduce((s, d) => s + d.count, 0)).toBe(1);
   });
 });
