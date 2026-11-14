@@ -4,7 +4,7 @@ import { expect, test } from '@playwright/test';
 import { E2E_BASE_URL, E2E_DB_FILE, E2E_EMAIL, E2E_OWNER, seedE2eAccount } from './fixtures';
 
 // Roadmap 7.2d: a stranger signs up and sees nothing of the admin's. Since phase 8 (L4) their library
-// starts empty, and Hôm nay offers OpenJLPT's N5 grammar from Kho chung in one click.
+// starts empty, and Hôm nay asks for a level, taking that level from Kho chung in one click (U3c).
 const EMAIL = 'newcomer@example.test';
 const PASSWORD = ['newcomer', 'login', '12345'].join('-');
 
@@ -43,13 +43,19 @@ test('a second account signs up, starts from Kho chung and cannot reach admin pa
   await page.getByRole('button', { name: 'Đăng nhập' }).click();
   await page.waitForURL((u) => !u.pathname.startsWith('/login'), { timeout: 30_000 });
 
+  // U3c: from an empty library to the first card in three taps: a level, "Bắt đầu ôn", the card.
   await page.goto('/');
-  await expect(page.getByText('Kho của bạn còn trống')).toBeVisible();
+  const hero = page.getByRole('region', { name: 'Hôm nay' });
+  await expect(hero.getByRole('heading', { name: 'Bạn đang học cấp nào?' })).toBeVisible();
   if (process.env.SCREENSHOT_DIR)
     await page.screenshot({ path: path.join(process.env.SCREENSHOT_DIR, 'empty-start-1440.png') });
-  await page.getByRole('button', { name: 'Lấy bộ N5 · Ngữ pháp' }).click();
-  await expect(page.getByText(/^Đã lấy \d+ mẫu về kho$/)).toBeVisible({ timeout: 30_000 });
-  await expect(page.getByText('Kho của bạn còn trống')).toHaveCount(0);
+  await hero.getByRole('button', { name: /^N5/ }).click();
+  await expect(page.getByText(/^Đã lấy \d+ mẫu, \d+ từ và \d+ kanji về kho$/)).toBeVisible({
+    timeout: 60_000,
+  });
+  await hero.getByRole('link', { name: 'Bắt đầu ôn' }).click();
+  await page.waitForURL((u) => u.pathname === '/review');
+  await expect(page.locator('[aria-label^="Thẻ "]').first()).toBeVisible();
 
   // loading.tsx streams the shell first, so the status stays 200; the page swaps to not-found.
   await page.goto('/admin');

@@ -142,8 +142,8 @@ export function NeedsWork({ today }: { today: Pick<Today, 'missingExamples' | 'm
   if (today.missingExamples > 0) {
     rows.push({
       href: '/resources?card=needs-work',
-      title: `${today.missingExamples} mẫu đã học còn thiếu ví dụ`,
-      hint: 'Nhờ Claude thêm ví dụ cho thẻ',
+      title: `${today.missingExamples} mẫu đã học có thẻ còn thiếu`,
+      hint: 'Nhờ Claude bổ sung ví dụ, cách dùng, lỗi hay gặp',
     });
   }
   for (const item of today.missed) {
@@ -177,7 +177,9 @@ export function WeekStrip({ week, streak }: { week: WeekDay[]; streak: Today['st
             />
             <span className="text-xs text-muted-foreground">
               {WEEKDAY[i]}
-              <span className="sr-only">{d.studied ? ': đã học' : ': chưa học'}</span>
+              <span className="sr-only">
+                {d.studied ? ': đã học' : d.future ? ': chưa tới' : ': chưa học'}
+              </span>
             </span>
           </li>
         ))}

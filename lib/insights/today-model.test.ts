@@ -55,7 +55,14 @@ describe('todayHero: what the lead area of Hôm nay says', () => {
   it('asks a newcomer for a level whatever else is true', () => {
     expect(todayHero({ ...base, libraryEmpty: true, ready: { ...none, newKanji: 5 } })).toEqual({
       kind: 'empty',
+      kanjiWaiting: 0,
     });
+  });
+
+  it('keeps the kanji cards a newcomer already has in view (U3c)', () => {
+    expect(
+      todayHero({ ...base, libraryEmpty: true, ready: { ...none, due: 4 }, kanjiWaiting: 4 }),
+    ).toEqual({ kind: 'empty', kanjiWaiting: 4 });
   });
 
   it('is done for today when nothing is ready, with the time of the next card', () => {

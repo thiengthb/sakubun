@@ -41,8 +41,11 @@ export interface ReadyCards {
 }
 
 export type TodayHero =
-  /** Nothing in the library yet: the lead area asks for a level (U3c). */
-  | { kind: 'empty' }
+  /**
+   * No grammar or words yet: the lead area asks for a level (U3c). `kanjiWaiting` counts the kanji
+   * cards Ôn nhanh already made that are ready now, so they are not hidden behind the level pick.
+   */
+  | { kind: 'empty'; kanjiWaiting: number }
   /** Cards to study; `resume` once the learner has already studied today ("Học tiếp"). */
   | ({ kind: 'ready'; total: number; minutes: number; resume: boolean } & ReadyCards)
   /** All done for today; `nextDueAt` is when the next card comes, if any is scheduled. */
@@ -51,11 +54,13 @@ export type TodayHero =
 export function todayHero(input: {
   libraryEmpty: boolean;
   ready: ReadyCards;
+  /** Kanji cards that exist and are ready now; read only when the library is empty. */
+  kanjiWaiting?: number;
   reviewedToday: number;
   secPerCard: number;
   nextDueAt: Date | null;
 }): TodayHero {
-  if (input.libraryEmpty) return { kind: 'empty' };
+  if (input.libraryEmpty) return { kind: 'empty', kanjiWaiting: input.kanjiWaiting ?? 0 };
   const { ready } = input;
   const total = ready.due + ready.newGrammar + ready.newVocab + ready.newKanji;
   if (total === 0) return { kind: 'done', nextDueAt: input.nextDueAt };
