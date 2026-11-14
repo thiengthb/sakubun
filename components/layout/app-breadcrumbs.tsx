@@ -22,7 +22,7 @@ import { Breadcrumbs, type Crumb } from '@/components/layout/breadcrumbs';
 const CRUMBS = {
   dashboard: {
     label: 'Phân tích',
-    href: '/',
+    href: '/analytics',
     icon: LayoutDashboard,
     description:
       'Hai tab: Tiến độ (tổng quan, tiến độ theo ngày, điểm yếu) và Thống kê (biểu đồ độ chính xác, thời gian, theo độ khó/độ dài). Luyện tập diễn ra qua MCP trong Claude Desktop hoặc ChatGPT.',

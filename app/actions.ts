@@ -35,6 +35,8 @@ import {
 } from '@/lib/library/groups';
 import { GROUP_NAME_MAX, GROUP_NOTE_MAX, groupTextError } from '@/lib/library/group-limits';
 import { type ActionResult, cleanIds, err, ok, parseInput } from '@/lib/core/action-result';
+import { startAtLevel, type StartLevelResult } from '@/lib/app/start-level';
+import { ensureOpenJlptLibrary } from '@/lib/library/seed';
 
 function revalidateResources(): void {
   revalidatePath('/resources');
@@ -351,4 +353,19 @@ export async function removeItemsFromGroupAction(
   } catch (e) {
     return err(e instanceof Error ? e.message : 'Không gỡ được khỏi nhóm');
   }
+}
+
+// A newcomer's level pick on Hôm nay (U3c): the level's grammar, words and kanji from Kho chung.
+export async function startAtLevelAction(level: string): Promise<ActionResult<StartLevelResult>> {
+  const parsed = z.enum(JLPT_LEVELS).safeParse(level);
+  if (!parsed.success) return err('Chọn một cấp từ N5 đến N1.');
+  // Kho chung is seeded on first use; the OpenJLPT level groups must be there to take.
+  await ensureOpenJlptLibrary();
+  const started = await startAtLevel(await getUserDb(), parsed.data);
+  if (started.ok) {
+    revalidatePath('/');
+    revalidatePath('/library', 'layout');
+    revalidateResources();
+  }
+  return started;
 }

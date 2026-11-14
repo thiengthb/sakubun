@@ -1,44 +1,36 @@
 'use client';
 
-import { useEffect, useLayoutEffect, useRef, useState, useTransition } from 'react';
+import { useEffect, useEffectEvent, useLayoutEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { X } from 'lucide-react';
+import { Undo2, X } from 'lucide-react';
 import { IconAction } from '@/components/common/icon-action';
 import { toast } from 'sonner';
 import { Button, ButtonLink } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 import { useFillWindow } from '@/components/ui/use-fit-rows';
 import { PageShell } from '@/components/layout/page-shell';
-import { HideBottomNav } from '@/components/layout/bottom-nav';
+import {
+  SessionFrame,
+  SessionPanel,
+  SessionProgress,
+  type Step,
+} from '@/components/features/review/session-frame';
+import { GradeBar, GRADES } from '@/components/features/review/grade-bar';
+import { SessionSummary, type SessionResult } from '@/components/features/review/session-summary';
+import { useGradeQueue } from '@/components/features/review/use-grade-queue';
 import { EmptyState } from '@/components/common/empty-state';
 import { ReviewCard, type CardTts } from '@/components/common/review-card';
 import type { CardAnswer, QuickCard, QuickReview } from '@/lib/app/quick-review';
 import { isRemembered } from '@/lib/domain/quick-review';
 import type { ActionResult } from '@/lib/core/action-result';
 import { humanizeUntil } from '@/lib/core/format';
-import { cn } from '@/lib/core/utils';
 import type { RatingValue } from '@/lib/srs/srs';
 
 type Answer = (answer: CardAnswer) => Promise<ActionResult<unknown>>;
 
-interface Result {
-  kind: QuickCard['kind'];
-  rating: RatingValue;
-  // An intro card was read, not tested, so it does not count towards what was remembered.
-  intro: boolean;
-}
+type Result = SessionResult;
 
-// "10 phút", "8 ngày": the wait on a grade button, without "nữa" and never "dưới 1 phút".
-const shortUntil = (due: Date) =>
-  humanizeUntil(due).replace(/ nữa$/, '').replace('dưới 1 phút', '1 phút');
-
-// The four FSRS buttons of a flip card (decision 0005), each with when the item comes back.
-const GRADES: { rating: RatingValue; label: string; tone?: string }[] = [
-  { rating: 1, label: 'Quên', tone: 'text-destructive' },
-  { rating: 2, label: 'Khó' },
-  { rating: 3, label: 'Nhớ' },
-  { rating: 4, label: 'Dễ', tone: 'text-ok' },
-];
+/** How long a right cloze answer stays on screen before the next card comes (U2g). */
+const AUTO_NEXT_MS = 1200;
 
 // A missed card comes back at the end of the session for practice, ungraded: its schedule already took
 // the miss. A cloze shows its choices in another order, so the place of the answer is not what is
@@ -71,8 +63,8 @@ function leftLine(left: QuickCard[]): string {
   return `Còn ${left.length} thẻ: ${kinds.map((k) => `${k.n} ${k.word}`).join(', ')}`;
 }
 
-// Laptop: the keys for what can be done now, at the left end of the answer bar. A phone has no
-// keyboard, and a narrow laptop page needs the bar's width for the buttons.
+// Laptop: the keys for what can be done now, in the side panel, one to a line. A phone has no
+// keyboard, and neither has the panel's room.
 function KeyHints({
   card,
   intro,
@@ -80,6 +72,7 @@ function KeyHints({
   revealed,
   practice,
   suggested,
+  canUndo,
 }: {
   card: QuickCard;
   intro: boolean;
@@ -88,29 +81,36 @@ function KeyHints({
   practice: boolean;
   /** The write pad's rating, which Enter then gives. */
   suggested: RatingValue | null;
+  /** The last grade can still be taken back (U2f). */
+  canUndo: boolean;
 }) {
-  // Writing on the pad has no key.
-  if (!intro && !revealed && writes(card)) return null;
-  const keys: [string, string][] = intro
-    ? [['Enter', 'đã xem']]
-    : card.mode === 'cloze'
-      ? picked
-        ? [['Enter', 'thẻ tiếp']]
-        : [['1 2 3 4', 'chọn đáp án theo số trên thẻ']]
-      : revealed && practice
-        ? [['Enter', 'thẻ tiếp']]
-        : revealed
-          ? [
-              ['1', 'Quên'],
-              ['2', 'Khó'],
-              ['3', 'Nhớ'],
-              ['4', 'Dễ'],
-              ['Enter', GRADES.find((g) => g.rating === (suggested ?? 3))!.label],
-            ]
-          : [['Space', 'xem đáp án']];
+  // Writing on the pad has no key of its own; the last grade can still be taken back.
+  const writing = !intro && !revealed && writes(card);
+  const undo: [string, string][] = canUndo ? [['Z', 'hoàn tác lần chấm vừa rồi']] : [];
+  if (writing && !canUndo) return null;
+  const own: [string, string][] = writing
+    ? []
+    : intro
+      ? [['Enter', 'đã xem']]
+      : card.mode === 'cloze'
+        ? picked
+          ? [['Enter', 'thẻ tiếp']]
+          : [['1 2 3 4', 'chọn đáp án theo số trên thẻ']]
+        : revealed && practice
+          ? [['Enter', 'thẻ tiếp']]
+          : revealed
+            ? [
+                ['1', 'Quên'],
+                ['2', 'Khó'],
+                ['3', 'Nhớ'],
+                ['4', 'Dễ'],
+                ['Enter', GRADES.find((g) => g.rating === (suggested ?? 3))!.label],
+              ]
+            : [['Space', 'xem đáp án']];
+  const keys = [...own, ...undo];
   return (
-    <p className="mr-auto flex flex-wrap items-center gap-x-4 gap-y-2 self-center text-xs text-muted-foreground max-lg:hidden">
-      <span>Phím tắt</span>
+    <div className="space-y-2 border-t border-border pt-4 text-xs text-muted-foreground">
+      <p>Phím tắt</p>
       {keys.map(([key, what]) => (
         <span key={key + what} className="flex items-center gap-1.5">
           <kbd className="rounded-sm border border-border bg-card px-1.5 py-0.5 font-sans font-semibold text-foreground">
@@ -119,50 +119,6 @@ function KeyHints({
           {what}
         </span>
       ))}
-    </p>
-  );
-}
-
-function Summary({ results: all, nextDueAt }: { results: Result[]; nextDueAt: Date | null }) {
-  const results = all.filter((r) => !r.intro);
-  const met = all.length - results.length;
-  const remembered = (of: Result[]) => of.filter((r) => isRemembered(r.rating)).length;
-  const byKind = (kind: QuickCard['kind'], label: string) => {
-    const of = results.filter((r) => r.kind === kind);
-    return of.length === 0 ? [] : [[label, `${remembered(of)}/${of.length} nhớ`]];
-  };
-  const count = (rating: RatingValue) => String(results.filter((r) => r.rating === rating).length);
-  const tiles = [
-    ...byKind('GRAMMAR', 'Ngữ pháp'),
-    ...byKind('VOCAB', 'Từ vựng'),
-    ...byKind('KANJI', 'Kanji'),
-    ['Khó', count(2)],
-    ['Quên', count(1)],
-  ];
-  return (
-    <div className="flex flex-col gap-6">
-      <div className="space-y-1">
-        <h2 className="text-lg font-bold">Xong buổi ôn</h2>
-        <p className="text-muted-foreground tabular-nums">
-          {results.length > 0 && `Nhớ ${remembered(results)} trên ${results.length} thẻ. `}
-          {met > 0 && `Đã làm quen ${met} mục mới. `}
-          {nextDueAt && `Thẻ tiếp theo đến hạn ${humanizeUntil(nextDueAt)}.`}
-        </p>
-      </div>
-      <dl className="flex flex-wrap gap-3">
-        {tiles.map(([label, value]) => (
-          <Card key={label} size="sm" className="min-w-32 flex-1 gap-1 px-4">
-            <dt className="text-muted-foreground">{label}</dt>
-            <dd className="text-lg font-bold tabular-nums">{value}</dd>
-          </Card>
-        ))}
-      </dl>
-      <div className="space-y-1 rounded-lg bg-muted p-4">
-        <p className="font-semibold">Còn sức? Dịch một câu với Claude</p>
-        <p className="text-muted-foreground">
-          Mở Claude, gõ “học”. Claude lấy đúng một mẫu đến hạn để bạn dịch.
-        </p>
-      </div>
     </div>
   );
 }
@@ -186,9 +142,6 @@ export function QuickReviewView({
   const [revealed, setRevealed] = useState(false);
   // A write card's rating from the pad: the grade Enter gives and the one the bar puts first.
   const [suggested, setSuggested] = useState<RatingValue | null>(null);
-  // A cloze pick the server never recorded. The answer is already on screen, so the same pick is
-  // sent again rather than reopening the choices (a second pick would grade with the answer known).
-  const [unsent, setUnsent] = useState<CardAnswer | null>(null);
   const [results, setResults] = useState<Result[]>([]);
   // The end-of-session round over the cards missed above; null until it starts.
   const [retry, setRetry] = useState<{
@@ -197,7 +150,16 @@ export function QuickReviewView({
     right: boolean[];
   } | null>(null);
   const missed = useRef<QuickCard[]>([]);
-  const [isPending, startTransition] = useTransition();
+  // U2e: a grade moves the session on at once and reaches the server behind it.
+  const grades = useGradeQueue<CardAnswer>(answer, (error) => toast.error(error));
+  // U2f: the session as it was before the last grade, while that grade is held for undo.
+  const beforeGrade = useRef<{
+    index: number;
+    retry: typeof retry;
+    results: Result[];
+    missed: QuickCard[];
+    suggested: RatingValue | null;
+  } | null>(null);
   // The answer bar rests on the window bottom while the card is short, and sticks there when long.
   const sessionRef = useRef<HTMLDivElement>(null);
 
@@ -211,39 +173,53 @@ export function QuickReviewView({
   // state survives: it keeps the cards it opened with (above).
   const router = useRouter();
   const answered = results.length > 0;
+  const saved = grades.saved;
+  const { release } = grades;
+  // Over: nothing is left to take back, so the held grade goes and the summary can count on it.
   useEffect(() => {
-    if (done && answered) router.refresh();
-  }, [done, answered, router]);
+    if (done) release();
+  }, [done, release]);
+  useEffect(() => {
+    if (done && answered && saved) router.refresh();
+  }, [done, answered, saved, router]);
   // The tab bar comes back with the summary; the session's height leaves room for it.
   useFillWindow(sessionRef, done);
   // A new item is met before it is tested: read, then "Đã xem" records Good, as it always has.
   const intro = !practice && flips(card) && !!card?.isNew;
 
   const send = (payload: CardAnswer, rating: RatingValue, advance: boolean) => {
-    if (!card || isPending) return;
-    const answered = card;
-    const kind = card.kind;
-    const met = intro;
-    startTransition(async () => {
-      const result = await answer(payload).catch((): ActionResult<unknown> => ({
-        ok: false,
-        error: 'Mất kết nối, chưa lưu được.',
-      }));
-      if (!result.ok) {
-        toast.error(result.error);
-        if (payload.mode === 'cloze') setUnsent(payload);
-        return;
-      }
-      setUnsent(null);
-      setResults((r) => [...r, { kind, rating, intro: met }]);
-      if (rating === 1) missed.current.push(retryCard(answered));
-      if (advance) next();
-    });
+    if (!card) return;
+    // A grade that moves on (a flip, an intro) is held so it can be taken back; a cloze pick is
+    // not: its answer is on screen, and picking again would grade with the answer known.
+    if (advance) {
+      beforeGrade.current = {
+        index,
+        retry,
+        results,
+        missed: [...missed.current],
+        suggested,
+      };
+    } else beforeGrade.current = null;
+    grades.enqueue(payload, { hold: advance });
+    setResults((r) => [
+      ...r,
+      {
+        itemId: card.itemId,
+        kind: card.kind,
+        expression: card.expression,
+        meaningVi: card.meaningVi,
+        rating,
+        intro,
+      },
+    ]);
+    if (rating === 1) missed.current.push(retryCard(card));
+    if (advance) next();
   };
 
   const next = () => {
     if (retry) {
-      setRetry({ ...retry, index: retry.index + 1 });
+      // Functional: practiceNext() may have just added this card's result to the same state.
+      setRetry((r) => (r ? { ...r, index: r.index + 1 } : r));
     } else if (index + 1 >= cards.length && missed.current.length > 0) {
       setRetry({ cards: missed.current, index: 0, right: [] });
     } else {
@@ -252,10 +228,10 @@ export function QuickReviewView({
     setPicked(null);
     setRevealed(false);
     setSuggested(null);
-    setUnsent(null);
   };
 
-  // A cloze is graded the moment a choice is picked; the card stays until "Tiếp".
+  // A cloze is graded the moment a choice is picked; the card stays until "Tiếp", or moves on by
+  // itself when the pick was right (U2g, below).
   const pick = (choiceId: string) => {
     if (!card || card.mode !== 'cloze' || picked) return;
     setPicked(choiceId);
@@ -265,13 +241,24 @@ export function QuickReviewView({
     }
     send({ itemId: card.itemId, mode: 'cloze', choiceId }, choiceId === card.itemId ? 3 : 1, false);
   };
-  const resend = () => {
-    if (!card || unsent?.mode !== 'cloze') return;
-    send(unsent, unsent.choiceId === card.itemId ? 3 : 1, false);
-  };
   const grade = (rating: RatingValue) => {
     if (!card) return;
     send({ itemId: card.itemId, mode: 'flip', rating }, rating, true);
+  };
+  // U2f (thien, 14/11): one step back, to the card just graded, its answer open to grade again.
+  // The grade never reached the server, so there is nothing to take out of the review log.
+  const canUndo = grades.canUndo && !done;
+  const undo = () => {
+    const before = beforeGrade.current;
+    if (!before || done || !grades.undo()) return;
+    beforeGrade.current = null;
+    missed.current = before.missed;
+    setIndex(before.index);
+    setRetry(before.retry);
+    setResults(before.results);
+    setPicked(null);
+    setRevealed(true);
+    setSuggested(before.suggested);
   };
 
   const graded = card?.mode === 'cloze' && picked !== null && (practice || results.length > index);
@@ -287,18 +274,36 @@ export function QuickReviewView({
   const practiceNext = () => {
     // A practice flip counts as right; a written one as the pad found it.
     const right = !writes(card) || (suggested ?? 1) > 1;
-    if (retry && flips(card)) setRetry({ ...retry, right: [...retry.right, right] });
+    if (retry && flips(card)) setRetry((r) => (r ? { ...r, right: [...r.right, right] } : r));
     next();
   };
+  // U2g (thien, 14/11): a right cloze pick moves on by itself after a moment, long enough to see
+  // it marked right; a wrong one stays, its answer open, until "Tiếp". Enter or Tiếp still move on
+  // at once, and the timer goes with the card.
+  const rightPick = card?.mode === 'cloze' && picked === card.itemId && showNext;
+  const moveOn = useEffectEvent(practiceNext);
+  useEffect(() => {
+    if (!rightPick) return;
+    const timer = setTimeout(moveOn, AUTO_NEXT_MS);
+    return () => clearTimeout(timer);
+  }, [rightPick, at, practice]);
 
   // A layout effect, so the handler that matches what is on screen is in place before the browser
   // paints it: with a passive effect a key pressed the moment the grade buttons appear still reached
   // the previous card's handler and was dropped.
   useLayoutEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLElement && e.target.closest('input, textarea, select')) return;
+      // A focused link (the sidebar, the tab bar) keeps its own keys: Enter there leaves the session
+      // rather than answering the card. So does a button outside the session, like the X (Dừng ôn):
+      // Enter on it stops the session instead of grading the card on screen.
+      if (e.target instanceof HTMLElement && e.target.closest('input, textarea, select, a[href]'))
+        return;
+      if (e.target instanceof HTMLButtonElement && !sessionRef.current?.contains(e.target)) return;
       if (!card || e.repeat || e.metaKey || e.ctrlKey || e.altKey) return;
-      if (card.mode === 'cloze' && !picked && /^[1-4]$/.test(e.key)) {
+      if (e.key === 'z' || e.key === 'Z') {
+        if (!canUndo) return;
+        undo();
+      } else if (card.mode === 'cloze' && !picked && /^[1-4]$/.test(e.key)) {
         const choice = card.choices[Number(e.key) - 1];
         if (choice) pick(choice.itemId);
       } else if (showGrade && /^[1-4]$/.test(e.key)) {
@@ -307,7 +312,6 @@ export function QuickReviewView({
         if (intro) grade(3);
         else if (showReveal) setRevealed(true);
         else if (showNext) practiceNext();
-        else if (unsent) resend();
         // A focused grade button handles its own Enter; otherwise Enter means "Nhớ", or the pad's
         // rating on a write card.
         else if (showGrade && !(e.target instanceof HTMLButtonElement)) grade(good);
@@ -341,68 +345,118 @@ export function QuickReviewView({
     );
   }
 
+  // Once over, the bar shows the graded round again, not the retry round: a card missed stays red
+  // on the summary even if it was right the second time.
+  const shownRetry = done ? null : retry;
+  const answeredAt = shownRetry ? shownRetry.right.length : results.length;
+  // An intro card was read, not tested: the panel's counts leave it out, like the summary.
+  const tested = results.filter((r) => !r.intro);
+  const steps = (done ? cards : deck).map((_, i): Step => {
+    if (i < answeredAt) {
+      const right = shownRetry ? shownRetry.right[i] : isRemembered(results[i].rating);
+      return right ? 'right' : 'wrong';
+    }
+    return i === at ? 'current' : 'todo';
+  });
+
   return (
-    <PageShell
-      template="form"
-      title="Ôn nhanh"
-      // The tab bar steps aside during a session, so the way out is always on screen (thien, U1
-      // gate): a plain X, as learning apps put it.
+    <SessionFrame
+      // The way out of a session (thien, U1 gate): a plain X at the end of the title's row.
       actions={
         card && !done ? (
-          <IconAction icon={X} label="Dừng ôn" onClick={() => router.push('/')} />
+          <>
+            {canUndo && <IconAction icon={Undo2} label="Hoàn tác" onClick={undo} />}
+            <IconAction icon={X} label="Dừng ôn" onClick={() => router.push('/')} />
+          </>
         ) : undefined
       }
       meta={
         <span className="tabular-nums">
-          {retry && !done ? `Làm lại ${retry.cards.length} câu sai` : leftLine(cards.slice(index))}
+          {/* Once over, nothing is left: after the retry round `index` still points at the last card. */}
+          {done
+            ? leftLine([])
+            : retry
+              ? `Làm lại ${retry.cards.length} câu sai`
+              : leftLine(cards.slice(index))}
+          {/* U2e: grades the network dropped wait on the device and go again on their own. */}
+          <span role="status" className="text-warn">
+            {grades.unsaved > 0 && ` · Chưa lưu ${grades.unsaved} thẻ, đang thử lại`}
+          </span>
         </span>
       }
+      progress={
+        <SessionProgress
+          steps={steps}
+          label={
+            done
+              ? `Thẻ ${cards.length} / ${cards.length}`
+              : `${retry ? 'Làm lại' : 'Thẻ'} ${Math.min(at + 1, deck.length)} / ${deck.length}`
+          }
+        />
+      }
     >
-      {/* A study session has the screen to itself: the phone's tab bar steps aside until the summary. */}
-      {card && !done && <HideBottomNav />}
-      <div ref={sessionRef} className="flex flex-col gap-6 md:gap-8">
-        <div
-          className="flex gap-1.5"
-          role="img"
-          aria-label={`${retry ? 'Làm lại' : 'Thẻ'} ${Math.min(at + 1, deck.length)} / ${deck.length}`}
-        >
-          {deck.map((c, i) => {
-            const right = retry ? retry.right[i] : results[i] && isRemembered(results[i].rating);
-            const answeredAt = retry ? retry.right.length : results.length;
-            return (
-              <div
-                key={c.itemId}
-                className={cn(
-                  'h-2 flex-1 rounded-full bg-muted',
-                  i < answeredAt && (right ? 'bg-ok' : 'bg-destructive'),
-                  i === at && i >= answeredAt && 'bg-accent-brand',
-                )}
+      {/* Layout C (thien, 2026-11-13): the card and its bar on the left; from 1280px a small panel
+          on the right with the counts and the keys. Narrower, beside the sidebar, the four grade
+          buttons need the whole width, so the session keeps one column and no panel. From 1280px the
+          bar follows the card instead of resting at the window bottom (thien, 2026-11-14: a bar far
+          below a short card looked detached); a card taller than the window still keeps it sticky. */}
+      <div
+        ref={sessionRef}
+        className="flex flex-col xl:grid xl:grid-cols-[minmax(0,1fr)_16rem] xl:gap-8"
+      >
+        <div className="flex flex-1 flex-col gap-6 md:gap-8">
+          <div className="flex flex-1 flex-col xl:flex-none">
+            {done || !card ? (
+              <SessionSummary results={results} nextDueAt={nextDueAt} saved={saved} />
+            ) : (
+              <ReviewCard
+                key={`${practice ? 'retry' : 'main'}-${card.itemId}`}
+                card={card}
+                intro={intro}
+                picked={picked}
+                revealed={revealed}
+                showFurigana={showFurigana}
+                tts={tts}
+                onPick={pick}
+                suggested={suggested}
+                onWritten={written}
               />
-            );
-          })}
-        </div>
+            )}
+          </div>
 
-        <div className="flex-1">
-          {done || !card ? (
-            <Summary results={results} nextDueAt={nextDueAt} />
-          ) : (
-            <ReviewCard
-              key={`${practice ? 'retry' : 'main'}-${card.itemId}`}
-              card={card}
-              intro={intro}
-              picked={picked}
-              revealed={revealed}
-              showFurigana={showFurigana}
-              tts={tts}
-              onPick={pick}
-              suggested={suggested}
-              onWritten={written}
-            />
-          )}
+          {/* Phone: the bar's buttons share the width; laptop: they keep their own size, at the right. */}
+          <div
+            data-session-bar
+            className="sticky bottom-(--bottom-nav-space) flex gap-2 bg-background pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] max-md:pb-2 max-sm:[&>*]:flex-1 sm:justify-end sm:[&>*]:min-w-32"
+          >
+            {intro && (
+              <Button size="lg" aria-keyshortcuts="Enter" onClick={() => grade(3)}>
+                Đã xem
+              </Button>
+            )}
+            {showReveal && (
+              <Button size="lg" onClick={() => setRevealed(true)}>
+                Xem đáp án
+              </Button>
+            )}
+            {showGrade && card && <GradeBar dueBy={card.dueBy} good={good} onGrade={grade} />}
+            {((card?.mode === 'cloze' && picked) || (showNext && practice)) && (
+              <Button size="lg" disabled={!showNext} onClick={practiceNext}>
+                Tiếp
+              </Button>
+            )}
+            {done && (
+              <ButtonLink href="/" size="lg">
+                Về trang chính
+              </ButtonLink>
+            )}
+          </div>
         </div>
-
-        {/* Phone: the bar's buttons share the width; laptop: they keep their own size, at the right. */}
-        <div className="sticky bottom-0 flex gap-2 bg-background pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] max-sm:[&>*]:flex-1 sm:justify-end sm:[&>*]:min-w-32">
+        <SessionPanel
+          remembered={tested.filter((r) => isRemembered(r.rating)).length}
+          missed={tested.filter((r) => !isRemembered(r.rating)).length}
+          left={done ? 0 : deck.length - answeredAt}
+        >
           {card && !done && (
             <KeyHints
               card={card}
@@ -411,64 +465,11 @@ export function QuickReviewView({
               revealed={revealed}
               practice={practice}
               suggested={suggested}
+              canUndo={canUndo}
             />
           )}
-          {intro && (
-            <Button
-              size="lg"
-              disabled={isPending}
-              aria-keyshortcuts="Enter"
-              onClick={() => grade(3)}
-            >
-              Đã xem
-            </Button>
-          )}
-          {showReveal && (
-            <Button size="lg" onClick={() => setRevealed(true)}>
-              Xem đáp án
-            </Button>
-          )}
-          {showGrade && card && (
-            // Phone: two columns, the misses (Quên, Khó) on the left and the hits (Nhớ, Dễ) on the
-            // right, so a thumb finds each side without reading.
-            <div
-              className="grid grid-flow-col grid-cols-2 grid-rows-2 gap-2 sm:flex"
-              role="group"
-              aria-label="Chấm thẻ"
-            >
-              {GRADES.map(({ rating, label, tone }) => (
-                <Button
-                  key={rating}
-                  size="lg"
-                  variant={rating === good ? 'default' : 'outline'}
-                  className={cn('sm:min-w-32', rating !== good && tone)}
-                  disabled={isPending}
-                  aria-keyshortcuts={rating === good ? `${rating} Enter` : String(rating)}
-                  onClick={() => grade(rating)}
-                >
-                  {label}
-                  <span className="text-xs opacity-75">{shortUntil(card.dueBy[rating])}</span>
-                </Button>
-              ))}
-            </div>
-          )}
-          {card?.mode === 'cloze' && picked && unsent && (
-            <Button size="lg" disabled={isPending} onClick={resend}>
-              Gửi lại
-            </Button>
-          )}
-          {((card?.mode === 'cloze' && picked && !unsent) || (showNext && practice)) && (
-            <Button size="lg" disabled={!showNext} onClick={practiceNext}>
-              Tiếp
-            </Button>
-          )}
-          {done && (
-            <ButtonLink href="/" size="lg">
-              Về trang chính
-            </ButtonLink>
-          )}
-        </div>
+        </SessionPanel>
       </div>
-    </PageShell>
+    </SessionFrame>
   );
 }

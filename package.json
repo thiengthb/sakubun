@@ -19,7 +19,7 @@
     "e2e": "playwright test",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
-    "verify": "npm run gen && npm run typecheck && npm run lint && npm test && npm run build",
+    "verify": "node scripts/check-status.mjs && npm run gen && npm run typecheck && npm run lint && npm test && npm run build",
     "format": "prettier --write"
   },
   "dependencies": {

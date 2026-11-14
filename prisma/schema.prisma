@@ -95,7 +95,11 @@ model ReviewLog {
   turnId      String?
   turn        Turn?     @relation(fields: [turnId], references: [id], onDelete: SetNull)
   channel     String?
+  // U2e: the id the device gave this grade, so a grade sent again after a dropped reply is not
+  // written twice. Null for every other way of reviewing and for rows written before U2e.
+  clientId    String?
 
+  @@unique([userId, clientId])
   @@index([reviewedAt])
   @@index([itemId, reviewedAt])
 

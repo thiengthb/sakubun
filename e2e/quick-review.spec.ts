@@ -124,7 +124,7 @@ function clozeRating(): number | undefined {
 }
 
 // By mouse every card is answered right. By keyboard the cloze gets a wrong pick that is lost on
-// the network and sent again, and the two flips are graded with 1 (Quên) and 4 (Dễ). The intro card
+// the network and sent again on its own (U2e), and the two flips are graded with 1 (Quên) and 4 (Dễ). The intro card
 // asks nothing: "Đã xem" (or Enter) records Nhớ.
 async function runSession(page: Page, { keyboard = false } = {}) {
   await login(page);
@@ -148,8 +148,14 @@ async function runSession(page: Page, { keyboard = false } = {}) {
   let sawIntro = false;
   let sawBare = 0;
   const flipKeys = ['1', '4'];
+  // Layout C: from 1280px the side panel shows the round's counts; narrower screens have none.
+  const panel = page.getByRole('complementary', { name: 'Buổi ôn này' });
+  const count = (label: string) => panel.locator(`dt:text-is("${label}") + dd`);
+  const laptop = (page.viewportSize()?.width ?? 0) >= 1280;
   for (let n = 0; n < 4; n++) {
     await expect(page.getByLabel(`Thẻ ${n + 1} / 4`)).toBeVisible();
+    if (laptop) await expect(count('Còn')).toHaveText(String(4 - n));
+    else await expect(panel).toBeHidden();
     const choices = page.getByRole('group', { name: 'Chọn đáp án' });
     const reveal = page.getByRole('button', { name: 'Xem đáp án' });
     const seen = page.getByRole('button', { name: 'Đã xem' });
@@ -159,25 +165,74 @@ async function runSession(page: Page, { keyboard = false } = {}) {
       await expect(choices.getByRole('button')).toHaveCount(4);
       await expect(page.getByLabel('chỗ trống')).toBeVisible();
       await expect(page.locator('main p[lang="ja"]').first()).not.toContainText('約束');
+      // U2b: the translation would give the answer away, so it waits for the pick.
+      const translation = page.locator('main p[lang="vi"]');
+      await expect(translation).toHaveCount(0);
+      // On a phone the four answers sit at the foot of the screen, under the thumb; on a laptop
+      // they follow the question.
+      const viewport = page.viewportSize()!;
+      const group = (await choices.boundingBox())!;
+      if (viewport.width < 640) {
+        expect(group.y).toBeGreaterThan(viewport.height / 2);
+        // ... and the session fits the screen: it does not run on under the tab bar (it did when
+        // the bar streamed in after the session was sized).
+        await expect(page.locator('[data-bottom-nav]')).toBeVisible();
+        const overflow = await page.evaluate(
+          () =>
+            new Promise<number>((done) =>
+              // Two frames: the session sizes itself in one after the bar is in.
+              requestAnimationFrame(() =>
+                requestAnimationFrame(() =>
+                  done(document.documentElement.scrollHeight - window.innerHeight),
+                ),
+              ),
+            ),
+        );
+        expect(overflow, 'nothing to scroll').toBeLessThanOrEqual(0);
+        // The page can fit while the fixed tab bar still covers the answers, so check them too.
+        const nav = (await page.locator('[data-bottom-nav]').boundingBox())!;
+        const settled = (await choices.boundingBox())!;
+        expect(settled.y + settled.height, 'answers clear the tab bar').toBeLessThanOrEqual(nav.y);
+      } else {
+        const question = (await page.locator('main p[lang="ja"]').first().boundingBox())!;
+        expect(group.y - (question.y + question.height)).toBeLessThan(120);
+      }
       const next = page.getByRole('button', { name: 'Tiếp' });
       if (keyboard) {
         const labels = await choices.getByRole('button').allTextContents();
         const wrong = String(labels.findIndex((t) => !t.includes('約束')) + 1);
         dropNext = true;
         await page.keyboard.press(wrong);
-        await expect(page.getByText('Mất kết nối, chưa lưu được.')).toBeVisible();
-        // The answer is on screen now, so the same pick is sent again; the choices stay shut.
+        // U2e: the answer shows at once; the lost grade waits on the device, says so, and goes
+        // again on its own. The choices stay shut: a second pick would grade with the answer known.
+        const unsaved = page.getByRole('status').filter({ hasText: 'Chưa lưu 1 thẻ' });
+        await expect(unsaved).toBeVisible();
         await expect(choices.getByRole('button').first()).toBeDisabled();
-        expect(reviewLogCount()).toBe(0);
-        await expect(page.getByRole('button', { name: 'Gửi lại' })).toBeEnabled();
-        await page.keyboard.press('Enter');
         await expect(next).toBeEnabled();
+        expect(reviewLogCount()).toBe(0);
+        await expect(unsaved).toHaveCount(0);
         expect(clozeRating(), 'the wrong pick sent again is still Again').toBe(1);
+        expect(reviewLogCount(), 'sent again, recorded once').toBe(1);
+        // U2g: a wrong pick does not move on by itself; it waits, its answer open, for Tiếp.
+        await page.waitForTimeout(1500);
+        await expect(page.getByLabel(`Thẻ ${n + 1} / 4`)).toBeVisible();
+        await expect(next).toBeEnabled();
         await page.keyboard.press('Enter');
       } else {
+        const pickedAt = Date.now();
         await choices.getByRole('button', { name: /約束/ }).click();
         await expect(choices.getByRole('button', { name: /約束/ })).toBeDisabled();
-        await next.click();
+        // Answered: the translation sits right under the sentence it translates.
+        const sentence = (await page.locator('main p[lang="ja"]').first().boundingBox())!;
+        await expect(translation).toHaveCount(1);
+        const under = (await translation.boundingBox())!;
+        expect(under.y).toBeGreaterThan(sentence.y);
+        expect(under.y - (sentence.y + sentence.height)).toBeLessThan(48);
+        // U2g: a right pick moves on by itself after a moment (1.2s), long enough to see it marked
+        // right; Tiếp is there for the impatient.
+        await expect(next).toBeVisible();
+        await expect(next).toBeHidden({ timeout: 3000 });
+        expect(Date.now() - pickedAt, 'the right pick stays a moment').toBeGreaterThan(1000);
       }
     } else if (await seen.isVisible()) {
       // Met inside its sentence, the answer already open with the translation.
@@ -194,13 +249,46 @@ async function runSession(page: Page, { keyboard = false } = {}) {
         await expect(page.getByRole('group', { name: 'Chấm thẻ' }).getByRole('button')).toHaveCount(
           4,
         );
-        await page.keyboard.press(flipKeys.shift()!);
+        const key = flipKeys.shift()!;
+        await page.keyboard.press(key);
+        if (key === '1') {
+          // U2f: Z takes the grade back, unsent: the same card with its answer open, to grade again.
+          await page.keyboard.press('z');
+          await expect(page.getByLabel(`Thẻ ${n + 1} / 4`)).toBeVisible();
+          await expect(
+            page.getByRole('group', { name: 'Chấm thẻ' }).getByRole('button'),
+          ).toHaveCount(4);
+          await page.keyboard.press(key);
+        }
       } else {
         await reveal.click();
+        // U2c: the grades take the answers' place. Phone: two columns at the foot of the screen,
+        // the misses left, the hits right. Laptop: one row of four under the card; the key hints
+        // sit in the side panel from 1280px (layout C).
+        const bar = page.getByRole('group', { name: 'Chấm thẻ' });
+        const boxes = await Promise.all(
+          (await bar.getByRole('button').all()).map(async (b) => (await b.boundingBox())!),
+        );
+        const viewport = page.viewportSize()!;
+        if (viewport.width < 640) {
+          const box = (await bar.boundingBox())!;
+          expect(box.y + box.height).toBeGreaterThan(viewport.height - 80);
+          const nav = (await page.locator('[data-bottom-nav]').boundingBox())!;
+          expect(box.y + box.height, 'grades clear the tab bar').toBeLessThanOrEqual(nav.y);
+          expect(boxes[0].x).toBe(boxes[1].x);
+          expect(boxes[2].x).toBeGreaterThan(boxes[0].x);
+        } else {
+          expect(new Set(boxes.map((b) => Math.round(b.y))).size).toBe(1);
+          const hints = page
+            .getByRole('complementary', { name: 'Buổi ôn này' })
+            .getByText('Phím tắt');
+          if (viewport.width >= 1280) await expect(hints).toBeVisible();
+          else await expect(hints).toBeHidden();
+        }
         await page.getByRole('button', { name: /^Nhớ/ }).click();
       }
     }
-    // The next card only shows once the server has recorded this answer.
+    // U2e: the next card shows without waiting for the server.
     if (n < 3) await expect(page.getByLabel(`Thẻ ${n + 2} / 4`)).toBeVisible();
   }
 
@@ -218,19 +306,59 @@ async function runSession(page: Page, { keyboard = false } = {}) {
       }
       await page.keyboard.press('Enter');
     }
-    expect(reviewLogCount(), 'practice answers are not graded').toBe(4);
+    // Grades reach the server behind the session; practice answers are never sent.
+    await expect.poll(reviewLogCount, { message: 'practice answers are not graded' }).toBe(4);
+    // (Once over, the bar shows the graded round, checked below, not the retry round.)
   }
 
   await expect(page.getByText('Xong buổi ôn')).toBeVisible();
+  // Over, after a retry round or not, the count under the title says nothing is left (it used to
+  // keep "Còn 1 thẻ" after the retry round).
+  await expect(page.getByText('Đã ôn hết thẻ đến hạn')).toBeVisible();
   // The intro card is not counted as remembered: it was read, not tested.
   await expect(
-    page.getByText(keyboard ? /Nhớ 1 trên 3 thẻ\. Đã làm quen 1 mục mới/ : /Nhớ 3 trên 3 thẻ\./),
+    page.getByText(
+      keyboard ? /Nhớ 1 trên 3 thẻ từ vựng\. Đã làm quen 1 mục mới/ : /Nhớ 3 trên 3 thẻ từ vựng\./,
+    ),
   ).toBeVisible();
+  // Over, the bar shows the graded round again: a card missed there stays red after the retry.
+  const bar = page.getByRole('progressbar', { name: 'Thẻ 4 / 4' });
+  await expect(bar).toHaveAttribute('aria-valuenow', '4');
+  await expect(bar.locator('.bg-destructive')).toHaveCount(keyboard ? 2 : 0);
+  // U2d: three figures, the cards to look at again, each a link to its page.
+  // The side panel (layout C, from 1280px) has its own Nhớ: read the summary's figures only.
+  const tiles = page.locator('main dl').filter({ hasText: 'Đã ôn' });
+  // The intro was read, not tested: Đã ôn counts the three tested cards, as the sentence does.
+  await expect(tiles.getByText('Đã ôn', { exact: true }).locator('xpath=..')).toContainText(
+    '3 thẻ',
+  );
+  await expect(tiles.getByText('Nhớ', { exact: true }).locator('xpath=..')).toContainText(
+    keyboard ? '33%' : '100%',
+  );
+  // The streak is read once the session is over and every grade is in; every answer here was today.
+  await expect(tiles.getByText('Chuỗi', { exact: true }).locator('xpath=..')).toContainText(
+    '1 ngày',
+  );
+  const again = page.getByRole('region', { name: 'Xem lại thẻ chưa nhớ' });
+  if (keyboard) {
+    // The wrong cloze and the flip graded Quên; the remembered ones and the intro are not listed.
+    await expect(again.getByRole('link')).toHaveCount(2);
+    await expect(again.getByRole('link').first()).toContainText('約束');
+    await expect(again.getByRole('link').first()).toHaveAttribute('href', '/resources/q1');
+  } else {
+    await expect(again).toHaveCount(0);
+  }
   expect(ratings()).toEqual(keyboard ? [1, 1, 3, 4] : [3, 3, 3, 3]);
   expect(sawCloze, 'the seen word is tested as a cloze').toBe(true);
   expect(sawIntro, 'a new word is met on an intro card').toBe(true);
   expect(sawBare, 'a word with no sentence says so').toBe(2);
   expect(reviewLogCount()).toBe(4);
+  if (laptop) {
+    // The intro card is left out of the panel's counts too.
+    await expect(count('Nhớ')).toHaveText(keyboard ? '1' : '3');
+    await expect(count('Chưa nhớ')).toHaveText(keyboard ? '2' : '0');
+    await expect(count('Còn')).toHaveText('0');
+  }
 
   const overflow = await page.evaluate(
     () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
@@ -250,6 +378,106 @@ test('quick review on desktop: cloze for a seen word, intro for a new one, every
 test('quick review by keyboard, and a lost answer is sent again as it was', async ({ page }) => {
   seed();
   await runSession(page, { keyboard: true });
+});
+
+// U2e: on a slow server every card still follows the grade at once, and the grades arrive behind.
+test('a grade moves on at once and is saved behind the session', async ({ page }) => {
+  seed();
+  await login(page);
+  await page.goto('/review');
+  await page.route('**/review', async (route) => {
+    const req = route.request();
+    if (!isAction(req.method(), req.headers())) return route.continue();
+    await new Promise((r) => setTimeout(r, 1500));
+    return route.continue().catch(() => {});
+  });
+
+  for (let n = 0; n < 4; n++) {
+    await expect(page.getByLabel(`Thẻ ${n + 1} / 4`)).toBeVisible();
+    const choices = page.getByRole('group', { name: 'Chọn đáp án' });
+    const reveal = page.getByRole('button', { name: 'Xem đáp án' });
+    const seen = page.getByRole('button', { name: 'Đã xem' });
+    await expect(choices.or(reveal).or(seen)).toBeVisible();
+    let last;
+    if (await choices.isVisible()) {
+      await choices.getByRole('button', { name: /約束/ }).click();
+      last = page.getByRole('button', { name: 'Tiếp' });
+      // Picked, the next step is open before the server has answered.
+      await expect(last).toBeEnabled({ timeout: 400 });
+    } else if (await seen.isVisible()) {
+      last = seen;
+    } else {
+      await reveal.click();
+      last = page.getByRole('button', { name: /^Nhớ/ });
+    }
+    const before = Date.now();
+    await last.click();
+    const nextShown = n < 3 ? page.getByLabel(`Thẻ ${n + 2} / 4`) : page.getByText('Xong buổi ôn');
+    await expect(nextShown).toBeVisible({ timeout: 400 });
+    expect(Date.now() - before, 'the next card shows under 400ms').toBeLessThan(400);
+  }
+  // Nothing failed, so nothing is said about saving; the grades land in order behind.
+  await expect(page.getByRole('status').filter({ hasText: 'Chưa lưu' })).toHaveCount(0);
+  await expect.poll(reviewLogCount, { timeout: 10_000 }).toBe(4);
+  expect(ratings()).toEqual([3, 3, 3, 3]);
+});
+
+// Answers the card on screen right. A flip or an intro is held for undo; a cloze is not.
+async function answerRight(page: Page): Promise<'held' | 'sent'> {
+  const choices = page.getByRole('group', { name: 'Chọn đáp án' });
+  const reveal = page.getByRole('button', { name: 'Xem đáp án' });
+  const seen = page.getByRole('button', { name: 'Đã xem' });
+  await expect(choices.or(reveal).or(seen)).toBeVisible();
+  if (await choices.isVisible()) {
+    // A right pick moves on by itself (U2g).
+    await choices.getByRole('button', { name: /約束/ }).click();
+    return 'sent';
+  }
+  if (await seen.isVisible()) await seen.click();
+  else {
+    await reveal.click();
+    await page.getByRole('button', { name: /^Nhớ/ }).click();
+  }
+  return 'held';
+}
+
+// U2f: the last grade waits on the device until the next one, so it can be taken back.
+test('Hoàn tác takes the last grade back, and one held as the page closes still lands', async ({
+  page,
+}) => {
+  seed();
+  await login(page);
+  await page.goto('/review');
+  const undo = page.getByRole('button', { name: 'Hoàn tác' });
+  let graded = 0;
+  let tookBack = false;
+  for (let n = 0; n < 3; n++) {
+    await expect(page.getByLabel(`Thẻ ${n + 1} / 4`)).toBeVisible();
+    const how = await answerRight(page);
+    graded++;
+    if (how === 'sent') {
+      // A cloze pick is never held: its answer was on screen.
+      await expect(undo).toHaveCount(0);
+      continue;
+    }
+    await expect(undo).toBeVisible();
+    if (!tookBack) {
+      tookBack = true;
+      await undo.click();
+      await expect(page.getByLabel(`Thẻ ${n + 1} / 4`)).toBeVisible();
+      await expect(undo).toHaveCount(0);
+      // Taken back before it was sent: the review log never sees it.
+      await expect.poll(reviewLogCount).toBe(graded - 1);
+      const again = page.getByRole('button', { name: /^Nhớ|^Đã xem/ }).first();
+      await again.click();
+      await expect(undo).toBeVisible();
+    }
+  }
+  // The last grade is still held. Leaving the page hands it to the browser, which sends it.
+  await expect.poll(reviewLogCount).toBe(graded - 1);
+  await page.goto('/');
+  await expect.poll(reviewLogCount, { timeout: 10_000 }).toBe(graded);
+  expect(ratings()).toEqual([3, 3, 3]);
 });
 
 test.describe('on a phone', () => {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useSyncExternalStore, type ComponentType } from 'react';
+import { useSyncExternalStore, type ComponentType } from 'react';
 import Link from 'next/link';
 import { cn } from '@/lib/core/utils';
 
@@ -18,16 +18,11 @@ export interface BottomNavTab {
 // UI v2, phase 1 (docs/plans/2026-11-08-ui-v2.md › Khung điều hướng): the phone's tab bar, after
 // thienui's shells/bottom-nav with one change the plan asks for: every tab shows its name under
 // the icon, since an icon alone is hard to guess. 56px tall plus the iPhone's safe area; from md the
-// sidebar takes over. It steps aside while the keyboard is up and while a study session asks it
-// to (<HideBottomNav />).
+// sidebar takes over. It steps aside while the keyboard is up. A study session keeps it, like every
+// other page (thien, 2026-11-13).
 export function BottomNav({ tabs }: { tabs: readonly BottomNavTab[] }) {
   const typing = useSyncExternalStore(subscribeFocus, typingNow, () => false);
-  const hidden = useSyncExternalStore(
-    subscribeHide,
-    () => hiders > 0,
-    () => false,
-  );
-  if (typing || hidden) return null;
+  if (typing) return null;
 
   return (
     <nav
@@ -132,25 +127,4 @@ function subscribeFocus(onChange: () => void): () => void {
     document.removeEventListener('focusin', onFocusIn);
     document.removeEventListener('focusout', onFocusOut);
   };
-}
-
-let hiders = 0;
-const hideListeners = new Set<() => void>();
-
-function subscribeHide(onChange: () => void): () => void {
-  hideListeners.add(onChange);
-  return () => hideListeners.delete(onChange);
-}
-
-/** Rendered by a study session: the tab bar steps aside while it is on the page. */
-export function HideBottomNav() {
-  useEffect(() => {
-    hiders++;
-    hideListeners.forEach((l) => l());
-    return () => {
-      hiders--;
-      hideListeners.forEach((l) => l());
-    };
-  }, []);
-  return null;
 }

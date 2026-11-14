@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import Link from 'next/link';
 import {
+  House,
   Bot,
   CalendarClock,
   Globe,
@@ -168,8 +169,11 @@ export function GuideTab({
       </SettingsSection>
 
       <SettingsSection title="Các trang">
-        <GuideRow icon={LayoutDashboard} title="Phân tích">
-          <p>Số mục đến hạn, chuỗi ngày học, độ nhớ và điểm yếu.</p>
+        <GuideRow icon={House} title="Hôm nay">
+          <p>
+            Trang mở đầu: số thẻ đến hạn và nút Bắt đầu ôn, việc nên làm tiếp và thẻ cần xử lý. Kho
+            còn trống thì chọn cấp đang học để lấy bộ đầu tiên từ Kho chung.
+          </p>
         </GuideRow>
         <GuideRow icon={Layers} title="Ôn nhanh">
           <p>Ôn bằng thẻ ngay trên web, không cần AI. Lượt ôn tính vào cùng lịch.</p>
@@ -192,6 +196,9 @@ export function GuideTab({
         </GuideRow>
         <GuideRow icon={TrendingUp} title="Tiến độ">
           <p>Những câu đã dịch, điểm và nhận xét của AI, và các buổi nhập vai đã lưu.</p>
+        </GuideRow>
+        <GuideRow icon={LayoutDashboard} title="Phân tích">
+          <p>Số mục đến hạn, chuỗi ngày học, độ nhớ và điểm yếu.</p>
         </GuideRow>
       </SettingsSection>
 

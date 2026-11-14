@@ -1,3 +1,5 @@
+@AGENTS.md
+
 # sakubun
 
 App luyện tiếng Nhật, mỗi người học một kho riêng, chạy thật sau `/login`. App giữ dữ liệu, lịch ôn **FSRS**, hạn mức ngày và cài đặt;
@@ -11,7 +13,7 @@ Kế hoạch hợp nhất (wordquiz + kaiwa vào đây): `nuc-infra/docs/researc
 | Việc | Lệnh |
 |---|---|
 | Chạy dev | `npm run dev` → http://localhost:3789 |
-| **Kiểm tra toàn bộ (bắt buộc trước khi coi là xong)** | `npm run verify` (gen → typecheck → lint → test → build) |
+| **Kiểm tra toàn bộ (bắt buộc trước khi coi là xong)** | `npm run verify` (STATUS → gen → typecheck → lint → test → build) |
 | Một file test | `npx vitest run lib/<miền>/<tên>.test.ts` |
 | E2E (browser thật) | `npm run e2e` |
 | Migration mới | `npm run db:migrate -- --name <slug>` |
@@ -37,16 +39,25 @@ Nhánh từ `main`, Conventional Commits, PR nhỏ một mục đích; CI chạy
 
 ## Bắt đầu và kết thúc phiên
 
-thien chuyển giữa nhiều tài khoản Claude; phiên sau không thấy bộ nhớ, artifact hay hội thoại của phiên trước. Mọi thứ
-phiên sau cần phải nằm trong repo.
+thien làm sakubun bằng nhiều nick Claude (và đôi khi Codex); nick này không thấy thread, bộ nhớ, artifact hay project files
+của nick kia. Thứ duy nhất mọi nick cùng thấy là repo trên GitHub: `main`, PR và nhánh. Nên trạng thái chỉ ghi ở đó.
 
-- **Bắt đầu**: đọc `docs/STATUS.md`, xem PR đang mở (`gh api repos/thiengthb/sakubun/pulls`). Gắn thêm repo
-  `thiengthb/nuc-infra` nếu cần luật chung. Bước đã có người giữ trong STATUS thì không làm lại; hỏi thien trước.
-- **Nhận một bước**: ghi bước, nhánh và phiên vào bảng "Đang làm" của `docs/STATUS.md` trong commit đầu tiên của nhánh.
-- **Nhánh** đặt theo bước: `feat/7.1d-user-id-required`, `docs/<slug>`; mỗi bước một nhánh mới, không dùng lại nhánh cũ.
-- **Kế hoạch** thien duyệt (kể cả bản trong artifact) chép vào `docs/plans/YYYY-MM-DD-<slug>.md` trước khi code.
-- **Kết thúc / bàn giao**: trong PR, cập nhật `docs/STATUS.md` (trạng thái, việc chờ thien, việc tiếp theo, việc treo)
-  và cột Status trong `docs/roadmap.md`.
+- **Bắt đầu**: lấy `main` mới nhất, đọc `docs/STATUS.md`, rồi xem PR đang mở (`gh api repos/thiengthb/sakubun/pulls`).
+  PR đang mở là chỗ biết nick nào đang giữ bước nào. Bước đã có PR mở hoặc có dòng trong bảng "Việc dở" thì không làm;
+  hỏi thien trước. Gắn thêm `thiengthb/nuc-infra` nếu cần luật chung.
+- **Nhận một bước**: ngay khi bắt đầu, đẩy nhánh và mở **PR nháp** (draft) vào `main`, tiêu đề mở đầu bằng mã bước
+  (`U2a: ...`). Không chờ code xong mới mở PR: PR nháp là cách nick khác thấy bước đã có người giữ.
+- **Một bước, một nick, một PR**: không xếp PR chồng lên PR khác (base phải là `main`), không làm song song cùng bước
+  với nick khác. Bước lớn quá 400 dòng thì chia bước trong kế hoạch, mỗi phần merge xong mới làm phần sau.
+- **Nhánh** đặt theo bước (`feat/u2a-...`, `docs/<slug>`); nếu harness bắt dùng `claude/project-thread-*` thì mã bước nằm
+  ở tiêu đề PR. Mỗi bước một nhánh mới.
+- **Kế hoạch** thien duyệt (kể cả bản trong artifact) chép vào `docs/plans/YYYY-MM-DD-<slug>.md` trước khi code, theo
+  `PLAN.template.md` của thienai-workflow cho kế hoạch mới.
+- **Đổi bố cục một màn**: trước khi code, đưa thien 2 đến 3 bố cục (ảnh hoặc phác) để chọn, kể cả khi kế hoạch đã ghi sẵn
+  một bố cục (13/11: buổi ôn toàn màn theo kế hoạch UI v2 bị thien bác khi đã có 4 PR).
+- **Kết thúc / bàn giao**: trong PR của việc, cập nhật `docs/STATUS.md` theo mẫu (tối đa 40 dòng, tối đa 3 việc chờ thien;
+  `npm run verify` kiểm) và cột Status trong `docs/roadmap.md`. Việc thien chọn trong chat, thẻ chọn hay trang duyệt ảnh
+  ghi vào PR hoặc kế hoạch ngay trong phiên; bộ nhớ project chỉ là bản sao.
 
 ## Cách làm việc giữa người và AI
 

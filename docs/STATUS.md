@@ -1,39 +1,37 @@
-# Trạng thái hiện tại
+# Tiến độ
 
-Cập nhật lần cuối: 2026-11-10 · Claude (thread "Đọc bàn giao và làm tiếp Sakubun", tài khoản của thien)
+Cập nhật lần cuối: 2026-11-14 · Claude (project Claude, thread bot review) · Trang tiến độ: https://claude.ai/artifact/GmergauKMVF2n9HT3WSfxo
 
-Trang này cho mọi phiên (kể cả tài khoản, model khác) biết trong 2 phút: đang ở đâu, ai giữ việc gì, cần thien làm gì.
-Lịch sử nằm trong git, PR và `docs/roadmap.md`, không ghi ở đây. Cả file dưới 40 dòng; quá thì gộp hoặc bỏ, đừng thêm.
+Cho mọi nick Claude, Codex và thien biết project đang ở đâu. Lịch sử ở git và PR. Tối đa 40 dòng, 3 việc chờ thien.
 
 ## Đang ở đâu
 
-Luyện dịch R1–R4, Kaiwa (a)–(d), kanji KJ1–KJ7 đã xong. UI v2 (`docs/plans/2026-11-08-ui-v2.md`): U0 xong và thien đã duyệt
-ảnh. U1 (khung app): Base UI #276–#282, sidebar 3 nhóm #283, thanh 5 tab #284 (kèm sửa số thẻ đến hạn sau buổi ôn);
-Lịch sử thành Tiến độ ở `/progress` #285. Góp ý cổng U1 của thien (#287): Cài đặt tự lưu, thông báo "Đã lưu · Hoàn tác"
-nổi trên thanh tab (phần tự lưu của U7 làm sớm); menu tài khoản thẳng mép với thẻ người dùng; Ôn nhanh có nút X "Dừng ôn";
-trên điện thoại chỉ còn thanh tab (bỏ menu ngang), Kho chuyển Của bạn / Kho chung, Bạn chuyển Tiến độ / Cài đặt, và
-giao diện tối, furigana, Đăng xuất nằm ở Cài đặt › Tài khoản.
-Phân tích vẫn ở `/`: Tổng quan và Thống kê vào Tiến độ ở U7, Hôm nay thay `/` ở U3.
+Đã áp quy trình chung (#297). UI v2: U0, U1 xong; U2 (buổi ôn) theo bố cục C thien chọn ngày 13/11 (thẻ trái,
+bảng nhỏ phải, giữ sidebar và thanh tab): U2a xong (#291, 14/11), U2b–U2d xong (#292–#294), U2e chấm chạy nền xong (#302), U2f hoàn tác xong (#303), U2g tự sang thẻ khi chọn đúng xong (#304), sửa buổi ôn 390px (#305): U2 xong. U3 Hôm nay: thien chọn bố cục A (14/11), kế hoạch đã merge (#306); U3a (số liệu) xong (#308); U3b (trang Hôm nay ở `/`, Phân tích sang `/analytics`) xong (#309); Phân tích cần làm lại bố cục ở giai đoạn 7 (Tiến độ). U3c (người mới chọn cấp) xong (#310). U3d (các trạng thái còn lại) xong (#311): U3 xong ngày 14/11. Mọi phần trước UI v2 đã xong, trừ việc thử thật K2, K8, L5 trong claude.ai (xem `roadmap.md`).
 
-## U1 còn lại
+Review PR: CodeRabbit review một lần khi PR chuyển sẵn sàng, không review lại mỗi lần đẩy (PR này). Hết dùng thử 24/11, sau đó chỉ tóm tắt PR.
 
-1. Cổng U1: thien duyệt lại sau #287 (Cài đặt, menu tài khoản, điều hướng điện thoại), ảnh trên https://claude.ai/artifact/9Hd8pSLPK63CUFMcX4Tshx (làm lại 09/11 ở tài khoản này, trang cũ đã mất) và đi thử 5 tab
-   trên điện thoại thật. Duyệt xong thì đánh U1 Done trong roadmap và nhận U2 (Phiên học, risk:high).
+## Kế hoạch đang chạy
 
-## Đang chờ thien (tối đa 3)
+| Kế hoạch                           | Đang ở checkpoint | Đã tick       |
+| ---------------------------------- | ----------------- | ------------- |
+| [UI v2](plans/2026-11-08-ui-v2.md) | U4 Kho của bạn    | U0–U3 / U0–U8 |
 
-1. **Hiện lại "N5 · Ngữ pháp"**: trang Quản trị, mục "Đã ẩn khỏi Kho chung", bấm Hiện.
-2. **Thử chia sẻ kịch bản** trên NUC: chia sẻ, mở link ở cửa sổ ẩn danh, Lấy về bằng tài khoản thứ hai (`kai`); phần MCP Claude đã thử, chạy đúng.
+## Việc dở
 
-## Việc nhỏ còn treo
+| Việc                 | Nhánh hoặc PR | Dở từ | Còn thiếu gì                              |
+| -------------------- | ------------- | ----- | ----------------------------------------- |
+| Bản tóm tắt hai nick | #296          | 13/11 | Tạm, của nick kia; đóng khi thien so xong |
 
-- Trên điện thoại, nút ⋯ của trang kịch bản nằm riêng một hàng để khớp màn hình đang tải; đổi thì đổi cả hai.
-- e2e không chạy trong CI, chạy tay trước PR đổi UI; `style-audit` đỏ trên main khi chạy sau kaiwa/quick-review (cần PR riêng);
-  `quick-review` "lost answer" đỏ tuỳ thứ tự, chạy riêng thì xanh. Tabs Base UI không tự chọn khi di phím (thêm `activateOnFocus` nếu thien muốn).
+## Việc tiếp theo
 
-## Ghi chú
+1. U4 Kho của bạn (`plans/2026-11-08-ui-v2.md`): đưa thien 2–3 bố cục trước khi code, rồi viết kế hoạch U4.
 
-- thien là người học (thi N2 tháng 12/2026, yếu nghe và nói): mục 1 của `docs/plans/2026-11-04-feature-candidates.md`;
-  câu hỏi nghiên cứu đã đóng 2026-11-13, tính năng còn lại để chọn sau UI v2 ở mục 6b của file đó.
-- NUC tự cập nhật khi `main` xanh CI (`nuc-infra/runbooks/02-add-app.md`); kéo tay cần `sudo`. Log:
-  `journalctl -u miniserver-deploy-poll --since "-10 min" | grep sakubun`. Trần tài khoản: `MAX_ACCOUNTS` (mặc định 50).
+## Đang chờ thien
+
+- Dán dòng hướng dẫn project vào cả hai project Sakubun (nội dung trong mô tả #297).
+- Trên NUC, không gấp: bấm Hiện "N5 · Ngữ pháp" ở Quản trị; thử chia sẻ kịch bản bằng tài khoản `kai`.
+
+## Đang vướng
+
+- e2e không chạy trong CI; `style-audit` và "lost answer" đỏ tuỳ thứ tự khi chạy cả bộ (`docs/handoff.md` mục 4).

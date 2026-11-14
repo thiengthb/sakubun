@@ -3,22 +3,20 @@ import Database from 'better-sqlite3';
 import { expect, test } from '@playwright/test';
 import { E2E_DB_FILE, E2E_EMAIL, E2E_LOGIN, E2E_OWNER, seedE2eAccount } from './fixtures';
 
-// Roadmap 7.3b: a learner with no AI app connected and no review yet is sent to the guide from
-// Phân tích; the hint goes away once they connect one.
+// Roadmap 7.3b, moved by U3d: a learner with no AI app connected is sent to the guide from the
+// first row of Việc tiếp theo on Hôm nay; the row turns into "Luyện dịch với Claude" once one is.
 function db() {
   return new Database(path.join(process.cwd(), E2E_DB_FILE));
 }
 
-test('Phân tích points a new learner at the guide until an AI app is connected', async ({
-  page,
-}) => {
+test('Hôm nay points a new learner at the guide until an AI app is connected', async ({ page }) => {
   await seedE2eAccount();
   const d = db();
   // Other specs connect apps, make tokens and review; start from a learner who has done none of it.
   d.exec(`DELETE FROM oauthConsent WHERE userId = ${E2E_OWNER}`);
   d.exec(`DELETE FROM mcp_key WHERE userId = ${E2E_OWNER}`);
   d.exec(`DELETE FROM ReviewLog WHERE userId = ${E2E_OWNER}`);
-  // Phân tích shows its empty state, not the dashboard, until there is a grammar item.
+  // Hôm nay shows its empty state, not the lead area, until there is a grammar or vocab item.
   d.prepare(
     `INSERT OR IGNORE INTO Item (id, userId, kind, expression, meaningVi, level, source, createdAt)
      VALUES ('hint-item', ${E2E_OWNER}, 'GRAMMAR', '〜ている', 'đang', 'N5', 'OPENJLPT', ?)`,
@@ -36,8 +34,11 @@ test('Phân tích points a new learner at the guide until an AI app is connected
   await page.getByRole('tab', { name: 'Tài khoản' }).click();
 
   await page.goto('/', { waitUntil: 'networkidle' });
-  const hint = page.getByRole('status').filter({ hasText: 'Kết nối Claude để bắt đầu luyện' });
+  // No banner above the page any more (thien, U3c review): the hint is a row with the others.
+  await expect(page.getByText('Kết nối Claude để bắt đầu luyện')).toHaveCount(0);
+  const hint = page.getByRole('link', { name: /^Kết nối Claude để luyện dịch/ });
   await expect(hint).toBeVisible();
+  await expect(page.getByRole('link', { name: /^Luyện dịch với Claude/ })).toHaveCount(0);
 
   const shots = process.env.SCREENSHOT_DIR;
   if (shots)
@@ -46,7 +47,7 @@ test('Phân tích points a new learner at the guide until an AI app is connected
       await page.screenshot({ path: path.join(shots, `connect-hint-${width}.png`) });
     }
 
-  await hint.getByRole('link', { name: 'Xem hướng dẫn' }).click();
+  await hint.click();
   await page.waitForURL(/\/settings\?tab=guide/);
   await expect(page.getByRole('heading', { name: '1. Kết nối Claude' })).toBeVisible();
 
@@ -57,8 +58,9 @@ test('Phân tích points a new learner at the guide until an AI app is connected
   ).run(new Date().toISOString());
   d2.close();
   await page.goto('/', { waitUntil: 'networkidle' });
-  await expect(page.getByRole('region', { name: 'Tổng quan' })).toBeVisible();
-  await expect(page.getByText('Kết nối Claude để bắt đầu luyện')).toHaveCount(0);
+  await expect(page.getByRole('region', { name: 'Hôm nay' })).toBeVisible();
+  await expect(page.getByRole('link', { name: /^Luyện dịch với Claude/ })).toBeVisible();
+  await expect(page.getByRole('link', { name: /^Kết nối Claude để luyện dịch/ })).toHaveCount(0);
 
   // Leave the shared e2e DB as other specs expect it: no items, no token.
   const d3 = db();

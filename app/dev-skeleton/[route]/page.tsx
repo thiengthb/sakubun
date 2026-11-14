@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
-import DashboardLoading from '@/app/loading';
+import TodayLoading from '@/app/loading';
+import AnalyticsLoading from '@/app/analytics/loading';
 import HistoryLoading from '@/app/progress/loading';
 import ReviewLoading from '@/app/review/loading';
 import SettingsLoading from '@/app/settings/loading';
@@ -21,7 +22,8 @@ import LibraryScriptLoading from '@/app/library/script/[id]/loading';
 import { SectionSwitch } from '@/components/layout/section-switch';
 
 const SKELETONS: Record<string, () => React.ReactElement> = {
-  dashboard: DashboardLoading,
+  today: TodayLoading,
+  analytics: AnalyticsLoading,
   resources: ResourcesLoading,
   'resources-new': ResourceAddLoading,
   item: ItemLoading,
@@ -47,6 +49,7 @@ const SKELETONS: Record<string, () => React.ReactElement> = {
 const SWITCHED: Record<string, string> = {
   resources: '/resources',
   history: '/progress',
+  analytics: '/analytics',
   settings: '/settings',
   library: '/library',
 };

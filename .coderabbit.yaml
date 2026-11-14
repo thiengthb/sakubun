@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+# CodeRabbit cho sakubun. Lý do và luật: thienai-workflow docs/decisions/002-coderabbit-one-review.md
+# PR nháp (lúc nhận bước) không được review; chuyển sẵn sàng thì review một lần.
+# Không tự review lại sau mỗi lần đẩy; sửa lớn thì comment "@coderabbitai review".
+reviews:
+  profile: chill
+  auto_review:
+    enabled: true
+    drafts: false
+    auto_incremental_review: false
+  path_filters:
+    - '!data/**' # dữ liệu kanji, JLPT lấy về nguyên bản
+    - '!lib/generated/**' # Prisma client sinh ra

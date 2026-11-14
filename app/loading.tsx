@@ -1,31 +1,20 @@
-import { PageSkeleton, PageTabsSkeleton } from '@/components/layout/page-skeleton';
+import { PageSkeleton } from '@/components/layout/page-skeleton';
 import { Skeleton } from '@/components/ui/skeleton';
 
-// Tiến độ, top to bottom: four stat tiles, Hôm nay (quests, rings on a phone), Nhớ đúng + 14 ngày
-// tới, Theo cấp + Điểm yếu, the year heatmap.
+// Hôm nay (U3b), as the page lays it out: the lead area and Việc tiếp theo on the left; on a laptop
+// the week, Cần xử lý and the next 14 days on the right.
 export default function Loading() {
   return (
-    <PageSkeleton
-      template="dashboard"
-      title="Phân tích"
-      tabs={<PageTabsSkeleton set="analytics" />}
-    >
-      <div className="space-y-3">
-        <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
-          {[0, 1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-24 rounded-lg" />
-          ))}
+    <PageSkeleton template="dashboard" title="Hôm nay" meta width="wide">
+      <div className="grid gap-4 lg:grid-cols-12">
+        <div className="space-y-4 lg:col-span-8">
+          <Skeleton className="h-48 rounded-xl md:h-52" />
+          <Skeleton className="h-52 rounded-xl" />
         </div>
-        <Skeleton className="h-28 rounded-lg max-sm:h-44" />
-        <div className="grid gap-3 lg:grid-cols-2">
-          <Skeleton className="h-44 rounded-lg" />
-          <Skeleton className="h-44 rounded-lg" />
+        <div className="space-y-4 max-lg:hidden lg:col-span-4">
+          <Skeleton className="h-32 rounded-xl" />
+          <Skeleton className="h-28 rounded-xl" />
         </div>
-        <div className="grid gap-3 lg:grid-cols-2">
-          <Skeleton className="h-48 rounded-lg" />
-          <Skeleton className="h-48 rounded-lg" />
-        </div>
-        <Skeleton className="h-40 rounded-lg" />
       </div>
     </PageSkeleton>
   );
