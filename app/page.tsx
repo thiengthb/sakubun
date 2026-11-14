@@ -1,8 +1,5 @@
 import type { Metadata } from 'next';
-import { ArrowRight, Plug } from 'lucide-react';
 import { PageShell } from '@/components/layout/page-shell';
-import { ButtonLink } from '@/components/ui/button';
-import { StateNotice } from '@/components/common/state-notice';
 import { LiveRefresh } from '@/components/layout/live-refresh';
 import {
   ForecastMini,
@@ -17,7 +14,6 @@ import { getToday } from '@/lib/insights/today';
 import { APP_TIME_ZONE } from '@/lib/core/format';
 import { getUserDb } from '@/lib/auth/current-user';
 import { hasAiConnection } from '@/lib/auth/connected-apps';
-import { showConnectHint } from '@/lib/insights/connect-hint';
 
 export const metadata: Metadata = {
   title: 'Hôm nay — sakubun',
@@ -40,59 +36,51 @@ function greeting(now: Date): string {
   return 'Chào buổi tối';
 }
 
-// Until a page reads which script or practice is next (U3d), the rows point at where each starts.
-const NEXT_STEPS: RowLink[] = [
-  {
-    href: 'https://claude.ai/new',
-    title: 'Luyện dịch với Claude',
-    hint: 'Nói "luyện dịch", Claude soạn câu từ kho của bạn',
-    mark: '文',
-  },
-  {
-    href: '/kaiwa',
-    title: 'Nghe lại một kịch bản',
-    hint: 'Hội thoại: đọc theo, nghe từng vai',
-    mark: '話',
-  },
-  {
-    href: '/library',
-    title: 'Lấy thêm mẫu ở Kho chung',
-    hint: 'Ngữ pháp, từ vựng, kanji và kịch bản theo cấp',
-    mark: '新',
-  },
-];
+// Each row points at where that practice starts. Translation needs an AI app, so until one is
+// connected its row leads to the guide instead (U3d; it replaces the banner above the page).
+function nextSteps(connected: boolean): RowLink[] {
+  return [
+    connected
+      ? {
+          href: 'https://claude.ai/new',
+          title: 'Luyện dịch với Claude',
+          hint: 'Nói "luyện dịch", Claude soạn câu từ kho của bạn',
+          mark: '文',
+        }
+      : {
+          href: '/settings?tab=guide',
+          title: 'Kết nối Claude để luyện dịch',
+          hint: 'Claude soạn câu và chấm bài; sakubun giữ kho và lịch ôn',
+          mark: '文',
+        },
+    {
+      href: '/kaiwa',
+      title: 'Nghe lại một kịch bản',
+      hint: 'Hội thoại: đọc theo, nghe từng vai',
+      mark: '話',
+    },
+    {
+      href: '/library',
+      title: 'Lấy thêm mẫu ở Kho chung',
+      hint: 'Ngữ pháp, từ vựng, kanji và kịch bản theo cấp',
+      mark: '新',
+    },
+  ];
+}
 
 export default async function TodayPage() {
   const db = await getUserDb();
   const now = new Date();
-  const [today, connected, firstReview] = await Promise.all([
-    getToday(db, now),
-    hasAiConnection(db.$ownerId()),
-    db.reviewLog.findFirst({ select: { id: true } }),
-  ]);
-  const connectHint = showConnectHint({ connected, reviewed: firstReview !== null }) && (
-    <StateNotice
-      icon={Plug}
-      title="Kết nối Claude để bắt đầu luyện"
-      action={
-        <ButtonLink href="/settings?tab=guide" variant="outline" size="sm" className="shrink-0">
-          Xem hướng dẫn <ArrowRight aria-hidden />
-        </ButtonLink>
-      }
-    >
-      Claude hoặc ChatGPT soạn câu và chấm bài; sakubun giữ kho và lịch ôn.
-    </StateNotice>
-  );
+  const [today, connected] = await Promise.all([getToday(db, now), hasAiConnection(db.$ownerId())]);
 
   if (today.hero.kind === 'empty') {
     // A new account starts empty (phase 8, L4): the lead area asks for a level (U3c).
     return (
       <PageShell template="dashboard" title="Hôm nay" meta={greeting(now)} width="wide">
         <LiveRefresh />
-        {connectHint}
         <div className="grid gap-4 lg:grid-cols-12">
           <div className="lg:col-span-8">
-            <LevelPick kanjiWaiting={today.hero.kanjiWaiting} />
+            <LevelPick kanjiWaiting={today.hero.kanjiWaiting} connected={connected} />
           </div>
         </div>
       </PageShell>
@@ -111,11 +99,10 @@ export default async function TodayPage() {
       width="wide"
     >
       <LiveRefresh />
-      {connectHint}
       <div className="grid gap-4 lg:grid-cols-12">
         <div className="space-y-4 lg:col-span-8">
           <TodayHero hero={today.hero} now={now} />
-          <NextSteps rows={NEXT_STEPS} />
+          <NextSteps rows={nextSteps(connected)} />
         </div>
         <div className="space-y-4 lg:col-span-4">
           <div className="max-lg:hidden">

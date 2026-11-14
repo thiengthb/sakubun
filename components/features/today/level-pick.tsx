@@ -13,7 +13,14 @@ import { JLPT_LEVELS } from '@/lib/settings/schema';
 // Hôm nay's lead area for a newcomer (plan 2026-11-14-u3-today, U3c): one tap on a level takes its
 // grammar, words and kanji from Kho chung, and the area turns into "Bắt đầu ôn".
 
-export function LevelPick({ kanjiWaiting }: { kanjiWaiting: number }) {
+export function LevelPick({
+  kanjiWaiting,
+  connected,
+}: {
+  kanjiWaiting: number;
+  /** Whether an AI app can reach this learner's data; until then the guide link sits here. */
+  connected: boolean;
+}) {
   const router = useRouter();
   const [picked, setPicked] = useState<string | null>(null);
   const start = useServerAction(startAtLevelAction, {
@@ -55,6 +62,11 @@ export function LevelPick({ kanjiWaiting }: { kanjiWaiting: number }) {
         <ButtonLink href="/library" variant="ghost" size="sm">
           Mở Kho chung <ArrowRight aria-hidden />
         </ButtonLink>
+        {!connected && (
+          <ButtonLink href="/settings?tab=guide" variant="ghost" size="sm">
+            Kết nối Claude để luyện dịch <ArrowRight aria-hidden />
+          </ButtonLink>
+        )}
         {kanjiWaiting > 0 && (
           <Link
             href="/review"

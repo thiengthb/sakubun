@@ -46,10 +46,22 @@ export type TodayHero =
    * cards Ôn nhanh already made that are ready now, so they are not hidden behind the level pick.
    */
   | { kind: 'empty'; kanjiWaiting: number }
-  /** Cards to study; `resume` once the learner has already studied today ("Học tiếp"). */
-  | ({ kind: 'ready'; total: number; minutes: number; resume: boolean } & ReadyCards)
-  /** All done for today; `nextDueAt` is when the next card comes, if any is scheduled. */
-  | { kind: 'done'; nextDueAt: Date | null };
+  /**
+   * Cards to study; `resume` once the learner has already studied today ("Học tiếp"), and
+   * `reviewedToday` says how many reviews that was.
+   */
+  | ({
+      kind: 'ready';
+      total: number;
+      minutes: number;
+      resume: boolean;
+      reviewedToday: number;
+    } & ReadyCards)
+  /**
+   * Nothing left for today. `reviewedToday` tells praise for finishing apart from a day with
+   * nothing due; `nextDueAt` is when the next card comes, if any is scheduled.
+   */
+  | { kind: 'done'; reviewedToday: number; nextDueAt: Date | null };
 
 export function todayHero(input: {
   libraryEmpty: boolean;
@@ -63,13 +75,15 @@ export function todayHero(input: {
   if (input.libraryEmpty) return { kind: 'empty', kanjiWaiting: input.kanjiWaiting ?? 0 };
   const { ready } = input;
   const total = ready.due + ready.newGrammar + ready.newVocab + ready.newKanji;
-  if (total === 0) return { kind: 'done', nextDueAt: input.nextDueAt };
+  if (total === 0)
+    return { kind: 'done', reviewedToday: input.reviewedToday, nextDueAt: input.nextDueAt };
   return {
     kind: 'ready',
     ...ready,
     total,
     minutes: estimateMinutes(total, input.secPerCard),
     resume: input.reviewedToday > 0,
+    reviewedToday: input.reviewedToday,
   };
 }
 

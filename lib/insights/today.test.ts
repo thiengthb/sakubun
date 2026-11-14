@@ -76,7 +76,7 @@ describe('getToday reads what the Hôm nay page shows', () => {
     const item = await grammar('TODAY_one');
     await review(item.itemId, 3);
     const t = await T.getToday(db);
-    expect(t.hero.kind).toBe('done');
+    expect(t.hero).toMatchObject({ kind: 'done', reviewedToday: 1 });
     expect(t.hero.kind === 'done' && t.hero.nextDueAt).toBeInstanceOf(Date);
     expect(t.streak.current).toBe(1);
     expect(t.week.find((d) => d.today)!.studied).toBe(true);
@@ -93,7 +93,7 @@ describe('getToday reads what the Hôm nay page shows', () => {
     await review(item.itemId, 1);
     await db.srsState.update({ where: { itemId: item.itemId }, data: { due: new Date(0) } });
     const t = await T.getToday(db);
-    expect(t.hero).toMatchObject({ kind: 'ready', due: 1, resume: true });
+    expect(t.hero).toMatchObject({ kind: 'ready', due: 1, resume: true, reviewedToday: 1 });
     expect(t.missed).toEqual([{ itemId: item.itemId, expression: 'TODAY_hard', misses: 3 }]);
   });
 
