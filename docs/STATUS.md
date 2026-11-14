@@ -21,7 +21,7 @@ bảng nhỏ phải, giữ sidebar và thanh tab): U2a xong (#291, 14/11), U2b�
 | ----------------------- | ------------- | ----- | ----------------------------------------------------- |
 | Đóng câu hỏi nghiên cứu | #289          | 13/11 | Chỉ tài liệu, chờ thien merge                         |
 | Bản tóm tắt hai nick    | #296          | 13/11 | Tạm, của nick kia; đóng khi thien so xong             |
-| U4 chọn hướng màn Kho   | PR U4 (nháp)  | 14/11 | thien chọn ở vòng 2, xem `plans/2026-11-14-u4-kho.md` |
+| U4 chọn hướng màn Kho   | #313          | 14/11 | thien chọn ở vòng 2, xem `plans/2026-11-14-u4-kho.md` |
 
 ## Việc tiếp theo
 
