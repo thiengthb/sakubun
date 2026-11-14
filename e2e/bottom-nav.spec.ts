@@ -264,7 +264,12 @@ test('the due count follows the session once it ends', async ({ page }) => {
       await page.getByRole('button', { name: /^Nhớ/ }).click();
     } else {
       await choices.getByRole('button').first().click();
-      await page.getByRole('button', { name: 'Tiếp' }).click();
+      // A wrong pick waits for Tiếp; a right one moves on by itself (U2g) and may beat the click.
+      // Either way the check below waits for the next card.
+      await page
+        .getByRole('button', { name: 'Tiếp' })
+        .click({ timeout: 2000 })
+        .catch(() => {});
     }
     await expect(async () => {
       const now = await page.locator('[aria-label^="Thẻ "]').getAttribute('aria-label');

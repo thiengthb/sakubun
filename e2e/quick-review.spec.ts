@@ -193,8 +193,13 @@ async function runSession(page: Page, { keyboard = false } = {}) {
         await expect(unsaved).toHaveCount(0);
         expect(clozeRating(), 'the wrong pick sent again is still Again').toBe(1);
         expect(reviewLogCount(), 'sent again, recorded once').toBe(1);
+        // U2g: a wrong pick does not move on by itself; it waits, its answer open, for Tiếp.
+        await page.waitForTimeout(1500);
+        await expect(page.getByLabel(`Thẻ ${n + 1} / 4`)).toBeVisible();
+        await expect(next).toBeEnabled();
         await page.keyboard.press('Enter');
       } else {
+        const pickedAt = Date.now();
         await choices.getByRole('button', { name: /約束/ }).click();
         await expect(choices.getByRole('button', { name: /約束/ })).toBeDisabled();
         // Answered: the translation sits right under the sentence it translates.
@@ -203,7 +208,11 @@ async function runSession(page: Page, { keyboard = false } = {}) {
         const under = (await translation.boundingBox())!;
         expect(under.y).toBeGreaterThan(sentence.y);
         expect(under.y - (sentence.y + sentence.height)).toBeLessThan(48);
-        await next.click();
+        // U2g: a right pick moves on by itself after a moment (1.2s), long enough to see it marked
+        // right; Tiếp is there for the impatient.
+        await expect(next).toBeVisible();
+        await expect(next).toBeHidden({ timeout: 3000 });
+        expect(Date.now() - pickedAt, 'the right pick stays a moment').toBeGreaterThan(1000);
       }
     } else if (await seen.isVisible()) {
       // Met inside its sentence, the answer already open with the translation.
@@ -381,8 +390,7 @@ test('a grade moves on at once and is saved behind the session', async ({ page }
     }
     const before = Date.now();
     await last.click();
-    const nextShown =
-      n < 3 ? page.getByLabel(`Thẻ ${n + 2} / 4`) : page.getByText('Xong buổi ôn');
+    const nextShown = n < 3 ? page.getByLabel(`Thẻ ${n + 2} / 4`) : page.getByText('Xong buổi ôn');
     await expect(nextShown).toBeVisible({ timeout: 400 });
     expect(Date.now() - before, 'the next card shows under 400ms').toBeLessThan(400);
   }
@@ -399,8 +407,8 @@ async function answerRight(page: Page): Promise<'held' | 'sent'> {
   const seen = page.getByRole('button', { name: 'Đã xem' });
   await expect(choices.or(reveal).or(seen)).toBeVisible();
   if (await choices.isVisible()) {
+    // A right pick moves on by itself (U2g).
     await choices.getByRole('button', { name: /約束/ }).click();
-    await page.getByRole('button', { name: 'Tiếp' }).click();
     return 'sent';
   }
   if (await seen.isVisible()) await seen.click();
