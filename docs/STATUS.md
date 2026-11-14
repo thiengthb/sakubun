@@ -19,7 +19,7 @@ bảng nhỏ phải, giữ sidebar và thanh tab): U2a xong (#291, 14/11), U2b�
 
 | Việc                    | Nhánh hoặc PR | Dở từ | Còn thiếu gì                              |
 | ----------------------- | ------------- | ----- | ----------------------------------------- |
-| Sửa buổi ôn 390px       | #305          | 14/11 | Chờ thien duyệt ảnh, rồi merge            |
+| Sửa buổi ôn 390px       | #305          | 14/11 | Đã duyệt ảnh (2/2), chờ thien merge       |
 | Đóng câu hỏi nghiên cứu | #289          | 13/11 | Chỉ tài liệu, chờ thien merge             |
 | Bản tóm tắt hai nick    | #296          | 13/11 | Tạm, của nick kia; đóng khi thien so xong |
 
@@ -29,7 +29,7 @@ bảng nhỏ phải, giữ sidebar và thanh tab): U2a xong (#291, 14/11), U2b�
 
 ## Đang chờ thien
 
-- Duyệt ảnh sửa buổi ôn trên điện thoại rồi merge #305.
+- Merge #305 (sửa buổi ôn trên điện thoại, đã duyệt ảnh 2/2).
 - Dán dòng hướng dẫn project vào cả hai project Sakubun (nội dung trong mô tả #297).
 - Trên NUC, không gấp: bấm Hiện "N5 · Ngữ pháp" ở Quản trị; thử chia sẻ kịch bản bằng tài khoản `kai`.
 
