@@ -1,7 +1,11 @@
-# Claude on GitHub, only when someone with write access comments "@claude ..." on an issue or PR
+# Claude on GitHub, only when the owner or a collaborator comments "@claude ..." on an issue or PR
 # (thienai-workflow profile/REVIEW.md, decision 003). No automatic runs, so no Actions minutes are spent unless called.
 # Needs: the Claude GitHub App installed on this repo, and the secret CLAUDE_CODE_OAUTH_TOKEN
 # (run `claude setup-token` on the laptop with any Claude nick; runs count against that nick's usage).
+# Comments from bots are ignored. The concurrency group sits on the job, so only real calls queue there:
+# a plain comment cannot cancel a waiting call.
+# contents: read keeps the workflow token from pushing; Claude is here to review. [Unchecked] whether the
+# Claude app's own token can still commit; ask for review only, and raise this only after main is protected.
 name: Claude
 
 on:
@@ -10,17 +14,19 @@ on:
   pull_request_review_comment:
     types: [created]
 
-concurrency:
-  group: claude-${{ github.event.issue.number || github.event.pull_request.number }}
-  cancel-in-progress: false
-
 jobs:
   claude:
-    if: contains(github.event.comment.body, '@claude')
+    if: >-
+      contains(github.event.comment.body, '@claude') &&
+      github.event.comment.user.type != 'Bot' &&
+      contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association)
+    concurrency:
+      group: claude-${{ github.event.issue.number || github.event.pull_request.number }}
+      cancel-in-progress: false
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
-      contents: write
+      contents: read
       pull-requests: write
       issues: write
       id-token: write
@@ -28,7 +34,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
         with:
-          fetch-depth: 1
+          fetch-depth: 0 # full history so git diff origin/main...HEAD works in a review
       - uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
