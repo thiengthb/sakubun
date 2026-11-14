@@ -30,7 +30,7 @@ export interface Today {
   hero: TodayHero;
   streak: Streak;
   week: WeekDay[];
-  /** Grammar already studied whose card still lacks an example (the "thiếu ví dụ" row). */
+  /** Grammar already studied whose card still needs work in any part (the "thẻ còn thiếu" row). */
   missingExamples: number;
   missed: MissedItem[];
   forecast: { day: string; count: number }[];
@@ -74,6 +74,8 @@ export async function getToday(db: UserDb, now: Date = new Date()): Promise<Toda
       libraryEmpty: items === 0,
       // New kanji are brought in when Ôn nhanh opens, up to what today still allows.
       ready: { ...ready, newKanji: Math.max(ready.newKanji, queue.left.newKanji) },
+      // With no grammar or words, every started card is a kanji Ôn nhanh brought in.
+      kanjiWaiting: ready.due + ready.newKanji,
       reviewedToday: reviewedAt.filter((d) => d.getTime() >= dayStart).length,
       secPerCard: secondsPerCard(reviewedAt),
       nextDueAt: queue.nextDueAt,

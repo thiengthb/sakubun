@@ -41,9 +41,18 @@ describe('getToday reads what the Hôm nay page shows', () => {
   it('an empty library asks for a level', async () => {
     await reset(5);
     const t = await T.getToday(db);
-    expect(t.hero).toEqual({ kind: 'empty' });
+    // Kanji Ôn nhanh would bring in are not cards yet, so nothing is waiting.
+    expect(t.hero).toEqual({ kind: 'empty', kanjiWaiting: 0 });
     expect(t.streak.current).toBe(0);
     expect(t.week).toHaveLength(7);
+  });
+
+  it('a newcomer with kanji cards from Ôn nhanh still picks a level, and sees the kanji waiting', async () => {
+    await reset(3);
+    const { takeKanjiLevel } = await import('@/lib/app/kanji-levels');
+    await takeKanjiLevel(db, 'N5');
+    const t = await T.getToday(db);
+    expect(t.hero).toEqual({ kind: 'empty', kanjiWaiting: 3 });
   });
 
   it('a new item is ready to learn, and the page has not started today', async () => {

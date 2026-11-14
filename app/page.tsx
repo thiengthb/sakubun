@@ -1,11 +1,9 @@
 import type { Metadata } from 'next';
-import { ArrowRight, Inbox, Plug } from 'lucide-react';
+import { ArrowRight, Plug } from 'lucide-react';
 import { PageShell } from '@/components/layout/page-shell';
 import { ButtonLink } from '@/components/ui/button';
-import { EmptyState } from '@/components/common/empty-state';
 import { StateNotice } from '@/components/common/state-notice';
 import { LiveRefresh } from '@/components/layout/live-refresh';
-import { StartFromLibrary } from '@/components/features/dashboard/start-from-library';
 import {
   ForecastMini,
   NeedsWork,
@@ -14,15 +12,12 @@ import {
   WeekStrip,
   type RowLink,
 } from '@/components/features/today/today-view';
+import { LevelPick } from '@/components/features/today/level-pick';
 import { getToday } from '@/lib/insights/today';
 import { APP_TIME_ZONE } from '@/lib/core/format';
 import { getUserDb } from '@/lib/auth/current-user';
 import { hasAiConnection } from '@/lib/auth/connected-apps';
 import { showConnectHint } from '@/lib/insights/connect-hint';
-import { prisma } from '@/lib/db/db';
-import { GRAMMAR_KIND } from '@/lib/library/item-kinds';
-import { ensureOpenJlptLibrary } from '@/lib/library/seed';
-import { findOpenJlptGroup } from '@/lib/library/shared';
 
 export const metadata: Metadata = {
   title: 'Hôm nay — sakubun',
@@ -90,20 +85,16 @@ export default async function TodayPage() {
   );
 
   if (today.hero.kind === 'empty') {
-    // A new account starts empty (phase 8, L4): the way in is Kho chung's N5 set. U3c turns this
-    // into the level pick.
-    await ensureOpenJlptLibrary();
-    const starter = await findOpenJlptGroup(prisma, 'N5', GRAMMAR_KIND);
+    // A new account starts empty (phase 8, L4): the lead area asks for a level (U3c).
     return (
-      <PageShell template="dashboard" title="Hôm nay">
+      <PageShell template="dashboard" title="Hôm nay" meta={greeting(now)} width="wide">
         <LiveRefresh />
         {connectHint}
-        <EmptyState
-          icon={Inbox}
-          title="Kho của bạn còn trống"
-          description="Lấy bộ ngữ pháp N5 từ Kho chung để bắt đầu, hoặc tìm mục khác ở đó."
-          action={<StartFromLibrary starter={starter} />}
-        />
+        <div className="grid gap-4 lg:grid-cols-12">
+          <div className="lg:col-span-8">
+            <LevelPick kanjiWaiting={today.hero.kanjiWaiting} />
+          </div>
+        </div>
       </PageShell>
     );
   }
@@ -112,7 +103,11 @@ export default async function TodayPage() {
     <PageShell
       template="dashboard"
       title="Hôm nay"
-      meta={`${greeting(now)} · chuỗi ${today.streak.current} ngày`}
+      meta={
+        today.streak.current > 0
+          ? `${greeting(now)} · chuỗi ${today.streak.current} ngày`
+          : greeting(now)
+      }
       width="wide"
     >
       <LiveRefresh />
