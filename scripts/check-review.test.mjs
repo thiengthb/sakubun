@@ -53,6 +53,24 @@ for (const l of [
 ])
   assert.equal(checkReview('## Review\n' + l), '', l);
 // Hidden or quoted sections do not count.
+assert.equal(
+  checkReview('~~~\nlog\n~~~~\n\n## Review\n- Ai: agent mới, 14/11'),
+  '',
+  'a longer closing fence closes the block',
+);
+assert.equal(
+  checkReview('```js\nx\n```\n## Review\n- Ai: agent mới, 14/11'),
+  '',
+  'fence with an info string',
+);
+assert.match(
+  checkReview('```\nx\n~~~\n## Review\n- Ai: agent mới'),
+  /chưa có mục/,
+  'a different fence character does not close it',
+);
+assert.match(checkReview('## Review\n- **Ai:**'), /cần một dòng/, 'empty bold label');
+assert.match(checkReview('## Review\n- **Bỏ qua:**  '), /cần một dòng/, 'empty bold skip');
+assert.match(checkReview('## Review\n- _Ai:_ **'), /cần một dòng/, 'only formatting marks');
 assert.match(
   checkReview('<!--\n## Review\n- Ai: agent mới\n-->'),
   /chưa có mục/,
