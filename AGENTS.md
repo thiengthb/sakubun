@@ -5,6 +5,8 @@ Luật cho mọi AI làm việc trong repo này (Claude, Codex, Gemini...). Ph�
 ## Đầu phiên
 - Đọc `docs/STATUS.md`, file này, và các kế hoạch đang chạy trong `docs/plans/`. Nếu thực tế (git, PR, CI) khác với file tiến độ, nói ra trước khi làm.
 - Số liệu (số commit, trạng thái PR, kết quả test) lấy từ công cụ, không lấy từ trí nhớ.
+- Trước khi làm, xem việc còn trên nhánh chưa merge (PR mở của phiên khác, tài khoản khác): main chậm hơn chúng. Có `templates/check-open-work.mjs` của thienai-workflow thì chạy nó; không thì liệt kê PR mở. Việc mình định làm đã có trên một nhánh thì làm tiếp trên nhánh đó, không làm lại từ main.
+- Phiên đầu của một thread: kiểm setup của nick và project theo [`profile/SETUP.md`](https://github.com/thiengthb/thienai-workflow/blob/main/profile/SETUP.md) (lệnh `templates/setup-check.mjs`). Thiếu thì nhắc thien làm trước, kèm đoạn cần dán và chỗ bấm; đủ thì không nói gì.
 - thien giao việc mới: trước khi làm, nhắc việc dở (thread chưa xong, PR mở, câu hỏi chờ, mục "Việc dở" của STATUS) kèm mức quan trọng, hỏi có giải quyết trước không. Làm đúng mục "Nhắc việc dở" trong [`profile/PROFILE.md`](https://github.com/thiengthb/thienai-workflow/blob/main/profile/PROFILE.md).
 
 ## Ai quyết
@@ -36,6 +38,10 @@ Luật cho mọi AI làm việc trong repo này (Claude, Codex, Gemini...). Ph�
 - Kế hoạch đang chạy: tick việc đã có bằng chứng, ghi bước đã đổi và lỗi gặp, sửa mục "Đang ở đâu". Luật và mẫu ở [`profile/PLANNING.md`](https://github.com/thiengthb/thienai-workflow/blob/main/profile/PLANNING.md).
 - Sửa STATUS thì gộp vào PR của tính năng đang làm. PR chỉ sửa STATUS thì nhắc thien merge ngay, vì để lâu là nó cũ và bị conflict.
 - Nếu project có `docs/ai-log.md`: thêm dòng cho phiên này, để trống hai cột "Người kiểm gì" và "Quyết định" cho người điền.
+
+## Bàn giao giữa các nick
+- Nick nào cũng có thể hết usage giữa chừng mà không báo trước. Việc nhiều bước: sau mỗi bước đẩy nhánh làm việc và ghi sổ bàn giao vào nhánh `handoff` của chính repo này (lệnh `templates/handoff.mjs` ở repo thienai-workflow). Sổ chỉ là dấu trang, sự thật vẫn là main, STATUS và PR. Trang chờ thien thì ghi cả link và lệnh dựng lại, nguồn trang nằm trong nhánh đã đẩy.
+- thien nói "tiếp tục": đọc sổ của mọi repo (`handoff.mjs list`), làm tiếp việc dở. Cách làm đủ ở [`profile/HANDOFF.md`](https://github.com/thiengthb/thienai-workflow/blob/main/profile/HANDOFF.md).
 
 ## Giữ file này ngắn
 - Phần chung dưới 60 dòng. Thêm một luật thì bỏ hoặc gộp một luật khác.
