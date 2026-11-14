@@ -7,29 +7,30 @@ Cho mọi nick Claude, Codex và thien biết project đang ở đâu. Lịch s�
 ## Đang ở đâu
 
 Đã áp quy trình chung (#297). UI v2: U0, U1 xong; U2 (buổi ôn) theo bố cục C thien chọn ngày 13/11 (thẻ trái,
-bảng nhỏ phải, giữ sidebar và thanh tab): U2a xong (#291, 14/11), U2b–U2d xong (#292–#294), U2e chấm chạy nền xong (#302), U2f hoàn tác xong (#303), U2g tự sang thẻ khi chọn đúng xong (#304), sửa buổi ôn 390px (#305): U2 xong. Đang làm U3 Hôm nay, bước chọn bố cục. Mọi phần trước UI v2 đã xong, trừ việc thử thật K2, K8, L5 trong claude.ai (xem `roadmap.md`).
+bảng nhỏ phải, giữ sidebar và thanh tab): U2a xong (#291, 14/11), U2b–U2d xong (#292–#294), U2e chấm chạy nền xong (#302), U2f hoàn tác xong (#303), U2g tự sang thẻ khi chọn đúng xong (#304), sửa buổi ôn 390px (#305): U2 xong. U3 Hôm nay: thien chọn bố cục A (14/11), kế hoạch ở #306. Mọi phần trước UI v2 đã xong, trừ việc thử thật K2, K8, L5 trong claude.ai (xem `roadmap.md`).
 
 ## Kế hoạch đang chạy
 
-| Kế hoạch                           | Đang ở checkpoint | Đã tick       |
-| ---------------------------------- | ----------------- | ------------- |
-| [UI v2](plans/2026-11-08-ui-v2.md) | U3 Hôm nay        | U0–U2 / U0–U8 |
+| Kế hoạch                                   | Đang ở checkpoint | Đã tick       |
+| ------------------------------------------ | ----------------- | ------------- |
+| [UI v2](plans/2026-11-08-ui-v2.md)         | U3 Hôm nay        | U0–U2 / U0–U8 |
+| [U3 Hôm nay](plans/2026-11-14-u3-today.md) | U3a số liệu       | 0 / 4         |
 
 ## Việc dở
 
-| Việc                    | Nhánh hoặc PR | Dở từ | Còn thiếu gì                              |
-| ----------------------- | ------------- | ----- | ----------------------------------------- |
-| U3 Hôm nay: chọn bố cục | PR này        | 14/11 | thien chọn 1 trong 3 bố cục, rồi mới code |
-| Đóng câu hỏi nghiên cứu | #289          | 13/11 | Chỉ tài liệu, chờ thien merge             |
-| Bản tóm tắt hai nick    | #296          | 13/11 | Tạm, của nick kia; đóng khi thien so xong |
+| Việc                    | Nhánh hoặc PR | Dở từ | Còn thiếu gì                               |
+| ----------------------- | ------------- | ----- | ------------------------------------------ |
+| U3 Hôm nay: kế hoạch    | #306          | 14/11 | thien đã chọn bố cục A; chờ merge kế hoạch |
+| Đóng câu hỏi nghiên cứu | #289          | 13/11 | Chỉ tài liệu, chờ thien merge              |
+| Bản tóm tắt hai nick    | #296          | 13/11 | Tạm, của nick kia; đóng khi thien so xong  |
 
 ## Việc tiếp theo
 
-1. U3 Hôm nay: thien chọn bố cục, mình ghi kế hoạch ngắn rồi code theo từng PR nhỏ.
+1. U3a (số liệu cho Hôm nay) sau khi #306 merge; rồi U3b, U3c, U3d, mỗi bước một PR.
 
 ## Đang chờ thien
 
-- Chọn bố cục cho màn Hôm nay (U3) trên trang chọn phương án.
+- Merge #306 (kế hoạch U3, bố cục A đã chọn) và #307 (thêm phép kiểm cho test 390px).
 - Dán dòng hướng dẫn project vào cả hai project Sakubun (nội dung trong mô tả #297).
 - Trên NUC, không gấp: bấm Hiện "N5 · Ngữ pháp" ở Quản trị; thử chia sẻ kịch bản bằng tài khoản `kai`.
 
