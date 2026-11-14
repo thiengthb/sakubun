@@ -1,0 +1,19 @@
+# Gemini Code Assist cho sakubun. Lý do và luật: thienai-workflow docs/decisions/002-coderabbit-one-review.md
+# Giống CodeRabbit: không review PR nháp, review một lần khi PR sẵn sàng; sửa lớn thì comment "/gemini review".
+# Không tóm tắt PR vì CodeRabbit đã tóm tắt.
+have_fun: false
+ignore_patterns:
+  - data/**
+  - lib/generated/**
+  - package-lock.json
+  - 'docs/plans/**/*.jpg'
+  - 'docs/plans/**/*.png'
+code_review:
+  disable: false
+  comment_severity_threshold: MEDIUM
+  max_review_comments: -1
+  pull_request_opened:
+    help: false
+    summary: false
+    code_review: true
+    include_drafts: false
