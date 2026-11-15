@@ -82,13 +82,9 @@ test('the phone shows five named tabs, and the edge rail is gone', async ({ page
   await bar.getByRole('link', { name: 'Kho' }).click();
   await page.waitForURL((u) => u.pathname === '/resources');
   await expect(bar.getByRole('link', { name: 'Kho' })).toHaveAttribute('aria-current', 'page');
-  // Kho holds both stores: a switch at the top goes between them.
-  const pages = page.getByRole('navigation', { name: 'Chuyển trang' });
-  await expect(pages.getByRole('link', { name: 'Của bạn' })).toHaveAttribute(
-    'aria-current',
-    'page',
-  );
-  await pages.getByRole('link', { name: 'Kho chung' }).click();
+  // Kho has no switch at the top since U4b: a level's cell opens Kho chung, and Kho stays lit there.
+  await expect(page.getByRole('navigation', { name: 'Chuyển trang' })).toHaveCount(0);
+  await page.goto('/library');
   await page.waitForURL((u) => u.pathname === '/library');
   await expect(bar.getByRole('link', { name: 'Kho' })).toHaveAttribute('aria-current', 'page');
   await expect(bar.locator('[aria-current="page"]')).toHaveCount(1);

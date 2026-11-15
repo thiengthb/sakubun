@@ -185,13 +185,17 @@ export function GuideTab({
             vai còn lại.
           </p>
         </GuideRow>
-        <GuideRow icon={Library} title="Tài nguyên">
-          <p>Kho ngữ pháp, từ vựng và nhóm của riêng bạn, cùng lịch ôn của từng mục.</p>
+        <GuideRow icon={Library} title="Kho">
+          <p>
+            Mở ra là các cấp JLPT từ N5 tới N1: mỗi ô cho biết bạn đã có bao nhiêu và đã thuộc bao
+            nhiêu trên cả cấp. Bấm Mọi mục để xem hết ngữ pháp, từ vựng, kanji và nhóm của bạn.
+          </p>
         </GuideRow>
         <GuideRow icon={Globe} title="Kho chung">
           <p>
-            Ngữ pháp và từ vựng mọi người cùng dùng, khởi đầu từ OpenJLPT. Lấy về một mục hay cả
-            nhóm; bấm Chia sẻ ở trang một mục hay một nhóm của bạn để đưa nó lên cho người khác.
+            Ngữ pháp và từ vựng mọi người cùng dùng, khởi đầu từ OpenJLPT, mở từ một ô trong Kho.
+            Lấy về một mục hay cả nhóm; bấm Chia sẻ ở trang một mục hay một nhóm của bạn để đưa nó
+            lên cho người khác.
           </p>
         </GuideRow>
         <GuideRow icon={TrendingUp} title="Tiến độ">

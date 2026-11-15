@@ -5,6 +5,7 @@ import HistoryLoading from '@/app/progress/loading';
 import ReviewLoading from '@/app/review/loading';
 import SettingsLoading from '@/app/settings/loading';
 import ResourcesLoading from '@/app/resources/loading';
+import AllItemsLoading from '@/app/resources/all/loading';
 import ResourceAddLoading from '@/app/resources/new/loading';
 import ItemLoading from '@/app/resources/[id]/loading';
 import ItemEditLoading from '@/app/resources/[id]/edit/loading';
@@ -25,6 +26,7 @@ const SKELETONS: Record<string, () => React.ReactElement> = {
   today: TodayLoading,
   analytics: AnalyticsLoading,
   resources: ResourcesLoading,
+  'resources-all': AllItemsLoading,
   'resources-new': ResourceAddLoading,
   item: ItemLoading,
   'item-edit': ItemEditLoading,
@@ -47,11 +49,9 @@ const SKELETONS: Record<string, () => React.ReactElement> = {
 // While these pages load on a phone, the shell already shows their tab's page switch above the
 // skeleton (it follows the address, not the page), so the preview draws it too.
 const SWITCHED: Record<string, string> = {
-  resources: '/resources',
   history: '/progress',
   analytics: '/analytics',
   settings: '/settings',
-  library: '/library',
 };
 
 export default async function DevSkeletonPage({ params }: { params: Promise<{ route: string }> }) {

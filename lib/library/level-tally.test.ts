@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { tallyLevels, type BoardEntry, type BoardItem } from './level-tally';
+import {
+  cellHref,
+  cellNote,
+  studyLabels,
+  tallyLevels,
+  type BoardEntry,
+  type BoardItem,
+} from './level-tally';
 
 const entry = (type: string, expression: string, level: string, listed = true): BoardEntry => ({
   type,
@@ -109,5 +116,25 @@ describe('tallyLevels', () => {
     expect(board.levels.every((l) => l.kanji.total === 0)).toBe(true);
     // A word whose entry has no JLPT level is still a known entry, not outside.
     expect(board.outside).toBe(0);
+  });
+});
+
+describe('cell helpers', () => {
+  it('says what is left of a cell', () => {
+    expect(cellNote({ total: 0, have: 0, mastered: 0 })).toBe('Kho chung chưa có mục nào');
+    expect(cellNote({ total: 98, have: 0, mastered: 0 })).toBe('Chưa lấy');
+    expect(cellNote({ total: 662, have: 660, mastered: 5 })).toBe('5 thuộc · còn 2 chưa lấy');
+    expect(cellNote({ total: 415, have: 415, mastered: 0 })).toBe('0 thuộc · đủ cả cấp');
+  });
+
+  it('opens the level in Kho chung, kanji on their level page', () => {
+    expect(cellHref('N4', 'vocab')).toBe('/library?tab=items&type=VOCAB&level=N4');
+    expect(cellHref('N5', 'grammar')).toBe('/library?tab=items&type=GRAMMAR&level=N5');
+    expect(cellHref('N3', 'kanji')).toBe('/library/kanji/N3');
+  });
+
+  it('puts "đang học" on the level, or on each cell when the kinds differ', () => {
+    expect(studyLabels('N5', 'N5')).toEqual({ level: 'N5', grammar: null, vocab: null });
+    expect(studyLabels('N4', 'N5')).toEqual({ level: null, grammar: 'N4', vocab: 'N5' });
   });
 });

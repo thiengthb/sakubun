@@ -62,7 +62,7 @@ export function ResourcesView({
     <Tabs value={tab} onValueChange={setTab}>
       <PageShell
         template="list"
-        title="Tài nguyên"
+        title="Mọi mục"
         meta={meta}
         actions={action}
         tabs={<PageTabs items={RESOURCE_TABS.items} label={RESOURCE_TABS.label} />}

@@ -18,7 +18,7 @@ export default function NotFound() {
           </ButtonLink>
           <ButtonLink href="/resources" size="lg" variant="outline">
             <BookOpen />
-            Mở Tài nguyên
+            Mở Kho
           </ButtonLink>
         </>
       }

@@ -1,38 +1,38 @@
+import { redirect } from 'next/navigation';
 import { LiveRefresh } from '@/components/layout/live-refresh';
-import { ResourcesView } from '@/components/features/resources/resources-view';
-import type { ResourceRow } from '@/components/features/resources/resource-table';
-import { getSettings, listItems, VOCAB_KIND } from '@/lib/library/practice';
-import { listGroups } from '@/lib/library/groups';
-import { MAX_LISTED_ITEMS } from '@/lib/library/item-limits';
+import { LevelBoardView } from '@/components/features/resources/level-board-view';
 import { getUserDb } from '@/lib/auth/current-user';
-import { furiganaInApp } from '@/lib/settings/schema';
-import { kanjiCatalog } from '@/lib/kanji/load';
+import { levelBoard } from '@/lib/app/level-board';
+import { getSettings } from '@/lib/library/practice';
+import { ensureOpenJlptLibrary } from '@/lib/library/seed';
 
 export const dynamic = 'force-dynamic';
 
-export default async function ResourcesPage() {
+// Kho (U4b, docs/plans/2026-11-14-u4-kho.md): the JLPT level board. A link that names a tab or a
+// card (?tab=vocab, ?card=needs-work) was written for the list of every item, which now lives at
+// /resources/all.
+export default async function KhoPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const params = await searchParams;
+  if (params.tab !== undefined || params.card !== undefined) {
+    const query = new URLSearchParams();
+    for (const [key, value] of Object.entries(params))
+      for (const v of [value ?? []].flat()) query.append(key, v);
+    redirect(`/resources/all?${query}`);
+  }
   const db = await getUserDb();
-  const [grammar, vocab, groups, settings, kanji] = await Promise.all([
-    listItems(db, { limit: MAX_LISTED_ITEMS, withGroupIds: true }) as Promise<ResourceRow[]>,
-    listItems(db, { kind: VOCAB_KIND, limit: MAX_LISTED_ITEMS, withGroupIds: true }) as Promise<
-      ResourceRow[]
-    >,
-    listGroups(db),
-    getSettings(db),
-    kanjiCatalog(),
-  ]);
-
+  await ensureOpenJlptLibrary();
+  const [board, settings] = await Promise.all([levelBoard(db), getSettings(db)]);
   return (
     <>
       <LiveRefresh />
-      <ResourcesView
-        grammar={grammar}
-        vocab={vocab}
-        groups={groups}
-        kanjiCount={kanji.length}
-        voiceSpeaker={settings.voiceSpeaker}
-        speechRate={settings.speechRate}
-        showFurigana={furiganaInApp(settings.furiganaMode)}
+      <LevelBoardView
+        board={board}
+        grammarLevel={settings.grammarLevel}
+        vocabLevel={settings.vocabLevel}
       />
     </>
   );
