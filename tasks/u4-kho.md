@@ -1,7 +1,7 @@
 # U4: màn Kho theo cấp JLPT (U4b chờ review, rồi U4c)
 
 Repo: thiengthb/sakubun · Nhánh: feat/u4b-kho-level-board · PR: #323
-Ghi bởi: Claude tnt697, https://claude.ai/code/session_01WXAvBWYJAVsv6v7gffV9Cb · Cập nhật: 2026-11-15T07:38Z
+Ghi bởi: Claude tnt697, https://claude.ai/code/session_01WXAvBWYJAVsv6v7gffV9Cb · Cập nhật: 2026-11-15T07:44Z
 
 ## thien muốn gì
 Làm U4 theo kế hoạch đã duyệt `docs/plans/2026-11-14-u4-kho.md` (hướng 2, gộp theo cấp JLPT; 15/11 thien trả lời "theo đề xuất" cả 3 câu, U4g/U4h để sau kỳ thi N2). thien bảo nick tnt697 làm tiếp ("nick này làm tiếp", 15/11).
@@ -14,7 +14,7 @@ Làm U4 theo kế hoạch đã duyệt `docs/plans/2026-11-14-u4-kho.md` (hướ
 
 ## Bước tiếp theo
 1. Một phiên khác review #323 (luật risk:medium trong `CLAUDE.md`), rồi merge.
-2. U4c (danh sách một cấp) theo kế hoạch: nhánh mới từ `main`, mở PR nháp `U4c: ...` ngay. Các ô bảng cấp hiện mở `/library?tab=items&type=..&level=..` (`cellHref` trong `level-tally.ts`); U4c đổi sang route danh sách cấp.
+2. U4c: đã mở nhánh `feat/u4c-level-list`, PR nháp #325. Đang làm vòng chọn bố cục (2–3 bản, ảnh 390px và 1440px, trang từ mẫu `artifacts/decide/`), nguồn ở `docs/plans/2026-11-14-u4-kho/u4c/`. Code chỉ sau khi thien chọn và #323 merge. Các ô bảng cấp hiện mở `/library?tab=items&type=..&level=..` (`cellHref` trong `level-tally.ts`); U4c đổi sang route danh sách cấp.
 
 ## Đang chờ thien
 - Review hoặc nhờ phiên khác review PR #323 rồi merge.
