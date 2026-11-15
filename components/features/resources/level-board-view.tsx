@@ -15,6 +15,7 @@ import {
 } from '@/lib/library/level-tally';
 import type { KhoBoard } from '@/lib/app/level-board';
 import { cn } from '@/lib/core/utils';
+import { KHO_BOARD_META } from './kho-copy';
 
 const KINDS: { kind: BoardKind; label: string }[] = [
   { kind: 'grammar', label: 'Ngữ pháp' },
@@ -39,7 +40,7 @@ export function LevelBoardView({
     <PageShell
       template="list"
       title="Kho"
-      meta="Theo cấp JLPT · mỗi ô là phần bạn đã có trên cả cấp"
+      meta={KHO_BOARD_META}
       actions={<ExpandingIconButton href="/resources/all" icon={List} label="Mọi mục" />}
     >
       <div className="flex flex-col gap-3">

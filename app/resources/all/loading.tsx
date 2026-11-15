@@ -20,7 +20,7 @@ export default function Loading() {
   return (
     <PageSkeleton
       template="list"
-      title="Tài nguyên"
+      title="Mọi mục"
       meta
       actions={<Skeleton className="h-9 w-20 rounded-sm md:h-7" />}
       tabs={<PageTabsSkeleton set="resources" />}

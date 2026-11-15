@@ -16,10 +16,12 @@ interface Pair {
 const PAIRS: Pair[] = [
   { name: 'today', page: '/', skeleton: 'today' },
   { name: 'analytics', page: '/analytics', skeleton: 'analytics' },
+  // Kho is the JLPT level board since U4b; the list of every item moved to /resources/all.
+  { name: 'kho board', page: '/resources', skeleton: 'resources' },
   {
-    name: 'resources',
-    page: '/resources?tab=grammar',
-    skeleton: 'resources',
+    name: 'resources all',
+    page: '/resources/all?tab=grammar',
+    skeleton: 'resources-all',
     items: true,
   },
   // The detail header's meaning wraps by its length, which the skeleton cannot know (as with the
