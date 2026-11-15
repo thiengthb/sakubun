@@ -1,0 +1,498 @@
+// Scratch (never committed): three layouts for U4 Kho, for thien to choose.
+import Link from 'next/link';
+import { ChevronRight, Plus, Check, Search, SlidersHorizontal, ArrowRight } from 'lucide-react';
+import { PageShell } from '@/components/layout/page-shell';
+import { Button, ButtonLink } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { SpeakButton } from '@/components/common/speak-button';
+import { cn } from '@/lib/core/utils';
+import { getUserDb } from '@/lib/auth/current-user';
+import { listItems, VOCAB_KIND } from '@/lib/library/practice';
+import { browseEntries } from '@/lib/library/browse';
+import { kanjiLevels } from '@/lib/app/kanji-levels';
+import { X, Sparkles, Library as LibIcon, PenLine, Users } from 'lucide-react';
+import { DEFAULT_BROWSE } from '@/lib/library/browse-query';
+
+export const dynamic = 'force-dynamic';
+
+type Row = {
+  id: string;
+  ja: string;
+  reading: string | null;
+  hanviet: string | null;
+  meaning: string;
+  level: string;
+  status: string | null;
+  due: string | null;
+  notes: string | null;
+};
+
+const fmt = new Intl.DateTimeFormat('vi-VN', { day: 'numeric', month: 'numeric', timeZone: 'Asia/Ho_Chi_Minh' });
+
+function statusOf(srs: { state: number; due: Date } | null, now: Date): [string, string | null] {
+  if (!srs || srs.state === 0) return ['Mới', null];
+  if (srs.due <= now) return ['Đến hạn', 'hôm nay'];
+  const days = Math.round((srs.due.getTime() - now.getTime()) / 86_400_000);
+  return [days >= 7 ? 'Đã thuộc' : 'Đang học', fmt.format(srs.due)];
+}
+
+const TONE: Record<string, string> = {
+  Mới: 'text-muted-foreground',
+  'Đang học': 'text-accent-brand',
+  'Đến hạn': 'text-warn',
+  'Đã thuộc': 'text-ok',
+};
+
+function Status({ s }: { s: string | null }) {
+  if (!s) return <span className="text-xs text-muted-foreground">Chưa có</span>;
+  return <span className={cn('text-xs font-medium', TONE[s])}>{s}</span>;
+}
+
+function Switch({ src, v }: { src: string; v: string }) {
+  return (
+    <nav aria-label="Nguồn" className="inline-flex self-start rounded-lg bg-muted p-1">
+      {[
+        ['mine', 'Của bạn'],
+        ['lib', 'Kho chung'],
+      ].map(([key, label]) => (
+        <Link
+          key={key}
+          href={`/zz-u4?v=${v}&src=${key}`}
+          className={cn(
+            'rounded-md px-4 py-1.5 text-sm font-medium text-muted-foreground',
+            src === key && 'bg-card text-foreground shadow-sm',
+          )}
+        >
+          {label}
+        </Link>
+      ))}
+    </nav>
+  );
+}
+
+function Tabs() {
+  return (
+    <div className="flex gap-5 border-b border-border text-sm">
+      {['Ngữ pháp', 'Từ vựng', 'Kanji', 'Nhóm'].map((t) => (
+        <span
+          key={t}
+          className={cn(
+            'pb-2 text-muted-foreground',
+            t === 'Từ vựng' && 'border-b-2 border-foreground font-medium text-foreground',
+          )}
+        >
+          {t}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function Chips({ items, on }: { items: string[]; on: string }) {
+  return (
+    <div className="flex gap-1.5 overflow-x-auto">
+      {items.map((c) => (
+        <span
+          key={c}
+          className={cn(
+            'shrink-0 rounded-full border border-border px-3 py-1 text-xs',
+            c === on ? 'border-foreground bg-foreground text-background' : 'text-muted-foreground',
+          )}
+        >
+          {c}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function SearchBox({ placeholder }: { placeholder: string }) {
+  return (
+    <div className="flex h-9 flex-1 items-center gap-2 rounded-lg border border-border bg-card px-3 text-sm text-muted-foreground md:max-w-xs">
+      <Search className="size-4" aria-hidden />
+      {placeholder}
+    </div>
+  );
+}
+
+function Word({ r, big }: { r: Row; big?: boolean }) {
+  return (
+    <span className="flex min-w-0 items-baseline gap-2">
+      <span lang="ja" className={cn('font-jp', big ? 'text-xl' : 'text-base')}>
+        {r.ja}
+      </span>
+      {r.reading && r.reading !== r.ja && (
+        <span lang="ja" className="truncate text-xs text-muted-foreground">
+          {r.reading}
+        </span>
+      )}
+    </span>
+  );
+}
+
+function TakeButton({ owned }: { owned: boolean }) {
+  return owned ? (
+    <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+      <Check className="size-3.5" aria-hidden /> Đã có
+    </span>
+  ) : (
+    <Button variant="outline" size="sm">
+      <Plus aria-hidden /> Học
+    </Button>
+  );
+}
+
+/** Laptop table: Từ, Nghĩa, Cấp, Trạng thái, Đến hạn; phone rows. */
+function List({ rows, lib, selected }: { rows: Row[]; lib: boolean; selected?: string }) {
+  return (
+    <>
+      <div className="max-md:hidden">
+        <div className="grid grid-cols-[minmax(0,1.3fr)_minmax(0,2fr)_56px_110px_90px] gap-3 border-b border-border px-3 pb-2 text-xs text-muted-foreground">
+          <span>Từ</span>
+          <span>Nghĩa</span>
+          <span>Cấp</span>
+          <span>{lib ? '' : 'Trạng thái'}</span>
+          <span className="text-right">{lib ? '' : 'Đến hạn'}</span>
+        </div>
+        {rows.map((r) => (
+          <div
+            key={r.id}
+            className={cn(
+              'grid min-h-12 grid-cols-[minmax(0,1.3fr)_minmax(0,2fr)_56px_110px_90px] items-center gap-3 border-b border-border px-3',
+              !r.status && !lib && 'opacity-70',
+              selected === r.id && 'bg-muted',
+            )}
+          >
+            <Word r={r} />
+            <span className="truncate text-sm">{r.meaning}</span>
+            <span className="text-xs text-muted-foreground">{r.level}</span>
+            {lib ? <span /> : <Status s={r.status} />}
+            <span className="text-right text-xs text-muted-foreground">
+              {lib || !r.status ? <TakeButton owned={!!r.status} /> : (r.due ?? '–')}
+            </span>
+          </div>
+        ))}
+      </div>
+      <ul className="divide-y divide-border md:hidden">
+        {rows.map((r) => (
+          <li key={r.id} className={cn('flex min-h-14 items-center gap-3 py-2', !r.status && !lib && 'opacity-70')}>
+            <span className="min-w-0 flex-1">
+              <Word r={r} />
+              <span className="block truncate text-sm text-muted-foreground">{r.meaning}</span>
+            </span>
+            {lib || !r.status ? (
+              <TakeButton owned={!!r.status} />
+            ) : (
+              <span className="flex flex-col items-end gap-0.5">
+                <Status s={r.status} />
+                {r.due && <span className="text-xs text-muted-foreground">{r.due}</span>}
+              </span>
+            )}
+          </li>
+        ))}
+      </ul>
+    </>
+  );
+}
+
+function LevelBanner() {
+  return (
+    <Card className="flex-row items-center justify-between gap-3 p-4">
+      <span>
+        <span className="block text-sm font-medium">OpenJLPT N4 · 616 từ</span>
+        <span className="block text-xs text-muted-foreground">Bạn chưa có từ nào của cấp này</span>
+      </span>
+      <Button size="sm">Lấy cả N4</Button>
+    </Card>
+  );
+}
+
+function Preview({ r, lib }: { r: Row; lib?: boolean }) {
+  return (
+    <Card className="sticky top-4 gap-4 p-5">
+      <div>
+        <p className="flex items-center gap-2">
+          <span lang="ja" className="font-jp text-3xl">
+            {r.ja}
+          </span>
+          <SpeakButton text={r.ja} />
+        </p>
+        <p lang="ja" className="text-sm text-muted-foreground">
+          {r.reading} {r.hanviet && `· ${r.hanviet}`}
+        </p>
+        <p className="mt-2 text-lg">{r.meaning}</p>
+      </div>
+      {r.notes && (
+        <div>
+          <p className="text-xs font-medium text-muted-foreground">Ví dụ</p>
+          <p className="mt-1 line-clamp-4 text-sm">{r.notes}</p>
+        </div>
+      )}
+      {lib ? (
+        <div className="rounded-lg bg-muted p-3">
+          <p className="text-sm">Chưa có trong kho của bạn. Bấm Học để đưa vào Ôn nhanh.</p>
+          <p className="mt-2 text-xs text-muted-foreground">OpenJLPT N4 · 128 người đã lấy</p>
+        </div>
+      ) : (
+      <div className="rounded-lg bg-muted p-3">
+        <p className="text-sm">Bạn nhớ từ này khoảng 9 ngày nữa, ôn lại ngày 23/11.</p>
+        <p className="mt-2 flex gap-4 text-xs text-muted-foreground">
+          <span>
+            <b className="text-foreground">4</b> lần ôn
+          </span>
+          <span>
+            <b className="text-foreground">75%</b> đúng
+          </span>
+          <span>
+            độ khó <b className="text-foreground">5.1</b>
+          </span>
+        </p>
+      </div>
+      )}
+      <div className="flex gap-2">
+        {lib && (
+          <Button size="sm">
+            <Plus aria-hidden /> Học
+          </Button>
+        )}
+        <ButtonLink href={`/resources/${r.id}`} variant="outline" size="sm">
+          Mở trang <ArrowRight aria-hidden />
+        </ButtonLink>
+        <Button variant="ghost" size="sm">
+          Sửa
+        </Button>
+      </div>
+    </Card>
+  );
+}
+
+
+const LIB: Record<string, [number, number]> = {
+  N5: [81, 662],
+  N4: [98, 616],
+  N3: [101, 1633],
+  N2: [115, 1752],
+  N1: [123, 2962],
+};
+
+function Bar({ parts, total }: { parts: [number, string][]; total: number }) {
+  return (
+    <span className="flex h-2 w-full overflow-hidden rounded-full bg-muted">
+      {parts.map(([n, c], i) => (
+        <span key={i} className={c} style={{ width: `${(100 * n) / Math.max(1, total)}%` }} />
+      ))}
+    </span>
+  );
+}
+
+function Cell({ label, total, mastered, learning, have }: { label: string; total: number; mastered: number; learning: number; have: number }) {
+  const left = total - have;
+  return (
+    <div className="flex flex-col gap-1.5">
+      <span className="flex items-baseline justify-between gap-2 text-sm">
+        <span className="font-medium">{label}</span>
+        <span className="text-xs text-muted-foreground tabular-nums">
+          {have}/{total}
+        </span>
+      </span>
+      <Bar total={total} parts={[[mastered, 'bg-ok'], [learning, 'bg-accent-brand'], [have - mastered - learning, 'bg-accent-brand/45']]} />
+      <span className="text-xs text-muted-foreground">
+        {have === 0 ? 'Chưa lấy' : left > 0 ? `${mastered} thuộc · còn ${left} chưa lấy` : `${mastered} thuộc · đủ cả cấp`}
+      </span>
+    </div>
+  );
+}
+
+export default async function U4({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
+  const { v = '1', view = 'home' } = await searchParams;
+  const db = await getUserDb();
+  const now = new Date();
+  const items = await listItems(db, { kind: VOCAB_KIND, limit: 14 });
+  const mine: Row[] = items.map((i) => {
+    const [status, due] = statusOf(i.srs, now);
+    return { id: i.itemId, ja: i.expression, reading: i.reading, hanviet: i.hanviet, meaning: i.meaningVi, level: i.level ?? '', status, due, notes: i.notes };
+  });
+  const add = (
+    <Button size="sm">
+      <Plus aria-hidden /> Thêm
+    </Button>
+  );
+
+  if (v === '1') {
+    // 1: no merge. Kho is yours; getting more is one "Thêm" away.
+    return (
+      <PageShell template="list" title="Kho của bạn" meta="78 mẫu · 660 từ · 415 kanji" actions={add}>
+        <div className="flex flex-col gap-4">
+          <Tabs />
+          <div className="flex flex-col gap-2 md:flex-row md:items-center">
+            <SearchBox placeholder="Tìm trong kho của bạn" />
+            <Chips items={['Mọi cấp', 'Đến hạn', 'Đang học', 'Mới', 'Đã thuộc']} on="Mọi cấp" />
+          </div>
+          <List rows={mine} lib={false} />
+        </div>
+        {view === 'add' && (
+          <div className="fixed inset-0 z-50 flex items-end bg-black/30 md:items-stretch md:justify-end">
+            <div className="flex w-full flex-col gap-4 rounded-t-2xl bg-background p-5 md:w-[440px] md:rounded-none md:p-6">
+              <div className="flex items-center justify-between">
+                <h2 className="text-heading">Thêm vào kho</h2>
+                <X className="size-5 text-muted-foreground" aria-hidden />
+              </div>
+              <div className="flex"><SearchBox placeholder="Tìm trong Kho chung: từ, mẫu, nghĩa" /></div>
+              <div className="flex flex-col divide-y divide-border rounded-xl border border-border bg-card">
+                {[
+                  [LibIcon, 'Lấy theo cấp JLPT', 'N4 · còn 98 mẫu, 616 từ, 304 kanji chưa lấy'],
+                  [Users, 'Bộ người khác chia sẻ', 'Bộ nhiều lượt lấy, theo chủ đề'],
+                  [Sparkles, 'Nhờ Claude soạn', 'Nói với Claude "thêm các từ về chủ đề…"'],
+                  [PenLine, 'Tự viết một mục', 'Nhập mẫu hoặc từ của riêng bạn'],
+                ].map(([Icon, t, h]) => {
+                  const I = Icon as typeof LibIcon;
+                  return (
+                    <div key={t as string} className="flex min-h-14 items-center gap-3 px-4 py-3">
+                      <I className="size-5 text-muted-foreground" aria-hidden />
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-sm font-medium">{t as string}</span>
+                        <span className="block text-xs text-muted-foreground">{h as string}</span>
+                      </span>
+                      <ChevronRight className="size-4 text-muted-foreground" aria-hidden />
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="text-xs text-muted-foreground">Kho chung không còn là mục riêng trong menu; nó mở từ đây, từ Hôm nay và từ Hội thoại.</p>
+            </div>
+          </div>
+        )}
+      </PageShell>
+    );
+  }
+
+  if (v === '2') {
+    // 2: merge by level. Kho opens on the JLPT levels; Kho chung is what is not taken yet.
+    const all = await db.item.findMany({ select: { level: true, kind: true, srs: { select: { state: true, due: true } } } });
+    const kl = await kanjiLevels(db);
+    const stat = (level: string, kind: string) => {
+      const rows = all.filter((r) => r.level === level && r.kind === kind);
+      const mastered = rows.filter((r) => r.srs && r.srs.state === 2 && r.srs.due.getTime() - now.getTime() > 7 * 86_400_000).length;
+      const learning = rows.filter((r) => r.srs && r.srs.state > 0).length - mastered;
+      return { have: rows.length, mastered, learning };
+    };
+    if (view === 'level') {
+      const { rows } = await browseEntries(db, { ...DEFAULT_BROWSE, type: VOCAB_KIND, level: 'N5', sort: 'popular' });
+      const mixed: Row[] = [
+        ...mine.slice(0, 9),
+        ...rows.filter((r) => !r.itemId).slice(0, 2).map((e) => ({ id: e.id, ja: e.expression ?? '', reading: e.reading, hanviet: null, meaning: e.meaningVi ?? '', level: e.level ?? '', status: null, due: null, notes: null })),
+      ];
+      return (
+        <PageShell template="list" title="N5 · Từ vựng" meta="660/662 từ trong kho · 12 đã thuộc" actions={<Button size="sm" variant="outline">Lấy nốt 2 từ</Button>}>
+          <div className="flex flex-col gap-4">
+            <p className="text-sm text-muted-foreground">
+              <Link href="/zz-u4?v=2" className="text-accent-brand">Kho</Link> › N5
+            </p>
+            <div className="flex flex-col gap-2 md:flex-row md:items-center">
+              <SearchBox placeholder="Tìm trong N5" />
+              <Chips items={['Tất cả', 'Đến hạn', 'Đang học', 'Mới', 'Đã thuộc', 'Chưa có']} on="Tất cả" />
+            </div>
+            <List rows={mixed} lib={false} />
+          </div>
+        </PageShell>
+      );
+    }
+    return (
+      <PageShell template="list" title="Kho" meta="Theo cấp JLPT · mỗi ô là phần bạn đã có trên cả cấp" actions={add}>
+        <div className="flex flex-col gap-4">
+          <SearchBox placeholder="Tìm trong kho của bạn và Kho chung" />
+          {(['N5', 'N4', 'N3', 'N2', 'N1'] as const).map((level, i) => {
+            const g = stat(level, 'GRAMMAR');
+            const w = stat(level, 'VOCAB');
+            const k = kl[i];
+            return (
+              <Card key={level} className="gap-3 p-4">
+                <div className="flex items-center justify-between">
+                  <span className="flex items-baseline gap-2">
+                    <span className="text-heading">{level}</span>
+                    {i === 0 && <span className="text-xs text-accent-brand">đang học</span>}
+                  </span>
+                  <ChevronRight className="size-4 text-muted-foreground" aria-hidden />
+                </div>
+                <div className="grid gap-4 md:grid-cols-3">
+                  <Cell label="Ngữ pháp" total={LIB[level][0]} {...g} />
+                  <Cell label="Từ vựng" total={LIB[level][1]} {...w} />
+                  <Cell label="Kanji" total={k.size} have={k.have} mastered={0} learning={0} />
+                </div>
+              </Card>
+            );
+          })}
+          <Card className="flex-row items-center justify-between gap-3 p-4">
+            <span>
+              <span className="block text-sm font-medium">Ngoài JLPT</span>
+              <span className="block text-xs text-muted-foreground">Mục bạn tự thêm, bộ người khác chia sẻ, Nhóm của bạn</span>
+            </span>
+            <ChevronRight className="size-4 text-muted-foreground" aria-hidden />
+          </Card>
+        </div>
+      </PageShell>
+    );
+  }
+
+  // 3: search first, like a dictionary.
+  const q = '会';
+  const own = await listItems(db, { kind: VOCAB_KIND, search: q, limit: 5 });
+  const { rows } = await browseEntries(db, { ...DEFAULT_BROWSE, q, hideOwned: true });
+  const ownRows: Row[] = own.map((i) => {
+    const [status, due] = statusOf(i.srs, now);
+    return { id: i.itemId, ja: i.expression, reading: i.reading, hanviet: i.hanviet, meaning: i.meaningVi, level: i.level ?? '', status, due, notes: i.notes };
+  });
+  const libRows: Row[] = rows.slice(0, 6).map((e) => ({ id: e.id, ja: e.expression ?? '', reading: e.reading, hanviet: null, meaning: e.meaningVi ?? '', level: e.level ?? '', status: null, due: null, notes: null }));
+  if (view === 'search') {
+    return (
+      <PageShell template="list" title="Kho" meta={`"${q}"`} actions={add}>
+        <div className="flex max-w-3xl flex-col gap-5">
+          <div className="flex h-12 items-center gap-3 rounded-xl border-2 border-foreground/70 bg-card px-4 text-lg">
+            <Search className="size-5 text-muted-foreground" aria-hidden /> <span lang="ja">{q}</span>
+          </div>
+          <section>
+            <h2 className="mb-1 text-sm font-medium">Trong kho của bạn · {ownRows.length}</h2>
+            <List rows={ownRows} lib={false} />
+          </section>
+          <section>
+            <h2 className="mb-1 text-sm font-medium">Trong Kho chung, chưa có · {libRows.length}+</h2>
+            <List rows={libRows} lib />
+          </section>
+        </div>
+      </PageShell>
+    );
+  }
+  return (
+    <PageShell template="list" title="Kho" meta="78 mẫu · 660 từ · 415 kanji" actions={add}>
+      <div className="flex max-w-3xl flex-col gap-6">
+        <div className="flex h-12 items-center gap-3 rounded-xl border-2 border-border bg-card px-4 text-muted-foreground">
+          <Search className="size-5" aria-hidden /> Tìm từ, mẫu, kanji, nghĩa tiếng Việt
+        </div>
+        <section className="flex flex-col gap-2">
+          <h2 className="text-sm font-medium">Xem theo</h2>
+          <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+            {[
+              ['Ngữ pháp', '78'],
+              ['Từ vựng', '660'],
+              ['Kanji', '415'],
+              ['Nhóm', '3'],
+            ].map(([t, n]) => (
+              <Card key={t} className="gap-0.5 p-3">
+                <span className="text-sm font-medium">{t}</span>
+                <span className="text-xs text-muted-foreground">{n} trong kho</span>
+              </Card>
+            ))}
+          </div>
+        </section>
+        <section className="flex flex-col gap-1">
+          <h2 className="text-sm font-medium">Vừa ôn</h2>
+          <List rows={mine.slice(0, 5)} lib={false} />
+        </section>
+        <section className="flex flex-col gap-1">
+          <h2 className="text-sm font-medium">Gợi ý từ Kho chung · N4</h2>
+          <List rows={libRows.slice(0, 3)} lib />
+        </section>
+      </div>
+    </PageShell>
+  );
+}

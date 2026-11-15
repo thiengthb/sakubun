@@ -1,0 +1,107 @@
+{
+  "id": "sakubun-u4-kho-direction",
+  "question": "Kho của bạn và Kho chung: gộp hay tách, và nếu gộp thì gộp thế nào?",
+  "context": "Vòng 1 bạn chọn A (công tắc trên cùng) nhưng chưa ưng, và hỏi có nhất thiết phải gộp không. Mình xem lại hai phần này dùng để làm gì. Kho của bạn là chỗ xem và sửa mục mình đang học, mở thường xuyên. Kho chung là chỗ lấy thêm mục, mở ít: sau lần chọn cấp đầu tiên thì chỉ khi lên cấp, cần một chủ đề, hay lấy bộ người khác chia sẻ. Quizlet, Anki, Spotify đều tách hai việc này (thư viện của bạn và khám phá). Ba hướng dưới đây là ba câu trả lời khác nhau. Mỗi ảnh: bên trái laptop (trên là màn chính, dưới là màn thứ hai), bên phải hai màn điện thoại tương ứng. Ảnh là bản phác bằng dữ liệu thật, chưa phải bản làm xong.",
+  "options": [
+    {
+      "key": "1",
+      "name": "1 · Không gộp, chia theo việc",
+      "summary": "Kho chỉ chứa mục của bạn: tab Ngữ pháp, Từ vựng, Kanji, Nhóm, ô tìm và lọc theo trạng thái. Nút Thêm mở một ngăn với bốn cách thêm: lấy theo cấp JLPT, bộ người khác chia sẻ, nhờ Claude soạn, tự viết. Kho chung rời khỏi menu, mở từ nút Thêm, từ Hôm nay và từ Hội thoại.",
+      "image": "h1.jpg",
+      "pros": [
+        "Màn Kho gọn nhất, chỉ có thứ của bạn",
+        "Mọi cách thêm mục nằm một chỗ, kể cả nhờ Claude",
+        "Giống app quen thuộc (Quizlet, Anki)"
+      ],
+      "cons": [
+        "Không thấy mình còn thiếu bao nhiêu so với cả cấp",
+        "Kho chung khó tìm hơn vì không còn trong menu",
+        "Khác D6 (bỏ công tắc Của bạn | Kho chung)"
+      ]
+    },
+    {
+      "key": "2",
+      "name": "2 · Gộp theo cấp JLPT",
+      "summary": "Kho mở ra là bảng N5 đến N1 và một ô Ngoài JLPT. Mỗi cấp có ba thanh Ngữ pháp, Từ vựng, Kanji: bạn đã có bao nhiêu trên cả cấp, bao nhiêu đã thuộc. Bấm vào một ô là danh sách cấp đó, mục bạn đã có và mục chưa có nằm chung, lọc được bằng chip Chưa có, có nút Lấy nốt. Kho chung không còn là một nơi riêng mà là phần bạn chưa lấy.",
+      "image": "h2.jpg",
+      "pros": [
+        "Thấy ngay tiến độ từng cấp, hợp với việc ôn N2",
+        "Lấy thêm ngay chỗ đang xem, không phải sang màn khác",
+        "Không cần công tắc; hai kho gộp theo cách bạn vẫn nghĩ (theo cấp)"
+      ],
+      "cons": [
+        "Bộ người khác chia sẻ và mục tự viết phải gom vào ô Ngoài JLPT",
+        "Làm nhiều hơn: đếm theo cấp, danh sách trộn hai nguồn",
+        "Khác D6"
+      ]
+    },
+    {
+      "key": "3",
+      "name": "3 · Tìm là chính",
+      "summary": "Kho mở ra là ô tìm lớn, bốn ô Xem theo (Ngữ pháp, Từ vựng, Kanji, Nhóm), danh sách vừa ôn và gợi ý từ Kho chung ở cấp tiếp theo. Gõ một chữ thì kết quả chia hai phần: trong kho của bạn, và trong Kho chung mà bạn chưa có, có nút Học.",
+      "image": "h3.jpg",
+      "pros": [
+        "Như tra từ điển: gặp từ lạ, tìm, lấy luôn",
+        "Màn đầu ngắn, nhìn là biết làm gì",
+        "Làm vừa phải: chủ yếu là tìm chung hai nguồn"
+      ],
+      "cons": [
+        "Không thấy tổng thể mình đã có gì, thiếu gì",
+        "Duyệt cả danh sách vẫn phải bấm thêm một lần",
+        "Gợi ý từ Kho chung dễ thành nhiễu nếu không dùng"
+      ]
+    }
+  ],
+  "criteria": [
+    {
+      "name": "Xem, sửa mục của mình nhanh",
+      "values": {
+        "1": "tốt",
+        "2": "vừa",
+        "3": "tốt"
+      }
+    },
+    {
+      "name": "Lấy thêm từ Kho chung nhanh",
+      "values": {
+        "1": "vừa",
+        "2": "tốt",
+        "3": "tốt"
+      }
+    },
+    {
+      "name": "Thấy tiến độ theo cấp (ôn N2)",
+      "values": {
+        "1": "kém",
+        "2": "tốt",
+        "3": "kém"
+      }
+    },
+    {
+      "name": "Chỗ cho bộ chia sẻ và nhờ Claude soạn",
+      "values": {
+        "1": "tốt",
+        "2": "vừa",
+        "3": "vừa"
+      }
+    },
+    {
+      "name": "Công làm",
+      "values": {
+        "1": {
+          "text": "ít",
+          "tone": "good"
+        },
+        "2": {
+          "text": "nhiều",
+          "tone": "bad"
+        },
+        "3": "vừa"
+      }
+    }
+  ],
+  "recommend": {
+    "key": "2",
+    "why": "Hai kho có cùng một khung là cấp JLPT, nên gộp theo cấp thì không cần công tắc nào: Kho chung chỉ là phần bạn chưa lấy. Bảng cấp còn cho thấy tiến độ, thứ bạn cần khi ôn N2. Nút Thêm của hướng 1 vẫn giữ để nhờ Claude soạn, tự viết và lấy bộ chia sẻ; ô tìm chung của hướng 3 cũng gắn được vào bảng cấp."
+  }
+}
