@@ -1,6 +1,6 @@
 # Tiến độ
 
-Cập nhật lần cuối: 2026-11-15 · Claude nick tnt697 (project Sakubun, U4) · Trang tiến độ: https://claude.ai/artifact/GmergauKMVF2n9HT3WSfxo
+Cập nhật lần cuối: 2026-11-15 · Claude nick tnt697 (project Sakubun, U4a) · Trang tiến độ: https://claude.ai/artifact/GmergauKMVF2n9HT3WSfxo
 
 Cho mọi nick Claude, Codex và thien biết project đang ở đâu. Lịch sử ở git và PR. Tối đa 40 dòng, 3 việc chờ thien.
 
@@ -26,7 +26,7 @@ Review PR: CodeRabbit review một lần khi PR chuyển sẵn sàng, không rev
 
 ## Việc tiếp theo
 
-1. U4 Kho (hướng 2, gộp theo cấp JLPT, duyệt 15/11): làm U4a theo `plans/2026-11-14-u4-kho.md`; U4g, U4h sau kỳ thi N2.
+1. U4 Kho (hướng 2, gộp theo cấp JLPT, duyệt 15/11): U4a số theo cấp xong (#322); làm U4b theo `plans/2026-11-14-u4-kho.md`.
 
 ## Đang chờ thien
 
