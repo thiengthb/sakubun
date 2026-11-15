@@ -22,7 +22,7 @@ const starter = (kind: string, expression: string, level: string): StarterItem =
   hanviet: null,
   meaningVi: 'nghĩa',
   level,
-  notes: null,
+  notes: '',
   tags: '[]',
   source: 'OPENJLPT',
   suspended: false,

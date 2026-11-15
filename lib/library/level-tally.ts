@@ -54,7 +54,7 @@ const isMastered = (item: BoardItem) => !item.suspended && item.state === REVIEW
 
 export function tallyLevels(
   entries: readonly BoardEntry[],
-  kanji: readonly { kanji: string; level: string }[],
+  kanji: readonly { kanji: string; level: string | null }[],
   items: readonly BoardItem[],
 ): LevelBoard {
   const owned = new Map(items.map((i) => [key(i.kind, i.expression), i]));
