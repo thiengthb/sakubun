@@ -19,19 +19,17 @@ Review PR: CodeRabbit review một lần khi PR chuyển sẵn sàng, không rev
 
 ## Việc dở
 
-| Việc                    | Nhánh hoặc PR | Dở từ | Còn thiếu gì                                 |
-| ----------------------- | ------------- | ----- | -------------------------------------------- |
-| Đóng câu hỏi nghiên cứu | #289          | 13/11 | Chỉ tài liệu, chờ thien merge                |
-| Bản tóm tắt hai nick    | #296          | 13/11 | Tạm, của nick kia; đóng khi thien so xong    |
-| Kế hoạch U4 Kho         | #313          | 14/11 | thien duyệt checkpoint U4a–U4h và 3 câu chọn |
+| Việc                    | Nhánh hoặc PR | Dở từ | Còn thiếu gì                              |
+| ----------------------- | ------------- | ----- | ----------------------------------------- |
+| Đóng câu hỏi nghiên cứu | #289          | 13/11 | Chỉ tài liệu, chờ thien merge             |
+| Bản tóm tắt hai nick    | #296          | 13/11 | Tạm, của nick kia; đóng khi thien so xong |
 
 ## Việc tiếp theo
 
-1. U4 Kho (hướng 2, gộp theo cấp JLPT): duyệt xong `plans/2026-11-14-u4-kho.md` thì làm U4a.
+1. U4 Kho (hướng 2, gộp theo cấp JLPT, duyệt 15/11): làm U4a theo `plans/2026-11-14-u4-kho.md`; U4g, U4h sau kỳ thi N2.
 
 ## Đang chờ thien
 
-- Duyệt kế hoạch U4 (#313): checkpoint và 3 câu ở mục "Cần thien chọn".
 - Dán dòng hướng dẫn project vào cả hai project Sakubun (nội dung trong mô tả #297).
 - Trên NUC, không gấp: bấm Hiện "N5 · Ngữ pháp" ở Quản trị; thử chia sẻ kịch bản bằng tài khoản `kai`.
 
