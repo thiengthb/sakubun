@@ -19,10 +19,9 @@ Review PR: CodeRabbit review một lần khi PR chuyển sẵn sàng, không rev
 
 ## Việc dở
 
-| Việc                    | Nhánh hoặc PR | Dở từ | Còn thiếu gì                              |
-| ----------------------- | ------------- | ----- | ----------------------------------------- |
-| Đóng câu hỏi nghiên cứu | #289          | 13/11 | Chỉ tài liệu, chờ thien merge             |
-| Bản tóm tắt hai nick    | #296          | 13/11 | Tạm, của nick kia; đóng khi thien so xong |
+| Việc                 | Nhánh hoặc PR | Dở từ | Còn thiếu gì                              |
+| -------------------- | ------------- | ----- | ----------------------------------------- |
+| Bản tóm tắt hai nick | #296          | 13/11 | Tạm, của nick kia; đóng khi thien so xong |
 
 ## Việc tiếp theo
 
