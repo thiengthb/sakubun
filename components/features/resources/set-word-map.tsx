@@ -42,10 +42,12 @@ export function SetWordMap({
   rate,
 }: {
   words: MapWord[];
-  initial: number;
+  initial: string;
   speaker?: number;
   rate?: number;
 }) {
+  // The open word by its expression, not its place: a refresh (LiveRefresh) that drops an earlier
+  // word must not slide the panel onto the next one. A word gone from the set closes the detail.
   const [open, setOpen] = useState(initial);
   const [sheet, setSheet] = useState(false);
   // Turned to landscape or widened past md, the panel beside the map takes over: close the sheet,
@@ -56,24 +58,24 @@ export function SetWordMap({
     wide.addEventListener('change', onChange);
     return () => wide.removeEventListener('change', onChange);
   }, []);
-  const word = words[open];
+  const word = words.find((w) => w.expression === open);
 
   return (
     <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_20rem] md:items-start">
       <ul aria-label="Các mục của chặng" className="grid grid-cols-4 gap-2 sm:grid-cols-5">
-        {words.map((w, i) => (
+        {words.map((w) => (
           <li key={w.expression}>
             <button
               type="button"
-              aria-pressed={i === open}
+              aria-pressed={w.expression === open}
               onClick={() => {
-                setOpen(i);
+                setOpen(w.expression);
                 if (!window.matchMedia(WIDE).matches) setSheet(true);
               }}
               className={cn(
                 'flex min-h-16 w-full flex-col items-center justify-center gap-0.5 rounded-lg border px-1 py-2 text-center transition-colors hover:brightness-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring md:min-h-20',
                 TILE[w.state],
-                i === open && 'md:outline-2 md:outline-offset-2 md:outline-accent-brand',
+                w.expression === open && 'md:outline-2 md:outline-offset-2 md:outline-accent-brand',
               )}
             >
               <span lang="ja" className="max-w-full truncate text-base font-semibold md:text-lg">
@@ -93,7 +95,8 @@ export function SetWordMap({
           aria-label="Mục đang mở"
           className="sticky top-4 rounded-xl border border-border bg-card p-4 max-md:hidden"
         >
-          <WordDetail word={word} speaker={speaker} rate={rate} />
+          {/* Keyed by word, so another word starts with its own speaker, not the last one's audio. */}
+          <WordDetail key={word.expression} word={word} speaker={speaker} rate={rate} />
         </aside>
       )}
 
@@ -101,11 +104,11 @@ export function SetWordMap({
         {word && (
           <SheetContent
             side="bottom"
-            className="gap-0 rounded-t-2xl p-4 pb-[max(1rem,env(safe-area-inset-bottom))] md:hidden"
+            className="max-h-[calc(100dvh-var(--spacing)*12)] gap-0 overflow-y-auto rounded-t-2xl p-4 pb-[max(1rem,env(safe-area-inset-bottom))] md:hidden"
           >
             <SheetTitle className="sr-only">{word.expression}</SheetTitle>
             <SheetDescription className="sr-only">{STATE_LABEL[word.state]}</SheetDescription>
-            <WordDetail word={word} speaker={speaker} rate={rate} />
+            <WordDetail key={word.expression} word={word} speaker={speaker} rate={rate} />
           </SheetContent>
         )}
       </Sheet>
@@ -114,7 +117,6 @@ export function SetWordMap({
 }
 
 function WordDetail({ word, speaker, rate }: { word: MapWord; speaker?: number; rate?: number }) {
-  const sub = [word.reading, word.hanviet?.toUpperCase()].filter(Boolean).join(' · ');
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between gap-2">
@@ -135,9 +137,11 @@ function WordDetail({ word, speaker, rate }: { word: MapWord; speaker?: number; 
           rate={rate}
           className="text-title1 font-semibold"
         />
-        {sub && (
-          <span lang="ja" className="text-sm text-muted-foreground">
-            {sub}
+        {(word.reading || word.hanviet) && (
+          <span className="text-sm text-muted-foreground">
+            {word.reading && <span lang="ja">{word.reading}</span>}
+            {word.reading && word.hanviet && ' · '}
+            {word.hanviet && <span lang="vi">{word.hanviet.toUpperCase()}</span>}
           </span>
         )}
       </div>

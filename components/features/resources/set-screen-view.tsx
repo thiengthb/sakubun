@@ -75,7 +75,7 @@ export function SetScreenView({
         </ul>
         <SetWordMap
           words={words}
-          initial={firstOpenWord(set)}
+          initial={set.words[firstOpenWord(set)]!.entry.expression}
           speaker={tts.speaker}
           rate={tts.rate}
         />

@@ -34,7 +34,9 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
 export default async function SetPage({ params }: { params: Params }) {
   const { level: rawLevel, kind: rawKind, set: rawSet } = await params;
   const p = parse(rawLevel, rawKind);
-  if (!p) notFound();
+  // A segment that cannot be a set number is turned away before the level loads; the upper bound
+  // needs the level's sets, so parseSetNumber checks it again below.
+  if (!p || parseSetNumber(rawSet, Number.MAX_SAFE_INTEGER) === null) notFound();
   const db = await getUserDb();
   await ensureOpenJlptLibrary();
   const [sets, settings] = await Promise.all([

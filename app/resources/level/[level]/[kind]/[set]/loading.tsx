@@ -12,6 +12,14 @@ export default function Loading() {
       }
       title={<SkeletonText text="Chặng 1" />}
       meta={<Skeleton className="h-3 w-56" />}
+      actions={
+        <>
+          <Skeleton className="h-9 w-32 rounded-sm md:h-7" />
+          <Skeleton className="h-9 w-28 rounded-sm md:h-7" />
+          <Skeleton className="h-9 w-16 rounded-sm md:h-7" />
+        </>
+      }
+      actionsOnPhone="split"
     >
       <div className="flex flex-col gap-4">
         <Skeleton className="h-4 w-72" />

@@ -87,6 +87,7 @@ test('on a phone a tapped word opens in a sheet', async ({ page }) => {
   await first.click();
   const sheet = page.getByRole('dialog', { name: word });
   await expect(sheet).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
   await page.keyboard.press('Escape');
   await expect(sheet).toBeHidden();
   const width = await page.evaluate(() => document.documentElement.scrollWidth);
