@@ -51,17 +51,19 @@ export function LevelWordMap({
         type="single"
         variant="choice"
         aria-label="Lọc theo trạng thái"
-        className="flex-wrap"
+        // A phone keeps the filter to one row that scrolls sideways, so the tiles start near the
+        // top (thien, U4c4a round 1).
+        className="max-md:-mx-4 max-md:w-auto max-md:flex-nowrap max-md:overflow-x-auto max-md:px-4 max-md:pb-1 md:flex-wrap"
         value={only}
         onValueChange={(v) => setOnly(v as Filter)}
       >
-        <ToggleGroupItem value="all" className="px-3">
+        <ToggleGroupItem value="all" className="shrink-0 px-3">
           Tất cả <span className="text-muted-foreground tabular-nums">{words.length}</span>
         </ToggleGroupItem>
         {counts
           .filter(([, n]) => n > 0)
           .map(([s, n]) => (
-            <ToggleGroupItem key={s} value={s} className="gap-1.5 px-3">
+            <ToggleGroupItem key={s} value={s} className="shrink-0 gap-1.5 px-3">
               <span aria-hidden className={cn('size-3 rounded-xs', MARK[s])} />
               <span className="first-letter:uppercase">{STATE_LABEL[s]}</span>
               <span className="text-muted-foreground tabular-nums">{n}</span>

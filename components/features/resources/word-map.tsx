@@ -68,8 +68,9 @@ export function WordMap({
       aria-label={label}
       className={cn(
         'grid gap-2',
-        // Dense: ten a row on a wide screen, five on a narrow one, so a set of 20 fills whole rows.
-        dense ? 'grid-cols-5 xl:grid-cols-10' : 'grid-cols-4 sm:grid-cols-5',
+        // Dense: ten a row on a wide screen, five or four on a narrower one, so a set of 20 fills
+        // whole rows; a phone keeps four so a word of four kana is not cut (thien, U4c4a round 1).
+        dense ? 'grid-cols-4 sm:grid-cols-5 xl:grid-cols-10' : 'grid-cols-4 sm:grid-cols-5',
       )}
     >
       {words.map((w) => (

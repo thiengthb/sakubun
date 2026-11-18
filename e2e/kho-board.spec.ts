@@ -154,6 +154,22 @@ test('the level switches between its sets and a tile per word', async ({ page })
   await expect(page.getByRole('heading', { level: 2, name: 'Các chặng' })).toBeVisible();
 });
 
+test('on a phone the map filter is one row that scrolls on its own', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await signIn(page);
+  await page.goto('/resources/level/N5/vocab?view=map');
+  const filters = page.getByRole('radiogroup', { name: 'Lọc theo trạng thái' });
+  const radios = filters.getByRole('radio');
+  const first = await radios.first().boundingBox();
+  const last = await radios.last().boundingBox();
+  expect(last!.y).toBe(first!.y);
+  await radios.last().click();
+  await expect(radios.last()).toHaveAttribute('aria-checked', 'true');
+  // The row scrolls, not the page.
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+  expect(await page.evaluate(() => window.scrollX)).toBe(0);
+});
+
 test('an old link to a tab lands on the list of every item', async ({ page }) => {
   await signIn(page);
   await page.goto('/resources?tab=vocab');
