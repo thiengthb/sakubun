@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { SpokenLine } from '@/components/common/spoken-line';
 import { ButtonLink } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@/components/ui/sheet';
@@ -48,6 +48,14 @@ export function SetWordMap({
 }) {
   const [open, setOpen] = useState(initial);
   const [sheet, setSheet] = useState(false);
+  // Turned to landscape or widened past md, the panel beside the map takes over: close the sheet,
+  // or its overlay would stay over the page.
+  useEffect(() => {
+    const wide = window.matchMedia(WIDE);
+    const onChange = () => wide.matches && setSheet(false);
+    wide.addEventListener('change', onChange);
+    return () => wide.removeEventListener('change', onChange);
+  }, []);
   const word = words[open];
 
   return (

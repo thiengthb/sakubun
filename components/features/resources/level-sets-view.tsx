@@ -192,21 +192,18 @@ function SetCard({ set, ctx }: { set: LevelSet; ctx: LevelContext }) {
     <li
       id={`chang-${set.number}`}
       aria-labelledby={`chang-${set.number}-title`}
-      className={cn(
-        LIST_CARD.base,
-        'flex scroll-mt-20 flex-col gap-2 p-4 transition-colors hover:bg-muted/40',
-      )}
+      className={cn(LIST_CARD.base, LIST_CARD.linked, 'flex scroll-mt-20 flex-col gap-2 p-4')}
     >
+      {/* A full-size link under the card opens the set (LIST_CARD); the set's own button sits above
+          it. Named by the title, so it reads "Chặng N". */}
+      <Link
+        href={setHref(ctx, set.number)}
+        aria-labelledby={`chang-${set.number}-title`}
+        className={LIST_CARD.link}
+      />
       <div className="flex min-h-9 items-center gap-2">
-        {/* The title's link covers the whole card (its ::after), so a tap anywhere opens the set;
-            the set's own button sits above it. */}
         <h3 id={`chang-${set.number}-title`} className="font-semibold">
-          <Link
-            href={setHref(ctx, set.number)}
-            className="outline-none after:absolute after:inset-0 after:rounded-xl focus-visible:after:outline-2 focus-visible:after:outline-offset-2 focus-visible:after:outline-ring"
-          >
-            Chặng {set.number}
-          </Link>
+          Chặng {set.number}
         </h3>
         <span lang="ja" className="min-w-0 flex-1 truncate text-sm text-muted-foreground">
           {first} → {last}
@@ -222,8 +219,8 @@ function SetCard({ set, ctx }: { set: LevelSet; ctx: LevelContext }) {
             </span>
           ))}
       </div>
-      {/* Each mark names its word and state for screen readers and on hover; the set screen
-          shows every word with its meaning. */}
+      {/* Each mark names its word and state for screen readers; the card's link lies over the marks,
+          so the set screen (a tap away) is where each word shows with its meaning. */}
       <ul
         className="grid grid-cols-10 gap-1.5 max-w-64"
         aria-label={`Từng mục của chặng ${set.number}`}
@@ -231,11 +228,7 @@ function SetCard({ set, ctx }: { set: LevelSet; ctx: LevelContext }) {
         {set.words.map((w) => {
           const name = `${w.entry.expression}: ${STATE_LABEL[w.state]}`;
           return (
-            <li
-              key={w.entry.expression}
-              title={name}
-              className={cn('aspect-square rounded-xs', MARK[w.state])}
-            >
+            <li key={w.entry.expression} className={cn('aspect-square rounded-xs', MARK[w.state])}>
               <span className="sr-only">{name}</span>
             </li>
           );
