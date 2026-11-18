@@ -1,0 +1,24 @@
+{ "id": "sakubun-u4c2-r1", "title": "Duyệt màn cấp (U4c2)",
+  "intro": "Màn mở ra khi bấm một ô trên bảng Kho, ví dụ N5 · Từ vựng. Ảnh chụp app thật trên nhánh của PR #331, dữ liệu thử: chặng 1 đến 4 đã học, chặng 5 lấy rồi chưa học, chặng 6, 7 thiếu vài từ. Nút Học tiếp mở Ôn nhanh; nếu cấp này không phải cấp đang học thì nút thành Học cấp này và mở Cài đặt, vì Ôn nhanh chỉ lấy mục mới từ cấp đã chọn ở đó. Bấm vào một chặng để xem 20 ô có nghĩa là bước sau (U4c3), chưa có ở vòng này.",
+  "scenarios": ["Cấp đang học dở (N5 · Từ vựng)", "Cấp chưa lấy mục nào (N4 · Ngữ pháp)", "Điện thoại 390px"],
+  "items": [
+    { "id": "level-1440", "group": "Laptop", "label": "N5 · Từ vựng · 1440",
+      "note": "Phác gộp bạn duyệt hôm 18/11 bên trái, app thật bên phải.",
+      "sides": [
+        { "key": "a", "name": "Phác đã duyệt", "file": "../u4c-r2/combo-level.jpg", "scale": 1.4 },
+        { "key": "new", "name": "App thật", "file": "r1-level-1440.jpg", "scale": 2 } ] },
+    { "id": "level-1440-full", "group": "Laptop", "label": "Cả trang · 1440",
+      "note": "Cả trang dài: 34 chặng của N5 · Từ vựng. Bên trái là cấp chưa lấy mục nào.",
+      "sides": [
+        { "key": "old", "name": "N4 · Ngữ pháp (chưa lấy)", "file": "n4-grammar-1440.jpg", "scale": 2 },
+        { "key": "new", "name": "N5 · Từ vựng (cả trang)", "file": "level-1440-full.jpg", "scale": 2 } ] },
+    { "id": "level-390", "group": "Điện thoại", "label": "Điện thoại · 390",
+      "note": "Bên trái là bảng Kho, bấm ô Từ vựng của N5 thì ra màn bên phải.",
+      "sides": [
+        { "key": "old", "name": "Bảng Kho", "file": "board-390.jpg", "scale": 2 },
+        { "key": "new", "name": "Màn cấp", "file": "r1-level-390.jpg", "scale": 2 } ] },
+    { "id": "level-390-full", "group": "Điện thoại", "label": "Cả trang · 390",
+      "sides": [
+        { "key": "old", "name": "Màn đầu", "file": "r1-level-390.jpg", "scale": 2 },
+        { "key": "new", "name": "Cả trang", "file": "level-390-full.jpg", "scale": 2 } ] }
+  ] }

@@ -1,0 +1,23 @@
+import sys,re
+v=sys.argv[1]
+p='components/features/resources/level-sets-view.tsx'
+s=open('/tmp/claude-0/-home-user/3f5e834e-bc2b-5790-9e93-84458bdff25d/scratchpad/view.orig.tsx').read()
+V={
+ 'a': ("""  mastered: 'bg-ok/70',
+  learning: 'bg-ok/30',
+  due: 'bg-warn/70',
+  new: 'bg-muted-foreground/15',""", "'h-2 rounded-full'", 'grid grid-cols-10 gap-1'),
+ 'b': ("""  mastered: 'bg-accent-brand/75',
+  learning: 'bg-accent-brand/30',
+  due: 'bg-warn/70',
+  new: 'bg-muted-foreground/15',""", "'aspect-square rounded-[3px]'", 'grid grid-cols-10 gap-1.5 max-w-64'),
+ 'c': ("""  mastered: 'bg-ok/80',
+  learning: 'bg-accent-brand/55',
+  due: 'bg-warn/80',
+  new: 'bg-muted-foreground/20',""", "'size-3 rounded-full'", 'grid w-fit grid-cols-10 gap-x-2 gap-y-1.5'),
+}
+marks,shape,grid=V[v]
+s=re.sub(r"  mastered: 'bg-ok/40',\n  learning: 'bg-accent-brand/30',\n  due: 'bg-warn/45',\n  new: 'bg-muted-foreground/15',",marks,s)
+s=s.replace("cn('h-2.5 rounded-sm', MARK[w.state])",f"cn({shape}, MARK[w.state])")
+s=s.replace('className="grid grid-cols-10 gap-1" aria-label',f'className="{grid}" aria-label')
+open(p,'w').write(s)

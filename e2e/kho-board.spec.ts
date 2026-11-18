@@ -35,14 +35,15 @@ test('Kho is the level board, from N5 to N1 and outside JLPT', async ({ page }) 
   await expect(nav.getByRole('link', { name: 'Kho chung', exact: true })).toHaveCount(0);
   await expect(nav.getByRole('link', { name: 'Tài nguyên', exact: true })).toHaveCount(0);
 
-  // A cell opens that level in Kho chung.
+  // A cell opens that level's screen (U4c2), Kho still lit.
   const n4 = page.getByRole('region', { name: /^N4/ });
   await n4.getByRole('link', { name: /Từ vựng/ }).click();
-  await page.waitForURL(/\/library\?tab=items&type=VOCAB&level=N4/);
-  await expect(nav.getByRole('link', { name: 'Kho', exact: true })).toHaveAttribute(
-    'aria-current',
-    'page',
-  );
+  await page.waitForURL(/\/resources\/level\/N4\/vocab$/);
+  await expect(page.getByRole('heading', { level: 1, name: 'N4 · Từ vựng' })).toBeVisible();
+  // Scoped to the sidebar: the breadcrumb has a "Kho" link too.
+  await expect(
+    page.locator('[data-sidebar="sidebar"]').getByRole('link', { name: 'Kho', exact: true }),
+  ).toHaveAttribute('aria-current', 'page');
 });
 
 test('an old link to a tab lands on the list of every item', async ({ page }) => {

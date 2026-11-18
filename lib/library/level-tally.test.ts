@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   cellHref,
   cellNote,
+  libraryLevelHref,
   studyLabels,
   tallyLevels,
   type BoardEntry,
@@ -127,10 +128,15 @@ describe('cell helpers', () => {
     expect(cellNote({ total: 415, have: 415, mastered: 0 })).toBe('0 thuộc · đủ cả cấp');
   });
 
-  it('opens the level in Kho chung, kanji on their level page', () => {
-    expect(cellHref('N4', 'vocab')).toBe('/library?tab=items&type=VOCAB&level=N4');
-    expect(cellHref('N5', 'grammar')).toBe('/library?tab=items&type=GRAMMAR&level=N5');
+  it('opens the level screen, kanji on their level page in Kho chung', () => {
+    expect(cellHref('N4', 'vocab')).toBe('/resources/level/N4/vocab');
+    expect(cellHref('N5', 'grammar')).toBe('/resources/level/N5/grammar');
     expect(cellHref('N3', 'kanji')).toBe('/library/kanji/N3');
+  });
+
+  it('takes from the level in Kho chung', () => {
+    expect(libraryLevelHref('N4', 'vocab')).toBe('/library?tab=items&type=VOCAB&level=N4');
+    expect(libraryLevelHref('N5', 'grammar')).toBe('/library?tab=items&type=GRAMMAR&level=N5');
   });
 
   it('puts "đang học" on the level, or on each cell when the kinds differ', () => {

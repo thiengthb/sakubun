@@ -1,0 +1,12 @@
+{ "id": "sakubun-u4c2-r2", "title": "Duyệt màn cấp (U4c2), vòng 2",
+  "intro": "Sửa theo hai góp ý ở vòng 1: ô Bước tiếp theo gọn hơn (số có màu theo việc, chữ phụ ngắn, có mũi tên để biết bấm được) và các vạch của chặng đổi sang màu nhạt. Bên trái là vòng 1, bên phải là bản đã sửa.",
+  "items": [
+    { "id": "level-1440", "group": "Laptop", "label": "N5 · Từ vựng · 1440",
+      "sides": [
+        { "key": "old", "name": "Vòng 1", "file": "r1-level-1440.jpg", "scale": 2 },
+        { "key": "new", "name": "Đã sửa", "file": "level-1440.jpg", "scale": 2 } ] },
+    { "id": "level-390", "group": "Điện thoại", "label": "Điện thoại · 390",
+      "sides": [
+        { "key": "old", "name": "Vòng 1", "file": "r1-level-390.jpg", "scale": 2 },
+        { "key": "new", "name": "Đã sửa", "file": "level-390.jpg", "scale": 2 } ] }
+  ] }
