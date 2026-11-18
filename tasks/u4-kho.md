@@ -1,7 +1,7 @@
 # U4: màn Kho theo cấp JLPT (U4c3 màn chặng chờ duyệt)
 
 Repo: thiengthb/sakubun · Nhánh: feat/u4c3-set-screen · PR: #332
-Ghi bởi: Claude tnt628, https://claude.ai/code/project/chan_0145cotX9neLQKZjxfBxCwDe?thread=cmsg_0145cotX9neLQKZjxfBxCwDeWAuBVAmkrKtfkT3LpFP7mf · Cập nhật: 2026-11-18T15:32Z
+Ghi bởi: Claude tnt628, https://claude.ai/code/project/chan_0145cotX9neLQKZjxfBxCwDe?thread=cmsg_0145cotX9neLQKZjxfBxCwDeWAuBVAmkrKtfkT3LpFP7mf · Cập nhật: 2026-11-18T18:18Z
 
 ## thien muốn gì
 Làm U4 theo kế hoạch đã duyệt `docs/plans/2026-11-14-u4-kho.md` (hướng 2, gộp theo cấp JLPT; 15/11 thien trả lời "theo đề xuất" cả 3 câu, U4g/U4h để sau kỳ thi N2). thien bảo nick tnt697 làm tiếp ("nick này làm tiếp", 15/11).
@@ -26,3 +26,4 @@ Làm U4 theo kế hoạch đã duyệt `docs/plans/2026-11-14-u4-kho.md` (hướ
 - 18/11 14:50Z: U4c3 (màn chặng) ở PR nháp #332, nhánh feat/u4c3-set-screen (82cd43d). Trang duyệt vòng 1: https://claude.ai/artifact/WZCzEq7hRXB4p8fC6p34ma (mở ở nick tnt628). Dựng lại: `make-round.mjs docs/plans/2026-11-14-u4-kho/u4c3/round.json <out>`. Chờ thien duyệt; xong thì chuyển PR sẵn sàng, chờ CodeRabbit, xin review phiên khác.
 - 18/11 15:18Z: #332 (U4c3, màn chặng) đã merge (c580103) theo lời thien. Tiếp U4c4: nút chuyển Chặng | Bản đồ ô | Danh sách ở đầu màn cấp, tìm trong cấp ở chế độ Danh sách (nằm trong phác ghép thien đã duyệt). Chưa có nhánh.
 - 18/11 15:33Z: U4c4 chia đôi. U4c4a (tab Chặng | Bản đồ ô) ở PR nháp #333, nhánh feat/u4c4-level-views (fffcc17), verify xanh ở máy ảo. Trang duyệt: https://claude.ai/artifact/7uPj9y4Z9FdePvWmK39cKW (mở ở nick tnt628). Dựng lại: `make-round.mjs docs/plans/2026-11-14-u4-kho/u4c4/round.json <out>`. U4c4b (tab Danh sách có ô tìm) đã code nháp ở nhánh feat/u4c4b-level-list (gồm cả 4a, chưa có PR), mở PR sau khi #333 merge: rebase lên main mới rồi bỏ phần trùng.
+- 18/11 18:18Z: U4c4a vòng 1: thien OK 3 màn laptop, Cần sửa 2 màn điện thoại không ghi chú. Đã sửa (3f7fe3b: hàng lọc một dòng vuốt ngang, 4 ô một hàng). Trang vòng 2: https://claude.ai/artifact/Y8zT6oqaJijjjVYwUkLTLH (mở ở nick tnt628), dựng lại từ `u4c4/round2.json`.
