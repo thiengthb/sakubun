@@ -8,6 +8,7 @@ createTestDb('sakubun-app-level-sets-');
 type Db = typeof import('@/lib/db/db');
 let prisma: Db['prisma'];
 let L: typeof import('@/lib/app/level-sets');
+let B: typeof import('@/lib/app/level-board');
 let P: typeof import('@/lib/library/practice');
 let mine: UserDb;
 let other: UserDb;
@@ -46,6 +47,7 @@ async function add(db: UserDb, kind: string, expression: string) {
 beforeAll(async () => {
   ({ prisma } = await import('@/lib/db/db'));
   L = await import('@/lib/app/level-sets');
+  B = await import('@/lib/app/level-board');
   P = await import('@/lib/library/practice');
   const S = await import('@/lib/library/shared');
   const { userDb } = await import('@/lib/db/user-db');
@@ -102,6 +104,23 @@ describe('loadLevelSets (U4c1)', () => {
     expect(result.sets[0]!.words.map((w) => w.entry.expression)).toEqual(['店', '静か']);
     await prisma.libraryEntry.updateMany({
       where: { type: 'VOCAB', expression: '会う' },
+      data: { status: 'public' },
+    });
+  });
+
+  it('agrees with the level board when an admin hides the level group', async () => {
+    await prisma.libraryEntry.updateMany({
+      where: { sourceKey: 'openjlpt:group:N5:VOCAB' },
+      data: { status: 'hidden' },
+    });
+    await add(mine, 'VOCAB', '店');
+    const result = await L.loadLevelSets(mine, 'N5', 'VOCAB', NOW);
+    const cell = (await B.levelBoard(mine)).levels[0]!.vocab;
+    expect(result.sets[0]!.words.map((w) => w.entry.expression)).toEqual(['店', '会う', '静か']);
+    expect(result.sets[0]!.words.length).toBe(cell.total);
+    expect(cell.total - result.counts.none).toBe(cell.have);
+    await prisma.libraryEntry.updateMany({
+      where: { sourceKey: 'openjlpt:group:N5:VOCAB' },
       data: { status: 'public' },
     });
   });

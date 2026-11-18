@@ -3,17 +3,18 @@ import { prisma } from '@/lib/db/db';
 import { levelSets, type LevelSets } from '@/lib/library/level-sets';
 import type { BoardLevel } from '@/lib/library/level-tally';
 import {
-  findOpenJlptGroup,
   OPENJLPT_ORIGIN,
   PUBLIC,
+  openJlptGroupKey,
   type ItemType,
   type LibraryClient,
 } from '@/lib/library/shared';
 
-// One level of one kind for the learner, cut into sets (U4c1, docs/plans/2026-11-14-u4-kho.md):
-// the listed OpenJLPT entries of that level in the order of its level group ("N5 · Từ vựng"),
-// and the learner's items of that kind. The same entries the level board counts, so a cell and
-// its screen agree. Not wired into a page yet (U4c2).
+// One level of one kind for the learner, cut into sets (U4c1, docs/plans/2026-11-14-u4-kho.md).
+// The entries are the ones the level board counts (listed OpenJLPT entries of that level and
+// kind), so a cell and its screen agree. They follow the order of the level's group ("N5 · Từ
+// vựng"), whether or not an admin has hidden the group; an entry outside the group goes last.
+// Not wired into a page yet (U4c2).
 export async function loadLevelSets(
   db: UserDb,
   level: BoardLevel,
@@ -21,20 +22,16 @@ export async function loadLevelSets(
   now: Date = new Date(),
   library: LibraryClient = prisma,
 ): Promise<LevelSets> {
-  const group = await findOpenJlptGroup(library, level, kind);
-  const [members, items] = await Promise.all([
-    group
-      ? library.libraryGroupMember.findMany({
-          where: {
-            groupEntryId: group.id,
-            item: { origin: OPENJLPT_ORIGIN, type: kind, level, status: PUBLIC },
-          },
-          orderBy: { position: 'asc' },
-          select: {
-            item: { select: { expression: true, reading: true, hanviet: true, meaningVi: true } },
-          },
-        })
-      : Promise.resolve([]),
+  const [entries, order, items] = await Promise.all([
+    library.libraryEntry.findMany({
+      where: { origin: OPENJLPT_ORIGIN, type: kind, level, status: PUBLIC },
+      orderBy: [{ expression: 'asc' }, { id: 'asc' }],
+      select: { id: true, expression: true, reading: true, hanviet: true, meaningVi: true },
+    }),
+    library.libraryGroupMember.findMany({
+      where: { group: { sourceKey: openJlptGroupKey(level, kind) } },
+      select: { itemEntryId: true, position: true },
+    }),
     db.item.findMany({
       where: { kind },
       select: {
@@ -45,11 +42,14 @@ export async function loadLevelSets(
       },
     }),
   ]);
-  const entries = members.flatMap(({ item }) =>
-    item.expression ? [{ ...item, expression: item.expression }] : [],
-  );
+  const position = new Map(order.map((m) => [m.itemEntryId, m.position]));
+  const rank = (id: string) => position.get(id) ?? Number.MAX_SAFE_INTEGER;
+  const ordered = entries
+    .flatMap(({ id, expression, ...rest }) => (expression ? [{ id, expression, ...rest }] : []))
+    // Array.prototype.sort is stable, so entries outside the group keep their expression order.
+    .sort((a, b) => rank(a.id) - rank(b.id));
   return levelSets(
-    entries,
+    ordered,
     items.map((i) => ({
       id: i.id,
       expression: i.expression,

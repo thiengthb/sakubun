@@ -94,7 +94,6 @@ export function levelSets(
   entries: readonly SetEntry[],
   items: readonly SetItem[],
   now: Date,
-  size = SET_SIZE,
 ): LevelSets {
   const owned = new Map(items.map((i) => [i.expression, i]));
   const seen = new Set<string>();
@@ -109,8 +108,8 @@ export function levelSets(
 
   const counts = emptyCounts();
   const sets: LevelSet[] = [];
-  for (let start = 0; start < words.length; start += size) {
-    const slice = words.slice(start, start + size);
+  for (let start = 0; start < words.length; start += SET_SIZE) {
+    const slice = words.slice(start, start + SET_SIZE);
     const setCounts = emptyCounts();
     for (const w of slice) {
       setCounts[w.state] += 1;
