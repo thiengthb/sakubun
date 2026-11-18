@@ -84,7 +84,7 @@ describe('leadActions', () => {
 describe('leadActions with nothing left to start', () => {
   it('does not call a level learnt while words are still being learnt', () => {
     const sets = levelSets(entries(2), [item('w1'), item('w2', { state: 1 })], NOW);
-    expect(leadActions(sets, N5_VOCAB).main).toMatchObject({ label: 'Đã học hết', href: null });
+    expect(leadActions(sets, N5_VOCAB).main).toMatchObject({ label: 'Đang ôn', href: null });
     expect(leadActions(sets, N5_VOCAB).main.hint).toContain('Còn 1 từ đang ôn');
   });
 
@@ -100,10 +100,11 @@ describe('leadActions with nothing left to start', () => {
     });
     const mixed = levelSets(
       entries(3),
-      [item('w1'), item('w2', { state: 1 }), item('w3', { suspended: true })],
+      [item('w1'), item('w2', { state: 1 }), item('w3', { state: 0, suspended: true })],
       NOW,
     );
     expect(leadActions(mixed, N5_VOCAB).main.hint).toContain('Còn 1 từ đang ôn');
+    expect(leadActions(mixed, N5_VOCAB).main.label).toBe('Đang ôn');
     expect(leadActions(mixed, N5_VOCAB).main.hint).toContain('1 tạm ngưng');
   });
 

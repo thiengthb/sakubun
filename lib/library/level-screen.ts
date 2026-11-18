@@ -125,7 +125,7 @@ function mainAction(
       href: null,
     };
   return {
-    label: 'Đã học hết',
+    label: 'Đang ôn',
     hint:
       `Còn ${reviewing} ${unit} đang ôn, Ôn nhanh nhắc khi đến hạn` +
       (paused > 0 ? ` · ${paused} tạm ngưng` : ''),
