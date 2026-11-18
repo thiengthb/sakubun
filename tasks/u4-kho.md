@@ -1,7 +1,7 @@
 # U4: màn Kho theo cấp JLPT (U4c2 màn cấp chờ duyệt)
 
 Repo: thiengthb/sakubun · Nhánh: feat/u4c2-level-screen · PR: #331
-Ghi bởi: Claude tnt628, https://claude.ai/code/project/chan_0145cotX9neLQKZjxfBxCwDe?thread=cmsg_0145cotX9neLQKZjxfBxCwDeWAuBVAmkrKtfkT3LpFP7mf · Cập nhật: 2026-11-18T14:35Z
+Ghi bởi: Claude tnt628, https://claude.ai/code/project/chan_0145cotX9neLQKZjxfBxCwDe?thread=cmsg_0145cotX9neLQKZjxfBxCwDeWAuBVAmkrKtfkT3LpFP7mf · Cập nhật: 2026-11-18T14:42Z
 
 ## thien muốn gì
 Làm U4 theo kế hoạch đã duyệt `docs/plans/2026-11-14-u4-kho.md` (hướng 2, gộp theo cấp JLPT; 15/11 thien trả lời "theo đề xuất" cả 3 câu, U4g/U4h để sau kỳ thi N2). thien bảo nick tnt697 làm tiếp ("nick này làm tiếp", 15/11).
@@ -18,6 +18,7 @@ Làm U4 theo kế hoạch đã duyệt `docs/plans/2026-11-14-u4-kho.md` (hướ
 ## Đang chờ thien
 - Chọn cách tô vạch của chặng, vòng 3: https://claude.ai/artifact/TeQjKvDj9jPzxkQD2zysR6 (mở ở nick tnt628; A vạch xanh, B ô vuông cam, C chấm tròn). Ô Bước tiếp theo đã chốt (vòng 2). Dựng lại: `make-round.mjs docs/plans/2026-11-14-u4-kho/u4c2/round-3.json <out>`; áp bản được chọn theo `u4c2/variants.py.txt`.
 - 18/11 14:40Z: thien chọn B ở vòng 3, đã áp ở 1df8419 trên #331. Chờ thien nói "merge đi" (review phiên khác đã OK), rồi làm U4c3 (màn chặng; thẻ chặng thành link).
+- 18/11 14:42Z: thien nói "merge đi", #331 đã merge (524e5c6). Tiếp: U4c3 (màn chặng), nhánh mới từ main, mở PR nháp ngay.
 
 ## Lưu ý
 - Máy ảo: `npm ci` cần `npm_config_nodedir=/opt/node22`; `prisma generate` cần `PRISMA_SCHEMA_ENGINE_BINARY=/bin/true`; e2e chạy bằng Chrome hệ thống (config tạm với `channel: 'chrome'`, không commit). `npm run build` lỗi ở máy ảo vì không tải được Google Fonts, CI thì xanh.
