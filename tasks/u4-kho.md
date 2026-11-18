@@ -1,7 +1,7 @@
 # U4: màn Kho theo cấp JLPT (U4b chờ review, rồi U4c)
 
 Repo: thiengthb/sakubun · Nhánh: feat/u4b-kho-level-board · PR: #323
-Ghi bởi: Claude tnt628, https://claude.ai/code/project/chan_0145cotX9neLQKZjxfBxCwDe?thread=cmsg_0145cotX9neLQKZjxfBxCwDeWAuBVAmkrKtfkT3LpFP7mf · Cập nhật: 2026-11-18T12:36Z
+Ghi bởi: Claude tnt628, https://claude.ai/code/project/chan_0145cotX9neLQKZjxfBxCwDe?thread=cmsg_0145cotX9neLQKZjxfBxCwDeWAuBVAmkrKtfkT3LpFP7mf · Cập nhật: 2026-11-18T12:43Z
 
 ## thien muốn gì
 Làm U4 theo kế hoạch đã duyệt `docs/plans/2026-11-14-u4-kho.md` (hướng 2, gộp theo cấp JLPT; 15/11 thien trả lời "theo đề xuất" cả 3 câu, U4g/U4h để sau kỳ thi N2). thien bảo nick tnt697 làm tiếp ("nick này làm tiếp", 15/11).
@@ -17,7 +17,7 @@ Làm U4 theo kế hoạch đã duyệt `docs/plans/2026-11-14-u4-kho.md` (hướ
 2. U4c: đã mở nhánh `feat/u4c-level-list`, PR nháp #325. Vòng chọn bố cục: 3 bản (A danh sách trộn, B của bạn trước, C ô số chia nhóm), nguồn đã đẩy ở commit `8ae37f7` (`docs/plans/2026-11-14-u4-kho/u4c/`), trang đã đăng, chờ thien chọn. Code chỉ sau khi thien chọn và #323 merge. Các ô bảng cấp hiện mở `/library?tab=items&type=..&level=..` (`cellHref` trong `level-tally.ts`); U4c đổi sang route danh sách cấp.
 
 ## Đang chờ thien
-- Chọn bố cục U4c trên trang https://claude.ai/artifact/ESGyaxNjQPo8P3AV7EDx9f (mở ở nick tnt628; bản cũ ở nick tnt697: https://claude.ai/artifact/2RrVb3ThQxpqn1fc9NHfyP). Dựng lại: ở thienai-workflow chạy `node artifacts/decide/make-decision.mjs <sakubun>/docs/plans/2026-11-14-u4-kho/u4c/decision.json out`, đăng theo `out/publish.json`. Kết quả chép vào mục "U4c (15/11)" của kế hoạch.
+- Chọn bố cục U4c vòng 2 trên trang https://claude.ai/artifact/3EuisTAm31hhrM3uHAcfNS (mở ở nick tnt628). Vòng 1 thien bác cả 3 bản (18/11). Dựng lại: ở thienai-workflow chạy `node artifacts/decide/make-decision.mjs <sakubun>/docs/plans/2026-11-14-u4-kho/u4c-r2/decision.json out`, đăng theo `out/publish.json`. Kết quả chép vào "Kết quả vòng 2" của mục U4c trong kế hoạch.
 - Nói "merge đi" cho PR #323 (đã có review OK của phiên khác, CI xanh).
 
 ## Lưu ý
