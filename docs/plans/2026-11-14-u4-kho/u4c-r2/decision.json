@@ -1,0 +1,67 @@
+{
+  "id": "sakubun-u4c-level-list-r2",
+  "question": "Bấm một ô trên bảng cấp (ví dụ N5 · Từ vựng) thì màn đó nên giúp bạn làm gì?",
+  "context": "Vòng 2, làm lại từ đầu vì 3 bản trước (đều là danh sách dạng bảng) lệch với kỳ vọng của bạn. Bạn chưa có hình dung cụ thể nên mình tự đặt giả định: (1) mở một cấp ra là để biết nên làm gì tiếp, không phải để đọc bảng 662 dòng; (2) bạn quen Quizlet và Anki, học theo cảm hứng nên cần một nút rõ ràng và từng phần nhỏ; (3) danh sách đầy đủ vẫn còn ở nút phụ để tra. Ba hướng dưới đây khác hẳn nhau ở cách chia cấp: theo chặng, theo ô từng từ, hoặc theo việc cần làm. Mỗi ảnh: trái là laptop, phải là điện thoại. Số liệu và từ là mẫu, ảnh là bản phác.",
+  "options": [
+    {
+      "key": "a",
+      "name": "A · Chia cấp thành chặng",
+      "summary": "Cấp được chia thành chặng 20 từ (như một bộ Quizlet), theo thứ tự của Kho chung. Trên cùng là ô Bước tiếp theo với nút Học chặng đang dở. Mỗi chặng là một thẻ có 20 ô màu theo trạng thái và một nút đúng lúc: Ôn, Học tiếp, Học hay Lấy chặng.",
+      "image": "a.jpg",
+      "pros": [
+        "Luôn có một nút rõ ràng để bấm, hợp lúc lười",
+        "Từng phần nhỏ, xong chặng là thấy tiến bộ",
+        "Chỗ chưa có nằm ngay trong chặng, lấy cả chặng một lần"
+      ],
+      "cons": [
+        "Chặng chia theo thứ tự có sẵn, không theo chủ đề",
+        "Muốn tìm một từ cụ thể phải dùng ô Tìm hoặc dạng danh sách",
+        "Phải thêm khái niệm chặng vào app (bước học theo chặng)"
+      ]
+    },
+    {
+      "key": "b",
+      "name": "B · Bản đồ ô từng từ",
+      "summary": "Mỗi từ của cấp là một ô nhỏ, màu theo trạng thái (thuộc, đang học, đến hạn, chưa học, chưa có). Chú thích ở trên bấm vào là lọc. Bấm một ô thì bên phải (laptop) hoặc tấm trượt dưới (điện thoại) hiện cách đọc, nghĩa, Hán Việt, câu ví dụ và nút Ôn hay Lấy.",
+      "image": "b.jpg",
+      "pros": [
+        "Nhìn một lần thấy cả cấp, tô kín dần rất đã mắt",
+        "Đọc chữ Hán trên ô là tự kiểm mình nhớ từ đó không",
+        "Không bỏ sót từ nào chưa có"
+      ],
+      "cons": [
+        "Phải bấm từng ô mới thấy nghĩa",
+        "Cấp lớn (N1 gần 3000 từ) thì lưới rất dài",
+        "Không có một nút Học tiếp rõ ràng"
+      ]
+    },
+    {
+      "key": "c",
+      "name": "C · Bàn học theo việc",
+      "summary": "Trên cùng là ba thẻ việc lớn: Ôn từ đến hạn, Học từ mới, Lấy nốt từ còn thiếu. Bên dưới là các kệ thẻ trượt ngang như flashcard: Hay quên nhất, Mới lấy, Chưa có trong kho. Danh sách đủ cả cấp ở nút Xem cả 662 từ.",
+      "image": "c.jpg",
+      "pros": [
+        "Ba việc chính luôn ở trên cùng",
+        "Kệ Hay quên nhất chỉ ra từ yếu, có ích khi ôn thi",
+        "Thẻ to, đọc được ngay nghĩa và cách đọc"
+      ],
+      "cons": [
+        "Không thấy được cả cấp đã đi tới đâu",
+        "Ba thẻ việc gần giống màn Hôm nay",
+        "Kệ trượt ngang khó dùng trên laptop"
+      ]
+    }
+  ],
+  "criteria": [
+    { "name": "Biết ngay nên làm gì", "values": { "a": "tốt", "b": "kém", "c": "tốt" } },
+    { "name": "Thấy cả cấp đi tới đâu", "values": { "a": "tốt", "b": "tốt", "c": "kém" } },
+    { "name": "Thấy chỗ còn thiếu", "values": { "a": "tốt", "b": "tốt", "c": "vừa" } },
+    { "name": "Tra một từ cụ thể", "values": { "a": "vừa", "b": "vừa", "c": "vừa" } },
+    { "name": "Gọn trên điện thoại", "values": { "a": "tốt", "b": "vừa", "c": "tốt" } },
+    { "name": "Công làm", "values": { "a": { "text": "nhiều", "tone": "bad" }, "b": { "text": "vừa", "tone": "neutral" }, "c": { "text": "vừa", "tone": "neutral" } } }
+  ],
+  "recommend": {
+    "key": "a",
+    "why": "Bạn học theo cảm hứng và quen bộ Quizlet: chặng 20 từ cho một nút rõ ràng mỗi lần mở, thấy tiến bộ theo từng phần nhỏ, và chỗ còn thiếu nằm ngay trong chặng. B đẹp để ngắm nhưng không bảo bạn làm gì; C trùng với Hôm nay. Nếu thích lưới ô của B, có thể ghép vào A làm cách xem trong một chặng."
+  }
+}

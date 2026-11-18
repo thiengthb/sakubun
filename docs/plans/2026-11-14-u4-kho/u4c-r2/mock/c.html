@@ -1,0 +1,27 @@
+<!doctype html><meta charset="utf-8"><link rel="stylesheet" href="base.css"><body>
+<style>
+.acts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:16px}
+.act{padding:16px 18px;display:flex;flex-direction:column;gap:4px}.act .n{font-size:34px;font-weight:700;line-height:1.1}
+.act.main{background:#fff4ec;border-color:#efcdb9}
+.shelf{margin-top:20px}.shelf h3{font-size:16px;display:flex;gap:8px;align-items:baseline}.shelf h3 small{font-weight:400;color:var(--mute);font-size:13px}
+.cards{display:flex;gap:10px;margin-top:8px;overflow:hidden}
+.fc{width:150px;flex:none;padding:12px;display:flex;flex-direction:column;gap:2px}.fc .k{font-size:26px;font-weight:700}
+.fc.none{border-style:dashed;background:transparent}
+.phone .acts{grid-template-columns:1fr;gap:8px}.phone .act{padding:12px 14px;flex-direction:row;align-items:center;gap:12px}.phone .act .n{font-size:26px;min-width:40px}
+.phone .fc{width:118px}.phone .fc .k{font-size:22px}
+</style>
+<script>
+const fc=(i,extra)=>{const w=W[i];return `<div class="card fc${ST[i]==='none'?' none':''}"><div class="k jp">${w[0]}</div><div class="jp mute" style="font-size:13px">${w[1]||'&nbsp;'}</div><div style="font-size:14px">${w[2]}</div><div style="font-size:12px;margin-top:4px">${extra}</div></div>`};
+const forget=[[6,'<span class="due">quên 4 lần</span>'],[13,'<span class="due">quên 3 lần</span>'],[22,'<span class="due">quên 3 lần</span>'],[30,'<span class="due">quên 2 lần</span>'],[2,'<span class="due">quên 2 lần</span>'],[39,'<span class="due">quên 2 lần</span>'],[17,'<span class="due">quên 2 lần</span>'],[7,'<span class="due">quên 1 lần</span>']];
+const fresh=[[4,'<span class="mute">lấy hôm qua</span>'],[9,'<span class="mute">lấy hôm qua</span>'],[20,'<span class="mute">lấy 16/11</span>'],[28,'<span class="mute">lấy 16/11</span>'],[38,'<span class="mute">lấy 15/11</span>'],[46,'<span class="mute">lấy 15/11</span>'],[0,''],[1,'']];
+const none=[[3,'<span class="brand" style="color:var(--brand);font-weight:600">+ Lấy</span>'],[8,'<span style="color:var(--brand);font-weight:600">+ Lấy</span>'],[12,'<span style="color:var(--brand);font-weight:600">+ Lấy</span>'],[23,'<span style="color:var(--brand);font-weight:600">+ Lấy</span>'],[42,'<span style="color:var(--brand);font-weight:600">+ Lấy</span>'],[5,''],[10,''],[11,'']];
+const shelf=(t,s,list,n)=>`<div class="shelf"><h3>${t} <small>${s}</small><span class="sp"></span><small>Xem hết ›</small></h3><div class="cards">${list.slice(0,n).map(([i,e])=>fc(i,e)).join('')}</div></div>`;
+const acts=`<div class="acts"><div class="card act main"><div class="mute" style="font-size:13px">Đến hạn hôm nay</div><div class="n">6</div><span class="btn pri" style="align-self:flex-start">Ôn 6 từ</span></div>
+<div class="card act"><div class="mute" style="font-size:13px">Đã lấy, chưa học</div><div class="n">540</div><span class="btn" style="align-self:flex-start">Học 10 từ mới</span></div>
+<div class="card act"><div class="mute" style="font-size:13px">Chưa có trong kho</div><div class="n">26</div><span class="btn" style="align-self:flex-start">+ Lấy nốt</span></div></div>`;
+function laptop(){return `<div class="crumb">Kho › N5</div><div class="row"><div><h1>N5 · Từ vựng</h1><div class="meta">636/662 từ trong kho · 52 đã thuộc · 38 đang học</div></div><span class="sp"></span><span class="btn">Tìm trong N5</span><span class="btn">Xem cả 662 từ</span></div>
+${acts}${shelf('Hay quên nhất','từ bạn bấm Quên nhiều lần',forget,8)}${shelf('Mới lấy','chưa học lần nào',fresh,8)}${shelf('Chưa có trong kho','26 từ của N5 bạn chưa lấy',none,5)}`}
+function phone(){return `<div class="crumb">Kho › N5</div><div class="row"><h1>N5 · Từ vựng</h1><span class="sp"></span><span class="btn">Tìm</span></div><div class="meta">636/662 từ · 52 thuộc · 38 đang học</div>
+<div class="acts"><div class="card act main"><div class="n">6</div><div style="flex:1"><b>Đến hạn hôm nay</b></div><span class="btn pri">Ôn</span></div><div class="card act"><div class="n">540</div><div style="flex:1"><b>Chưa học</b></div><span class="btn">Học 10</span></div><div class="card act"><div class="n">26</div><div style="flex:1"><b>Chưa có</b></div><span class="btn">+ Lấy</span></div></div>
+${shelf('Hay quên nhất','',forget,4)}${shelf('Mới lấy','',fresh,4)}`}
+</script><script src="shell.js"></script>
