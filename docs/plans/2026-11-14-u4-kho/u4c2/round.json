@@ -6,7 +6,7 @@
       "note": "Phác gộp bạn duyệt hôm 18/11 bên trái, app thật bên phải.",
       "sides": [
         { "key": "a", "name": "Phác đã duyệt", "file": "../u4c-r2/combo-level.jpg", "scale": 1.4 },
-        { "key": "new", "name": "App thật", "file": "level-1440.jpg", "scale": 2 } ] },
+        { "key": "new", "name": "App thật", "file": "r1-level-1440.jpg", "scale": 2 } ] },
     { "id": "level-1440-full", "group": "Laptop", "label": "Cả trang · 1440",
       "note": "Cả trang dài: 34 chặng của N5 · Từ vựng. Bên trái là cấp chưa lấy mục nào.",
       "sides": [
@@ -16,9 +16,9 @@
       "note": "Bên trái là bảng Kho, bấm ô Từ vựng của N5 thì ra màn bên phải.",
       "sides": [
         { "key": "old", "name": "Bảng Kho", "file": "board-390.jpg", "scale": 2 },
-        { "key": "new", "name": "Màn cấp", "file": "level-390.jpg", "scale": 2 } ] },
+        { "key": "new", "name": "Màn cấp", "file": "r1-level-390.jpg", "scale": 2 } ] },
     { "id": "level-390-full", "group": "Điện thoại", "label": "Cả trang · 390",
       "sides": [
-        { "key": "old", "name": "Màn đầu", "file": "level-390.jpg", "scale": 2 },
+        { "key": "old", "name": "Màn đầu", "file": "r1-level-390.jpg", "scale": 2 },
         { "key": "new", "name": "Cả trang", "file": "level-390-full.jpg", "scale": 2 } ] }
   ] }
