@@ -24,6 +24,8 @@ export interface AppSidebarItem {
   label: string;
   icon: ComponentType<{ className?: string }>;
   exact?: boolean;
+  /** Other paths the item stands for (Kho also lights on Kho chung and Nhóm). */
+  also?: readonly string[];
   badge?: ReactNode;
   external?: boolean;
 }
@@ -50,7 +52,9 @@ export interface AppSidebarProps {
 
 function isActive(pathname: string, item: AppSidebarItem): boolean {
   if (item.exact) return pathname === item.href;
-  return pathname === item.href || pathname.startsWith(`${item.href}/`);
+  return [item.href, ...(item.also ?? [])].some(
+    (href) => pathname === href || pathname.startsWith(`${href}/`),
+  );
 }
 
 export function AppSidebar({ brand, groups, footer, activePath, className }: AppSidebarProps) {

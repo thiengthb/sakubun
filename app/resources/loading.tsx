@@ -1,45 +1,17 @@
-import {
-  CardsSkeleton,
-  PageSkeleton,
-  PageTabsSkeleton,
-  TabbedSkeleton,
-  TableSkeleton,
-  ToolbarSkeleton,
-} from '@/components/layout/page-skeleton';
+import { CardsSkeleton, PageSkeleton } from '@/components/layout/page-skeleton';
+import { KHO_BOARD_META } from '@/components/features/resources/kho-copy';
 import { Skeleton } from '@/components/ui/skeleton';
 
-// Each tab's DataTable keeps its own view switch (resource-table.tsx: persistKey, urlPrefix).
-const table = (storeKey: string, urlKey: string) => (
-  <>
-    <ToolbarSkeleton filters={1} columnMenu />
-    <TableSkeleton view={{ storeKey, urlKey }} />
-  </>
-);
-
+// Kho's level board (U4b): five level cards and the one for what lies outside JLPT.
 export default function Loading() {
   return (
     <PageSkeleton
       template="list"
-      title="Tài nguyên"
-      meta
+      title="Kho"
+      meta={KHO_BOARD_META}
       actions={<Skeleton className="h-9 w-20 rounded-sm md:h-7" />}
-      tabs={<PageTabsSkeleton set="resources" />}
     >
-      <TabbedSkeleton
-        storeKey="resources.tab"
-        urlKey="tab"
-        initial="grammar"
-        shapes={{
-          grammar: table('items.view', 'view'),
-          vocab: table('vocab.view', 'vview'),
-          groups: (
-            <>
-              <ToolbarSkeleton filters={1} />
-              <CardsSkeleton rowHeight={108} footer={false} />
-            </>
-          ),
-        }}
-      />
+      <CardsSkeleton count={6} rowHeight={152} rowGap={12} columns="" footer={false} />
     </PageSkeleton>
   );
 }

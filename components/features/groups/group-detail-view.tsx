@@ -87,8 +87,8 @@ export function GroupDetailView({
               title="Nhóm chưa có mục nào"
               description={
                 <>
-                  Bấm Thêm để chọn {kinds} cho nhóm, hoặc chọn nhiều mục ở Tài nguyên rồi thêm vào
-                  nhóm.
+                  Bấm Thêm để chọn {kinds} cho nhóm, hoặc chọn nhiều mục ở Kho › Mọi mục rồi thêm
+                  vào nhóm.
                 </>
               }
             />

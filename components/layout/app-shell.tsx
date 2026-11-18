@@ -2,7 +2,6 @@
 
 import { usePathname } from 'next/navigation';
 import {
-  Globe,
   House,
   CircleUserRound,
   Layers,
@@ -28,8 +27,8 @@ import { useSession } from '@/lib/auth/auth-client';
 const CHROMELESS = ['/login', '/consent', '/privacy', '/terms'];
 
 // UI v2 (docs/plans/2026-11-08-ui-v2.md › Bản đồ mới): three groups by what the learner does. Hôm
-// nay holds / since U3b; Phân tích moved under Bạn at /analytics. The two stores keep their own
-// items until D6 makes them one "Kho" in phase 4.
+// nay holds / since U3b; Phân tích moved under Bạn at /analytics. The two stores are one "Kho"
+// since U4b (D6, docs/plans/2026-11-14-u4-kho.md); Kho chung opens from inside it.
 const NAV_GROUPS: AppSidebarGroup[] = [
   {
     label: 'Học',
@@ -41,10 +40,7 @@ const NAV_GROUPS: AppSidebarGroup[] = [
   },
   {
     label: 'Kho',
-    items: [
-      { href: '/resources', label: 'Tài nguyên', icon: Library },
-      { href: '/library', label: 'Kho chung', icon: Globe },
-    ],
+    items: [{ href: '/resources', label: 'Kho', icon: Library, also: ['/library', '/groups'] }],
   },
   {
     label: 'Bạn',

@@ -42,7 +42,7 @@ const CRUMBS = {
       'Kịch bản hội thoại Kaiwa: soạn cùng Claude qua MCP, xem từng câu với nghĩa tiếng Việt và nghe đọc.',
   },
   resources: {
-    label: 'Tài nguyên',
+    label: 'Kho',
     href: '/resources',
     icon: Library,
     description:

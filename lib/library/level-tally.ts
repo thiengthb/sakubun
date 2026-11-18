@@ -94,3 +94,35 @@ export function tallyLevels(
   ).length;
   return { levels: [...rows.values()], outside };
 }
+
+export type BoardKind = 'grammar' | 'vocab' | 'kanji';
+
+/** The line under a cell's bar: "Chưa lấy", "5 thuộc · còn 2 chưa lấy", "0 thuộc · đủ cả cấp". */
+export function cellNote(cell: LevelCell): string {
+  if (cell.total === 0) return 'Kho chung chưa có mục nào';
+  if (cell.have === 0) return 'Chưa lấy';
+  const left = cell.total - cell.have;
+  return `${cell.mastered} thuộc · ${left > 0 ? `còn ${left} chưa lấy` : 'đủ cả cấp'}`;
+}
+
+/**
+ * Where a cell opens until the level list of U4c exists: the level in Kho chung, which marks what
+ * the learner already has. Kanji open the level's kanji page.
+ */
+export function cellHref(level: BoardLevel, kind: BoardKind): string {
+  if (kind === 'kanji') return `/library/kanji/${level}`;
+  const type = kind === 'grammar' ? GRAMMAR_KIND : VOCAB_KIND;
+  return `/library?tab=items&type=${type}&level=${level}`;
+}
+
+/**
+ * Which cells carry "đang học": the levels new cards come from (Cài đặt). One level for both
+ * kinds puts the label on the level itself; two levels put it on each cell.
+ */
+export function studyLabels(
+  grammarLevel: string,
+  vocabLevel: string,
+): { level: string | null; grammar: string | null; vocab: string | null } {
+  if (grammarLevel === vocabLevel) return { level: grammarLevel, grammar: null, vocab: null };
+  return { level: null, grammar: grammarLevel, vocab: vocabLevel };
+}
