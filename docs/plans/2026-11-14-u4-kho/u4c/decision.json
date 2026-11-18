@@ -1,0 +1,82 @@
+{
+  "id": "sakubun-u4c-level-list",
+  "question": "Bấm một ô trên bảng cấp (ví dụ N5 · Từ vựng) thì danh sách cấp đó nên trông thế nào?",
+  "context": "Đây là bước U4c của hướng 2 bạn đã chọn: Kho chung không còn là nơi riêng mà là phần bạn chưa lấy. Danh sách một cấp vì vậy có cả mục bạn đã có (kèm trạng thái và ngày đến hạn) lẫn mục chưa có. Bước này chỉ để xem; nút Học từng mục và Lấy nốt làm ở U4d, ở đây chỉ vẽ chỗ của nó. Mỗi ảnh: bên trái laptop, bên phải điện thoại. Dữ liệu thật của N5, mình bỏ bớt 26 từ để có phần Chưa có và cho vài từ đủ các trạng thái. Ảnh là bản phác, chưa phải bản làm xong.",
+  "options": [
+    {
+      "key": "a",
+      "name": "A · Một danh sách trộn",
+      "summary": "Mọi từ của N5 theo thứ tự của Kho chung, từ bạn có và chưa có xen nhau; từ chưa có nhạt hơn và ghi Chưa có. Ô tìm và chip lọc ở trên (Tất cả, Đến hạn, Đang học, Mới, Đã thuộc, Chưa có, mỗi chip kèm số). Nút Lấy nốt ở góc trên.",
+      "image": "a.jpg",
+      "pros": [
+        "Đúng nghĩa hướng 2: chỗ thiếu nằm ngay giữa chỗ đã có",
+        "Một danh sách, một hàng chip: dễ hiểu, làm ít nhất",
+        "Sau này bấm Học ngay trên dòng Chưa có là xong (U4d)"
+      ],
+      "cons": [
+        "Mở ra không thấy ngay từ nào đến hạn, phải bấm chip",
+        "Cấp đã lấy gần đủ thì vài dòng Chưa có dễ lẫn"
+      ]
+    },
+    {
+      "key": "b",
+      "name": "B · Của bạn trước, Chưa có ở cuối",
+      "summary": "Phần trên là từ bạn đã có, xếp Đến hạn trước rồi Đang học, Mới, Đã thuộc; chip lọc chỉ lọc phần này. Từ chưa có gom vào một khối gập ở cuối, có số và nút Lấy nốt riêng.",
+      "image": "b.jpg",
+      "pros": [
+        "Mở ra là thấy từ đến hạn trước tiên",
+        "Phần của bạn và phần lấy thêm tách rõ",
+        "Khối Chưa có gập lại khi cấp đã lấy gần đủ"
+      ],
+      "cons": [
+        "Chưa có bị đẩy xuống cuối, dễ quên là còn thiếu",
+        "Hai danh sách, hai chỗ lọc: phải nghĩ xem đang lọc phần nào"
+      ]
+    },
+    {
+      "key": "c",
+      "name": "C · Ô số làm bộ lọc, chia nhóm",
+      "summary": "Trên cùng là năm ô số (Đến hạn, Đang học, Mới, Đã thuộc, Chưa có), bấm ô là lọc. Không lọc thì danh sách chia theo nhóm trạng thái, mỗi nhóm vài dòng và nút Xem hết.",
+      "image": "c.jpg",
+      "pros": [
+        "Thấy ngay cấp này đang ở đâu bằng số",
+        "Mỗi trạng thái một nhóm, nhìn lướt dễ"
+      ],
+      "cons": [
+        "Mỗi nhóm chỉ vài dòng, muốn xem cả phải bấm Xem hết",
+        "Năm ô số chiếm gần nửa màn điện thoại",
+        "Số lặp lại thứ bảng cấp đã có"
+      ]
+    }
+  ],
+  "criteria": [
+    {
+      "name": "Thấy ngay từ đến hạn",
+      "values": { "a": "kém", "b": "tốt", "c": "tốt" }
+    },
+    {
+      "name": "Thấy chỗ còn thiếu",
+      "values": { "a": "tốt", "b": "vừa", "c": "vừa" }
+    },
+    {
+      "name": "Duyệt cả cấp một mạch",
+      "values": { "a": "tốt", "b": "vừa", "c": "kém" }
+    },
+    {
+      "name": "Gọn trên điện thoại",
+      "values": { "a": "tốt", "b": "tốt", "c": "kém" }
+    },
+    {
+      "name": "Công làm",
+      "values": {
+        "a": { "text": "ít", "tone": "good" },
+        "b": { "text": "vừa", "tone": "neutral" },
+        "c": { "text": "nhiều", "tone": "bad" }
+      }
+    }
+  ],
+  "recommend": {
+    "key": "a",
+    "why": "Danh sách cấp sinh ra để xem cả cấp và lấy nốt chỗ thiếu, đúng nghĩa hướng 2 bạn chọn; A làm việc đó trực tiếp nhất. Từ đến hạn đã có Ôn nhanh và Hôm nay lo, ở đây chỉ cần chip Đến hạn kèm số. C lặp lại bảng cấp và bắt bấm thêm."
+  }
+}

@@ -1,0 +1,62 @@
+<!doctype html><meta charset="utf-8"><style>
+/* Sketch shell for U4c round 2: laptop frame (sidebar app shell) beside a phone frame. Not app code. */
+:root{--bg:#f6f3ee;--card:#fffdf9;--line:#e7e0d4;--ink:#24201b;--mute:#7b7368;--brand:#c9592f;--brand-soft:#f3d9cc;
+--ok:#1f7a4d;--ok-soft:#d5ebdd;--learn:#d9884f;--learn-soft:#f6e0cc;--due:#b8860b;--due-soft:#f6ebc6;--new:#9aa3ad;--new-soft:#e7eaee;}
+*{box-sizing:border-box;margin:0}
+body{background:#ebe6dd;font:15px/1.45 "Noto Sans","Noto Sans CJK JP",system-ui,sans-serif;color:var(--ink);width:2000px;height:990px;
+display:flex;gap:24px;padding:28px;}
+.laptop{width:1530px;height:934px;background:var(--bg);border-radius:14px;display:flex;overflow:hidden;box-shadow:0 2px 10px #0001}
+.side{width:240px;flex:none;background:#efebe4;border-right:1px solid var(--line);padding:18px 14px;display:flex;flex-direction:column;gap:4px;font-size:14px}
+.brand{display:flex;gap:10px;align-items:center;margin-bottom:18px}.logo{width:36px;height:36px;border-radius:9px;background:var(--brand);color:#fff;display:grid;place-items:center;font-weight:700;font-size:13px}
+.side .g{color:var(--mute);font-size:12px;margin:14px 6px 4px}.side .i{padding:7px 10px;border-radius:8px}.side .i.on{background:#fff;color:var(--brand);border:1px solid var(--line)}
+.main{flex:1;padding:26px 34px;overflow:hidden}
+.phone{width:390px;height:934px;background:var(--bg);border-radius:22px;overflow:hidden;position:relative;box-shadow:0 2px 10px #0001}
+.phone .main{padding:16px 16px 90px}
+.tabs{position:absolute;left:0;right:0;bottom:0;height:68px;background:#fffdf9;border-top:1px solid var(--line);display:flex;justify-content:space-around;align-items:center;font-size:11px;color:var(--mute)}
+.tabs span.on{color:var(--brand);font-weight:600}
+.crumb{color:var(--brand);font-size:13px;margin-bottom:6px}
+h1{font-size:30px;line-height:1.15;font-weight:700}.phone h1{font-size:24px}
+.meta{color:var(--mute);font-size:13px;margin-top:4px}
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:#fff;border-radius:9px;padding:8px 14px;font-size:14px;font-weight:600;white-space:nowrap}
+.btn.pri{background:var(--brand);border-color:var(--brand);color:#fff}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px}
+.bar{display:flex;height:8px;border-radius:99px;overflow:hidden;background:#ece6dc}.bar i{display:block;height:100%}
+.ok{color:var(--ok)}.learn{color:var(--learn)}.due{color:var(--due)}.mute{color:var(--mute)}
+.jp{font-family:"Noto Sans CJK JP","Noto Sans JP",sans-serif}
+.row{display:flex;align-items:center;gap:10px}.sp{flex:1}
+.pill{font-size:12px;padding:2px 8px;border-radius:99px;font-weight:600;white-space:nowrap}
+.note{position:absolute;right:10px;top:8px;font-size:11px;color:var(--mute)}
+</style>
+<style>
+.wrap{display:flex;gap:18px;margin-top:14px}
+.grid{flex:1;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;align-content:start}
+.tile{height:84px;border-radius:11px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:20px;font-weight:600;gap:2px}
+.tile small{font-size:12px;font-weight:400;color:var(--mute)}
+.t-ok{background:var(--ok-soft);color:#174f33}.t-learn{background:var(--learn-soft);color:#7a4115}.t-due{background:var(--due-soft);color:#6b4e00;box-shadow:inset 0 0 0 2px var(--due)}.t-new{background:#fff;border:1px solid var(--line)}.t-none{border:1.5px dashed #c9c1b4;color:#b2a998;font-weight:400}
+.tile.sel{outline:3px solid var(--brand);outline-offset:2px}
+.panel{width:380px;flex:none;padding:20px;display:flex;flex-direction:column;gap:10px;align-self:start}
+.big{font-size:56px;font-weight:700;line-height:1}
+.ex{background:#f3efe8;border-radius:10px;padding:10px 12px;font-size:14px}
+.phone .grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}.phone .tile{height:64px;font-size:16px}.phone .tile small{display:none}
+.sheet{position:absolute;left:0;right:0;bottom:68px;background:#fffdf9;border-top:1px solid var(--line);border-radius:18px 18px 0 0;box-shadow:0 -6px 20px #0002;padding:10px 16px 16px}
+.grab{width:40px;height:4px;border-radius:9px;background:#d6cfc3;margin:0 auto 10px}
+.lg{display:inline-flex;align-items:center;gap:6px;font-size:13px;margin-right:12px;white-space:nowrap}.lg i{width:11px;height:11px;border-radius:3px;display:inline-block}
+.tag{font-size:11px;font-weight:700;color:#fff;background:#6b5bd2;border-radius:5px;padding:1px 6px;margin-left:6px;vertical-align:2px}
+</style><body>
+<script>
+const IDX=[...Array(20).keys()].map(i=>i+20);
+const S2=['ok','ok','learn','due','ok','learn','due','learn','new','ok','learn','due','ok','ok','learn','ok','new','learn','new','new'];
+const tiles=(sm)=>IDX.map((i,k)=>`<div class="tile t-${S2[k]} jp${k===3?' sel':''}">${W[i][0]}${sm?`<small>${W[i][2]}</small>`:''}</div>`).join('');
+const legend=`<div style="margin-top:10px">${[['var(--ok)','Thuộc 7'],['var(--learn)','Đang học 6'],['var(--due)','Đến hạn 3'],['#cfd5dc','Chưa học 4']].map(([c,t])=>`<span class="lg"><i style="background:${c}"></i>${t}</span>`).join('')}</div>`;
+const ww=()=>W[23];
+function laptop(){const w=ww();return `<div class="crumb">Kho › N5 › Chặng 2</div><div class="row"><div><h1>Chặng 2 <span class="mute jp" style="font-size:20px;font-weight:400">${W[20][0]} → ${W[39][0]}</span><span class="tag">B</span></h1><div class="meta">20 từ · 7 thuộc · 3 đến hạn · 4 chưa học</div></div><span class="sp"></span><span class="btn">‹ Chặng 1</span><span class="btn">Chặng 3 ›</span><span class="btn">Ôn 3 từ</span><span class="btn pri">Học 4 từ mới</span></div>
+${legend}<div class="wrap"><div class="grid">${tiles(true)}</div>
+<div class="card panel"><div class="row"><span class="pill" style="background:var(--due-soft);color:#6b4e00">Đến hạn hôm nay</span><span class="sp"></span><span class="mute" style="font-size:13px">quên 3 lần</span></div>
+<div class="row" style="align-items:flex-end"><div class="big jp">${w[0]}</div><div><div class="jp" style="font-size:18px">${w[1]}</div><div class="mute" style="font-size:13px">HẬU</div></div></div>
+<div style="font-size:18px;font-weight:600">${w[2]}</div><div class="ex jp">この本は厚いです。<div class="mute">Quyển sách này dày.</div></div>
+<div class="row"><span class="btn">Nghe</span><span class="sp"></span><span class="btn pri">Ôn từ này</span></div></div></div>`}
+function phone(){const w=ww();return `<div class="crumb">Kho › N5 › Chặng 2</div><div class="row"><h1>Chặng 2</h1><span class="sp"></span><span class="btn pri">Học 4</span></div><div class="meta">7 thuộc · 3 đến hạn · 4 chưa học</div>
+<div style="white-space:nowrap;overflow:hidden">${legend}</div><div class="grid" style="margin-top:10px">${tiles(false)}</div>
+<div class="sheet"><div class="grab"></div><div class="row"><div class="big jp" style="font-size:40px">${w[0]}</div><div><div class="jp">${w[1]} · <span class="mute">HẬU</span></div><div style="font-weight:600">${w[2]}</div></div><span class="sp"></span><span class="pill" style="background:var(--due-soft);color:#6b4e00">Đến hạn</span></div>
+<div class="row" style="margin-top:10px"><span class="btn" style="flex:1;justify-content:center">Nghe</span><span class="btn pri" style="flex:1;justify-content:center">Ôn từ này</span></div></div>`}
+</script><script src="shell.js"></script>

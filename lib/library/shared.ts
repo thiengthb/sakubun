@@ -40,7 +40,7 @@ export const ITEM_TYPES = [GRAMMAR_KIND, VOCAB_KIND] as const;
 export type ItemType = (typeof ITEM_TYPES)[number];
 
 export const openJlptKey = (type: string, expression: string) => `openjlpt:${type}:${expression}`;
-const openJlptGroupKey = (level: string, type: ItemType) => `openjlpt:group:${level}:${type}`;
+export const openJlptGroupKey = (level: string, type: ItemType) => `openjlpt:group:${level}:${type}`;
 
 const GROUP_KIND_OF: Record<ItemType, 'grammar' | 'vocab'> = {
   [GRAMMAR_KIND]: 'grammar',

@@ -1,0 +1,66 @@
+<!doctype html><meta charset="utf-8"><style>
+/* Sketch shell for U4c round 2: laptop frame (sidebar app shell) beside a phone frame. Not app code. */
+:root{--bg:#f6f3ee;--card:#fffdf9;--line:#e7e0d4;--ink:#24201b;--mute:#7b7368;--brand:#c9592f;--brand-soft:#f3d9cc;
+--ok:#1f7a4d;--ok-soft:#d5ebdd;--learn:#d9884f;--learn-soft:#f6e0cc;--due:#b8860b;--due-soft:#f6ebc6;--new:#9aa3ad;--new-soft:#e7eaee;}
+*{box-sizing:border-box;margin:0}
+body{background:#ebe6dd;font:15px/1.45 "Noto Sans","Noto Sans CJK JP",system-ui,sans-serif;color:var(--ink);width:2000px;height:990px;
+display:flex;gap:24px;padding:28px;}
+.laptop{width:1530px;height:934px;background:var(--bg);border-radius:14px;display:flex;overflow:hidden;box-shadow:0 2px 10px #0001}
+.side{width:240px;flex:none;background:#efebe4;border-right:1px solid var(--line);padding:18px 14px;display:flex;flex-direction:column;gap:4px;font-size:14px}
+.brand{display:flex;gap:10px;align-items:center;margin-bottom:18px}.logo{width:36px;height:36px;border-radius:9px;background:var(--brand);color:#fff;display:grid;place-items:center;font-weight:700;font-size:13px}
+.side .g{color:var(--mute);font-size:12px;margin:14px 6px 4px}.side .i{padding:7px 10px;border-radius:8px}.side .i.on{background:#fff;color:var(--brand);border:1px solid var(--line)}
+.main{flex:1;padding:26px 34px;overflow:hidden}
+.phone{width:390px;height:934px;background:var(--bg);border-radius:22px;overflow:hidden;position:relative;box-shadow:0 2px 10px #0001}
+.phone .main{padding:16px 16px 90px}
+.tabs{position:absolute;left:0;right:0;bottom:0;height:68px;background:#fffdf9;border-top:1px solid var(--line);display:flex;justify-content:space-around;align-items:center;font-size:11px;color:var(--mute)}
+.tabs span.on{color:var(--brand);font-weight:600}
+.crumb{color:var(--brand);font-size:13px;margin-bottom:6px}
+h1{font-size:30px;line-height:1.15;font-weight:700}.phone h1{font-size:24px}
+.meta{color:var(--mute);font-size:13px;margin-top:4px}
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:#fff;border-radius:9px;padding:8px 14px;font-size:14px;font-weight:600;white-space:nowrap}
+.btn.pri{background:var(--brand);border-color:var(--brand);color:#fff}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px}
+.bar{display:flex;height:8px;border-radius:99px;overflow:hidden;background:#ece6dc}.bar i{display:block;height:100%}
+.ok{color:var(--ok)}.learn{color:var(--learn)}.due{color:var(--due)}.mute{color:var(--mute)}
+.jp{font-family:"Noto Sans CJK JP","Noto Sans JP",sans-serif}
+.row{display:flex;align-items:center;gap:10px}.sp{flex:1}
+.pill{font-size:12px;padding:2px 8px;border-radius:99px;font-weight:600;white-space:nowrap}
+.note{position:absolute;right:10px;top:8px;font-size:11px;color:var(--mute)}
+</style><body>
+<style>
+.hero{padding:18px 20px;display:flex;align-items:center;gap:16px;background:linear-gradient(90deg,#fff4ec,#fffdf9);border-color:#efcdb9}
+.sets{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:16px}
+.set{padding:14px 16px;display:flex;flex-direction:column;gap:8px}
+.dots{display:grid;grid-template-columns:repeat(10,1fr);gap:4px}.dots i{height:12px;border-radius:3px}
+.d-ok{background:var(--ok)}.d-learn{background:var(--learn)}.d-due{background:var(--due)}.d-new{background:#cfd5dc}.d-none{border:1.5px dashed #c9c1b4}
+.set .t{font-weight:700}.set .w{font-size:13px;color:var(--mute)}
+.phone .sets{grid-template-columns:1fr;gap:10px}.phone .set{padding:12px 14px}
+.sec{font-weight:700;margin-top:18px;font-size:15px}
+</style>
+<script>
+const SETS=[
+ {n:1,a:'会う',b:'足',s:'oooooooooooooooooooo',act:'done'},
+ {n:2,a:'明日',b:'医者',s:'oooooooooooooolooooo',act:'done'},
+ {n:3,a:'椅子',b:'一緒',s:'ooooodooooooolooooooo',act:'due'},
+ {n:4,a:'五つ',b:'売る',s:'ooooollllldddoooolll',act:'due'},
+ {n:5,a:'上着',b:'お皿',s:'lllllnnnnnnnnnnnnnnn',act:'go'},
+ {n:6,a:'お酒',b:'女',s:'nnnnnnnnnnnnnnnnnnnn',act:'new'},
+ {n:7,a:'外国',b:'貸す',s:'nnnnnnnnnnnnnnnnnnnn',act:'new'},
+ {n:8,a:'風',b:'学校',s:'nnnnnnnnnnnnnnnnnnnn',act:'new'},
+ {n:9,a:'角',b:'家内',s:'nnnnnnnnnnnnnnnnnnnn',act:'new'},
+ {n:31,a:'夕方',b:'洋服',s:'xxxxxxxxxxxxxxxxxxxx',act:'take'},
+ {n:32,a:'横',b:'読む',s:'xxxxxxxxxxxxxxxxxxxx',act:'take'},
+ {n:33,a:'夜',b:'若い',s:'nnnnnnnnnnnnnnxxxxxx',act:'take6'},
+];
+const map={o:'ok',l:'learn',d:'due',n:'new',x:'none',' ':'ok'};
+const btn=a=>({done:'<span class="pill" style="background:var(--ok-soft);color:var(--ok)">Thuộc hết</span>',due:'<span class="btn">Ôn 3 từ</span>',go:'<span class="btn pri">Học tiếp</span>',new:'<span class="btn">Học</span>',take:'<span class="btn">+ Lấy chặng</span>',take6:'<span class="btn">+ Lấy 6 từ</span>'}[a]);
+const line=s=>{const c={ok:0,learn:0,due:0,new:0,none:0};[...s].forEach(ch=>c[map[ch]]++);return [c.ok&&`<span class="ok">${c.ok} thuộc</span>`,c.due&&`<span class="due">${c.due} đến hạn</span>`,c.learn&&`<span class="learn">${c.learn} đang học</span>`,c.new&&`${c.new} chưa học`,c.none&&`${c.none} chưa có`].filter(Boolean).join(' · ')};
+const setCard=x=>`<div class="card set"><div class="row"><span class="t">Chặng ${x.n}</span><span class="w jp">${x.a} → ${x.b}</span><span class="sp"></span>${btn(x.act)}</div>
+<div class="dots">${[...x.s].map(ch=>`<i class="d-${map[ch]}"></i>`).join('')}</div><div class="w">${line(x.s)}</div></div>`;
+const hero=`<div class="card hero"><div><div style="font-size:13px" class="mute">Bước tiếp theo của N5 · Từ vựng</div><div style="font-size:20px;font-weight:700;margin-top:2px">Chặng 5: còn 15 từ chưa học</div><div class="meta">20 từ mỗi chặng, theo thứ tự của Kho chung · xong chặng 4 thì chặng 5 mở</div></div><span class="sp"></span><span class="btn">Ôn 6 từ đến hạn</span><span class="btn pri">Học chặng 5</span></div>`;
+function laptop(){return `<div class="crumb">Kho › N5</div><div class="row"><div><h1>N5 · Từ vựng</h1><div class="meta">34 chặng · 636/662 từ trong kho · 52 đã thuộc</div></div><span class="sp"></span><span class="btn">Tìm trong N5</span><span class="btn">Xem dạng danh sách</span></div>
+<div style="margin-top:16px">${hero}</div><div class="sets">${SETS.slice(0,9).map(setCard).join('')}</div><div class="sec">… chặng 10–30 · <span class="mute" style="font-weight:400">Chưa có trong kho</span></div><div class="sets">${SETS.slice(9).map(setCard).join('')}</div>`}
+function phone(){return `<div class="crumb">Kho › N5</div><div class="row"><h1>N5 · Từ vựng</h1><span class="sp"></span><span class="btn">Tìm</span></div><div class="meta">34 chặng · 636/662 từ · 52 thuộc</div>
+<div class="card" style="padding:14px;margin-top:12px;background:#fff4ec;border-color:#efcdb9"><div class="mute" style="font-size:12px">Bước tiếp theo</div><div style="font-weight:700;font-size:17px">Chặng 5: còn 15 từ chưa học</div><div class="row" style="margin-top:10px"><span class="btn" style="flex:1;justify-content:center">Ôn 6 từ</span><span class="btn pri" style="flex:1;justify-content:center">Học chặng 5</span></div></div>
+<div class="sets">${SETS.slice(2,7).map(setCard).join('')}</div>`}
+</script><script src="shell.js"></script>
