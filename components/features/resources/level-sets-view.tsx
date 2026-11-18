@@ -10,6 +10,7 @@ import {
   leadActions,
   setAction,
   setSummary,
+  STATE_LABEL,
   type LevelAction,
   type LevelContext,
 } from '@/lib/library/level-screen';
@@ -220,11 +221,22 @@ function SetCard({ set, ctx }: { set: LevelSet; ctx: LevelContext }) {
             </span>
           ))}
       </div>
-      <div className="grid grid-cols-10 gap-1" aria-hidden>
-        {set.words.map((w) => (
-          <span key={w.entry.expression} className={cn('h-2.5 rounded-sm', MARK[w.state])} />
-        ))}
-      </div>
+      {/* Each mark names its word and state for screen readers and on hover; the set screen
+          (U4c3) shows every word with its meaning. */}
+      <ul className="grid grid-cols-10 gap-1" aria-label={`Từng mục của chặng ${set.number}`}>
+        {set.words.map((w) => {
+          const name = `${w.entry.expression}: ${STATE_LABEL[w.state]}`;
+          return (
+            <li
+              key={w.entry.expression}
+              title={name}
+              className={cn('h-2.5 rounded-sm', MARK[w.state])}
+            >
+              <span className="sr-only">{name}</span>
+            </li>
+          );
+        })}
+      </ul>
       <p className="text-xs text-muted-foreground">{setSummary(set.counts)}</p>
     </li>
   );

@@ -33,7 +33,7 @@ describe('leadActions', () => {
     );
     const lead = leadActions(sets, N5_VOCAB);
     expect(lead.main).toMatchObject({ label: 'Học tiếp', count: 2, href: '/review' });
-    expect(lead.main.hint).toContain('từ chưa học ở Chặng 2');
+    expect(lead.main.hint).toContain('từ chưa học, Ôn nhanh đưa ra dần');
     expect(lead.due).toMatchObject({ count: 1, href: '/review' });
     expect(lead.take).toMatchObject({
       count: 22,
@@ -41,11 +41,17 @@ describe('leadActions', () => {
     });
   });
 
-  it("counts the next set's new words, not the whole level's", () => {
+  it("counts the whole level's new words: Ôn nhanh does not follow the sets", () => {
     const fresh = ['w3', 'w4', 'w22'].map((e) => item(e, { state: 0 }));
     const lead = leadActions(levelSets(entries(25), fresh, NOW), N5_VOCAB);
-    expect(lead.main).toMatchObject({ label: 'Học tiếp', count: 2 });
-    expect(lead.main.hint).toContain('Chặng 1');
+    expect(lead.main).toMatchObject({ label: 'Học tiếp', count: 3 });
+  });
+
+  it('sends an easier level to Ôn nhanh too, which mixes it in', () => {
+    const sets = levelSets(entries(3), [item('w1', { state: 0 })], NOW);
+    const lead = leadActions(sets, { level: 'N5', kind: 'vocab', studyLevel: 'N4' });
+    expect(lead.main).toMatchObject({ label: 'Học tiếp', href: '/review' });
+    expect(lead.main.hint).toContain('khi bạn học N4');
   });
 
   it('points to Cài đặt when Ôn nhanh takes new items from another level', () => {
@@ -61,15 +67,30 @@ describe('leadActions', () => {
       entries(22).map((e) => item(e.expression)),
       NOW,
     );
-    expect(leadActions(sets, N5_VOCAB).main).toMatchObject({ label: 'Lấy chặng 2', count: 8 });
+    const main = leadActions(sets, N5_VOCAB).main;
+    expect(main).toMatchObject({ label: 'Lấy thêm', count: 8 });
+    expect(main.hint).toContain('từ Chặng 2');
   });
 
   it('has nothing to do on a level taken and studied in full', () => {
     const sets = levelSets(entries(2), [item('w1'), item('w2')], NOW);
     const lead = leadActions(sets, N5_VOCAB);
-    expect(lead.main).toMatchObject({ label: 'Đủ cả cấp', href: null });
+    expect(lead.main).toMatchObject({ label: 'Thuộc cả cấp', href: null });
     expect(lead.due.href).toBeNull();
     expect(lead.take).toMatchObject({ count: 0, href: null, hint: 'đã có đủ cả cấp' });
+  });
+});
+
+describe('leadActions with nothing left to start', () => {
+  it('does not call a level learnt while words are still being learnt', () => {
+    const sets = levelSets(entries(2), [item('w1'), item('w2', { state: 1 })], NOW);
+    expect(leadActions(sets, N5_VOCAB).main).toMatchObject({ label: 'Đã học hết', href: null });
+    expect(leadActions(sets, N5_VOCAB).main.hint).toContain('Còn 1 từ đang ôn');
+  });
+
+  it('says so when Kho chung has nothing at the level', () => {
+    const sets = levelSets([], [], NOW);
+    expect(leadActions(sets, N5_VOCAB).main).toMatchObject({ label: 'Chưa có mục', href: null });
   });
 });
 

@@ -1,10 +1,12 @@
 import type { LevelSet, LevelSets, StateCounts } from '@/lib/library/level-sets';
 import { libraryLevelHref, type BoardLevel } from '@/lib/library/level-tally';
+import { JLPT_LEVELS } from '@/lib/settings/schema';
 
 // What the level screen offers (U4c2, docs/plans/2026-11-14-u4-kho.md): the three actions of
 // "Bước tiếp theo" and each set's button. Pure. New items reach the learner only through Ôn nhanh,
-// which takes them from the level set in Cài đặt, a few a day (lib/app/queue.ts); so "Học" on
-// another level sends the learner to that setting rather than promising what Ôn nhanh won't do.
+// which takes them from the level set in Cài đặt and the levels below it, a few a day
+// (lib/app/queue.ts); so "Học" on a harder level sends the learner to that setting rather than
+// promising what Ôn nhanh won't do.
 
 export type LevelKind = 'grammar' | 'vocab';
 
@@ -56,18 +58,27 @@ export function leadActions(sets: LevelSets, ctx: LevelContext): LeadActions {
   };
 }
 
+// Ôn nhanh takes new items from the study level and, now and then, from the levels below it, in its
+// own mixed order (lib/domain/new-items.ts): so "Học" counts the whole level, never one set.
+function servedByReview(level: string, studyLevel: string): boolean {
+  const at = (l: string) => JLPT_LEVELS.indexOf(l as (typeof JLPT_LEVELS)[number]);
+  return at(level) >= 0 && at(studyLevel) >= 0 && at(level) <= at(studyLevel);
+}
+
 function mainAction(
-  { counts, next }: LevelSets,
+  { sets, counts, mastered, next }: LevelSets,
   ctx: LevelContext,
   unit: string,
   take: string,
 ): LevelAction {
-  if (next?.kind === 'study' && ctx.studyLevel === ctx.level) {
+  if (next?.kind === 'study' && servedByReview(ctx.level, ctx.studyLevel)) {
     return {
       label: 'Học tiếp',
-      // The set's own count, not the level's: the number reads with "Chặng N" beside it.
-      hint: `${unit} chưa học ở Chặng ${next.set}, Ôn nhanh đưa ra dần mỗi ngày`,
-      count: next.count,
+      hint:
+        ctx.level === ctx.studyLevel
+          ? `${unit} chưa học, Ôn nhanh đưa ra dần mỗi ngày`
+          : `${unit} chưa học, Ôn nhanh xen dần vào khi bạn học ${ctx.studyLevel}`,
+      count: counts.new,
       href: REVIEW_HREF,
     };
   }
@@ -80,16 +91,32 @@ function mainAction(
     };
   }
   if (next?.kind === 'take') {
+    // Kho chung lists the whole level; it cannot open on one set.
     return {
-      label: `Lấy chặng ${next.set}`,
-      hint: `${next.count} ${unit} chưa có trong kho`,
-      count: next.count,
+      label: 'Lấy thêm',
+      hint: `${unit} chưa có trong kho, từ Chặng ${next.set}`,
+      count: counts.none,
       href: take,
     };
   }
+  const total = sets.reduce((n, s) => n + s.words.length, 0);
+  if (total === 0)
+    return {
+      label: 'Chưa có mục',
+      hint: 'Kho chung chưa có mục nào ở cấp này',
+      count: null,
+      href: null,
+    };
+  if (mastered === total)
+    return {
+      label: 'Thuộc cả cấp',
+      hint: `Bạn đã thuộc mọi ${unit} của cấp này`,
+      count: null,
+      href: null,
+    };
   return {
-    label: 'Đủ cả cấp',
-    hint: `Bạn đã lấy và học mọi ${unit} của cấp này`,
+    label: 'Đã học hết',
+    hint: `Còn ${total - mastered} ${unit} đang ôn, Ôn nhanh nhắc khi đến hạn`,
     count: null,
     href: null,
   };
@@ -114,6 +141,16 @@ export function setAction(
     return { label: 'Thuộc hết', hint: '', count: null, href: null };
   return null;
 }
+
+/** What each mark of a set means, read by screen readers and on hover. */
+export const STATE_LABEL: Record<keyof StateCounts, string> = {
+  mastered: 'đã thuộc',
+  due: 'đến hạn',
+  learning: 'đang học',
+  new: 'chưa học',
+  none: 'chưa có trong kho',
+  paused: 'tạm ngưng',
+};
 
 const SUMMARY: [keyof StateCounts, string][] = [
   ['mastered', 'thuộc'],

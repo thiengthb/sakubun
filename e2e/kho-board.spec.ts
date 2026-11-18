@@ -40,10 +40,10 @@ test('Kho is the level board, from N5 to N1 and outside JLPT', async ({ page }) 
   await n4.getByRole('link', { name: /Từ vựng/ }).click();
   await page.waitForURL(/\/resources\/level\/N4\/vocab$/);
   await expect(page.getByRole('heading', { level: 1, name: 'N4 · Từ vựng' })).toBeVisible();
-  // The breadcrumb now has a "Kho" link too; the menu's is the one marked as the current page.
+  // Scoped to the sidebar: the breadcrumb has a "Kho" link too.
   await expect(
-    nav.getByRole('link', { name: 'Kho', exact: true }).and(nav.locator('[aria-current="page"]')),
-  ).toHaveCount(1);
+    page.locator('[data-sidebar="sidebar"]').getByRole('link', { name: 'Kho', exact: true }),
+  ).toHaveAttribute('aria-current', 'page');
 });
 
 test('an old link to a tab lands on the list of every item', async ({ page }) => {
