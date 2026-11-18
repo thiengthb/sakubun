@@ -97,6 +97,8 @@ test('on a phone a tapped word opens in a sheet', async ({ page }) => {
   await expect(sheet).toBeVisible();
   await page.setViewportSize({ width: 1024, height: 768 });
   await expect(sheet).toBeHidden();
+  // md:hidden alone would hide the sheet too; the overlay going away shows it really closed.
+  await expect(page.locator('[data-slot="sheet-overlay"]')).toHaveCount(0);
   await expect(
     page.getByRole('complementary', { name: 'Mục đang mở' }).getByText(word, { exact: true }),
   ).toBeVisible();
