@@ -90,6 +90,17 @@ test('on a phone a tapped word opens in a sheet', async ({ page }) => {
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
   await page.keyboard.press('Escape');
   await expect(sheet).toBeHidden();
+
+  // Widened past md with the sheet open, the sheet closes and the panel beside the map shows the
+  // same word.
+  await first.click();
+  await expect(sheet).toBeVisible();
+  await page.setViewportSize({ width: 1024, height: 768 });
+  await expect(sheet).toBeHidden();
+  await expect(
+    page.getByRole('complementary', { name: 'Mục đang mở' }).getByText(word, { exact: true }),
+  ).toBeVisible();
+  await page.setViewportSize({ width: 390, height: 844 });
   const width = await page.evaluate(() => document.documentElement.scrollWidth);
   expect(width).toBeLessThanOrEqual(390);
 });
