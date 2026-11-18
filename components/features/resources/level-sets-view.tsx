@@ -19,12 +19,13 @@ import { LEVEL_VIEWS, levelViewHref, levelWords, type LevelView } from '@/lib/li
 import { setHref } from '@/lib/library/set-screen';
 import { cn } from '@/lib/core/utils';
 import { LevelTabContent, LevelTabList, LevelTabs } from './level-tabs';
+import { LevelWordList } from './level-word-list';
 import { LevelWordMap } from './level-word-map';
 import { MARK } from './word-marks';
 
 // One JLPT level of one kind (U4c2, combined layout of docs/plans/2026-11-14-u4-kho.md): what to do
 // next, the words forgotten most, then the level cut into sets of 20 with a mark per word. Tabs
-// switch to a tile per word of the level (U4c4); only the open one is sent.
+// switch to a tile per word of the level or a list to search (U4c4); only the open one is sent.
 
 export function levelTitle(ctx: Pick<LevelContext, 'level' | 'kind'>): string {
   return `${ctx.level} · ${KIND_LABEL[ctx.kind]}`;
@@ -66,8 +67,15 @@ export function LevelSetsView({
         >
           {view === 'sets' ? (
             <SetsView sets={sets} ctx={ctx} />
-          ) : (
+          ) : view === 'map' ? (
             <LevelWordMap words={levelWords(sets, ctx)} speaker={tts.speaker} rate={tts.rate} />
+          ) : (
+            <LevelWordList
+              words={levelWords(sets, ctx)}
+              ctx={ctx}
+              speaker={tts.speaker}
+              rate={tts.rate}
+            />
           )}
         </LevelTabContent>
       </PageShell>

@@ -107,7 +107,9 @@ test('on a phone a tapped word opens in a sheet', async ({ page }) => {
   expect(width).toBeLessThanOrEqual(390);
 });
 
-test('the level switches between its sets and a tile per word', async ({ page }) => {
+test('the level switches between its sets, a tile per word and a list to search', async ({
+  page,
+}) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await signIn(page);
   await page.goto('/resources/level/N5/vocab');
@@ -131,7 +133,10 @@ test('the level switches between its sets and a tile per word', async ({ page })
   await filters.getByRole('radio', { name: /chưa có/i }).click();
   // A filter that hides the open word opens the first word it keeps.
   await expect(
-    page.getByRole('complementary', { name: 'Mục đang mở' }).getByText(/chưa có/i).first(),
+    page
+      .getByRole('complementary', { name: 'Mục đang mở' })
+      .getByText(/chưa có/i)
+      .first(),
   ).toBeVisible();
   const missing = page.locator('[aria-pressed]');
   const shown = await missing.count();
@@ -148,6 +153,18 @@ test('the level switches between its sets and a tile per word', async ({ page })
   await tile.click();
   await expect(panel.getByText(word, { exact: true })).toBeVisible();
   await expect(panel.getByRole('link', { name: 'Chặng 2' })).toHaveAttribute(
+    'href',
+    '/resources/level/N5/vocab/2',
+  );
+
+  // Danh sách: one row a word; the search inside the level finds the word just opened.
+  await tabs.getByRole('tab', { name: 'Danh sách' }).click();
+  await page.waitForURL(/\/resources\/level\/N5\/vocab\?view=list$/);
+  await expect(page.getByRole('table')).toBeVisible();
+  await page.getByPlaceholder(/Tìm trong N5/).fill(word);
+  const row = page.getByRole('row').filter({ hasText: word }).first();
+  await expect(row).toBeVisible();
+  await expect(row.getByRole('link', { name: 'Chặng 2' })).toHaveAttribute(
     'href',
     '/resources/level/N5/vocab/2',
   );

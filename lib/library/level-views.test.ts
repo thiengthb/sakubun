@@ -16,6 +16,7 @@ const entries = (n: number): SetEntry[] =>
 describe('level views', () => {
   it('opens the sets unless the address names another view', () => {
     expect(parseLevelView('map')).toBe('map');
+    expect(parseLevelView('list')).toBe('list');
     for (const raw of [undefined, '', 'sets', 'MAP', 'grid', ['map']])
       expect(parseLevelView(raw)).toBe('sets');
   });
@@ -23,6 +24,7 @@ describe('level views', () => {
   it('keeps the sets at the plain address', () => {
     expect(levelViewHref(N4_VOCAB, 'sets')).toBe('/resources/level/N4/vocab');
     expect(levelViewHref(N4_VOCAB, 'map')).toBe('/resources/level/N4/vocab?view=map');
+    expect(levelViewHref(N4_VOCAB, 'list')).toBe('/resources/level/N4/vocab?view=list');
   });
 
   it('lists every word of the level in order, each with its set', () => {
