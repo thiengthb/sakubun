@@ -1,0 +1,28 @@
+{ "id": "sakubun-u4c4-r1", "title": "Duyệt tab Bản đồ ô ở màn cấp (U4c4a)",
+  "intro": "Màn cấp giờ có hai tab dưới tiêu đề: Chặng (như cũ) và Bản đồ ô. Bản đồ ô là mọi từ của cấp, mỗi từ một ô, chia theo chặng: mười ô một hàng trên laptop, năm ô trên điện thoại, nên mỗi chặng tròn hai hay bốn hàng. Hàng chú thích màu ở trên là bộ lọc: bấm Đến hạn thì chỉ còn các ô đến hạn. Bấm một ô thì chi tiết hiện như ở màn chặng, có thêm nút về chặng của từ đó. Tab Danh sách (bảng có ô tìm trong cấp) mình đã làm xong bản nháp nhưng tách sang PR sau, vì gộp chung thì PR quá 700 dòng. Công tắc theo kiểu tab gạch chân như Kho chung, không theo kiểu nút liền trong phác, cho giống các trang khác của app. Ảnh chụp app thật trên nhánh PR #333.",
+  "scenarios": ["Bản đồ ô của N5 · Từ vựng", "Bấm một ô", "Lọc Đến hạn", "Điện thoại 390px"],
+  "items": [
+    { "id": "map-1440", "group": "Laptop", "label": "Bản đồ ô · 1440",
+      "note": "Bên trái phác B bạn xem hôm 18/11, bên phải app thật.",
+      "sides": [
+        { "key": "a", "name": "Phác B", "file": "../u4c-r2/b.jpg", "scale": 1.4 },
+        { "key": "new", "name": "App thật", "file": "map-1440.jpg", "scale": 2 } ] },
+    { "id": "tabs-1440", "group": "Laptop", "label": "Hai tab · 1440",
+      "note": "Tab Chặng giữ nguyên màn cũ; chỉ thêm hàng tab dưới tiêu đề.",
+      "sides": [
+        { "key": "old", "name": "Tab Chặng", "file": "sets-1440.jpg", "scale": 2 },
+        { "key": "new", "name": "Tab Bản đồ ô", "file": "map-1440.jpg", "scale": 2 } ] },
+    { "id": "open-due-1440", "group": "Laptop", "label": "Bấm ô và lọc · 1440",
+      "sides": [
+        { "key": "old", "name": "Bấm một ô ở Chặng 4", "file": "map-open-1440.jpg", "scale": 2 },
+        { "key": "new", "name": "Lọc Đến hạn", "file": "map-due-1440.jpg", "scale": 2 } ] },
+    { "id": "map-390", "group": "Điện thoại", "label": "Điện thoại · 390",
+      "note": "Bấm ô thì chi tiết trượt lên từ dưới, như màn chặng.",
+      "sides": [
+        { "key": "old", "name": "Bản đồ ô", "file": "map-390.jpg", "scale": 2 },
+        { "key": "new", "name": "Bấm một ô", "file": "map-open-390.jpg", "scale": 2 } ] },
+    { "id": "due-390", "group": "Điện thoại", "label": "Lọc Đến hạn · 390",
+      "sides": [
+        { "key": "old", "name": "Tất cả", "file": "map-390.jpg", "scale": 2 },
+        { "key": "new", "name": "Đến hạn", "file": "map-due-390.jpg", "scale": 2 } ] }
+  ] }

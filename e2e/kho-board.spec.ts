@@ -107,6 +107,53 @@ test('on a phone a tapped word opens in a sheet', async ({ page }) => {
   expect(width).toBeLessThanOrEqual(390);
 });
 
+test('the level switches between its sets and a tile per word', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await signIn(page);
+  await page.goto('/resources/level/N5/vocab');
+  const tabs = page.getByRole('tablist', { name: 'Chọn cách xem' });
+  await expect(tabs.getByRole('tab', { name: 'Chặng' })).toHaveAttribute('aria-selected', 'true');
+
+  // Bản đồ ô: every word of the level, cut by set; the legend filters it.
+  await tabs.getByRole('tab', { name: 'Bản đồ ô' }).click();
+  await page.waitForURL(/\/resources\/level\/N5\/vocab\?view=map$/);
+  await expect(tabs.getByRole('tab', { name: 'Bản đồ ô' })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  );
+  const sets = page.getByRole('region', { name: /^Chặng \d+$/ });
+  const total = await sets.count();
+  expect(total).toBeGreaterThan(1);
+  await expect(
+    page.getByRole('list', { name: 'Các mục của chặng 1', exact: true }).getByRole('button'),
+  ).toHaveCount(20);
+  const filters = page.getByRole('radiogroup', { name: 'Lọc theo trạng thái' });
+  await filters.getByRole('radio', { name: /chưa có/i }).click();
+  const missing = page.locator('[aria-pressed]');
+  const shown = await missing.count();
+  for (let i = 0; i < Math.min(shown, 5); i++)
+    await expect(missing.nth(i)).toContainText('chưa có');
+  await filters.getByRole('radio', { name: /tất cả/i }).click();
+  await expect(sets).toHaveCount(total);
+  const panel = page.getByRole('complementary', { name: 'Mục đang mở' });
+  const tile = page
+    .getByRole('list', { name: 'Các mục của chặng 2', exact: true })
+    .getByRole('button')
+    .first();
+  const word = (await tile.locator('[lang="ja"]').textContent())!;
+  await tile.click();
+  await expect(panel.getByText(word, { exact: true })).toBeVisible();
+  await expect(panel.getByRole('link', { name: 'Chặng 2' })).toHaveAttribute(
+    'href',
+    '/resources/level/N5/vocab/2',
+  );
+
+  // Back to the sets: the plain address again.
+  await tabs.getByRole('tab', { name: 'Chặng' }).click();
+  await page.waitForURL(/\/resources\/level\/N5\/vocab$/);
+  await expect(page.getByRole('heading', { level: 2, name: 'Các chặng' })).toBeVisible();
+});
+
 test('an old link to a tab lands on the list of every item', async ({ page }) => {
   await signIn(page);
   await page.goto('/resources?tab=vocab');

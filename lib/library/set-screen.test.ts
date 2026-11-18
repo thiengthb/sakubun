@@ -64,11 +64,11 @@ describe('the set screen', () => {
       [item('w1'), item('w2', { state: 0 }), item('w3', { due: PAST })],
       NOW,
     );
-    expect(firstOpenWord(due.sets[0]!)).toBe(2);
+    expect(firstOpenWord(due.sets[0]!.words)).toBe(2);
     const fresh = levelSets(entries(3), [item('w1'), item('w2', { state: 0 })], NOW);
-    expect(firstOpenWord(fresh.sets[0]!)).toBe(1);
+    expect(firstOpenWord(fresh.sets[0]!.words)).toBe(1);
     const learnt = levelSets(entries(2), [item('w1'), item('w2')], NOW);
-    expect(firstOpenWord(learnt.sets[0]!)).toBe(0);
+    expect(firstOpenWord(learnt.sets[0]!.words)).toBe(0);
   });
 
   it("links a word to the learner's item, or to Kho chung when it is not taken", () => {

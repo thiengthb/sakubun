@@ -10,7 +10,9 @@ import {
   FileSpreadsheet,
   FolderOpen,
   GalleryVerticalEnd,
+  Grid3x3,
   Languages,
+  Layers,
   List,
   MessagesSquare,
   PenLine,
@@ -109,6 +111,17 @@ export const GROUP_TABS: StoredTabSet = {
   storeKey: 'group.tab',
 };
 
+// A level of Kho (U4c4): its sets, a tile per word. The open view rides in the address (?view=,
+// lib/library/level-views.ts), so the server sends only that view.
+export const LEVEL_TABS: PageTabSet = {
+  items: [
+    { value: 'sets', label: 'Chặng', icon: Layers },
+    { value: 'map', label: 'Bản đồ ô', icon: Grid3x3 },
+  ],
+  label: 'Chọn cách xem',
+  initial: 'sets',
+};
+
 export const INPUT_TABS: PageTabSet = {
   items: [
     { value: 'single', label: 'Theo trường', icon: TextCursorInput },
@@ -156,6 +169,7 @@ export const PAGE_TAB_SETS = {
   input: INPUT_TABS,
   item: itemTabs(),
   group: GROUP_TABS,
+  level: LEVEL_TABS,
 } satisfies Record<string, PageTabSet>;
 
 export type PageTabSetName = keyof typeof PAGE_TAB_SETS;

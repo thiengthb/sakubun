@@ -1,9 +1,15 @@
 import { ParentCrumbs } from '@/components/layout/app-breadcrumbs';
 import { LeadPanel } from '@/components/common/lead-panel';
-import { CardsSkeleton, PageSkeleton, SkeletonText } from '@/components/layout/page-skeleton';
+import {
+  CardsSkeleton,
+  PageSkeleton,
+  PageTabsSkeleton,
+  SkeletonText,
+} from '@/components/layout/page-skeleton';
 import { Skeleton } from '@/components/ui/skeleton';
 
-// A level of Kho (U4c2): "Bước tiếp theo" with its three actions, then the sets.
+// A level of Kho (U4c2): the view tabs (U4c4), "Bước tiếp theo" with its three actions, then the
+// sets. A switch of view keeps the old view on screen instead (LevelTabs).
 export default function Loading() {
   return (
     <PageSkeleton
@@ -11,6 +17,7 @@ export default function Loading() {
       trail={<ParentCrumbs section="resources" self />}
       title={<SkeletonText text="N5 · Từ vựng" />}
       meta={<Skeleton className="h-3 w-48" />}
+      tabs={<PageTabsSkeleton set="level" />}
     >
       <div className="flex flex-col gap-6">
         <LeadPanel className="p-4 md:p-4">

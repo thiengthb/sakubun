@@ -1,4 +1,4 @@
-import type { LevelSet, SetWord } from '@/lib/library/level-sets';
+import type { LevelSet, SetWord, WordState } from '@/lib/library/level-sets';
 import { setSummary, UNIT, type LevelContext } from '@/lib/library/level-screen';
 import { cellHref, libraryLevelHref } from '@/lib/library/level-tally';
 
@@ -32,10 +32,10 @@ export function setMeta(set: LevelSet, ctx: Where): string {
 }
 
 // The word open when the screen loads: the first one asking for something (due, then never
-// studied), else the first of the set.
-export function firstOpenWord(set: LevelSet): number {
+// studied), else the first one.
+export function firstOpenWord(words: readonly { state: WordState }[]): number {
   for (const state of ['due', 'new'] as const) {
-    const i = set.words.findIndex((w) => w.state === state);
+    const i = words.findIndex((w) => w.state === state);
     if (i >= 0) return i;
   }
   return 0;
@@ -45,4 +45,27 @@ export function firstOpenWord(set: LevelSet): number {
 export function wordLink(word: SetWord, ctx: Where): { label: string; href: string } {
   if (word.item) return { label: 'Mở mục', href: `/resources/${word.item.id}` };
   return { label: 'Lấy ở Kho chung', href: libraryLevelHref(ctx.level, ctx.kind) };
+}
+
+/** A word as the map shows it: the entry, its state and where it leads. */
+export interface WordCard {
+  expression: string;
+  reading: string | null;
+  hanviet: string | null;
+  meaningVi: string | null;
+  state: WordState;
+  lapses: number;
+  link: { label: string; href: string };
+  // The set the word belongs to, for a view of the whole level.
+  set: { number: number; href: string };
+}
+
+export function wordCard(word: SetWord, set: number, ctx: Where): WordCard {
+  return {
+    ...word.entry,
+    state: word.state,
+    lapses: word.item?.lapses ?? 0,
+    link: wordLink(word, ctx),
+    set: { number: set, href: setHref(ctx, set) },
+  };
 }

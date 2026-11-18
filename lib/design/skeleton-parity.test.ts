@@ -86,6 +86,11 @@ describe('loading skeletons match their routes', () => {
       loading: 'app/resources/[id]/loading.tsx',
     },
     {
+      name: 'level',
+      source: 'components/features/resources/level-tabs.tsx',
+      loading: 'app/resources/level/[level]/[kind]/loading.tsx',
+    },
+    {
       name: 'group detail',
       source: 'components/features/groups/group-detail-view.tsx',
       loading: 'app/groups/[id]/loading.tsx',
