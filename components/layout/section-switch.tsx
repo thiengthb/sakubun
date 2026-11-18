@@ -4,13 +4,10 @@ import Link from 'next/link';
 import { cn } from '@/lib/core/utils';
 
 // The phone has five tabs and no other menu (thien, U1 gate), so a tab that holds two pages shows a
-// switch between them at the top: Kho holds Của bạn and Kho chung, Bạn holds Tiến độ, Phân tích and Cài đặt.
-// Only on the two pages themselves; a laptop reaches both from the sidebar.
+// switch between them at the top: Bạn holds Tiến độ, Phân tích and Cài đặt. Only on those pages
+// themselves; a laptop reaches them from the sidebar. Kho has no switch since U4b (D6): it opens on
+// the JLPT levels and Kho chung opens from a level.
 const SECTIONS = [
-  [
-    { href: '/resources', label: 'Của bạn' },
-    { href: '/library', label: 'Kho chung' },
-  ],
   [
     { href: '/progress', label: 'Tiến độ' },
     { href: '/analytics', label: 'Phân tích' },

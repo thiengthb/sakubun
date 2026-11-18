@@ -68,7 +68,7 @@ describe('loading skeletons match their routes', () => {
     {
       name: 'resources',
       source: 'components/features/resources/resources-view.tsx',
-      loading: 'app/resources/loading.tsx',
+      loading: 'app/resources/all/loading.tsx',
     },
     {
       name: 'settings',

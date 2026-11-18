@@ -96,7 +96,7 @@ export function LibraryView({
                   <>
                     Muốn chia sẻ nhóm của bạn: mở nhóm ở{' '}
                     <Link href="/resources?tab=groups" className="underline underline-offset-2">
-                      Tài nguyên › Nhóm
+                      Kho › Nhóm
                     </Link>{' '}
                     rồi bấm Chia sẻ.
                   </>

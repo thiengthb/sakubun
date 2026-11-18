@@ -61,7 +61,7 @@ test('on a phone only an unusual icon keeps its word', async ({ page }) => {
     .toBeGreaterThan(20);
   expect(await wordWidth(page.getByRole('link', { name: 'Thêm' }))).toBeGreaterThan(20);
 
-  await page.goto('/resources');
+  await page.goto('/resources/all');
   const filter = page.getByRole('button', { name: /^Bộ lọc/ }).first();
   const sort = page.getByRole('button', { name: /^Sắp xếp/ }).first();
   await expect(filter).toBeVisible();

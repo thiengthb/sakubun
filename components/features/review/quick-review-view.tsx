@@ -336,7 +336,7 @@ export function QuickReviewView({
           action={
             nextDueAt ? undefined : (
               <ButtonLink href="/resources" variant="outline">
-                Mở Tài nguyên
+                Mở Kho
               </ButtonLink>
             )
           }
