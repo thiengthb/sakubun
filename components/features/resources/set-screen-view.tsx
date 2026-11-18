@@ -5,9 +5,9 @@ import { Button, ButtonLink } from '@/components/ui/button';
 import { setAction, STATE_LABEL, type LevelContext } from '@/lib/library/level-screen';
 import { WORD_STATES, type LevelSet } from '@/lib/library/level-sets';
 import { cellHref } from '@/lib/library/level-tally';
-import { firstOpenWord, setHref, setMeta, setNeighbours, wordLink } from '@/lib/library/set-screen';
+import { firstOpenWord, setHref, setMeta, setNeighbours, wordCard } from '@/lib/library/set-screen';
 import { levelTitle } from './level-sets-view';
-import { SetWordMap, type MapWord } from './set-word-map';
+import { WordMap } from './word-map';
 import { MARK } from './word-marks';
 import { cn } from '@/lib/core/utils';
 
@@ -29,12 +29,7 @@ export function SetScreenView({
   const action = setAction(set, ctx);
   const first = set.words[0]!.entry.expression;
   const last = set.words.at(-1)!.entry.expression;
-  const words: MapWord[] = set.words.map((w) => ({
-    ...w.entry,
-    state: w.state,
-    lapses: w.item?.lapses ?? 0,
-    link: wordLink(w, ctx),
-  }));
+  const words = set.words.map((w) => wordCard(w, set.number, ctx));
   return (
     <PageShell
       template="list"
@@ -73,9 +68,9 @@ export function SetScreenView({
             </li>
           ))}
         </ul>
-        <SetWordMap
-          words={words}
-          initial={set.words[firstOpenWord(set)]!.entry.expression}
+        <WordMap
+          sections={[{ key: `chang-${set.number}`, label: `Chặng ${set.number}`, words }]}
+          initial={words[firstOpenWord(words)]!.expression}
           speaker={tts.speaker}
           rate={tts.rate}
         />

@@ -15,12 +15,17 @@ import {
   type LevelContext,
 } from '@/lib/library/level-screen';
 import type { LevelSet, LevelSets, SetWord } from '@/lib/library/level-sets';
+import { LEVEL_VIEWS, levelViewHref, levelWords, type LevelView } from '@/lib/library/level-views';
 import { setHref } from '@/lib/library/set-screen';
 import { cn } from '@/lib/core/utils';
+import { LevelTabContent, LevelTabList, LevelTabs } from './level-tabs';
+import { LevelWordList } from './level-word-list';
+import { LevelWordMap } from './level-word-map';
 import { MARK } from './word-marks';
 
 // One JLPT level of one kind (U4c2, combined layout of docs/plans/2026-11-14-u4-kho.md): what to do
-// next, the words forgotten most, then the level cut into sets of 20 with a mark per word.
+// next, the words forgotten most, then the level cut into sets of 20 with a mark per word. Tabs
+// switch to a tile per word of the level or a list to search (U4c4); only the open one is sent.
 
 export function levelTitle(ctx: Pick<LevelContext, 'level' | 'kind'>): string {
   return `${ctx.level} · ${KIND_LABEL[ctx.kind]}`;
@@ -32,48 +37,85 @@ export function levelMeta(sets: LevelSets): string {
   return `${sets.sets.length} chặng · ${have}/${total} trong kho · ${sets.mastered} đã thuộc`;
 }
 
-export function LevelSetsView({ sets, ctx }: { sets: LevelSets; ctx: LevelContext }) {
+export function LevelSetsView({
+  sets,
+  ctx,
+  view,
+  tts,
+}: {
+  sets: LevelSets;
+  ctx: LevelContext;
+  view: LevelView;
+  tts: { speaker: number; rate: number };
+}) {
+  const hrefs = Object.fromEntries(LEVEL_VIEWS.map((v) => [v, levelViewHref(ctx, v)])) as Record<
+    LevelView,
+    string
+  >;
+  return (
+    <LevelTabs view={view} hrefs={hrefs}>
+      <PageShell
+        template="list"
+        breadcrumb={<ParentCrumbs section="resources" self />}
+        title={levelTitle(ctx)}
+        meta={levelMeta(sets)}
+        tabs={<LevelTabList />}
+      >
+        <LevelTabContent
+          value={view}
+          className="transition-opacity group-aria-busy/tabs:opacity-60"
+        >
+          {view === 'sets' ? (
+            <SetsView sets={sets} ctx={ctx} />
+          ) : view === 'map' ? (
+            <LevelWordMap words={levelWords(sets, ctx)} speaker={tts.speaker} rate={tts.rate} />
+          ) : (
+            <LevelWordList
+              words={levelWords(sets, ctx)}
+              ctx={ctx}
+              speaker={tts.speaker}
+              rate={tts.rate}
+            />
+          )}
+        </LevelTabContent>
+      </PageShell>
+    </LevelTabs>
+  );
+}
+
+function SetsView({ sets, ctx }: { sets: LevelSets; ctx: LevelContext }) {
   const lead = leadActions(sets, ctx);
   return (
-    <PageShell
-      template="list"
-      breadcrumb={<ParentCrumbs section="resources" self />}
-      title={levelTitle(ctx)}
-      meta={levelMeta(sets)}
-    >
-      <div className="flex flex-col gap-6">
-        <LeadPanel aria-label="Bước tiếp theo" className="p-4 md:p-4">
-          <p className="text-sm font-medium text-accent-brand">Bước tiếp theo</p>
-          <div className="mt-3 grid grid-cols-2 gap-2 md:grid-cols-[1.4fr_1fr_1fr] md:gap-3">
-            <ActionTile action={lead.main} tone="primary" className="col-span-2 md:col-span-1" />
-            <ActionTile action={lead.due} tone="warn" />
-            <ActionTile action={lead.take} tone="plain" />
-          </div>
-        </LeadPanel>
+    <div className="flex flex-col gap-6">
+      <LeadPanel aria-label="Bước tiếp theo" className="p-4 md:p-4">
+        <p className="text-sm font-medium text-accent-brand">Bước tiếp theo</p>
+        <div className="mt-3 grid grid-cols-2 gap-2 md:grid-cols-[1.4fr_1fr_1fr] md:gap-3">
+          <ActionTile action={lead.main} tone="primary" className="col-span-2 md:col-span-1" />
+          <ActionTile action={lead.due} tone="warn" />
+          <ActionTile action={lead.take} tone="plain" />
+        </div>
+      </LeadPanel>
 
-        {sets.forgotten.length > 0 && <Forgotten words={sets.forgotten} />}
+      {sets.forgotten.length > 0 && <Forgotten words={sets.forgotten} />}
 
-        <section aria-labelledby="sets-heading">
-          <h2 id="sets-heading" className="text-heading">
-            Các chặng
-          </h2>
-          <p className="mt-0.5 text-sm text-muted-foreground">
-            20 mục mỗi chặng, theo thứ tự của Kho chung · mỗi ô là một mục
-          </p>
-          {sets.sets.length === 0 ? (
-            <p className="mt-3 text-sm text-muted-foreground">
-              Kho chung chưa có mục nào ở cấp này.
-            </p>
-          ) : (
-            <ol className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-              {sets.sets.map((set) => (
-                <SetCard key={set.number} set={set} ctx={ctx} />
-              ))}
-            </ol>
-          )}
-        </section>
-      </div>
-    </PageShell>
+      <section aria-labelledby="sets-heading">
+        <h2 id="sets-heading" className="text-heading">
+          Các chặng
+        </h2>
+        <p className="mt-0.5 text-sm text-muted-foreground">
+          20 mục mỗi chặng, theo thứ tự của Kho chung · mỗi ô là một mục
+        </p>
+        {sets.sets.length === 0 ? (
+          <p className="mt-3 text-sm text-muted-foreground">Kho chung chưa có mục nào ở cấp này.</p>
+        ) : (
+          <ol className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {sets.sets.map((set) => (
+              <SetCard key={set.number} set={set} ctx={ctx} />
+            ))}
+          </ol>
+        )}
+      </section>
+    </div>
   );
 }
 

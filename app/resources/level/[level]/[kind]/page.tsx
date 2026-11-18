@@ -8,6 +8,7 @@ import { JLPT_LEVELS } from '@/lib/kanji/data';
 import { GRAMMAR_KIND, VOCAB_KIND } from '@/lib/library/item-kinds';
 import type { LevelKind } from '@/lib/library/level-screen';
 import type { BoardLevel } from '@/lib/library/level-tally';
+import { parseLevelView } from '@/lib/library/level-views';
 import { getSettings } from '@/lib/library/practice';
 import { ensureOpenJlptLibrary } from '@/lib/library/seed';
 
@@ -28,9 +29,16 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
 }
 
 // One level of one kind (U4c2, docs/plans/2026-11-14-u4-kho.md), opened from a cell of Kho's
-// level board: what to do next, the words forgotten most, and the level cut into sets of 20.
-export default async function LevelPage({ params }: { params: Params }) {
-  const { level: rawLevel, kind: rawKind } = await params;
+// level board: what to do next, the words forgotten most, and the level cut into sets of 20; or,
+// by ?view= (U4c4), a tile per word of the level or a list to search.
+export default async function LevelPage({
+  params,
+  searchParams,
+}: {
+  params: Params;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const [{ level: rawLevel, kind: rawKind }, query] = await Promise.all([params, searchParams]);
   const p = parse(rawLevel, rawKind);
   if (!p) notFound();
   const db = await getUserDb();
@@ -43,7 +51,12 @@ export default async function LevelPage({ params }: { params: Params }) {
   return (
     <>
       <LiveRefresh />
-      <LevelSetsView sets={sets} ctx={{ ...p, studyLevel }} />
+      <LevelSetsView
+        sets={sets}
+        ctx={{ ...p, studyLevel }}
+        view={parseLevelView(query.view)}
+        tts={{ speaker: settings.voiceSpeaker, rate: settings.speechRate }}
+      />
     </>
   );
 }
