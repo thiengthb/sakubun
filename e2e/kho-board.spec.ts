@@ -46,6 +46,53 @@ test('Kho is the level board, from N5 to N1 and outside JLPT', async ({ page }) 
   ).toHaveAttribute('aria-current', 'page');
 });
 
+test('a set card opens the set: its words, one open beside them, the sets around it', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await signIn(page);
+  await page.goto('/resources/level/N4/vocab');
+  // The whole card is the link (U4c3); its name is the set's title.
+  await page.getByRole('link', { name: 'Chặng 1', exact: true }).click();
+  await page.waitForURL(/\/resources\/level\/N4\/vocab\/1$/);
+  await expect(page.getByRole('heading', { level: 1, name: 'Chặng 1' })).toBeVisible();
+
+  const map = page.getByRole('list', { name: 'Các mục của chặng' });
+  await expect(map.getByRole('button')).toHaveCount(20);
+  const panel = page.getByRole('complementary', { name: 'Mục đang mở' });
+  const third = map.getByRole('button').nth(2);
+  const word = (await third.locator('[lang="ja"]').textContent())!;
+  await third.click();
+  await expect(third).toHaveAttribute('aria-pressed', 'true');
+  await expect(panel.getByText(word, { exact: true })).toBeVisible();
+
+  await expect(page.getByRole('button', { name: 'Chặng trước' })).toBeDisabled();
+  await page.getByRole('link', { name: 'Chặng sau' }).click();
+  await page.waitForURL(/\/resources\/level\/N4\/vocab\/2$/);
+  await expect(page.getByRole('heading', { level: 1, name: 'Chặng 2' })).toBeVisible();
+
+  // A set the level does not have is not found.
+  // The page streams behind its skeleton, so the status is 200; the page says it.
+  await page.goto('/resources/level/N4/vocab/999');
+  await expect(page.getByRole('heading', { name: 'Không tìm thấy trang' })).toBeVisible();
+});
+
+test('on a phone a tapped word opens in a sheet', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await signIn(page);
+  await page.goto('/resources/level/N5/vocab/1');
+  const map = page.getByRole('list', { name: 'Các mục của chặng' });
+  const first = map.getByRole('button').first();
+  const word = (await first.locator('[lang="ja"]').textContent())!;
+  await first.click();
+  const sheet = page.getByRole('dialog', { name: word });
+  await expect(sheet).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(sheet).toBeHidden();
+  const width = await page.evaluate(() => document.documentElement.scrollWidth);
+  expect(width).toBeLessThanOrEqual(390);
+});
+
 test('an old link to a tab lands on the list of every item', async ({ page }) => {
   await signIn(page);
   await page.goto('/resources?tab=vocab');
