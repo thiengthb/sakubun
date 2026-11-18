@@ -1,0 +1,14 @@
+{ "id": "sakubun-u4c2-r3", "title": "Chọn màu vạch của chặng (U4c2), vòng 3",
+  "intro": "Ô Bước tiếp theo giữ như bản đã sửa. Vòng này chỉ đổi cách tô từng mục trong thẻ chặng. A: vạch dài, xanh đậm là thuộc, xanh nhạt là đang học, vàng là đến hạn. B: ô vuông theo màu cam của app, cam đậm là thuộc, cam nhạt là đang học, vàng là đến hạn. C: chấm tròn nhỏ giữ màu như vòng 1 nhưng dịu hơn. Xám là chưa học, viền nét đứt là chưa có. Bấm ngón cái ở bản bạn thích, hoặc ghi chú nếu muốn trộn.",
+  "items": [
+    { "id": "marks-1440", "group": "Laptop", "label": "Các chặng · 1440",
+      "sides": [
+        { "key": "a", "name": "A · Vạch xanh", "file": "marks-a-1440.jpg", "scale": 2 },
+        { "key": "b", "name": "B · Ô vuông cam", "file": "marks-b-1440.jpg", "scale": 2 },
+        { "key": "c", "name": "C · Chấm tròn", "file": "marks-c-1440.jpg", "scale": 2 } ] },
+    { "id": "marks-390", "group": "Điện thoại", "label": "Các chặng · 390",
+      "sides": [
+        { "key": "a", "name": "A · Vạch xanh", "file": "marks-a-390.jpg", "scale": 2 },
+        { "key": "b", "name": "B · Ô vuông cam", "file": "marks-b-390.jpg", "scale": 2 },
+        { "key": "c", "name": "C · Chấm tròn", "file": "marks-c-390.jpg", "scale": 2 } ] }
+  ] }
