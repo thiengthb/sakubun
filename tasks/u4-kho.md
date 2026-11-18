@@ -1,7 +1,7 @@
 # U4: màn Kho theo cấp JLPT (U4c2 màn cấp chờ duyệt)
 
 Repo: thiengthb/sakubun · Nhánh: feat/u4c2-level-screen · PR: #331
-Ghi bởi: Claude tnt628, https://claude.ai/code/project/chan_0145cotX9neLQKZjxfBxCwDe?thread=cmsg_0145cotX9neLQKZjxfBxCwDeWAuBVAmkrKtfkT3LpFP7mf · Cập nhật: 2026-11-18T13:48Z
+Ghi bởi: Claude tnt628, https://claude.ai/code/project/chan_0145cotX9neLQKZjxfBxCwDe?thread=cmsg_0145cotX9neLQKZjxfBxCwDeWAuBVAmkrKtfkT3LpFP7mf · Cập nhật: 2026-11-18T14:07Z
 
 ## thien muốn gì
 Làm U4 theo kế hoạch đã duyệt `docs/plans/2026-11-14-u4-kho.md` (hướng 2, gộp theo cấp JLPT; 15/11 thien trả lời "theo đề xuất" cả 3 câu, U4g/U4h để sau kỳ thi N2). thien bảo nick tnt697 làm tiếp ("nick này làm tiếp", 15/11).
@@ -12,11 +12,11 @@ Làm U4 theo kế hoạch đã duyệt `docs/plans/2026-11-14-u4-kho.md` (hướ
 - U4c1 logic chia chặng: #325 (merge 18/11), `lib/library/level-sets.ts`, `lib/app/level-sets.ts`.
 
 ## Bước tiếp theo
-1. U4c2 màn cấp: code xong trên `feat/u4c2-level-screen`, PR #331 (risk:medium). Chờ CI, chuyển sẵn sàng, sửa theo CodeRabbit, cần một phiên khác review rồi thien bảo merge.
+1. U4c2 màn cấp, PR #331 (risk:medium, đã sẵn sàng): thien OK vòng 1 kèm hai góp ý (đã sửa); CodeRabbit 5 ý đã sửa và resolve. Đã nhờ coordinator mở thread review. Merge khi review xong và thien bảo.
 2. Rồi U4c3 (màn chặng: 20 ô có nghĩa, chi tiết bên phải hoặc tấm trượt, chặng trước/sau), U4c4 (Bản đồ ô, Danh sách, tìm trong cấp).
 
 ## Đang chờ thien
-- Duyệt ảnh màn cấp: https://claude.ai/artifact/Skgdy4ryrDhtARXHU5Sxho (mở ở nick tnt628). Nick khác dựng lại: `node <thienai-workflow>/artifacts/compare/make-round.mjs docs/plans/2026-11-14-u4-kho/u4c2/round.json <out>` trên nhánh PR #331.
+- Duyệt ảnh vòng 2: https://claude.ai/artifact/QJce9vSy36LKVMnJxzTL7T (mở ở nick tnt628). Nick khác dựng lại: `node <thienai-workflow>/artifacts/compare/make-round.mjs docs/plans/2026-11-14-u4-kho/u4c2/round-2.json <out>` trên nhánh PR #331.
 
 ## Lưu ý
 - Máy ảo: `npm ci` cần `npm_config_nodedir=/opt/node22`; `prisma generate` cần `PRISMA_SCHEMA_ENGINE_BINARY=/bin/true`; e2e chạy bằng Chrome hệ thống (config tạm với `channel: 'chrome'`, không commit). `npm run build` lỗi ở máy ảo vì không tải được Google Fonts, CI thì xanh.
