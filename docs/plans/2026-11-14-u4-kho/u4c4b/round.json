@@ -1,0 +1,15 @@
+{ "id": "sakubun-u4c4b-r1", "title": "Duyệt tab Danh sách ở màn cấp (U4c4b)",
+  "intro": "Màn cấp có thêm tab thứ ba, Danh sách: mọi từ của cấp trong một bảng (từ, cách đọc, Hán Việt, nghĩa, trạng thái, chặng), ô tìm ở trên tìm trong cả cấp theo chữ, cách đọc, Hán Việt hay nghĩa. Bảng dùng lại bảng có sẵn của app nên sắp xếp, ẩn cột, số dòng như các trang khác, và nhớ riêng cho từng cấp. Trên điện thoại mỗi từ một thẻ, bấm thẻ mở mục. Mỗi màn có hai ảnh: bên trái lúc mới mở, bên phải sau khi gõ \"nước\". Ảnh chụp app thật trên nhánh PR #334.",
+  "scenarios": ["Danh sách N5 · Từ vựng", "Tìm \"nước\"", "Điện thoại 390px"],
+  "items": [
+    { "id": "list-1440", "group": "Laptop", "label": "Danh sách · 1440",
+      "note": "Cột Chặng bấm được để về chặng của từ; cột Mở mục mở trang của từ.",
+      "sides": [
+        { "key": "old", "name": "Mới mở", "file": "list-1440.jpg", "scale": 2 },
+        { "key": "new", "name": "Tìm \"nước\"", "file": "list-search-1440.jpg", "scale": 2 } ] },
+    { "id": "list-390", "group": "Điện thoại", "label": "Danh sách · 390",
+      "note": "Mỗi từ một thẻ: chữ, cách đọc · Hán Việt, nghĩa, trạng thái, chặng.",
+      "sides": [
+        { "key": "old", "name": "Mới mở", "file": "list-390.jpg", "scale": 2 },
+        { "key": "new", "name": "Tìm \"nước\"", "file": "list-search-390.jpg", "scale": 2 } ] }
+  ] }
