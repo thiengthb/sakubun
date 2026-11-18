@@ -21,11 +21,11 @@ import { cn } from '@/lib/core/utils';
 // next, the words forgotten most, then the level cut into sets of 20 with a mark per word.
 
 // One mark per state, read with the summary line under it (the colour alone says nothing).
-// Pale tints (thien, 18/11: solid colours were too heavy).
+// Square tiles in the app's orange, deeper once mastered (thien picked B in round 3, 18/11).
 const MARK: Record<WordState, string> = {
-  mastered: 'bg-ok/40',
+  mastered: 'bg-accent-brand/75',
   learning: 'bg-accent-brand/30',
-  due: 'bg-warn/45',
+  due: 'bg-warn/70',
   new: 'bg-muted-foreground/15',
   none: 'border border-dashed border-muted-foreground/50',
   paused: 'bg-muted',
@@ -223,14 +223,17 @@ function SetCard({ set, ctx }: { set: LevelSet; ctx: LevelContext }) {
       </div>
       {/* Each mark names its word and state for screen readers and on hover; the set screen
           (U4c3) shows every word with its meaning. */}
-      <ul className="grid grid-cols-10 gap-1" aria-label={`Từng mục của chặng ${set.number}`}>
+      <ul
+        className="grid grid-cols-10 gap-1.5 max-w-64"
+        aria-label={`Từng mục của chặng ${set.number}`}
+      >
         {set.words.map((w) => {
           const name = `${w.entry.expression}: ${STATE_LABEL[w.state]}`;
           return (
             <li
               key={w.entry.expression}
               title={name}
-              className={cn('h-2.5 rounded-sm', MARK[w.state])}
+              className={cn('aspect-square rounded-xs', MARK[w.state])}
             >
               <span className="sr-only">{name}</span>
             </li>
