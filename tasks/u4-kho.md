@@ -1,7 +1,7 @@
 # U4: màn Kho theo cấp JLPT (U4b chờ review, rồi U4c)
 
-Repo: thiengthb/sakubun · Nhánh: feat/u4b-kho-level-board · PR: #323
-Ghi bởi: Claude tnt628, https://claude.ai/code/project/chan_0145cotX9neLQKZjxfBxCwDe?thread=cmsg_0145cotX9neLQKZjxfBxCwDeWAuBVAmkrKtfkT3LpFP7mf · Cập nhật: 2026-11-18T13:11Z
+Repo: thiengthb/sakubun · Nhánh: feat/u4c2-level-screen · PR: #331
+Ghi bởi: Claude tnt628, https://claude.ai/code/project/chan_0145cotX9neLQKZjxfBxCwDe?thread=cmsg_0145cotX9neLQKZjxfBxCwDeWAuBVAmkrKtfkT3LpFP7mf · Cập nhật: 2026-11-18T13:37Z
 
 ## thien muốn gì
 Làm U4 theo kế hoạch đã duyệt `docs/plans/2026-11-14-u4-kho.md` (hướng 2, gộp theo cấp JLPT; 15/11 thien trả lời "theo đề xuất" cả 3 câu, U4g/U4h để sau kỳ thi N2). thien bảo nick tnt697 làm tiếp ("nick này làm tiếp", 15/11).
@@ -17,7 +17,7 @@ Làm U4 theo kế hoạch đã duyệt `docs/plans/2026-11-14-u4-kho.md` (hướ
 2. U4c: đã mở nhánh `feat/u4c-level-list`, PR nháp #325. Vòng chọn bố cục: 3 bản (A danh sách trộn, B của bạn trước, C ô số chia nhóm), nguồn đã đẩy ở commit `8ae37f7` (`docs/plans/2026-11-14-u4-kho/u4c/`), trang đã đăng, chờ thien chọn. Code chỉ sau khi thien chọn và #323 merge. Các ô bảng cấp hiện mở `/library?tab=items&type=..&level=..` (`cellHref` trong `level-tally.ts`); U4c đổi sang route danh sách cấp.
 
 ## Đang chờ thien
-- U4c: thien duyệt bản gộp (18/11, "ok cũng khá ổn rồi"), kế hoạch chia U4c1–U4c4. U4c1 (logic chia chặng) ở PR #325, risk:low, đã chuyển sẵn sàng, commit 3657143; chờ CI, CodeRabbit và thien nói merge #323, #325. Sau đó U4c2 (màn cấp) nhánh mới từ main.
+- U4c1 merge (#325, 18/11). U4c2 (màn cấp) đang làm: nhánh feat/u4c2-level-screen, PR nháp #331. Route dự kiến `/resources/level/[level]/[kind]`, dùng `loadLevelSets`; `cellHref` trong level-tally.ts trỏ về đây. Ảnh 1440 và 390 cho thien duyệt trước khi chuyển sẵn sàng.
 - Nói "merge đi" cho PR #323 (đã có review OK của phiên khác, CI xanh).
 
 ## Lưu ý
