@@ -43,7 +43,10 @@ export function LevelWordMap({
         words: [w],
       });
   }
-  const first = words[firstOpenWord(words)];
+  // A filter that hides the open word opens the first word it keeps (WordMap is keyed by filter).
+  const first = shown[firstOpenWord(shown)];
+  if (words.length === 0)
+    return <p className="text-sm text-muted-foreground">Kho chung chưa có mục nào ở cấp này.</p>;
 
   return (
     <div className="flex flex-col gap-4">
@@ -72,6 +75,7 @@ export function LevelWordMap({
       </ToggleGroup>
       {first && (
         <WordMap
+          key={only}
           sections={sections}
           initial={first.expression}
           dense

@@ -129,6 +129,10 @@ test('the level switches between its sets and a tile per word', async ({ page })
   ).toHaveCount(20);
   const filters = page.getByRole('radiogroup', { name: 'Lọc theo trạng thái' });
   await filters.getByRole('radio', { name: /chưa có/i }).click();
+  // A filter that hides the open word opens the first word it keeps.
+  await expect(
+    page.getByRole('complementary', { name: 'Mục đang mở' }).getByText(/chưa có/i).first(),
+  ).toBeVisible();
   const missing = page.locator('[aria-pressed]');
   const shown = await missing.count();
   for (let i = 0; i < Math.min(shown, 5); i++)
