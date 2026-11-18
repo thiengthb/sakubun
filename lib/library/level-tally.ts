@@ -105,12 +105,14 @@ export function cellNote(cell: LevelCell): string {
   return `${cell.mastered} thuộc · ${left > 0 ? `còn ${left} chưa lấy` : 'đủ cả cấp'}`;
 }
 
-/**
- * Where a cell opens until the level list of U4c exists: the level in Kho chung, which marks what
- * the learner already has. Kanji open the level's kanji page.
- */
+/** Where a cell opens: the level screen (U4c2), or the level's kanji page in Kho chung. */
 export function cellHref(level: BoardLevel, kind: BoardKind): string {
   if (kind === 'kanji') return `/library/kanji/${level}`;
+  return `/resources/level/${level}/${kind}`;
+}
+
+/** The level in Kho chung, which marks what the learner already has: where "Lấy" goes. */
+export function libraryLevelHref(level: BoardLevel, kind: Exclude<BoardKind, 'kanji'>): string {
   const type = kind === 'grammar' ? GRAMMAR_KIND : VOCAB_KIND;
   return `/library?tab=items&type=${type}&level=${level}`;
 }
