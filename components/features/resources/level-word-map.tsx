@@ -3,8 +3,9 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { WORD_STATES, type WordState } from '@/lib/library/level-sets';
+import { WORD_STATES } from '@/lib/library/level-sets';
 import { STATE_LABEL } from '@/lib/library/level-screen';
+import { activeFilter, type MapFilter } from '@/lib/library/level-views';
 import { firstOpenWord, type WordCard } from '@/lib/library/set-screen';
 import { cn } from '@/lib/core/utils';
 import { WordMap, type MapSection } from './word-map';
@@ -12,8 +13,6 @@ import { MARK } from './word-marks';
 
 // The level screen's "Bản đồ ô" (U4c4, docs/plans/2026-11-14-u4-kho.md, sketch u4c-r2/b.jpg): a
 // tile per word of the whole level, cut by set, with the legend as a filter.
-
-type Filter = 'all' | WordState;
 
 export function LevelWordMap({
   words,
@@ -24,12 +23,9 @@ export function LevelWordMap({
   speaker?: number;
   rate?: number;
 }) {
-  const [only, setOnly] = useState<Filter>('all');
+  const [only, setOnly] = useState<MapFilter>('all');
   const counts = WORD_STATES.map((s) => [s, words.filter((w) => w.state === s).length] as const);
-  // A filter whose state has no words left (a refresh after reviewing) falls back to "all", so
-  // the map never goes blank with no filter chosen.
-  const active: Filter =
-    only !== 'all' && !counts.some(([s, n]) => s === only && n > 0) ? 'all' : only;
+  const active = activeFilter(only, words);
   const shown = active === 'all' ? words : words.filter((w) => w.state === active);
   const sections: MapSection[] = [];
   for (const w of shown) {
@@ -62,7 +58,7 @@ export function LevelWordMap({
         // top (thien, U4c4a round 1).
         className="max-md:-mx-4 max-md:w-auto max-md:flex-nowrap max-md:overflow-x-auto max-md:px-4 max-md:pb-1 md:flex-wrap"
         value={active}
-        onValueChange={(v) => setOnly(v as Filter)}
+        onValueChange={(v) => setOnly(v as MapFilter)}
       >
         <ToggleGroupItem value="all" className="shrink-0 px-3">
           Tất cả <span className="text-muted-foreground tabular-nums">{words.length}</span>

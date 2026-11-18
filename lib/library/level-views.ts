@@ -1,4 +1,4 @@
-import type { LevelSets } from '@/lib/library/level-sets';
+import type { LevelSets, WordState } from '@/lib/library/level-sets';
 import type { LevelContext } from '@/lib/library/level-screen';
 import { cellHref } from '@/lib/library/level-tally';
 import { wordCard, type WordCard } from '@/lib/library/set-screen';
@@ -27,4 +27,15 @@ export function levelViewHref(ctx: Where, view: LevelView): string {
 /** Every word of the level in the sets' order, each knowing its set. */
 export function levelWords(sets: LevelSets, ctx: Where): WordCard[] {
   return sets.sets.flatMap((set) => set.words.map((w) => wordCard(w, set.number, ctx)));
+}
+
+/** The map's filter: every word, or the words in one state. */
+export type MapFilter = 'all' | WordState;
+
+/**
+ * The filter in force: the one chosen, or every word once no word is left in its state (the page
+ * refreshes every 10 seconds, so a review can empty a state while its filter is chosen).
+ */
+export function activeFilter(chosen: MapFilter, words: readonly { state: WordState }[]): MapFilter {
+  return chosen === 'all' || words.some((w) => w.state === chosen) ? chosen : 'all';
 }

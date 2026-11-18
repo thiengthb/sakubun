@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { levelSets, type SetEntry } from './level-sets';
-import { levelViewHref, levelWords, parseLevelView } from './level-views';
+import { activeFilter, levelViewHref, levelWords, parseLevelView } from './level-views';
 
 const NOW = new Date('2026-11-18T12:00:00Z');
 const N4_VOCAB = { level: 'N4', kind: 'vocab' } as const;
@@ -52,5 +52,13 @@ describe('level views', () => {
       set: { number: 2 },
       link: { href: '/resources/i21' },
     });
+  });
+
+  it('drops a filter whose state has no word left', () => {
+    const words = [{ state: 'due' as const }, { state: 'new' as const }];
+    expect(activeFilter('due', words)).toBe('due');
+    expect(activeFilter('all', words)).toBe('all');
+    expect(activeFilter('mastered', words)).toBe('all');
+    expect(activeFilter('due', [])).toBe('all');
   });
 });
