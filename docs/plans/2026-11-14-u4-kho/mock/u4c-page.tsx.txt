@@ -1,0 +1,305 @@
+// Scratch (never committed): three layouts for U4c, the list of one level, for thien to choose.
+import Link from 'next/link';
+import { ChevronDown, ChevronRight, Plus, Search } from 'lucide-react';
+import { PageShell } from '@/components/layout/page-shell';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/core/utils';
+import { getUserDb } from '@/lib/auth/current-user';
+import { VOCAB_KIND } from '@/lib/library/practice';
+import { browseEntries } from '@/lib/library/browse';
+import { DEFAULT_BROWSE } from '@/lib/library/browse-query';
+
+export const dynamic = 'force-dynamic';
+
+type Status = 'Đến hạn' | 'Đang học' | 'Mới' | 'Đã thuộc' | null;
+type Row = {
+  id: string;
+  ja: string;
+  reading: string | null;
+  meaning: string;
+  status: Status;
+  due: string | null;
+};
+
+const fmt = new Intl.DateTimeFormat('vi-VN', {
+  day: 'numeric',
+  month: 'numeric',
+  timeZone: 'Asia/Ho_Chi_Minh',
+});
+
+function statusOf(srs: { state: number; due: Date } | null, now: Date): [Status, string | null] {
+  if (!srs || srs.state === 0) return ['Mới', null];
+  if (srs.due <= now) return ['Đến hạn', 'hôm nay'];
+  return [srs.state === 2 ? 'Đã thuộc' : 'Đang học', fmt.format(srs.due)];
+}
+
+const TONE: Record<string, string> = {
+  Mới: 'text-muted-foreground',
+  'Đang học': 'text-accent-brand',
+  'Đến hạn': 'text-warn',
+  'Đã thuộc': 'text-ok',
+};
+const ORDER: Exclude<Status, null>[] = ['Đến hạn', 'Đang học', 'Mới', 'Đã thuộc'];
+
+function StatusText({ s }: { s: Status }) {
+  if (!s) return <span className="text-xs text-muted-foreground">Chưa có</span>;
+  return <span className={cn('text-xs font-medium', TONE[s])}>{s}</span>;
+}
+
+function Chips({ items, on }: { items: string[]; on: string }) {
+  return (
+    <div className="flex gap-1.5 overflow-x-auto">
+      {items.map((c) => (
+        <span
+          key={c}
+          className={cn(
+            'shrink-0 rounded-full border border-border px-3 py-1 text-xs',
+            c.startsWith(on)
+              ? 'border-foreground bg-foreground text-background'
+              : 'text-muted-foreground',
+          )}
+        >
+          {c}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function SearchBox() {
+  return (
+    <div className="flex h-9 flex-1 items-center gap-2 rounded-lg border border-border bg-card px-3 text-sm text-muted-foreground md:max-w-xs">
+      <Search className="size-4" aria-hidden />
+      Tìm trong N5 · Từ vựng
+    </div>
+  );
+}
+
+function Word({ r }: { r: Row }) {
+  return (
+    <span className="flex min-w-0 items-baseline gap-2">
+      <span lang="ja" className="font-jp text-base">
+        {r.ja}
+      </span>
+      {r.reading && r.reading !== r.ja && (
+        <span lang="ja" className="truncate text-xs text-muted-foreground">
+          {r.reading}
+        </span>
+      )}
+    </span>
+  );
+}
+
+const COLS = 'grid-cols-[minmax(0,1.3fr)_minmax(0,2fr)_110px_90px]';
+
+/** Laptop table (Từ, Nghĩa, Trạng thái, Đến hạn) and phone rows. */
+function List({ rows, head = true }: { rows: Row[]; head?: boolean }) {
+  return (
+    <>
+      <div className="max-md:hidden">
+        {head && (
+          <div
+            className={cn(
+              'grid gap-3 border-b border-border px-3 pb-2 text-xs text-muted-foreground',
+              COLS,
+            )}
+          >
+            <span>Từ</span>
+            <span>Nghĩa</span>
+            <span>Trạng thái</span>
+            <span className="text-right">Đến hạn</span>
+          </div>
+        )}
+        {rows.map((r) => (
+          <div
+            key={r.id}
+            className={cn(
+              'grid min-h-12 items-center gap-3 border-b border-border px-3',
+              COLS,
+              !r.status && 'text-muted-foreground',
+            )}
+          >
+            <Word r={r} />
+            <span className="truncate text-sm">{r.meaning}</span>
+            <StatusText s={r.status} />
+            <span className="text-right text-xs text-muted-foreground">{r.due ?? ''}</span>
+          </div>
+        ))}
+      </div>
+      <ul className="divide-y divide-border md:hidden">
+        {rows.map((r) => (
+          <li
+            key={r.id}
+            className={cn('flex min-h-14 items-center gap-3 py-2', !r.status && 'opacity-70')}
+          >
+            <span className="min-w-0 flex-1">
+              <Word r={r} />
+              <span className="block truncate text-sm text-muted-foreground">{r.meaning}</span>
+            </span>
+            <span className="flex flex-col items-end gap-0.5">
+              <StatusText s={r.status} />
+              {r.due && <span className="text-xs text-muted-foreground">{r.due}</span>}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </>
+  );
+}
+
+function Trail() {
+  return (
+    <p className="text-sm text-muted-foreground">
+      <Link href="/resources" className="text-accent-brand">
+        Kho
+      </Link>{' '}
+      › N5
+    </p>
+  );
+}
+
+export default async function U4c({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | undefined>>;
+}) {
+  const { v = 'a' } = await searchParams;
+  const db = await getUserDb();
+  const now = new Date();
+  const { rows: entries, counts } = await browseEntries(db, {
+    ...DEFAULT_BROWSE,
+    type: VOCAB_KIND,
+    level: 'N5',
+  });
+  const owned = await db.item.findMany({
+    where: { kind: VOCAB_KIND, level: 'N5' },
+    select: { id: true, srs: { select: { state: true, due: true } } },
+  });
+  const srsOf = new Map(owned.map((i) => [i.id, i.srs]));
+  const rows: Row[] = entries.map((e) => {
+    const [status, due] = e.itemId ? statusOf(srsOf.get(e.itemId) ?? null, now) : [null, null];
+    return {
+      id: e.id,
+      ja: e.expression ?? '',
+      reading: e.reading,
+      meaning: e.meaningVi ?? '',
+      status,
+      due,
+    };
+  });
+  const total = counts?.[VOCAB_KIND as keyof typeof counts] ?? rows.length;
+  const tally = Object.fromEntries(
+    ORDER.map((s) => [s, owned.filter((i) => statusOf(i.srs, now)[0] === s).length]),
+  ) as Record<Exclude<Status, null>, number>;
+  const missing = Math.max(0, Number(total) - owned.length);
+  const meta = `${owned.length}/${total} từ trong kho · ${tally['Đã thuộc']} đã thuộc`;
+  const getRest = (
+    <Button size="sm" variant="outline">
+      <Plus aria-hidden /> Lấy nốt {missing} từ
+    </Button>
+  );
+  const chips = [
+    `Tất cả`,
+    `Đến hạn ${tally['Đến hạn']}`,
+    `Đang học ${tally['Đang học']}`,
+    `Mới ${tally['Mới']}`,
+    `Đã thuộc ${tally['Đã thuộc']}`,
+    `Chưa có ${missing}`,
+  ];
+
+  if (v === 'a') {
+    // A: one mixed list in the library's order; what you lack sits among what you have.
+    return (
+      <PageShell template="list" title="N5 · Từ vựng" meta={meta} actions={getRest}>
+        <div className="flex flex-col gap-4">
+          <Trail />
+          <div className="flex flex-col gap-2 md:flex-row md:items-center">
+            <SearchBox />
+            <Chips items={chips} on="Tất cả" />
+          </div>
+          <List rows={rows.slice(0, 14)} />
+        </div>
+      </PageShell>
+    );
+  }
+
+  if (v === 'b') {
+    // B: yours first (due first), what you lack folded at the end with its own button.
+    const mine = rows
+      .filter((r) => r.status)
+      .sort((x, y) => ORDER.indexOf(x.status!) - ORDER.indexOf(y.status!));
+    const lack = rows.filter((r) => !r.status);
+    return (
+      <PageShell template="list" title="N5 · Từ vựng" meta={meta}>
+        <div className="flex flex-col gap-4">
+          <Trail />
+          <div className="flex flex-col gap-2 md:flex-row md:items-center">
+            <SearchBox />
+            <Chips items={chips.slice(0, 5)} on="Tất cả" />
+          </div>
+          <List rows={mine.slice(0, 9)} />
+          <div className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4">
+            <div className="flex items-center justify-between gap-3">
+              <span className="flex items-center gap-2 text-sm font-medium">
+                <ChevronDown className="size-4" aria-hidden />
+                Chưa có trong kho · {missing} từ
+              </span>
+              {getRest}
+            </div>
+            <List rows={lack.slice(0, 3)} head={false} />
+            <span className="text-xs text-muted-foreground">Xem cả {missing} từ</span>
+          </div>
+        </div>
+      </PageShell>
+    );
+  }
+
+  // C: the counts are the filter; the list is grouped by status, what you lack last.
+  const groups: [string, Row[], number][] = [
+    ...ORDER.map(
+      (s) => [s, rows.filter((r) => r.status === s).slice(0, 3), tally[s]] as [string, Row[], number],
+    ),
+    ['Chưa có', rows.filter((r) => !r.status).slice(0, 2), missing],
+  ];
+  return (
+    <PageShell template="list" title="N5 · Từ vựng" meta={meta} actions={getRest}>
+      <div className="flex flex-col gap-4">
+        <Trail />
+        <div className="grid grid-cols-3 gap-2 md:grid-cols-5">
+          {groups.map(([label, , n]) => (
+            <div
+              key={label}
+              className={cn(
+                'flex flex-col gap-0.5 rounded-lg border border-border bg-card px-3 py-2',
+                label === 'Đến hạn' && 'border-foreground',
+              )}
+            >
+              <span className={cn('text-lg font-semibold', TONE[label])}>{n}</span>
+              <span className="text-xs text-muted-foreground">{label}</span>
+            </div>
+          ))}
+        </div>
+        <div className="flex">
+          <SearchBox />
+        </div>
+        <div className="flex flex-col gap-5">
+          {groups
+            .filter(([, list]) => list.length)
+            .map(([label, list, n]) => (
+              <section key={label} className="flex flex-col gap-1">
+                <h2 className="flex items-center justify-between text-sm font-medium">
+                  <span>
+                    {label} <span className="text-muted-foreground">· {n}</span>
+                  </span>
+                  <span className="flex items-center gap-0.5 text-xs text-accent-brand">
+                    Xem hết <ChevronRight className="size-3.5" aria-hidden />
+                  </span>
+                </h2>
+                <List rows={list} head={false} />
+              </section>
+            ))}
+        </div>
+      </div>
+    </PageShell>
+  );
+}
