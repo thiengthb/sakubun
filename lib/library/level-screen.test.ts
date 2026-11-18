@@ -33,12 +33,19 @@ describe('leadActions', () => {
     );
     const lead = leadActions(sets, N5_VOCAB);
     expect(lead.main).toMatchObject({ label: 'Học tiếp', count: 2, href: '/review' });
-    expect(lead.main.hint).toContain('Chặng 2 còn 2 từ chưa học');
+    expect(lead.main.hint).toContain('từ chưa học ở Chặng 2');
     expect(lead.due).toMatchObject({ count: 1, href: '/review' });
     expect(lead.take).toMatchObject({
       count: 22,
       href: '/library?tab=items&type=VOCAB&level=N5',
     });
+  });
+
+  it("counts the next set's new words, not the whole level's", () => {
+    const fresh = ['w3', 'w4', 'w22'].map((e) => item(e, { state: 0 }));
+    const lead = leadActions(levelSets(entries(25), fresh, NOW), N5_VOCAB);
+    expect(lead.main).toMatchObject({ label: 'Học tiếp', count: 2 });
+    expect(lead.main.hint).toContain('Chặng 1');
   });
 
   it('points to Cài đặt when Ôn nhanh takes new items from another level', () => {

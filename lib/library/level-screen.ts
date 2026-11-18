@@ -65,8 +65,9 @@ function mainAction(
   if (next?.kind === 'study' && ctx.studyLevel === ctx.level) {
     return {
       label: 'Học tiếp',
-      hint: `Chặng ${next.set} còn ${next.count} ${unit} chưa học · Ôn nhanh đưa ra theo số mới mỗi ngày`,
-      count: counts.new,
+      // The set's own count, not the level's: the number reads with "Chặng N" beside it.
+      hint: `${unit} chưa học ở Chặng ${next.set} · Ôn nhanh đưa ra theo số mới mỗi ngày`,
+      count: next.count,
       href: REVIEW_HREF,
     };
   }

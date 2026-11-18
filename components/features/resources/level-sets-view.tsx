@@ -95,7 +95,9 @@ function ActionTile({
   const body = (
     <>
       {action.count !== null && (
-        <span className="text-title2 font-semibold tabular-nums">{action.count}</span>
+        <span className="text-title3 font-semibold tabular-nums md:text-title2">
+          {action.count}
+        </span>
       )}
       <span className="flex min-w-0 flex-col">
         <span className="font-semibold">{action.label}</span>
@@ -111,7 +113,7 @@ function ActionTile({
     </>
   );
   const box =
-    'flex min-h-14 items-center gap-3 rounded-lg px-3 py-2.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring';
+    'flex min-h-14 items-center gap-2 rounded-lg px-3 md:gap-3 py-2.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring';
   if (!action.href)
     return <div className={cn(box, 'border border-border bg-card', className)}>{body}</div>;
   return (
