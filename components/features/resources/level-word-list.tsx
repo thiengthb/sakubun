@@ -17,7 +17,7 @@ import { MARK } from './word-marks';
 // in the sets' order, to look one up. The search box finds the word, its reading, Hán Việt or
 // meaning; a row opens the learner's item, or the level in Kho chung when it is not taken yet.
 
-// Sorting by state follows the legend: learnt first, missing last.
+// Sorting by state follows the legend: learnt first, then missing, then paused.
 const STATE_ORDER: Record<WordState, number> = {
   mastered: 0,
   learning: 1,
@@ -167,8 +167,9 @@ export function LevelWordList({
       renderCard={(w) => (
         <div className="flex flex-col gap-1">
           <div className="flex min-w-0 items-baseline gap-2">
-            {/* Above the card's link, so the speaker plays instead of opening the item. */}
-            <div className="relative z-10 min-w-0">
+            {/* Under the card's link, so a tap on the word opens it; the card lifts only the speaker
+                above the link (LIST_CARD.linked). */}
+            <div className="min-w-0">
               <Expression word={w} voice={{ speaker, rate }} big />
             </div>
             {(w.reading || w.hanviet) && (
