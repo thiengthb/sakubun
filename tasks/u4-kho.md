@@ -17,6 +17,7 @@ Làm U4 theo kế hoạch đã duyệt `docs/plans/2026-11-14-u4-kho.md` (hướ
 
 ## Đang chờ thien
 - Chọn cách tô vạch của chặng, vòng 3: https://claude.ai/artifact/TeQjKvDj9jPzxkQD2zysR6 (mở ở nick tnt628; A vạch xanh, B ô vuông cam, C chấm tròn). Ô Bước tiếp theo đã chốt (vòng 2). Dựng lại: `make-round.mjs docs/plans/2026-11-14-u4-kho/u4c2/round-3.json <out>`; áp bản được chọn theo `u4c2/variants.py.txt`.
+- 18/11 14:40Z: thien chọn B ở vòng 3, đã áp ở 1df8419 trên #331. Chờ thien nói "merge đi" (review phiên khác đã OK), rồi làm U4c3 (màn chặng; thẻ chặng thành link).
 
 ## Lưu ý
 - Máy ảo: `npm ci` cần `npm_config_nodedir=/opt/node22`; `prisma generate` cần `PRISMA_SCHEMA_ENGINE_BINARY=/bin/true`; e2e chạy bằng Chrome hệ thống (config tạm với `channel: 'chrome'`, không commit). `npm run build` lỗi ở máy ảo vì không tải được Google Fonts, CI thì xanh.
