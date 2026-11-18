@@ -1,0 +1,17 @@
+{ "id": "sakubun-u4c4-r2", "title": "Duyệt lại Bản đồ ô trên điện thoại (U4c4a, vòng 2)",
+  "intro": "Vòng 1 bạn để Cần sửa ở hai màn điện thoại nhưng không ghi chú, nên mình sửa hai chỗ mình đoán là lý do: hàng lọc trước chiếm ba dòng, giờ còn một dòng vuốt ngang được, ô bắt đầu cao hơn; ô từ còn bốn ô một hàng thay vì năm, nên từ dài như いちばん, 朝ごはん không còn bị cắt (mỗi chặng tròn năm hàng). Laptop giữ nguyên như bạn đã OK. Nếu lý do không phải hai chỗ này, ghi giúp mình vào ô ghi chú của màn đó. Ảnh chụp app thật trên nhánh PR #333.",
+  "scenarios": ["Điện thoại 390px: bản đồ ô", "Lọc Đến hạn", "Bấm một ô"],
+  "items": [
+    { "id": "map-390", "group": "Điện thoại", "label": "Bản đồ ô · 390",
+      "sides": [
+        { "key": "old", "name": "Vòng 1", "file": "map-390.jpg", "scale": 2 },
+        { "key": "new", "name": "Vòng 2", "file": "map-390-r2.jpg", "scale": 2 } ] },
+    { "id": "due-390", "group": "Điện thoại", "label": "Lọc Đến hạn · 390",
+      "sides": [
+        { "key": "old", "name": "Vòng 1", "file": "map-due-390.jpg", "scale": 2 },
+        { "key": "new", "name": "Vòng 2", "file": "map-due-390-r2.jpg", "scale": 2 } ] },
+    { "id": "open-390", "group": "Điện thoại", "label": "Bấm một ô · 390",
+      "sides": [
+        { "key": "old", "name": "Vòng 1", "file": "map-open-390.jpg", "scale": 2 },
+        { "key": "new", "name": "Vòng 2", "file": "map-open-390-r2.jpg", "scale": 2 } ] }
+  ] }
