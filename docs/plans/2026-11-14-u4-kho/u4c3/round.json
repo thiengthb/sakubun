@@ -1,0 +1,24 @@
+{ "id": "sakubun-u4c3-r1", "title": "Duyệt màn chặng (U4c3)",
+  "intro": "Bấm một thẻ chặng ở màn cấp (cả thẻ giờ bấm được) thì ra màn này: 20 ô của chặng, ô nào đang mở thì nghĩa, cách đọc, Hán Việt hiện ở khung bên phải trên laptop, còn trên điện thoại thì trượt lên từ dưới. Màu ô theo bản B bạn chọn (cam đậm là đã thuộc, cam nhạt là đang học, vàng là đến hạn, xám là chưa học, viền đứt là chưa có trong kho). Ảnh chụp app thật trên nhánh của PR #332, cùng dữ liệu thử như vòng màn cấp. So với phác: nút Ôn từ này và câu ví dụ chưa có, vì app chưa ôn được từng từ riêng; thay bằng nút Mở mục (hay Lấy ở Kho chung nếu từ chưa có trong kho) và nút loa cạnh từ.",
+  "scenarios": ["Chặng đang ôn (Chặng 4, N5 · Từ vựng)", "Chặng còn thiếu từ (Chặng 7)", "Điện thoại 390px, bấm một ô"],
+  "items": [
+    { "id": "set-1440", "group": "Laptop", "label": "Chặng 4 · 1440",
+      "note": "Phác gộp bạn duyệt hôm 18/11 bên trái, app thật bên phải.",
+      "sides": [
+        { "key": "a", "name": "Phác đã duyệt", "file": "../u4c-r2/combo-set.jpg", "scale": 1.4 },
+        { "key": "new", "name": "App thật", "file": "set-1440.jpg", "scale": 2 } ] },
+    { "id": "set7-1440", "group": "Laptop", "label": "Chặng 1 và Chặng 7 · 1440",
+      "note": "Chặng 1 không có chặng trước nên nút đó mờ. Chặng 7 còn 10 từ chưa có trong kho: nút Lấy 10 mở Kho chung.",
+      "sides": [
+        { "key": "old", "name": "Chặng 1", "file": "set1-1440.jpg", "scale": 2 },
+        { "key": "new", "name": "Chặng 7", "file": "set7-1440.jpg", "scale": 2 } ] },
+    { "id": "set-390", "group": "Điện thoại", "label": "Điện thoại · 390",
+      "note": "Trên điện thoại ô chỉ có chữ Nhật cho đỡ chật; bấm ô thì nghĩa trượt lên từ dưới.",
+      "sides": [
+        { "key": "old", "name": "Chặng 4", "file": "set-390.jpg", "scale": 2 },
+        { "key": "new", "name": "Bấm một ô", "file": "set-390-sheet.jpg", "scale": 2 } ] },
+    { "id": "set7-390", "group": "Điện thoại", "label": "Chặng 7 · 390",
+      "sides": [
+        { "key": "old", "name": "Chặng 4", "file": "set-390.jpg", "scale": 2 },
+        { "key": "new", "name": "Chặng 7", "file": "set7-390.jpg", "scale": 2 } ] }
+  ] }

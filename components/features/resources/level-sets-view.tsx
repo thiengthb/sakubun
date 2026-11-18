@@ -14,22 +14,13 @@ import {
   type LevelAction,
   type LevelContext,
 } from '@/lib/library/level-screen';
-import type { LevelSet, LevelSets, SetWord, WordState } from '@/lib/library/level-sets';
+import type { LevelSet, LevelSets, SetWord } from '@/lib/library/level-sets';
+import { setHref } from '@/lib/library/set-screen';
 import { cn } from '@/lib/core/utils';
+import { MARK } from './word-marks';
 
 // One JLPT level of one kind (U4c2, combined layout of docs/plans/2026-11-14-u4-kho.md): what to do
 // next, the words forgotten most, then the level cut into sets of 20 with a mark per word.
-
-// One mark per state, read with the summary line under it (the colour alone says nothing).
-// Square tiles in the app's orange, deeper once mastered (thien picked B in round 3, 18/11).
-const MARK: Record<WordState, string> = {
-  mastered: 'bg-accent-brand/75',
-  learning: 'bg-accent-brand/30',
-  due: 'bg-warn/70',
-  new: 'bg-muted-foreground/15',
-  none: 'border border-dashed border-muted-foreground/50',
-  paused: 'bg-muted',
-};
 
 export function levelTitle(ctx: Pick<LevelContext, 'level' | 'kind'>): string {
   return `${ctx.level} · ${KIND_LABEL[ctx.kind]}`;
@@ -201,8 +192,15 @@ function SetCard({ set, ctx }: { set: LevelSet; ctx: LevelContext }) {
     <li
       id={`chang-${set.number}`}
       aria-labelledby={`chang-${set.number}-title`}
-      className={cn(LIST_CARD.base, 'flex scroll-mt-20 flex-col gap-2 p-4')}
+      className={cn(LIST_CARD.base, LIST_CARD.linked, 'flex scroll-mt-20 flex-col gap-2 p-4')}
     >
+      {/* A full-size link under the card opens the set (LIST_CARD); the set's own button sits above
+          it. Named by the title, so it reads "Chặng N". */}
+      <Link
+        href={setHref(ctx, set.number)}
+        aria-labelledby={`chang-${set.number}-title`}
+        className={LIST_CARD.link}
+      />
       <div className="flex min-h-9 items-center gap-2">
         <h3 id={`chang-${set.number}-title`} className="font-semibold">
           Chặng {set.number}
@@ -212,17 +210,17 @@ function SetCard({ set, ctx }: { set: LevelSet; ctx: LevelContext }) {
         </span>
         {action &&
           (action.href ? (
-            <ButtonLink href={action.href} variant="outline">
+            <ButtonLink href={action.href} variant="outline" className="relative z-10">
               {action.label}
             </ButtonLink>
           ) : (
-            <span className="rounded-full bg-ok-wash px-2 py-0.5 text-xs font-medium text-ok">
+            <span className="relative rounded-full bg-ok-wash px-2 py-0.5 text-xs font-medium text-ok">
               {action.label}
             </span>
           ))}
       </div>
-      {/* Each mark names its word and state for screen readers and on hover; the set screen
-          (U4c3) shows every word with its meaning. */}
+      {/* Each mark names its word and state for screen readers; the card's link lies over the marks,
+          so the set screen (a tap away) is where each word shows with its meaning. */}
       <ul
         className="grid grid-cols-10 gap-1.5 max-w-64"
         aria-label={`Từng mục của chặng ${set.number}`}
@@ -230,11 +228,7 @@ function SetCard({ set, ctx }: { set: LevelSet; ctx: LevelContext }) {
         {set.words.map((w) => {
           const name = `${w.entry.expression}: ${STATE_LABEL[w.state]}`;
           return (
-            <li
-              key={w.entry.expression}
-              title={name}
-              className={cn('aspect-square rounded-xs', MARK[w.state])}
-            >
+            <li key={w.entry.expression} className={cn('aspect-square rounded-xs', MARK[w.state])}>
               <span className="sr-only">{name}</span>
             </li>
           );

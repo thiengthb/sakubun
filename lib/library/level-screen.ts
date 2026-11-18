@@ -32,7 +32,7 @@ export interface LeadActions {
 }
 
 export const KIND_LABEL: Record<LevelKind, string> = { grammar: 'Ngữ pháp', vocab: 'Từ vựng' };
-const UNIT: Record<LevelKind, string> = { grammar: 'mẫu', vocab: 'từ' };
+export const UNIT: Record<LevelKind, string> = { grammar: 'mẫu', vocab: 'từ' };
 
 export const REVIEW_HREF = '/review';
 export const STUDY_LEVEL_HREF = '/settings?tab=practice';
