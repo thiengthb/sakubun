@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { ChevronRight } from 'lucide-react';
 import { PageShell } from '@/components/layout/page-shell';
 import { ParentCrumbs } from '@/components/layout/app-breadcrumbs';
 import { LeadPanel } from '@/components/common/lead-panel';
@@ -19,11 +20,12 @@ import { cn } from '@/lib/core/utils';
 // next, the words forgotten most, then the level cut into sets of 20 with a mark per word.
 
 // One mark per state, read with the summary line under it (the colour alone says nothing).
+// Pale tints (thien, 18/11: solid colours were too heavy).
 const MARK: Record<WordState, string> = {
-  mastered: 'bg-ok',
-  learning: 'bg-accent-brand/60',
-  due: 'bg-warn',
-  new: 'bg-muted-foreground/30',
+  mastered: 'bg-ok/40',
+  learning: 'bg-accent-brand/30',
+  due: 'bg-warn/45',
+  new: 'bg-muted-foreground/15',
   none: 'border border-dashed border-muted-foreground/50',
   paused: 'bg-muted',
 };
@@ -51,9 +53,9 @@ export function LevelSetsView({ sets, ctx }: { sets: LevelSets; ctx: LevelContex
         <LeadPanel aria-label="Bước tiếp theo" className="p-4 md:p-4">
           <p className="text-sm font-medium text-accent-brand">Bước tiếp theo</p>
           <div className="mt-3 grid grid-cols-2 gap-2 md:grid-cols-[1.4fr_1fr_1fr] md:gap-3">
-            <ActionTile action={lead.main} primary className="col-span-2 md:col-span-1" />
-            <ActionTile action={lead.due} />
-            <ActionTile action={lead.take} />
+            <ActionTile action={lead.main} tone="primary" className="col-span-2 md:col-span-1" />
+            <ActionTile action={lead.due} tone="warn" />
+            <ActionTile action={lead.take} tone="plain" />
           </div>
         </LeadPanel>
 
@@ -83,42 +85,64 @@ export function LevelSetsView({ sets, ctx }: { sets: LevelSets; ctx: LevelContex
   );
 }
 
+// The number takes the tile's colour: white on the main tile, gold for what is due, grey for what
+// is missing (the combined sketch, u4c-r2/combo-level.jpg). A tile with nothing to do is greyed out.
+const NUMBER = {
+  primary: '',
+  warn: 'text-warn',
+  plain: 'text-muted-foreground',
+} as const;
+
 function ActionTile({
   action,
-  primary = false,
+  tone,
   className,
 }: {
   action: LevelAction;
-  primary?: boolean;
+  tone: keyof typeof NUMBER;
   className?: string;
 }) {
+  const live = action.href !== null;
+  const primary = tone === 'primary' && live;
   const body = (
     <>
       {action.count !== null && (
-        <span className="text-title3 font-semibold tabular-nums md:text-title2">
+        <span
+          className={cn(
+            'min-w-7 shrink-0 text-center text-title3 font-semibold tabular-nums md:min-w-9 md:text-title2',
+            live ? NUMBER[tone] : 'text-muted-foreground',
+          )}
+        >
           {action.count}
         </span>
       )}
-      <span className="flex min-w-0 flex-col">
-        <span className="font-semibold">{action.label}</span>
+      <span className="flex min-w-0 flex-1 flex-col">
+        <span className={cn('font-semibold', !live && 'text-muted-foreground')}>
+          {action.label}
+        </span>
         <span
           className={cn(
-            'text-xs',
-            primary && action.href ? 'text-primary-foreground/85' : 'text-muted-foreground',
+            'text-xs md:truncate',
+            primary ? 'text-primary-foreground/85' : 'text-muted-foreground',
           )}
         >
           {action.hint}
         </span>
       </span>
+      {live && (
+        <ChevronRight
+          className={cn('size-4 shrink-0 opacity-60', !primary && 'max-md:hidden')}
+          aria-hidden
+        />
+      )}
     </>
   );
   const box =
-    'flex min-h-14 items-center gap-2 rounded-lg px-3 md:gap-3 py-2.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring';
-  if (!action.href)
-    return <div className={cn(box, 'border border-border bg-card', className)}>{body}</div>;
+    'flex min-h-16 items-center gap-2 rounded-lg px-3 py-2 md:gap-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring';
+  if (!live) return <div className={cn(box, 'border border-border/60', className)}>{body}</div>;
   return (
     <Link
-      href={action.href}
+      href={action.href!}
       className={cn(
         box,
         'transition-colors',

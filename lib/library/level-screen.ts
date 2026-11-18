@@ -66,7 +66,7 @@ function mainAction(
     return {
       label: 'Học tiếp',
       // The set's own count, not the level's: the number reads with "Chặng N" beside it.
-      hint: `${unit} chưa học ở Chặng ${next.set} · Ôn nhanh đưa ra theo số mới mỗi ngày`,
+      hint: `${unit} chưa học ở Chặng ${next.set}, Ôn nhanh đưa ra dần mỗi ngày`,
       count: next.count,
       href: REVIEW_HREF,
     };
@@ -74,7 +74,7 @@ function mainAction(
   if (next?.kind === 'study') {
     return {
       label: 'Học cấp này',
-      hint: `Ôn nhanh đang lấy ${unit} mới từ ${ctx.studyLevel}; đổi cấp đang học trong Cài đặt`,
+      hint: `Ôn nhanh đang lấy ${unit} mới từ ${ctx.studyLevel}, đổi trong Cài đặt`,
       count: counts.new,
       href: STUDY_LEVEL_HREF,
     };
