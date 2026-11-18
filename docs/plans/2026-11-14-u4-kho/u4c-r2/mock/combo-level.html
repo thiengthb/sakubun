@@ -1,0 +1,39 @@
+<!doctype html><meta charset="utf-8"><link rel="stylesheet" href="base.css">
+<style>
+.hero{padding:16px 18px;background:linear-gradient(90deg,#fff4ec,#fffdf9);border-color:#efcdb9}
+.acts{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:10px;margin-top:12px}
+.act{border:1px solid var(--line);background:#fff;border-radius:11px;padding:10px 14px;display:flex;align-items:center;gap:12px}
+.act .n{font-size:26px;font-weight:700;line-height:1}.act.pri{background:var(--brand);border-color:var(--brand);color:#fff}.act.pri .mute{color:#ffe3d6}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;font-size:13px;font-weight:600}.seg span{padding:7px 12px;background:#fff}.seg span.on{background:var(--ink);color:#fff}
+.shelf{margin-top:16px}.shelf h3{font-size:15px;display:flex;gap:8px;align-items:baseline}.shelf h3 small{font-weight:400;color:var(--mute);font-size:13px}
+.cards{display:flex;gap:8px;margin-top:8px;overflow:hidden}
+.fc{width:128px;flex:none;padding:10px 12px}.fc .k{font-size:22px;font-weight:700}
+.sets{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:8px}
+.set{padding:12px 14px;display:flex;flex-direction:column;gap:7px}
+.dots{display:grid;grid-template-columns:repeat(10,1fr);gap:4px}.dots i{height:11px;border-radius:3px}
+.d-ok{background:var(--ok)}.d-learn{background:var(--learn)}.d-due{background:var(--due)}.d-new{background:#cfd5dc}.d-none{border:1.5px dashed #c9c1b4}
+.set .w{font-size:13px;color:var(--mute)}
+.phone .acts{grid-template-columns:1fr 1fr}.phone .act.pri{grid-column:1/-1}.phone .act{padding:9px 12px}.phone .act .n{font-size:22px}
+.phone .sets{grid-template-columns:1fr}.phone .fc{width:104px}.phone .fc .k{font-size:19px}
+.tag{font-size:11px;font-weight:700;color:#fff;background:#6b5bd2;border-radius:5px;padding:1px 6px;margin-left:6px;vertical-align:2px}
+</style><body>
+<script>
+const SETS=[{n:3,a:'椅子',b:'一緒',s:'ooooodoooooooloooooo',act:'<span class="btn">Ôn 1</span>'},{n:4,a:'五つ',b:'売る',s:'ooooollllldddoooolll',act:'<span class="btn">Ôn 3</span>'},{n:5,a:'上着',b:'お皿',s:'lllllnnnnnnnnnnnnnnn',act:'<span class="btn pri">Học tiếp</span>'},{n:6,a:'お酒',b:'女',s:'nnnnnnnnnnnnnnnnnnnn',act:'<span class="btn">Học</span>'},{n:7,a:'外国',b:'貸す',s:'nnnnnnnnnnnnnnnnnnnn',act:'<span class="btn">Học</span>'},{n:33,a:'夜',b:'若い',s:'nnnnnnnnnnnnnnxxxxxx',act:'<span class="btn">+ Lấy 6</span>'}];
+const map={o:'ok',l:'learn',d:'due',n:'new',x:'none'};
+const line=s=>{const c={ok:0,learn:0,due:0,new:0,none:0};[...s].forEach(ch=>c[map[ch]]++);return [c.ok&&`<span class="ok">${c.ok} thuộc</span>`,c.due&&`<span class="due">${c.due} đến hạn</span>`,c.learn&&`<span class="learn">${c.learn} đang học</span>`,c.new&&`${c.new} chưa học`,c.none&&`${c.none} chưa có`].filter(Boolean).join(' · ')};
+const setCard=x=>`<div class="card set"><div class="row"><b>Chặng ${x.n}</b><span class="w jp">${x.a} → ${x.b}</span><span class="sp"></span>${x.act}</div><div class="dots">${[...x.s].map(ch=>`<i class="d-${map[ch]}"></i>`).join('')}</div><div class="w">${line(x.s)}</div></div>`;
+const fc=(i,e)=>{const w=W[i];return `<div class="card fc"><div class="k jp">${w[0]}</div><div class="jp mute" style="font-size:12px">${w[1]||'&nbsp;'}</div><div style="font-size:13px">${w[2]}</div><div class="due" style="font-size:12px">${e}</div></div>`};
+const F=[[6,'quên 4 lần'],[13,'quên 3 lần'],[22,'quên 3 lần'],[30,'quên 2 lần'],[2,'quên 2 lần'],[39,'quên 2 lần'],[17,'quên 2 lần'],[7,'quên 1 lần'],[19,'quên 1 lần']];
+const acts=`<div class="acts"><div class="act pri"><div class="n">15</div><div><b>Học chặng 5</b><div class="mute" style="font-size:12px">từ chưa học của chặng đang dở</div></div></div>
+<div class="act"><div class="n due">6</div><div><b>Ôn đến hạn</b><div class="mute" style="font-size:12px">trong N5</div></div></div>
+<div class="act"><div class="n mute">26</div><div><b>Lấy nốt</b><div class="mute" style="font-size:12px">từ chưa có</div></div></div></div>`;
+function laptop(){return `<div class="crumb">Kho › N5</div><div class="row"><div><h1>N5 · Từ vựng</h1><div class="meta">34 chặng · 636/662 từ trong kho · 52 đã thuộc</div></div><span class="sp"></span><div class="seg"><span class="on">Chặng</span><span>Bản đồ ô</span><span>Danh sách</span></div><span class="btn">Tìm</span></div>
+<div class="card hero" style="margin-top:14px"><div class="mute" style="font-size:13px">Bước tiếp theo <span class="tag">A</span><span class="tag">C</span></div>${acts}</div>
+<div class="shelf"><h3>Hay quên nhất <small>từ bạn bấm Quên nhiều lần</small><span class="tag">C</span><span class="sp"></span><small>Ôn riêng nhóm này ›</small></h3><div class="cards">${F.map(([i,e])=>fc(i,e)).join('')}</div></div>
+<div class="shelf"><h3>Các chặng <small>20 từ mỗi chặng · mỗi ô là một từ, bấm chặng để mở bản đồ ô</small><span class="tag">A</span><span class="tag">B</span></h3><div class="sets">${SETS.map(setCard).join('')}</div></div>`}
+function phone(){return `<div class="crumb">Kho › N5</div><div class="row"><h1>N5 · Từ vựng</h1><span class="sp"></span><span class="btn">Tìm</span></div><div class="meta">34 chặng · 636/662 từ · 52 thuộc</div>
+<div style="margin-top:10px"><div class="seg"><span class="on">Chặng</span><span>Bản đồ ô</span><span>Danh sách</span></div></div>
+<div class="card hero" style="margin-top:10px;padding:12px">${acts}</div>
+<div class="shelf"><h3>Hay quên nhất<span class="sp"></span><small>Ôn nhóm này ›</small></h3><div class="cards">${F.slice(0,4).map(([i,e])=>fc(i,e)).join('')}</div></div>
+<div class="shelf"><h3>Các chặng</h3><div class="sets">${SETS.slice(1,4).map(setCard).join('')}</div></div>`}
+</script><script src="shell.js"></script>
