@@ -117,6 +117,7 @@ export const LEVEL_TABS: PageTabSet = {
   items: [
     { value: 'sets', label: 'Chặng', icon: Layers },
     { value: 'map', label: 'Bản đồ ô', icon: Grid3x3 },
+    { value: 'list', label: 'Danh sách', icon: List },
   ],
   label: 'Chọn cách xem',
   initial: 'sets',

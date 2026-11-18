@@ -107,7 +107,9 @@ test('on a phone a tapped word opens in a sheet', async ({ page }) => {
   expect(width).toBeLessThanOrEqual(390);
 });
 
-test('the level switches between its sets and a tile per word', async ({ page }) => {
+test('the level switches between its sets, a tile per word and a list to search', async ({
+  page,
+}) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await signIn(page);
   await page.goto('/resources/level/N5/vocab');
@@ -131,7 +133,10 @@ test('the level switches between its sets and a tile per word', async ({ page })
   await filters.getByRole('radio', { name: /chưa có/i }).click();
   // A filter that hides the open word opens the first word it keeps.
   await expect(
-    page.getByRole('complementary', { name: 'Mục đang mở' }).getByText(/chưa có/i).first(),
+    page
+      .getByRole('complementary', { name: 'Mục đang mở' })
+      .getByText(/chưa có/i)
+      .first(),
   ).toBeVisible();
   const missing = page.locator('[aria-pressed]');
   const shown = await missing.count();
@@ -148,6 +153,18 @@ test('the level switches between its sets and a tile per word', async ({ page })
   await tile.click();
   await expect(panel.getByText(word, { exact: true })).toBeVisible();
   await expect(panel.getByRole('link', { name: 'Chặng 2' })).toHaveAttribute(
+    'href',
+    '/resources/level/N5/vocab/2',
+  );
+
+  // Danh sách: one row a word; the search inside the level finds the word just opened.
+  await tabs.getByRole('tab', { name: 'Danh sách' }).click();
+  await page.waitForURL(/\/resources\/level\/N5\/vocab\?view=list$/);
+  await expect(page.getByRole('table')).toBeVisible();
+  await page.getByPlaceholder(/Tìm trong N5/).fill(word);
+  const row = page.getByRole('row').filter({ hasText: word }).first();
+  await expect(row).toBeVisible();
+  await expect(row.getByRole('link', { name: 'Chặng 2' })).toHaveAttribute(
     'href',
     '/resources/level/N5/vocab/2',
   );
@@ -172,6 +189,25 @@ test('on a phone the map filter is one row that scrolls on its own', async ({ pa
   // The row scrolls, not the page.
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
   expect(await page.evaluate(() => window.scrollX)).toBe(0);
+});
+
+test('on a phone a tap on a word in the list opens it, and its speaker does not', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await signIn(page);
+  await page.goto('/resources/level/N5/vocab?view=list');
+  const link = page.getByRole('link', { name: /^会う: / });
+  const href = await link.getAttribute('href');
+  const card = page.getByRole('listitem').filter({ has: link });
+  // The speaker sits above the card's link: it plays and the page stays.
+  await card.getByRole('button', { name: /phát âm/ }).click();
+  await expect(page).toHaveURL(/view=list$/);
+  // The word itself is under the link, even when it is short and not cut.
+  // (A click on the point, as the link above the word is what takes it.)
+  const word = (await card.locator('[lang="ja"]', { hasText: '会う' }).first().boundingBox())!;
+  await page.mouse.click(word.x + word.width / 2, word.y + word.height / 2);
+  await page.waitForURL((u) => u.pathname + u.search === href);
 });
 
 test('an old link to a tab lands on the list of every item', async ({ page }) => {
