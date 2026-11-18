@@ -26,7 +26,11 @@ export function LevelWordMap({
 }) {
   const [only, setOnly] = useState<Filter>('all');
   const counts = WORD_STATES.map((s) => [s, words.filter((w) => w.state === s).length] as const);
-  const shown = only === 'all' ? words : words.filter((w) => w.state === only);
+  // A filter whose state has no words left (a refresh after reviewing) falls back to "all", so
+  // the map never goes blank with no filter chosen.
+  const active: Filter =
+    only !== 'all' && !counts.some(([s, n]) => s === only && n > 0) ? 'all' : only;
+  const shown = active === 'all' ? words : words.filter((w) => w.state === active);
   const sections: MapSection[] = [];
   for (const w of shown) {
     const last = sections.at(-1);
@@ -57,7 +61,7 @@ export function LevelWordMap({
         // A phone keeps the filter to one row that scrolls sideways, so the tiles start near the
         // top (thien, U4c4a round 1).
         className="max-md:-mx-4 max-md:w-auto max-md:flex-nowrap max-md:overflow-x-auto max-md:px-4 max-md:pb-1 md:flex-wrap"
-        value={only}
+        value={active}
         onValueChange={(v) => setOnly(v as Filter)}
       >
         <ToggleGroupItem value="all" className="shrink-0 px-3">
@@ -75,7 +79,7 @@ export function LevelWordMap({
       </ToggleGroup>
       {first && (
         <WordMap
-          key={only}
+          key={active}
           sections={sections}
           initial={first.expression}
           dense
