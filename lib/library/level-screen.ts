@@ -114,9 +114,21 @@ function mainAction(
       count: null,
       href: null,
     };
+  // Paused words leave Ôn nhanh (lib/app/queue.ts), so they are counted apart from those in review.
+  const paused = counts.paused;
+  const reviewing = total - mastered - paused;
+  if (reviewing === 0)
+    return {
+      label: 'Đang tạm ngưng',
+      hint: `${paused} ${unit} tạm ngưng, bỏ tạm ngưng để học tiếp`,
+      count: null,
+      href: null,
+    };
   return {
     label: 'Đã học hết',
-    hint: `Còn ${total - mastered} ${unit} đang ôn, Ôn nhanh nhắc khi đến hạn`,
+    hint:
+      `Còn ${reviewing} ${unit} đang ôn, Ôn nhanh nhắc khi đến hạn` +
+      (paused > 0 ? ` · ${paused} tạm ngưng` : ''),
     count: null,
     href: null,
   };

@@ -88,6 +88,25 @@ describe('leadActions with nothing left to start', () => {
     expect(leadActions(sets, N5_VOCAB).main.hint).toContain('Còn 1 từ đang ôn');
   });
 
+  it('keeps paused words apart: Ôn nhanh does not bring them back', () => {
+    const allPaused = levelSets(
+      entries(2),
+      [item('w1'), item('w2', { state: 0, suspended: true })],
+      NOW,
+    );
+    expect(leadActions(allPaused, N5_VOCAB).main).toMatchObject({
+      label: 'Đang tạm ngưng',
+      href: null,
+    });
+    const mixed = levelSets(
+      entries(3),
+      [item('w1'), item('w2', { state: 1 }), item('w3', { suspended: true })],
+      NOW,
+    );
+    expect(leadActions(mixed, N5_VOCAB).main.hint).toContain('Còn 1 từ đang ôn');
+    expect(leadActions(mixed, N5_VOCAB).main.hint).toContain('1 tạm ngưng');
+  });
+
   it('says so when Kho chung has nothing at the level', () => {
     const sets = levelSets([], [], NOW);
     expect(leadActions(sets, N5_VOCAB).main).toMatchObject({ label: 'Chưa có mục', href: null });
