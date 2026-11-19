@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { BookCheck, Download, Layers, UserRound } from 'lucide-react';
-import { ParentCrumbs } from '@/components/layout/app-breadcrumbs';
+import { KhoTrail } from '@/components/layout/kho-trail';
 import { PageShell } from '@/components/layout/page-shell';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/common/empty-state';
@@ -71,7 +71,7 @@ export function LibraryItemView({
   return (
     <PageShell
       template="detail"
-      breadcrumb={<ParentCrumbs section="library" self />}
+      breadcrumb={<KhoTrail place={{ way: 'library' }} />}
       title={
         <SpokenLine
           text={pattern}

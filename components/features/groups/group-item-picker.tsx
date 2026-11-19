@@ -6,7 +6,7 @@ import { Plus, SearchX } from 'lucide-react';
 import { toastResult } from '@/lib/core/action-toast';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/common/empty-state';
-import { ParentCrumbs } from '@/components/layout/app-breadcrumbs';
+import { KhoTrail } from '@/components/layout/kho-trail';
 import { FormFooter, PageShell } from '@/components/layout/page-shell';
 import { GroupItemTable } from '@/components/features/groups/group-item-table';
 import { addItemsToGroupAction } from '@/app/actions';
@@ -50,7 +50,9 @@ export function GroupItemPicker({
   return (
     <PageShell
       template="form"
-      breadcrumb={<ParentCrumbs section="groups" self record={{ label: group.name, href: back }} />}
+      breadcrumb={
+        <KhoTrail place={{ way: 'groups' }} extra={[{ label: group.name, href: back }]} />
+      }
       title="Thêm mục"
       meta={`Chỉ hiện ${kinds} chưa thuộc nhóm.`}
     >

@@ -1,4 +1,4 @@
-import { ParentCrumbs } from '@/components/layout/app-breadcrumbs';
+import { KhoTrail } from '@/components/layout/kho-trail';
 import { PageSkeleton, SkeletonText } from '@/components/layout/page-skeleton';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -8,10 +8,9 @@ export default function Loading() {
     <PageSkeleton
       template="list"
       trail={
-        <ParentCrumbs
-          section="kanji"
-          self
-          record={{ label: 'Bộ thủ', href: '/resources/radicals' }}
+        <KhoTrail
+          place={{ way: 'kanji' }}
+          extra={[{ label: 'Bộ thủ', href: '/resources/radicals' }]}
         />
       }
       title={<SkeletonText text="Bộ 水 thủy" />}

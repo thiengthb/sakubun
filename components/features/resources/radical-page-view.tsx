@@ -1,6 +1,6 @@
 'use client';
 
-import { ParentCrumbs } from '@/components/layout/app-breadcrumbs';
+import { KhoTrail } from '@/components/layout/kho-trail';
 import { PageShell } from '@/components/layout/page-shell';
 import { EmptyState } from '@/components/common/empty-state';
 import { KanjiNodeList, StudyLegend } from '@/components/features/resources/kanji-network';
@@ -15,10 +15,9 @@ export function RadicalPageView({ page }: { page: RadicalPage }) {
     <PageShell
       template="list"
       breadcrumb={
-        <ParentCrumbs
-          section="kanji"
-          self
-          record={{ label: 'Bộ thủ', href: '/resources/radicals' }}
+        <KhoTrail
+          place={{ way: 'kanji' }}
+          extra={[{ label: 'Bộ thủ', href: '/resources/radicals' }]}
         />
       }
       title={`Bộ ${r.radical} ${r.nameVi}`}

@@ -2,11 +2,12 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { PageShell } from '@/components/layout/page-shell';
-import { ParentCrumbs } from '@/components/layout/app-breadcrumbs';
+import { KhoTrail } from '@/components/layout/kho-trail';
 import { ItemEditForm } from '@/components/features/resources/item-edit-form';
 import { ItemGuide } from '@/components/features/resources/item-guide';
 import { getItemStats } from '@/lib/insights/item-stats';
 import { getUserDb } from '@/lib/auth/current-user';
+import { itemPlaceById } from '@/lib/app/item-place';
 
 export const metadata: Metadata = { title: 'Sửa mục — sakubun' };
 export const dynamic = 'force-dynamic';
@@ -14,13 +15,15 @@ export const dynamic = 'force-dynamic';
 export default async function ItemEditPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const db = await getUserDb();
-  const stats = await getItemStats(db, id);
-  if (!stats) notFound();
+  const [stats, place] = await Promise.all([getItemStats(db, id), itemPlaceById(db, id)]);
+  if (!stats || !place) notFound();
 
   return (
     <PageShell
       template="form"
-      breadcrumb={<ParentCrumbs section={stats.kind} self />}
+      breadcrumb={
+        <KhoTrail place={place} extra={[{ label: stats.expression, href: `/resources/${id}` }]} />
+      }
       title={stats.kind === 'vocab' ? 'Sửa từ vựng' : 'Sửa ngữ pháp'}
     >
       <Card>

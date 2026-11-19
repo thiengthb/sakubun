@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Download, FolderOpen, SearchX, UserRound } from 'lucide-react';
-import { ParentCrumbs } from '@/components/layout/app-breadcrumbs';
+import { KhoTrail } from '@/components/layout/kho-trail';
 import { PageShell } from '@/components/layout/page-shell';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/common/empty-state';
@@ -73,7 +73,7 @@ export function LibraryGroupView({
   return (
     <PageShell
       template="list"
-      breadcrumb={<ParentCrumbs section="library" self />}
+      breadcrumb={<KhoTrail place={{ way: 'library' }} />}
       title={group.name}
       meta={
         // The kind is a chip, first (docs/ui-standard.md › Đầu trang); then size, who shared it, note.

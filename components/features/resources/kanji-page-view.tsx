@@ -1,4 +1,4 @@
-import { ParentCrumbs } from '@/components/layout/app-breadcrumbs';
+import { KhoTrail } from '@/components/layout/kho-trail';
 import { PageShell } from '@/components/layout/page-shell';
 import { SectionHeading } from '@/components/common/section-heading';
 import { KanjiFacts } from '@/components/common/kanji-detail';
@@ -16,7 +16,7 @@ export function KanjiPageView({ page }: { page: KanjiPage }) {
   return (
     <PageShell
       template="detail"
-      breadcrumb={<ParentCrumbs section="kanji" self />}
+      breadcrumb={<KhoTrail place={{ way: 'kanji' }} />}
       title={withHanviet(k.kanji, k.hanviet)}
       meta={k.meaningVi || 'Chưa có nghĩa tiếng Việt.'}
     >

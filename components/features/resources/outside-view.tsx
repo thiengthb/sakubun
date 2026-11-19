@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { PageShell } from '@/components/layout/page-shell';
-import { ParentCrumbs } from '@/components/layout/app-breadcrumbs';
+import { KhoTrail } from '@/components/layout/kho-trail';
 import { AddSheet } from '@/components/features/resources/add-sheet';
 import { LIST_CARD } from '@/components/common/list-card';
 import { ButtonLink } from '@/components/ui/button';
@@ -25,7 +25,7 @@ export function OutsideView({ shelves }: { shelves: OutsideShelves }) {
   return (
     <PageShell
       template="list"
-      breadcrumb={<ParentCrumbs section="resources" self />}
+      breadcrumb={<KhoTrail place={{ way: 'home' }} />}
       title={OUTSIDE_TITLE}
       meta={outsideMeta(shelves)}
       actions={<AddSheet />}

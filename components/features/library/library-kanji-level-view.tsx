@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { Download, SearchX } from 'lucide-react';
-import { ParentCrumbs } from '@/components/layout/app-breadcrumbs';
+import { KhoTrail } from '@/components/layout/kho-trail';
 import { PageShell } from '@/components/layout/page-shell';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
@@ -50,7 +50,7 @@ export function LibraryKanjiLevelView({
   return (
     <PageShell
       template="list"
-      breadcrumb={<ParentCrumbs section="library" self />}
+      breadcrumb={<KhoTrail place={{ way: 'library' }} />}
       title={name}
       meta={`${kanji.length} chữ · Kanji Jōyō`}
       actions={

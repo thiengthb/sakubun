@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { PageShell } from '@/components/layout/page-shell';
-import { ParentCrumbs } from '@/components/layout/app-breadcrumbs';
+import { KhoTrail } from '@/components/layout/kho-trail';
 import { AddSheet } from '@/components/features/resources/add-sheet';
 import { LIST_CARD } from '@/components/common/list-card';
 import { SpokenLine } from '@/components/common/spoken-line';
@@ -12,7 +12,6 @@ import { wordState } from '@/lib/library/level-sets';
 import { SOURCE_TITLE, type OutsideItem, type OutsideSource } from '@/lib/library/outside-shelves';
 import { cn } from '@/lib/core/utils';
 import { MARK } from './word-marks';
-import { OUTSIDE_TITLE } from './outside-view';
 
 // One source of "Ngoài JLPT" (U4e): its items oldest first, each opening the item's page. A full-size
 // link lies under each row (LIST_CARD); the expression's play button sits above it.
@@ -31,13 +30,7 @@ export function OutsideList({
   return (
     <PageShell
       template="list"
-      breadcrumb={
-        <ParentCrumbs
-          section="resources"
-          self
-          record={{ label: OUTSIDE_TITLE, href: '/resources/outside' }}
-        />
-      }
+      breadcrumb={<KhoTrail place={{ way: 'outside' }} />}
       title={SOURCE_TITLE[source]}
       meta={`${items.length} mục ngoài JLPT`}
       actions={<AddSheet />}

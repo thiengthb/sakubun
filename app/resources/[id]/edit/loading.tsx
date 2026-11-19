@@ -2,7 +2,7 @@
 
 import { useSearchParams } from 'next/navigation';
 import { FormCardSkeleton, PageSkeleton } from '@/components/layout/page-skeleton';
-import { ParentCrumbs } from '@/components/layout/app-breadcrumbs';
+import { KhoTrail } from '@/components/layout/kho-trail';
 import { ITEM_FIELDS } from '@/components/features/resources/item-fields-skeleton';
 import { ItemGuide } from '@/components/features/resources/item-guide';
 
@@ -14,7 +14,9 @@ export default function Loading() {
   return (
     <PageSkeleton
       template="form"
-      trail={<ParentCrumbs section={kind ?? 'grammar'} self pending={!kind} />}
+      trail={
+        <KhoTrail place={{ way: 'pending' }} extra={[{ label: 'mục', href: '', pending: true }]} />
+      }
       title={kind === 'grammar' ? 'Sửa ngữ pháp' : kind === 'vocab' ? 'Sửa từ vựng' : 'Sửa mục'}
     >
       <FormCardSkeleton layout={ITEM_FIELDS} />

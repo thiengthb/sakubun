@@ -6,7 +6,7 @@ import {
   TableSkeleton,
   ToolbarSkeleton,
 } from '@/components/layout/page-skeleton';
-import { ParentCrumbs } from '@/components/layout/app-breadcrumbs';
+import { KhoTrail } from '@/components/layout/kho-trail';
 import { Skeleton } from '@/components/ui/skeleton';
 
 // GroupCards' shape: progress, the card filling the screen, the controls, the one-line note.
@@ -28,7 +28,7 @@ export default function Loading() {
   return (
     <PageSkeleton
       template="list"
-      trail={<ParentCrumbs section="groups" self />}
+      trail={<KhoTrail place={{ way: 'groups' }} />}
       title={<SkeletonText text="Ôn thi N2" />}
       meta={
         // The kind chip, then the size: GroupDetailView's meta line.

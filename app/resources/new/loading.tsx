@@ -6,7 +6,7 @@ import {
   PageSkeleton,
   PageTabsSkeleton,
 } from '@/components/layout/page-skeleton';
-import { ParentCrumbs } from '@/components/layout/app-breadcrumbs';
+import { KhoTrail } from '@/components/layout/kho-trail';
 import { ITEM_FIELDS } from '@/components/features/resources/item-fields-skeleton';
 import { ItemGuide } from '@/components/features/resources/item-guide';
 
@@ -16,7 +16,7 @@ export default function Loading() {
   return (
     <PageSkeleton
       template="form"
-      trail={<ParentCrumbs section={kind} self />}
+      trail={<KhoTrail place={{ way: 'home' }} />}
       title={kind === 'grammar' ? 'Thêm ngữ pháp' : 'Thêm từ vựng'}
       tabs={<PageTabsSkeleton set="input" />}
     >

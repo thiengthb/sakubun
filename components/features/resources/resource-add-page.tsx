@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Tabs } from '@/components/ui/tabs';
 import { PageShell } from '@/components/layout/page-shell';
-import { ParentCrumbs } from '@/components/layout/app-breadcrumbs';
+import { KhoTrail } from '@/components/layout/kho-trail';
 import { PageTabs } from '@/components/common/page-tabs';
 import { INPUT_TABS } from '@/components/layout/page-heads';
 import {
@@ -28,7 +28,7 @@ export function ResourceAddPage({ kind, initialTab }: { kind: ResourceKind; init
     <Tabs value={tab} onValueChange={setTab}>
       <PageShell
         template="form"
-        breadcrumb={<ParentCrumbs section={kind} self />}
+        breadcrumb={<KhoTrail place={{ way: 'home' }} />}
         title={kind === 'grammar' ? 'Thêm ngữ pháp' : 'Thêm từ vựng'}
         tabs={<PageTabs items={INPUT_TABS.items} label={INPUT_TABS.label} />}
       >

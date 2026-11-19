@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { ChevronRight } from 'lucide-react';
 import { PageShell } from '@/components/layout/page-shell';
-import { ParentCrumbs } from '@/components/layout/app-breadcrumbs';
+import { KhoTrail } from '@/components/layout/kho-trail';
 import { LeadPanel } from '@/components/common/lead-panel';
 import { LIST_CARD } from '@/components/common/list-card';
 import { ButtonLink, buttonVariants } from '@/components/ui/button';
@@ -57,7 +57,7 @@ export function LevelSetsView({
     <LevelTabs view={view} hrefs={hrefs}>
       <PageShell
         template="list"
-        breadcrumb={<ParentCrumbs section="resources" self />}
+        breadcrumb={<KhoTrail place={{ way: 'levels' }} />}
         title={levelTitle(ctx)}
         meta={levelMeta(sets)}
         tabs={<LevelTabList />}
