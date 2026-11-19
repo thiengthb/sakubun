@@ -40,7 +40,8 @@ export const ITEM_TYPES = [GRAMMAR_KIND, VOCAB_KIND] as const;
 export type ItemType = (typeof ITEM_TYPES)[number];
 
 export const openJlptKey = (type: string, expression: string) => `openjlpt:${type}:${expression}`;
-export const openJlptGroupKey = (level: string, type: ItemType) => `openjlpt:group:${level}:${type}`;
+export const openJlptGroupKey = (level: string, type: ItemType) =>
+  `openjlpt:group:${level}:${type}`;
 
 const GROUP_KIND_OF: Record<ItemType, 'grammar' | 'vocab'> = {
   [GRAMMAR_KIND]: 'grammar',
@@ -183,7 +184,6 @@ export const MAX_RESULTS = 50;
 
 function entryWhere(query: SearchQuery, type: ItemType | { in: ItemType[] }) {
   const text = query.text?.trim();
-  const exclude = Object.entries(query.exclude ?? {}).filter(([, list]) => list.length > 0);
   return {
     ...VISIBLE,
     type,
@@ -197,32 +197,66 @@ function entryWhere(query: SearchQuery, type: ItemType | { in: ItemType[] }) {
           ],
         }
       : {}),
-    ...(exclude.length > 0
-      ? { NOT: exclude.map(([kind, list]) => ({ type: kind, expression: { in: [...list] } })) }
-      : {}),
   };
+}
+
+// Newest first, or (the default) OpenJLPT's originals first, then the most taken, then the most liked.
+const entryOrder = (sort: EntrySort | undefined) =>
+  sort === 'new'
+    ? [{ createdAt: 'desc' as const }, { id: 'asc' as const }]
+    : // OPENJLPT sorts after LEARNER, so descending puts the originals first.
+      [
+        { origin: 'desc' as const },
+        { takeCount: 'desc' as const },
+        { likes: { _count: 'desc' as const } },
+        { createdAt: 'asc' as const },
+        { id: 'asc' as const },
+      ];
+
+const hasExclude = (query: SearchQuery) =>
+  Object.values(query.exclude ?? {}).some((list) => list.length > 0);
+
+// What a search finds minus `exclude`, in the page's order, as ids and kinds. The owned expressions are
+// left out here rather than in SQL: a learner who took whole levels owns thousands, one bound value
+// each, past SQLite's limit (P2029 on thien's Kho, 19/11).
+async function remainingEntries(
+  db: LibraryClient,
+  query: SearchQuery,
+  type: ItemType | { in: ItemType[] },
+) {
+  const exclude = new Map(
+    Object.entries(query.exclude ?? {}).map(([kind, list]) => [kind, new Set(list)]),
+  );
+  const rows = await db.libraryEntry.findMany({
+    where: entryWhere(query, type),
+    select: { id: true, type: true, expression: true },
+    orderBy: entryOrder(query.sort),
+  });
+  return rows.filter((r) => !(r.expression !== null && exclude.get(r.type)?.has(r.expression)));
 }
 
 // Patterns and words matching a search, public only. The same expression may be shared many times
 // (rule 7): OpenJLPT's version comes first as the original, then the most taken, then the most liked.
 export async function searchEntries(db: LibraryClient, query: SearchQuery = {}) {
-  return db.libraryEntry.findMany({
-    where: entryWhere(query, query.type ?? { in: [...ITEM_TYPES] }),
+  const type = query.type ?? { in: [...ITEM_TYPES] };
+  const take = Math.min(query.take ?? MAX_RESULTS, MAX_RESULTS);
+  const skip = query.skip ?? 0;
+  if (!hasExclude(query))
+    return db.libraryEntry.findMany({
+      where: entryWhere(query, type),
+      select: ENTRY_FIELDS,
+      orderBy: entryOrder(query.sort),
+      take,
+      skip,
+    });
+  const ids = (await remainingEntries(db, query, type)).slice(skip, skip + take).map((r) => r.id);
+  if (ids.length === 0) return [];
+  const rows = await db.libraryEntry.findMany({
+    where: { id: { in: ids } },
     select: ENTRY_FIELDS,
-    orderBy:
-      query.sort === 'new'
-        ? [{ createdAt: 'desc' }, { id: 'asc' }]
-        : // OPENJLPT sorts after LEARNER, so descending puts the originals first.
-          [
-            { origin: 'desc' },
-            { takeCount: 'desc' },
-            { likes: { _count: 'desc' } },
-            { createdAt: 'asc' },
-            { id: 'asc' },
-          ],
-    take: Math.min(query.take ?? MAX_RESULTS, MAX_RESULTS),
-    skip: query.skip ?? 0,
   });
+  const at = new Map(ids.map((id, i) => [id, i]));
+  return rows.sort((a, b) => at.get(a.id)! - at.get(b.id)!);
 }
 
 // How many entries a search finds in all, by kind (7.4i: the page says the real size of Kho chung,
@@ -235,7 +269,9 @@ export async function countEntries(
     ITEM_TYPES.map((type) =>
       query.type && query.type !== type
         ? 0
-        : db.libraryEntry.count({ where: entryWhere(query, type) }),
+        : hasExclude(query)
+          ? remainingEntries(db, query, type).then((rows) => rows.length)
+          : db.libraryEntry.count({ where: entryWhere(query, type) }),
     ),
   );
   return { [GRAMMAR_KIND]: grammar, [VOCAB_KIND]: vocab } as Record<ItemType, number>;
