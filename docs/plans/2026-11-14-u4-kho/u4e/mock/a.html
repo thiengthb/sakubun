@@ -1,0 +1,15 @@
+<!doctype html><meta charset="utf-8"><link rel="stylesheet" href="base.css"><body>
+<style>.menu{position:absolute;right:34px;top:88px;width:380px;padding:10px;display:flex;flex-direction:column;gap:8px;box-shadow:0 8px 30px #0002;z-index:2}</style>
+<script>
+const TABS_A = [['Tất cả',94],['Claude soạn',41],['Tự viết',23],['Từ bộ chia sẻ',30],['Nhóm',3]];
+const tabsA = on => `<div class="row" style="gap:8px;flex-wrap:nowrap;overflow:hidden">${TABS_A.map(([t,n],i)=>`<span class="tab ${i===on?'on':''}">${t} <span style="opacity:.7">${n}</span></span>`).join('')}</div>`;
+function laptop(){return `<div style="position:relative"><div class="crumb">Kho ›</div><div class="row"><div><h1>Ngoài JLPT</h1><div class="meta">94 mục không thuộc N5–N1 · 3 nhóm · 31 đã thuộc</div></div><span class="sp"></span><span class="inp" style="width:260px">Tìm chữ, cách đọc, nghĩa</span><span class="btn pri">+ Thêm</span></div>
+<div class="card menu">${WAYS.map(way).join('')}</div>
+<div style="margin-top:18px">${tabsA(0)}</div>
+<div class="card" style="margin-top:14px;padding:4px 10px"><table class="tbl"><tr><th>Chữ</th><th>Cách đọc</th><th>Nghĩa</th><th>Nguồn</th><th>Trạng thái</th><th></th></tr>
+${IT.slice(0,14).map(x=>`<tr><td class="jp" style="font-size:16px;font-weight:600">${x[0]}</td><td class="jp mute">${x[1]}</td><td>${x[2]}</td><td class="src">${SRC[x[3]]}</td><td>${pill(x[4])}</td><td class="mute">›</td></tr>`).join('')}</table></div></div>`}
+function phone(){return `<div class="crumb">Kho ›</div><div class="row"><h1>Ngoài JLPT</h1><span class="sp"></span><span class="btn pri">+ Thêm</span></div><div class="meta">94 mục · 3 nhóm · 31 đã thuộc</div>
+<div class="inp" style="margin-top:12px">Tìm chữ, cách đọc, nghĩa</div><div style="margin-top:10px">${tabsA(1)}</div>
+<div class="card" style="margin-top:12px">${IT.filter(x=>x[3]==='c').map(x=>`<div class="row" style="padding:11px 14px;border-bottom:1px solid var(--line)"><div><div class="jp" style="font-weight:600;font-size:16px">${x[0]} <span class="mute" style="font-weight:400;font-size:13px">${x[1]}</span></div><div style="font-size:13px">${x[2]}</div></div><span class="sp"></span>${pill(x[4])}</div>`).join('')}</div>`}
+function sheet(){return `<div class="main" style="filter:blur(.5px)">${phone()}</div><div class="dim"></div><div class="sheet"><div class="grab"></div><div style="font-weight:700;font-size:18px;margin-bottom:4px">Thêm vào kho</div><div class="meta" style="margin:0 0 12px">Chọn một cách</div><div style="display:flex;flex-direction:column;gap:8px">${WAYS.map(way).join('')}</div></div>`}
+</script><script src="shell.js"></script>

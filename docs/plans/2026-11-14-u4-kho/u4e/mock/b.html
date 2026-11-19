@@ -1,0 +1,28 @@
+<!doctype html><meta charset="utf-8"><link rel="stylesheet" href="base.css"><body>
+<style>.laptop .main{position:relative}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:10px}.gc{padding:14px 16px;display:flex;flex-direction:column;gap:8px}.gc .t{font-weight:700}.gc .w{font-size:13px;color:var(--mute)}
+.sec{font-weight:700;margin-top:20px;font-size:15px}.phone .grid{grid-template-columns:1fr;gap:10px}
+.drawer{position:absolute;right:0;top:0;bottom:0;width:440px;background:var(--card);border-left:1px solid var(--line);padding:22px;box-shadow:-8px 0 30px #0002;display:flex;flex-direction:column;gap:10px}
+.form{display:flex;flex-direction:column;gap:8px;padding:12px;border:1.5px solid var(--brand);border-radius:12px;background:#fff}</style>
+<script>
+const G = [
+ {t:'Từ trong bài dịch tuần này',w:'18 mục · Claude soạn',p:'oooolllddnnnnnnnnn',b:'<span class="btn pri">Học 9</span>'},
+ {t:'Anime Frieren',w:'24 mục · tự viết',p:'oooooooooooooolllldoooo',b:'<span class="btn">Ôn 1</span>'},
+ {t:'Phỏng vấn xin việc',w:'12 mục · tự viết',p:'oooooooooooo',b:'<span class="pill" style="background:var(--ok-soft);color:var(--ok)">Thuộc hết</span>'},
+];
+const S = [
+ {t:'Claude soạn',w:'41 mục, từ các buổi dịch',p:'ooooooooooooolllllllddddnnnnnnnnnnnnnnnn',b:'<span class="btn">Ôn 4</span>'},
+ {t:'Tự viết',w:'23 mục',p:'oooooooooooolllllnnnnnn',b:'<span class="btn">Học 6</span>'},
+ {t:'Từ bộ chia sẻ',w:'30 mục · bộ "IT công sở" của Minh',p:'oooooollllldddnnnnnnnnnnnnnnnn',b:'<span class="btn">Ôn 3</span>'},
+];
+const card = x => `<div class="card gc"><div class="row"><span class="t">${x.t}</span><span class="sp"></span>${x.b}</div>${dots(x.p)}<div class="w">${x.w}</div></div>`;
+function laptop(){return `<div class="crumb">Kho ›</div><div class="row"><div><h1>Ngoài JLPT</h1><div class="meta">94 mục không thuộc N5–N1 · 3 nhóm · 31 đã thuộc</div></div><span class="sp"></span><span class="btn">Xem dạng danh sách</span><span class="btn pri">+ Thêm</span></div>
+<div class="sec">Nhóm của bạn</div><div class="grid">${G.map(card).join('')}</div>
+<div class="sec">Theo nguồn <span class="mute" style="font-weight:400">· mọi mục, kể cả mục đã vào nhóm</span></div><div class="grid">${S.map(card).join('')}</div>
+<div class="drawer"><div class="row"><b style="font-size:18px">Thêm vào kho</b><span class="sp"></span><span class="mute">✕</span></div>${WAYS.slice(0,3).map(way).join('')}
+<div class="form"><div class="row"><div class="ic" style="width:36px;height:36px;border-radius:9px;display:grid;place-items:center;background:#e7eaee;font-weight:700">+</div><b>Tự viết</b></div>
+<div class="row"><span class="tab on">Từ vựng</span><span class="tab">Ngữ pháp</span></div><div class="inp">Chữ (ví dụ 締め切り)</div><div class="inp">Cách đọc</div><div class="inp">Nghĩa tiếng Việt</div><div class="inp">Nhóm: Từ trong bài dịch tuần này</div><div class="row"><span class="sp"></span><span class="btn pri">Thêm</span></div></div></div>`}
+function phone(){return `<div class="crumb">Kho ›</div><div class="row"><h1>Ngoài JLPT</h1><span class="sp"></span><span class="btn pri">+ Thêm</span></div><div class="meta">94 mục · 3 nhóm · 31 đã thuộc</div>
+<div class="sec">Nhóm của bạn</div><div class="grid">${G.slice(0,2).map(card).join('')}</div><div class="sec">Theo nguồn</div><div class="grid">${S.slice(0,2).map(card).join('')}</div>`}
+function sheet(){return `<div class="main">${phone()}</div><div class="dim"></div><div class="sheet" style="top:70px;overflow:hidden"><div class="grab"></div><div style="font-weight:700;font-size:18px;margin-bottom:12px">Thêm vào kho</div><div style="display:flex;flex-direction:column;gap:8px">${WAYS.slice(0,3).map(way).join('')}
+<div class="form"><b>Tự viết</b><div class="row"><span class="tab on">Từ vựng</span><span class="tab">Ngữ pháp</span></div><div class="inp">Chữ</div><div class="inp">Cách đọc</div><div class="inp">Nghĩa tiếng Việt</div><div class="row"><span class="sp"></span><span class="btn pri">Thêm</span></div></div></div></div>`}
+</script><script src="shell.js"></script>

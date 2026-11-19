@@ -1,0 +1,21 @@
+<!doctype html><meta charset="utf-8"><link rel="stylesheet" href="base.css"><body>
+<style>.cols{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:20px;margin-top:16px}.side2{display:flex;flex-direction:column;gap:12px}
+.chip{font-size:13px;padding:5px 10px;border-radius:99px;border:1px solid var(--line);background:#fff;white-space:nowrap}.chip.on{border-color:var(--brand);color:var(--brand);background:#fff4ec}
+.big{font-size:16px;padding:12px 16px}.lk{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--line);font-size:14px}
+.fab{position:absolute;right:16px;bottom:84px;border-radius:99px;padding:12px 18px;box-shadow:0 4px 14px #0003;z-index:2}</style>
+<script>
+const chips = `<div class="row" style="gap:6px;flex-wrap:nowrap;overflow:hidden"><span class="chip on">Mọi nguồn ▾</span><span class="chip">Từ vựng</span><span class="chip">Ngữ pháp</span><span class="chip">Đến hạn 6</span><span class="chip">Chưa học 21</span></div>`;
+function laptop(){return `<div class="crumb">Kho ›</div><div class="row"><div><h1>Ngoài JLPT</h1><div class="meta">94 mục không thuộc N5–N1 · 31 đã thuộc</div></div></div>
+<div class="cols"><div><div class="inp big">Tìm trong 94 mục: chữ, cách đọc, nghĩa</div><div style="margin-top:10px">${chips}</div>
+<div class="card" style="margin-top:12px;padding:4px 10px"><table class="tbl"><tr><th>Chữ</th><th>Nghĩa</th><th>Nguồn</th><th>Trạng thái</th></tr>
+${IT.slice(0,13).map(x=>`<tr><td><span class="jp" style="font-size:16px;font-weight:600">${x[0]}</span> <span class="jp mute" style="font-size:13px">${x[1]}</span></td><td>${x[2]}</td><td class="src">${SRC[x[3]]}</td><td>${pill(x[4])}</td></tr>`).join('')}</table></div></div>
+<div class="side2"><div class="card" style="padding:14px 16px"><b>Thêm vào kho</b><div style="display:flex;flex-direction:column;gap:8px;margin-top:10px">${WAYS.map(way).join('')}</div></div>
+<div class="card" style="padding:14px 16px"><div class="row"><b>Nhóm của bạn</b><span class="sp"></span><span class="mute" style="font-size:13px">Tạo nhóm</span></div>
+<div class="lk"><span>Từ trong bài dịch tuần này</span><span class="mute">18</span></div><div class="lk"><span>Anime Frieren</span><span class="mute">24</span></div><div class="lk" style="border:0"><span>Phỏng vấn xin việc</span><span class="mute">12</span></div></div></div></div>`}
+function phone(){return `<div class="crumb">Kho ›</div><h1>Ngoài JLPT</h1><div class="meta">94 mục · 31 đã thuộc</div><div class="inp" style="margin-top:12px">Tìm trong 94 mục</div><div style="margin-top:10px">${chips}</div>
+<div class="row" style="gap:6px;margin-top:10px;overflow:hidden"><span class="mute" style="font-size:13px">Nhóm:</span><span class="chip">Bài dịch tuần này</span><span class="chip">Frieren</span><span class="chip">Phỏng vấn</span></div>
+<div class="card" style="margin-top:12px">${IT.slice(0,9).map(x=>`<div class="row" style="padding:10px 14px;border-bottom:1px solid var(--line)"><div><div class="jp" style="font-weight:600;font-size:16px">${x[0]} <span class="mute" style="font-weight:400;font-size:13px">${x[1]}</span></div><div style="font-size:13px">${x[2]}</div></div><span class="sp"></span>${pill(x[4])}</div>`).join('')}</div><span class="btn pri fab">+ Thêm</span>`}
+function sheet(){return `<div class="main"><div class="crumb">‹ Ngoài JLPT</div><h1>Thêm vào kho</h1><div class="row" style="gap:6px;margin-top:12px;overflow:hidden"><span class="tab on">Tự viết</span><span class="tab">Nhờ Claude</span><span class="tab">Bộ chia sẻ</span><span class="tab">Theo cấp</span></div>
+<div class="card" style="padding:14px;margin-top:14px;display:flex;flex-direction:column;gap:10px"><div class="row"><span class="tab on">Từ vựng</span><span class="tab">Ngữ pháp</span></div><div class="inp">Chữ (ví dụ 締め切り)</div><div class="inp">Cách đọc</div><div class="inp">Hán Việt</div><div class="inp">Nghĩa tiếng Việt</div><div class="inp">Ghi chú</div><div class="inp">Nhóm (không bắt buộc)</div><span class="btn pri" style="justify-content:center">Thêm</span></div>
+<div class="meta" style="margin-top:12px">Trang riêng, mở từ nút Thêm; trên laptop bốn cách nằm sẵn ở cột phải.</div></div>${TABS}`}
+</script><script src="shell.js"></script>
