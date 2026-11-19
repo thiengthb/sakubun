@@ -8,7 +8,7 @@ Luật ghi file này ở `profile/PLANNING.md` của repo thienai-workflow. Tick
 
 - Đang ở: KN0, sơ đồ hiện tại và 3 phương án điều hướng, chờ thien chọn.
 - Còn thiếu: thien chọn phương án; rồi chia bước code.
-- thien cần làm: chọn phương án trên trang chọn (link trong PR KN0).
+- thien cần làm: chọn phương án ở https://claude.ai/artifact/2sHn59iuGi9qsbvFGjwkXA (mở ở nick tnt628; nguồn trang ở `2026-11-19-kho-navigation/kn0/`).
 
 ## Mục tiêu
 
