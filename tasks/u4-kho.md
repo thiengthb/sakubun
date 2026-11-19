@@ -1,7 +1,7 @@
 # U4: màn Kho theo cấp JLPT (tiếp U4f ô tìm hai nguồn)
 
 Repo: thiengthb/sakubun · Nhánh: docs/kho-navigation · PR: #343 (nháp)
-Ghi bởi: Claude tnt628, https://claude.ai/code/project/chan_0145cotX9neLQKZjxfBxCwDe?thread=cmsg_0145cotX9neLQKZjxfBxCwDe2nQVyXHabhp85BNJRRHSxc · Cập nhật: 2026-11-19T16:24Z
+Ghi bởi: Claude tnt628, https://claude.ai/code/project/chan_0145cotX9neLQKZjxfBxCwDe?thread=cmsg_0145cotX9neLQKZjxfBxCwDe2nQVyXHabhp85BNJRRHSxc · Cập nhật: 2026-11-19T17:10Z
 
 ## thien muốn gì
 Làm U4 theo kế hoạch đã duyệt `docs/plans/2026-11-14-u4-kho.md` (hướng 2, gộp theo cấp JLPT; 15/11 thien trả lời "theo đề xuất" cả 3 câu, U4g/U4h để sau kỳ thi N2). thien bảo nick tnt697 làm tiếp ("nick này làm tiếp", 15/11).
@@ -49,3 +49,4 @@ Làm U4 theo kế hoạch đã duyệt `docs/plans/2026-11-14-u4-kho.md` (hướ
 - 19/11 15:15Z: vòng 2 điện thoại OK; laptop đổi sang khung nổi dưới ô tìm (c27c82e, verify xanh), gửi ảnh vòng 3. Ghi bởi Claude tnt628.
 - 19/11 15:35Z: #341 (KD2, khung vẽ kanji ở ô tìm Kho) đã merge (6b009a2) theo lời thien, sau 3 vòng duyệt ảnh, review riêng và CodeRabbit. Ghi bởi Claude tnt628.
 - 19/11 16:26Z: #342 (sửa P2029 ô tìm Kho) merge 487ec0d. KN0 điều hướng Kho: PR nháp #343, trang chọn 3 phương án đã gửi. Ghi bởi Claude tnt628.
+- 19/11 17:15Z: thien chọn C cho điều hướng Kho; #343 (kế hoạch) merge d633095. KN1 (đường dẫn theo cây Kho, nút quay lại điện thoại) ở PR nháp #344, unit 1244 xanh, e2e 9 đỏ giống hệt main; trang duyệt ảnh https://claude.ai/artifact/AuzSsZe1wWUSKG2cfJ9Lu9 (mở ở nick tnt628), nguồn ở docs/plans/2026-11-19-kho-navigation/kn1/. Chờ thien duyệt ảnh. Ghi bởi Claude tnt628.
