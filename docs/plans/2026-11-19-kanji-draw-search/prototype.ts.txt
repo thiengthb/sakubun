@@ -1,0 +1,74 @@
+import { readFileSync } from 'node:fs';
+import { pathPoints, resample, type Point } from '/home/user/sakubun/lib/japanese/strokes';
+const table: Record<string, string[]> = JSON.parse(readFileSync('/home/user/sakubun/data/kanji/strokes.json', 'utf8'));
+const N = 12;
+type Shape = Point[][];
+function norm(strokes: Point[][]): Shape {
+  const all = strokes.flat();
+  const xs = all.map(p=>p.x), ys = all.map(p=>p.y);
+  const minx=Math.min(...xs), maxx=Math.max(...xs), miny=Math.min(...ys), maxy=Math.max(...ys);
+  const s = Math.max(maxx-minx, maxy-miny, 1);
+  const cx=(minx+maxx)/2, cy=(miny+maxy)/2;
+  return strokes.map(st => resample(st, N).map(p => ({ x: (p.x-cx)/s, y: (p.y-cy)/s })));
+}
+const ref = Object.entries(table).map(([k, ds]) => ({ k, shape: norm(ds.map(d => pathPoints(d))) }));
+const md = (a: Point[], b: Point[]) => a.reduce((t,p,i)=>t+Math.hypot(p.x-b[i].x,p.y-b[i].y),0)/a.length;
+function score(d: Shape, r: Shape): number {
+  if (d.length === r.length) return d.reduce((t, s, i) => t + md(s, r[i]), 0) / d.length;
+  return Infinity;
+}
+function unordered(d: Shape, r: Shape): number {
+  // greedy: each drawn stroke takes its nearest free reference stroke
+  const used = new Set<number>(); let t = 0;
+  const pairs: [number, number, number][] = [];
+  d.forEach((s, i) => r.forEach((q, j) => pairs.push([md(s, q), i, j])));
+  pairs.sort((a, b) => a[0] - b[0]);
+  const doneD = new Set<number>();
+  for (const [v, i, j] of pairs) { if (doneD.has(i) || used.has(j)) continue; doneD.add(i); used.add(j); t += v; }
+  return t / d.length + 0.02;
+}
+function scoreLoose(d: Shape, r: Shape): number {
+  if (d.length === r.length) return Math.min(score(d, r), unordered(d, r));
+  const diff = r.length - d.length;
+  if (diff === 0) return score(d, r);
+  if (Math.abs(diff) > 2) return Infinity;
+  // DP alignment allowing skips in the longer one, penalty per skip
+  const [a, b] = d.length < r.length ? [d, r] : [r, d];
+  const n = a.length, m = b.length, P = 0.15;
+  const dp = Array.from({ length: n + 1 }, () => Array(m + 1).fill(Infinity));
+  dp[0][0] = 0;
+  for (let i = 0; i <= n; i++) for (let j = 0; j <= m; j++) {
+    if (dp[i][j] === Infinity) continue;
+    if (i < n && j < m) dp[i+1][j+1] = Math.min(dp[i+1][j+1], dp[i][j] + md(a[i], b[j]));
+    if (j < m) dp[i][j+1] = Math.min(dp[i][j+1], dp[i][j] + P);
+  }
+  return dp[n][m] / m;
+}
+let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+const g = () => (rnd()+rnd()+rnd()-1.5)*1.4;
+function messy(ds: string[], level: number, dropOrSwap: boolean): Point[][] {
+  const sc = 0.8 + rnd()*0.4, sy = sc*(0.9+rnd()*0.2), rot = g()*0.05*level, dx = g()*10, dy = g()*10;
+  let strokes = ds.map(d => {
+    const ox = g()*4*level, oy = g()*4*level; const ws = 1 + g()*0.1*level;
+    return pathPoints(d).map(p => {
+      const x = (p.x-54)*ws, y = (p.y-54)*ws;
+      const rx = x*Math.cos(rot)-y*Math.sin(rot), ry = x*Math.sin(rot)+y*Math.cos(rot);
+      return { x: rx*sc+54+dx+ox+g()*1.5*level, y: ry*sy+54+dy+oy+g()*1.5*level };
+    });
+  });
+  if (dropOrSwap && strokes.length > 3) { const i = Math.floor(rnd()*(strokes.length-1)); [strokes[i], strokes[i+1]] = [strokes[i+1], strokes[i]]; }
+  return strokes;
+}
+const keys = Object.keys(table); const sample = Array.from({length: 400}, () => keys[Math.floor(rnd()*keys.length)]);
+for (const [level, swap] of [[1,false],[2,false],[3,false],[2,true]] as const) {
+  let t1=0,t5=0,t10=0, ms=0;
+  for (const k of sample) {
+    const d = norm(messy(table[k], level, swap));
+    const t0 = performance.now();
+    const ranked = ref.map(r => ({ k: r.k, s: scoreLoose(d, r.shape) })).filter(r=>r.s<Infinity).sort((a,b)=>a.s-b.s);
+    ms += performance.now()-t0;
+    const pos = ranked.findIndex(r => r.k === k);
+    if (pos === 0) t1++; if (pos >= 0 && pos < 5) t5++; if (pos>=0 && pos<10) t10++;
+  }
+  console.log(`level ${level} swap ${swap}: top1 ${(t1/4).toFixed(0)}% top5 ${(t5/4).toFixed(0)}% top10 ${(t10/4).toFixed(0)}%  ${(ms/sample.length).toFixed(1)} ms/query`);
+}

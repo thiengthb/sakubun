@@ -1,6 +1,6 @@
 # Tiến độ
 
-Cập nhật lần cuối: 2026-11-19 · Claude nick tnt628 (project Sakubun, U4e) · Trang tiến độ: https://claude.ai/artifact/GmergauKMVF2n9HT3WSfxo
+Cập nhật lần cuối: 2026-11-19 · Claude nick tnt628 (project Sakubun, kế hoạch tìm bằng vẽ kanji) · Trang tiến độ: https://claude.ai/artifact/GmergauKMVF2n9HT3WSfxo
 
 Cho mọi nick Claude, Codex và thien biết project đang ở đâu. Lịch sử ở git và PR. Tối đa 40 dòng, 3 việc chờ thien.
 
@@ -9,13 +9,12 @@ Cho mọi nick Claude, Codex và thien biết project đang ở đâu. Lịch s�
 Đã áp quy trình chung (#297). UI v2: U0, U1 xong; U2 (buổi ôn) theo bố cục C thien chọn ngày 13/11 (thẻ trái,
 bảng nhỏ phải, giữ sidebar và thanh tab): U2a xong (#291, 14/11), U2b–U2d xong (#292–#294), U2e chấm chạy nền xong (#302), U2f hoàn tác xong (#303), U2g tự sang thẻ khi chọn đúng xong (#304), sửa buổi ôn 390px (#305): U2 xong. U3 Hôm nay: thien chọn bố cục A (14/11), kế hoạch đã merge (#306); U3a (số liệu) xong (#308); U3b (trang Hôm nay ở `/`, Phân tích sang `/analytics`) xong (#309); Phân tích cần làm lại bố cục ở giai đoạn 7 (Tiến độ). U3c (người mới chọn cấp) xong (#310). U3d (các trạng thái còn lại) xong (#311): U3 xong ngày 14/11. Mọi phần trước UI v2 đã xong, trừ việc thử thật K2, K8, L5 trong claude.ai (xem `roadmap.md`).
 
-Review PR: CodeRabbit review một lần khi PR chuyển sẵn sàng, không review lại mỗi lần đẩy (PR này). Hết dùng thử 24/11, sau đó chỉ tóm tắt PR.
-
 ## Kế hoạch đang chạy
 
-| Kế hoạch                           | Đang ở checkpoint | Đã tick       |
-| ---------------------------------- | ----------------- | ------------- |
-| [UI v2](plans/2026-11-08-ui-v2.md) | U4 Kho của bạn    | U0–U3 / U0–U8 |
+| Kế hoạch                                                   | Đang ở checkpoint | Đã tick       |
+| ---------------------------------------------------------- | ----------------- | ------------- |
+| [UI v2](plans/2026-11-08-ui-v2.md)                         | U4 Kho của bạn    | U0–U3 / U0–U8 |
+| [Tìm bằng vẽ kanji](plans/2026-11-19-kanji-draw-search.md) | KD1 Máy đoán chữ  | 1 / 3         |
 
 ## Việc dở
 
@@ -23,11 +22,11 @@ Review PR: CodeRabbit review một lần khi PR chuyển sẵn sàng, không rev
 | ----------------------- | ------------- | ----- | ----------------------------------------- |
 | Đóng câu hỏi nghiên cứu | #289          | 13/11 | Chỉ tài liệu, chờ thien merge             |
 | Bản tóm tắt hai nick    | #296          | 13/11 | Tạm, của nick kia; đóng khi thien so xong |
-| U4f Ô tìm hai nguồn     | (PR này)      | 19/11 | thien OK ảnh; chờ review, "merge đi"      |
+| KD1 Máy đoán chữ kanji  | (PR này)      | 19/11 | Code xong; chờ review, "merge đi"         |
 
 ## Việc tiếp theo
 
-1. U4 Kho (hướng 2, gộp theo cấp JLPT, duyệt 15/11): U4b bảng cấp xong (#323); U4c theo bản gộp chặng thien duyệt 18/11, U4c1 xong (#325); U4c2 (màn cấp) xong (#331); U4c3 (màn chặng) xong (#332); U4c4a (tab Chặng | Bản đồ ô) xong (#333); U4c4b (Danh sách có ô tìm) xong (#334); U4d (lấy thêm tại chỗ) xong (#335); U4e1 (trang Ngoài JLPT) xong (#336); U4e2 (ngăn Thêm) xong (#337); U4f (ô tìm hai nguồn) đang làm theo `plans/2026-11-14-u4-kho.md`.
+1. U4 Kho (hướng 2, gộp theo cấp JLPT, duyệt 15/11): U4b bảng cấp xong (#323); U4c theo bản gộp chặng thien duyệt 18/11, U4c1 xong (#325); U4c2 (màn cấp) xong (#331); U4c3 (màn chặng) xong (#332); U4c4a (tab Chặng | Bản đồ ô) xong (#333); U4c4b (Danh sách có ô tìm) xong (#334); U4d (lấy thêm tại chỗ) xong (#335); U4e1 (trang Ngoài JLPT) xong (#336); U4e2 (ngăn Thêm) xong (#337); U4f (ô tìm hai nguồn) xong (#338). Tiếp: tìm bằng vẽ kanji (thien xin 19/11), kế hoạch `plans/2026-11-19-kanji-draw-search.md`; U4g, U4h sau kỳ thi N2.
 
 ## Đang chờ thien
 
