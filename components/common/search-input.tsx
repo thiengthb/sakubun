@@ -9,8 +9,13 @@ import { cn } from '@/lib/core/utils';
 // clicks through, so pressing it focuses the field.
 export function SearchInput({
   className,
+  inputClassName,
   ...props
-}: React.ComponentProps<typeof Input> & { className?: string }) {
+}: React.ComponentProps<typeof Input> & {
+  className?: string;
+  /** For the field itself, e.g. room on the right for a button inside the box. */
+  inputClassName?: string;
+}) {
   return (
     <div className={cn('group/search relative w-full sm:max-w-xs', className)}>
       <span
@@ -19,7 +24,7 @@ export function SearchInput({
       >
         <Search className="size-4" />
       </span>
-      <Input {...props} className="pl-10 md:pl-8" />
+      <Input {...props} className={cn('pl-10 md:pl-8', inputClassName)} />
     </div>
   );
 }

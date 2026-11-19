@@ -1,0 +1,24 @@
+{ "id": "sakubun-kd2-r2", "title": "Duyệt khung vẽ kanji ở Kho (KD2), vòng 2",
+  "intro": "Vòng 2, theo góp ý vòng 1 và bản C bạn chọn. Nút bút trong ô tìm chỉ còn biểu tượng, cam khi đang vẽ. Laptop: cột Vẽ chữ đứng ngang hàng với ô tìm, ô tìm co lại bên trái. Khung vẽ rộng hết chỗ, ba nút Xoá nét, Xoá hết, Bàn phím (chỉ điện thoại) chỉ còn biểu tượng, xếp dọc bên phải khung; rê chuột hay giữ ngón tay vẫn hiện tên. Màn Vẽ và thêm chữ · 1440 bạn đã OK ở vòng 1, ở đây chỉ đổi theo nút và khung mới. Ảnh chụp từ app thật trên nhánh PR #341.",
+  "scenarios": ["Mở Kho, bấm Vẽ", "Vẽ 社, bấm 社", "Vẽ tiếp 4 nét đầu của 会"],
+  "items": [
+    { "id": "open", "group": "Laptop", "label": "Mở khung vẽ · 1440",
+      "note": "Trái: ô tìm có nút Vẽ. Phải: bấm Vẽ, cột Vẽ chữ mở, bảng cấp vẫn thấy bên trái.",
+      "sides": [
+        { "key": "old", "name": "Chưa mở", "file": "closed-1440.jpg", "scale": 2 },
+        { "key": "new", "name": "Đã mở", "file": "open-1440.jpg", "scale": 2 } ] },
+    { "id": "draw", "group": "Laptop", "label": "Vẽ và thêm chữ · 1440",
+      "note": "Trái: vẽ xong 社, chữ đoán đầu tiên là 社. Phải: bấm 社 thì ô tìm có 社 và kết quả hiện; đang vẽ 会 được 4 trên 6 nét: vẽ chưa xong nên 会 chưa lên đầu, vẽ đủ thì lên (e2e kiểm).",
+      "sides": [
+        { "key": "old", "name": "Vẽ 社", "file": "drawing-1440.jpg", "scale": 2 },
+        { "key": "new", "name": "Thêm 社, vẽ tiếp", "file": "second-1440.jpg", "scale": 2 } ] },
+    { "id": "phone-open", "group": "Điện thoại", "label": "Mở bàn phím vẽ · 390",
+      "sides": [
+        { "key": "old", "name": "Chưa mở", "file": "closed-390.jpg", "scale": 2 },
+        { "key": "new", "name": "Đã mở", "file": "open-390.jpg", "scale": 2 } ] },
+    { "id": "phone-draw", "group": "Điện thoại", "label": "Vẽ và thêm chữ · 390",
+      "note": "Kết quả vẫn thấy phía trên bàn phím vẽ; cuộn được tới dòng cuối.",
+      "sides": [
+        { "key": "old", "name": "Vẽ 社", "file": "drawing-390.jpg", "scale": 2 },
+        { "key": "new", "name": "Thêm 社, vẽ tiếp", "file": "second-390.jpg", "scale": 2 } ] }
+  ] }

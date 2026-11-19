@@ -1,11 +1,16 @@
 'use client';
 
-import { useEffect, useRef, useState, useTransition } from 'react';
+import { useEffect, useRef, useState, useTransition, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Loader2 } from 'lucide-react';
+import { Loader2, PenLine, X } from 'lucide-react';
+import { KanjiDrawPad } from '@/components/common/kanji-draw-pad';
 import { LIST_CARD } from '@/components/common/list-card';
 import { SearchInput } from '@/components/common/search-input';
+import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { SpokenLine } from '@/components/common/spoken-line';
 import { STATE_LABEL } from '@/lib/library/level-screen';
 import type { KhoSearch, LibraryHit, MineHit } from '@/lib/app/kho-search';
@@ -25,13 +30,22 @@ export interface Voice {
   rate?: number;
 }
 
-/** The box under Kho's title. Typing updates ?q= a moment after the last key; `query` is ?q= as is. */
-export function KhoSearchBox({ query }: { query: string }) {
+/**
+ * The box under Kho's title, and what it searches below it (`children`: the results or the board).
+ * Typing updates ?q= a moment after the last key; `query` is ?q= as is. The pen in the box opens the
+ * drawing pad (KD2, docs/plans/2026-11-19-kanji-draw-search.md): on a laptop it drops down under the
+ * box, over the results; on a phone it is a keyboard at the foot of the screen, over the tab bar.
+ */
+export function KhoSearchArea({ query, children }: { query: string; children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
+  const phone = useIsMobile();
   const [text, setText] = useState(query);
+  const [pen, setPen] = useState(false);
   const [pending, startTransition] = useTransition();
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const field = useRef<HTMLInputElement>(null);
+  const boxRef = useRef<HTMLDivElement>(null);
   // A key is waiting for the pause before it searches.
   const [waiting, setWaiting] = useState(false);
 
@@ -52,28 +66,122 @@ export function KhoSearchBox({ query }: { query: string }) {
       );
     }, WAIT_MS);
   };
+  const type = (next: string) => {
+    setText(next);
+    go(next);
+  };
 
-  return (
-    <div className="relative">
+  const togglePen = () => {
+    // On a phone the drawing keyboard takes the typing keyboard's place.
+    if (!pen && phone) field.current?.blur();
+    setPen(!pen);
+  };
+  // On a phone the pad has a way back to typing.
+  const pad = (keyboard: boolean) => (
+    <KanjiDrawPad
+      onPick={(k) => type(text + k)}
+      onKeyboard={
+        keyboard
+          ? () => {
+              setPen(false);
+              field.current?.focus();
+            }
+          : undefined
+      }
+    />
+  );
+
+  // Left of the field's own clear button while there is text, so both stay reachable; on a phone far
+  // enough that the pen's 44px touch area stops short of it.
+  const penPlace = cn(
+    'absolute top-1/2 -translate-y-1/2 max-md:after:absolute max-md:after:-inset-2.5',
+    text ? 'right-9 md:right-7' : 'right-1 md:right-0.5',
+  );
+  const penButton = (
+    <Button
+      variant={pen ? 'default' : 'ghost'}
+      size="icon-xs"
+      aria-pressed={pen}
+      aria-label="Vẽ chữ kanji"
+      title="Tìm bằng cách vẽ chữ kanji"
+      onClick={phone ? togglePen : undefined}
+      // 24px to see, 44px to touch on a phone (docs/ui-standard.md › Nút và ô).
+      className={penPlace}
+    >
+      <PenLine />
+    </Button>
+  );
+  const box = (
+    <div ref={boxRef} className="relative">
       <SearchInput
+        ref={field}
         role="searchbox"
         enterKeyHint="search"
         value={text}
-        onChange={(e) => {
-          setText(e.target.value);
-          go(e.target.value);
-        }}
+        onChange={(e) => type(e.target.value)}
+        // Typing on a phone brings its own keyboard up, which the drawing one would sit under.
+        onFocus={() => phone && setPen(false)}
         placeholder="Tìm trong kho và Kho chung"
         aria-label="Tìm trong kho và Kho chung"
         className="sm:max-w-none"
+        inputClassName={text ? 'pr-18 md:pr-14' : 'pr-10 md:pr-8'}
       />
       {pending && (
         <Loader2
           aria-label="Đang tìm"
-          className="absolute top-1/2 right-10 size-4 -translate-y-1/2 animate-spin text-muted-foreground"
+          className={cn(
+            'absolute top-1/2 size-4 -translate-y-1/2 animate-spin text-muted-foreground',
+            text ? 'right-18 md:right-14' : 'right-10 md:right-8',
+          )}
         />
       )}
+      {phone ? (
+        penButton
+      ) : (
+        // On a laptop the pad drops down under the box, over the results (thien, round 2 review).
+        <Popover open={pen} onOpenChange={setPen}>
+          <PopoverTrigger render={penButton} />
+          <PopoverContent
+            anchor={boxRef}
+            align="end"
+            aria-label="Vẽ chữ"
+            className="w-96 gap-3 p-4"
+          >
+            <div className="flex items-center justify-between">
+              <h2 className="text-heading">Vẽ chữ</h2>
+              <Button variant="ghost" size="icon" aria-label="Đóng khung vẽ" onClick={togglePen}>
+                <X />
+              </Button>
+            </div>
+            {pad(false)}
+          </PopoverContent>
+        </Popover>
+      )}
     </div>
+  );
+
+  return (
+    <>
+      {box}
+      {children}
+      {pen && phone && (
+        <>
+          {/* Room under the results, so the last of them can scroll up above the drawing keyboard. */}
+          <div aria-hidden className="h-100 shrink-0" />
+          {/* On the body, so it sits over the tab bar whatever the page's own layers are. */}
+          {createPortal(
+            <div
+              role="region"
+              aria-label="Bàn phím vẽ"
+              className="fixed inset-x-0 bottom-0 z-50 border-t-2 border-border bg-background pb-[env(safe-area-inset-bottom)]"
+            >
+              <div className="mx-auto max-w-md p-3">{pad(true)}</div>
+            </div>,
+            document.body,
+          )}
+        </>
+      )}
+    </>
   );
 }
 

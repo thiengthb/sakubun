@@ -1,0 +1,24 @@
+{ "id": "sakubun-kd2-r1", "title": "Duyệt khung vẽ kanji ở Kho (KD2)",
+  "intro": "Bản B bạn chọn, chụp từ app thật trên nhánh của PR #341. Ô tìm của Kho có thêm nút Vẽ ở cuối. Laptop: bấm Vẽ thì cột Vẽ chữ mở bên phải, kết quả (hay bảng cấp) dồn sang trái. Điện thoại: bấm Vẽ thì nửa dưới màn thành bàn phím vẽ, đè lên thanh tab; nút Bàn phím đưa bạn về gõ. Sau mỗi nét, hàng chữ đoán ở trên khung đổi theo; bấm chữ đúng là chữ đó nối vào cuối ô tìm và khung trống lại. Ảnh vẽ bằng nét KanjiVG có xê dịch một chút cho giống tay. Khác bản phác: nút trong ô tìm có chữ Vẽ kèm biểu tượng bút, vì luật giao diện không cho nút chỉ có biểu tượng khó đoán.",
+  "scenarios": ["Mở Kho, bấm Vẽ", "Vẽ 社, bấm 社", "Vẽ tiếp 4 nét đầu của 会"],
+  "items": [
+    { "id": "open", "group": "Laptop", "label": "Mở khung vẽ · 1440",
+      "note": "Trái: ô tìm có nút Vẽ. Phải: bấm Vẽ, cột Vẽ chữ mở, bảng cấp vẫn thấy bên trái.",
+      "sides": [
+        { "key": "old", "name": "Chưa mở", "file": "closed-1440.jpg", "scale": 2 },
+        { "key": "new", "name": "Đã mở", "file": "open-1440.jpg", "scale": 2 } ] },
+    { "id": "draw", "group": "Laptop", "label": "Vẽ và thêm chữ · 1440",
+      "note": "Trái: vẽ xong 社, chữ đoán đầu tiên là 社. Phải: bấm 社 thì ô tìm có 社 và kết quả hiện; đang vẽ 会 được 4 trên 6 nét: vẽ chưa xong nên 会 chưa lên đầu, vẽ đủ thì lên (e2e kiểm).",
+      "sides": [
+        { "key": "old", "name": "Vẽ 社", "file": "drawing-1440.jpg", "scale": 2 },
+        { "key": "new", "name": "Thêm 社, vẽ tiếp", "file": "second-1440.jpg", "scale": 2 } ] },
+    { "id": "phone-open", "group": "Điện thoại", "label": "Mở bàn phím vẽ · 390",
+      "sides": [
+        { "key": "old", "name": "Chưa mở", "file": "closed-390.jpg", "scale": 2 },
+        { "key": "new", "name": "Đã mở", "file": "open-390.jpg", "scale": 2 } ] },
+    { "id": "phone-draw", "group": "Điện thoại", "label": "Vẽ và thêm chữ · 390",
+      "note": "Kết quả vẫn thấy phía trên bàn phím vẽ; cuộn được tới dòng cuối.",
+      "sides": [
+        { "key": "old", "name": "Vẽ 社", "file": "drawing-390.jpg", "scale": 2 },
+        { "key": "new", "name": "Thêm 社, vẽ tiếp", "file": "second-390.jpg", "scale": 2 } ] }
+  ] }

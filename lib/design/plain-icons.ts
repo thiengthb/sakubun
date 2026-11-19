@@ -12,6 +12,7 @@ import {
   Eye,
   EyeOff,
   Info,
+  Keyboard,
   Loader2,
   Minus,
   Moon,
@@ -20,6 +21,7 @@ import {
   PanelLeftIcon,
   Pause,
   Pencil,
+  PenLine,
   Play,
   Plus,
   Search,
@@ -27,6 +29,7 @@ import {
   Star,
   Sun,
   Trash2,
+  Undo2,
   Volume2,
   X,
   XIcon,
@@ -35,6 +38,7 @@ import {
 /**
  * Icons whose meaning nobody has to guess (thien, 7.4): add, edit, delete, filter, sort, search,
  * close, copy... A button may show one alone on a phone; any other icon gets its word there.
+ * Kanji drawing pad (thien, 19/11, KD2): pen to draw, undo a stroke, back to the keyboard.
  * The ui-standard test reads the names, ExpandingIconButton the components.
  */
 const PLAIN = {
@@ -51,6 +55,7 @@ const PLAIN = {
   Eye,
   EyeOff,
   Info,
+  Keyboard,
   Loader2,
   Minus,
   Moon,
@@ -59,6 +64,7 @@ const PLAIN = {
   PanelLeftIcon,
   Pause,
   Pencil,
+  PenLine,
   Play,
   Plus,
   Search,
@@ -66,6 +72,7 @@ const PLAIN = {
   Star,
   Sun,
   Trash2,
+  Undo2,
   Volume2,
   X,
   XIcon,
