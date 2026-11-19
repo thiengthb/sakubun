@@ -91,6 +91,11 @@ export function KhoSearchArea({ query, children }: { query: string; children: Re
     />
   );
 
+  // Left of the field's own clear button while there is text, so both stay reachable.
+  const penPlace = cn(
+    'absolute top-1/2 -translate-y-1/2 max-md:after:absolute max-md:after:-inset-2.5',
+    text ? 'right-7' : 'right-1 md:right-0.5',
+  );
   const penButton = (
     <Button
       variant={pen ? 'default' : 'ghost'}
@@ -100,7 +105,7 @@ export function KhoSearchArea({ query, children }: { query: string; children: Re
       title="Tìm bằng cách vẽ chữ kanji"
       onClick={phone ? togglePen : undefined}
       // 24px to see, 44px to touch on a phone (docs/ui-standard.md › Nút và ô).
-      className="absolute top-1/2 right-1 -translate-y-1/2 max-md:after:absolute max-md:after:-inset-2.5 md:right-0.5"
+      className={penPlace}
     >
       <PenLine />
     </Button>
@@ -118,12 +123,15 @@ export function KhoSearchArea({ query, children }: { query: string; children: Re
         placeholder="Tìm trong kho và Kho chung"
         aria-label="Tìm trong kho và Kho chung"
         className="sm:max-w-none"
-        inputClassName="pr-10 md:pr-8"
+        inputClassName={text ? 'pr-16 md:pr-14' : 'pr-10 md:pr-8'}
       />
       {pending && (
         <Loader2
           aria-label="Đang tìm"
-          className="absolute top-1/2 right-10 size-4 -translate-y-1/2 animate-spin text-muted-foreground md:right-8"
+          className={cn(
+            'absolute top-1/2 size-4 -translate-y-1/2 animate-spin text-muted-foreground',
+            text ? 'right-16 md:right-14' : 'right-10 md:right-8',
+          )}
         />
       )}
       {phone ? (

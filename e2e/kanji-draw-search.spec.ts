@@ -88,6 +88,10 @@ test('on a laptop, a kanji drawn in the pad under the box is searched (1440px)',
 
   await page.getByRole('button', { name: 'Đóng khung vẽ' }).click();
   await expect(pad).toHaveCount(0);
+  // The box's own clear button sits beside the pen, not under it.
+  await page.getByRole('button', { name: 'Xoá nội dung' }).click();
+  await expect(box).toHaveValue('');
+  await page.waitForURL(/\/resources$/);
 });
 
 test("on a phone, the drawing keyboard takes the tab bar's place (390px)", async ({ page }) => {
