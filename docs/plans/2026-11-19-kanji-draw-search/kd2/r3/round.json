@@ -1,0 +1,14 @@
+{ "id": "sakubun-kd2-r3", "title": "Duyệt khung vẽ kanji ở Kho (KD2), vòng 3: laptop",
+  "intro": "Vòng 3 chỉ sửa laptop theo góp ý của bạn: bấm bút trong ô tìm thì khung vẽ nổi ngay dưới ô tìm, sát mép phải, đè lên kết quả (như bản phác A lúc đầu), không còn là cột riêng. Bấm ra ngoài, bấm bút lần nữa, bấm X hay Esc là đóng. Bên trong giữ như bản C bạn đã duyệt trên điện thoại: hàng chữ đoán ở trên, khung vẽ, cột nút biểu tượng bên phải. Điện thoại bạn đã OK ở vòng 2 nên không đổi. Ảnh chụp từ app thật trên nhánh PR #341.",
+  "scenarios": ["Mở Kho, bấm bút", "Vẽ 社, bấm 社", "Vẽ tiếp 4 nét đầu của 会"],
+  "items": [
+    { "id": "open", "group": "Laptop", "label": "Mở khung vẽ · 1440",
+      "sides": [
+        { "key": "old", "name": "Chưa mở", "file": "closed-1440.jpg", "scale": 2 },
+        { "key": "new", "name": "Đã mở", "file": "open-1440.jpg", "scale": 2 } ] },
+    { "id": "draw", "group": "Laptop", "label": "Vẽ và thêm chữ · 1440",
+      "note": "Phải: bấm 社 thì ô tìm có 社, kết quả hiện dưới khung vẽ; đang vẽ 会 được 4 trên 6 nét nên 会 chưa lên đầu.",
+      "sides": [
+        { "key": "old", "name": "Vẽ 社", "file": "drawing-1440.jpg", "scale": 2 },
+        { "key": "new", "name": "Thêm 社, vẽ tiếp", "file": "second-1440.jpg", "scale": 2 } ] }
+  ] }

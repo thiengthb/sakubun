@@ -4,8 +4,8 @@ import { expect, test, type Page } from '@playwright/test';
 import { pathPoints, STROKE_BOX } from '@/lib/japanese/strokes';
 import { E2E_EMAIL, E2E_LOGIN, seedE2eAccount } from './fixtures';
 
-// KD2 (docs/plans/2026-11-19-kanji-draw-search.md, layout B): the pen in Kho's search box opens a
-// drawing pad, a column on a laptop and a keyboard at the foot of a phone; a kanji drawn there is
+// KD2 (docs/plans/2026-11-19-kanji-draw-search.md): the pen in Kho's search box opens a
+// drawing pad, dropping down under the box on a laptop and a keyboard at the foot of a phone; a kanji drawn there is
 // guessed, and a tap on the guess puts it in the box, which searches it.
 
 const TABLE = JSON.parse(
@@ -50,42 +50,44 @@ test.beforeAll(async () => {
   await seedE2eAccount();
 });
 
-test('on a laptop, a kanji drawn in the side column is searched (1440px)', async ({ page }) => {
+test('on a laptop, a kanji drawn in the pad under the box is searched (1440px)', async ({
+  page,
+}) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await signIn(page);
   await page.goto('/resources', { waitUntil: 'networkidle' });
   const box = page.getByRole('searchbox', { name: 'Tìm trong kho và Kho chung' });
 
   await page.getByRole('button', { name: 'Vẽ chữ kanji' }).click();
-  const column = page.getByRole('complementary', { name: 'Vẽ chữ' });
-  await expect(column).toBeVisible();
-  // The board stays in view beside the pad.
+  const pad = page.getByRole('dialog', { name: 'Vẽ chữ' });
+  await expect(pad).toBeVisible();
+  // The board stays under the pad.
   await expect(page.getByRole('heading', { level: 2, name: /^N5/ })).toBeVisible();
 
   await draw(page, '会');
-  await expect(column.getByRole('button', { name: 'Thêm 会' })).toBeVisible();
+  await expect(pad.getByRole('button', { name: 'Thêm 会' })).toBeVisible();
   await shot(page, 've-kanji-laptop');
-  await column.getByRole('button', { name: 'Thêm 会' }).click();
+  await pad.getByRole('button', { name: 'Thêm 会' }).click();
   await expect(box).toHaveValue('会');
   await page.waitForURL(/\/resources\?q=%E4%BC%9A$/);
   await expect(page.getByRole('region', { name: /^Trong Kho chung/ })).toBeVisible();
   // The pad is empty again for the next kanji, and the next one is added after the first.
   await expect(page.locator('[data-slot="kanji-draw"]')).toHaveAttribute('data-strokes', '0');
   await draw(page, '話');
-  await column.getByRole('button', { name: 'Thêm 話' }).click();
+  await pad.getByRole('button', { name: 'Thêm 話' }).click();
   await expect(box).toHaveValue('会話');
   await page.waitForURL(/\/resources\?q=%E4%BC%9A%E8%A9%B1$/);
   await shot(page, 've-kanji-laptop-ket-qua');
 
   // Xoá nét takes back the last stroke; Xoá hết empties the pad.
   await draw(page, '日');
-  await column.getByRole('button', { name: 'Xoá nét' }).click();
+  await pad.getByRole('button', { name: 'Xoá nét' }).click();
   await expect(page.locator('[data-slot="kanji-draw"]')).toHaveAttribute('data-strokes', '3');
-  await column.getByRole('button', { name: 'Xoá hết' }).click();
+  await pad.getByRole('button', { name: 'Xoá hết' }).click();
   await expect(page.locator('[data-slot="kanji-draw"]')).toHaveAttribute('data-strokes', '0');
 
   await page.getByRole('button', { name: 'Đóng khung vẽ' }).click();
-  await expect(column).toHaveCount(0);
+  await expect(pad).toHaveCount(0);
 });
 
 test("on a phone, the drawing keyboard takes the tab bar's place (390px)", async ({ page }) => {

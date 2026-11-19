@@ -7,7 +7,7 @@ lỗi thì ghi vào "Lỗi gặp".
 
 ## Đang ở đâu
 
-- Đang ở: KD1 xong (#340, 19/11). KD2 (khung vẽ): đã sửa theo bản C thien chọn, chờ thien duyệt ảnh vòng 2.
+- Đang ở: KD1 xong (#340, 19/11). KD2 (khung vẽ): điện thoại đã duyệt (vòng 2); laptop đổi sang khung nổi, chờ thien duyệt ảnh vòng 3.
 - Còn thiếu: KD2, KD3.
 - thien cần làm: duyệt ảnh KD2; sau khi merge thì vẽ thử 20 chữ trên app thật.
 
@@ -77,8 +77,7 @@ nổi, hay ngăn dưới trên điện thoại, hay khung luôn hiện bên ph�
 docs/plans/2026-11-19-kanji-draw-search/kd2/decision.json <out>`. Kết quả (19/11): thien chọn **B · Bàn phím vẽ ở
       đáy màn**, trùng đề xuất (bản ghi `decisions/sakubun-kd2-pad-layout`).
 - [x] Khung vẽ `components/common/kanji-draw-pad.tsx`, cách bắt nét giống khung viết KJ4, có Xoá nét cuối và Xoá hết;
-      đoán lại sau mỗi nét, câu trả lời cũ về muộn thì bỏ. Nút Vẽ nằm trong ô tìm (`kho-search.tsx`): laptop mở cột
-      Vẽ chữ bên phải, điện thoại mở bàn phím vẽ ở đáy màn đè lên thanh tab, có nút Bàn phím để quay về gõ (PR #341).
+      đoán lại sau mỗi nét, câu trả lời cũ về muộn thì bỏ. Nút Vẽ nằm trong ô tìm (`kho-search.tsx`): laptop mở khung vẽ nổi dưới ô tìm (vòng 3), điện thoại mở bàn phím vẽ ở đáy màn đè lên thanh tab, có nút Bàn phím để quay về gõ (PR #341).
 - [x] Hàng chữ đoán trên khung (giống bàn phím viết tay của điện thoại, như bản phác B); bấm một chữ là thêm vào cuối ô
       tìm, khung trống lại để vẽ chữ sau.
 - [x] e2e `e2e/kanji-draw-search.spec.ts`: laptop vẽ 会 rồi 話, ô tìm thành 会話 và kết quả hiện; Xoá nét, Xoá hết, Đóng;
@@ -92,6 +91,10 @@ docs/plans/2026-11-19-kanji-draw-search/kd2/decision.json <out>`. Kết quả (1
       Đã làm: nút chỉ có biểu tượng (thêm `PenLine`, `Undo2`, `Keyboard` vào `lib/design/plain-icons.ts` theo lời thien),
       khung vẽ chiếm phần còn lại. Ảnh duyệt vòng 2 ở `kd2/r2/`, trang https://claude.ai/artifact/SHpSqzgoc3V3yANRA8CifB
       (mở ở nick tnt628), dựng lại: `make-round.mjs docs/plans/2026-11-19-kanji-draw-search/kd2/r2/round.json <out>`.
+      Vòng 2 (19/11): điện thoại OK cả hai màn; laptop cần sửa: "khung vẽ ở laptop hiện lên menu như lúc đầu". Đã làm: trên
+      laptop khung vẽ nổi dưới ô tìm, sát mép phải, đè lên kết quả (như bản phác A). Ảnh vòng 3 ở `kd2/r3/`, trang
+      https://claude.ai/artifact/QH5BBeRZo9683K8oGUjgcg (mở ở nick tnt628), dựng lại: `make-round.mjs
+    docs/plans/2026-11-19-kanji-draw-search/kd2/r3/round.json <out>`.
 - [ ] thien duyệt ảnh laptop và điện thoại: trang https://claude.ai/artifact/YYVCB9K5etj9jyiihB3yVF (mở ở nick tnt628),
       dựng lại: `make-round.mjs docs/plans/2026-11-19-kanji-draw-search/kd2/round.json <out>`; ảnh chụp bằng `kd2/shots.spec.ts.txt`.
 - [ ] thien vẽ thử 20 chữ trên app thật (sau khi merge, Kho tự lên NUC): ít nhất 16 chữ nằm trong 5 chữ đầu.
@@ -110,6 +113,7 @@ Xong khi: ô tìm ở Kho chung và trang Kanji cũng có nút vẽ.
 | 19/11 | Thử 20 chữ vẽ thật chuyển từ KD1 sang KD2                                                             | KD1 chưa có khung vẽ để thien thử bằng tay                                             |
 | 19/11 | Thử 20 chữ vẽ thật làm sau khi merge KD2, trên app thật                                               | Chưa có bản chạy thử trước merge; chưa đạt thì chỉnh bộ đoán ở PR sau                  |
 | 19/11 | Hàng chữ đoán đặt trên khung vẽ, không phải dưới                                                      | Giống bản phác B thien chọn và bàn phím viết tay của điện thoại                        |
+| 19/11 | Laptop: khung vẽ nổi dưới ô tìm thay cho cột bên phải                                                 | thien duyệt vòng 2: muốn như bản phác A lúc đầu                                        |
 | 19/11 | Nút bút trong ô tìm có chữ "Vẽ" kèm biểu tượng                                                        | Luật giao diện: nút chỉ có biểu tượng thì biểu tượng phải dễ hiểu (bút chì là "sửa")   |
 
 ## Lỗi gặp

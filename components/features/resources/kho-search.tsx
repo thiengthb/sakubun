@@ -9,6 +9,7 @@ import { KanjiDrawPad } from '@/components/common/kanji-draw-pad';
 import { LIST_CARD } from '@/components/common/list-card';
 import { SearchInput } from '@/components/common/search-input';
 import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { SpokenLine } from '@/components/common/spoken-line';
 import { STATE_LABEL } from '@/lib/library/level-screen';
@@ -44,6 +45,7 @@ export function KhoSearchArea({ query, children }: { query: string; children: Re
   const [pending, startTransition] = useTransition();
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const field = useRef<HTMLInputElement>(null);
+  const boxRef = useRef<HTMLDivElement>(null);
   // A key is waiting for the pause before it searches.
   const [waiting, setWaiting] = useState(false);
 
@@ -96,69 +98,62 @@ export function KhoSearchArea({ query, children }: { query: string; children: Re
       aria-pressed={pen}
       aria-label="Vẽ chữ kanji"
       title="Tìm bằng cách vẽ chữ kanji"
-      onClick={togglePen}
+      onClick={phone ? togglePen : undefined}
       className="absolute top-1/2 right-1 -translate-y-1/2 md:right-0.5"
     >
       <PenLine />
     </Button>
   );
   const box = (
-    <div className="flex items-center gap-2">
-      <div className="relative min-w-0 flex-1">
-        <SearchInput
-          ref={field}
-          role="searchbox"
-          enterKeyHint="search"
-          value={text}
-          onChange={(e) => type(e.target.value)}
-          // Typing on a phone brings its own keyboard up, which the drawing one would sit under.
-          onFocus={() => phone && setPen(false)}
-          placeholder="Tìm trong kho và Kho chung"
-          aria-label="Tìm trong kho và Kho chung"
-          className="sm:max-w-none"
-          inputClassName="pr-10 md:pr-8"
+    <div ref={boxRef} className="relative">
+      <SearchInput
+        ref={field}
+        role="searchbox"
+        enterKeyHint="search"
+        value={text}
+        onChange={(e) => type(e.target.value)}
+        // Typing on a phone brings its own keyboard up, which the drawing one would sit under.
+        onFocus={() => phone && setPen(false)}
+        placeholder="Tìm trong kho và Kho chung"
+        aria-label="Tìm trong kho và Kho chung"
+        className="sm:max-w-none"
+        inputClassName="pr-10 md:pr-8"
+      />
+      {pending && (
+        <Loader2
+          aria-label="Đang tìm"
+          className="absolute top-1/2 right-10 size-4 -translate-y-1/2 animate-spin text-muted-foreground md:right-8"
         />
-        {pending && (
-          <Loader2
-            aria-label="Đang tìm"
-            className={cn(
-              'absolute top-1/2 size-4 -translate-y-1/2 animate-spin text-muted-foreground',
-              'right-10 md:right-8',
-            )}
-          />
-        )}
-        {penButton}
-      </div>
-    </div>
-  );
-
-  return (
-    <>
-      {pen && !phone ? (
-        <div className="flex items-start gap-6">
-          <div className="flex min-w-0 flex-1 flex-col gap-4">
-            {box}
-            {children}
-          </div>
-          <aside
+      )}
+      {phone ? (
+        penButton
+      ) : (
+        // On a laptop the pad drops down under the box, over the results (thien, round 2 review).
+        <Popover open={pen} onOpenChange={setPen}>
+          <PopoverTrigger render={penButton} />
+          <PopoverContent
+            anchor={boxRef}
+            align="end"
             aria-label="Vẽ chữ"
-            className={cn(LIST_CARD.base, 'sticky top-4 flex w-80 shrink-0 flex-col gap-3 p-4')}
+            className="w-96 gap-3 p-4"
           >
-            <div className="flex min-h-9 items-center justify-between">
+            <div className="flex items-center justify-between">
               <h2 className="text-heading">Vẽ chữ</h2>
               <Button variant="ghost" size="icon" aria-label="Đóng khung vẽ" onClick={togglePen}>
                 <X />
               </Button>
             </div>
             {pad(false)}
-          </aside>
-        </div>
-      ) : (
-        <>
-          {box}
-          {children}
-        </>
+          </PopoverContent>
+        </Popover>
       )}
+    </div>
+  );
+
+  return (
+    <>
+      {box}
+      {children}
       {pen && phone && (
         <>
           {/* Room under the results, so the last of them can scroll up above the drawing keyboard. */}
