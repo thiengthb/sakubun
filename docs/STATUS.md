@@ -26,7 +26,7 @@ Review PR: CodeRabbit review một lần khi PR chuyển sẵn sàng, không rev
 
 ## Việc tiếp theo
 
-1. U4 Kho (hướng 2, gộp theo cấp JLPT, duyệt 15/11): U4b bảng cấp xong (#323); U4c theo bản gộp chặng thien duyệt 18/11, U4c1 xong (#325); U4c2 (màn cấp) xong (#331); U4c3 (màn chặng) xong (#332); U4c4a (tab Chặng | Bản đồ ô) xong (#333); U4c4b (Danh sách có ô tìm) xong (#334); U4d (lấy thêm tại chỗ) ở #335, chờ thien duyệt ảnh; rồi U4e theo `plans/2026-11-14-u4-kho.md`.
+1. U4 Kho (hướng 2, gộp theo cấp JLPT, duyệt 15/11): U4b bảng cấp xong (#323); U4c theo bản gộp chặng thien duyệt 18/11, U4c1 xong (#325); U4c2 (màn cấp) xong (#331); U4c3 (màn chặng) xong (#332); U4c4a (tab Chặng | Bản đồ ô) xong (#333); U4c4b (Danh sách có ô tìm) xong (#334); U4d (lấy thêm tại chỗ) ở #335, thien OK ảnh, chờ review; rồi U4e theo `plans/2026-11-14-u4-kho.md`.
 
 ## Đang chờ thien
 
