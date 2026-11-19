@@ -70,10 +70,7 @@ export function AddSheet() {
       <SheetTrigger render={<ExpandingIconButton icon={Plus} label="Thêm" variant="default" />} />
       <SheetContent
         side={isMobile ? 'bottom' : 'right'}
-        className={cn(
-          'gap-0 overflow-y-auto',
-          isMobile ? 'top-12 rounded-t-2xl' : 'w-full sm:max-w-md',
-        )}
+        className={cn('gap-0 overflow-y-auto', isMobile && 'top-12 rounded-t-2xl')}
       >
         <SheetHeader className="pr-12">
           <SheetTitle className="text-heading font-bold">Thêm vào kho</SheetTitle>
@@ -127,6 +124,12 @@ function ManualAddForm() {
   const { draft, set, errors, ready, reset } = useItemDraft(EMPTY_DRAFT);
   const [isPending, startTransition] = useTransition();
 
+  // A pattern has no reading of its own: a word's reading typed before the switch is not sent with it.
+  const switchKind = (next: ItemKind) => {
+    setKind(next);
+    if (next === 'grammar') set('reading', '');
+  };
+
   const submit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!ready) return;
@@ -168,7 +171,7 @@ function ManualAddForm() {
           variant="choice"
           aria-label="Loại mục"
           value={kind}
-          onValueChange={(v) => v && setKind(v as ItemKind)}
+          onValueChange={(v) => v && switchKind(v as ItemKind)}
         >
           {(['vocab', 'grammar'] as const).map((k) => (
             <ToggleGroupItem key={k} value={k} className="px-3">
@@ -186,7 +189,7 @@ function ManualAddForm() {
         </FormActions>
       </form>
       <Link
-        href={`/resources/new?kind=${kind}`}
+        href={`/resources/new?kind=${kind}&tab=paste`}
         className="text-sm text-muted-foreground underline underline-offset-2"
       >
         Dán nhiều dòng hay nhập Excel

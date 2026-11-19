@@ -59,11 +59,26 @@ test('Thêm opens four ways and adds one word in place', async ({ page }) => {
   await panel.getByRole('button', { name: 'Thêm từ' }).click();
   await expect(page.getByText('Đã thêm từ vào kho')).toBeVisible();
   await expect(panel.getByLabel(/Từ \(tiếng Nhật\)/)).toHaveValue('');
+  // A pattern has no reading: one typed for a word is dropped on the switch.
+  await panel.getByLabel(/Cách đọc/).fill('ついかしけんご');
+  await panel.getByRole('radio', { name: 'Ngữ pháp' }).click();
+  await expect(panel.getByLabel(/Cách đọc/)).toHaveValue('');
+  await expect(panel.getByRole('link', { name: 'Dán nhiều dòng hay nhập Excel' })).toHaveAttribute(
+    'href',
+    '/resources/new?kind=grammar&tab=paste',
+  );
   await page.keyboard.press('Escape');
   await expect(panel).toBeHidden();
 
   await page.goto('/resources/outside/manual');
   await expect(page.getByRole('link', { name: `Mở ${WORD}` })).toBeVisible();
+
+  // The paste link lands on the paste tab of the Add page.
+  await page.goto('/resources/new?kind=grammar&tab=paste');
+  await expect(page.getByRole('tab', { name: /Dán danh sách/ })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  );
 });
 
 test('on a phone Thêm is a sheet near full height, and a way closes it', async ({ page }) => {

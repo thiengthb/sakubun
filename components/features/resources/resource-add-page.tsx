@@ -12,9 +12,12 @@ import {
   type ResourceKind,
 } from '@/components/features/resources/resource-add-form';
 
-export function ResourceAddPage({ kind }: { kind: ResourceKind }) {
+/** `initialTab` comes from `?tab=` (Kho's Add sheet links "Dán nhiều dòng" to the paste tab). */
+export function ResourceAddPage({ kind, initialTab }: { kind: ResourceKind; initialTab?: string }) {
   const router = useRouter();
-  const [tab, setTab] = useState<string>(INPUT_TABS.initial);
+  const [tab, setTab] = useState<string>(() =>
+    INPUT_TABS.items.some((t) => t.value === initialTab) ? initialTab! : INPUT_TABS.initial,
+  );
 
   const done = () => {
     router.push(`/resources?tab=${kind}`);
