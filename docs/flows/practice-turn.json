@@ -47,7 +47,7 @@
     },
     {
       "id": "queue",
-      "note": "`getQueue` xếp thứ cần ôn hôm nay: thẻ đang học dở trước, rồi thẻ đến hạn tới mức ôn tối đa, rồi mục mới trong hạn mức (mặc định 5 ngữ pháp, 15 từ).",
+      "note": "`getQueue` xếp thứ cần ôn hôm nay: thẻ đang học dở trước, rồi thẻ đến hạn tới mức ôn tối đa, rồi mục mới trong hạn mức (mặc định 3 ngữ pháp, 15 từ).",
       "more": "Ngữ pháp và từ vựng chung một hàng, mỗi loại một hạn mức mục mới. Mục chưa học lần nào thì không bao giờ \"đến hạn\".",
       "chips": ["lib/app/queue.ts", "lib/domain/queue.ts"]
     },
