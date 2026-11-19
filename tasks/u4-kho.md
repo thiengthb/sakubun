@@ -1,7 +1,7 @@
 # U4: màn Kho theo cấp JLPT (tiếp U4f ô tìm hai nguồn)
 
 Repo: thiengthb/sakubun · Nhánh: feat/u4f-kho-search · PR: #338
-Ghi bởi: Claude tnt628, https://claude.ai/code/project/chan_0145cotX9neLQKZjxfBxCwDe?thread=cmsg_0145cotX9neLQKZjxfBxCwDe2nQVyXHabhp85BNJRRHSxc · Cập nhật: 2026-11-19T14:30Z
+Ghi bởi: Claude tnt628, https://claude.ai/code/project/chan_0145cotX9neLQKZjxfBxCwDe?thread=cmsg_0145cotX9neLQKZjxfBxCwDe2nQVyXHabhp85BNJRRHSxc · Cập nhật: 2026-11-19T15:11Z
 
 ## thien muốn gì
 Làm U4 theo kế hoạch đã duyệt `docs/plans/2026-11-14-u4-kho.md` (hướng 2, gộp theo cấp JLPT; 15/11 thien trả lời "theo đề xuất" cả 3 câu, U4g/U4h để sau kỳ thi N2). thien bảo nick tnt697 làm tiếp ("nick này làm tiếp", 15/11).
@@ -12,10 +12,10 @@ Làm U4 theo kế hoạch đã duyệt `docs/plans/2026-11-14-u4-kho.md` (hướ
 - U4c1 logic chia chặng: #325 (merge 18/11), `lib/library/level-sets.ts`, `lib/app/level-sets.ts`.
 
 ## Bước tiếp theo
-1. KD2 (khung vẽ kanji): PR nháp #341, vòng 2 đã đẩy (bản C: nút biểu tượng xếp cột bên phải khung, cột laptop ngang ô tìm), verify 1235 test xanh. Chờ thien duyệt ảnh vòng 2 ở https://claude.ai/artifact/SHpSqzgoc3V3yANRA8CifB (mở ở nick tnt628; dựng lại: make-round.mjs docs/plans/2026-11-19-kanji-draw-search/kd2/r2/round.json). Duyệt xong: sẵn sàng, risk:medium, CodeRabbit, xin review riêng, chờ "merge đi". Sau merge: thien vẽ thử 20 chữ; rồi KD3.
+1. KD2 (khung vẽ kanji): PR nháp #341, vòng 2 đã đẩy (bản C: nút biểu tượng xếp cột bên phải khung, cột laptop ngang ô tìm), verify 1235 test xanh. Chờ thien duyệt ảnh vòng 2 ở https://claude.ai/artifact/QH5BBeRZo9683K8oGUjgcg (vòng 3, chỉ laptop: khung nổi dưới ô tìm; điện thoại đã OK ở vòng 2; mở ở nick tnt628; dựng lại: make-round.mjs docs/plans/2026-11-19-kanji-draw-search/kd2/r3/round.json). Duyệt xong: sẵn sàng, risk:medium, CodeRabbit, xin review riêng, chờ "merge đi". Sau merge: thien vẽ thử 20 chữ; rồi KD3.
 
 ## Đang chờ thien
-- Duyệt ảnh KD2 vòng 2: https://claude.ai/artifact/SHpSqzgoc3V3yANRA8CifB (mở ở nick tnt628). Dựng lại: `make-round.mjs docs/plans/2026-11-19-kanji-draw-search/kd2/r2/round.json <out>`.
+- Duyệt ảnh laptop KD2 vòng 3: https://claude.ai/artifact/QH5BBeRZo9683K8oGUjgcg (mở ở nick tnt628). Dựng lại: `make-round.mjs docs/plans/2026-11-19-kanji-draw-search/kd2/r3/round.json <out>`.
 
 ## Lưu ý
 - Máy ảo: `npm ci` cần `npm_config_nodedir=/opt/node22`; `prisma generate` cần `PRISMA_SCHEMA_ENGINE_BINARY=/bin/true`; e2e chạy bằng Chrome hệ thống (config tạm với `channel: 'chrome'`, không commit). `npm run build` lỗi ở máy ảo vì không tải được Google Fonts, CI thì xanh.
@@ -43,3 +43,4 @@ Làm U4 theo kế hoạch đã duyệt `docs/plans/2026-11-14-u4-kho.md` (hướ
 - 19/11 13:52Z: #340 (KD1) merge theo lời thien (a0a0206). KD2 ở PR nháp #341, trang chọn bố cục đã gửi. Ghi bởi Claude tnt628.
 - 19/11 14:10Z: thien chọn B cho KD2. Code xong ở #341 (kanji-draw-pad.tsx, KhoSearchArea), verify xanh, ảnh duyệt đã gửi. Ghi bởi Claude tnt628.
 - 19/11 14:35Z: vòng duyệt 1 KD2 thien cần sửa (khung to hơn, nút chỉ biểu tượng); trang chọn vòng 2 thien chọn C; code đã đẩy (697d474), ảnh vòng 2 đã gửi. Ghi bởi Claude tnt628.
+- 19/11 15:15Z: vòng 2 điện thoại OK; laptop đổi sang khung nổi dưới ô tìm (c27c82e, verify xanh), gửi ảnh vòng 3. Ghi bởi Claude tnt628.
