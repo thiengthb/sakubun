@@ -22,6 +22,7 @@ export function ConfirmDialog({
   pending = false,
   children,
   cancelLabel = 'Huỷ',
+  confirmVariant = 'destructive',
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -32,6 +33,8 @@ export function ConfirmDialog({
   pending?: boolean;
   children?: ReactNode;
   cancelLabel?: string;
+  // Destructive by default; a confirm that only adds (U4d "Lấy nốt") takes the plain one.
+  confirmVariant?: 'destructive' | 'default';
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -45,7 +48,7 @@ export function ConfirmDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={pending}>
             {cancelLabel}
           </Button>
-          <Button variant="destructive" onClick={onConfirm} disabled={pending}>
+          <Button variant={confirmVariant} onClick={onConfirm} disabled={pending}>
             {pending && <Loader2 className="animate-spin" />}
             {confirmLabel}
           </Button>

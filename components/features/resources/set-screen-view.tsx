@@ -1,7 +1,7 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { PageShell } from '@/components/layout/page-shell';
 import { ParentCrumbs } from '@/components/layout/app-breadcrumbs';
-import { Button, ButtonLink } from '@/components/ui/button';
+import { Button, ButtonLink, buttonVariants } from '@/components/ui/button';
 import { setAction, STATE_LABEL, type LevelContext } from '@/lib/library/level-screen';
 import { WORD_STATES, type LevelSet } from '@/lib/library/level-sets';
 import { cellHref } from '@/lib/library/level-tally';
@@ -9,6 +9,7 @@ import { firstOpenWord, setHref, setMeta, setNeighbours, wordCard } from '@/lib/
 import { levelTitle } from './level-sets-view';
 import { WordMap } from './word-map';
 import { MARK } from './word-marks';
+import { TakeLevelTrigger } from './take-buttons';
 import { cn } from '@/lib/core/utils';
 
 // One set of a level (U4c3, combined layout of docs/plans/2026-11-14-u4-kho.md,
@@ -54,7 +55,13 @@ export function SetScreenView({
         <>
           <Neighbour to={prev} ctx={ctx} side="prev" />
           <Neighbour to={next} ctx={ctx} side="next" />
-          {action?.href && <ButtonLink href={action.href}>{action.label}</ButtonLink>}
+          {action?.take ? (
+            <TakeLevelTrigger ctx={ctx} scope={action.take} className={buttonVariants()}>
+              {action.label}
+            </TakeLevelTrigger>
+          ) : (
+            action?.href && <ButtonLink href={action.href}>{action.label}</ButtonLink>
+          )}
         </>
       }
     >

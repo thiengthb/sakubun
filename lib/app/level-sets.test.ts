@@ -10,6 +10,7 @@ let prisma: Db['prisma'];
 let L: typeof import('@/lib/app/level-sets');
 let B: typeof import('@/lib/app/level-board');
 let P: typeof import('@/lib/library/practice');
+let T: typeof import('@/lib/app/take-level');
 let mine: UserDb;
 let other: UserDb;
 
@@ -49,6 +50,7 @@ beforeAll(async () => {
   L = await import('@/lib/app/level-sets');
   B = await import('@/lib/app/level-board');
   P = await import('@/lib/library/practice');
+  T = await import('@/lib/app/take-level');
   const S = await import('@/lib/library/shared');
   const { userDb } = await import('@/lib/db/user-db');
   mine = userDb(await createTestUser(prisma, 'learner'));
@@ -123,5 +125,35 @@ describe('loadLevelSets (U4c1)', () => {
       where: { sourceKey: 'openjlpt:group:N5:VOCAB' },
       data: { status: 'public' },
     });
+  });
+});
+
+describe('takeLevelWords (U4d)', () => {
+  it("takes the level's missing words, and the board counts them", async () => {
+    await add(mine, 'VOCAB', '店');
+    const taken = await T.takeLevelWords(mine, 'N5', 'vocab', null);
+    expect(taken).toEqual({ ok: true, data: { added: 2 } });
+    const result = await L.loadLevelSets(mine, 'N5', 'VOCAB', NOW);
+    expect(result.counts.none).toBe(0);
+    expect(result.sets[0]!.words.map((w) => w.state)).toEqual(['new', 'new', 'new']);
+    const cell = (await B.levelBoard(mine)).levels[0]!.vocab;
+    expect(cell.have).toBe(cell.total);
+    // Other kinds, levels and learners are left alone.
+    expect(await mine.item.count({ where: { kind: 'GRAMMAR' } })).toBe(0);
+    expect(await mine.item.count({ where: { expression: '切符' } })).toBe(0);
+    expect(await other.item.count()).toBe(0);
+  });
+
+  it('takes one set only, and says when the set is gone', async () => {
+    expect(await T.takeLevelWords(mine, 'N5', 'grammar', 1)).toEqual({
+      ok: true,
+      data: { added: 1 },
+    });
+    expect(await T.takeLevelWords(mine, 'N5', 'grammar', 1)).toEqual({
+      ok: true,
+      data: { added: 0 },
+    });
+    const gone = await T.takeLevelWords(mine, 'N5', 'grammar', 2);
+    expect(gone.ok).toBe(false);
   });
 });

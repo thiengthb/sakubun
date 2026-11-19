@@ -127,6 +127,23 @@ describe('item length limits (lib/library/item-limits.ts)', () => {
     expect(row.hanviet).toBe('PHỐI LỰ');
   });
 
+  it('copies a Kho chung entry as it is, however long', async () => {
+    await resetData();
+    const res = await P.addItems(
+      db,
+      [
+        {
+          expression: '〜に至る / 〜に至って / 〜に至っては',
+          meaningVi: 'Đến mức',
+          libraryEntryId: 'entry-1',
+        },
+      ],
+      'LIBRARY',
+      'GRAMMAR',
+    );
+    expect(res).toMatchObject({ created: 1, skipped: [] });
+  });
+
   it('edits an old long item without forcing it short, and refuses a new long value', async () => {
     await resetData();
     const old = await db.item.create({

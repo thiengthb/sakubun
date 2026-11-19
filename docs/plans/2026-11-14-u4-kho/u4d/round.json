@@ -1,0 +1,38 @@
+{ "id": "sakubun-u4d-r1", "title": "Duyệt Lấy thêm tại chỗ (U4d)",
+  "intro": "Từ nay lấy từ ngay ở màn cấp, màn chặng và Danh sách, không phải sang Kho chung nữa. Từ chưa có trong kho có nút Học: bấm là từ vào kho thành mục mới, Ôn nhanh đưa ra dần (nếu cấp đó cao hơn cấp bạn đang học trong Cài đặt thì thông báo nói rõ). Nút Lấy N của chặng lấy luôn phần thiếu của chặng; ô Lấy nốt lấy hết phần thiếu của cả cấp, có hỏi lại trước vì có cấp thiếu cả nghìn từ. Bên trái là bản trên main, bên phải là nhánh PR #335. Dữ liệu thử: N5 · Từ vựng, Chặng 1 thiếu 3 từ, Chặng 3 thiếu 10, Chặng 5 thiếu cả 20. Sửa kèm: 18 mẫu OpenJLPT dài quá 20 ký tự (ví dụ 〜に至る / 〜に至って / 〜に至っては) trước giờ không lấy được về kho, giờ lấy được.",
+  "scenarios": ["Màn cấp N5 · Từ vựng", "Chặng 1, mở từ 赤 chưa có", "Danh sách", "Bấm Học, bấm Lấy nốt"],
+  "items": [
+    { "id": "level-1440", "group": "Laptop", "label": "Màn cấp · 1440",
+      "note": "Ô Lấy nốt và nút Lấy N trên thẻ chặng giờ lấy ngay tại chỗ (trước đây mở Kho chung). Khi mọi từ đã có đều học rồi, ô chính thành Lấy Chặng N.",
+      "sides": [
+        { "key": "old", "name": "Trước", "file": "level-1440-old.jpg", "scale": 2 },
+        { "key": "new", "name": "Sau", "file": "level-1440-new.jpg", "scale": 2 } ] },
+    { "id": "set-1440", "group": "Laptop", "label": "Chặng 1, từ chưa có · 1440",
+      "note": "Khung chi tiết: nút Học, và Xem ở Kho chung mở đúng trang của từ đó (trước là cả cấp trong Kho chung).",
+      "sides": [
+        { "key": "old", "name": "Trước", "file": "set-1440-old.jpg", "scale": 2 },
+        { "key": "new", "name": "Sau", "file": "set-1440-new.jpg", "scale": 2 } ] },
+    { "id": "list-1440", "group": "Laptop", "label": "Danh sách · 1440",
+      "note": "Cột cuối: từ chưa có có nút Học, từ đã có vẫn là Mở mục.",
+      "sides": [
+        { "key": "old", "name": "Trước", "file": "list-1440-old.jpg", "scale": 2 },
+        { "key": "new", "name": "Sau", "file": "list-1440-new.jpg", "scale": 2 } ] },
+    { "id": "take-1440", "group": "Laptop", "label": "Sau khi bấm · 1440",
+      "note": "Trái: bấm Học ở 赤, từ thành Chưa học và thông báo hiện ở dưới. Phải: bấm Lấy nốt, hỏi lại trước khi lấy cả 32 từ.",
+      "sides": [
+        { "key": "old", "name": "Bấm Học", "file": "taken-1440-new.jpg", "scale": 2 },
+        { "key": "new", "name": "Bấm Lấy nốt", "file": "confirm-1440-new.jpg", "scale": 2 } ] },
+    { "id": "level-390", "group": "Điện thoại", "label": "Màn cấp · 390",
+      "sides": [
+        { "key": "old", "name": "Trước", "file": "level-390-old.jpg", "scale": 2 },
+        { "key": "new", "name": "Sau", "file": "level-390-new.jpg", "scale": 2 } ] },
+    { "id": "set-390", "group": "Điện thoại", "label": "Chặng 1, chạm từ chưa có · 390",
+      "sides": [
+        { "key": "old", "name": "Trước", "file": "set-390-old.jpg", "scale": 2 },
+        { "key": "new", "name": "Sau", "file": "set-390-new.jpg", "scale": 2 } ] },
+    { "id": "list-390", "group": "Điện thoại", "label": "Danh sách · 390",
+      "note": "Thẻ của từ chưa có có nút Học ở góc dưới.",
+      "sides": [
+        { "key": "old", "name": "Trước", "file": "list-390-old.jpg", "scale": 2 },
+        { "key": "new", "name": "Sau", "file": "list-390-new.jpg", "scale": 2 } ] }
+  ] }

@@ -1,5 +1,5 @@
 import type { LevelSet, LevelSets, StateCounts } from '@/lib/library/level-sets';
-import { libraryLevelHref, type BoardLevel } from '@/lib/library/level-tally';
+import type { BoardLevel } from '@/lib/library/level-tally';
 import { JLPT_LEVELS } from '@/lib/settings/schema';
 
 // What the level screen offers (U4c2, docs/plans/2026-11-14-u4-kho.md): the three actions of
@@ -17,12 +17,20 @@ export interface LevelContext {
   studyLevel: string;
 }
 
+// What a take button copies into the learner's Kho (U4d): the missing words of one set, or of
+// the whole level when set is null.
+export interface TakeScope {
+  set: number | null;
+  count: number;
+}
+
 export interface LevelAction {
   label: string;
   hint: string;
   count: number | null;
-  // null: nothing to do here, shown without a link.
+  // null: nothing to open here; shown without a link unless it takes words in place.
   href: string | null;
+  take?: TakeScope;
 }
 
 export interface LeadActions {
@@ -39,10 +47,9 @@ export const STUDY_LEVEL_HREF = '/settings?tab=practice';
 
 export function leadActions(sets: LevelSets, ctx: LevelContext): LeadActions {
   const unit = UNIT[ctx.kind];
-  const take = libraryLevelHref(ctx.level, ctx.kind);
   const { counts } = sets;
   return {
-    main: mainAction(sets, ctx, unit, take),
+    main: mainAction(sets, ctx, unit),
     due: {
       label: 'Ôn đến hạn',
       hint: counts.due > 0 ? 'trong Ôn nhanh' : 'chưa có mục nào đến hạn',
@@ -53,14 +60,15 @@ export function leadActions(sets: LevelSets, ctx: LevelContext): LeadActions {
       label: 'Lấy nốt',
       hint: counts.none > 0 ? `${unit} chưa có trong kho` : 'đã có đủ cả cấp',
       count: counts.none,
-      href: counts.none > 0 ? take : null,
+      href: null,
+      ...(counts.none > 0 && { take: { set: null, count: counts.none } }),
     },
   };
 }
 
 // Ôn nhanh takes new items from the study level and, now and then, from the levels below it, in its
 // own mixed order (lib/domain/new-items.ts): so "Học" counts the whole level, never one set.
-function servedByReview(level: string, studyLevel: string): boolean {
+export function servedByReview(level: string, studyLevel: string): boolean {
   const at = (l: string) => JLPT_LEVELS.indexOf(l as (typeof JLPT_LEVELS)[number]);
   return at(level) >= 0 && at(studyLevel) >= 0 && at(level) <= at(studyLevel);
 }
@@ -69,7 +77,6 @@ function mainAction(
   { sets, counts, mastered, next }: LevelSets,
   ctx: LevelContext,
   unit: string,
-  take: string,
 ): LevelAction {
   if (next?.kind === 'study' && servedByReview(ctx.level, ctx.studyLevel)) {
     return {
@@ -91,12 +98,13 @@ function mainAction(
     };
   }
   if (next?.kind === 'take') {
-    // Kho chung lists the whole level; it cannot open on one set.
+    // Takes the next set's missing words, a set at a time: "Lấy nốt" beside it takes the level.
     return {
-      label: 'Lấy thêm',
-      hint: `${unit} chưa có trong kho, từ Chặng ${next.set}`,
-      count: counts.none,
-      href: take,
+      label: `Lấy Chặng ${next.set}`,
+      hint: `${unit} chưa có trong kho, lấy về để học`,
+      count: next.count,
+      href: null,
+      take: { set: next.set, count: next.count },
     };
   }
   const total = sets.reduce((n, s) => n + s.words.length, 0);
@@ -147,7 +155,8 @@ export function setAction(
       label: `Lấy ${counts.none}`,
       hint: `${UNIT[ctx.kind]} chưa có trong kho`,
       count: null,
-      href: libraryLevelHref(ctx.level, ctx.kind),
+      href: null,
+      take: { set: set.number, count: counts.none },
     };
   if (counts.mastered === set.words.length)
     return { label: 'Thuộc hết', hint: '', count: null, href: null };
@@ -178,4 +187,20 @@ export function setSummary(counts: StateCounts): string {
   return SUMMARY.filter(([state]) => counts[state] > 0)
     .map(([state, label]) => `${counts[state]} ${label}`)
     .join(' · ');
+}
+
+/**
+ * The toast after a take (U4d): how many came in, and whether Ôn nhanh will bring them, which it
+ * does only for the study level and the levels below it.
+ */
+export function takenNote(
+  taken: { added: number; level: string | null; kind: LevelKind },
+  studyLevel: string,
+): string {
+  const unit = UNIT[taken.kind];
+  if (taken.added === 0) return `Đã có đủ các ${unit} này trong kho`;
+  const head = `Đã thêm ${taken.added} ${unit} vào kho`;
+  if (!taken.level || servedByReview(taken.level, studyLevel))
+    return `${head}, Ôn nhanh đưa ra dần mỗi ngày`;
+  return `${head}. Ôn nhanh đang lấy ${unit} mới từ ${studyLevel}, đổi trong Cài đặt để học ${taken.level}`;
 }

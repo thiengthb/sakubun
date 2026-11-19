@@ -7,6 +7,7 @@ const N4_VOCAB = { level: 'N4', kind: 'vocab' } as const;
 
 const entries = (n: number): SetEntry[] =>
   Array.from({ length: n }, (_, i) => ({
+    id: `e-w${i + 1}`,
     expression: `w${i + 1}`,
     reading: null,
     hanviet: null,

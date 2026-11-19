@@ -24,6 +24,8 @@ export const WORD_STATES: readonly WordState[] = [
 ];
 
 export interface SetEntry {
+  // The OpenJLPT entry's id, what "Học" takes (U4d).
+  id: string;
   expression: string;
   reading: string | null;
   hanviet: string | null;
