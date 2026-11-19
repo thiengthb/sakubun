@@ -1,0 +1,91 @@
+{
+  "title": "Một câu luyện đi qua những đâu trong sakubun",
+  "intro": "Kiến trúc sakubun kể theo một câu luyện: hai cửa vào (ôn nhanh trên web, dịch câu với Claude qua MCP) dùng chung **một hàng ôn FSRS**, và chỉ **một chỗ** ghi lịch. App giữ dữ liệu và lịch; AI là thầy, không phải app tự soạn hay tự chấm câu dịch.",
+  "updated": "2026-11-19",
+  "page": "https://claude.ai/artifact/Xx8GxEfRauxKujP1er9H5v",
+  "sources": ["CLAUDE.md", "README.md", "docs/decisions/0001-core-rewrite.md", "docs/decisions/0006-per-user-learning-data.md"],
+  "nodes": [
+    { "id": "open", "label": "Bạn mở buổi ôn hay nhắn Claude", "kind": "k2" },
+    { "id": "gate", "label": "Cửa vào: ai, kho nào", "kind": "k1" },
+    { "id": "queue", "label": "Hàng ôn FSRS", "kind": "k1" },
+    { "id": "web", "label": "Ôn nhanh trên web", "kind": "k1" },
+    { "id": "turn", "label": "Claude soạn câu", "kind": "k1" },
+    { "id": "stage", "label": "Server kiểm câu", "kind": "k1" },
+    { "id": "answer", "label": "Bạn trả lời", "kind": "k2" },
+    { "id": "grade", "label": "Chấm 1–4", "kind": "k1" },
+    { "id": "record", "label": "Ghi lịch mới", "kind": "k1" },
+    { "id": "db", "label": "SQLite trong volume", "note": "Một file `sakubun.db` trong volume Docker `/data`. Mỗi bảng học có `userId`; xoá container không mất lịch sử học." },
+    { "id": "library", "label": "Kho chung", "note": "Mục mẫu dùng chung (`lib/library/`). Bạn lấy về kho riêng thì mục mới vào hàng ôn, theo hạn mức mục mới mỗi ngày." }
+  ],
+  "edges": [
+    ["open", "gate"],
+    ["gate", "queue"],
+    ["queue", "web", "/review"],
+    ["queue", "turn", "next_turn"],
+    ["turn", "stage", "stage_turn"],
+    ["stage", "turn", "sai luật"],
+    ["stage", "answer", "đạt"],
+    ["web", "answer"],
+    ["answer", "grade"],
+    ["grade", "record"],
+    ["record", "queue", "lịch mới"],
+    ["record", "db"],
+    ["library", "queue", "mục mới"]
+  ],
+  "steps": [
+    {
+      "id": "open",
+      "note": "Có hai cách học trên cùng một kho: mở trang buổi ôn trên web, hoặc nhắn \"học\" với Claude (connector sakubun trên claude.ai, Claude Desktop, ChatGPT).",
+      "more": "Hai cách không tách hai kho: ôn trên web xong thì Claude thấy ngay mục đó đã ôn, và ngược lại.",
+      "chips": ["app/review/", "prompt hoc (lib/mcp/v2-prompt.ts)"]
+    },
+    {
+      "id": "gate",
+      "note": "Web vào bằng Google; Claude vào `/api/mcp` bằng OAuth hay token. Mọi cửa hỏi `accountAccess()`: tài khoản bị chặn thì không vào được đâu.",
+      "more": "Rồi mọi truy vấn trên bảng học đi qua `userDb(userId)`, nên mỗi người chỉ chạm tới kho của mình. Client chung `prisma` ném lỗi nếu ai lỡ dùng nó trên các bảng đó.",
+      "chips": ["lib/auth/access.ts", "lib/db/user-db.ts", "app/api/[transport]/route.ts"]
+    },
+    {
+      "id": "queue",
+      "note": "`getQueue` xếp thứ cần ôn hôm nay: thẻ đang học dở trước, rồi thẻ đến hạn tới mức ôn tối đa, rồi mục mới trong hạn mức (mặc định 3 ngữ pháp, 15 từ).",
+      "more": "Ngữ pháp và từ vựng chung một hàng, mỗi loại một hạn mức mục mới. Mục chưa học lần nào thì không bao giờ \"đến hạn\".",
+      "chips": ["lib/app/queue.ts", "lib/domain/queue.ts"]
+    },
+    {
+      "id": "web",
+      "note": "Cửa web: thẻ lật với bốn nút, hay câu điền từ có bốn lựa chọn dựng sẵn từ câu ví dụ. Server tự chấm, không cần AI.",
+      "more": "Buổi ôn theo bố cục C bạn chọn ngày 13/11: thẻ bên trái, bảng nhỏ bên phải; chấm chạy nền, có hoàn tác.",
+      "chips": ["lib/app/quick-review.ts", "lib/domain/cloze.ts"]
+    },
+    {
+      "id": "turn",
+      "note": "Cửa MCP: `next_turn` đưa Claude đúng một mục cần luyện, kèm hướng dịch, độ dài câu theo cấp JLPT và các câu đã viết gần đây để khỏi lặp. Claude viết một câu mới cả tiếng Nhật lẫn tiếng Việt.",
+      "more": "Mỗi lượt chỉ một mục đích; các từ khác trong câu là nền, không chấm. Mỗi kết quả của tool kết thúc bằng dòng `next:` nói lời gọi tiếp theo, nên lời dặn cho Claude rất ngắn.",
+      "chips": ["lib/app/turn.ts", "lib/mcp/tools/v2.ts"]
+    },
+    {
+      "id": "stage",
+      "note": "`stage_turn` kiểm câu bằng code: có đủ hai câu không, độ dài có đúng khoảng không, câu có dùng đúng mục không. Sai thì trả lỗi ngắn nêu đúng một cách sửa, Claude viết lại.",
+      "more": "Đây là luật \"server ép được thì ép trong code\": thay vì dặn Claude nhớ luật, server từ chối và chỉ cách sửa. Đạt thì lượt chuyển sang trạng thái `staged`.",
+      "chips": ["lib/domain/turn.ts (checkStage)"]
+    },
+    {
+      "id": "answer",
+      "note": "Bạn trả lời: bấm thẻ hay chọn từ trên web, hoặc gõ bản dịch cho Claude. Claude chỉ cho bạn thấy câu cần dịch, không lộ đáp án trước khi bạn thử.",
+      "more": "Trên web, câu tiếng Nhật phát ra tiếng được (qua `SpokenLine`, giọng VOICEVOX chạy như service thứ hai trong compose; nó chết thì trình duyệt tự đọc). Trong chat với Claude thì bạn đọc chữ.",
+      "chips": ["components/features/review/"]
+    },
+    {
+      "id": "grade",
+      "note": "Web: server chấm theo nút bạn bấm. MCP: Claude gọi `grade_turn` một lần, chấm 1 (sai nghĩa) tới 4 (tức thì, không lỗi), kèm một dòng nhận xét.",
+      "more": "Server vẫn giữ luật: Claude đã gợi ý thì 4 hạ xuống 3; lượt đã chấm hay đã bỏ qua thì không chấm lại được. Muốn bỏ câu thì `skip_turn`, lịch không đổi.",
+      "chips": ["lib/domain/turn.ts (finalRating)", "lib/domain/quick-review.ts"]
+    },
+    {
+      "id": "record",
+      "note": "`recordReviews()` là lối duy nhất tính lịch FSRS: tính lần ôn tới, ghi `SrsState`, thêm một dòng `ReviewLog`. Lịch mới quay về hàng ôn cho lần sau.",
+      "more": "Không route, màn hay tool MCP nào được ghi lịch thẳng. Lần chấm chạy nền tới muộn mà thẻ đã đổi thì cả lần ghi bị từ chối, không ghi đè. `ReviewLog` chỉ thêm, không sửa.",
+      "chips": ["lib/app/record-review.ts", "lib/srs/"]
+    }
+  ]
+}
