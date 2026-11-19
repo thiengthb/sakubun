@@ -1,7 +1,7 @@
 # U4: màn Kho theo cấp JLPT (U4d lấy thêm tại chỗ chờ duyệt)
 
 Repo: thiengthb/sakubun · Nhánh: feat/u4d-take-in-place · PR: #335
-Ghi bởi: Claude tnt628, https://claude.ai/code/project/chan_0145cotX9neLQKZjxfBxCwDe?thread=cmsg_0145cotX9neLQKZjxfBxCwDe2nQVyXHabhp85BNJRRHSxc · Cập nhật: 2026-11-19T03:13Z
+Ghi bởi: Claude tnt628, https://claude.ai/code/project/chan_0145cotX9neLQKZjxfBxCwDe?thread=cmsg_0145cotX9neLQKZjxfBxCwDe2nQVyXHabhp85BNJRRHSxc · Cập nhật: 2026-11-19T03:27Z
 
 ## thien muốn gì
 Làm U4 theo kế hoạch đã duyệt `docs/plans/2026-11-14-u4-kho.md` (hướng 2, gộp theo cấp JLPT; 15/11 thien trả lời "theo đề xuất" cả 3 câu, U4g/U4h để sau kỳ thi N2). thien bảo nick tnt697 làm tiếp ("nick này làm tiếp", 15/11).
@@ -12,7 +12,7 @@ Làm U4 theo kế hoạch đã duyệt `docs/plans/2026-11-14-u4-kho.md` (hướ
 - U4c1 logic chia chặng: #325 (merge 18/11), `lib/library/level-sets.ts`, `lib/app/level-sets.ts`.
 
 ## Bước tiếp theo
-1. U4d (lấy thêm tại chỗ), PR nháp #335, nhánh feat/u4d-take-in-place (6eb0834): code, test, e2e xong. Chờ thien duyệt ảnh; OK thì chuyển PR sẵn sàng, risk:medium, chờ CodeRabbit, nhờ coordinator mở thread review.
+1. U4d (lấy thêm tại chỗ), PR nháp #335, nhánh feat/u4d-take-in-place (6eb0834): code, test, e2e xong. thien OK cả 7 ảnh (19/11 03:27Z); PR đã sẵn sàng, risk:medium, đã nhờ coordinator mở thread review. Chờ CodeRabbit (sửa từng ý), review, rồi thien nói "merge đi".
 2. Rồi U4e (Ngoài JLPT và nút Thêm), U4f (ô tìm hai nguồn) theo kế hoạch.
 
 ## Đang chờ thien
