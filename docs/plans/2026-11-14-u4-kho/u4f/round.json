@@ -1,0 +1,15 @@
+{ "id": "sakubun-u4f-r1", "title": "Duyệt ô tìm ở Kho (U4f)",
+  "intro": "Bản B bạn chọn: ô tìm nằm dưới tiêu đề Kho. Gõ là bảng cấp tạm ẩn, chỗ đó hiện hai phần: Trong kho của bạn (trạng thái từng mục) và Trong Kho chung (chỉ mục bạn chưa có, có nút Học, link Xem thêm mở Kho chung với cùng chữ tìm). Bấm Học là mục chuyển sang phần của bạn. Xoá chữ là bảng cấp hiện lại; chữ tìm nằm trên địa chỉ (?q=) nên dán link được. Thêm một sửa nhỏ: trên điện thoại, nút Mọi mục ở đầu trang làm tiêu đề bị ép (lỗi từ PR ngăn Thêm), nên mình ẩn nó trên điện thoại và thêm dòng Mọi mục của bạn vào thẻ Ngoài JLPT. Tài khoản thử chưa có mục nào, nên phần của bạn trống.",
+  "scenarios": ["Mở Kho", "Gõ 会 vào ô tìm"],
+  "items": [
+    { "id": "board", "group": "Bảng cấp", "label": "Kho có ô tìm",
+      "note": "Ô tìm dưới tiêu đề. Điện thoại: không còn nút Mọi mục ở đầu trang.",
+      "sides": [
+        { "key": "old", "name": "Laptop 1440", "file": "board-1440.jpg", "scale": 2 },
+        { "key": "new", "name": "Điện thoại 390", "file": "board-390.jpg", "scale": 2 } ] },
+    { "id": "search", "group": "Kết quả tìm", "label": "Gõ 会",
+      "note": "Laptop hai cột, điện thoại hai khối trên dưới. Mỗi bên tối đa 6 dòng.",
+      "sides": [
+        { "key": "old", "name": "Laptop 1440", "file": "search-1440.jpg", "scale": 2 },
+        { "key": "new", "name": "Điện thoại 390", "file": "search-390.jpg", "scale": 2 } ] }
+  ] }

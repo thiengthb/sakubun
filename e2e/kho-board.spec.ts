@@ -222,7 +222,7 @@ test('an old link to a tab lands on the list of every item', async ({ page }) =>
   await expect(page.getByRole('heading', { level: 1, name: 'Mọi mục' })).toBeVisible();
 
   await page.goto('/resources');
-  await page.getByRole('link', { name: 'Mọi mục' }).click();
+  await page.getByRole('link', { name: 'Mọi mục', exact: true }).click();
   await page.waitForURL(/\/resources\/all$/);
 });
 

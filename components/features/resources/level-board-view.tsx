@@ -15,6 +15,8 @@ import {
   type LevelRow,
 } from '@/lib/library/level-tally';
 import type { KhoBoard } from '@/lib/app/level-board';
+import type { KhoSearch } from '@/lib/app/kho-search';
+import { KhoSearchBox, KhoSearchResults, type Voice } from './kho-search';
 import { cn } from '@/lib/core/utils';
 import { KHO_BOARD_META } from './kho-copy';
 
@@ -31,10 +33,15 @@ export function LevelBoardView({
   board,
   grammarLevel,
   vocabLevel,
+  search,
+  voice,
 }: {
   board: KhoBoard;
   grammarLevel: string;
   vocabLevel: string;
+  /** The answer to ?q= (U4f): while there is one, it takes the board's place. */
+  search: KhoSearch | null;
+  voice: Voice;
 }) {
   const labels = studyLabels(grammarLevel, vocabLevel);
   return (
@@ -44,16 +51,29 @@ export function LevelBoardView({
       meta={KHO_BOARD_META}
       actions={
         <>
-          <ExpandingIconButton href="/resources/all" icon={List} label="Mọi mục" />
+          {/* On a phone it would squeeze the title; the Ngoài JLPT card links there too. */}
+          <ExpandingIconButton
+            href="/resources/all"
+            icon={List}
+            label="Mọi mục"
+            className="max-md:hidden"
+          />
           <AddSheet />
         </>
       }
     >
-      <div className="flex flex-col gap-3">
-        {board.levels.map((row) => (
-          <LevelCard key={row.level} row={row} labels={labels} />
-        ))}
-        <OutsideCard outside={board.outside} groups={board.groups} />
+      <div className="flex flex-col gap-4">
+        <KhoSearchBox query={search?.query ?? ''} />
+        {search ? (
+          <KhoSearchResults search={search} voice={voice} />
+        ) : (
+          <div className="flex flex-col gap-3">
+            {board.levels.map((row) => (
+              <LevelCard key={row.level} row={row} labels={labels} />
+            ))}
+            <OutsideCard outside={board.outside} groups={board.groups} />
+          </div>
+        )}
       </div>
     </PageShell>
   );
@@ -162,12 +182,13 @@ function OutsideCard({ outside, groups }: { outside: number; groups: number }) {
       <div className="mt-2 grid gap-1 md:grid-cols-3 md:gap-4">
         <OutsideLink href="/resources/outside" label="Mục ngoài JLPT" count={outside} />
         <OutsideLink href="/resources/all?tab=groups" label="Nhóm của bạn" count={groups} />
+        <OutsideLink href="/resources/all" label="Mọi mục của bạn" />
       </div>
     </section>
   );
 }
 
-function OutsideLink({ href, label, count }: { href?: string; label: string; count: number }) {
+function OutsideLink({ href, label, count }: { href?: string; label: string; count?: number }) {
   const row = '-mx-2 flex min-h-11 items-center justify-between gap-2 rounded-lg px-2 py-2 text-sm';
   const body = (
     <>

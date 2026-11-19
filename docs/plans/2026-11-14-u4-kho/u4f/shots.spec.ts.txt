@@ -1,0 +1,40 @@
+// Scratch (never committed as .ts): U4f review shots and timing. SHOT_DIR=<dir>.
+import { test } from '@playwright/test';
+import { E2E_EMAIL, E2E_LOGIN, seedE2eAccount } from './fixtures';
+
+const OUT = process.env.SHOT_DIR!;
+test.beforeAll(seedE2eAccount);
+
+test('u4f shots', async ({ browser }) => {
+  test.setTimeout(600_000);
+  for (const w of [1440, 390]) {
+    const ctx = await browser.newContext({ viewport: { width: w, height: w === 390 ? 844 : 900 }, deviceScaleFactor: 2 });
+    const page = await ctx.newPage();
+    await page.addInitScript(() => {
+      const s = document.createElement('style');
+      s.textContent = 'nextjs-portal{display:none!important}';
+      document.addEventListener('DOMContentLoaded', () => document.head.append(s));
+    });
+    await page.goto('/login');
+    await page.getByLabel('Email').fill(E2E_EMAIL);
+    await page.getByLabel('Mật khẩu').fill(E2E_LOGIN);
+    await page.getByRole('button', { name: 'Đăng nhập' }).click();
+    await page.waitForURL((u) => !u.pathname.startsWith('/login'), { timeout: 30_000 });
+    await page.goto('/resources', { waitUntil: 'networkidle' });
+    await page.waitForTimeout(500);
+    await page.screenshot({ path: `${OUT}/board-${w}.jpg`, type: 'jpeg', quality: 85 });
+    await page.getByRole('searchbox', { name: 'Tìm trong kho và Kho chung' }).fill('会');
+    await page.waitForURL(/q=/);
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(600);
+    await page.screenshot({ path: `${OUT}/search-${w}.jpg`, type: 'jpeg', quality: 85, fullPage: w === 390 });
+    if (w === 1440) {
+      for (const q of ['会', 'か', 'a', '先生']) {
+        const t = Date.now();
+        await page.goto(`/resources?q=${encodeURIComponent(q)}`, { waitUntil: 'load' });
+        console.log(`TIMING ${q} ${Date.now() - t}ms`);
+      }
+    }
+    await ctx.close();
+  }
+});
