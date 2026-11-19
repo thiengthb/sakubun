@@ -7,9 +7,10 @@ lỗi thì ghi vào "Lỗi gặp".
 
 ## Đang ở đâu
 
-- Đang ở: KD1 (máy đoán chữ) xong ở PR #340, chờ merge. Tiếp KD2 (khung vẽ, chọn bố cục trước).
+- Đang ở: KD1 xong (#340, 19/11). KD2 (khung vẽ): chờ thien chọn bố cục.
 - Còn thiếu: KD2, KD3.
-- thien cần làm: không có (ở KD2: vẽ thử khoảng 20 chữ).
+- thien cần làm: chọn bố cục ở https://claude.ai/artifact/EtpcD3uxVgea4iuQTR3q9x (mở ở nick tnt628). Dựng lại ở nick
+  khác: `make-decision.mjs docs/plans/2026-11-19-kanji-draw-search/kd2/decision.json <out>`.
 
 ## Mục tiêu
 
@@ -59,7 +60,7 @@ Xong khi: test với nét giả lập qua các mức sàn trong `lib/japanese/re
 viết vừa nằm trong 5 chữ đầu từ 93%, viết nặng nằm trong 10 chữ đầu từ 80%, đảo 2 nét nằm trong 5 chữ đầu từ 92%, thiếu
 1 nét nằm trong 5 chữ đầu từ 90%. Bảng ở trên là số đo của bản thử, để so.
 
-- [x] Hàm thuần nhận các nét đã vẽ, trả 10 chữ giống nhất, kèm test (`lib/japanese/recognize.ts`, PR #340). Test 60
+- [x] Hàm thuần nhận các nét đã vẽ, trả 10 chữ giống nhất, kèm test (`lib/japanese/recognize.ts`, PR #340, merge 19/11). Test 60
       chữ mỗi mức với hạt giống cố định: nhẹ 100% đúng vị trí 1; vừa 98% trong 5 chữ đầu; nặng 87% trong 10 chữ đầu;
       đảo 2 nét 100% trong 5 chữ đầu (98% khi thử 400 chữ); thiếu 1 nét 97% trong 5 chữ đầu. Khoảng 20–35 ms một lần đoán trên máy dev.
 - [x] Server action `recognizeKanjiAction` (`app/resources/actions.ts`) nhận nét dạng cặp [x, y], tối đa 34 nét, 200
@@ -71,6 +72,8 @@ Xong khi: thien duyệt ảnh laptop và điện thoại, và 20 chữ thien v�
 KD1 sang đây vì phải có khung vẽ mới thử tay được). Trước khi code: 2–3 bố cục để thien chọn (nút bút cạnh ô tìm mở khung
 nổi, hay ngăn dưới trên điện thoại, hay khung luôn hiện bên phải).
 
+- [ ] Bố cục (19/11, nick tnt628): A khung nổi dưới ô tìm, B bàn phím vẽ ở đáy màn điện thoại và cột bên phải trên
+      laptop (đề xuất, ẩn tới khi chọn), C khung vẽ nằm trong trang đẩy kết quả xuống. Phác ở `kd2/mock/`, ảnh `kd2/*.jpg`.
 - [ ] Khung vẽ dùng lại phần vẽ của khung viết KJ4 (`kanji-write-pad.tsx`), có Xoá nét cuối và Xoá hết.
 - [ ] Hàng chữ đoán dưới khung; bấm một chữ là thêm vào ô tìm, khung trống lại để vẽ chữ sau.
 - [ ] e2e: vẽ 会 bằng nét KanjiVG, bấm chữ đoán, ô tìm có 会 và kết quả hiện.

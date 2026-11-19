@@ -1,0 +1,67 @@
+{
+  "id": "sakubun-kd2-pad-layout",
+  "question": "Khung vẽ kanji nên nằm ở đâu cạnh ô tìm của Kho?",
+  "context": "KD2. Bấm nút bút ✎ ở cuối ô tìm là mở khung vẽ. Vẽ một chữ thì hàng chữ đoán hiện ra, bấm chữ đúng là nó nối vào ô tìm (ở ảnh: đã có 社, đang vẽ 会 để thành 社会) và khung trống lại cho chữ sau. Mỗi ảnh: trái là laptop đang vẽ, giữa là điện thoại trước khi vẽ (nút bút trong ô tìm), phải là điện thoại đang vẽ. Số liệu là mẫu, ảnh là bản phác.",
+  "options": [
+    {
+      "key": "a",
+      "name": "A · Khung nổi dưới ô tìm",
+      "summary": "Nút bút mở một khung nổi ngay dưới ô tìm, đè lên kết quả: hàng chữ đoán ở trên, khung vẽ ở giữa, Xoá nét và Xoá hết ở dưới. Bấm ra ngoài hay bấm bút lần nữa là đóng.",
+      "image": "a.jpg",
+      "scale": 2,
+      "pros": [
+        "Gọn, giống cách các ô tìm hay mở thêm công cụ",
+        "Không đẩy trang đi đâu, đóng là về y như cũ"
+      ],
+      "cons": [
+        "Che kết quả trong lúc vẽ, nhất là trên điện thoại gần kín màn",
+        "Muốn xem kết quả của chữ vừa thêm phải đóng khung"
+      ]
+    },
+    {
+      "key": "b",
+      "name": "B · Bàn phím vẽ ở đáy màn",
+      "summary": "Trên điện thoại, nút bút biến nửa dưới màn thành một bàn phím vẽ (thay chỗ thanh tab trong lúc vẽ): hàng chữ đoán, khung vẽ, nút Xoá nét, Xoá hết và Bàn phím để quay về gõ. Trên laptop, khung vẽ thành một cột bên phải, kết quả dồn sang trái.",
+      "image": "b.jpg",
+      "scale": 2,
+      "pros": [
+        "Vẫn thấy kết quả phía trên trong lúc vẽ, thêm chữ là thấy kết quả đổi ngay",
+        "Khung vẽ nằm ngay dưới ngón cái, giống bàn phím viết tay của điện thoại",
+        "Laptop có chỗ cho khung vẽ to mà không che gì"
+      ],
+      "cons": [
+        "Trên điện thoại, thanh tab tạm ẩn trong lúc vẽ",
+        "Laptop và điện thoại khác dáng nhau nên tốn công hơn một chút"
+      ]
+    },
+    {
+      "key": "c",
+      "name": "C · Khung vẽ nằm trong trang",
+      "summary": "Nút bút mở khung vẽ ngay dưới ô tìm, nằm trong trang và đẩy kết quả xuống. Laptop: khung vẽ bên trái, chữ đoán và nút bên phải. Điện thoại: xếp dọc.",
+      "image": "c.jpg",
+      "scale": 2,
+      "pros": ["Đơn giản nhất, không có gì đè lên gì", "Cuộn xuống là thấy kết quả"],
+      "cons": [
+        "Trên điện thoại khung vẽ chiếm gần hết màn đầu, kết quả bị đẩy xuống dưới",
+        "Trên laptop khung nằm ngang làm phần kết quả lùi xuống nhiều"
+      ]
+    }
+  ],
+  "criteria": [
+    { "name": "Thấy kết quả khi đang vẽ", "values": { "a": "kém", "b": "tốt", "c": "vừa" } },
+    { "name": "Dễ vẽ trên điện thoại", "values": { "a": "vừa", "b": "tốt", "c": "vừa" } },
+    { "name": "Giữ nguyên trang khi đóng", "values": { "a": "tốt", "b": "tốt", "c": "vừa" } },
+    {
+      "name": "Công làm",
+      "values": {
+        "a": { "text": "ít", "tone": "good" },
+        "b": { "text": "vừa", "tone": "neutral" },
+        "c": { "text": "ít", "tone": "good" }
+      }
+    }
+  ],
+  "recommend": {
+    "key": "b",
+    "why": "Vẽ thường là vẽ vài chữ liền nhau rồi nhìn kết quả, nên kết quả phải luôn thấy được trong lúc vẽ. B làm được điều đó trên cả hai cỡ màn, và trên điện thoại khung nằm đúng chỗ ngón cái như bàn phím viết tay quen thuộc. Thanh tab ẩn tạm là cái giá nhỏ vì bấm Bàn phím hay bút là về ngay."
+  }
+}
