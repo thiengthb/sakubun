@@ -170,6 +170,7 @@ function ManualAddForm() {
           type="single"
           variant="choice"
           aria-label="Loại mục"
+          disabled={isPending}
           value={kind}
           onValueChange={(v) => v && switchKind(v as ItemKind)}
         >
@@ -181,7 +182,10 @@ function ManualAddForm() {
         </ToggleGroup>
       </div>
       <form onSubmit={submit} noValidate className="@container space-y-4">
-        <ItemFields kind={kind} draft={draft} set={set} errors={errors} idPrefix="add-sheet" />
+        {/* Locked while it sends, so nothing typed meanwhile is lost to the reset after it. */}
+        <fieldset disabled={isPending} className="min-w-0">
+          <ItemFields kind={kind} draft={draft} set={set} errors={errors} idPrefix="add-sheet" />
+        </fieldset>
         <FormActions>
           <SubmitButton ready={ready} pending={isPending}>
             {isPending ? 'Đang thêm…' : `Thêm ${NOUN[kind]}`}
