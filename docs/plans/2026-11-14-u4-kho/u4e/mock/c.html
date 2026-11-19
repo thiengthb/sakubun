@@ -1,0 +1,87 @@
+<!doctype html><meta charset="utf-8"><style>
+/* Sketch shell for U4e: laptop frame beside two phone frames (page, Add sheet). Not app code. */
+:root{--bg:#f6f3ee;--card:#fffdf9;--line:#e7e0d4;--ink:#24201b;--mute:#7b7368;--brand:#c9592f;--brand-soft:#f3d9cc;
+--ok:#1f7a4d;--ok-soft:#d5ebdd;--learn:#d9884f;--learn-soft:#f6e0cc;--due:#b8860b;--due-soft:#f6ebc6;--new:#9aa3ad;--new-soft:#e7eaee;}
+*{box-sizing:border-box;margin:0}
+body{background:#ebe6dd;font:15px/1.45 "Noto Sans","Noto Sans CJK JP",system-ui,sans-serif;color:var(--ink);width:2414px;height:990px;
+display:flex;gap:24px;padding:28px;}
+.laptop{width:1530px;height:934px;background:var(--bg);border-radius:14px;display:flex;overflow:hidden;box-shadow:0 2px 10px #0001}
+.side{width:240px;flex:none;background:#efebe4;border-right:1px solid var(--line);padding:18px 14px;display:flex;flex-direction:column;gap:4px;font-size:14px}
+.brand{display:flex;gap:10px;align-items:center;margin-bottom:18px}.logo{width:36px;height:36px;border-radius:9px;background:var(--brand);color:#fff;display:grid;place-items:center;font-weight:700;font-size:13px}
+.side .g{color:var(--mute);font-size:12px;margin:14px 6px 4px}.side .i{padding:7px 10px;border-radius:8px}.side .i.on{background:#fff;color:var(--brand);border:1px solid var(--line)}
+.main{flex:1;padding:26px 34px;overflow:hidden}
+.phone{width:390px;height:934px;background:var(--bg);border-radius:22px;overflow:hidden;position:relative;box-shadow:0 2px 10px #0001}
+.phone .main{padding:16px 16px 90px}
+.tabs{position:absolute;left:0;right:0;bottom:0;height:68px;background:#fffdf9;border-top:1px solid var(--line);display:flex;justify-content:space-around;align-items:center;font-size:11px;color:var(--mute)}
+.tabs span.on{color:var(--brand);font-weight:600}
+.crumb{color:var(--brand);font-size:13px;margin-bottom:6px}
+h1{font-size:30px;line-height:1.15;font-weight:700}.phone h1{font-size:24px}
+.meta{color:var(--mute);font-size:13px;margin-top:4px}
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:#fff;border-radius:9px;padding:8px 14px;font-size:14px;font-weight:600;white-space:nowrap}
+.btn.pri{background:var(--brand);border-color:var(--brand);color:#fff}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px}
+.bar{display:flex;height:8px;border-radius:99px;overflow:hidden;background:#ece6dc}.bar i{display:block;height:100%}
+.ok{color:var(--ok)}.learn{color:var(--learn)}.due{color:var(--due)}.mute{color:var(--mute)}
+.jp{font-family:"Noto Sans CJK JP","Noto Sans JP",sans-serif}
+.row{display:flex;align-items:center;gap:10px}.sp{flex:1}
+.pill{font-size:12px;padding:2px 8px;border-radius:99px;font-weight:600;white-space:nowrap}
+.note{position:absolute;right:10px;top:8px;font-size:11px;color:var(--mute)}
+.dots{display:flex;flex-wrap:wrap;gap:4px}.dots i{width:12px;height:12px;border-radius:3px}
+.d-ok{background:var(--ok)}.d-learn{background:var(--learn)}.d-due{background:var(--due)}.d-new{background:#cfd5dc}
+.dim{position:absolute;inset:0;background:#24201b55}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--card);border-radius:18px 18px 0 0;padding:10px 16px 24px;box-shadow:0 -4px 20px #0002}
+.grab{width:40px;height:5px;border-radius:9px;background:#d8d0c4;margin:0 auto 12px}
+.way{display:flex;gap:12px;align-items:flex-start;padding:12px;border:1px solid var(--line);border-radius:12px;background:#fff}
+.way .ic{width:36px;height:36px;border-radius:9px;display:grid;place-items:center;font-weight:700;flex:none;font-size:15px}
+.way b{display:block;font-size:15px}.way span.s{font-size:13px;color:var(--mute)}
+.tab{padding:7px 12px;border-radius:99px;font-size:14px;border:1px solid var(--line);background:#fff;white-space:nowrap}
+.tab.on{background:var(--ink);border-color:var(--ink);color:#fff}
+.tbl{width:100%;border-collapse:collapse;font-size:14px}.tbl td,.tbl th{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+.tbl th{font-size:12px;color:var(--mute);font-weight:600}
+.src{font-size:12px;color:var(--mute)}
+.inp{border:1px solid var(--line);border-radius:9px;background:#fff;padding:8px 12px;font-size:14px;color:var(--mute)}
+</style><body>
+<style>.cols{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:20px;margin-top:16px}.side2{display:flex;flex-direction:column;gap:12px}
+.chip{font-size:13px;padding:5px 10px;border-radius:99px;border:1px solid var(--line);background:#fff;white-space:nowrap}.chip.on{border-color:var(--brand);color:var(--brand);background:#fff4ec}
+.big{font-size:16px;padding:12px 16px}.lk{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--line);font-size:14px}
+.fab{position:absolute;right:16px;bottom:84px;border-radius:99px;padding:12px 18px;box-shadow:0 4px 14px #0003;z-index:2}</style>
+<script>
+const chips = `<div class="row" style="gap:6px;flex-wrap:nowrap;overflow:hidden"><span class="chip on">Mọi nguồn ▾</span><span class="chip">Từ vựng</span><span class="chip">Ngữ pháp</span><span class="chip">Đến hạn 6</span><span class="chip">Chưa học 21</span></div>`;
+function laptop(){return `<div class="crumb">Kho ›</div><div class="row"><div><h1>Ngoài JLPT</h1><div class="meta">94 mục không thuộc N5–N1 · 31 đã thuộc</div></div></div>
+<div class="cols"><div><div class="inp big">Tìm trong 94 mục: chữ, cách đọc, nghĩa</div><div style="margin-top:10px">${chips}</div>
+<div class="card" style="margin-top:12px;padding:4px 10px"><table class="tbl"><tr><th>Chữ</th><th>Nghĩa</th><th>Nguồn</th><th>Trạng thái</th></tr>
+${IT.slice(0,13).map(x=>`<tr><td><span class="jp" style="font-size:16px;font-weight:600">${x[0]}</span> <span class="jp mute" style="font-size:13px">${x[1]}</span></td><td>${x[2]}</td><td class="src">${SRC[x[3]]}</td><td>${pill(x[4])}</td></tr>`).join('')}</table></div></div>
+<div class="side2"><div class="card" style="padding:14px 16px"><b>Thêm vào kho</b><div style="display:flex;flex-direction:column;gap:8px;margin-top:10px">${WAYS.map(way).join('')}</div></div>
+<div class="card" style="padding:14px 16px"><div class="row"><b>Nhóm của bạn</b><span class="sp"></span><span class="mute" style="font-size:13px">Tạo nhóm</span></div>
+<div class="lk"><span>Từ trong bài dịch tuần này</span><span class="mute">18</span></div><div class="lk"><span>Anime Frieren</span><span class="mute">24</span></div><div class="lk" style="border:0"><span>Phỏng vấn xin việc</span><span class="mute">12</span></div></div></div></div>`}
+function phone(){return `<div class="crumb">Kho ›</div><h1>Ngoài JLPT</h1><div class="meta">94 mục · 31 đã thuộc</div><div class="inp" style="margin-top:12px">Tìm trong 94 mục</div><div style="margin-top:10px">${chips}</div>
+<div class="row" style="gap:6px;margin-top:10px;overflow:hidden"><span class="mute" style="font-size:13px">Nhóm:</span><span class="chip">Bài dịch tuần này</span><span class="chip">Frieren</span><span class="chip">Phỏng vấn</span></div>
+<div class="card" style="margin-top:12px">${IT.slice(0,9).map(x=>`<div class="row" style="padding:10px 14px;border-bottom:1px solid var(--line)"><div><div class="jp" style="font-weight:600;font-size:16px">${x[0]} <span class="mute" style="font-weight:400;font-size:13px">${x[1]}</span></div><div style="font-size:13px">${x[2]}</div></div><span class="sp"></span>${pill(x[4])}</div>`).join('')}</div><span class="btn pri fab">+ Thêm</span>`}
+function sheet(){return `<div class="main"><div class="crumb">‹ Ngoài JLPT</div><h1>Thêm vào kho</h1><div class="row" style="gap:6px;margin-top:12px;overflow:hidden"><span class="tab on">Tự viết</span><span class="tab">Nhờ Claude</span><span class="tab">Bộ chia sẻ</span><span class="tab">Theo cấp</span></div>
+<div class="card" style="padding:14px;margin-top:14px;display:flex;flex-direction:column;gap:10px"><div class="row"><span class="tab on">Từ vựng</span><span class="tab">Ngữ pháp</span></div><div class="inp">Chữ (ví dụ 締め切り)</div><div class="inp">Cách đọc</div><div class="inp">Hán Việt</div><div class="inp">Nghĩa tiếng Việt</div><div class="inp">Ghi chú</div><div class="inp">Nhóm (không bắt buộc)</div><span class="btn pri" style="justify-content:center">Thêm</span></div>
+<div class="meta" style="margin-top:12px">Trang riêng, mở từ nút Thêm; trên laptop bốn cách nằm sẵn ở cột phải.</div></div>${TABS}`}
+</script><script>
+// Builds the three frames; each option page defines laptop(), phone() and sheet() returning HTML.
+const SIDE = `<div class="side"><div class="brand"><div class="logo">作文</div><div><b>Sakubun</b><div class="meta" style="margin:0">Luyện dịch Nhật–Việt</div></div></div>
+<div class="g">Học</div><div class="i">Hôm nay</div><div class="i">Ôn nhanh</div><div class="i">Hội thoại</div>
+<div class="g">Kho</div><div class="i on">Kho</div><div class="g">Bạn</div><div class="i">Tiến độ</div><div class="i">Phân tích</div><div class="i">Cài đặt</div></div>`;
+const TABS = `<div class="tabs" style="z-index:3"><span>Hôm nay</span><span>Ôn nhanh</span><span>Hội thoại</span><span class="on">Kho</span><span>Bạn</span></div>`;
+// Sample items outside JLPT: [expression, reading, meaning, source, state]. Source: c Claude soạn, m tự viết, s từ bộ chia sẻ.
+const IT = [['締め切り','しめきり','hạn chót','c','due'],['見積もり','みつもり','báo giá','c','learn'],['気まずい','きまずい','ngượng ngùng','c','ok'],['推し','おし','người mình hâm mộ','c','ok'],['積ん読','つんどく','mua sách rồi để đó','c','new'],['手応え','てごたえ','cảm giác có kết quả','c','learn'],['打ち合わせ','うちあわせ','buổi họp bàn','c','ok'],['微妙','びみょう','khó nói, tế nhị','c','due'],
+['先輩','せんぱい','tiền bối','m','ok'],['名刺','めいし','danh thiếp','m','ok'],['了解','りょうかい','đã hiểu','m','ok'],['残業','ざんぎょう','làm thêm giờ','m','learn'],['有給','ゆうきゅう','nghỉ phép có lương','m','new'],
+['仕様','しよう','đặc tả','s','learn'],['不具合','ふぐあい','lỗi (phần mềm)','s','due'],['納期','のうき','hạn giao hàng','s','new'],['本番','ほんばん','môi trường thật','s','new'],['共有','きょうゆう','chia sẻ','s','ok']];
+const SRC = {c:'Claude soạn',m:'Tự viết',s:'Bộ "IT công sở" của Minh'};
+const LABEL = {ok:'Đã thuộc',learn:'Đang học',due:'Đến hạn',new:'Chưa học'};
+const pill = s => `<span class="pill" style="background:var(--${s==='new'?'new':s}-soft);color:var(--${s==='new'?'mute':s})">${LABEL[s]}</span>`;
+// A strip of n state dots drawn from a pattern string (o ok, l learn, d due, n new).
+const MAP = {o:'ok',l:'learn',d:'due',n:'new'};
+const dots = p => `<div class="dots">${[...p].map(c=>`<i class="d-${MAP[c]}"></i>`).join('')}</div>`;
+const WAYS = [
+ ['N','#f3d9cc','var(--brand)','Lấy theo cấp JLPT','Mở bảng N5–N1, lấy từng chặng 20 từ'],
+ ['B','#d5ebdd','var(--ok)','Bộ người khác chia sẻ','Mở Kho chung: bộ theo chủ đề, lấy về là của bạn'],
+ ['C','#e7e2f6','#5b4bb0','Nhờ Claude soạn','Gửi Claude đoạn văn hay chủ đề, Claude thêm vào kho qua Sakubun'],
+ ['+','#e7eaee','var(--ink)','Tự viết','Gõ chữ, cách đọc, nghĩa; thêm một mục ngay'],
+];
+const way = w => `<div class="way"><div class="ic" style="background:${w[1]};color:${w[2]}">${w[0]}</div><div><b>${w[3]}</b><span class="s">${w[4]}</span></div></div>`;
+document.body.insertAdjacentHTML("beforeend", `<div class="laptop">${SIDE}<div class="main">${laptop()}</div></div><div class="phone"><div class="main">${phone()}</div>${TABS}</div><div class="phone">${sheet()}</div>`);
+</script>

@@ -1,0 +1,46 @@
+{
+  "id": "sakubun-u4e-outside-jlpt",
+  "question": "Trang Ngoài JLPT và nút Thêm nên trông thế nào?",
+  "context": "U4e. Ô Ngoài JLPT trên bảng cấp giờ chỉ có hai con số, chưa mở ra được. Trang này gom mục không thuộc N5–N1: Claude soạn từ buổi dịch, bạn tự viết, lấy từ bộ người khác chia sẻ, cộng Nhóm của bạn. Nút Thêm có bốn cách: lấy theo cấp, bộ chia sẻ, nhờ Claude soạn, tự viết. Mỗi ảnh: trái là laptop, giữa là điện thoại, phải là điện thoại khi bấm Thêm. Số liệu và từ là mẫu, ảnh là bản phác.",
+  "options": [
+    {
+      "key": "a",
+      "name": "A · Danh sách chia tab theo nguồn",
+      "summary": "Một bảng mọi mục, tab ở trên lọc theo nguồn (Tất cả, Claude soạn, Tự viết, Từ bộ chia sẻ, Nhóm), có ô tìm. Thêm mở một danh sách bốn cách: thả xuống dưới nút trên laptop, tấm trượt từ dưới lên trên điện thoại; Tự viết mở form có sẵn.",
+      "image": "a.jpg",
+      "scale": 2,
+      "pros": ["Giống tab Danh sách của màn cấp, đã quen", "Tra một từ nhanh, thấy ngay nghĩa và trạng thái", "Ít việc làm nhất"],
+      "cons": ["Không có nút Học hay Ôn rõ ràng", "Nhóm chỉ là một tab, khó thấy nhóm nào còn yếu", "Nhìn như một bảng dữ liệu, giống bản danh sách bạn từng chê ở U4c"]
+    },
+    {
+      "key": "b",
+      "name": "B · Thẻ như màn cấp",
+      "summary": "Nhóm của bạn và ba nguồn (Claude soạn, Tự viết, Từ bộ chia sẻ) đều là thẻ giống thẻ chặng: dải ô màu theo trạng thái và một nút đúng lúc (Học 9, Ôn 4, Thuộc hết). Bấm thẻ mở danh sách mục của thẻ đó; nút phụ Xem dạng danh sách cho mọi mục. Thêm mở ngăn bên phải (laptop) hoặc tấm trượt gần kín màn (điện thoại); Tự viết là form gõ ngay trong ngăn.",
+      "image": "b.jpg",
+      "scale": 2,
+      "pros": ["Cùng cách nhìn với màn cấp và chặng bạn đã duyệt", "Luôn có một nút để bấm, thấy nhóm nào yếu", "Thêm một từ không phải rời trang"],
+      "cons": ["Muốn thấy từng từ phải bấm vào thẻ", "Một mục vừa ở nhóm vừa ở nguồn nên đếm hai lần", "Nhiều việc nhất: cần Học, Ôn theo nhóm hay nguồn"]
+    },
+    {
+      "key": "c",
+      "name": "C · Tìm là chính, Thêm luôn hiện",
+      "summary": "Ô tìm lớn và chip lọc (nguồn, loại, đến hạn, chưa học) trên một bảng mọi mục. Laptop có cột phải luôn hiện bốn cách thêm và danh sách Nhóm. Điện thoại: nhóm là hàng chip, nút Thêm nổi ở góc mở trang Thêm riêng có bốn tab, tab đầu là form Tự viết.",
+      "image": "c.jpg",
+      "scale": 2,
+      "pros": ["Bốn cách thêm luôn trước mắt trên laptop", "Lọc kết hợp được (Claude soạn và đến hạn)", "Trang Thêm riêng có chỗ cho form đủ trường"],
+      "cons": ["Khác hẳn màn cấp", "Điện thoại phải sang trang khác để thêm", "Cũng không có nút Học hay Ôn rõ ràng"]
+    }
+  ],
+  "criteria": [
+    { "name": "Biết ngay nên làm gì", "values": { "a": "kém", "b": "tốt", "c": "kém" } },
+    { "name": "Tra một từ cụ thể", "values": { "a": "tốt", "b": "vừa", "c": "tốt" } },
+    { "name": "Thấy nhóm nào còn yếu", "values": { "a": "kém", "b": "tốt", "c": "kém" } },
+    { "name": "Thêm nhanh một từ", "values": { "a": "tốt", "b": "tốt", "c": "vừa" } },
+    { "name": "Giống màn cấp đã duyệt", "values": { "a": "vừa", "b": "tốt", "c": "kém" } },
+    { "name": "Công làm", "values": { "a": { "text": "ít", "tone": "good" }, "b": { "text": "nhiều", "tone": "bad" }, "c": { "text": "vừa", "tone": "neutral" } } }
+  ],
+  "recommend": {
+    "key": "b",
+    "why": "Bạn đã chọn thẻ chặng có dải ô và một nút rõ ràng cho màn cấp; Ngoài JLPT dùng cùng kiểu thì cả Kho đọc giống nhau, và mục từ buổi dịch (thứ bạn thấy có ích nhất) có nút Học riêng. Tra từ vẫn còn ở Xem dạng danh sách và ô tìm U4f. Nếu muốn ít việc hơn, có thể làm B mà chưa có nút Học/Ôn theo thẻ ở PR đầu."
+  }
+}

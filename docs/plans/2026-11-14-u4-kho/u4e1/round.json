@@ -1,0 +1,20 @@
+{ "id": "sakubun-u4e1-r1", "title": "Duyệt trang Ngoài JLPT (U4e1)",
+  "intro": "Bản B bạn chọn: ô Ngoài JLPT ở cuối bảng cấp giờ mở được. Trang có Nhóm của bạn và ba nguồn (Claude soạn, Tự viết, Từ bộ chia sẻ), mỗi cái là một thẻ giống thẻ chặng: mỗi ô là một mục, dòng đếm trạng thái và một nút. Bấm thẻ nhóm mở trang nhóm, bấm thẻ nguồn mở danh sách mục của nguồn đó. Nút trên thẻ chỉ có Ôn N (mở Ôn nhanh, nơi ôn mọi mục đến hạn) hoặc Thuộc hết: Học riêng một thẻ cần Ôn nhanh theo phạm vi, chưa có, nên chưa làm. Nút Thêm vẫn mở form tự viết như cũ; ngăn bốn cách thêm làm ở PR sau (U4e2). Dữ liệu thử: 20 từ, 6 trong đó trùng mục OpenJLPT nên không tính là ngoài JLPT, 2 nhóm.",
+  "scenarios": ["Bảng cấp, ô Ngoài JLPT", "Trang Ngoài JLPT", "Danh sách Claude soạn"],
+  "items": [
+    { "id": "outside", "group": "Trang mới", "label": "Ngoài JLPT",
+      "note": "Thẻ có mục đến hạn có nút Ôn N; nhóm thuộc hết sẽ có nhãn Thuộc hết. Trên điện thoại thẻ xếp một cột.",
+      "sides": [
+        { "key": "old", "name": "Laptop 1440", "file": "outside-1440.jpg", "scale": 2 },
+        { "key": "new", "name": "Điện thoại 390", "file": "outside-390.jpg", "scale": 2 } ] },
+    { "id": "source", "group": "Trang mới", "label": "Danh sách một nguồn",
+      "note": "Mục cũ trước, mới sau. Bấm loa để nghe, bấm dòng để mở mục.",
+      "sides": [
+        { "key": "old", "name": "Laptop 1440", "file": "source-1440.jpg", "scale": 2 },
+        { "key": "new", "name": "Điện thoại 390", "file": "source-390.jpg", "scale": 2 } ] },
+    { "id": "board", "group": "Bảng cấp", "label": "Ô Ngoài JLPT trên bảng cấp",
+      "note": "Dòng Mục ngoài JLPT giờ là link (có mũi tên) mở trang mới.",
+      "sides": [
+        { "key": "old", "name": "Laptop 1440", "file": "board-1440.jpg", "scale": 2 },
+        { "key": "new", "name": "Điện thoại 390", "file": "board-390.jpg", "scale": 2 } ] }
+  ] }

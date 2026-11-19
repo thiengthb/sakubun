@@ -154,8 +154,7 @@ function OutsideCard({ outside, groups }: { outside: number; groups: number }) {
         Mục bạn tự thêm, nhờ Claude soạn hoặc lấy từ bộ người khác chia sẻ, và Nhóm của bạn.
       </p>
       <div className="mt-2 grid gap-1 md:grid-cols-3 md:gap-4">
-        {/* Its own list comes with U4e; until then "Mọi mục" in the header lists every item. */}
-        <OutsideLink label="Mục ngoài JLPT" count={outside} />
+        <OutsideLink href="/resources/outside" label="Mục ngoài JLPT" count={outside} />
         <OutsideLink href="/resources/all?tab=groups" label="Nhóm của bạn" count={groups} />
       </div>
     </section>
