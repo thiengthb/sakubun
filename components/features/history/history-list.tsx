@@ -156,12 +156,7 @@ export function HistoryList({
   return (
     // With furigana on, the readings in Lịch sử show without a hover (thien, 7.4).
     // While a turn is open on a laptop the list makes room for the panel, so no row hides under it.
-    <div
-      className={cn(
-        'space-y-6',
-        openId && 'lg:pr-108',
-      )}
-    >
+    <div className={cn('space-y-6', openId && 'lg:pr-108')}>
       <SearchToolbar
         search={
           <SearchInput

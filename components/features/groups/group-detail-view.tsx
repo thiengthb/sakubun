@@ -1,7 +1,7 @@
 'use client';
 
 import { Layers, Target } from 'lucide-react';
-import { ParentCrumbs } from '@/components/layout/app-breadcrumbs';
+import { KhoTrail } from '@/components/layout/kho-trail';
 import { PageShell } from '@/components/layout/page-shell';
 import { GROUP_TABS } from '@/components/layout/page-heads';
 import { EmptyState } from '@/components/common/empty-state';
@@ -46,7 +46,7 @@ export function GroupDetailView({
     <Tabs value={tab} onValueChange={setTab}>
       <PageShell
         template="list"
-        breadcrumb={<ParentCrumbs section="groups" self />}
+        breadcrumb={<KhoTrail place={{ way: 'groups' }} />}
         title={group.name}
         meta={
           // thien, Nhóm round 1: the kind is a chip, first; then the size, then the note.

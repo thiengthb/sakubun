@@ -1,0 +1,148 @@
+{
+  "id": "sakubun-kn1-r2",
+  "title": "Duyệt KN1, vòng 2: bỏ logo, nút Trước và Sau",
+  "intro": "Vòng 2, chỉ các màn thien đánh Cần sửa ở vòng 1. Trên điện thoại, màn nào có lối quay lại thì bỏ logo của app, lối quay lại đứng đầu trang (màn đầu như Hôm nay, Kho vẫn giữ logo). Trang một mục: nút quay lại phẳng, không viền. Màn chặng: hai nút chỉ còn \"Trước\" và \"Sau\". Màn \"Một nguồn ngoài JLPT · 1440\" vòng 1 không có ghi chú nên chưa đổi gì: thien ghi giúp chỗ cần sửa.",
+  "scenarios": ["Mục có cấp JLPT", "Mục tự thêm ngoài JLPT", "Kanji", "Kho chung"],
+  "items": [
+    {
+      "id": "set-1440",
+      "group": "Laptop",
+      "label": "Một chặng (N5 · Chặng 1) · 1440",
+      "note": "Nút \"Chặng trước\" và \"Chặng sau\" thành \"Trước\" và \"Sau\" (trình đọc màn hình vẫn đọc đủ \"Chặng trước\", \"Chặng sau\").",
+      "sides": [
+        {
+          "key": "old",
+          "name": "Trước (main)",
+          "file": "set-1440__old.jpg",
+          "scale": 1
+        },
+        {
+          "key": "new",
+          "name": "Sau (KN1)",
+          "file": "set-1440__new.jpg",
+          "scale": 1
+        }
+      ]
+    },
+    {
+      "id": "set-390",
+      "group": "Điện thoại",
+      "label": "Một chặng (N5 · Chặng 1) · 390",
+      "note": "Bỏ logo, lối \"‹ N5 · Từ vựng\" đứng đầu; nút Trước, Sau.",
+      "sides": [
+        {
+          "key": "old",
+          "name": "Trước (main)",
+          "file": "set-390__old.jpg",
+          "scale": 1
+        },
+        {
+          "key": "new",
+          "name": "Sau (KN1)",
+          "file": "set-390__new.jpg",
+          "scale": 1
+        }
+      ]
+    },
+    {
+      "id": "outside-1440",
+      "group": "Laptop",
+      "label": "Một nguồn ngoài JLPT (Tự viết) · 1440",
+      "note": "Chưa đổi gì: vòng 1 đánh Cần sửa nhưng không có ghi chú. thien ghim comment chỗ cần sửa giúp mình.",
+      "sides": [
+        {
+          "key": "old",
+          "name": "Trước (main)",
+          "file": "outside-1440__old.jpg",
+          "scale": 1
+        },
+        {
+          "key": "new",
+          "name": "Sau (KN1)",
+          "file": "outside-1440__new.jpg",
+          "scale": 1
+        }
+      ]
+    },
+    {
+      "id": "outside-390",
+      "group": "Điện thoại",
+      "label": "Một nguồn ngoài JLPT (Tự viết) · 390",
+      "note": "Bỏ logo khi có lối quay lại.",
+      "sides": [
+        {
+          "key": "old",
+          "name": "Trước (main)",
+          "file": "outside-390__old.jpg",
+          "scale": 1
+        },
+        {
+          "key": "new",
+          "name": "Sau (KN1)",
+          "file": "outside-390__new.jpg",
+          "scale": 1
+        }
+      ]
+    },
+    {
+      "id": "outside-item-390",
+      "group": "Điện thoại",
+      "label": "Một mục ngoài JLPT (積読, tự thêm) · 390",
+      "note": "Bỏ logo khi có lối quay lại.",
+      "sides": [
+        {
+          "key": "old",
+          "name": "Trước (main)",
+          "file": "outside-item-390__old.jpg",
+          "scale": 1
+        },
+        {
+          "key": "new",
+          "name": "Sau (KN1)",
+          "file": "outside-item-390__new.jpg",
+          "scale": 1
+        }
+      ]
+    },
+    {
+      "id": "kanji-390",
+      "group": "Điện thoại",
+      "label": "Một chữ kanji (飲) · 390",
+      "note": "Bỏ logo khi có lối quay lại.",
+      "sides": [
+        {
+          "key": "old",
+          "name": "Trước (main)",
+          "file": "kanji-390__old.jpg",
+          "scale": 1
+        },
+        {
+          "key": "new",
+          "name": "Sau (KN1)",
+          "file": "kanji-390__new.jpg",
+          "scale": 1
+        }
+      ]
+    },
+    {
+      "id": "library-item-390",
+      "group": "Điện thoại",
+      "label": "Một mục của Kho chung · 390",
+      "note": "Bỏ logo khi có lối quay lại.",
+      "sides": [
+        {
+          "key": "old",
+          "name": "Trước (main)",
+          "file": "library-item-390__old.jpg",
+          "scale": 1
+        },
+        {
+          "key": "new",
+          "name": "Sau (KN1)",
+          "file": "library-item-390__new.jpg",
+          "scale": 1
+        }
+      ]
+    }
+  ]
+}

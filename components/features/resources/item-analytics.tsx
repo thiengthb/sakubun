@@ -13,7 +13,8 @@ import {
   Target,
   TrendingDown,
 } from 'lucide-react';
-import { ParentCrumbs } from '@/components/layout/app-breadcrumbs';
+import { KhoTrail } from '@/components/layout/kho-trail';
+import type { KhoPlace } from '@/lib/library/kho-trail';
 import { PageTabs } from '@/components/common/page-tabs';
 import { itemTabs } from '@/components/layout/page-heads';
 import { PageShell } from '@/components/layout/page-shell';
@@ -79,6 +80,7 @@ function Fact({
 
 export function ItemAnalytics({
   stats,
+  place,
   groupsSlot,
   shareSlot,
   voiceSpeaker,
@@ -86,6 +88,8 @@ export function ItemAnalytics({
   showFurigana = false,
 }: {
   stats: ItemStats;
+  /** Where the item hangs in Kho, for its trail (KN1). */
+  place: KhoPlace;
   groupsSlot?: ReactNode;
   /** "Chia sẻ" to the shared library, the last header action (phase 8, L3). */
   shareSlot?: ReactNode;
@@ -125,7 +129,7 @@ export function ItemAnalytics({
     <Tabs value={tab} onValueChange={setTab}>
       <PageShell
         template="detail"
-        breadcrumb={<ParentCrumbs section={stats.kind} self />}
+        breadcrumb={<KhoTrail place={place} />}
         title={
           <SpokenLine
             text={stats.expression}

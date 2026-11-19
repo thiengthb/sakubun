@@ -1,9 +1,9 @@
 import { FormCardSkeleton, PageSkeleton } from '@/components/layout/page-skeleton';
-import { ParentCrumbs } from '@/components/layout/app-breadcrumbs';
+import { KhoTrail } from '@/components/layout/kho-trail';
 
 export default function Loading() {
   return (
-    <PageSkeleton template="form" trail={<ParentCrumbs section="groups" self />} title="Sửa nhóm">
+    <PageSkeleton template="form" trail={<KhoTrail place={{ way: 'groups' }} />} title="Sửa nhóm">
       <FormCardSkeleton fields={3} />
     </PageSkeleton>
   );

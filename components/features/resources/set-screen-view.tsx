@@ -1,12 +1,10 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { PageShell } from '@/components/layout/page-shell';
-import { ParentCrumbs } from '@/components/layout/app-breadcrumbs';
+import { KhoTrail } from '@/components/layout/kho-trail';
 import { Button, ButtonLink, buttonVariants } from '@/components/ui/button';
 import { setAction, STATE_LABEL, type LevelContext } from '@/lib/library/level-screen';
 import { WORD_STATES, type LevelSet } from '@/lib/library/level-sets';
-import { cellHref } from '@/lib/library/level-tally';
 import { firstOpenWord, setHref, setMeta, setNeighbours, wordCard } from '@/lib/library/set-screen';
-import { levelTitle } from './level-sets-view';
 import { WordMap } from './word-map';
 import { MARK } from './word-marks';
 import { TakeLevelTrigger } from './take-buttons';
@@ -34,13 +32,7 @@ export function SetScreenView({
   return (
     <PageShell
       template="list"
-      breadcrumb={
-        <ParentCrumbs
-          section="resources"
-          self
-          record={{ label: levelTitle(ctx), href: cellHref(ctx.level, ctx.kind) }}
-        />
-      }
+      breadcrumb={<KhoTrail place={{ way: 'levels', level: ctx.level, kind: ctx.kind }} />}
       title={`Chặng ${set.number}`}
       meta={
         <>
@@ -56,7 +48,7 @@ export function SetScreenView({
           <Neighbour to={prev} ctx={ctx} side="prev" />
           <Neighbour to={next} ctx={ctx} side="next" />
           {action?.take ? (
-            <TakeLevelTrigger ctx={ctx} scope={action.take} className={buttonVariants()}>
+            <TakeLevelTrigger ctx={ctx} scope={action.take} className={cn(buttonVariants())}>
               {action.label}
             </TakeLevelTrigger>
           ) : (
@@ -100,22 +92,25 @@ function Neighbour({
     side === 'prev' ? (
       <>
         <ChevronLeft aria-hidden />
-        Chặng trước
+        Trước
       </>
     ) : (
       <>
-        Chặng sau
+        Sau
         <ChevronRight aria-hidden />
       </>
     );
+  // The screen is a set, so "Trước" and "Sau" say enough (thien, KN1 review); a screen reader
+  // still hears which way.
+  const label = side === 'prev' ? 'Chặng trước' : 'Chặng sau';
   if (to === null)
     return (
-      <Button variant="outline" disabled>
+      <Button variant="outline" disabled aria-label={label}>
         {body}
       </Button>
     );
   return (
-    <ButtonLink href={setHref(ctx, to)} variant="outline">
+    <ButtonLink href={setHref(ctx, to)} variant="outline" aria-label={label}>
       {body}
     </ButtonLink>
   );

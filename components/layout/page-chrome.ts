@@ -5,7 +5,7 @@
 // Laptop: a nested page's parent trail is a small line above the title. A top page draws no empty
 // line for it: its title sits level with the sidebar's logo, and only a nested page's title moves
 // down by the trail (thien, Ôn nhanh round 2: 24px of empty space on every top page). Phone: the menu logo, the title block and the
-// actions share one 36px row; the title block is two tight lines (trail over title on a nested
+// actions share one 36px row (a nested page with a way back drops the logo, thien KN1 review 19/11); the title block is two tight lines (trail over title on a nested
 // page, title over meta on a top page).
 export const PAGE_CHROME = {
   // A flex column, not space-y: a tab's hidden panels after the open one would each keep a margin.
@@ -15,10 +15,17 @@ export const PAGE_CHROME = {
   trail: 'flex h-4 min-w-0 items-center max-md:hidden',
   /** Laptop: 8px from the trail to the title and from the title to the meta (thien, Nhóm round 1). */
   stack: 'space-y-1 md:space-y-2',
-  row: 'flex min-h-9 min-w-0 items-center gap-3 md:min-h-7',
+  row: 'group/row flex min-h-9 min-w-0 items-center gap-3 md:min-h-7',
+  /** Phone only: the logo, which steps aside when the trail is a way back (thien, KN1 review). */
+  phoneLogo: 'flex shrink-0 items-center group-has-[[data-back]]/row:hidden md:hidden',
   block: 'min-w-0 flex-1',
-  /** Phone only: the trail inside the title block, above the title. */
-  phoneTrail: 'mb-1 flex h-4 min-w-0 items-center md:hidden',
+  /** Phone only: the trail inside the title block, above the title; not when it is a way back. */
+  phoneTrail: 'mb-1 flex h-4 min-w-0 items-center has-[[data-back]]:hidden md:hidden',
+  /**
+   * Phone only: a way back gets a 36px row of its own above the title, the same flat back as the
+   * detail header's (thien, KN1 review round 2: the small line was hard to see).
+   */
+  phoneBack: 'hidden h-9 min-w-0 items-center max-md:has-[[data-back]]:flex',
   title: 'text-title break-words',
   meta: 'text-xs leading-4 text-muted-foreground md:mt-2',
   /** Phone, nested page: the trail holds the block's small line, so the meta drops below the row. */
@@ -42,7 +49,9 @@ export const DETAIL_CHROME = {
   header: 'space-y-4 md:space-y-6',
   head: 'space-y-3 md:space-y-4',
   /** Phone only: logo, trail, page icons. */
-  phoneTop: 'flex h-9 min-w-0 items-center gap-3 md:hidden',
+  phoneTop: 'group/top flex h-9 min-w-0 items-center gap-3 md:hidden',
+  // With a way back in the row the logo steps aside: the back is the row's one thing (thien, KN1).
+  phoneLogo: 'flex group-has-[[data-back]]/top:hidden',
   phoneTrail: 'flex min-w-0 flex-1 items-center',
   titleRow: 'flex items-start gap-4',
   titleBlock: 'min-w-0 flex-1 space-y-2 md:space-y-3',

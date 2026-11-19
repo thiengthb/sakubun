@@ -99,8 +99,11 @@ export function PageShell({
         <header className={PAGE_CHROME.header}>
           <div className={PAGE_CHROME.stack}>
             {breadcrumb && <div className={PAGE_CHROME.trail}>{breadcrumb}</div>}
-            <div className={PAGE_CHROME.row}>
-              <MobileTopBar />
+            {breadcrumb && <div className={PAGE_CHROME.phoneBack}>{breadcrumb}</div>}
+            <div data-slot="header-row" className={PAGE_CHROME.row}>
+              <div className={PAGE_CHROME.phoneLogo}>
+                <MobileTopBar />
+              </div>
               <div className={PAGE_CHROME.block}>
                 {breadcrumb && <div className={PAGE_CHROME.phoneTrail}>{breadcrumb}</div>}
                 <h1 className={PAGE_CHROME.title}>{title}</h1>

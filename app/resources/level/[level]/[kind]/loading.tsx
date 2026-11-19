@@ -1,4 +1,4 @@
-import { ParentCrumbs } from '@/components/layout/app-breadcrumbs';
+import { KhoTrail } from '@/components/layout/kho-trail';
 import { LeadPanel } from '@/components/common/lead-panel';
 import {
   CardsSkeleton,
@@ -14,7 +14,7 @@ export default function Loading() {
   return (
     <PageSkeleton
       template="list"
-      trail={<ParentCrumbs section="resources" self />}
+      trail={<KhoTrail place={{ way: 'levels' }} />}
       title={<SkeletonText text="N5 · Từ vựng" />}
       meta={<Skeleton className="h-3 w-48" />}
       tabs={<PageTabsSkeleton set="level" />}

@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { Download, LogIn, MessagesSquare, UserRound } from 'lucide-react';
-import { ParentCrumbs } from '@/components/layout/app-breadcrumbs';
+import { KhoTrail } from '@/components/layout/kho-trail';
 import { PageShell } from '@/components/layout/page-shell';
 import { Button, ButtonLink } from '@/components/ui/button';
 import { ExpandingIconButton } from '@/components/common/expanding-icon-button';
@@ -53,7 +53,7 @@ export function LibraryScriptView({
   return (
     <PageShell
       template="list"
-      breadcrumb={<ParentCrumbs section="library" self />}
+      breadcrumb={<KhoTrail place={{ way: 'library' }} />}
       title={script.title}
       meta={
         <span className="flex flex-wrap items-center gap-x-2 gap-y-1">

@@ -22,16 +22,8 @@ export async function loadLevelSets(
   now: Date = new Date(),
   library: LibraryClient = prisma,
 ): Promise<LevelSets> {
-  const [entries, order, items] = await Promise.all([
-    library.libraryEntry.findMany({
-      where: { origin: OPENJLPT_ORIGIN, type: kind, level, status: PUBLIC },
-      orderBy: [{ expression: 'asc' }, { id: 'asc' }],
-      select: { id: true, expression: true, reading: true, hanviet: true, meaningVi: true },
-    }),
-    library.libraryGroupMember.findMany({
-      where: { group: { sourceKey: openJlptGroupKey(level, kind) } },
-      select: { itemEntryId: true, position: true },
-    }),
+  const [ordered, items] = await Promise.all([
+    loadLevelOrder(level, kind, library),
     db.item.findMany({
       where: { kind },
       select: {
@@ -42,12 +34,6 @@ export async function loadLevelSets(
       },
     }),
   ]);
-  const position = new Map(order.map((m) => [m.itemEntryId, m.position]));
-  const rank = (id: string) => position.get(id) ?? Number.MAX_SAFE_INTEGER;
-  const ordered = entries
-    .flatMap(({ id, expression, ...rest }) => (expression ? [{ id, expression, ...rest }] : []))
-    // Array.prototype.sort is stable, so entries outside the group keep their expression order.
-    .sort((a, b) => rank(a.id) - rank(b.id));
   return levelSets(
     ordered,
     items.map((i) => ({
@@ -59,5 +45,32 @@ export async function loadLevelSets(
       lapses: i.srs?.lapses ?? 0,
     })),
     now,
+  );
+}
+
+/** A level's listed entries of one kind in the order its screen cuts them into sets. */
+export async function loadLevelOrder(
+  level: string,
+  kind: ItemType,
+  library: LibraryClient = prisma,
+) {
+  const [entries, order] = await Promise.all([
+    library.libraryEntry.findMany({
+      where: { origin: OPENJLPT_ORIGIN, type: kind, level, status: PUBLIC },
+      orderBy: [{ expression: 'asc' }, { id: 'asc' }],
+      select: { id: true, expression: true, reading: true, hanviet: true, meaningVi: true },
+    }),
+    library.libraryGroupMember.findMany({
+      where: { group: { sourceKey: openJlptGroupKey(level, kind) } },
+      select: { itemEntryId: true, position: true },
+    }),
+  ]);
+  const position = new Map(order.map((m) => [m.itemEntryId, m.position]));
+  const rank = (id: string) => position.get(id) ?? Number.MAX_SAFE_INTEGER;
+  return (
+    entries
+      .flatMap(({ id, expression, ...rest }) => (expression ? [{ id, expression, ...rest }] : []))
+      // Array.prototype.sort is stable, so entries outside the group keep their expression order.
+      .sort((a, b) => rank(a.id) - rank(b.id))
   );
 }

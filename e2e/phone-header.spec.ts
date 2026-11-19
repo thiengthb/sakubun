@@ -6,7 +6,8 @@ import { E2E_DB_FILE, E2E_EMAIL, E2E_LOGIN, E2E_OWNER, seedE2eAccount } from './
 // docs/ui-standard.md › Đầu trang: on a phone the menu logo, the title block and the page's actions
 // share ONE 36px row. Each step-6 page PR adds its page here. A page with the detail header (a lot
 // to say about one thing) is the exception: its row holds the logo, the trail and the star, and the
-// title gets a line of its own under it (thien, item detail round 2).
+// title gets a line of its own under it (thien, item detail round 2). When the trail is a way back
+// (KN1), the back takes the logo's place: no logo beside it (thien, KN1 review 19/11).
 const TEMPLATE_PAGES = [
   '/',
   '/settings',
@@ -40,7 +41,7 @@ async function login(page: Page) {
   await page.waitForURL((u) => !u.pathname.startsWith('/login'), { timeout: 30_000 });
 }
 
-test('detail headers keep logo, trail and star on one row, the title under it, at 390px', async ({
+test('detail headers keep the way back (or logo), trail and star on one row, the title under it, at 390px', async ({
   page,
 }) => {
   test.setTimeout(60_000);
@@ -50,11 +51,12 @@ test('detail headers keep logo, trail and star on one row, the title under it, a
     await page.goto(path, { waitUntil: 'networkidle' });
     const m = await page.evaluate(() => {
       const shell = document.querySelector('[data-template]');
-      const logo = shell?.querySelector('header [data-app-logo]');
-      const rowEl = logo?.parentElement?.parentElement;
+      const rowEl = shell?.querySelector('header [data-slot="phone-top"]');
+      const logo = rowEl?.querySelector('[data-app-logo]');
       const h1 = shell?.querySelector('header h1');
       // The middle child holds the trail; it must render something.
       const trail = rowEl?.children[1]?.firstElementChild;
+      const back = rowEl?.querySelector('nav[data-back] > :first-child');
       const icons = rowEl?.lastElementChild;
       if (!logo || !rowEl || !h1) return null;
       const box = (el: Element | null | undefined) => {
@@ -65,6 +67,7 @@ test('detail headers keep logo, trail and star on one row, the title under it, a
       return {
         row: box(rowEl)!,
         logo: box(logo)!,
+        back: box(back),
         h1: box(h1)!,
         trail: box(trail),
         icons: box(icons),
@@ -74,10 +77,13 @@ test('detail headers keep logo, trail and star on one row, the title under it, a
       wrong.push(`${path}: no detail header (data-template, menu logo, h1)`);
       continue;
     }
-    if (m.logo.h !== 36) wrong.push(`${path}: logo is ${m.logo.h}px, not 36px`);
+    if (m.back) {
+      if (m.logo.h !== 0) wrong.push(`${path}: a logo beside the way back`);
+      if (m.back.h !== 36) wrong.push(`${path}: the way back is ${m.back.h}px, not 36px`);
+    } else if (m.logo.h !== 36) wrong.push(`${path}: logo is ${m.logo.h}px, not 36px`);
     if (m.row.h !== 36) wrong.push(`${path}: top row is ${m.row.h}px, not 36px`);
     if (!m.trail) wrong.push(`${path}: no trail in the top row`);
-    for (const el of [m.trail, m.icons]) {
+    for (const el of [m.trail, m.back, m.icons]) {
       if (el && (el.top < m.row.top || el.bottom > m.row.bottom))
         wrong.push(
           `${path}: an element at ${el.top}-${el.bottom} leaves the row ${m.row.top}-${m.row.bottom}`,
@@ -88,7 +94,9 @@ test('detail headers keep logo, trail and star on one row, the title under it, a
   expect(wrong, wrong.join('\n')).toEqual([]);
 });
 
-test('template pages keep logo, title and actions on one row at 390px', async ({ page }) => {
+test('template pages keep logo (or the way back), title and actions on one row at 390px', async ({
+  page,
+}) => {
   test.setTimeout(120_000);
   await login(page);
 
@@ -99,8 +107,9 @@ test('template pages keep logo, title and actions on one row at 390px', async ({
       const shell = document.querySelector('[data-template]');
       const logo = shell?.querySelector('header [data-app-logo]');
       const h1 = shell?.querySelector('header h1');
-      const rowEl = logo?.parentElement?.parentElement;
+      const rowEl = shell?.querySelector('header [data-slot="header-row"]');
       if (!logo || !h1 || !rowEl) return null;
+      const back = Boolean(rowEl.querySelector('nav[data-back]'));
       const mid = (el: Element) => {
         const r = el.getBoundingClientRect();
         return {
@@ -113,13 +122,17 @@ test('template pages keep logo, title and actions on one row at 390px', async ({
       const actions = [...rowEl.querySelectorAll(':scope > div:not(:first-child) button')]
         .filter((el) => el.getBoundingClientRect().height > 0)
         .map(mid);
-      return { row: mid(rowEl), logo: mid(logo), h1: mid(h1), actions };
+      return { row: mid(rowEl), logo: mid(logo), h1: mid(h1), actions, back };
     });
     if (!row) {
       wrong.push(`${path}: no template header (data-template, menu logo, h1)`);
       continue;
     }
-    if (row.logo.height !== 36) wrong.push(`${path}: logo is ${row.logo.height}px, not 36px`);
+    // A nested page with a way back has no logo beside it (thien, KN1 review 19/11).
+    if (row.back) {
+      if (row.logo.height !== 0) wrong.push(`${path}: a logo beside the way back`);
+    } else if (row.logo.height !== 36)
+      wrong.push(`${path}: logo is ${row.logo.height}px, not 36px`);
     if (row.row.height > 44) wrong.push(`${path}: header row is ${row.row.height}px, not one row`);
     for (const el of [row.h1, ...row.actions]) {
       if (el.top < row.row.top || el.bottom > row.row.bottom)

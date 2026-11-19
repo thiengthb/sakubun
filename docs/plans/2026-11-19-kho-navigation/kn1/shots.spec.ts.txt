@@ -1,0 +1,61 @@
+// Scratch: KN1 review shots, before (main) and after (branch). Copy into e2e/ to run.
+import { test, type Page } from '@playwright/test';
+import { E2E_DB_FILE, E2E_EMAIL, E2E_LOGIN, E2E_OWNER, seedE2eAccount } from './fixtures';
+
+const OUT = process.env.SHOT_DIR!;
+const SIDE = process.env.SHOT_SIDE!; // old | new
+const ID = 'kn1shot-nomu';
+const OUT_ID = 'kn1shot-manual';
+
+test.beforeAll(async () => {
+  await seedE2eAccount();
+  const { default: Database } = await import('better-sqlite3');
+  const db = new Database(E2E_DB_FILE);
+  const now = new Date().toISOString().replace('Z', '+00:00');
+  const ins = db.prepare(
+    `INSERT OR REPLACE INTO Item (userId, id, kind, expression, reading, hanviet, meaningVi, level, notes, source,
+                       suspended, starred, createdAt)
+     VALUES (${E2E_OWNER}, ?, 'VOCAB', ?, ?, ?, ?, ?, '', ?, 0, 0, ?)`,
+  );
+  ins.run(ID, '飲む', 'のむ', 'ẩm', 'uống', 'N5', 'OPENJLPT', now);
+  ins.run(OUT_ID, '積読', 'つんどく', 'tích độc', 'mua sách về để đó không đọc', 'N3', 'MANUAL', now);
+  db.close();
+});
+
+async function signIn(page: Page) {
+  await page.goto('/login');
+  await page.getByLabel('Email').fill(E2E_EMAIL);
+  await page.getByLabel('Mật khẩu').fill(E2E_LOGIN);
+  await page.getByRole('button', { name: 'Đăng nhập' }).click();
+  await page.waitForURL((u) => !u.pathname.startsWith('/login'), { timeout: 30_000 });
+}
+
+async function shoot(page: Page, name: string, path: string | (() => Promise<void>)) {
+  for (const [w, h] of [
+    [1440, 900],
+    [390, 844],
+  ]) {
+    await page.setViewportSize({ width: w, height: h });
+    if (typeof path === 'string') await page.goto(path, { waitUntil: 'load' });
+    else await path();
+    await page.locator('h1').first().waitFor({ timeout: 30_000 });
+    await page.waitForTimeout(800);
+    await page.screenshot({ path: `${OUT}/${name}-${w}__${SIDE}@2x.png` });
+  }
+}
+
+test.use({ deviceScaleFactor: 2 });
+test.setTimeout(240_000);
+
+test('KN1 shots', async ({ page }) => {
+  await signIn(page);
+  await page.goto('/resources/level/N5/vocab', { waitUntil: 'load' });
+  await shoot(page, 'item', `/resources/${ID}`);
+  await shoot(page, 'set', '/resources/level/N5/vocab/1');
+  await shoot(page, 'outside', '/resources/outside/manual');
+  await shoot(page, 'outside-item', `/resources/${OUT_ID}`);
+  await shoot(page, 'kanji', `/resources/kanji/${encodeURIComponent('飲')}`);
+  await page.goto('/library?tab=items', { waitUntil: 'load' });
+  const href = await page.locator('a[href^="/library/item/"]').first().getAttribute('href');
+  await shoot(page, 'library-item', href!);
+});

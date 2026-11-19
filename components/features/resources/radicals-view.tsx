@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ParentCrumbs } from '@/components/layout/app-breadcrumbs';
+import { KhoTrail } from '@/components/layout/kho-trail';
 import { PageShell } from '@/components/layout/page-shell';
 import { SectionHeading } from '@/components/common/section-heading';
 import { LIST_CARD } from '@/components/common/list-card';
@@ -18,7 +18,7 @@ export function RadicalsView({ radicals }: { radicals: RadicalSummary[] }) {
   return (
     <PageShell
       template="list"
-      breadcrumb={<ParentCrumbs section="kanji" self />}
+      breadcrumb={<KhoTrail place={{ way: 'kanji' }} />}
       title="Bộ thủ"
       meta={`${radicals.length} bộ Khang Hy, xếp theo số nét`}
     >

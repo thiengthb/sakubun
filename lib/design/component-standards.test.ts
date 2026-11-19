@@ -92,6 +92,28 @@ describe('component standards', () => {
     ).toEqual([]);
   });
 
+  it('buttonVariants() is always passed through cn(), so a raised button is as tall as its row', () => {
+    // A raised button is 2px shorter than its size (h-8.5, with a 2px lip under it). The raw class
+    // string of buttonVariants() still holds the plain h-9 too, and CSS order lets h-9 win: the
+    // button stood 2px taller than the buttons beside it (thien, KN1 review 19/11, "đã gặp nhiều
+    // lần"). cn() merges the two and keeps the raised height.
+    const offenders: string[] = [];
+    for (const root of ['app', 'components']) {
+      for (const file of sources(root)) {
+        if (rel(file) === 'components/ui/button.tsx') continue;
+        readFileSync(file, 'utf8')
+          .split('\n')
+          .forEach((line, i) => {
+            for (const m of line.matchAll(/(cn\()?buttonVariants\(/g))
+              if (!m[1]) offenders.push(`${rel(file)}:${i + 1}  ${line.trim()}`);
+          });
+      }
+    }
+    expect(offenders, `Wrap it: cn(buttonVariants(...), ...):\n${offenders.join('\n')}`).toEqual(
+      [],
+    );
+  });
+
   it('presentational components live in components/, not inside a route file', () => {
     // app/ files are routes. A styled, reusable block defined inside one is invisible to every
     // other page — app/page.tsx carried its own SectionHeader for exactly this reason.

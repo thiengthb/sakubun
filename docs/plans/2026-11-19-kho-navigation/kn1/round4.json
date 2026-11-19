@@ -1,0 +1,68 @@
+{
+  "id": "sakubun-kn1-r4",
+  "title": "Duyệt KN1, vòng 4: nút cam và nút trắng cao như nhau",
+  "intro": "Vòng 4, về chiều cao các nút. Ở vòng 3 khung các nút đã cao bằng nhau (mình đo từng điểm ảnh), nhưng nút cam trông vẫn cao hơn: nút trắng có viền xám 2px bao quanh mặt trắng, còn nút cam tô kín cả phần viền nên mặt cam to hơn mặt trắng 2px mỗi phía. Giờ nút cam có viền 2px màu cam đậm, giống cách nút trắng có viền xám: mặt hai loại nút cao bằng nhau. Đổi này áp cho mọi nút cam (và nút đỏ xoá) trong app.",
+  "scenarios": ["Mục có cấp JLPT", "Mục tự thêm ngoài JLPT", "Kanji", "Kho chung"],
+  "items": [
+    {
+      "id": "zoom",
+      "group": "Phóng to",
+      "label": "Nút Trước, Sau, Lấy 20 phóng to",
+      "note": "Trên: laptop. Dưới: điện thoại. Trái là main, phải là bản mới.",
+      "sides": [
+        {
+          "key": "old",
+          "name": "Trước (main)",
+          "file": "zoom__old.jpg",
+          "scale": 1
+        },
+        {
+          "key": "new",
+          "name": "Sau (KN1)",
+          "file": "zoom__new.jpg",
+          "scale": 1
+        }
+      ]
+    },
+    {
+      "id": "set-1440",
+      "group": "Laptop",
+      "label": "Một chặng (N5 · Chặng 1) · 1440",
+      "note": "Nút cam có viền cam đậm, mặt cao bằng nút trắng. Panel bên phải (Xem ở Kho chung, Học) cũng vậy.",
+      "sides": [
+        {
+          "key": "old",
+          "name": "Trước (main)",
+          "file": "set-1440__old.jpg",
+          "scale": 1
+        },
+        {
+          "key": "new",
+          "name": "Sau (KN1)",
+          "file": "set-1440__new.jpg",
+          "scale": 1
+        }
+      ]
+    },
+    {
+      "id": "set-390",
+      "group": "Điện thoại",
+      "label": "Một chặng (N5 · Chặng 1) · 390",
+      "note": "Nút cam có viền cam đậm, mặt cao bằng nút trắng. Panel bên phải (Xem ở Kho chung, Học) cũng vậy.",
+      "sides": [
+        {
+          "key": "old",
+          "name": "Trước (main)",
+          "file": "set-390__old.jpg",
+          "scale": 1
+        },
+        {
+          "key": "new",
+          "name": "Sau (KN1)",
+          "file": "set-390__new.jpg",
+          "scale": 1
+        }
+      ]
+    }
+  ]
+}

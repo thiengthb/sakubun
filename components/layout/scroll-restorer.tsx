@@ -37,8 +37,7 @@ export function ScrollRestorer() {
         saveTimer = 0;
         try {
           sessionStorage.setItem(key, String(Math.round(window.scrollY)));
-        } catch {
-        }
+        } catch {}
       }, 150);
     };
     window.addEventListener('scroll', onScroll, { passive: true });

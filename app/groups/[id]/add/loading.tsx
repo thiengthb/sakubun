@@ -4,14 +4,19 @@ import {
   TableSkeleton,
   ToolbarSkeleton,
 } from '@/components/layout/page-skeleton';
-import { ParentCrumbs } from '@/components/layout/app-breadcrumbs';
+import { KhoTrail } from '@/components/layout/kho-trail';
 
 // The trail ends in the group's name, which only the loaded group knows.
 export default function Loading() {
   return (
     <PageSkeleton
       template="form"
-      trail={<ParentCrumbs section="groups" self record={{ label: 'Ôn thi N2', pending: true }} />}
+      trail={
+        <KhoTrail
+          place={{ way: 'groups' }}
+          extra={[{ label: 'Ôn thi N2', href: '', pending: true }]}
+        />
+      }
       title="Thêm mục"
       meta
     >

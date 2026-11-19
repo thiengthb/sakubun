@@ -8,6 +8,8 @@ import { getItemGroupPicker } from '@/lib/library/groups';
 import { itemShareStatus } from '@/lib/library/publish';
 import { getSettings } from '@/lib/library/practice';
 import { getUserDb } from '@/lib/auth/current-user';
+import { itemPlaceById } from '@/lib/app/item-place';
+import { ensureOpenJlptLibrary } from '@/lib/library/seed';
 import { furiganaInApp } from '@/lib/settings/schema';
 
 export const dynamic = 'force-dynamic';
@@ -15,19 +17,23 @@ export const dynamic = 'force-dynamic';
 export default async function ItemDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const db = await getUserDb();
-  const [stats, settings, picker, share] = await Promise.all([
+  // The item's place reads Kho chung's OpenJLPT entries, seeded on first use.
+  await ensureOpenJlptLibrary();
+  const [stats, settings, picker, share, place] = await Promise.all([
     getItemStats(db, id),
     getSettings(db),
     getItemGroupPicker(db, id),
     itemShareStatus(db, id),
+    itemPlaceById(db, id),
   ]);
-  if (!stats) notFound();
+  if (!stats || !place) notFound();
 
   return (
     <>
       <LiveRefresh />
       <ItemAnalytics
         stats={stats}
+        place={place}
         groupsSlot={
           picker && <ItemGroups itemId={id} member={picker.member} addable={picker.addable} />
         }

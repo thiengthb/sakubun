@@ -1,0 +1,248 @@
+{
+  "id": "sakubun-kn1-r1",
+  "title": "Duyệt KN1: đường dẫn Kho và nút quay lại",
+  "intro": "Bước 1 của phương án C. Mọi màn trong Kho ghi đúng chỗ của màn trong cây Kho (Kho › ngả › cấp › chặng), bấm vào đâu về đúng đó. Trên điện thoại, chữ nhỏ đầu trang thành lối quay lại về màn cha; trang một mục có nút \"‹ Chặng 24\" rõ ràng. Thanh bên xổ 5 ngả là KN2, trang chọn ngả trên điện thoại là KN3, chưa có ở vòng này.",
+  "scenarios": ["Mục có cấp JLPT", "Mục tự thêm ngoài JLPT", "Kanji", "Kho chung"],
+  "items": [
+    {
+      "id": "item-1440",
+      "group": "Laptop",
+      "label": "Một mục có cấp JLPT (飲む) · 1440",
+      "note": "Trước: \"Kho › Từ vựng\", bấm Từ vựng sang bảng Mọi mục. Sau: Kho › Theo cấp JLPT › N5 · Từ vựng › Chặng 24, đúng chặng chứa 飲む. Điện thoại: nút \"‹ Chặng 24\".",
+      "sides": [
+        {
+          "key": "old",
+          "name": "Trước (main)",
+          "file": "item-1440__old.jpg",
+          "scale": 1
+        },
+        {
+          "key": "new",
+          "name": "Sau (KN1)",
+          "file": "item-1440__new.jpg",
+          "scale": 1
+        }
+      ]
+    },
+    {
+      "id": "item-390",
+      "group": "Điện thoại",
+      "label": "Một mục có cấp JLPT (飲む) · 390",
+      "note": "Trước: \"Kho › Từ vựng\", bấm Từ vựng sang bảng Mọi mục. Sau: Kho › Theo cấp JLPT › N5 · Từ vựng › Chặng 24, đúng chặng chứa 飲む. Điện thoại: nút \"‹ Chặng 24\".",
+      "sides": [
+        {
+          "key": "old",
+          "name": "Trước (main)",
+          "file": "item-390__old.jpg",
+          "scale": 1
+        },
+        {
+          "key": "new",
+          "name": "Sau (KN1)",
+          "file": "item-390__new.jpg",
+          "scale": 1
+        }
+      ]
+    },
+    {
+      "id": "set-1440",
+      "group": "Laptop",
+      "label": "Một chặng (N5 · Chặng 1) · 1440",
+      "note": "Laptop thêm \"Theo cấp JLPT\" vào giữa. Điện thoại: chữ nhỏ thành lối \"‹ N5 · Từ vựng\".",
+      "sides": [
+        {
+          "key": "old",
+          "name": "Trước (main)",
+          "file": "set-1440__old.jpg",
+          "scale": 1
+        },
+        {
+          "key": "new",
+          "name": "Sau (KN1)",
+          "file": "set-1440__new.jpg",
+          "scale": 1
+        }
+      ]
+    },
+    {
+      "id": "set-390",
+      "group": "Điện thoại",
+      "label": "Một chặng (N5 · Chặng 1) · 390",
+      "note": "Laptop thêm \"Theo cấp JLPT\" vào giữa. Điện thoại: chữ nhỏ thành lối \"‹ N5 · Từ vựng\".",
+      "sides": [
+        {
+          "key": "old",
+          "name": "Trước (main)",
+          "file": "set-390__old.jpg",
+          "scale": 1
+        },
+        {
+          "key": "new",
+          "name": "Sau (KN1)",
+          "file": "set-390__new.jpg",
+          "scale": 1
+        }
+      ]
+    },
+    {
+      "id": "outside-1440",
+      "group": "Laptop",
+      "label": "Một nguồn ngoài JLPT (Tự viết) · 1440",
+      "note": "Đường dẫn ghi đủ Kho › Ngoài JLPT.",
+      "sides": [
+        {
+          "key": "old",
+          "name": "Trước (main)",
+          "file": "outside-1440__old.jpg",
+          "scale": 1
+        },
+        {
+          "key": "new",
+          "name": "Sau (KN1)",
+          "file": "outside-1440__new.jpg",
+          "scale": 1
+        }
+      ]
+    },
+    {
+      "id": "outside-390",
+      "group": "Điện thoại",
+      "label": "Một nguồn ngoài JLPT (Tự viết) · 390",
+      "note": "Đường dẫn ghi đủ Kho › Ngoài JLPT.",
+      "sides": [
+        {
+          "key": "old",
+          "name": "Trước (main)",
+          "file": "outside-390__old.jpg",
+          "scale": 1
+        },
+        {
+          "key": "new",
+          "name": "Sau (KN1)",
+          "file": "outside-390__new.jpg",
+          "scale": 1
+        }
+      ]
+    },
+    {
+      "id": "outside-item-1440",
+      "group": "Laptop",
+      "label": "Một mục ngoài JLPT (積読, tự thêm) · 1440",
+      "note": "Trước: Kho › Từ vựng. Sau: Kho › Ngoài JLPT › Tự viết, đúng nguồn của mục.",
+      "sides": [
+        {
+          "key": "old",
+          "name": "Trước (main)",
+          "file": "outside-item-1440__old.jpg",
+          "scale": 1
+        },
+        {
+          "key": "new",
+          "name": "Sau (KN1)",
+          "file": "outside-item-1440__new.jpg",
+          "scale": 1
+        }
+      ]
+    },
+    {
+      "id": "outside-item-390",
+      "group": "Điện thoại",
+      "label": "Một mục ngoài JLPT (積読, tự thêm) · 390",
+      "note": "Trước: Kho › Từ vựng. Sau: Kho › Ngoài JLPT › Tự viết, đúng nguồn của mục.",
+      "sides": [
+        {
+          "key": "old",
+          "name": "Trước (main)",
+          "file": "outside-item-390__old.jpg",
+          "scale": 1
+        },
+        {
+          "key": "new",
+          "name": "Sau (KN1)",
+          "file": "outside-item-390__new.jpg",
+          "scale": 1
+        }
+      ]
+    },
+    {
+      "id": "kanji-1440",
+      "group": "Laptop",
+      "label": "Một chữ kanji (飲) · 1440",
+      "note": "Trước: Kho › Kanji dẫn sang tab Kanji của Mọi mục. Sau vẫn vậy ở bước này; KN2 mới tách Kanji thành trang riêng.",
+      "sides": [
+        {
+          "key": "old",
+          "name": "Trước (main)",
+          "file": "kanji-1440__old.jpg",
+          "scale": 1
+        },
+        {
+          "key": "new",
+          "name": "Sau (KN1)",
+          "file": "kanji-1440__new.jpg",
+          "scale": 1
+        }
+      ]
+    },
+    {
+      "id": "kanji-390",
+      "group": "Điện thoại",
+      "label": "Một chữ kanji (飲) · 390",
+      "note": "Trước: Kho › Kanji dẫn sang tab Kanji của Mọi mục. Sau vẫn vậy ở bước này; KN2 mới tách Kanji thành trang riêng.",
+      "sides": [
+        {
+          "key": "old",
+          "name": "Trước (main)",
+          "file": "kanji-390__old.jpg",
+          "scale": 1
+        },
+        {
+          "key": "new",
+          "name": "Sau (KN1)",
+          "file": "kanji-390__new.jpg",
+          "scale": 1
+        }
+      ]
+    },
+    {
+      "id": "library-item-1440",
+      "group": "Laptop",
+      "label": "Một mục của Kho chung · 1440",
+      "note": "Trước chỉ có \"Kho chung\", không có lối về Kho. Sau: Kho › Kho chung.",
+      "sides": [
+        {
+          "key": "old",
+          "name": "Trước (main)",
+          "file": "library-item-1440__old.jpg",
+          "scale": 1
+        },
+        {
+          "key": "new",
+          "name": "Sau (KN1)",
+          "file": "library-item-1440__new.jpg",
+          "scale": 1
+        }
+      ]
+    },
+    {
+      "id": "library-item-390",
+      "group": "Điện thoại",
+      "label": "Một mục của Kho chung · 390",
+      "note": "Trước chỉ có \"Kho chung\", không có lối về Kho. Sau: Kho › Kho chung.",
+      "sides": [
+        {
+          "key": "old",
+          "name": "Trước (main)",
+          "file": "library-item-390__old.jpg",
+          "scale": 1
+        },
+        {
+          "key": "new",
+          "name": "Sau (KN1)",
+          "file": "library-item-390__new.jpg",
+          "scale": 1
+        }
+      ]
+    }
+  ]
+}

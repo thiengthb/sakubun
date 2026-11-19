@@ -4,7 +4,7 @@ import {
   SkeletonText,
   TabbedSkeleton,
 } from '@/components/layout/page-skeleton';
-import { ParentCrumbs } from '@/components/layout/app-breadcrumbs';
+import { KhoTrail } from '@/components/layout/kho-trail';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/core/utils';
 
@@ -25,7 +25,7 @@ export default function Loading() {
   return (
     <PageSkeleton
       template="detail"
-      trail={<ParentCrumbs section="grammar" self pending />}
+      trail={<KhoTrail place={{ way: 'pending' }} />}
       title={<SkeletonText text="〜ばかりに" />}
       facts={[
         { label: 'Cấp độ', value: 'N2' },

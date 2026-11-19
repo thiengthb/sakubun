@@ -1,0 +1,108 @@
+{
+  "id": "sakubun-kn1-r3",
+  "title": "Duyệt KN1, vòng 3: nút cùng chiều cao, lối quay lại rõ hơn",
+  "intro": "Vòng 3, chỉ các màn Cần sửa ở vòng 2. (1) Nút cùng hàng giờ cùng chiều cao: nút Lấy cao hơn 2px vì một chỗ ghép class sai; đã sửa và thêm test để lỗi này không quay lại ở bất kỳ màn nào. (2) Trên điện thoại, lối quay lại ở mọi màn giống hệt trang một mục thien đã duyệt: một hàng riêng cao 36px, chữ to hơn, có mũi tên. Màn \"Một nguồn ngoài JLPT · 1440\" không đổi so với main nên không đưa vào vòng này.",
+  "scenarios": ["Mục có cấp JLPT", "Mục tự thêm ngoài JLPT", "Kanji", "Kho chung"],
+  "items": [
+    {
+      "id": "set-1440",
+      "group": "Laptop",
+      "label": "Một chặng (N5 · Chặng 1) · 1440",
+      "note": "Trước, Sau, Lấy cùng chiều cao.",
+      "sides": [
+        {
+          "key": "old",
+          "name": "Trước (main)",
+          "file": "set-1440__old.jpg",
+          "scale": 1
+        },
+        {
+          "key": "new",
+          "name": "Sau (KN1)",
+          "file": "set-1440__new.jpg",
+          "scale": 1
+        }
+      ]
+    },
+    {
+      "id": "set-390",
+      "group": "Điện thoại",
+      "label": "Một chặng (N5 · Chặng 1) · 390",
+      "note": "Trước, Sau, Lấy cùng chiều cao. Lối \"‹ N5 · Từ vựng\" thành hàng riêng.",
+      "sides": [
+        {
+          "key": "old",
+          "name": "Trước (main)",
+          "file": "set-390__old.jpg",
+          "scale": 1
+        },
+        {
+          "key": "new",
+          "name": "Sau (KN1)",
+          "file": "set-390__new.jpg",
+          "scale": 1
+        }
+      ]
+    },
+    {
+      "id": "outside-390",
+      "group": "Điện thoại",
+      "label": "Một nguồn ngoài JLPT (Tự viết) · 390",
+      "note": "Lối quay lại thành hàng riêng 36px, chữ to, như trang một mục.",
+      "sides": [
+        {
+          "key": "old",
+          "name": "Trước (main)",
+          "file": "outside-390__old.jpg",
+          "scale": 1
+        },
+        {
+          "key": "new",
+          "name": "Sau (KN1)",
+          "file": "outside-390__new.jpg",
+          "scale": 1
+        }
+      ]
+    },
+    {
+      "id": "kanji-390",
+      "group": "Điện thoại",
+      "label": "Một chữ kanji (飲) · 390",
+      "note": "Lối quay lại thành hàng riêng 36px, chữ to, như trang một mục.",
+      "sides": [
+        {
+          "key": "old",
+          "name": "Trước (main)",
+          "file": "kanji-390__old.jpg",
+          "scale": 1
+        },
+        {
+          "key": "new",
+          "name": "Sau (KN1)",
+          "file": "kanji-390__new.jpg",
+          "scale": 1
+        }
+      ]
+    },
+    {
+      "id": "library-item-390",
+      "group": "Điện thoại",
+      "label": "Một mục của Kho chung · 390",
+      "note": "Lối quay lại thành hàng riêng 36px, chữ to, như trang một mục.",
+      "sides": [
+        {
+          "key": "old",
+          "name": "Trước (main)",
+          "file": "library-item-390__old.jpg",
+          "scale": 1
+        },
+        {
+          "key": "new",
+          "name": "Sau (KN1)",
+          "file": "library-item-390__new.jpg",
+          "scale": 1
+        }
+      ]
+    }
+  ]
+}

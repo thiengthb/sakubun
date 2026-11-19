@@ -85,8 +85,10 @@ export function PageSkeleton({
       <div className={cn(PAGE_CHROME.page, className)} data-template={template}>
         <div className={DETAIL_CHROME.header}>
           <div className={DETAIL_CHROME.head}>
-            <div className={DETAIL_CHROME.phoneTop}>
-              <Skeleton className="size-9 rounded-sm" />
+            <div data-slot="phone-top" className={DETAIL_CHROME.phoneTop}>
+              <div className={DETAIL_CHROME.phoneLogo}>
+                <Skeleton className="size-9 rounded-sm" />
+              </div>
               <div className={DETAIL_CHROME.phoneTrail}>{trail}</div>
               {pageIcons && <div className={PAGE_CHROME.pageIcons}>{pageIcons}</div>}
             </div>
@@ -136,8 +138,9 @@ export function PageSkeleton({
         <div className={PAGE_CHROME.header}>
           <div className={PAGE_CHROME.stack}>
             {trail && <div className={PAGE_CHROME.trail}>{trail}</div>}
-            <div className={PAGE_CHROME.row}>
-              <div className="flex shrink-0 items-center md:hidden">
+            {trail && <div className={PAGE_CHROME.phoneBack}>{trail}</div>}
+            <div data-slot="header-row" className={PAGE_CHROME.row}>
+              <div className={PAGE_CHROME.phoneLogo}>
                 <Skeleton className="size-9 rounded-sm" />
               </div>
               <div className={PAGE_CHROME.block}>
