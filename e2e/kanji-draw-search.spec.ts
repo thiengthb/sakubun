@@ -115,6 +115,14 @@ test("on a phone, the drawing keyboard takes the tab bar's place (390px)", async
   await draw(page, '社');
   await shot(page, 've-kanji-phone');
 
+  // The pen's touch area stops short of the box's clear button.
+  const clear = (await page.getByRole('button', { name: 'Xoá nội dung' }).boundingBox())!;
+  const penArea = await page.getByRole('button', { name: 'Vẽ chữ kanji' }).evaluate((el) => {
+    const r = el.getBoundingClientRect();
+    const after = getComputedStyle(el, '::after');
+    return r.right - parseFloat(after.right);
+  });
+  expect(penArea).toBeLessThanOrEqual(clear.x);
   // Bàn phím goes back to typing.
   await keyboard.getByRole('button', { name: 'Bàn phím' }).click();
   await expect(keyboard).toHaveCount(0);
