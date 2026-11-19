@@ -14,7 +14,7 @@ bảng nhỏ phải, giữ sidebar và thanh tab): U2a xong (#291, 14/11), U2b�
 | Kế hoạch                                                   | Đang ở checkpoint | Đã tick       |
 | ---------------------------------------------------------- | ----------------- | ------------- |
 | [UI v2](plans/2026-11-08-ui-v2.md)                         | U4 Kho của bạn    | U0–U3 / U0–U8 |
-| [Tìm bằng vẽ kanji](plans/2026-11-19-kanji-draw-search.md) | KD2 Khung vẽ      | 1 / 3         |
+| [Tìm bằng vẽ kanji](plans/2026-11-19-kanji-draw-search.md) | KD2 Khung vẽ      | 2 / 3         |
 
 ## Việc dở
 
@@ -22,11 +22,11 @@ bảng nhỏ phải, giữ sidebar và thanh tab): U2a xong (#291, 14/11), U2b�
 | ----------------------- | ------------- | ----- | ----------------------------------------- |
 | Đóng câu hỏi nghiên cứu | #289          | 13/11 | Chỉ tài liệu, chờ thien merge             |
 | Bản tóm tắt hai nick    | #296          | 13/11 | Tạm, của nick kia; đóng khi thien so xong |
-| KD2 Khung vẽ kanji      | (PR này)      | 19/11 | ảnh đã duyệt, chờ review và merge         |
+| KD2 Khung vẽ kanji      | #341 (merge)  | 19/11 | thien vẽ thử 20 chữ trên app thật         |
 
 ## Việc tiếp theo
 
-1. U4 Kho (hướng 2, gộp theo cấp JLPT, duyệt 15/11): U4b bảng cấp xong (#323); U4c theo bản gộp chặng thien duyệt 18/11, U4c1 xong (#325); U4c2 (màn cấp) xong (#331); U4c3 (màn chặng) xong (#332); U4c4a (tab Chặng | Bản đồ ô) xong (#333); U4c4b (Danh sách có ô tìm) xong (#334); U4d (lấy thêm tại chỗ) xong (#335); U4e1 (trang Ngoài JLPT) xong (#336); U4e2 (ngăn Thêm) xong (#337); U4f (ô tìm hai nguồn) xong (#338). Tiếp: tìm bằng vẽ kanji (thien xin 19/11), kế hoạch `plans/2026-11-19-kanji-draw-search.md`; U4g, U4h sau kỳ thi N2.
+1. U4 Kho (hướng 2, gộp theo cấp JLPT, duyệt 15/11): U4b bảng cấp xong (#323); U4c theo bản gộp chặng thien duyệt 18/11, U4c1 xong (#325); U4c2 (màn cấp) xong (#331); U4c3 (màn chặng) xong (#332); U4c4a (tab Chặng | Bản đồ ô) xong (#333); U4c4b (Danh sách có ô tìm) xong (#334); U4d (lấy thêm tại chỗ) xong (#335); U4e1 (trang Ngoài JLPT) xong (#336); U4e2 (ngăn Thêm) xong (#337); U4f (ô tìm hai nguồn) xong (#338). Tiếp: tìm bằng vẽ kanji (thien xin 19/11), kế hoạch `plans/2026-11-19-kanji-draw-search.md`: KD1 (#340), KD2 (#341) xong, tiếp KD3; ô tìm Kho lỗi với kho nhiều mục (P2029), sửa ở PR này; U4g, U4h sau kỳ thi N2.
 
 ## Đang chờ thien
 

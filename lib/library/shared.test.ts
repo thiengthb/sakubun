@@ -150,6 +150,20 @@ describe('searchEntries sort, exclude and countEntries (7.4i)', () => {
     });
     expect(await L.countEntries(prisma, { text: '店' })).toEqual({ GRAMMAR: 0, VOCAB: 1 });
   });
+
+  it('leaves out a learner who owns thousands of words (past SQLite bound-value limit)', async () => {
+    await L.seedOpenJlpt(prisma, DECK);
+    // thien's Kho on 19/11: searching it failed with P2029, one bound value per owned word.
+    const many = Array.from({ length: 40_000 }, (_, i) => `語${i}`);
+    const exclude = { GRAMMAR: ['〜てから', ...many], VOCAB: ['店', ...many] };
+    const found = (await L.searchEntries(prisma, { exclude })).map((e) => e.expression);
+    expect([...found].sort()).toEqual(['〜ばかりに', '静か'].sort());
+    expect(await L.countEntries(prisma, { exclude })).toEqual({ GRAMMAR: 1, VOCAB: 1 });
+    // Paging counts only what is left, in the same order.
+    expect(
+      (await L.searchEntries(prisma, { exclude, skip: 1, take: 1 })).map((e) => e.expression),
+    ).toEqual([found[1]]);
+  });
 });
 
 describe('listGroupEntries', () => {
