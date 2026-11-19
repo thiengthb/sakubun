@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { PageShell } from '@/components/layout/page-shell';
 import { ParentCrumbs } from '@/components/layout/app-breadcrumbs';
-import { AddButton } from '@/components/common/add-button';
+import { AddSheet } from '@/components/features/resources/add-sheet';
 import { LIST_CARD } from '@/components/common/list-card';
 import { SpokenLine } from '@/components/common/spoken-line';
 import { speakable } from '@/lib/core/format';
@@ -40,7 +40,7 @@ export function OutsideList({
       }
       title={SOURCE_TITLE[source]}
       meta={`${items.length} mục ngoài JLPT`}
-      actions={<AddButton href="/resources/new" />}
+      actions={<AddSheet />}
     >
       {items.length === 0 ? (
         <p className="text-sm text-muted-foreground">Chưa có mục nào từ nguồn này.</p>

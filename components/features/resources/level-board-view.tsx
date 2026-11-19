@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { ChevronRight, List } from 'lucide-react';
+import { AddSheet } from '@/components/features/resources/add-sheet';
 import { PageShell } from '@/components/layout/page-shell';
 import { ExpandingIconButton } from '@/components/common/expanding-icon-button';
 import { LIST_CARD } from '@/components/common/list-card';
@@ -41,7 +42,12 @@ export function LevelBoardView({
       template="list"
       title="Kho"
       meta={KHO_BOARD_META}
-      actions={<ExpandingIconButton href="/resources/all" icon={List} label="Mọi mục" />}
+      actions={
+        <>
+          <ExpandingIconButton href="/resources/all" icon={List} label="Mọi mục" />
+          <AddSheet />
+        </>
+      }
     >
       <div className="flex flex-col gap-3">
         {board.levels.map((row) => (

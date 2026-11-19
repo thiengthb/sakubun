@@ -1,0 +1,15 @@
+{ "id": "sakubun-u4e2-r1", "title": "Duyệt ngăn Thêm (U4e2)",
+  "intro": "Bản B bạn chọn: nút Thêm ở Kho (bảng cấp, trang Ngoài JLPT, danh sách một nguồn) giờ mở ngăn bốn cách thêm. Ba cách đầu mở đúng chỗ của nó: bảng cấp N5–N1, Kho chung, hướng dẫn kết nối Claude. Tự viết là form gõ ngay trong ngăn, thêm xong form trống lại để gõ tiếp, trang phía sau tự cập nhật. Dán nhiều dòng và nhập Excel vẫn ở trang Thêm cũ (link cuối ngăn). Lưu ý: luật giao diện cũ nói thêm và sửa là trang riêng; mình ghi ngoại lệ cho ngăn này, kèm lý do là bạn đã chọn bản B.",
+  "scenarios": ["Bấm Thêm trên trang Ngoài JLPT", "Gõ một từ trong ngăn"],
+  "items": [
+    { "id": "sheet", "group": "Ngăn Thêm", "label": "Bốn cách thêm",
+      "note": "Laptop: ngăn bên phải. Điện thoại: tấm trượt gần kín màn, kéo xuống để thấy form.",
+      "sides": [
+        { "key": "old", "name": "Laptop 1440", "file": "sheet-1440.jpg", "scale": 2 },
+        { "key": "new", "name": "Điện thoại 390", "file": "sheet-390.jpg", "scale": 2 } ] },
+    { "id": "manual", "group": "Ngăn Thêm", "label": "Tự viết trong ngăn",
+      "note": "Chọn Từ vựng hay Ngữ pháp, gõ chữ và nghĩa, bấm Thêm từ.",
+      "sides": [
+        { "key": "old", "name": "Laptop 1440", "file": "manual-1440.jpg", "scale": 2 },
+        { "key": "new", "name": "Điện thoại 390", "file": "manual-390.jpg", "scale": 2 } ] }
+  ] }
