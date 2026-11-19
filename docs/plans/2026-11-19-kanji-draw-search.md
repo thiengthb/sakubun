@@ -7,10 +7,9 @@ lỗi thì ghi vào "Lỗi gặp".
 
 ## Đang ở đâu
 
-- Đang ở: KD1 xong (#340, 19/11). KD2 (khung vẽ): chờ thien chọn bố cục.
+- Đang ở: KD1 xong (#340, 19/11). KD2 (khung vẽ): thien chọn bố cục B, đang code.
 - Còn thiếu: KD2, KD3.
-- thien cần làm: chọn bố cục ở https://claude.ai/artifact/EtpcD3uxVgea4iuQTR3q9x (mở ở nick tnt628). Dựng lại ở nick
-  khác: `make-decision.mjs docs/plans/2026-11-19-kanji-draw-search/kd2/decision.json <out>`.
+- thien cần làm: không có (sau khi code xong: duyệt ảnh và vẽ thử khoảng 20 chữ).
 
 ## Mục tiêu
 
@@ -72,8 +71,11 @@ Xong khi: thien duyệt ảnh laptop và điện thoại, và 20 chữ thien v�
 KD1 sang đây vì phải có khung vẽ mới thử tay được). Trước khi code: 2–3 bố cục để thien chọn (nút bút cạnh ô tìm mở khung
 nổi, hay ngăn dưới trên điện thoại, hay khung luôn hiện bên phải).
 
-- [ ] Bố cục (19/11, nick tnt628): A khung nổi dưới ô tìm, B bàn phím vẽ ở đáy màn điện thoại và cột bên phải trên
+- [x] Bố cục (19/11, nick tnt628): A khung nổi dưới ô tìm, B bàn phím vẽ ở đáy màn điện thoại và cột bên phải trên
       laptop (đề xuất, ẩn tới khi chọn), C khung vẽ nằm trong trang đẩy kết quả xuống. Phác ở `kd2/mock/`, ảnh `kd2/*.jpg`.
+      Trang chọn https://claude.ai/artifact/EtpcD3uxVgea4iuQTR3q9x (mở ở nick tnt628), dựng lại: `make-decision.mjs
+    docs/plans/2026-11-19-kanji-draw-search/kd2/decision.json <out>`. Kết quả (19/11): thien chọn **B · Bàn phím vẽ ở
+      đáy màn**, trùng đề xuất (bản ghi `decisions/sakubun-kd2-pad-layout`).
 - [ ] Khung vẽ dùng lại phần vẽ của khung viết KJ4 (`kanji-write-pad.tsx`), có Xoá nét cuối và Xoá hết.
 - [ ] Hàng chữ đoán dưới khung; bấm một chữ là thêm vào ô tìm, khung trống lại để vẽ chữ sau.
 - [ ] e2e: vẽ 会 bằng nét KanjiVG, bấm chữ đoán, ô tìm có 会 và kết quả hiện.

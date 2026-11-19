@@ -22,7 +22,7 @@ bảng nhỏ phải, giữ sidebar và thanh tab): U2a xong (#291, 14/11), U2b�
 | ----------------------- | ------------- | ----- | ----------------------------------------- |
 | Đóng câu hỏi nghiên cứu | #289          | 13/11 | Chỉ tài liệu, chờ thien merge             |
 | Bản tóm tắt hai nick    | #296          | 13/11 | Tạm, của nick kia; đóng khi thien so xong |
-| KD2 Khung vẽ kanji      | (PR này)      | 19/11 | Chờ thien chọn bố cục                     |
+| KD2 Khung vẽ kanji      | (PR này)      | 19/11 | thien chọn B; đang code                   |
 
 ## Việc tiếp theo
 
@@ -30,7 +30,6 @@ bảng nhỏ phải, giữ sidebar và thanh tab): U2a xong (#291, 14/11), U2b�
 
 ## Đang chờ thien
 
-- Chọn bố cục khung vẽ kanji (KD2, link trong `plans/2026-11-19-kanji-draw-search.md`).
 - Dán dòng hướng dẫn project vào cả hai project Sakubun (nội dung trong mô tả #297).
 - Trên NUC, không gấp: bấm Hiện "N5 · Ngữ pháp" ở Quản trị; thử chia sẻ kịch bản bằng tài khoản `kai`.
 
