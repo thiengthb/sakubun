@@ -8,6 +8,7 @@ import { ItemGuide } from '@/components/features/resources/item-guide';
 import { getItemStats } from '@/lib/insights/item-stats';
 import { getUserDb } from '@/lib/auth/current-user';
 import { itemPlaceById } from '@/lib/app/item-place';
+import { ensureOpenJlptLibrary } from '@/lib/library/seed';
 
 export const metadata: Metadata = { title: 'Sửa mục — sakubun' };
 export const dynamic = 'force-dynamic';
@@ -15,6 +16,7 @@ export const dynamic = 'force-dynamic';
 export default async function ItemEditPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const db = await getUserDb();
+  await ensureOpenJlptLibrary();
   const [stats, place] = await Promise.all([getItemStats(db, id), itemPlaceById(db, id)]);
   if (!stats || !place) notFound();
 
