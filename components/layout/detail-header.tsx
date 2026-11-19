@@ -31,8 +31,10 @@ export function DetailHeader({
   return (
     <header className={DETAIL_CHROME.header}>
       <div className={DETAIL_CHROME.head}>
-        <div className={DETAIL_CHROME.phoneTop}>
-          <MobileTopBar />
+        <div data-slot="phone-top" className={DETAIL_CHROME.phoneTop}>
+          <div className={DETAIL_CHROME.phoneLogo}>
+            <MobileTopBar />
+          </div>
           <div className={DETAIL_CHROME.phoneTrail}>{breadcrumb}</div>
           {pageIcons && <div className={PAGE_CHROME.pageIcons}>{pageIcons}</div>}
         </div>

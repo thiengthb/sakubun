@@ -42,7 +42,9 @@ export const DETAIL_CHROME = {
   header: 'space-y-4 md:space-y-6',
   head: 'space-y-3 md:space-y-4',
   /** Phone only: logo, trail, page icons. */
-  phoneTop: 'flex h-9 min-w-0 items-center gap-3 md:hidden',
+  phoneTop: 'group/top flex h-9 min-w-0 items-center gap-3 md:hidden',
+  // With a way back in the row the logo steps aside: the back is the row's one thing (thien, KN1).
+  phoneLogo: 'flex group-has-[[data-back]]/top:hidden',
   phoneTrail: 'flex min-w-0 flex-1 items-center',
   titleRow: 'flex items-start gap-4',
   titleBlock: 'min-w-0 flex-1 space-y-2 md:space-y-3',

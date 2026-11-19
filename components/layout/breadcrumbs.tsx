@@ -120,6 +120,9 @@ export function BreadcrumbPlaceholder({ className }: { className?: string }) {
   );
 }
 
+// Flat, not a raised button (thien, KN1 review): the chevron lines up with the page's left edge.
+const FLAT_BACK = 'max-w-full -translate-x-2 md:hidden';
+
 function BackTo({ crumb, look }: { crumb: Crumb; look: 'button' | 'link' }) {
   const label = crumb.pending ? (
     <span data-pending className="relative inline-flex min-w-12">
@@ -137,11 +140,9 @@ function BackTo({ crumb, look }: { crumb: Crumb; look: 'button' | 'link' }) {
       </>
     );
     return crumb.pending || !crumb.href ? (
-      <span className={cn(buttonVariants({ variant: 'outline' }), 'max-w-full md:hidden')}>
-        {body}
-      </span>
+      <span className={cn(buttonVariants({ variant: 'ghost' }), FLAT_BACK)}>{body}</span>
     ) : (
-      <ButtonLink href={crumb.href} variant="outline" className="max-w-full md:hidden">
+      <ButtonLink href={crumb.href} variant="ghost" className={FLAT_BACK}>
         {body}
       </ButtonLink>
     );
