@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { levelSets, type SetEntry, type SetItem } from './level-sets';
-import { leadActions, setAction, setSummary } from './level-screen';
+import { leadActions, setAction, setSummary, takeAskNote, takenNote } from './level-screen';
 
 const NOW = new Date('2026-11-18T12:00:00Z');
 const PAST = new Date('2026-11-17T12:00:00Z');
@@ -8,6 +8,7 @@ const FUTURE = new Date('2026-11-25T12:00:00Z');
 
 const entries = (n: number): SetEntry[] =>
   Array.from({ length: n }, (_, i) => ({
+    id: `e-w${i + 1}`,
     expression: `w${i + 1}`,
     reading: null,
     hanviet: null,
@@ -35,10 +36,8 @@ describe('leadActions', () => {
     expect(lead.main).toMatchObject({ label: 'Học tiếp', count: 2, href: '/review' });
     expect(lead.main.hint).toContain('từ chưa học, Ôn nhanh đưa ra dần');
     expect(lead.due).toMatchObject({ count: 1, href: '/review' });
-    expect(lead.take).toMatchObject({
-      count: 22,
-      href: '/library?tab=items&type=VOCAB&level=N5',
-    });
+    // "Lấy nốt" takes the whole level's missing words in place (U4d).
+    expect(lead.take).toMatchObject({ count: 22, href: null, take: { set: null, count: 22 } });
   });
 
   it("counts the whole level's new words: Ôn nhanh does not follow the sets", () => {
@@ -68,8 +67,13 @@ describe('leadActions', () => {
       NOW,
     );
     const main = leadActions(sets, N5_VOCAB).main;
-    expect(main).toMatchObject({ label: 'Lấy thêm', count: 8 });
-    expect(main.hint).toContain('từ Chặng 2');
+    // Taken in place, a set at a time (U4d).
+    expect(main).toMatchObject({
+      label: 'Lấy Chặng 2',
+      count: 8,
+      href: null,
+      take: { set: 2, count: 8 },
+    });
   });
 
   it('has nothing to do on a level taken and studied in full', () => {
@@ -120,7 +124,11 @@ describe('setAction', () => {
     const [due] = levelSets(entries(2), [item('w1', { due: PAST })], NOW).sets;
     expect(setAction(due!, ctx)).toMatchObject({ label: 'Ôn 1', href: '/review' });
     const [missing] = levelSets(entries(2), [item('w1')], NOW).sets;
-    expect(setAction(missing!, ctx)).toMatchObject({ label: 'Lấy 1' });
+    expect(setAction(missing!, ctx)).toMatchObject({
+      label: 'Lấy 1',
+      href: null,
+      take: { set: 1, count: 1 },
+    });
     const [done] = levelSets(entries(1), [item('w1')], NOW).sets;
     expect(setAction(done!, ctx)).toMatchObject({ label: 'Thuộc hết', href: null });
     const [learning] = levelSets(entries(1), [item('w1', { state: 1 })], NOW).sets;
@@ -135,6 +143,35 @@ describe('setSummary', () => {
     );
     expect(setSummary({ mastered: 0, due: 0, learning: 0, new: 0, none: 20, paused: 0 })).toBe(
       '20 chưa có',
+    );
+  });
+});
+
+describe('takenNote', () => {
+  it('says Ôn nhanh brings the words when it serves the level', () => {
+    expect(takenNote({ added: 20, level: 'N5', kind: 'vocab' }, 'N4')).toBe(
+      'Đã thêm 20 từ vào kho, Ôn nhanh đưa ra dần mỗi ngày',
+    );
+  });
+  it('points to Cài đặt when Ôn nhanh takes new words from an easier level', () => {
+    expect(takenNote({ added: 1, level: 'N3', kind: 'grammar' }, 'N5')).toBe(
+      'Đã thêm 1 mẫu vào kho. Ôn nhanh đang lấy mẫu mới từ N5, đổi trong Cài đặt để học N3',
+    );
+  });
+  it('says nothing was missing', () => {
+    expect(takenNote({ added: 0, level: 'N5', kind: 'vocab' }, 'N5')).toBe(
+      'Đã có đủ các từ này trong kho',
+    );
+  });
+});
+
+describe('takeAskNote', () => {
+  it('follows the same rule as the toast', () => {
+    expect(takeAskNote({ level: 'N5', kind: 'vocab', studyLevel: 'N4' })).toContain(
+      'Ôn nhanh đưa ra dần theo hạn mức mỗi ngày',
+    );
+    expect(takeAskNote({ level: 'N1', kind: 'vocab', studyLevel: 'N5' })).toContain(
+      'Ôn nhanh đang lấy từ mới từ N5, đổi trong Cài đặt để học N1',
     );
   });
 });

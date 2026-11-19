@@ -1,6 +1,6 @@
 import type { LevelSet, SetWord, WordState } from '@/lib/library/level-sets';
 import { setSummary, UNIT, type LevelContext } from '@/lib/library/level-screen';
-import { cellHref, libraryLevelHref } from '@/lib/library/level-tally';
+import { cellHref } from '@/lib/library/level-tally';
 
 // The set screen (U4c3, docs/plans/2026-11-14-u4-kho.md): one set of a level as a map of its
 // words, one open beside the map. Pure: the links, the neighbours and which word opens first.
@@ -41,14 +41,16 @@ export function firstOpenWord(words: readonly { state: WordState }[]): number {
   return 0;
 }
 
-/** The detail's link: the learner's own item, or the level in Kho chung to take it from. */
-export function wordLink(word: SetWord, ctx: Where): { label: string; href: string } {
+/** The detail's link: the learner's own item, or the entry's page in Kho chung ("Học" beside it takes it, U4d). */
+export function wordLink(word: SetWord): { label: string; href: string } {
   if (word.item) return { label: 'Mở mục', href: `/resources/${word.item.id}` };
-  return { label: 'Lấy ở Kho chung', href: libraryLevelHref(ctx.level, ctx.kind) };
+  return { label: 'Xem ở Kho chung', href: `/library/item/${word.entry.id}` };
 }
 
 /** A word as the map shows it: the entry, its state and where it leads. */
 export interface WordCard {
+  // The OpenJLPT entry, what "Học" takes when the word is not in the learner's Kho.
+  entryId: string;
   expression: string;
   reading: string | null;
   hanviet: string | null;
@@ -61,11 +63,13 @@ export interface WordCard {
 }
 
 export function wordCard(word: SetWord, set: number, ctx: Where): WordCard {
+  const { id, ...entry } = word.entry;
   return {
-    ...word.entry,
+    ...entry,
+    entryId: id,
     state: word.state,
     lapses: word.item?.lapses ?? 0,
-    link: wordLink(word, ctx),
+    link: wordLink(word),
     set: { number: set, href: setHref(ctx, set) },
   };
 }

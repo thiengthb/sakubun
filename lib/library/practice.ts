@@ -88,12 +88,17 @@ export async function addItems(
       result.skipped.push({ expression, reason: 'thiếu expression hoặc meaningVi' });
       continue;
     }
-    const tooLong = itemLimitError({
-      expression,
-      meaningVi,
-      reading: cleanTextOrNull(entry.reading),
-      hanviet: cleanTextOrNull(entry.hanviet),
-    });
+    // A copy of a shared-library entry keeps its text as Kho chung has it: the limits are for what a
+    // learner or Claude writes, and 18 OpenJLPT entries ("〜に至る / 〜に至って / 〜に至っては")
+    // run past them, so they could never be taken (found in U4d).
+    const tooLong = entry.libraryEntryId
+      ? null
+      : itemLimitError({
+          expression,
+          meaningVi,
+          reading: cleanTextOrNull(entry.reading),
+          hanviet: cleanTextOrNull(entry.hanviet),
+        });
     if (tooLong) {
       result.skipped.push({ expression, reason: tooLong.message });
       continue;

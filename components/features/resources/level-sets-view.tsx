@@ -4,7 +4,7 @@ import { PageShell } from '@/components/layout/page-shell';
 import { ParentCrumbs } from '@/components/layout/app-breadcrumbs';
 import { LeadPanel } from '@/components/common/lead-panel';
 import { LIST_CARD } from '@/components/common/list-card';
-import { ButtonLink } from '@/components/ui/button';
+import { ButtonLink, buttonVariants } from '@/components/ui/button';
 import {
   KIND_LABEL,
   leadActions,
@@ -22,6 +22,7 @@ import { LevelTabContent, LevelTabList, LevelTabs } from './level-tabs';
 import { LevelWordList } from './level-word-list';
 import { LevelWordMap } from './level-word-map';
 import { MARK } from './word-marks';
+import { TakeLevelTrigger } from './take-buttons';
 
 // One JLPT level of one kind (U4c2, combined layout of docs/plans/2026-11-14-u4-kho.md): what to do
 // next, the words forgotten most, then the level cut into sets of 20 with a mark per word. Tabs
@@ -90,9 +91,14 @@ function SetsView({ sets, ctx }: { sets: LevelSets; ctx: LevelContext }) {
       <LeadPanel aria-label="Bước tiếp theo" className="p-4 md:p-4">
         <p className="text-sm font-medium text-accent-brand">Bước tiếp theo</p>
         <div className="mt-3 grid grid-cols-2 gap-2 md:grid-cols-[1.4fr_1fr_1fr] md:gap-3">
-          <ActionTile action={lead.main} tone="primary" className="col-span-2 md:col-span-1" />
-          <ActionTile action={lead.due} tone="warn" />
-          <ActionTile action={lead.take} tone="plain" />
+          <ActionTile
+            action={lead.main}
+            ctx={ctx}
+            tone="primary"
+            className="col-span-2 md:col-span-1"
+          />
+          <ActionTile action={lead.due} ctx={ctx} tone="warn" />
+          <ActionTile action={lead.take} ctx={ctx} tone="plain" />
         </div>
       </LeadPanel>
 
@@ -129,14 +135,16 @@ const NUMBER = {
 
 function ActionTile({
   action,
+  ctx,
   tone,
   className,
 }: {
   action: LevelAction;
+  ctx: LevelContext;
   tone: keyof typeof NUMBER;
   className?: string;
 }) {
-  const live = action.href !== null;
+  const live = action.href !== null || action.take !== undefined;
   const primary = tone === 'primary' && live;
   const body = (
     <>
@@ -174,18 +182,22 @@ function ActionTile({
   const box =
     'flex min-h-16 items-center gap-2 rounded-lg px-3 py-2 md:gap-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring';
   if (!live) return <div className={cn(box, 'border border-border/60', className)}>{body}</div>;
+  const look = cn(
+    box,
+    'text-left transition-colors disabled:opacity-60',
+    primary
+      ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+      : 'border border-border bg-card hover:bg-muted',
+    className,
+  );
+  if (action.take)
+    return (
+      <TakeLevelTrigger ctx={ctx} scope={action.take} className={look}>
+        {body}
+      </TakeLevelTrigger>
+    );
   return (
-    <Link
-      href={action.href!}
-      className={cn(
-        box,
-        'transition-colors',
-        primary
-          ? 'bg-primary text-primary-foreground hover:bg-primary/90'
-          : 'border border-border bg-card hover:bg-muted',
-        className,
-      )}
-    >
+    <Link href={action.href!} className={look}>
       {body}
     </Link>
   );
@@ -251,7 +263,15 @@ function SetCard({ set, ctx }: { set: LevelSet; ctx: LevelContext }) {
           {first} → {last}
         </span>
         {action &&
-          (action.href ? (
+          (action.take ? (
+            <TakeLevelTrigger
+              ctx={ctx}
+              scope={action.take}
+              className={cn(buttonVariants({ variant: 'outline' }), 'relative z-10')}
+            >
+              {action.label}
+            </TakeLevelTrigger>
+          ) : action.href ? (
             <ButtonLink href={action.href} variant="outline" className="relative z-10">
               {action.label}
             </ButtonLink>

@@ -10,6 +10,7 @@ let prisma: Db['prisma'];
 let L: typeof import('@/lib/app/level-sets');
 let B: typeof import('@/lib/app/level-board');
 let P: typeof import('@/lib/library/practice');
+let T: typeof import('@/lib/app/take-level');
 let mine: UserDb;
 let other: UserDb;
 
@@ -37,6 +38,8 @@ const DECK = [
   starter('VOCAB', '静か', 'N5'),
   starter('VOCAB', '切符', 'N4'),
   starter('GRAMMAR', '〜は', 'N5'),
+  // More than a set's worth, for "Lấy nốt" asking first (U4d).
+  ...Array.from({ length: 21 }, (_, i) => starter('VOCAB', `語${i}`, 'N3')),
 ];
 
 async function add(db: UserDb, kind: string, expression: string) {
@@ -49,6 +52,7 @@ beforeAll(async () => {
   L = await import('@/lib/app/level-sets');
   B = await import('@/lib/app/level-board');
   P = await import('@/lib/library/practice');
+  T = await import('@/lib/app/take-level');
   const S = await import('@/lib/library/shared');
   const { userDb } = await import('@/lib/db/user-db');
   mine = userDb(await createTestUser(prisma, 'learner'));
@@ -122,6 +126,52 @@ describe('loadLevelSets (U4c1)', () => {
     await prisma.libraryEntry.updateMany({
       where: { sourceKey: 'openjlpt:group:N5:VOCAB' },
       data: { status: 'public' },
+    });
+  });
+});
+
+describe('takeLevelWords (U4d)', () => {
+  it("takes the level's missing words, and the board counts them", async () => {
+    await add(mine, 'VOCAB', '店');
+    const taken = await T.takeLevelWords(mine, 'N5', 'vocab', null);
+    expect(taken).toEqual({ ok: true, data: { added: 2 } });
+    const result = await L.loadLevelSets(mine, 'N5', 'VOCAB', NOW);
+    expect(result.counts.none).toBe(0);
+    expect(result.sets[0]!.words.map((w) => w.state)).toEqual(['new', 'new', 'new']);
+    const cell = (await B.levelBoard(mine)).levels[0]!.vocab;
+    expect(cell.have).toBe(cell.total);
+    // Other kinds, levels and learners are left alone.
+    expect(await mine.item.count({ where: { kind: 'GRAMMAR' } })).toBe(0);
+    expect(await mine.item.count({ where: { expression: '切符' } })).toBe(0);
+    expect(await other.item.count()).toBe(0);
+  });
+
+  it('takes one set only, and says when the set is gone', async () => {
+    expect(await T.takeLevelWords(mine, 'N5', 'grammar', 1)).toEqual({
+      ok: true,
+      data: { added: 1 },
+    });
+    expect(await T.takeLevelWords(mine, 'N5', 'grammar', 1)).toEqual({
+      ok: true,
+      data: { added: 0 },
+    });
+    const gone = await T.takeLevelWords(mine, 'N5', 'grammar', 2);
+    expect(gone.ok).toBe(false);
+  });
+
+  it('refuses more than a set unasked, and takes it once the learner said yes', async () => {
+    const unasked = await T.takeLevelWords(mine, 'N3', 'vocab', null);
+    expect(unasked.ok).toBe(false);
+    expect(await mine.item.count()).toBe(0);
+    expect(await T.takeLevelWords(mine, 'N3', 'vocab', null, true)).toEqual({
+      ok: true,
+      data: { added: 21 },
+    });
+    // A set is never more than 20, so it needs no question.
+    await resetLearningData(prisma);
+    expect(await T.takeLevelWords(mine, 'N3', 'vocab', 2)).toEqual({
+      ok: true,
+      data: { added: 1 },
     });
   });
 });

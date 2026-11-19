@@ -16,6 +16,7 @@ const N5_VOCAB = { level: 'N5', kind: 'vocab' } as const;
 
 const entries = (n: number): SetEntry[] =>
   Array.from({ length: n }, (_, i) => ({
+    id: `e-w${i + 1}`,
     expression: `w${i + 1}`,
     reading: null,
     hanviet: null,
@@ -71,13 +72,10 @@ describe('the set screen', () => {
     expect(firstOpenWord(learnt.sets[0]!.words)).toBe(0);
   });
 
-  it("links a word to the learner's item, or to Kho chung when it is not taken", () => {
+  it("links a word to the learner's item, or to its entry in Kho chung when it is not taken", () => {
     const { sets } = levelSets(entries(2), [item('w1')], NOW);
     const [owned, missing] = sets[0]!.words;
-    expect(wordLink(owned!, N5_VOCAB)).toEqual({ label: 'Mở mục', href: '/resources/id-w1' });
-    expect(wordLink(missing!, N5_VOCAB)).toEqual({
-      label: 'Lấy ở Kho chung',
-      href: '/library?tab=items&type=VOCAB&level=N5',
-    });
+    expect(wordLink(owned!)).toEqual({ label: 'Mở mục', href: '/resources/id-w1' });
+    expect(wordLink(missing!)).toEqual({ label: 'Xem ở Kho chung', href: '/library/item/e-w2' });
   });
 });

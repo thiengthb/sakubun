@@ -146,6 +146,19 @@ export async function takeEntry(
   return ok({ itemId, already: false });
 }
 
+// Several entries at once (U4d "Lấy nốt", a set's "Lấy N"): the visible ones the learner lacks
+// are copied; returns how many became new items.
+export async function takeEntries(db: UserDb, entryIds: readonly string[]): Promise<number> {
+  if (entryIds.length === 0) return 0;
+  const entries = await db.libraryEntry.findMany({
+    where: { id: { in: [...entryIds] }, ...VISIBLE, type: { in: [GRAMMAR_KIND, VOCAB_KIND] } },
+    select: CONTENT,
+  });
+  const taken = await copyEntries(db, entries);
+  await countTakes(db, taken);
+  return taken.length;
+}
+
 export interface TakeGroupResult {
   groupId: string;
   // Entries copied as new items, and entries the learner had already (still put in the group).

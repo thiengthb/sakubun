@@ -9,6 +9,7 @@ import { STATE_LABEL } from '@/lib/library/level-screen';
 import type { WordCard } from '@/lib/library/set-screen';
 import { cn } from '@/lib/core/utils';
 import { TILE } from './word-marks';
+import { TakeWordButton } from './take-buttons';
 
 // A map of words as tiles, one open at a time (docs/plans/2026-11-14-u4-kho.md): a set's 20 on
 // the set screen (U4c3), the whole level cut by set on the level screen's map (U4c4). On a laptop
@@ -208,7 +209,16 @@ function WordDetail({
             Chặng {word.set.number}
           </ButtonLink>
         )}
-        <ButtonLink href={word.link.href}>{word.link.label}</ButtonLink>
+        {word.state === 'none' ? (
+          <>
+            <ButtonLink href={word.link.href} variant="outline">
+              {word.link.label}
+            </ButtonLink>
+            <TakeWordButton entryId={word.entryId} expression={word.expression} />
+          </>
+        ) : (
+          <ButtonLink href={word.link.href}>{word.link.label}</ButtonLink>
+        )}
       </div>
     </div>
   );

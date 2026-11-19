@@ -6,6 +6,7 @@ const PAST = new Date('2026-11-17T12:00:00Z');
 const FUTURE = new Date('2026-11-25T12:00:00Z');
 
 const entry = (expression: string): SetEntry => ({
+  id: `e-${expression}`,
   expression,
   reading: null,
   hanviet: null,

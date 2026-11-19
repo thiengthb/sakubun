@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { E2E_EMAIL, E2E_LOGIN, seedE2eAccount } from './fixtures';
+import { E2E_DB_FILE, E2E_EMAIL, E2E_LOGIN, E2E_OWNER, seedE2eAccount } from './fixtures';
 
 // U4b (docs/plans/2026-11-14-u4-kho.md): Kho opens on the JLPT levels, the menu has one Kho, and
 // links written for the old list of every item land on /resources/all.
@@ -14,6 +14,11 @@ async function signIn(page: Page) {
 
 test.beforeAll(async () => {
   await seedE2eAccount();
+});
+
+// Runs after a failed test too, so specs after this file never see what U4d's test took.
+test.afterAll(async () => {
+  await dropTakenN1Grammar();
 });
 
 test('Kho is the level board, from N5 to N1 and outside JLPT', async ({ page }) => {
@@ -228,4 +233,60 @@ test('on a phone the board stacks and the Kho tab is lit', async ({ page }) => {
   await expect(page.getByRole('heading', { level: 2, name: /^N5/ })).toBeVisible();
   const width = await page.evaluate(() => document.documentElement.scrollWidth);
   expect(width).toBeLessThanOrEqual(390);
+});
+
+// U4d: what this spec takes in N1 grammar leaves with it, so specs after it see the account as seeded.
+async function dropTakenN1Grammar() {
+  const { default: Database } = await import('better-sqlite3');
+  const { default: path } = await import('node:path');
+  const db = new Database(path.join(process.cwd(), E2E_DB_FILE));
+  db.pragma('foreign_keys = ON');
+  db.prepare(
+    `DELETE FROM Item WHERE userId = ${E2E_OWNER} AND kind = 'GRAMMAR' AND level = 'N1' AND source = 'LIBRARY'`,
+  ).run();
+  db.close();
+}
+
+test('a word, a set and the rest of a level are taken in place', async ({ page }) => {
+  await dropTakenN1Grammar();
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await signIn(page);
+  await page.goto('/resources/level/N1/grammar/1');
+  const map = page.getByRole('list', { name: 'Các mục của chặng' });
+  const panel = page.getByRole('complementary', { name: 'Mục đang mở' });
+
+  // "Học" on one word: it joins the Kho as a new item, and the panel opens it.
+  const first = map.getByRole('button').first();
+  const word = (await first.locator('[lang="ja"]').textContent())!;
+  await first.click();
+  await expect(panel.getByText(/chưa có/i)).toBeVisible();
+  await panel.getByRole('button', { name: `Học ${word}` }).click();
+  await expect(page.getByText(/Đã thêm 1 mẫu vào kho/)).toBeVisible();
+  await expect(panel.getByRole('link', { name: 'Mở mục' })).toBeVisible();
+
+  // The set's button takes the other 19.
+  await page.getByRole('button', { name: 'Lấy 19' }).click();
+  await expect(page.getByText(/Đã thêm 19 mẫu vào kho/)).toBeVisible();
+  await expect(page.getByRole('button', { name: /^Lấy \d+$/ })).toHaveCount(0);
+
+  // "Lấy nốt" takes the rest of the level, after asking.
+  await page.goto('/resources/level/N1/grammar');
+  const lead = page.getByRole('region', { name: 'Bước tiếp theo' });
+  const rest = lead.getByRole('button', { name: /Lấy nốt/ });
+  const count = Number((await rest.locator('.tabular-nums').textContent())!.trim());
+  expect(count).toBeGreaterThan(20);
+  await rest.click();
+  const ask = page.getByRole('dialog');
+  await expect(ask).toContainText(`Lấy ${count} mẫu còn thiếu của N1?`);
+  await ask.getByRole('button', { name: `Lấy ${count} mẫu` }).click();
+  await expect(page.getByText(new RegExp(`Đã thêm ${count} mẫu vào kho`))).toBeVisible();
+  await expect(lead.getByText('đã có đủ cả cấp')).toBeVisible();
+
+  // The board counts them.
+  await page.goto('/resources');
+  const n1 = page.getByRole('region', { name: /^N1/ });
+  // Every N1 pattern taken here (the test starts with none): the whole level, nothing missing.
+  const cell = n1.getByRole('link', { name: /Ngữ pháp/ });
+  await expect(cell).toContainText(`${count + 20}/${count + 20}`);
+  await expect(cell).toContainText('đủ cả cấp');
 });

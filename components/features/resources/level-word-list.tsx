@@ -12,10 +12,11 @@ import type { WordCard } from '@/lib/library/set-screen';
 import { speakable } from '@/lib/core/format';
 import { cn } from '@/lib/core/utils';
 import { MARK } from './word-marks';
+import { TakeWordButton } from './take-buttons';
 
 // The level screen's "Danh sách" (U4c4, docs/plans/2026-11-14-u4-kho.md): every word of the level
 // in the sets' order, to look one up. The search box finds the word, its reading, Hán Việt or
-// meaning; a row opens the learner's item, or the level in Kho chung when it is not taken yet.
+// meaning; a row opens the learner's item, or the entry in Kho chung with "Học" beside it when not taken (U4d).
 
 // Sorting by state follows the legend: learnt first, then missing, then paused.
 const STATE_ORDER: Record<WordState, number> = {
@@ -124,15 +125,24 @@ function columns(kind: LevelContext['kind'], voice: Voice): ColumnDef<WordCard, 
     {
       id: 'open',
       header: 'Mở',
-      size: 150,
+      size: 210,
       minSize: 110,
       enableSorting: false,
       enableGlobalFilter: false,
       meta: { label: 'Mở', cellClassName: 'whitespace-nowrap' },
       cell: ({ row }) => (
-        <Link href={row.original.link.href} className="text-accent-brand hover:underline">
-          {row.original.link.label}
-        </Link>
+        <span className="flex items-center gap-3">
+          {row.original.state === 'none' && (
+            <TakeWordButton
+              entryId={row.original.entryId}
+              expression={row.original.expression}
+              className="h-7 md:h-6"
+            />
+          )}
+          <Link href={row.original.link.href} className="text-accent-brand hover:underline">
+            {row.original.link.label}
+          </Link>
+        </span>
       ),
     },
   ];
@@ -183,7 +193,17 @@ export function LevelWordList({
           {w.meaningVi && <p className="line-clamp-2 text-sm">{w.meaningVi}</p>}
           <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
             <State state={w.state} />
-            <span>Chặng {w.set.number}</span>
+            <span className="flex items-center gap-2">
+              Chặng {w.set.number}
+              {/* Above the card's link (which opens the entry in Kho chung), like the speaker. */}
+              {w.state === 'none' && (
+                <TakeWordButton
+                  entryId={w.entryId}
+                  expression={w.expression}
+                  className="relative z-10"
+                />
+              )}
+            </span>
           </div>
         </div>
       )}
