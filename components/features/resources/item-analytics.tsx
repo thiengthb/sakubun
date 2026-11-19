@@ -129,7 +129,7 @@ export function ItemAnalytics({
     <Tabs value={tab} onValueChange={setTab}>
       <PageShell
         template="detail"
-        breadcrumb={<KhoTrail place={place} back="button" />}
+        breadcrumb={<KhoTrail place={place} />}
         title={
           <SpokenLine
             text={stats.expression}

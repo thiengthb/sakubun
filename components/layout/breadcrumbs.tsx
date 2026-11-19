@@ -30,10 +30,9 @@ export function Breadcrumbs({
   /**
    * On a phone, one way back to the nearest parent in place of the trail (KN1,
    * docs/plans/2026-11-19-kho-navigation.md): a row of small crumbs was hard to read and to hit.
-   * `button` where the header has a 36px row for it (the detail header), `link` in the template's
-   * 16px trail line.
+   * The header gives it a 36px row of its own (PAGE_CHROME.phoneBack, DETAIL_CHROME.phoneTop).
    */
-  back?: 'button' | 'link';
+  back?: boolean;
 }) {
   if (items.length === 0) return null;
   const up = parentsOnly ? items[items.length - 1] : undefined;
@@ -47,7 +46,7 @@ export function Breadcrumbs({
       data-parents={parentsOnly || undefined}
       data-back={canGoBack || undefined}
     >
-      {up && canGoBack && <BackTo crumb={up} look={back!} />}
+      {up && canGoBack && <BackTo crumb={up} />}
       <ol className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-sm text-muted-foreground in-data-parents:text-xs in-data-back:max-md:hidden">
         {items.map((item, i) => {
           const last = !parentsOnly && i === items.length - 1;
@@ -121,9 +120,9 @@ export function BreadcrumbPlaceholder({ className }: { className?: string }) {
 }
 
 // Flat, not a raised button (thien, KN1 review): the chevron lines up with the page's left edge.
-const FLAT_BACK = 'max-w-full -translate-x-2 md:hidden';
+const FLAT_BACK = 'min-w-0 max-w-full -translate-x-2 md:hidden';
 
-function BackTo({ crumb, look }: { crumb: Crumb; look: 'button' | 'link' }) {
+function BackTo({ crumb }: { crumb: Crumb }) {
   const label = crumb.pending ? (
     <span data-pending className="relative inline-flex min-w-12">
       <span className="invisible">{crumb.label}</span>
@@ -132,34 +131,17 @@ function BackTo({ crumb, look }: { crumb: Crumb; look: 'button' | 'link' }) {
   ) : (
     <span className="truncate">{crumb.label}</span>
   );
-  if (look === 'button') {
-    const body = (
-      <>
-        <ChevronLeft data-icon="inline-start" aria-hidden />
-        {label}
-      </>
-    );
-    return crumb.pending || !crumb.href ? (
-      <span className={cn(buttonVariants({ variant: 'ghost' }), FLAT_BACK)}>{body}</span>
-    ) : (
-      <ButtonLink href={crumb.href} variant="ghost" className={FLAT_BACK}>
-        {body}
-      </ButtonLink>
-    );
-  }
-  const linkLook =
-    'target-44 inline-flex min-w-0 items-center gap-0.5 text-xs font-medium text-foreground md:hidden';
   const body = (
     <>
-      <ChevronLeft className="size-4 shrink-0" aria-hidden />
+      <ChevronLeft data-icon="inline-start" aria-hidden />
       {label}
     </>
   );
   return crumb.pending || !crumb.href ? (
-    <span className={linkLook}>{body}</span>
+    <span className={cn(buttonVariants({ variant: 'ghost' }), FLAT_BACK)}>{body}</span>
   ) : (
-    <Link href={crumb.href} className={linkLook}>
+    <ButtonLink href={crumb.href} variant="ghost" className={FLAT_BACK}>
       {body}
-    </Link>
+    </ButtonLink>
   );
 }

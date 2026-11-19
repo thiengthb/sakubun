@@ -9,15 +9,7 @@ import { khoTrail, type KhoPlace, type TrailStep } from '@/lib/library/kho-trail
  * then `extra` (a record the screen acts on, like the group whose items it adds). On a phone it is
  * one way back to the nearest of them.
  */
-export function KhoTrail({
-  place,
-  extra = [],
-  back = 'link',
-}: {
-  place: KhoPlace;
-  extra?: TrailStep[];
-  back?: 'button' | 'link';
-}) {
+export function KhoTrail({ place, extra = [] }: { place: KhoPlace; extra?: TrailStep[] }) {
   const items: Crumb[] = [...khoTrail(place), ...extra].map((step) => ({
     label: step.label,
     href: step.href,
@@ -25,5 +17,5 @@ export function KhoTrail({
     icon: step.root ? Library : undefined,
     description: step.root ? 'Kho của bạn' : `Về ${step.label}`,
   }));
-  return <Breadcrumbs items={items} parentsOnly back={back} />;
+  return <Breadcrumbs items={items} parentsOnly back />;
 }

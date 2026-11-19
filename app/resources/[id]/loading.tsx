@@ -25,7 +25,7 @@ export default function Loading() {
   return (
     <PageSkeleton
       template="detail"
-      trail={<KhoTrail place={{ way: 'pending' }} back="button" />}
+      trail={<KhoTrail place={{ way: 'pending' }} />}
       title={<SkeletonText text="〜ばかりに" />}
       facts={[
         { label: 'Cấp độ', value: 'N2' },

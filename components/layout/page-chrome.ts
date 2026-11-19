@@ -19,8 +19,13 @@ export const PAGE_CHROME = {
   /** Phone only: the logo, which steps aside when the trail is a way back (thien, KN1 review). */
   phoneLogo: 'flex shrink-0 items-center group-has-[[data-back]]/row:hidden md:hidden',
   block: 'min-w-0 flex-1',
-  /** Phone only: the trail inside the title block, above the title. */
-  phoneTrail: 'mb-1 flex h-4 min-w-0 items-center md:hidden',
+  /** Phone only: the trail inside the title block, above the title; not when it is a way back. */
+  phoneTrail: 'mb-1 flex h-4 min-w-0 items-center has-[[data-back]]:hidden md:hidden',
+  /**
+   * Phone only: a way back gets a 36px row of its own above the title, the same flat back as the
+   * detail header's (thien, KN1 review round 2: the small line was hard to see).
+   */
+  phoneBack: 'hidden h-9 min-w-0 items-center max-md:has-[[data-back]]:flex',
   title: 'text-title break-words',
   meta: 'text-xs leading-4 text-muted-foreground md:mt-2',
   /** Phone, nested page: the trail holds the block's small line, so the meta drops below the row. */

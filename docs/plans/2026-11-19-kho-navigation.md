@@ -6,7 +6,7 @@ Luật ghi file này ở `profile/PLANNING.md` của repo thienai-workflow. Tick
 
 ## Đang ở đâu
 
-- Đang ở: KN1 (đường dẫn đúng và nút quay lại), code xong ở #344, vòng 1 thien cần sửa 7 màn (đã sửa), chờ duyệt vòng 2: https://claude.ai/artifact/9kztWwQ2TK7XQENUGCMuFL (mở ở nick tnt628).
+- Đang ở: KN1 (đường dẫn đúng và nút quay lại), code xong ở #344, vòng 1 thien cần sửa 7 màn (đã sửa), vòng 2 cần sửa 4 màn (đã sửa), chờ duyệt vòng 3: https://claude.ai/artifact/9QHgBtnMk1q8W5GrXYLdxn (mở ở nick tnt628).
 - Còn thiếu: KN1, KN2, KN3.
 - thien cần làm: duyệt ảnh của từng bước khi được gửi.
 
@@ -84,11 +84,12 @@ Xong khi: bấm tab Kho trên điện thoại ra trang 5 ngả (kèm số mục)
 
 ## Đã đổi
 
-| Ngày  | Đổi gì                                                                                                            | Vì sao                                                                                                                                                                                                              |
-| ----- | ----------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 19/11 | Chọn C thay vì B AI đề xuất                                                                                       | thien chọn trên trang chọn                                                                                                                                                                                          |
-| 19/11 | Đường dẫn theo chỗ của màn trong cây Kho, không theo đường đã đi như bản A tả                                     | Một mục tới được từ nhiều nơi (ô tìm, nhóm, Mọi mục, Kho chung); chỗ cố định thì đường dẫn đoán trước được, còn về đúng màn vừa rời đã có nút Back của trình duyệt. Thấy khó dùng thì thêm lối "về chỗ vừa rời" sau |
-| 19/11 | Điện thoại: màn có lối quay lại thì bỏ logo của app; nút quay lại ở trang mục phẳng; nút chặng chỉ ghi Trước, Sau | thien duyệt ảnh KN1 vòng 1                                                                                                                                                                                          |
+| Ngày  | Đổi gì                                                                                                                                                                 | Vì sao                                                                                                                                                                                                              |
+| ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 19/11 | Chọn C thay vì B AI đề xuất                                                                                                                                            | thien chọn trên trang chọn                                                                                                                                                                                          |
+| 19/11 | Đường dẫn theo chỗ của màn trong cây Kho, không theo đường đã đi như bản A tả                                                                                          | Một mục tới được từ nhiều nơi (ô tìm, nhóm, Mọi mục, Kho chung); chỗ cố định thì đường dẫn đoán trước được, còn về đúng màn vừa rời đã có nút Back của trình duyệt. Thấy khó dùng thì thêm lối "về chỗ vừa rời" sau |
+| 19/11 | Điện thoại: màn có lối quay lại thì bỏ logo của app; nút quay lại ở trang mục phẳng; nút chặng chỉ ghi Trước, Sau                                                      | thien duyệt ảnh KN1 vòng 1                                                                                                                                                                                          |
+| 19/11 | Nút cùng hàng phải cùng chiều cao (test `buttonVariants() is always passed through cn()`); lối quay lại trên điện thoại ở mọi màn là một hàng riêng 36px như trang mục | thien duyệt ảnh KN1 vòng 2                                                                                                                                                                                          |
 
 ## Lỗi gặp
 

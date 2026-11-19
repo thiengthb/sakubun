@@ -48,7 +48,7 @@ export function SetScreenView({
           <Neighbour to={prev} ctx={ctx} side="prev" />
           <Neighbour to={next} ctx={ctx} side="next" />
           {action?.take ? (
-            <TakeLevelTrigger ctx={ctx} scope={action.take} className={buttonVariants()}>
+            <TakeLevelTrigger ctx={ctx} scope={action.take} className={cn(buttonVariants())}>
               {action.label}
             </TakeLevelTrigger>
           ) : (
