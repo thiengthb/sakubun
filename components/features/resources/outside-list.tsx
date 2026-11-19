@@ -51,7 +51,10 @@ export function OutsideList({
             return (
               <li
                 key={item.id}
-                className="relative flex min-h-11 items-center gap-3 px-4 py-2.5 hover:bg-muted/40"
+                className={cn(
+                  'relative flex min-h-11 items-center gap-3 px-4 py-2.5',
+                  LIST_CARD.linked,
+                )}
               >
                 <Link
                   href={`/resources/${item.id}`}
@@ -65,7 +68,7 @@ export function OutsideList({
                     speaker={tts.speaker}
                     rate={tts.rate}
                     truncate
-                    className="relative z-10 font-semibold"
+                    className="font-semibold"
                   />
                   <span className="truncate text-sm">
                     {item.reading && (

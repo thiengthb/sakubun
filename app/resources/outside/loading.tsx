@@ -1,5 +1,5 @@
 import { ParentCrumbs } from '@/components/layout/app-breadcrumbs';
-import { CardsSkeleton, PageSkeleton, SkeletonText } from '@/components/layout/page-skeleton';
+import { CardsSkeleton, PageSkeleton } from '@/components/layout/page-skeleton';
 import { Skeleton } from '@/components/ui/skeleton';
 
 // "Ngoài JLPT" (U4e): the groups, then the sources, each a row of cards.
@@ -8,7 +8,7 @@ export default function Loading() {
     <PageSkeleton
       template="list"
       trail={<ParentCrumbs section="resources" self />}
-      title={<SkeletonText text="Ngoài JLPT" />}
+      title="Ngoài JLPT"
       meta={<Skeleton className="h-3 w-56" />}
       actions={<Skeleton className="h-9 w-20 rounded-sm md:h-7" />}
     >
