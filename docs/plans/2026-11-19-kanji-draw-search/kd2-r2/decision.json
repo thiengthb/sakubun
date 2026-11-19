@@ -1,0 +1,43 @@
+{
+  "id": "sakubun-kd2-pad-tools",
+  "question": "Khung vẽ to hơn, nút chỉ có biểu tượng: đặt nút ở đâu?",
+  "context": "Vòng 2 của KD2, theo góp ý của bạn trên trang duyệt. Cả ba bản đều đã sửa chung: nút bút trong ô tìm chỉ còn biểu tượng (đổi màu cam khi đang vẽ); trên laptop cột Vẽ chữ đứng ngang hàng với ô tìm, ô tìm co lại bên trái nên không còn chạy qua đầu cột; khung vẽ rộng hết cột hay hết màn điện thoại (trước chỉ khoảng 3/5). Nút Xoá nét, Xoá hết và Bàn phím (chỉ điện thoại) chỉ còn biểu tượng; rê chuột hay giữ ngón tay vẫn hiện tên. Mỗi ảnh: trái là laptop, phải là điện thoại, cùng đang vẽ 社. Ảnh chụp từ app thật.",
+  "options": [
+    {
+      "key": "a",
+      "name": "A · Nút dưới khung",
+      "summary": "Khung vẽ vuông rộng hết chỗ, ba nút biểu tượng xếp hàng ở dưới, dạt phải.",
+      "image": "a.jpg",
+      "scale": 2,
+      "pros": ["Khung to nhất, nét không bao giờ đè lên nút", "Nút nằm gần ngón cái trên điện thoại"],
+      "cons": ["Bàn phím vẽ trên điện thoại cao nhất (gần 60% màn), còn ít chỗ thấy kết quả"]
+    },
+    {
+      "key": "b",
+      "name": "B · Nút nằm trên góc khung",
+      "summary": "Khung vẽ vuông rộng hết chỗ, ba nút biểu tượng nằm đè lên góc trên bên phải của khung.",
+      "image": "b.jpg",
+      "scale": 2,
+      "pros": ["Khung to như A mà bàn phím vẽ thấp hơn một hàng nút", "Gọn, giống các ứng dụng vẽ"],
+      "cons": ["Chữ có nét ở góc trên phải (như 戈, 犬) dễ vẽ trúng nút"]
+    },
+    {
+      "key": "c",
+      "name": "C · Cột nút bên phải khung",
+      "summary": "Ba nút biểu tượng xếp dọc bên phải, khung vẽ chiếm phần còn lại.",
+      "image": "c.jpg",
+      "scale": 2,
+      "pros": ["Bàn phím vẽ thấp nhất, thấy được nhiều kết quả nhất", "Nét không đè lên nút"],
+      "cons": ["Khung nhỏ hơn A và B một chút (mất bề ngang của cột nút)"]
+    }
+  ],
+  "criteria": [
+    { "name": "Khung vẽ to", "values": { "a": "tốt", "b": "tốt", "c": "vừa" } },
+    { "name": "Thấy kết quả trên điện thoại", "values": { "a": "kém", "b": "vừa", "c": "tốt" } },
+    { "name": "Không vẽ trúng nút", "values": { "a": "tốt", "b": "kém", "c": "tốt" } }
+  ],
+  "recommend": {
+    "key": "c",
+    "why": "Trên điện thoại khung đã gần gấp rưỡi trước, mà bàn phím vẽ vẫn để lại khoảng nửa màn cho kết quả; vẽ chữ kế tiếp là thấy kết quả đổi ngay. A to hơn nhưng che gần hết kết quả, B tiết kiệm chỗ nhưng nét ở góc dễ bấm nhầm nút."
+  }
+}
