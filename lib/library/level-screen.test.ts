@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { levelSets, type SetEntry, type SetItem } from './level-sets';
-import { leadActions, setAction, setSummary, takenNote } from './level-screen';
+import { leadActions, setAction, setSummary, takeAskNote, takenNote } from './level-screen';
 
 const NOW = new Date('2026-11-18T12:00:00Z');
 const PAST = new Date('2026-11-17T12:00:00Z');
@@ -161,6 +161,17 @@ describe('takenNote', () => {
   it('says nothing was missing', () => {
     expect(takenNote({ added: 0, level: 'N5', kind: 'vocab' }, 'N5')).toBe(
       'Đã có đủ các từ này trong kho',
+    );
+  });
+});
+
+describe('takeAskNote', () => {
+  it('follows the same rule as the toast', () => {
+    expect(takeAskNote({ level: 'N5', kind: 'vocab', studyLevel: 'N4' })).toContain(
+      'Ôn nhanh đưa ra dần theo hạn mức mỗi ngày',
+    );
+    expect(takeAskNote({ level: 'N1', kind: 'vocab', studyLevel: 'N5' })).toContain(
+      'Ôn nhanh đang lấy từ mới từ N5, đổi trong Cài đặt để học N1',
     );
   });
 });

@@ -204,3 +204,11 @@ export function takenNote(
     return `${head}, Ôn nhanh đưa ra dần mỗi ngày`;
   return `${head}. Ôn nhanh đang lấy ${unit} mới từ ${studyLevel}, đổi trong Cài đặt để học ${taken.level}`;
 }
+
+/** What the "Lấy nốt" question says comes next, by the same rule as takenNote. */
+export function takeAskNote(ctx: LevelContext): string {
+  const unit = UNIT[ctx.kind];
+  if (servedByReview(ctx.level, ctx.studyLevel))
+    return `Các ${unit} vào kho của bạn như mục mới; Ôn nhanh đưa ra dần theo hạn mức mỗi ngày, không dồn một lúc.`;
+  return `Các ${unit} vào kho của bạn như mục mới. Ôn nhanh đang lấy ${unit} mới từ ${ctx.studyLevel}, đổi trong Cài đặt để học ${ctx.level}.`;
+}

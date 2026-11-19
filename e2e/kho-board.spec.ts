@@ -16,6 +16,11 @@ test.beforeAll(async () => {
   await seedE2eAccount();
 });
 
+// Runs after a failed test too, so specs after this file never see what U4d's test took.
+test.afterAll(async () => {
+  await dropTakenN1Grammar();
+});
+
 test('Kho is the level board, from N5 to N1 and outside JLPT', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await signIn(page);
@@ -280,6 +285,8 @@ test('a word, a set and the rest of a level are taken in place', async ({ page }
   // The board counts them.
   await page.goto('/resources');
   const n1 = page.getByRole('region', { name: /^N1/ });
-  await expect(n1.getByRole('link', { name: /Ngữ pháp/ })).toContainText(/(\d+)\/\1/);
-  await dropTakenN1Grammar();
+  // Every N1 pattern taken here (the test starts with none): the whole level, nothing missing.
+  const cell = n1.getByRole('link', { name: /Ngữ pháp/ });
+  await expect(cell).toContainText(`${count + 20}/${count + 20}`);
+  await expect(cell).toContainText('đủ cả cấp');
 });

@@ -38,6 +38,8 @@ const DECK = [
   starter('VOCAB', '静か', 'N5'),
   starter('VOCAB', '切符', 'N4'),
   starter('GRAMMAR', '〜は', 'N5'),
+  // More than a set's worth, for "Lấy nốt" asking first (U4d).
+  ...Array.from({ length: 21 }, (_, i) => starter('VOCAB', `語${i}`, 'N3')),
 ];
 
 async function add(db: UserDb, kind: string, expression: string) {
@@ -155,5 +157,21 @@ describe('takeLevelWords (U4d)', () => {
     });
     const gone = await T.takeLevelWords(mine, 'N5', 'grammar', 2);
     expect(gone.ok).toBe(false);
+  });
+
+  it('refuses more than a set unasked, and takes it once the learner said yes', async () => {
+    const unasked = await T.takeLevelWords(mine, 'N3', 'vocab', null);
+    expect(unasked.ok).toBe(false);
+    expect(await mine.item.count()).toBe(0);
+    expect(await T.takeLevelWords(mine, 'N3', 'vocab', null, true)).toEqual({
+      ok: true,
+      data: { added: 21 },
+    });
+    // A set is never more than 20, so it needs no question.
+    await resetLearningData(prisma);
+    expect(await T.takeLevelWords(mine, 'N3', 'vocab', 2)).toEqual({
+      ok: true,
+      data: { added: 1 },
+    });
   });
 });

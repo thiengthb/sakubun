@@ -125,23 +125,25 @@ function columns(kind: LevelContext['kind'], voice: Voice): ColumnDef<WordCard, 
     {
       id: 'open',
       header: 'Mở',
-      size: 150,
+      size: 210,
       minSize: 110,
       enableSorting: false,
       enableGlobalFilter: false,
       meta: { label: 'Mở', cellClassName: 'whitespace-nowrap' },
-      cell: ({ row }) =>
-        row.original.state === 'none' ? (
-          <TakeWordButton
-            entryId={row.original.entryId}
-            expression={row.original.expression}
-            className="h-7 md:h-6"
-          />
-        ) : (
+      cell: ({ row }) => (
+        <span className="flex items-center gap-3">
+          {row.original.state === 'none' && (
+            <TakeWordButton
+              entryId={row.original.entryId}
+              expression={row.original.expression}
+              className="h-7 md:h-6"
+            />
+          )}
           <Link href={row.original.link.href} className="text-accent-brand hover:underline">
             {row.original.link.label}
           </Link>
-        ),
+        </span>
+      ),
     },
   ];
 }

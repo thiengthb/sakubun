@@ -28,12 +28,13 @@ export async function takeLevelAction(
   level: string,
   kind: string,
   set: number | null,
+  confirmed: boolean,
 ): Promise<ActionResult<{ message: string }>> {
   if (!(JLPT_LEVELS as readonly string[]).includes(level)) return err('Không có cấp này.');
   if (kind !== 'grammar' && kind !== 'vocab') return err('Không có loại mục này.');
   if (set !== null && !(Number.isInteger(set) && set >= 1)) return err('Không có chặng này.');
   const db = await getUserDb();
-  const taken = await takeLevelWords(db, level as BoardLevel, kind, set);
+  const taken = await takeLevelWords(db, level as BoardLevel, kind, set, confirmed === true);
   if (!taken.ok) return taken;
   refresh();
   return ok({

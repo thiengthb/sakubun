@@ -2,6 +2,7 @@ import type { UserDb } from '@/lib/db/user-db';
 import { err, ok, type ActionResult } from '@/lib/core/action-result';
 import { loadLevelSets } from '@/lib/app/level-sets';
 import { GRAMMAR_KIND, VOCAB_KIND } from '@/lib/library/item-kinds';
+import { SET_SIZE } from '@/lib/library/level-sets';
 import type { LevelKind } from '@/lib/library/level-screen';
 import type { BoardLevel } from '@/lib/library/level-tally';
 import { takeEntries } from '@/lib/library/take';
@@ -14,10 +15,15 @@ export async function takeLevelWords(
   level: BoardLevel,
   kind: LevelKind,
   set: number | null,
+  // The learner was asked first; without it, more than a set's worth is refused, so a count that
+  // grew since the page was drawn (a word removed in another tab) never takes a level unasked.
+  confirmed = false,
 ): Promise<ActionResult<{ added: number }>> {
   const { sets } = await loadLevelSets(db, level, kind === 'grammar' ? GRAMMAR_KIND : VOCAB_KIND);
   const words = set === null ? sets.flatMap((s) => s.words) : sets[set - 1]?.words;
   if (!words) return err('Không có chặng này, tải lại trang để xem các chặng mới.');
   const missing = words.filter((w) => w.state === 'none').map((w) => w.entry.id);
+  if (!confirmed && missing.length > SET_SIZE)
+    return err('Số mục còn thiếu đã đổi, tải lại trang rồi bấm lại.');
   return ok({ added: await takeEntries(db, missing) });
 }

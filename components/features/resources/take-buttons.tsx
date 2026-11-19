@@ -7,7 +7,7 @@ import { useServerAction } from '@/components/common/use-server-action';
 import { Button } from '@/components/ui/button';
 import { takeLevelAction, takeWordAction } from '@/app/resources/level/actions';
 import { SET_SIZE } from '@/lib/library/level-sets';
-import { UNIT, type LevelContext, type TakeScope } from '@/lib/library/level-screen';
+import { takeAskNote, UNIT, type LevelContext, type TakeScope } from '@/lib/library/level-screen';
 
 // Taking words in place on Kho's level screens (U4d, docs/plans/2026-11-14-u4-kho.md). The page
 // refreshes from the server once the words are in, so counts and marks change with it.
@@ -24,7 +24,7 @@ export function TakeLevelTrigger({
   className,
   children,
 }: {
-  ctx: Pick<LevelContext, 'level' | 'kind'>;
+  ctx: LevelContext;
   scope: TakeScope;
   className?: string;
   children: ReactNode;
@@ -34,7 +34,8 @@ export function TakeLevelTrigger({
     success: message,
     onSuccess: () => setAsking(false),
   });
-  const run = () => take.run(ctx.level, ctx.kind, scope.set);
+  const ask = scope.set === null && scope.count > SET_SIZE;
+  const run = () => take.run(ctx.level, ctx.kind, scope.set, ask);
   const unit = UNIT[ctx.kind];
   return (
     <>
@@ -43,15 +44,17 @@ export function TakeLevelTrigger({
         className={className}
         disabled={take.isPending}
         aria-busy={take.isPending}
-        onClick={() => (scope.set === null && scope.count > SET_SIZE ? setAsking(true) : run())}
+        onClick={() => (ask ? setAsking(true) : run())}
       >
         {children}
+        {/* "Lấy nốt" on N1 takes about 3 s: show it is working, not stuck. */}
+        {take.isPending && !asking && <Loader2 className="size-4 shrink-0 animate-spin" />}
       </button>
       <ConfirmDialog
         open={asking}
         onOpenChange={setAsking}
         title={`Lấy ${scope.count} ${unit} còn thiếu của ${ctx.level}?`}
-        description={`Các ${unit} vào kho của bạn như mục mới; Ôn nhanh đưa ra dần theo hạn mức mỗi ngày, không dồn một lúc.`}
+        description={takeAskNote(ctx)}
         confirmLabel={`Lấy ${scope.count} ${unit}`}
         confirmVariant="default"
         pending={take.isPending}
