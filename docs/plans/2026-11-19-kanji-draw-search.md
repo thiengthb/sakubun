@@ -1,16 +1,15 @@
 # KD · Tìm bằng vẽ kanji
 
-Trạng thái: đang chạy · Duyệt: chưa · Cập nhật: 2026-11-19 · Thread: "Đồng bộ Sakubun giữa các nick" (nick tnt628)
+Trạng thái: đang chạy · Duyệt: 2026-11-19 · Cập nhật: 2026-11-19 · Thread: "Đồng bộ Sakubun giữa các nick" (nick tnt628)
 
 Luật ghi file này ở `profile/PLANNING.md` của repo thienai-workflow. Tick khi có bằng chứng; đổi bước thì ghi vào "Đã đổi";
 lỗi thì ghi vào "Lỗi gặp".
 
 ## Đang ở đâu
 
-- Đang ở: kế hoạch, chờ thien chọn cách nhận dạng.
+- Đang ở: KD1 (máy đoán chữ) theo cách A thien chọn.
 - Còn thiếu: KD1–KD3.
-- thien cần làm: chọn một trong ba cách ở https://claude.ai/artifact/MVyZQjxQ14eZCYgf6eF4MC (mở ở nick tnt628). Dựng lại
-  trang ở nick khác: `make-decision.mjs docs/plans/2026-11-19-kanji-draw-search/decision.json <out>`.
+- thien cần làm: không có (sau KD1: vẽ thử khoảng 20 chữ).
 
 ## Mục tiêu
 
@@ -24,6 +23,10 @@ vào ô tìm và kết quả hiện như khi gõ (thien xin ngày 19/11, lúc du
 - Kana: gõ được bằng bàn phím, không cần vẽ.
 
 ## Cách nhận dạng (thien chọn)
+
+Kết quả (19/11): thien chọn **A · Tự nhận dạng bằng nét KanjiVG đã có**, trùng đề xuất (bản ghi
+`decisions/sakubun-kd-recognizer` trên trang https://claude.ai/artifact/MVyZQjxQ14eZCYgf6eF4MC, mở ở nick tnt628; dựng
+lại: `make-decision.mjs docs/plans/2026-11-19-kanji-draw-search/decision.json <out>`).
 
 Khác khung viết KJ4: KJ4 biết trước chữ cần viết và so từng nét với chữ đó; ở đây máy không biết chữ nào, phải so với
 cả 2.136 chữ Jōyō rồi xếp hạng.

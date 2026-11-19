@@ -11,10 +11,10 @@ bảng nhỏ phải, giữ sidebar và thanh tab): U2a xong (#291, 14/11), U2b�
 
 ## Kế hoạch đang chạy
 
-| Kế hoạch                                                   | Đang ở checkpoint       | Đã tick       |
-| ---------------------------------------------------------- | ----------------------- | ------------- |
-| [UI v2](plans/2026-11-08-ui-v2.md)                         | U4 Kho của bạn          | U0–U3 / U0–U8 |
-| [Tìm bằng vẽ kanji](plans/2026-11-19-kanji-draw-search.md) | Chờ chọn cách nhận dạng | 0 / 3         |
+| Kế hoạch                                                   | Đang ở checkpoint | Đã tick       |
+| ---------------------------------------------------------- | ----------------- | ------------- |
+| [UI v2](plans/2026-11-08-ui-v2.md)                         | U4 Kho của bạn    | U0–U3 / U0–U8 |
+| [Tìm bằng vẽ kanji](plans/2026-11-19-kanji-draw-search.md) | KD1 Máy đoán chữ  | 0 / 3         |
 
 ## Việc dở
 
@@ -22,7 +22,7 @@ bảng nhỏ phải, giữ sidebar và thanh tab): U2a xong (#291, 14/11), U2b�
 | ----------------------- | ------------- | ----- | ----------------------------------------- |
 | Đóng câu hỏi nghiên cứu | #289          | 13/11 | Chỉ tài liệu, chờ thien merge             |
 | Bản tóm tắt hai nick    | #296          | 13/11 | Tạm, của nick kia; đóng khi thien so xong |
-| KD Tìm bằng vẽ kanji    | (PR này)      | 19/11 | Chờ thien chọn cách nhận dạng             |
+| KD1 Máy đoán chữ kanji  | (PR này)      | 19/11 | thien chọn A; đang code                   |
 
 ## Việc tiếp theo
 
@@ -30,7 +30,6 @@ bảng nhỏ phải, giữ sidebar và thanh tab): U2a xong (#291, 14/11), U2b�
 
 ## Đang chờ thien
 
-- Chọn cách nhận dạng cho tìm bằng vẽ kanji (trang chọn trong PR kế hoạch).
 - Dán dòng hướng dẫn project vào cả hai project Sakubun (nội dung trong mô tả #297).
 - Trên NUC, không gấp: bấm Hiện "N5 · Ngữ pháp" ở Quản trị; thử chia sẻ kịch bản bằng tài khoản `kai`.
 
