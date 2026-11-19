@@ -7,14 +7,8 @@
       "key": "a",
       "name": "A · Sửa đường dẫn, thêm nút quay lại",
       "summary": "Giữ nguyên cấu trúc. Đường dẫn đi đúng đường đã vào (Kho › Theo cấp JLPT › N5 · Từ vựng › Chặng 1). Điện thoại thay chữ nhỏ bằng nút '‹ Chặng 1'.",
-      "pros": [
-        "Ít đổi nhất, làm nhanh",
-        "Quay lại luôn đúng chỗ vừa rời"
-      ],
-      "cons": [
-        "Vẫn không thấy Kho có mấy ngả",
-        "Ngoài JLPT, Nhóm, Kanji vẫn khó tìm"
-      ],
+      "pros": ["Ít đổi nhất, làm nhanh", "Quay lại luôn đúng chỗ vừa rời"],
+      "cons": ["Vẫn không thấy Kho có mấy ngả", "Ngoài JLPT, Nhóm, Kanji vẫn khó tìm"],
       "image": "a.png",
       "scale": 2
     },
