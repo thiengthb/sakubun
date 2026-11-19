@@ -16,7 +16,7 @@ import {
 } from '@/lib/library/level-tally';
 import type { KhoBoard } from '@/lib/app/level-board';
 import type { KhoSearch } from '@/lib/app/kho-search';
-import { KhoSearchBox, KhoSearchResults, type Voice } from './kho-search';
+import { KhoSearchArea, KhoSearchResults, type Voice } from './kho-search';
 import { cn } from '@/lib/core/utils';
 import { KHO_BOARD_META } from './kho-copy';
 
@@ -66,17 +66,18 @@ export function LevelBoardView({
       }
     >
       <div className="flex flex-col gap-4">
-        <KhoSearchBox query={query} />
-        {search ? (
-          <KhoSearchResults search={search} voice={voice} />
-        ) : (
-          <div className="flex flex-col gap-3">
-            {board.levels.map((row) => (
-              <LevelCard key={row.level} row={row} labels={labels} />
-            ))}
-            <OutsideCard outside={board.outside} groups={board.groups} />
-          </div>
-        )}
+        <KhoSearchArea query={query}>
+          {search ? (
+            <KhoSearchResults search={search} voice={voice} />
+          ) : (
+            <div className="flex flex-col gap-3">
+              {board.levels.map((row) => (
+                <LevelCard key={row.level} row={row} labels={labels} />
+              ))}
+              <OutsideCard outside={board.outside} groups={board.groups} />
+            </div>
+          )}
+        </KhoSearchArea>
       </div>
     </PageShell>
   );

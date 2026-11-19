@@ -1,11 +1,15 @@
 'use client';
 
-import { useEffect, useRef, useState, useTransition } from 'react';
+import { useEffect, useRef, useState, useTransition, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Loader2 } from 'lucide-react';
+import { Loader2, PenLine, X } from 'lucide-react';
+import { KanjiDrawPad } from '@/components/common/kanji-draw-pad';
 import { LIST_CARD } from '@/components/common/list-card';
 import { SearchInput } from '@/components/common/search-input';
+import { Button } from '@/components/ui/button';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { SpokenLine } from '@/components/common/spoken-line';
 import { STATE_LABEL } from '@/lib/library/level-screen';
 import type { KhoSearch, LibraryHit, MineHit } from '@/lib/app/kho-search';
@@ -25,13 +29,21 @@ export interface Voice {
   rate?: number;
 }
 
-/** The box under Kho's title. Typing updates ?q= a moment after the last key; `query` is ?q= as is. */
-export function KhoSearchBox({ query }: { query: string }) {
+/**
+ * The box under Kho's title, and what it searches below it (`children`: the results or the board).
+ * Typing updates ?q= a moment after the last key; `query` is ?q= as is. The pen in the box opens the
+ * drawing pad (KD2, docs/plans/2026-11-19-kanji-draw-search.md, layout B): a column beside the results
+ * on a laptop, a keyboard at the foot of a phone's screen that stands in for the tab bar meanwhile.
+ */
+export function KhoSearchArea({ query, children }: { query: string; children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
+  const phone = useIsMobile();
   const [text, setText] = useState(query);
+  const [pen, setPen] = useState(false);
   const [pending, startTransition] = useTransition();
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const field = useRef<HTMLInputElement>(null);
   // A key is waiting for the pause before it searches.
   const [waiting, setWaiting] = useState(false);
 
@@ -52,28 +64,102 @@ export function KhoSearchBox({ query }: { query: string }) {
       );
     }, WAIT_MS);
   };
+  const type = (next: string) => {
+    setText(next);
+    go(next);
+  };
+
+  const togglePen = () => {
+    // On a phone the drawing keyboard takes the typing keyboard's place.
+    if (!pen && phone) field.current?.blur();
+    setPen(!pen);
+  };
+  const pad = (layout: 'keyboard' | 'panel') => (
+    <KanjiDrawPad
+      layout={layout}
+      onPick={(k) => type(text + k)}
+      onKeyboard={
+        layout === 'keyboard'
+          ? () => {
+              setPen(false);
+              field.current?.focus();
+            }
+          : undefined
+      }
+    />
+  );
 
   return (
-    <div className="relative">
-      <SearchInput
-        role="searchbox"
-        enterKeyHint="search"
-        value={text}
-        onChange={(e) => {
-          setText(e.target.value);
-          go(e.target.value);
-        }}
-        placeholder="Tìm trong kho và Kho chung"
-        aria-label="Tìm trong kho và Kho chung"
-        className="sm:max-w-none"
-      />
-      {pending && (
-        <Loader2
-          aria-label="Đang tìm"
-          className="absolute top-1/2 right-10 size-4 -translate-y-1/2 animate-spin text-muted-foreground"
+    <>
+      <div className="relative">
+        <SearchInput
+          ref={field}
+          role="searchbox"
+          enterKeyHint="search"
+          value={text}
+          onChange={(e) => type(e.target.value)}
+          // Typing on a phone brings its own keyboard up, which the drawing one would sit under.
+          onFocus={() => phone && setPen(false)}
+          placeholder="Tìm trong kho và Kho chung"
+          aria-label="Tìm trong kho và Kho chung"
+          className="sm:max-w-none"
+          inputClassName="pr-20"
         />
+        {pending && (
+          <Loader2
+            aria-label="Đang tìm"
+            className="absolute top-1/2 right-20 size-4 -translate-y-1/2 animate-spin text-muted-foreground"
+          />
+        )}
+        <Button
+          variant={pen ? 'secondary' : 'ghost'}
+          size="sm"
+          aria-pressed={pen}
+          title="Tìm bằng cách vẽ chữ kanji"
+          onClick={togglePen}
+          className="absolute top-1/2 right-1 -translate-y-1/2"
+        >
+          <PenLine data-icon="inline-start" />
+          Vẽ
+        </Button>
+      </div>
+      {pen && !phone ? (
+        <div className="flex items-start gap-6">
+          <div className="min-w-0 flex-1">{children}</div>
+          <aside
+            aria-label="Vẽ chữ"
+            className={cn(LIST_CARD.base, 'sticky top-4 flex w-80 shrink-0 flex-col gap-3 p-4')}
+          >
+            <div className="flex items-center justify-between">
+              <h2 className="text-heading">Vẽ chữ</h2>
+              <Button variant="ghost" size="icon" aria-label="Đóng khung vẽ" onClick={togglePen}>
+                <X />
+              </Button>
+            </div>
+            {pad('panel')}
+          </aside>
+        </div>
+      ) : (
+        children
       )}
-    </div>
+      {pen && phone && (
+        <>
+          {/* Room under the results, so the last of them can scroll up above the drawing keyboard. */}
+          <div aria-hidden className="h-80 shrink-0" />
+          {/* On the body, so it sits over the tab bar whatever the page's own layers are. */}
+          {createPortal(
+            <div
+              role="region"
+              aria-label="Bàn phím vẽ"
+              className="fixed inset-x-0 bottom-0 z-50 border-t-2 border-border bg-background pb-[env(safe-area-inset-bottom)]"
+            >
+              <div className="mx-auto max-w-md p-3">{pad('keyboard')}</div>
+            </div>,
+            document.body,
+          )}
+        </>
+      )}
+    </>
   );
 }
 
