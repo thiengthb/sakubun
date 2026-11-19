@@ -1,7 +1,7 @@
 # U4: màn Kho theo cấp JLPT (U4d lấy thêm tại chỗ chờ duyệt)
 
 Repo: thiengthb/sakubun · Nhánh: feat/u4d-take-in-place · PR: #335
-Ghi bởi: Claude tnt628, https://claude.ai/code/project/chan_0145cotX9neLQKZjxfBxCwDe?thread=cmsg_0145cotX9neLQKZjxfBxCwDe2nQVyXHabhp85BNJRRHSxc · Cập nhật: 2026-11-19T03:46Z
+Ghi bởi: Claude tnt628, https://claude.ai/code/project/chan_0145cotX9neLQKZjxfBxCwDe?thread=cmsg_0145cotX9neLQKZjxfBxCwDe2nQVyXHabhp85BNJRRHSxc · Cập nhật: 2026-11-19T03:50Z
 
 ## thien muốn gì
 Làm U4 theo kế hoạch đã duyệt `docs/plans/2026-11-14-u4-kho.md` (hướng 2, gộp theo cấp JLPT; 15/11 thien trả lời "theo đề xuất" cả 3 câu, U4g/U4h để sau kỳ thi N2). thien bảo nick tnt697 làm tiếp ("nick này làm tiếp", 15/11).
@@ -16,7 +16,7 @@ Làm U4 theo kế hoạch đã duyệt `docs/plans/2026-11-14-u4-kho.md` (hướ
 2. Rồi U4e (Ngoài JLPT và nút Thêm), U4f (ô tìm hai nguồn) theo kế hoạch.
 
 ## Đang chờ thien
-- Không có.
+- Chọn bố cục U4e: https://claude.ai/artifact/UA7G9bxevbfhGk4DqDFUg8 (mở ở nick tnt628). Dựng lại: `make-decision.mjs docs/plans/2026-11-14-u4-kho/u4e/decision.json <out>` (nguồn trong nhánh feat/u4e-outside-jlpt).
 
 ## Lưu ý
 - Máy ảo: `npm ci` cần `npm_config_nodedir=/opt/node22`; `prisma generate` cần `PRISMA_SCHEMA_ENGINE_BINARY=/bin/true`; e2e chạy bằng Chrome hệ thống (config tạm với `channel: 'chrome'`, không commit). `npm run build` lỗi ở máy ảo vì không tải được Google Fonts, CI thì xanh.
@@ -30,3 +30,4 @@ Làm U4 theo kế hoạch đã duyệt `docs/plans/2026-11-14-u4-kho.md` (hướ
 - 19/11 03:15Z: U4d ở PR nháp #335. Ngoài kế hoạch: sửa addItems để mục lấy từ Kho chung không bị giới hạn 20 ký tự (18 mục OpenJLPT trước giờ không lấy được).
 - 19/11 03:45Z: review độc lập (tnt628) OK, không chặn. CodeRabbit 7 ý: sửa 6 ở 2e0d37e (resolve), ý take.ts (chuẩn hoá chữ) trả lời không sửa vì không mục OpenJLPT nào bị đổi chữ, để mở cho thien xem. Chờ CI và thien nói "merge đi".
 - 19/11 03:50Z: #335 (U4d) đã merge (d8a08e8) theo lời thien. STATUS và kế hoạch chưa ghi U4d xong: sửa trong PR U4e. Tiếp U4e (trang Ngoài JLPT, ngăn Thêm): đưa 2–3 bố cục trước khi code. Ghi bởi Claude tnt628.
+- 19/11 03:55Z: U4e ở PR nháp #336 (feat/u4e-outside-jlpt). Đã gửi trang chọn 3 bố cục (A tab theo nguồn, B thẻ như màn cấp [đề xuất], C tìm là chính). Chờ thien chọn rồi mới code. Ghi bởi Claude tnt628.
