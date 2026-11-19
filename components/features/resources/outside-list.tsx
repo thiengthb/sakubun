@@ -1,3 +1,5 @@
+'use client';
+
 import Link from 'next/link';
 import { PageShell } from '@/components/layout/page-shell';
 import { ParentCrumbs } from '@/components/layout/app-breadcrumbs';
@@ -57,22 +59,22 @@ export function OutsideList({
                   className={LIST_CARD.link}
                 />
                 <span className="flex min-w-0 flex-1 flex-col">
-                  <span className="flex min-w-0 items-baseline gap-2">
-                    <SpokenLine
-                      text={item.expression}
-                      speakText={speakable(item.expression)}
-                      speaker={tts.speaker}
-                      rate={tts.rate}
-                      truncate
-                      className="relative z-10 font-semibold"
-                    />
+                  <SpokenLine
+                    text={item.expression}
+                    speakText={speakable(item.expression)}
+                    speaker={tts.speaker}
+                    rate={tts.rate}
+                    truncate
+                    className="relative z-10 font-semibold"
+                  />
+                  <span className="truncate text-sm">
                     {item.reading && (
-                      <span lang="ja" className="truncate text-xs text-muted-foreground">
-                        {item.reading}
+                      <span lang="ja" className="text-muted-foreground">
+                        {item.reading} ·{' '}
                       </span>
                     )}
+                    {item.meaningVi}
                   </span>
-                  <span className="truncate text-sm">{item.meaningVi}</span>
                 </span>
                 <span className="inline-flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground">
                   <span aria-hidden className={cn('size-3 rounded-xs', MARK[state])} />

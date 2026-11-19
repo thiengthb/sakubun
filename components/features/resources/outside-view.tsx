@@ -1,9 +1,9 @@
+'use client';
+
 import Link from 'next/link';
-import { List } from 'lucide-react';
 import { PageShell } from '@/components/layout/page-shell';
 import { ParentCrumbs } from '@/components/layout/app-breadcrumbs';
 import { AddButton } from '@/components/common/add-button';
-import { ExpandingIconButton } from '@/components/common/expanding-icon-button';
 import { LIST_CARD } from '@/components/common/list-card';
 import { ButtonLink } from '@/components/ui/button';
 import { setSummary, STATE_LABEL } from '@/lib/library/level-screen';
@@ -28,12 +28,7 @@ export function OutsideView({ shelves }: { shelves: OutsideShelves }) {
       breadcrumb={<ParentCrumbs section="resources" self />}
       title={OUTSIDE_TITLE}
       meta={outsideMeta(shelves)}
-      actions={
-        <>
-          <ExpandingIconButton href="/resources/all" icon={List} label="Mọi mục" />
-          <AddButton href="/resources/new" />
-        </>
-      }
+      actions={<AddButton href="/resources/new" />}
     >
       <div className="flex flex-col gap-6">
         <ShelfSection

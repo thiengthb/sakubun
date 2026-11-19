@@ -1,0 +1,93 @@
+// Scratch (never committed): U4e review shots. SHOT_DIR=<dir>.
+import path from 'node:path';
+import Database from 'better-sqlite3';
+import { test } from '@playwright/test';
+import { E2E_DB_FILE, E2E_EMAIL, E2E_LOGIN, E2E_OWNER, seedE2eAccount } from './fixtures';
+
+const OUT = process.env.SHOT_DIR!;
+const DAY = 86_400_000;
+
+async function open(browser: import('@playwright/test').Browser, w: number) {
+  const ctx = await browser.newContext({ viewport: { width: w, height: w === 390 ? 844 : 900 }, deviceScaleFactor: 2 });
+  const page = await ctx.newPage();
+  await page.addInitScript(() => {
+    const s = document.createElement('style');
+    s.textContent = 'nextjs-portal{display:none!important}';
+    document.addEventListener('DOMContentLoaded', () => document.head.append(s));
+  });
+  await page.goto('/login');
+  await page.getByLabel('Email').fill(E2E_EMAIL);
+  await page.getByLabel('Mật khẩu').fill(E2E_LOGIN);
+  await page.getByRole('button', { name: 'Đăng nhập' }).click();
+  await page.waitForURL((u) => !u.pathname.startsWith('/login'), { timeout: 30_000 });
+  return { ctx, page };
+}
+
+test.beforeAll(seedE2eAccount);
+
+// [expression, reading, meaning, source, state: o mastered, l learning, d due, n new]
+const ITEMS: [string, string, string, string, string][] = [
+  ['締め切り', 'しめきり', 'hạn chót', 'MCP', 'd'], ['見積もり', 'みつもり', 'báo giá', 'MCP', 'l'],
+  ['気まずい', 'きまずい', 'ngượng ngùng', 'MCP', 'o'], ['推し', 'おし', 'người mình hâm mộ', 'MCP', 'o'],
+  ['積ん読', 'つんどく', 'mua sách rồi để đó', 'MCP', 'n'], ['手応え', 'てごたえ', 'cảm giác có kết quả', 'MCP', 'l'],
+  ['打ち合わせ', 'うちあわせ', 'buổi họp bàn', 'MCP', 'o'], ['微妙', 'びみょう', 'khó nói, tế nhị', 'MCP', 'd'],
+  ['根回し', 'ねまわし', 'vận động trước', 'MCP', 'n'], ['段取り', 'だんどり', 'sắp xếp các bước', 'MCP', 'o'],
+  ['先輩', 'せんぱい', 'tiền bối', 'MANUAL', 'o'], ['名刺', 'めいし', 'danh thiếp', 'MANUAL', 'o'],
+  ['了解', 'りょうかい', 'đã hiểu', 'MANUAL', 'o'], ['残業', 'ざんぎょう', 'làm thêm giờ', 'MANUAL', 'l'],
+  ['有給', 'ゆうきゅう', 'nghỉ phép có lương', 'MANUAL', 'n'],
+  ['仕様', 'しよう', 'đặc tả', 'LIBRARY', 'l'], ['不具合', 'ふぐあい', 'lỗi phần mềm', 'LIBRARY', 'd'],
+  ['納期', 'のうき', 'hạn giao hàng', 'LIBRARY', 'n'], ['本番', 'ほんばん', 'môi trường thật', 'LIBRARY', 'n'],
+  ['共有', 'きょうゆう', 'chia sẻ', 'LIBRARY', 'o'],
+];
+const GROUPS: [string, number[]][] = [
+  ['Từ trong bài dịch tuần này', [0, 1, 4, 5, 7, 8]],
+  ['Công sở', [10, 11, 12, 13, 14, 6, 9]],
+];
+
+function prepare() {
+  const d = new Database(path.join(process.cwd(), E2E_DB_FILE));
+  d.pragma('foreign_keys = ON');
+  for (const t of ['GroupMember', 'Group', 'ReviewLog', 'SrsState', 'Sentence', 'Item']) d.exec(`DELETE FROM "${t}"`);
+  const owner = (d.prepare(`SELECT ${E2E_OWNER} AS id`).get() as { id: string }).id;
+  const now = Date.now();
+  ITEMS.forEach(([expr, reading, meaning, source, st], i) => {
+    const created = new Date(now - (40 - i) * DAY).toISOString();
+    d.prepare(
+      `INSERT INTO Item (id, userId, kind, expression, reading, meaningVi, level, source, suspended, starred, createdAt)
+       VALUES (?, ?, 'VOCAB', ?, ?, ?, 'N5', ?, 0, 0, ?)`,
+    ).run(`u4e${i}`, owner, expr, reading, meaning, source, created);
+    const state = st === 'n' ? 0 : st === 'l' ? 1 : 2;
+    const due = st === 'd' ? now - DAY : st === 'n' ? now : now + 9 * DAY;
+    d.prepare(`INSERT INTO SrsState (id, userId, itemId, due, state, reps) VALUES (?, ?, ?, ?, ?, ?)`).run(
+      `s${i}`, owner, `u4e${i}`, new Date(due).toISOString(), state, state === 0 ? 0 : 3,
+    );
+  });
+  GROUPS.forEach(([name, members], g) => {
+    const at = new Date(now - g * DAY).toISOString();
+    d.prepare(`INSERT INTO "Group" (id, userId, name, kind, createdAt, updatedAt) VALUES (?, ?, ?, 'mixed', ?, ?)`).run(`g${g}`, owner, name, at, at);
+    for (const m of members) d.prepare(`INSERT INTO GroupMember (groupId, itemId, userId, addedAt) VALUES (?, ?, ?, ?)`).run(`g${g}`, `u4e${m}`, owner, at);
+  });
+  d.close();
+}
+
+test('u4e shots', async ({ browser }) => {
+  test.setTimeout(600_000);
+  prepare();
+  for (const w of [1440, 390]) {
+    const { ctx, page } = await open(browser, w);
+    const shot = async (name: string) => {
+      await page.waitForLoadState('networkidle');
+      await page.waitForTimeout(500);
+      await page.screenshot({ path: `${OUT}/${name}-${w}.jpg`, type: 'jpeg', quality: 85, fullPage: true });
+    };
+    await page.goto('/resources', { waitUntil: 'networkidle' });
+    await page.getByRole('link', { name: /Mục ngoài JLPT/ }).scrollIntoViewIfNeeded();
+    await shot('board');
+    await page.getByRole('link', { name: /Mục ngoài JLPT/ }).click();
+    await page.waitForURL('**/resources/outside');
+    await shot('outside');
+    await page.goto('/resources/outside/mcp', { waitUntil: 'networkidle' });
+    await shot('source');
+    await ctx.close();
+  }
+});
