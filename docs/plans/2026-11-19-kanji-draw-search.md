@@ -55,11 +55,13 @@ KD1 phải thử bằng nét vẽ thật (thien vẽ khoảng 20 chữ) trước
 
 ### KD1. Máy đoán chữ
 
-Xong khi: test với nét giả lập đạt ít nhất mức ở bảng.
+Xong khi: test với nét giả lập qua các mức sàn trong `lib/japanese/recognize.test.ts`: viết nhẹ đúng ở vị trí 1 từ 95%,
+viết vừa nằm trong 5 chữ đầu từ 93%, viết nặng nằm trong 10 chữ đầu từ 80%, đảo 2 nét nằm trong 5 chữ đầu từ 92%, thiếu
+1 nét nằm trong 5 chữ đầu từ 90%. Bảng ở trên là số đo của bản thử, để so.
 
 - [x] Hàm thuần nhận các nét đã vẽ, trả 10 chữ giống nhất, kèm test (`lib/japanese/recognize.ts`, PR #340). Test 60
       chữ mỗi mức với hạt giống cố định: nhẹ 100% đúng vị trí 1; vừa 98% trong 5 chữ đầu; nặng 87% trong 10 chữ đầu;
-      đảo 2 nét 88% trong 5 chữ đầu; thiếu 1 nét 97% trong 5 chữ đầu. Khoảng 20–35 ms một lần đoán trên máy dev.
+      đảo 2 nét 100% trong 5 chữ đầu (98% khi thử 400 chữ); thiếu 1 nét 97% trong 5 chữ đầu. Khoảng 20–35 ms một lần đoán trên máy dev.
 - [x] Server action `recognizeKanjiAction` (`app/resources/actions.ts`) nhận nét dạng cặp [x, y], tối đa 34 nét, 200
       điểm mỗi nét; nét không đọc được thì trả một dòng "Xoá hết rồi vẽ lại".
 
@@ -81,9 +83,10 @@ Xong khi: ô tìm ở Kho chung và trang Kanji cũng có nút vẽ.
 
 ## Đã đổi
 
-| Ngày  | Đổi gì                                    | Vì sao                                     |
-| ----- | ----------------------------------------- | ------------------------------------------ |
-| 19/11 | Thử 20 chữ vẽ thật chuyển từ KD1 sang KD2 | KD1 chưa có khung vẽ để thien thử bằng tay |
+| Ngày  | Đổi gì                                                                                                | Vì sao                                                                                 |
+| ----- | ----------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| 19/11 | "Xong khi" của KD1 ghi thành mức sàn trong test, thêm cho phép đảo 2 nét liền nhau khi so theo thứ tự | CodeRabbit chỉ ra test (85%) thấp hơn bảng (92%); cho đảo nét thì đạt 98% trên 400 chữ |
+| 19/11 | Thử 20 chữ vẽ thật chuyển từ KD1 sang KD2                                                             | KD1 chưa có khung vẽ để thien thử bằng tay                                             |
 
 ## Lỗi gặp
 

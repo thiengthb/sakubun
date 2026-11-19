@@ -79,6 +79,9 @@ describe('recognizeKanji (KD1)', () => {
         pathPoints(d).map((p) => ({ x: p.x * 2.5 + 40, y: p.y * 2.5 + 10 })),
       );
       expect(recognizeKanji(moved, shapes)[0]).toBe(k);
+      // A pad that counts in fractions of its box draws the same kanji.
+      const tiny = table[k].map((d) => pathPoints(d).map((p) => ({ x: p.x / 109, y: p.y / 109 })));
+      expect(recognizeKanji(tiny, shapes)[0]).toBe(k);
     }
   });
 
@@ -89,7 +92,7 @@ describe('recognizeKanji (KD1)', () => {
   });
 
   it('copes with two strokes swapped or one left out', { timeout: 60_000 }, () => {
-    expect(hitRate({ level: 2, swap: true }, 5)).toBeGreaterThanOrEqual(0.85);
+    expect(hitRate({ level: 2, swap: true }, 5)).toBeGreaterThanOrEqual(0.92);
     expect(hitRate({ level: 2, drop: true }, 5)).toBeGreaterThanOrEqual(0.9);
   });
 

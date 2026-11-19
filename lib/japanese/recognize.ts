@@ -37,7 +37,8 @@ export function normalizeStrokes(strokes: readonly (readonly Point[])[]): Point[
     maxX = Math.max(maxX, p.x);
     maxY = Math.max(maxY, p.y);
   }
-  const size = Math.max(maxX - minX, maxY - minY, 1);
+  // A tap alone has no extent; anything else is scaled by its own, however small the pad's units.
+  const size = Math.max(maxX - minX, maxY - minY) || 1;
   const cx = (minX + maxX) / 2;
   const cy = (minY + maxY) / 2;
   return strokes.map((s) =>
@@ -59,10 +60,23 @@ const meanDistance = (a: readonly Point[], b: readonly Point[]) => {
   return total / a.length;
 };
 
+// In order, except that two neighbouring strokes may be written the other way round, each such
+// swap costing UNORDERED_COST: the commonest slip (口's last two strokes, 書's bars).
 function inOrder(drawn: readonly Point[][], shape: readonly Point[][]): number {
-  let total = 0;
-  for (let i = 0; i < drawn.length; i++) total += meanDistance(drawn[i], shape[i]);
-  return total / drawn.length;
+  const n = drawn.length;
+  const best = Array<number>(n + 1).fill(0);
+  for (let i = 1; i <= n; i++) {
+    best[i] = best[i - 1] + meanDistance(drawn[i - 1], shape[i - 1]);
+    if (i >= 2) {
+      const swapped =
+        best[i - 2] +
+        meanDistance(drawn[i - 2], shape[i - 1]) +
+        meanDistance(drawn[i - 1], shape[i - 2]) +
+        UNORDERED_COST;
+      if (swapped < best[i]) best[i] = swapped;
+    }
+  }
+  return best[n] / n;
 }
 
 // Learners often swap two strokes; each drawn stroke takes the nearest stroke still free.
