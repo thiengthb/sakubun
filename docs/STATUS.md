@@ -23,11 +23,11 @@ Review PR: CodeRabbit review một lần khi PR chuyển sẵn sàng, không rev
 | ----------------------- | ------------- | ----- | ----------------------------------------- |
 | Đóng câu hỏi nghiên cứu | #289          | 13/11 | Chỉ tài liệu, chờ thien merge             |
 | Bản tóm tắt hai nick    | #296          | 13/11 | Tạm, của nick kia; đóng khi thien so xong |
-| U4e2 Ngăn Thêm          | (PR này)      | 19/11 | thien OK ảnh; chờ review, "merge đi"      |
+| U4f Ô tìm hai nguồn     | (PR này)      | 19/11 | Chờ thien chọn bố cục                     |
 
 ## Việc tiếp theo
 
-1. U4 Kho (hướng 2, gộp theo cấp JLPT, duyệt 15/11): U4b bảng cấp xong (#323); U4c theo bản gộp chặng thien duyệt 18/11, U4c1 xong (#325); U4c2 (màn cấp) xong (#331); U4c3 (màn chặng) xong (#332); U4c4a (tab Chặng | Bản đồ ô) xong (#333); U4c4b (Danh sách có ô tìm) xong (#334); U4d (lấy thêm tại chỗ) xong (#335); U4e1 (trang Ngoài JLPT) xong (#336); U4e2 (ngăn Thêm) đang làm; rồi U4f theo `plans/2026-11-14-u4-kho.md`.
+1. U4 Kho (hướng 2, gộp theo cấp JLPT, duyệt 15/11): U4b bảng cấp xong (#323); U4c theo bản gộp chặng thien duyệt 18/11, U4c1 xong (#325); U4c2 (màn cấp) xong (#331); U4c3 (màn chặng) xong (#332); U4c4a (tab Chặng | Bản đồ ô) xong (#333); U4c4b (Danh sách có ô tìm) xong (#334); U4d (lấy thêm tại chỗ) xong (#335); U4e1 (trang Ngoài JLPT) xong (#336); U4e2 (ngăn Thêm) xong (#337); U4f (ô tìm hai nguồn) đang làm theo `plans/2026-11-14-u4-kho.md`.
 
 ## Đang chờ thien
 
