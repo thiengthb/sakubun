@@ -1,7 +1,7 @@
 # U4: màn Kho theo cấp JLPT (tiếp U4f ô tìm hai nguồn)
 
 Repo: thiengthb/sakubun · Nhánh: feat/u4f-kho-search · PR: #338
-Ghi bởi: Claude tnt628, https://claude.ai/code/project/chan_0145cotX9neLQKZjxfBxCwDe?thread=cmsg_0145cotX9neLQKZjxfBxCwDe2nQVyXHabhp85BNJRRHSxc · Cập nhật: 2026-11-19T13:02Z
+Ghi bởi: Claude tnt628, https://claude.ai/code/project/chan_0145cotX9neLQKZjxfBxCwDe?thread=cmsg_0145cotX9neLQKZjxfBxCwDe2nQVyXHabhp85BNJRRHSxc · Cập nhật: 2026-11-19T13:50Z
 
 ## thien muốn gì
 Làm U4 theo kế hoạch đã duyệt `docs/plans/2026-11-14-u4-kho.md` (hướng 2, gộp theo cấp JLPT; 15/11 thien trả lời "theo đề xuất" cả 3 câu, U4g/U4h để sau kỳ thi N2). thien bảo nick tnt697 làm tiếp ("nick này làm tiếp", 15/11).
@@ -12,10 +12,10 @@ Làm U4 theo kế hoạch đã duyệt `docs/plans/2026-11-14-u4-kho.md` (hướ
 - U4c1 logic chia chặng: #325 (merge 18/11), `lib/library/level-sets.ts`, `lib/app/level-sets.ts`.
 
 ## Bước tiếp theo
-1. #340 (KD1 máy đoán chữ + kế hoạch, risk:low, sẵn sàng): chờ CI, CodeRabbit, rồi thien "merge đi". Sau đó KD2: đưa 2–3 bố cục khung vẽ cạnh ô tìm Kho để thien chọn, nhánh mới từ main.
+1. KD2 (khung vẽ kanji): PR nháp #341 (feat/kd2-draw-pad). Chờ thien chọn bố cục (A khung nổi, B bàn phím vẽ đáy màn [đề xuất, ẩn], C trong trang). Chọn xong: ghi vào kế hoạch, code khung vẽ dùng lại kanji-write-pad + recognizeKanjiAction, ảnh duyệt, thien vẽ thử 20 chữ.
 
 ## Đang chờ thien
-- "merge đi" cho #340.
+- Chọn bố cục KD2: https://claude.ai/artifact/EtpcD3uxVgea4iuQTR3q9x (mở ở nick tnt628). Dựng lại: `make-decision.mjs docs/plans/2026-11-19-kanji-draw-search/kd2/decision.json <out>`.
 
 ## Lưu ý
 - Máy ảo: `npm ci` cần `npm_config_nodedir=/opt/node22`; `prisma generate` cần `PRISMA_SCHEMA_ENGINE_BINARY=/bin/true`; e2e chạy bằng Chrome hệ thống (config tạm với `channel: 'chrome'`, không commit). `npm run build` lỗi ở máy ảo vì không tải được Google Fonts, CI thì xanh.
@@ -40,3 +40,4 @@ Làm U4 theo kế hoạch đã duyệt `docs/plans/2026-11-14-u4-kho.md` (hướ
 - 19/11 12:35Z: thien duyệt ảnh U4f 2/2, xin thêm tìm bằng vẽ kanji (bước riêng trong kế hoạch U4). Review riêng và CodeRabbit cùng chỉ 2 lỗi; sửa ở ef7fc55 (loại mọi mục đã có bên Kho chung; ô tìm theo ?q= khi đổi từ ngoài), verify 1228 test xanh, e2e 12/12. Ghi bởi Claude tnt628.
 - 19/11 12:46Z: #338 (U4f) merge theo lời thien (ed05843): U4f xong. Kế hoạch tìm bằng vẽ kanji ở PR nháp #340, trang chọn đã gửi. Ghi bởi Claude tnt628.
 - 19/11 13:10Z: thien chọn A (tự so nét KanjiVG). KD1 code xong ở #340 (lib/japanese/recognize.ts, recognizeKanjiAction), verify 1235 test xanh. Ghi bởi Claude tnt628.
+- 19/11 13:52Z: #340 (KD1) merge theo lời thien (a0a0206). KD2 ở PR nháp #341, trang chọn bố cục đã gửi. Ghi bởi Claude tnt628.
