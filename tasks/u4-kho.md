@@ -1,7 +1,7 @@
 # U4: màn Kho theo cấp JLPT (tiếp U4f ô tìm hai nguồn)
 
-Repo: thiengthb/sakubun · Nhánh: (chưa có, KD3 sẽ mở mới) · PR: #341 đã merge
-Ghi bởi: Claude tnt628, https://claude.ai/code/project/chan_0145cotX9neLQKZjxfBxCwDe?thread=cmsg_0145cotX9neLQKZjxfBxCwDe2nQVyXHabhp85BNJRRHSxc · Cập nhật: 2026-11-19T15:34Z
+Repo: thiengthb/sakubun · Nhánh: docs/kho-navigation · PR: #343 (nháp)
+Ghi bởi: Claude tnt628, https://claude.ai/code/project/chan_0145cotX9neLQKZjxfBxCwDe?thread=cmsg_0145cotX9neLQKZjxfBxCwDe2nQVyXHabhp85BNJRRHSxc · Cập nhật: 2026-11-19T16:24Z
 
 ## thien muốn gì
 Làm U4 theo kế hoạch đã duyệt `docs/plans/2026-11-14-u4-kho.md` (hướng 2, gộp theo cấp JLPT; 15/11 thien trả lời "theo đề xuất" cả 3 câu, U4g/U4h để sau kỳ thi N2). thien bảo nick tnt697 làm tiếp ("nick này làm tiếp", 15/11).
@@ -12,11 +12,13 @@ Làm U4 theo kế hoạch đã duyệt `docs/plans/2026-11-14-u4-kho.md` (hướ
 - U4c1 logic chia chặng: #325 (merge 18/11), `lib/library/level-sets.ts`, `lib/app/level-sets.ts`.
 
 ## Bước tiếp theo
-1. Chờ thien vẽ thử khoảng 20 chữ trên app thật (mục tiêu ít nhất 16 chữ nằm trong 5 chữ đoán đầu). Nếu thấy đoán chậm: gửi từng yêu cầu một, kèm cờ "cần hỏi lại" (PR sau).
-2. KD3: đặt cùng khung vẽ vào ô tìm Kho chung và trang Kanji. Nhánh mới từ main; ghi KD2 đã merge (#341) vào kế hoạch và STATUS trong PR đó (STATUS trên main còn dòng "KD2 ... chờ review và merge").
+1. KN0 (điều hướng Kho, thien xin 19/11 16:05Z): PR nháp #343, kế hoạch `docs/plans/2026-11-19-kho-navigation.md`. Chờ thien chọn A/B/C ở https://claude.ai/artifact/2sHn59iuGi9qsbvFGjwkXA (mở ở nick tnt628; dựng lại theo `docs/plans/2026-11-19-kho-navigation/kn0/README.md`). Chọn xong: ghi vào kế hoạch, chia bước KN1.. rồi code.
+2. Chờ thien vẽ thử 20 chữ (KD2 đã lên NUC; lỗi P2029 ô tìm Kho đã sửa ở #342). Rồi KD3.
+3. Việc nhỏ từ review #342: ghi gotcha "Prisma + SQLite chỉ nhận khoảng 999 tham số" vào CLAUDE.md.
 
 ## Đang chờ thien
-- Kết quả vẽ thử 20 chữ trên app thật.
+- Chọn cách điều hướng Kho (trang trên).
+- Kết quả vẽ thử 20 chữ.
 
 ## Lưu ý
 - Máy ảo: `npm ci` cần `npm_config_nodedir=/opt/node22`; `prisma generate` cần `PRISMA_SCHEMA_ENGINE_BINARY=/bin/true`; e2e chạy bằng Chrome hệ thống (config tạm với `channel: 'chrome'`, không commit). `npm run build` lỗi ở máy ảo vì không tải được Google Fonts, CI thì xanh.
@@ -46,3 +48,4 @@ Làm U4 theo kế hoạch đã duyệt `docs/plans/2026-11-14-u4-kho.md` (hướ
 - 19/11 14:35Z: vòng duyệt 1 KD2 thien cần sửa (khung to hơn, nút chỉ biểu tượng); trang chọn vòng 2 thien chọn C; code đã đẩy (697d474), ảnh vòng 2 đã gửi. Ghi bởi Claude tnt628.
 - 19/11 15:15Z: vòng 2 điện thoại OK; laptop đổi sang khung nổi dưới ô tìm (c27c82e, verify xanh), gửi ảnh vòng 3. Ghi bởi Claude tnt628.
 - 19/11 15:35Z: #341 (KD2, khung vẽ kanji ở ô tìm Kho) đã merge (6b009a2) theo lời thien, sau 3 vòng duyệt ảnh, review riêng và CodeRabbit. Ghi bởi Claude tnt628.
+- 19/11 16:26Z: #342 (sửa P2029 ô tìm Kho) merge 487ec0d. KN0 điều hướng Kho: PR nháp #343, trang chọn 3 phương án đã gửi. Ghi bởi Claude tnt628.
