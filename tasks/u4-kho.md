@@ -1,7 +1,7 @@
-# U4: màn Kho theo cấp JLPT (U4d lấy thêm tại chỗ chờ duyệt)
+# U4: màn Kho theo cấp JLPT (tiếp U4e2 ngăn Thêm)
 
-Repo: thiengthb/sakubun · Nhánh: feat/u4d-take-in-place · PR: #335
-Ghi bởi: Claude tnt628, https://claude.ai/code/project/chan_0145cotX9neLQKZjxfBxCwDe?thread=cmsg_0145cotX9neLQKZjxfBxCwDe2nQVyXHabhp85BNJRRHSxc · Cập nhật: 2026-11-19T04:05Z
+Repo: thiengthb/sakubun · Nhánh: (chưa có, U4e2) · PR: (chưa có)
+Ghi bởi: Claude tnt628, https://claude.ai/code/project/chan_0145cotX9neLQKZjxfBxCwDe?thread=cmsg_0145cotX9neLQKZjxfBxCwDe2nQVyXHabhp85BNJRRHSxc · Cập nhật: 2026-11-19T04:37Z
 
 ## thien muốn gì
 Làm U4 theo kế hoạch đã duyệt `docs/plans/2026-11-14-u4-kho.md` (hướng 2, gộp theo cấp JLPT; 15/11 thien trả lời "theo đề xuất" cả 3 câu, U4g/U4h để sau kỳ thi N2). thien bảo nick tnt697 làm tiếp ("nick này làm tiếp", 15/11).
@@ -12,11 +12,11 @@ Làm U4 theo kế hoạch đã duyệt `docs/plans/2026-11-14-u4-kho.md` (hướ
 - U4c1 logic chia chặng: #325 (merge 18/11), `lib/library/level-sets.ts`, `lib/app/level-sets.ts`.
 
 ## Bước tiếp theo
-1. U4d (lấy thêm tại chỗ), PR nháp #335, nhánh feat/u4d-take-in-place (6eb0834): code, test, e2e xong. thien OK cả 7 ảnh (19/11 03:27Z); PR đã sẵn sàng, risk:medium, đã nhờ coordinator mở thread review. Chờ CodeRabbit (sửa từng ý), review, rồi thien nói "merge đi".
-2. Rồi U4e (Ngoài JLPT và nút Thêm), U4f (ô tìm hai nguồn) theo kế hoạch.
+1. U4e2: ngăn Thêm bốn cách (lấy theo cấp, bộ chia sẻ, nhờ Claude soạn, tự viết) theo bố cục B đã chọn (ngăn phải trên laptop, gần toàn màn trên điện thoại). Nhánh mới từ main, PR nháp; ghi STATUS và kế hoạch U4e1 xong trong PR đó.
+2. Rồi U4f (ô tìm hai nguồn).
 
 ## Đang chờ thien
-- Duyệt ảnh U4e1: https://claude.ai/artifact/4Lox5KCWiGDVMU9M5P9y5P (mở ở nick tnt628). Dựng lại: `make-round.mjs docs/plans/2026-11-14-u4-kho/u4e1/round.json <out>`; spec chụp ở `u4e1/shots.spec.ts.txt`.
+- Không có.
 
 ## Lưu ý
 - Máy ảo: `npm ci` cần `npm_config_nodedir=/opt/node22`; `prisma generate` cần `PRISMA_SCHEMA_ENGINE_BINARY=/bin/true`; e2e chạy bằng Chrome hệ thống (config tạm với `channel: 'chrome'`, không commit). `npm run build` lỗi ở máy ảo vì không tải được Google Fonts, CI thì xanh.
@@ -32,3 +32,4 @@ Làm U4 theo kế hoạch đã duyệt `docs/plans/2026-11-14-u4-kho.md` (hướ
 - 19/11 03:50Z: #335 (U4d) đã merge (d8a08e8) theo lời thien. STATUS và kế hoạch chưa ghi U4d xong: sửa trong PR U4e. Tiếp U4e (trang Ngoài JLPT, ngăn Thêm): đưa 2–3 bố cục trước khi code. Ghi bởi Claude tnt628.
 - 19/11 03:55Z: U4e ở PR nháp #336 (feat/u4e-outside-jlpt). Đã gửi trang chọn 3 bố cục (A tab theo nguồn, B thẻ như màn cấp [đề xuất], C tìm là chính). Chờ thien chọn rồi mới code. Ghi bởi Claude tnt628.
 - 19/11 04:05Z: thien chọn B. U4e chia đôi: U4e1 (trang /resources/outside, thẻ nhóm và nguồn, danh sách theo nguồn) code xong ở #336 (verify xanh), chờ thien duyệt ảnh; U4e2 (ngăn Thêm bốn cách) sau khi U4e1 merge. Ghi bởi Claude tnt628.
+- 19/11 04:40Z: #336 (U4e1, trang Ngoài JLPT) đã merge (ddbda6d) theo lời thien. Tiếp U4e2. Ghi bởi Claude tnt628.
