@@ -1,7 +1,7 @@
-# U4: màn Kho theo cấp JLPT (U4e2 ngăn Thêm chờ review)
+# U4: màn Kho theo cấp JLPT (tiếp U4f ô tìm hai nguồn)
 
-Repo: thiengthb/sakubun · Nhánh: feat/u4e2-add-sheet · PR: #337
-Ghi bởi: Claude tnt628, https://claude.ai/code/project/chan_0145cotX9neLQKZjxfBxCwDe?thread=cmsg_0145cotX9neLQKZjxfBxCwDe2nQVyXHabhp85BNJRRHSxc · Cập nhật: 2026-11-19T05:25Z
+Repo: thiengthb/sakubun · Nhánh: (chưa có, U4f) · PR: (chưa có)
+Ghi bởi: Claude tnt628, https://claude.ai/code/project/chan_0145cotX9neLQKZjxfBxCwDe?thread=cmsg_0145cotX9neLQKZjxfBxCwDe2nQVyXHabhp85BNJRRHSxc · Cập nhật: 2026-11-19T09:41Z
 
 ## thien muốn gì
 Làm U4 theo kế hoạch đã duyệt `docs/plans/2026-11-14-u4-kho.md` (hướng 2, gộp theo cấp JLPT; 15/11 thien trả lời "theo đề xuất" cả 3 câu, U4g/U4h để sau kỳ thi N2). thien bảo nick tnt697 làm tiếp ("nick này làm tiếp", 15/11).
@@ -12,11 +12,10 @@ Làm U4 theo kế hoạch đã duyệt `docs/plans/2026-11-14-u4-kho.md` (hướ
 - U4c1 logic chia chặng: #325 (merge 18/11), `lib/library/level-sets.ts`, `lib/app/level-sets.ts`.
 
 ## Bước tiếp theo
-1. U4e2: ngăn Thêm bốn cách (lấy theo cấp, bộ chia sẻ, nhờ Claude soạn, tự viết) theo bố cục B đã chọn (ngăn phải trên laptop, gần toàn màn trên điện thoại). Nhánh mới từ main, PR nháp; ghi STATUS và kế hoạch U4e1 xong trong PR đó.
-2. Rồi U4f (ô tìm hai nguồn).
+1. U4f (ô tìm hai nguồn ở đầu Kho): đưa thien 2–3 bố cục trước khi code. Nhánh mới từ main, PR nháp; ghi U4e2 xong (#337) vào STATUS và kế hoạch trong PR đó.
 
 ## Đang chờ thien
-- Nói "merge đi" cho #337 sau khi CodeRabbit và phiên review xong.
+- Không có.
 
 ## Lưu ý
 - Máy ảo: `npm ci` cần `npm_config_nodedir=/opt/node22`; `prisma generate` cần `PRISMA_SCHEMA_ENGINE_BINARY=/bin/true`; e2e chạy bằng Chrome hệ thống (config tạm với `channel: 'chrome'`, không commit). `npm run build` lỗi ở máy ảo vì không tải được Google Fonts, CI thì xanh.
@@ -35,3 +34,4 @@ Làm U4 theo kế hoạch đã duyệt `docs/plans/2026-11-14-u4-kho.md` (hướ
 - 19/11 04:40Z: #336 (U4e1, trang Ngoài JLPT) đã merge (ddbda6d) theo lời thien. Tiếp U4e2. Ghi bởi Claude tnt628.
 - 19/11 04:45Z: U4e2 ở PR nháp #337, verify xanh, e2e add-sheet 2/2. Chờ thien duyệt ảnh; xong thì sẵn sàng, risk:medium, xin review. Ghi bởi Claude tnt628.
 - 19/11 05:30Z: thien OK ảnh U4e2 2/2. #337 sẵn sàng, risk:medium, đã nhờ coordinator mở thread review. Ghi bởi Claude tnt628.
+- 19/11 09:42Z: #337 (U4e2, ngăn Thêm) đã merge (f6a5dc3) theo lời thien. U4e xong. Tiếp U4f. Ghi bởi Claude tnt628.
