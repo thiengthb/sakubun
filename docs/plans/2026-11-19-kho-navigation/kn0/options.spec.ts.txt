@@ -1,0 +1,199 @@
+// Scratch: KN0 option mock-ups, drawn into the real pages. Copy into e2e/ to run.
+import { test, expect, type Page } from '@playwright/test';
+import { E2E_EMAIL, E2E_LOGIN, seedE2eAccount } from './fixtures';
+
+const OUT = process.env.SHOT_DIR!;
+test.beforeAll(seedE2eAccount);
+
+async function signIn(page: Page) {
+  await page.goto('/login');
+  await page.getByLabel('Email').fill(E2E_EMAIL);
+  await page.getByLabel('Mật khẩu').fill(E2E_LOGIN);
+  await page.getByRole('button', { name: 'Đăng nhập' }).click();
+  await page.waitForURL((u) => !u.pathname.startsWith('/login'), { timeout: 30_000 });
+}
+
+const CHIP =
+  'target-44 mb-0.5 flex h-8.5 shrink-0 items-center justify-center rounded-sm border-2 border-control-edge bg-card px-3 text-sm font-medium text-muted-foreground shadow-lift';
+const CHIP_ON = 'border-brand-wash bg-brand-wash text-accent-brand shadow-lift-chosen';
+
+// Drawn in the page: A's trail and back button, B's row of Kho's ways, C's sidebar tree and hub.
+async function draw(page: Page, option: 'cur' | 'a' | 'b' | 'c', phone: boolean) {
+  await page.evaluate(
+    ({ option, phone, CHIP, CHIP_ON }) => {
+      const ways = ['Theo cấp JLPT', 'Ngoài JLPT', 'Nhóm', 'Kanji', 'Kho chung'];
+      const nav = [...document.querySelectorAll('nav[aria-label="Breadcrumb"]')].find(
+        (n) => (n as HTMLElement).offsetParent !== null,
+      ) as HTMLElement;
+      const trail = (parents: string[]) => {
+        const ol = nav.querySelector('ol')!;
+        const lis = [...ol.children] as HTMLElement[];
+        const model = lis[lis.length - 1];
+        ol.innerHTML = '';
+        parents.forEach((label, i) => {
+          const li = (i === 0 ? lis[0] : model).cloneNode(true) as HTMLElement;
+          const spans = li.querySelectorAll('span');
+          const text = [...spans].reverse().find((s) => s.children.length === 0)!;
+          text.textContent = label;
+          if (i > 0) li.querySelector('svg:not(:last-child)')?.remove();
+          const chev = li.querySelector('svg.size-3\\.5');
+          if (i === parents.length - 1) chev?.remove();
+          else if (!chev) {
+            const c = lis[0].querySelector('svg.size-3\\.5')!.cloneNode(true);
+            li.append(c);
+          }
+          ol.append(li);
+        });
+      };
+      if (option === 'cur') return;
+      const hub = option === 'c' && phone && !nav;
+      // A, and B and C on top of it: the trail follows the way the learner came.
+      if (!phone) trail(['Kho', 'Theo cấp JLPT', 'N5 · Từ vựng', 'Chặng 1']);
+      else if (!hub) {
+        const back = document.createElement('a');
+        back.className = CHIP + ' gap-1 pr-3 pl-1.5 text-foreground';
+        back.innerHTML =
+          '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>Chặng 1';
+        const holder = nav.parentElement!;
+        nav.style.display = 'none';
+        holder.append(back);
+        holder.style.flex = '1';
+      }
+      if (option === 'b') {
+        const row = document.createElement('nav');
+        row.setAttribute('aria-label', 'Các ngả của Kho');
+        row.className = 'flex gap-2 overflow-x-auto pb-1';
+        row.style.scrollbarWidth = 'none';
+        ways.forEach((w, i) => {
+          const a = document.createElement('a');
+          a.className = CHIP + (i === 0 ? ' ' + CHIP_ON : '');
+          if (i === 0) {
+            a.style.color = 'var(--color-accent-brand)';
+            a.style.borderColor = 'var(--color-accent-brand)';
+          }
+          a.textContent = w;
+          if (i === 4) a.style.marginLeft = '12px';
+          row.append(a);
+        });
+        const header = document.querySelector('main header')!;
+        if (phone) {
+          row.style.margin = '12px 0 4px';
+          nav.parentElement!.parentElement!.after(row);
+        } else {
+          row.style.marginBottom = '18px';
+          header.prepend(row);
+        }
+      }
+      if (option === 'c' && !phone) {
+        const side = document.querySelector('[data-sidebar="sidebar"]')!;
+        const kho = [...side.querySelectorAll('a')].find((a) => a.getAttribute('href') === '/resources')!;
+        const li = kho.closest('li')!;
+        const model = [...side.querySelectorAll('a')].find((a) => a.textContent?.includes('Tiến độ'))!.closest('li')!;
+        // Kho itself stays lit only as the parent; the way you are in is the lit row.
+        const parent = li.cloneNode(true) as HTMLElement;
+        const pa = parent.querySelector('a')!;
+        pa.removeAttribute('data-active');
+        pa.setAttribute('data-active', 'false');
+        pa.className = (model.querySelector('a') as HTMLElement).className;
+        pa.style.color = 'var(--color-accent-brand)';
+        li.replaceWith(parent);
+        let after: Element = parent;
+        ways.forEach((w, i) => {
+          const sub = (i === 0 ? li : model).cloneNode(true) as HTMLElement;
+          const a = sub.querySelector('a')!;
+          a.querySelector('svg')?.remove();
+          const t = [...a.querySelectorAll('span')].find((s) => s.children.length === 0) ?? a;
+          t.textContent = w;
+          a.style.paddingLeft = '34px';
+          a.style.position = 'relative';
+          sub.style.position = 'relative';
+          const line = document.createElement('span');
+          line.style.cssText = 'position:absolute;left:19px;top:0;bottom:0;border-left:2px solid var(--color-border)';
+          sub.prepend(line);
+          after.after(sub);
+          after = sub;
+        });
+      }
+      if (hub) {
+        // The Kho tab opens on a list of Kho's ways; the level board is the first of them.
+        const main = document.querySelector('main')!;
+        const h1 = main.querySelector('h1')!;
+        const header = h1.closest('header') ?? h1.parentElement!;
+        [...header.parentElement!.children].forEach((el) => {
+          if (el !== header) (el as HTMLElement).style.display = 'none';
+        });
+        const list = document.createElement('div');
+        list.className = 'flex flex-col gap-3 pt-4';
+        const sub = [
+          'N5 → N1, ngữ pháp và từ vựng · 1 mục',
+          'Mục tự thêm, từ Claude · 0 mục',
+          'Bộ sưu tập tự đặt tên · 0 nhóm',
+          '2.136 chữ Jōyō, bộ thủ',
+          'Ngữ pháp, từ vựng, nhóm của mọi người',
+        ];
+        ways.forEach((w, i) => {
+          const card = document.createElement('a');
+          card.className = 'flex items-center justify-between rounded-xl border-2 border-border bg-card px-4 py-3.5 shadow-lift';
+          card.innerHTML = `<span class="flex flex-col"><span class="font-semibold text-foreground">${w}</span><span class="text-sm text-muted-foreground">${sub[i]}</span></span><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-muted-foreground"><path d="m9 18 6-6-6-6"/></svg>`;
+          if (i === 4) card.style.marginTop = '8px';
+          list.append(card);
+        });
+        header.after(list);
+      }
+    },
+    { option, phone, CHIP, CHIP_ON },
+  );
+  await page.waitForTimeout(300);
+}
+
+test('kn options', async ({ browser }) => {
+  test.setTimeout(600_000);
+  const setup = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+  await signIn(setup);
+  await setup.goto('/resources/level/N5/vocab/1', { waitUntil: 'load' });
+  await setup.waitForTimeout(2000);
+  const panel = setup.getByRole('complementary', { name: 'Mục đang mở' });
+  const first = setup.getByRole('list', { name: 'Các mục của chặng' }).getByRole('button').first();
+  const word = (await first.locator('[lang="ja"]').textContent())!;
+  await first.click();
+  const learn = panel.getByRole('button', { name: `Học ${word}` });
+  if (await learn.isVisible()) {
+    await learn.click();
+    await expect(setup.getByText(/Đã thêm 1/)).toBeVisible();
+  }
+  const itemHref = (await panel.getByRole('link', { name: 'Mở mục' }).getAttribute('href'))!;
+  await setup.close();
+
+  for (const w of [1440, 390]) {
+    const phone = w === 390;
+    const ctx = await browser.newContext({
+      viewport: { width: w, height: phone ? 844 : 900 },
+      deviceScaleFactor: 2,
+      hasTouch: phone,
+    });
+    const page = await ctx.newPage();
+    await page.addInitScript(() => {
+      const s = document.createElement('style');
+      s.textContent = 'nextjs-portal{display:none!important}';
+      document.addEventListener('DOMContentLoaded', () => document.head.append(s));
+    });
+    await signIn(page);
+    for (const option of ['cur', 'a', 'b', 'c'] as const) {
+      const url = option === 'c' && phone ? '/resources' : itemHref;
+      await page.goto(url, { waitUntil: 'load' });
+      await page.locator('h1').first().waitFor();
+      await page.waitForTimeout(1500);
+      await draw(page, option, phone);
+      await page.screenshot({ path: `${OUT}/${option}-${w}.jpg`, type: 'jpeg', quality: 85 });
+      if (option === 'c' && phone) {
+        // C on a phone, one level down: the way's own page, with the back button.
+        await page.goto(itemHref, { waitUntil: 'load' });
+        await page.locator('h1').first().waitFor();
+        await page.waitForTimeout(1500);
+        await draw(page, 'a', phone);
+        await page.screenshot({ path: `${OUT}/c2-${w}.jpg`, type: 'jpeg', quality: 85 });
+      }
+    }
+    await ctx.close();
+  }
+});
