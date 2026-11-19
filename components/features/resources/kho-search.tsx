@@ -33,8 +33,8 @@ export interface Voice {
 /**
  * The box under Kho's title, and what it searches below it (`children`: the results or the board).
  * Typing updates ?q= a moment after the last key; `query` is ?q= as is. The pen in the box opens the
- * drawing pad (KD2, docs/plans/2026-11-19-kanji-draw-search.md, layout B): a column beside the results
- * on a laptop, a keyboard at the foot of a phone's screen that stands in for the tab bar meanwhile.
+ * drawing pad (KD2, docs/plans/2026-11-19-kanji-draw-search.md): on a laptop it drops down under the
+ * box, over the results; on a phone it is a keyboard at the foot of the screen, over the tab bar.
  */
 export function KhoSearchArea({ query, children }: { query: string; children: ReactNode }) {
   const router = useRouter();
@@ -99,7 +99,8 @@ export function KhoSearchArea({ query, children }: { query: string; children: Re
       aria-label="Vẽ chữ kanji"
       title="Tìm bằng cách vẽ chữ kanji"
       onClick={phone ? togglePen : undefined}
-      className="absolute top-1/2 right-1 -translate-y-1/2 md:right-0.5"
+      // 24px to see, 44px to touch on a phone (docs/ui-standard.md › Nút và ô).
+      className="absolute top-1/2 right-1 -translate-y-1/2 max-md:after:absolute max-md:after:-inset-2.5 md:right-0.5"
     >
       <PenLine />
     </Button>

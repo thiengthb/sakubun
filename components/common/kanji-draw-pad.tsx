@@ -87,6 +87,13 @@ export function KanjiDrawPad({
     setDrawing(null);
   };
 
+  const drop = (e: PointerEvent<SVGSVGElement>) => {
+    if (e.pointerId !== pointer.current) return;
+    pointer.current = null;
+    current.current = null;
+    setDrawing(null);
+  };
+
   const pick = (kanji: string) => {
     onPick(kanji);
     update([]);
@@ -163,7 +170,7 @@ export function KanjiDrawPad({
       <div className="flex gap-3">
         <svg
           ref={box}
-          viewBox="0 0 109 109"
+          viewBox={`0 0 ${STROKE_BOX} ${STROKE_BOX}`}
           role="img"
           aria-label="Khung vẽ chữ kanji"
           data-slot="kanji-draw"
@@ -175,12 +182,9 @@ export function KanjiDrawPad({
           onPointerDown={down}
           onPointerMove={move}
           onPointerUp={up}
-          onPointerCancel={(e) => {
-            if (e.pointerId !== pointer.current) return;
-            pointer.current = null;
-            current.current = null;
-            setDrawing(null);
-          }}
+          onPointerCancel={drop}
+          // Some touch browsers drop the capture without a cancel; the pad must not stay stuck.
+          onLostPointerCapture={drop}
         >
           <g className="text-border" stroke="currentColor" strokeWidth={0.6} strokeDasharray="2 2">
             <line x1={54.5} y1={0} x2={54.5} y2={109} />
