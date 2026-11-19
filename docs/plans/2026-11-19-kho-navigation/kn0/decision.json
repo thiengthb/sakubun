@@ -1,0 +1,112 @@
+{
+  "id": "sakubun-kho-navigation",
+  "question": "Kho nên điều hướng thế nào để biết mình đang ở đâu?",
+  "context": "Kho hiện có 6 ngả: Theo cấp JLPT, Ngoài JLPT, Nhóm, Kanji, Mọi mục và Kho chung, nhưng chỉ ngả Theo cấp hiện rõ, các ngả kia là link nhỏ cuối bảng cấp. Đường dẫn trên đầu trang không khớp đường đã đi: mở 会う từ N5 · Từ vựng › Chặng 1 thì trang ghi 'Kho › Từ vựng', và bấm 'Từ vựng' sẽ sang bảng Mọi mục chứ không về Chặng 1. Trang Kho chung không có lối về Kho. Ảnh là phác vẽ thẳng lên trang thật, màu và chữ sẽ chỉnh khi làm.",
+  "options": [
+    {
+      "key": "a",
+      "name": "A · Sửa đường dẫn, thêm nút quay lại",
+      "summary": "Giữ nguyên cấu trúc. Đường dẫn đi đúng đường đã vào (Kho › Theo cấp JLPT › N5 · Từ vựng › Chặng 1). Điện thoại thay chữ nhỏ bằng nút '‹ Chặng 1'.",
+      "pros": [
+        "Ít đổi nhất, làm nhanh",
+        "Quay lại luôn đúng chỗ vừa rời"
+      ],
+      "cons": [
+        "Vẫn không thấy Kho có mấy ngả",
+        "Ngoài JLPT, Nhóm, Kanji vẫn khó tìm"
+      ],
+      "image": "a.png",
+      "scale": 2
+    },
+    {
+      "key": "b",
+      "name": "B · Hàng ngả của Kho ở đầu mọi màn",
+      "summary": "Gồm A, thêm một hàng cố định ở đầu mọi màn Kho: Theo cấp JLPT · Ngoài JLPT · Nhóm · Kanji · Kho chung, ngả đang đứng được tô. Điện thoại vuốt ngang hàng này. Mọi mục thành nút 'Xem dạng bảng' trong Theo cấp.",
+      "pros": [
+        "Thấy ngay Kho có 5 ngả và mình ở ngả nào",
+        "Laptop và điện thoại cùng một cách",
+        "Kho chung có lối cố định"
+      ],
+      "cons": [
+        "Mỗi màn Kho cao thêm một hàng",
+        "Trên điện thoại hàng bị cắt, phải vuốt mới thấy Kanji, Kho chung"
+      ],
+      "image": "b.png",
+      "scale": 2
+    },
+    {
+      "key": "c",
+      "name": "C · Kho xổ ra trong thanh bên",
+      "summary": "Gồm A. Laptop: thanh bên xổ Kho thành 5 mục con như cây thư mục, mục đang đứng được tô. Điện thoại: bấm tab Kho ra một trang chọn ngả, vào sâu thì có nút quay lại.",
+      "pros": [
+        "Laptop gọn nhất: không tốn chỗ trong trang",
+        "Trang chọn ngả trên điện thoại giải thích từng ngả"
+      ],
+      "cons": [
+        "Điện thoại thêm một chạm mới tới bảng cấp, ngả dùng nhiều nhất",
+        "Đang ở sâu trên điện thoại thì không thấy các ngả khác",
+        "Laptop và điện thoại hai kiểu khác nhau"
+      ],
+      "image": "c.png",
+      "scale": 2
+    }
+  ],
+  "criteria": [
+    {
+      "name": "Biết mình đang ở đâu",
+      "values": {
+        "a": "vừa",
+        "b": "tốt",
+        "c": "tốt"
+      }
+    },
+    {
+      "name": "Quay lại đúng chỗ",
+      "values": {
+        "a": "tốt",
+        "b": "tốt",
+        "c": "tốt"
+      }
+    },
+    {
+      "name": "Thấy Kho có mấy ngả",
+      "values": {
+        "a": "kém",
+        "b": "tốt",
+        "c": {
+          "text": "tốt trên laptop, vừa trên điện thoại",
+          "tone": "good"
+        }
+      }
+    },
+    {
+      "name": "Số chạm tới bảng cấp trên điện thoại",
+      "values": {
+        "a": "1",
+        "b": "1",
+        "c": {
+          "text": "2",
+          "tone": "bad"
+        }
+      }
+    },
+    {
+      "name": "Công làm",
+      "values": {
+        "a": {
+          "text": "ít",
+          "tone": "good"
+        },
+        "b": "vừa",
+        "c": {
+          "text": "nhiều",
+          "tone": "bad"
+        }
+      }
+    }
+  ],
+  "recommend": {
+    "key": "b",
+    "why": "B trả lời cả ba câu bạn hỏi (đang ở đâu, quay lại thế nào, có mấy ngả) ở mọi màn, và laptop với điện thoại dùng chung một cách. C gọn hơn trên laptop nhưng trên điện thoại lại thêm một chạm và che mất các ngả khi vào sâu."
+  }
+}
