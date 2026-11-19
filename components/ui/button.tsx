@@ -14,8 +14,11 @@ const buttonVariants = cva(
     variants: {
       variant: {
         // Raised: a 2px lift that the press takes away.
+        // Its edge takes the lip's colour, as an outline button's edge does: without it the filled
+        // face ran 2px past an outline button's white face on every side and read as taller
+        // (thien, KN1 review round 3).
         default:
-          'bg-primary text-primary-foreground shadow-lift-primary hover:bg-primary/90 active:not-aria-[haspopup]:translate-y-0.5 active:not-aria-[haspopup]:shadow-none',
+          'border-press bg-primary text-primary-foreground shadow-lift-primary hover:bg-primary/90 active:not-aria-[haspopup]:translate-y-0.5 active:not-aria-[haspopup]:shadow-none',
         outline:
           'border-control-edge bg-card shadow-lift hover:bg-muted hover:text-foreground active:not-aria-[haspopup]:translate-y-0.5 active:not-aria-[haspopup]:shadow-none aria-expanded:bg-muted aria-expanded:text-foreground',
         // A suggestion to create the first of something: flat, dashed edge.
@@ -26,7 +29,7 @@ const buttonVariants = cva(
         ghost:
           'hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:hover:bg-muted/50',
         destructive:
-          'bg-destructive text-destructive-foreground shadow-lift-destructive hover:bg-destructive/90 focus-visible:ring-destructive/20 active:not-aria-[haspopup]:translate-y-0.5 active:not-aria-[haspopup]:shadow-none dark:focus-visible:ring-destructive/40',
+          'border-(--destructive-press) bg-destructive text-destructive-foreground shadow-lift-destructive hover:bg-destructive/90 focus-visible:ring-destructive/20 active:not-aria-[haspopup]:translate-y-0.5 active:not-aria-[haspopup]:shadow-none dark:focus-visible:ring-destructive/40',
         link: 'text-primary underline-offset-4 hover:underline',
       },
       size: {
