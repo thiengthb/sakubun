@@ -1,0 +1,103 @@
+{
+  "id": "sakubun-kd-recognizer",
+  "question": "Tìm bằng vẽ kanji: máy đoán chữ bằng cách nào?",
+  "context": "Bạn vẽ một chữ vào khung cạnh ô tìm ở Kho, máy đưa ra vài chữ giống nhất, bấm một chữ là nó vào ô tìm. Phần khung vẽ và bố cục sẽ chọn sau bằng ảnh; ở đây chỉ chọn cách máy đoán chữ. Khác khung viết KJ4: ở đó máy biết trước chữ cần viết, ở đây phải so với cả 2.136 chữ Jōyō.",
+  "options": [
+    {
+      "key": "a",
+      "name": "A · Tự nhận dạng bằng nét KanjiVG đã có",
+      "summary": "Server so nét bạn vẽ với nét của 2.136 chữ đã có trong app (dữ liệu KanjiVG từ KJ1), cho lệch 1–2 nét và sai thứ tự. Thử nhanh trên nét giả lập vẽ tay: viết vừa phải thì chữ đúng nằm trong 5 chữ đầu 98% lần, viết rất ẩu thì 80%, khoảng 30 ms một lần đoán.",
+      "pros": [
+        "Thử nhanh trên nét giả lập vẽ tay: viết vừa phải thì chữ đúng nằm trong 5 chữ đầu 98% lần, rất ẩu thì 80%",
+        "Không thêm dữ liệu, thư viện hay dịch vụ ngoài",
+        "Chữ nào đoán ra cũng có trang kanji trong app (Hán Việt, nghĩa, bộ)",
+        "Nét vẽ không rời khỏi Sakubun"
+      ],
+      "cons": [
+        "Viết quá ẩu hay thiếu nhiều nét thì đoán kém hơn dịch vụ lớn",
+        "Chỉ có chữ Jōyō (đủ cho N5–N1)",
+        "Tự viết khoảng 200 dòng và tự chỉnh khi đoán sai"
+      ]
+    },
+    {
+      "key": "b",
+      "name": "B · Thư viện mở KanjiCanvas",
+      "summary": "Thư viện JavaScript giấy phép MIT, chạy trong trình duyệt, tự nói không phụ thuộc thứ tự và số nét. Dùng bộ chữ và dữ liệu mẫu riêng của nó.",
+      "pros": [
+        "Đã có người làm và dùng, không phải tự nghĩ thuật toán",
+        "Chạy ngay trong trình duyệt, không cần gọi server"
+      ],
+      "cons": [
+        "Bộ chữ không khớp dữ liệu kanji của app: có chữ đoán ra mà app không có trang",
+        "Viết kiểu gắn vào một canvas theo id, khó ghép vào khung vẽ sẵn có",
+        "Cỡ tải thêm và giấy phép của dữ liệu mẫu chưa kiểm"
+      ]
+    },
+    {
+      "key": "c",
+      "name": "C · Gửi nét vẽ cho Google",
+      "summary": "Dùng dịch vụ nhận dạng chữ viết tay của Google Input Tools (có tiếng Nhật), giống nhiều app từ điển.",
+      "pros": ["Chịu được chữ viết ẩu nhất", "Có cả chữ ngoài Jōyō"],
+      "cons": [
+        "Không thấy API công khai cho web app (chưa kiểm kỹ): có thể bị chặn bất cứ lúc nào",
+        "Nét vẽ của người học đi ra ngoài app",
+        "Khi Google lỗi hay chậm thì tính năng chết theo"
+      ]
+    }
+  ],
+  "criteria": [
+    {
+      "name": "Đoán đúng khi viết ẩu",
+      "values": {
+        "a": "vừa",
+        "b": "vừa",
+        "c": "tốt"
+      }
+    },
+    {
+      "name": "Khớp dữ liệu kanji của app",
+      "values": {
+        "a": "tốt",
+        "b": "kém",
+        "c": "kém"
+      }
+    },
+    {
+      "name": "Bền lâu (không phụ thuộc bên ngoài)",
+      "values": {
+        "a": "tốt",
+        "b": "tốt",
+        "c": "kém"
+      }
+    },
+    {
+      "name": "Riêng tư",
+      "values": {
+        "a": "tốt",
+        "b": "tốt",
+        "c": "kém"
+      }
+    },
+    {
+      "name": "Công làm",
+      "values": {
+        "a": {
+          "text": "vừa",
+          "tone": "neutral"
+        },
+        "b": {
+          "text": "vừa",
+          "tone": "neutral"
+        },
+        "c": {
+          "text": "ít",
+          "tone": "good"
+        }
+      }
+    }
+  ],
+  "recommend": {
+    "key": "a",
+    "why": "Dữ liệu nét đã có sẵn cho đúng 2.136 chữ app dạy, nên chữ nào đoán ra cũng mở được trang kanji, và không phụ thuộc ai. Bản thử nhanh cho thấy đủ dùng khi viết vừa phải; nếu sau 20 chữ bạn vẽ thật mà đoán kém, vẫn đổi sang B được vì khung vẽ dùng chung."
+  }
+}
