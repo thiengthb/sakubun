@@ -1,6 +1,6 @@
 # Tiến độ
 
-Cập nhật lần cuối: 2026-11-19 · Claude nick tnt628 (project Sakubun, U4d) · Trang tiến độ: https://claude.ai/artifact/GmergauKMVF2n9HT3WSfxo
+Cập nhật lần cuối: 2026-11-19 · Claude nick tnt628 (project Sakubun, U4e) · Trang tiến độ: https://claude.ai/artifact/GmergauKMVF2n9HT3WSfxo
 
 Cho mọi nick Claude, Codex và thien biết project đang ở đâu. Lịch sử ở git và PR. Tối đa 40 dòng, 3 việc chờ thien.
 
@@ -19,15 +19,15 @@ Review PR: CodeRabbit review một lần khi PR chuyển sẵn sàng, không rev
 
 ## Việc dở
 
-| Việc                    | Nhánh hoặc PR | Dở từ | Còn thiếu gì                              |
-| ----------------------- | ------------- | ----- | ----------------------------------------- |
-| Đóng câu hỏi nghiên cứu | #289          | 13/11 | Chỉ tài liệu, chờ thien merge             |
-| Bản tóm tắt hai nick    | #296          | 13/11 | Tạm, của nick kia; đóng khi thien so xong |
-| U4d lấy thêm tại chỗ    | #335          | 19/11 | thien OK ảnh; chờ review và "merge đi"    |
+| Việc                     | Nhánh hoặc PR | Dở từ | Còn thiếu gì                              |
+| ------------------------ | ------------- | ----- | ----------------------------------------- |
+| Đóng câu hỏi nghiên cứu  | #289          | 13/11 | Chỉ tài liệu, chờ thien merge             |
+| Bản tóm tắt hai nick     | #296          | 13/11 | Tạm, của nick kia; đóng khi thien so xong |
+| U4e Ngoài JLPT, nút Thêm | #PR           | 19/11 | Đưa 2–3 bố cục cho thien chọn             |
 
 ## Việc tiếp theo
 
-1. U4 Kho (hướng 2, gộp theo cấp JLPT, duyệt 15/11): U4b bảng cấp xong (#323); U4c theo bản gộp chặng thien duyệt 18/11, U4c1 xong (#325); U4c2 (màn cấp) xong (#331); U4c3 (màn chặng) xong (#332); U4c4a (tab Chặng | Bản đồ ô) xong (#333); U4c4b (Danh sách có ô tìm) xong (#334); U4d (lấy thêm tại chỗ) ở #335, thien OK ảnh, chờ review; rồi U4e theo `plans/2026-11-14-u4-kho.md`.
+1. U4 Kho (hướng 2, gộp theo cấp JLPT, duyệt 15/11): U4b bảng cấp xong (#323); U4c theo bản gộp chặng thien duyệt 18/11, U4c1 xong (#325); U4c2 (màn cấp) xong (#331); U4c3 (màn chặng) xong (#332); U4c4a (tab Chặng | Bản đồ ô) xong (#333); U4c4b (Danh sách có ô tìm) xong (#334); U4d (lấy thêm tại chỗ) xong (#335); U4e (Ngoài JLPT, nút Thêm) đang làm; rồi U4f theo `plans/2026-11-14-u4-kho.md`.
 
 ## Đang chờ thien
 
