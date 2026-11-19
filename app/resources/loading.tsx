@@ -2,7 +2,7 @@ import { CardsSkeleton, PageSkeleton } from '@/components/layout/page-skeleton';
 import { KHO_BOARD_META } from '@/components/features/resources/kho-copy';
 import { Skeleton } from '@/components/ui/skeleton';
 
-// Kho's level board (U4b): five level cards and the one for what lies outside JLPT.
+// Kho's level board (U4b): the search box (U4f), five level cards and the one for what lies outside JLPT.
 export default function Loading() {
   return (
     <PageSkeleton
@@ -11,7 +11,10 @@ export default function Loading() {
       meta={KHO_BOARD_META}
       actions={<Skeleton className="h-9 w-20 rounded-sm md:h-7" />}
     >
-      <CardsSkeleton count={6} rowHeight={152} rowGap={12} columns="" footer={false} />
+      <div className="flex flex-col gap-4">
+        <Skeleton className="h-11 w-full rounded-md md:h-9" />
+        <CardsSkeleton count={6} rowHeight={152} rowGap={12} columns="" footer={false} />
+      </div>
     </PageSkeleton>
   );
 }

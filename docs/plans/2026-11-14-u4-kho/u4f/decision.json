@@ -1,0 +1,45 @@
+{
+  "id": "sakubun-u4f-kho-search",
+  "question": "Ô tìm ở đầu Kho nên hiện kết quả thế nào?",
+  "context": "U4f. Gõ một chữ ở đầu Kho thì thấy ngay mục đó đã có trong kho của bạn chưa (kèm trạng thái), và mục nào ở Kho chung chưa lấy (kèm nút Học). Mỗi ảnh: trái là laptop khi gõ 会, giữa là điện thoại trước khi gõ, phải là điện thoại khi gõ. Số liệu là mẫu, ảnh là bản phác.",
+  "options": [
+    {
+      "key": "a",
+      "name": "A · Kết quả thả xuống dưới ô tìm",
+      "summary": "Ô tìm nằm ngay dưới tiêu đề Kho. Gõ là một khung thả xuống đè lên bảng cấp: tối đa 4–5 mục của bạn, rồi 4 mục ở Kho chung có nút Học, cuối khung có link xem hết ở Kho chung. Bấm ra ngoài là khung đóng.",
+      "image": "a.jpg",
+      "scale": 2,
+      "pros": ["Nhanh nhất để tra một từ rồi quay lại", "Bảng cấp vẫn còn phía sau, không mất chỗ đang xem", "Giống ô tìm ở nhiều app quen thuộc"],
+      "cons": ["Chỉ đủ chỗ cho ít kết quả", "Khung đè lên bảng, trên điện thoại gần kín màn", "Bấm Học trong khung thả xuống dễ bấm nhầm"]
+    },
+    {
+      "key": "b",
+      "name": "B · Kết quả thay chỗ bảng cấp",
+      "summary": "Ô tìm nằm dưới tiêu đề. Gõ thì bảng cấp tạm ẩn, chỗ đó hiện kết quả: laptop chia hai cột (Trong kho của bạn | Trong Kho chung), điện thoại xếp hai khối trên dưới. Kho chung có nút Học và Xem thêm. Xoá chữ là bảng cấp hiện lại.",
+      "image": "b.jpg",
+      "scale": 2,
+      "pros": ["Nhìn hai nguồn cạnh nhau, đúng ý 'kết quả chia hai phần' trong kế hoạch", "Đủ chỗ cho nhiều kết quả và nút Học", "Không phải sang trang khác"],
+      "cons": ["Đang gõ thì không thấy bảng cấp", "Cần thêm trạng thái trống và đang tải cho kết quả"]
+    },
+    {
+      "key": "c",
+      "name": "C · Trang tìm riêng, hai tab",
+      "summary": "Đầu Kho có nút kính lúp. Bấm mở trang Tìm riêng: ô tìm, rồi hai tab Của bạn · 4 và Kho chung · 38. Mỗi lần chỉ xem một nguồn.",
+      "image": "c.jpg",
+      "scale": 2,
+      "pros": ["Bảng cấp giữ gọn, không thêm ô tìm", "Trang riêng nên có link dán được (vd. /resources/search?q=会)"],
+      "cons": ["Thêm một bước bấm trước khi gõ", "Không thấy hai nguồn cùng lúc: muốn biết từ đã có chưa phải đổi tab", "Rời khỏi Kho"]
+    }
+  ],
+  "criteria": [
+    { "name": "Tra nhanh một từ", "values": { "a": "tốt", "b": "tốt", "c": "vừa" } },
+    { "name": "Thấy hai nguồn cùng lúc", "values": { "a": "tốt", "b": "tốt", "c": "kém" } },
+    { "name": "Chỗ cho nhiều kết quả", "values": { "a": "kém", "b": "tốt", "c": "tốt" } },
+    { "name": "Hợp điện thoại", "values": { "a": "vừa", "b": "tốt", "c": "tốt" } },
+    { "name": "Công làm", "values": { "a": { "text": "vừa", "tone": "neutral" }, "b": { "text": "ít", "tone": "good" }, "c": { "text": "vừa", "tone": "neutral" } } }
+  ],
+  "recommend": {
+    "key": "b",
+    "why": "Kết quả nằm ngay trong trang nên đủ chỗ cho hai nguồn cạnh nhau và nút Học, trên điện thoại không có khung đè lên màn. Bảng cấp chỉ ẩn khi đang gõ, xoá chữ là về. Cũng là cách ít việc nhất vì dùng lại kiểu dòng của tab Danh sách."
+  }
+}
