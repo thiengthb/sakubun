@@ -84,8 +84,10 @@ Xong khi: bấm tab Kho trên điện thoại ra trang 5 ngả (kèm số mục)
 
 ## Đã đổi
 
-| Ngày | Đổi gì | Vì sao |
-| ---- | ------ | ------ |
+| Ngày  | Đổi gì                                                                        | Vì sao                                                                                                                                                                                                              |
+| ----- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 19/11 | Chọn C thay vì B AI đề xuất                                                   | thien chọn trên trang chọn                                                                                                                                                                                          |
+| 19/11 | Đường dẫn theo chỗ của màn trong cây Kho, không theo đường đã đi như bản A tả | Một mục tới được từ nhiều nơi (ô tìm, nhóm, Mọi mục, Kho chung); chỗ cố định thì đường dẫn đoán trước được, còn về đúng màn vừa rời đã có nút Back của trình duyệt. Thấy khó dùng thì thêm lối "về chỗ vừa rời" sau |
 
 ## Lỗi gặp
 
