@@ -6,7 +6,7 @@ Luật ghi file này ở `profile/PLANNING.md` của repo thienai-workflow. Tick
 
 ## Đang ở đâu
 
-- Đang ở: KN1 (đường dẫn đúng và nút quay lại).
+- Đang ở: KN1 (đường dẫn đúng và nút quay lại), code xong ở #344, chờ thien duyệt ảnh: https://claude.ai/artifact/AuzSsZe1wWUSKG2cfJ9Lu9 (mở ở nick tnt628).
 - Còn thiếu: KN1, KN2, KN3.
 - thien cần làm: duyệt ảnh của từng bước khi được gửi.
 
@@ -62,10 +62,10 @@ Xong khi: thien chọn trên trang chọn, lựa chọn ghi vào file này.
 
 Xong khi: ở mọi màn Kho, đường dẫn ghi đúng chỗ của màn trong cây Kho, bấm vào đâu về đúng đó; điện thoại có nút "‹ <màn cha>".
 
-- [ ] Một cây Kho duy nhất (logic thuần, có test): với mỗi đường dẫn trang, biết ngả (Theo cấp JLPT, Ngoài JLPT, Nhóm, Kanji, Kho chung) và chuỗi màn cha. Trang một mục suy ra chỗ của mục: mục có cấp JLPT về Cấp › Chặng chứa nó, mục ngoài JLPT về Ngoài JLPT › nguồn.
-- [ ] Mọi màn Kho dùng cây đó cho đường dẫn (sửa trang mục, kanji, nhóm, Kho chung đang trỏ về bảng Mọi mục hoặc không có lối về Kho).
-- [ ] Điện thoại: chữ nhỏ đầu trang thành nút "‹ <màn cha>".
-- [ ] Ảnh duyệt laptop và điện thoại, e2e.
+- [x] Một cây Kho duy nhất (logic thuần, có test): với mỗi đường dẫn trang, biết ngả (Theo cấp JLPT, Ngoài JLPT, Nhóm, Kanji, Kho chung) và chuỗi màn cha. Trang một mục suy ra chỗ của mục: mục có cấp JLPT về Cấp › Chặng chứa nó, mục ngoài JLPT về Ngoài JLPT › nguồn.
+- [x] Mọi màn Kho dùng cây đó cho đường dẫn (sửa trang mục, kanji, nhóm, Kho chung đang trỏ về bảng Mọi mục hoặc không có lối về Kho).
+- [x] Điện thoại: chữ nhỏ đầu trang thành nút "‹ <màn cha>".
+- [ ] Ảnh duyệt laptop và điện thoại (nguồn ở `2026-11-19-kho-navigation/kn1/`), e2e: các spec đụng đường dẫn chạy 19/11, 9 test đỏ y hệt trên main nên không do KN1.
 
 ### 2. KN2 · Kho xổ ra trong thanh bên laptop
 
@@ -91,5 +91,6 @@ Xong khi: bấm tab Kho trên điện thoại ra trang 5 ngả (kèm số mục)
 
 ## Lỗi gặp
 
-| Ngày | Lỗi | Đã xử lý |
-| ---- | --- | -------- |
+| Ngày  | Lỗi                                               | Đã xử lý                                                                                                   |
+| ----- | ------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| 19/11 | Ảnh chụp đầu tiên: 飲む (N5) hiện dưới Ngoài JLPT | Server mới chưa nạp Kho chung khi mở trang mục; trang mục và trang sửa gọi `ensureOpenJlptLibrary()` trước |

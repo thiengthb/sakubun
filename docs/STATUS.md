@@ -15,6 +15,7 @@ bảng nhỏ phải, giữ sidebar và thanh tab): U2a xong (#291, 14/11), U2b�
 | ---------------------------------------------------------- | ----------------- | ------------- |
 | [UI v2](plans/2026-11-08-ui-v2.md)                         | U4 Kho của bạn    | U0–U3 / U0–U8 |
 | [Tìm bằng vẽ kanji](plans/2026-11-19-kanji-draw-search.md) | KD2 Khung vẽ      | 2 / 3         |
+| [Điều hướng Kho](plans/2026-11-19-kho-navigation.md)       | KN1 Đường dẫn     | 1 / 4         |
 
 ## Việc dở
 
@@ -23,11 +24,11 @@ bảng nhỏ phải, giữ sidebar và thanh tab): U2a xong (#291, 14/11), U2b�
 | Đóng câu hỏi nghiên cứu | #289          | 13/11 | Chỉ tài liệu, chờ thien merge             |
 | Bản tóm tắt hai nick    | #296          | 13/11 | Tạm, của nick kia; đóng khi thien so xong |
 | KD2 Khung vẽ kanji      | #341 (merge)  | 19/11 | thien vẽ thử 20 chữ trên app thật         |
-| KN Điều hướng Kho       | #343          | 19/11 | thien chọn C; làm KN1                     |
+| KN1 Đường dẫn Kho       | #344          | 19/11 | thien duyệt ảnh KN1                       |
 
 ## Việc tiếp theo
 
-1. U4 Kho (hướng 2, gộp theo cấp JLPT, duyệt 15/11): U4b bảng cấp xong (#323); U4c theo bản gộp chặng thien duyệt 18/11, U4c1 xong (#325); U4c2 (màn cấp) xong (#331); U4c3 (màn chặng) xong (#332); U4c4a (tab Chặng | Bản đồ ô) xong (#333); U4c4b (Danh sách có ô tìm) xong (#334); U4d (lấy thêm tại chỗ) xong (#335); U4e1 (trang Ngoài JLPT) xong (#336); U4e2 (ngăn Thêm) xong (#337); U4f (ô tìm hai nguồn) xong (#338). Tiếp: tìm bằng vẽ kanji (thien xin 19/11), kế hoạch `plans/2026-11-19-kanji-draw-search.md`: KD1 (#340), KD2 (#341) xong, tiếp KD3; ô tìm Kho lỗi với kho nhiều mục (P2029), sửa ở PR này; U4g, U4h sau kỳ thi N2.
+1. U4 Kho (hướng 2, gộp theo cấp JLPT, duyệt 15/11): U4b bảng cấp xong (#323); U4c theo bản gộp chặng thien duyệt 18/11, U4c1 xong (#325); U4c2 (màn cấp) xong (#331); U4c3 (màn chặng) xong (#332); U4c4a (tab Chặng | Bản đồ ô) xong (#333); U4c4b (Danh sách có ô tìm) xong (#334); U4d (lấy thêm tại chỗ) xong (#335); U4e1 (trang Ngoài JLPT) xong (#336); U4e2 (ngăn Thêm) xong (#337); U4f (ô tìm hai nguồn) xong (#338). Tiếp: tìm bằng vẽ kanji (thien xin 19/11), kế hoạch `plans/2026-11-19-kanji-draw-search.md`: KD1 (#340), KD2 (#341) xong, tiếp KD3; ô tìm Kho lỗi P2029 đã sửa (#342); điều hướng Kho theo phương án C (thien chọn 19/11), kế hoạch `plans/2026-11-19-kho-navigation.md`: KN0 (#343) xong, KN1 (#344) chờ duyệt ảnh, rồi KN2, KN3; U4g, U4h sau kỳ thi N2.
 
 ## Đang chờ thien
 
@@ -36,4 +37,4 @@ bảng nhỏ phải, giữ sidebar và thanh tab): U2a xong (#291, 14/11), U2b�
 
 ## Đang vướng
 
-- e2e không chạy trong CI; `style-audit` và "lost answer" đỏ tuỳ thứ tự khi chạy cả bộ (`docs/handoff.md` mục 4).
+- e2e không chạy trong CI; 9 e2e đỏ trên main 19/11 (display-toggles, mobile-layout, phone-header, resource-cards, resources-kanji); `style-audit` và "lost answer" đỏ tuỳ thứ tự khi chạy cả bộ (`docs/handoff.md` mục 4).
