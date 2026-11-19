@@ -1,7 +1,7 @@
 # U4: màn Kho theo cấp JLPT (tiếp U4f ô tìm hai nguồn)
 
 Repo: thiengthb/sakubun · Nhánh: feat/u4f-kho-search · PR: #338
-Ghi bởi: Claude tnt628, https://claude.ai/code/project/chan_0145cotX9neLQKZjxfBxCwDe?thread=cmsg_0145cotX9neLQKZjxfBxCwDe2nQVyXHabhp85BNJRRHSxc · Cập nhật: 2026-11-19T10:21Z
+Ghi bởi: Claude tnt628, https://claude.ai/code/project/chan_0145cotX9neLQKZjxfBxCwDe?thread=cmsg_0145cotX9neLQKZjxfBxCwDe2nQVyXHabhp85BNJRRHSxc · Cập nhật: 2026-11-19T12:27Z
 
 ## thien muốn gì
 Làm U4 theo kế hoạch đã duyệt `docs/plans/2026-11-14-u4-kho.md` (hướng 2, gộp theo cấp JLPT; 15/11 thien trả lời "theo đề xuất" cả 3 câu, U4g/U4h để sau kỳ thi N2). thien bảo nick tnt697 làm tiếp ("nick này làm tiếp", 15/11).
@@ -12,10 +12,10 @@ Làm U4 theo kế hoạch đã duyệt `docs/plans/2026-11-14-u4-kho.md` (hướ
 - U4c1 logic chia chặng: #325 (merge 18/11), `lib/library/level-sets.ts`, `lib/app/level-sets.ts`.
 
 ## Bước tiếp theo
-1. U4f (ô tìm hai nguồn ở đầu Kho): đưa thien 2–3 bố cục trước khi code. Nhánh mới từ main, PR nháp; ghi U4e2 xong (#337) vào STATUS và kế hoạch trong PR đó.
+1. #338 (U4f) chờ CI ở ef7fc55 rồi chờ thien nói "merge đi" (thien đã duyệt ảnh, review riêng không chặn, 2 lỗi đã sửa). Merge xong: viết kế hoạch ngắn "Tìm bằng vẽ kanji" (thien xin 19/11, giống mazii) có phương án cho thien chọn.
 
 ## Đang chờ thien
-- Duyệt ảnh U4f: https://claude.ai/artifact/Rei1NqUxg4VZKiDCAAji5Y (mở ở nick tnt628). Dựng lại: `make-round.mjs docs/plans/2026-11-14-u4-kho/u4f/round.json <out>`.
+- "merge đi" cho #338.
 
 ## Lưu ý
 - Máy ảo: `npm ci` cần `npm_config_nodedir=/opt/node22`; `prisma generate` cần `PRISMA_SCHEMA_ENGINE_BINARY=/bin/true`; e2e chạy bằng Chrome hệ thống (config tạm với `channel: 'chrome'`, không commit). `npm run build` lỗi ở máy ảo vì không tải được Google Fonts, CI thì xanh.
@@ -37,3 +37,4 @@ Làm U4 theo kế hoạch đã duyệt `docs/plans/2026-11-14-u4-kho.md` (hướ
 - 19/11 09:42Z: #337 (U4e2, ngăn Thêm) đã merge (f6a5dc3) theo lời thien. U4e xong. Tiếp U4f. Ghi bởi Claude tnt628.
 - 19/11 09:50Z: U4f ở PR nháp #338, gửi trang chọn 3 bố cục (A thả xuống, B thay chỗ bảng cấp [đề xuất], C trang tìm riêng). Chờ thien chọn rồi mới code. Ghi bởi Claude tnt628.
 - 19/11 10:25Z: thien chọn B cho U4f. Code xong ở #338 (verify xanh 1227 test, e2e kho-search/kho-board/add-sheet 13/13). Chờ thien duyệt ảnh; xong thì sẵn sàng, risk:medium, xin review. Ghi bởi Claude tnt628.
+- 19/11 12:35Z: thien duyệt ảnh U4f 2/2, xin thêm tìm bằng vẽ kanji (bước riêng trong kế hoạch U4). Review riêng và CodeRabbit cùng chỉ 2 lỗi; sửa ở ef7fc55 (loại mọi mục đã có bên Kho chung; ô tìm theo ?q= khi đổi từ ngoài), verify 1228 test xanh, e2e 12/12. Ghi bởi Claude tnt628.
