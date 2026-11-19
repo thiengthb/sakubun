@@ -14,11 +14,15 @@ let other: UserDb;
 
 const NOW = new Date('2030-01-15T03:00:00.000Z');
 
-const starter = (expression: string, meaningVi: string): StarterItem => ({
+const starter = (
+  expression: string,
+  meaningVi: string,
+  reading: string | null = null,
+): StarterItem => ({
   id: `VOCAB-${expression}`,
   kind: 'VOCAB',
   expression,
-  reading: null,
+  reading,
   hanviet: null,
   meaningVi,
   level: 'N5',
@@ -42,7 +46,7 @@ beforeAll(async () => {
   other = userDb(await createTestUser(prisma, 'other'));
   await prisma.libraryEntry.deleteMany();
   await S.seedOpenJlpt(prisma, [
-    starter('会う', 'gặp'),
+    starter('会う', 'gặp', 'あう'),
     starter('会話', 'hội thoại'),
     starter('社会', 'xã hội'),
     starter('店', 'cửa hàng'),
@@ -68,6 +72,15 @@ describe('searchKho (U4f)', () => {
     expect(found.library.map((e) => e.expression).sort()).toEqual(['会話', '社会']);
     expect(found.libraryCount).toBe(2);
     expect(found.libraryHref).toBe('/library?tab=items&q=%E4%BC%9A&hide=1');
+  });
+
+  it("hides an owned word from Kho chung even when only Kho chung's copy matches", async () => {
+    // The learner's 会う has no reading; Kho chung's has あう, so only Kho chung's copy matches.
+    await add(mine, '会う', 'gặp gỡ');
+    const found = await K.searchKho(mine, 'あう', NOW);
+    expect(found.mine).toEqual([]);
+    expect(found.library).toEqual([]);
+    expect(found.libraryCount).toBe(0);
   });
 
   it('matches a meaning too, and an empty query finds nothing', async () => {

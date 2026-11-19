@@ -25,20 +25,28 @@ export interface Voice {
   rate?: number;
 }
 
-/** The box under Kho's title. Typing updates ?q= a moment after the last key. */
+/** The box under Kho's title. Typing updates ?q= a moment after the last key; `query` is ?q= as is. */
 export function KhoSearchBox({ query }: { query: string }) {
   const router = useRouter();
   const pathname = usePathname();
   const [text, setText] = useState(query);
   const [pending, startTransition] = useTransition();
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  // A key is waiting for the pause before it searches.
+  const [waiting, setWaiting] = useState(false);
 
   useEffect(() => () => clearTimeout(timer.current), []);
 
+  // ?q= changed from elsewhere (the sidebar's "Kho", a link): show it. While a key is waiting or the
+  // box's own search is on its way, the typed text wins, so a slow answer never undoes a key.
+  if (!waiting && !pending && query.trim() !== text.trim()) setText(query);
+
   const go = (next: string) => {
     clearTimeout(timer.current);
+    setWaiting(true);
     timer.current = setTimeout(() => {
       const q = next.trim();
+      setWaiting(false);
       startTransition(() =>
         router.replace(q ? `${pathname}?q=${encodeURIComponent(q)}` : pathname, { scroll: false }),
       );

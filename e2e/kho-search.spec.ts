@@ -64,3 +64,28 @@ test('the search box swaps the board for two sources, and Học moves a word acr
   await page.waitForURL(/\/resources$/);
   await expect(page.getByRole('heading', { level: 2, name: /^N5/ })).toBeVisible();
 });
+
+test('typing on keeps the text, and leaving by the sidebar empties the box', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await signIn(page);
+  await page.goto('/resources');
+  const box = page.getByRole('searchbox', { name: 'Tìm trong kho và Kho chung' });
+
+  await box.fill('会');
+  await page.waitForURL(/\/resources\?q=%E4%BC%9A$/);
+  // A key after the first search: the answer to 会 does not undo it.
+  await box.press('End');
+  await page.keyboard.type('話');
+  await page.waitForURL(/\/resources\?q=%E4%BC%9A%E8%A9%B1$/);
+  await expect(box).toHaveValue('会話');
+  await expect(box).toBeFocused();
+
+  // "Kho" in the sidebar goes back to the board, and the box follows the address.
+  await page
+    .locator('[data-sidebar="sidebar"]')
+    .getByRole('link', { name: 'Kho', exact: true })
+    .click();
+  await page.waitForURL(/\/resources$/);
+  await expect(page.getByRole('heading', { level: 2, name: /^N5/ })).toBeVisible();
+  await expect(box).toHaveValue('');
+});

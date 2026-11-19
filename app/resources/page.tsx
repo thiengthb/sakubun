@@ -42,6 +42,7 @@ export default async function KhoPage({
         board={board}
         grammarLevel={settings.grammarLevel}
         vocabLevel={settings.vocabLevel}
+        query={q}
         search={search}
         voice={{ speaker: settings.voiceSpeaker, rate: settings.speechRate }}
       />

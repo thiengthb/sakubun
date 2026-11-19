@@ -5,6 +5,7 @@ import { asItemKind, ITEM_KINDS, type ItemKind } from '@/lib/library/item-kinds'
 import { wordState, type WordState } from '@/lib/library/level-sets';
 import { countEntries, searchEntries, type LibraryClient } from '@/lib/library/shared';
 import { browseParams } from '@/lib/library/browse-query';
+import { ownedExpressions } from '@/lib/library/take';
 
 // Kho's search box (U4f, layout B that thien picked on 19/11, docs/plans/2026-11-14-u4-kho.md): one
 // query over the learner's own words and patterns, and over Kho chung minus what they already have,
@@ -69,34 +70,35 @@ export async function searchKho(
       libraryHref,
     };
 
-  const owned = await db.item.findMany({
-    where: {
-      kind: { in: [...ITEM_KINDS] },
-      OR: [
-        { expression: { contains: query } },
-        { reading: { contains: query } },
-        { meaningVi: { contains: query } },
-      ],
-    },
-    select: {
-      id: true,
-      kind: true,
-      expression: true,
-      reading: true,
-      meaningVi: true,
-      level: true,
-      suspended: true,
-      srs: { select: { state: true, due: true, lapses: true } },
-    },
-    orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
-    take: MINE_SCAN + 1,
-  });
+  // Everything the learner owns is left out of Kho chung's side, not just what matches here: their 会う
+  // with no reading still hides Kho chung's 会う (あう) on a search for あう. Same rule as "Ẩn mục đã có".
+  const [owned, exclude] = await Promise.all([
+    db.item.findMany({
+      where: {
+        kind: { in: [...ITEM_KINDS] },
+        OR: [
+          { expression: { contains: query } },
+          { reading: { contains: query } },
+          { meaningVi: { contains: query } },
+        ],
+      },
+      select: {
+        id: true,
+        kind: true,
+        expression: true,
+        reading: true,
+        meaningVi: true,
+        level: true,
+        suspended: true,
+        srs: { select: { state: true, due: true, lapses: true } },
+      },
+      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+      take: MINE_SCAN + 1,
+    }),
+    ownedExpressions(db),
+  ]);
   const mineMore = owned.length > MINE_SCAN;
   const scanned = owned.slice(0, MINE_SCAN);
-
-  // What the learner owns among the matches is left out of Kho chung's side, by kind and expression.
-  const exclude: Partial<Record<ItemKind, string[]>> = {};
-  for (const i of scanned) (exclude[asItemKind(i.kind)] ??= []).push(i.expression);
   const [entries, counts] = await Promise.all([
     searchEntries(library, { text: query, exclude, take: LIBRARY_SHOWN }),
     countEntries(library, { text: query, exclude }),

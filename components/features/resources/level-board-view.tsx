@@ -33,12 +33,15 @@ export function LevelBoardView({
   board,
   grammarLevel,
   vocabLevel,
+  query,
   search,
   voice,
 }: {
   board: KhoBoard;
   grammarLevel: string;
   vocabLevel: string;
+  /** ?q= as the address has it, for the box. */
+  query: string;
   /** The answer to ?q= (U4f): while there is one, it takes the board's place. */
   search: KhoSearch | null;
   voice: Voice;
@@ -63,7 +66,7 @@ export function LevelBoardView({
       }
     >
       <div className="flex flex-col gap-4">
-        <KhoSearchBox query={search?.query ?? ''} />
+        <KhoSearchBox query={query} />
         {search ? (
           <KhoSearchResults search={search} voice={voice} />
         ) : (
