@@ -1,7 +1,7 @@
-# U4: màn Kho theo cấp JLPT (U4e2 ngăn Thêm chờ duyệt)
+# U4: màn Kho theo cấp JLPT (U4e2 ngăn Thêm chờ review)
 
 Repo: thiengthb/sakubun · Nhánh: feat/u4e2-add-sheet · PR: #337
-Ghi bởi: Claude tnt628, https://claude.ai/code/project/chan_0145cotX9neLQKZjxfBxCwDe?thread=cmsg_0145cotX9neLQKZjxfBxCwDe2nQVyXHabhp85BNJRRHSxc · Cập nhật: 2026-11-19T04:43Z
+Ghi bởi: Claude tnt628, https://claude.ai/code/project/chan_0145cotX9neLQKZjxfBxCwDe?thread=cmsg_0145cotX9neLQKZjxfBxCwDe2nQVyXHabhp85BNJRRHSxc · Cập nhật: 2026-11-19T05:25Z
 
 ## thien muốn gì
 Làm U4 theo kế hoạch đã duyệt `docs/plans/2026-11-14-u4-kho.md` (hướng 2, gộp theo cấp JLPT; 15/11 thien trả lời "theo đề xuất" cả 3 câu, U4g/U4h để sau kỳ thi N2). thien bảo nick tnt697 làm tiếp ("nick này làm tiếp", 15/11).
@@ -16,7 +16,7 @@ Làm U4 theo kế hoạch đã duyệt `docs/plans/2026-11-14-u4-kho.md` (hướ
 2. Rồi U4f (ô tìm hai nguồn).
 
 ## Đang chờ thien
-- Duyệt ảnh U4e2: https://claude.ai/artifact/3s1VM3bD3YXgrTfpAFmF1n (mở ở nick tnt628). Dựng lại: `make-round.mjs docs/plans/2026-11-14-u4-kho/u4e2/round.json <out>`.
+- Nói "merge đi" cho #337 sau khi CodeRabbit và phiên review xong.
 
 ## Lưu ý
 - Máy ảo: `npm ci` cần `npm_config_nodedir=/opt/node22`; `prisma generate` cần `PRISMA_SCHEMA_ENGINE_BINARY=/bin/true`; e2e chạy bằng Chrome hệ thống (config tạm với `channel: 'chrome'`, không commit). `npm run build` lỗi ở máy ảo vì không tải được Google Fonts, CI thì xanh.
@@ -34,3 +34,4 @@ Làm U4 theo kế hoạch đã duyệt `docs/plans/2026-11-14-u4-kho.md` (hướ
 - 19/11 04:05Z: thien chọn B. U4e chia đôi: U4e1 (trang /resources/outside, thẻ nhóm và nguồn, danh sách theo nguồn) code xong ở #336 (verify xanh), chờ thien duyệt ảnh; U4e2 (ngăn Thêm bốn cách) sau khi U4e1 merge. Ghi bởi Claude tnt628.
 - 19/11 04:40Z: #336 (U4e1, trang Ngoài JLPT) đã merge (ddbda6d) theo lời thien. Tiếp U4e2. Ghi bởi Claude tnt628.
 - 19/11 04:45Z: U4e2 ở PR nháp #337, verify xanh, e2e add-sheet 2/2. Chờ thien duyệt ảnh; xong thì sẵn sàng, risk:medium, xin review. Ghi bởi Claude tnt628.
+- 19/11 05:30Z: thien OK ảnh U4e2 2/2. #337 sẵn sàng, risk:medium, đã nhờ coordinator mở thread review. Ghi bởi Claude tnt628.
