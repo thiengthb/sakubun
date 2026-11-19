@@ -7,7 +7,7 @@ lỗi thì ghi vào "Lỗi gặp".
 
 ## Đang ở đâu
 
-- Đang ở: KD1 xong (#340, 19/11). KD2 (khung vẽ): vòng duyệt 1 cần sửa nút và khung vẽ; chờ thien chọn cách đặt nút (vòng 2).
+- Đang ở: KD1 xong (#340, 19/11). KD2 (khung vẽ): đã sửa theo bản C thien chọn, chờ thien duyệt ảnh vòng 2.
 - Còn thiếu: KD2, KD3.
 - thien cần làm: duyệt ảnh KD2; sau khi merge thì vẽ thử 20 chữ trên app thật.
 
@@ -88,6 +88,10 @@ docs/plans/2026-11-19-kanji-draw-search/kd2/decision.json <out>`. Kết quả (1
       tìm chỉ còn biểu tượng, cột Vẽ chữ ngang hàng ô tìm, khung vẽ rộng hết chỗ; 3 cách đặt nút (A dưới khung, B trên góc
       khung, C cột bên phải, đề xuất ẩn tới khi chọn) ở `kd2-r2/`, trang chọn https://claude.ai/artifact/JWXNfHzHqQzurEwu65UWo6
       (mở ở nick tnt628), dựng lại: `make-decision.mjs docs/plans/2026-11-19-kanji-draw-search/kd2-r2/decision.json <out>`.
+      Kết quả (19/11): thien chọn **C · Cột nút bên phải khung**, trùng đề xuất (bản ghi `decisions/sakubun-kd2-pad-tools`).
+      Đã làm: nút chỉ có biểu tượng (thêm `PenLine`, `Undo2`, `Keyboard` vào `lib/design/plain-icons.ts` theo lời thien),
+      khung vẽ chiếm phần còn lại. Ảnh duyệt vòng 2 ở `kd2/r2/`, trang https://claude.ai/artifact/SHpSqzgoc3V3yANRA8CifB
+      (mở ở nick tnt628), dựng lại: `make-round.mjs docs/plans/2026-11-19-kanji-draw-search/kd2/r2/round.json <out>`.
 - [ ] thien duyệt ảnh laptop và điện thoại: trang https://claude.ai/artifact/YYVCB9K5etj9jyiihB3yVF (mở ở nick tnt628),
       dựng lại: `make-round.mjs docs/plans/2026-11-19-kanji-draw-search/kd2/round.json <out>`; ảnh chụp bằng `kd2/shots.spec.ts.txt`.
 - [ ] thien vẽ thử 20 chữ trên app thật (sau khi merge, Kho tự lên NUC): ít nhất 16 chữ nằm trong 5 chữ đầu.

@@ -59,7 +59,7 @@ test('kd2 shots', async ({ browser }) => {
     const shot = (name: string) =>
       page.screenshot({ path: `${OUT}/${name}-${w}.jpg`, type: 'jpeg', quality: 85 });
     await shot('closed');
-    await page.getByRole('button', { name: 'Vẽ', exact: true }).click();
+    await page.getByRole('button', { name: 'Vẽ chữ kanji' }).click();
     await page.waitForTimeout(400);
     await shot('open');
     await draw(page, '社');

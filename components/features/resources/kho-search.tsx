@@ -74,12 +74,12 @@ export function KhoSearchArea({ query, children }: { query: string; children: Re
     if (!pen && phone) field.current?.blur();
     setPen(!pen);
   };
-  const pad = (layout: 'keyboard' | 'panel') => (
+  // On a phone the pad has a way back to typing.
+  const pad = (keyboard: boolean) => (
     <KanjiDrawPad
-      layout={layout}
       onPick={(k) => type(text + k)}
       onKeyboard={
-        layout === 'keyboard'
+        keyboard
           ? () => {
               setPen(false);
               field.current?.focus();
@@ -89,9 +89,22 @@ export function KhoSearchArea({ query, children }: { query: string; children: Re
     />
   );
 
-  return (
-    <>
-      <div className="relative">
+  const penButton = (
+    <Button
+      variant={pen ? 'default' : 'ghost'}
+      size="icon-xs"
+      aria-pressed={pen}
+      aria-label="Vẽ chữ kanji"
+      title="Tìm bằng cách vẽ chữ kanji"
+      onClick={togglePen}
+      className="absolute top-1/2 right-1 -translate-y-1/2 md:right-0.5"
+    >
+      <PenLine />
+    </Button>
+  );
+  const box = (
+    <div className="flex items-center gap-2">
+      <div className="relative min-w-0 flex-1">
         <SearchInput
           ref={field}
           role="searchbox"
@@ -103,49 +116,53 @@ export function KhoSearchArea({ query, children }: { query: string; children: Re
           placeholder="Tìm trong kho và Kho chung"
           aria-label="Tìm trong kho và Kho chung"
           className="sm:max-w-none"
-          inputClassName="pr-20"
+          inputClassName="pr-10 md:pr-8"
         />
         {pending && (
           <Loader2
             aria-label="Đang tìm"
-            className="absolute top-1/2 right-20 size-4 -translate-y-1/2 animate-spin text-muted-foreground"
+            className={cn(
+              'absolute top-1/2 size-4 -translate-y-1/2 animate-spin text-muted-foreground',
+              'right-10 md:right-8',
+            )}
           />
         )}
-        <Button
-          variant={pen ? 'secondary' : 'ghost'}
-          size="sm"
-          aria-pressed={pen}
-          title="Tìm bằng cách vẽ chữ kanji"
-          onClick={togglePen}
-          className="absolute top-1/2 right-1 -translate-y-1/2"
-        >
-          <PenLine data-icon="inline-start" />
-          Vẽ
-        </Button>
+        {penButton}
       </div>
+    </div>
+  );
+
+  return (
+    <>
       {pen && !phone ? (
         <div className="flex items-start gap-6">
-          <div className="min-w-0 flex-1">{children}</div>
+          <div className="flex min-w-0 flex-1 flex-col gap-4">
+            {box}
+            {children}
+          </div>
           <aside
             aria-label="Vẽ chữ"
             className={cn(LIST_CARD.base, 'sticky top-4 flex w-80 shrink-0 flex-col gap-3 p-4')}
           >
-            <div className="flex items-center justify-between">
+            <div className="flex min-h-9 items-center justify-between">
               <h2 className="text-heading">Vẽ chữ</h2>
               <Button variant="ghost" size="icon" aria-label="Đóng khung vẽ" onClick={togglePen}>
                 <X />
               </Button>
             </div>
-            {pad('panel')}
+            {pad(false)}
           </aside>
         </div>
       ) : (
-        children
+        <>
+          {box}
+          {children}
+        </>
       )}
       {pen && phone && (
         <>
           {/* Room under the results, so the last of them can scroll up above the drawing keyboard. */}
-          <div aria-hidden className="h-80 shrink-0" />
+          <div aria-hidden className="h-100 shrink-0" />
           {/* On the body, so it sits over the tab bar whatever the page's own layers are. */}
           {createPortal(
             <div
@@ -153,7 +170,7 @@ export function KhoSearchArea({ query, children }: { query: string; children: Re
               aria-label="Bàn phím vẽ"
               className="fixed inset-x-0 bottom-0 z-50 border-t-2 border-border bg-background pb-[env(safe-area-inset-bottom)]"
             >
-              <div className="mx-auto max-w-md p-3">{pad('keyboard')}</div>
+              <div className="mx-auto max-w-md p-3">{pad(true)}</div>
             </div>,
             document.body,
           )}

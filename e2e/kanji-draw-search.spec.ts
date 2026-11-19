@@ -56,7 +56,7 @@ test('on a laptop, a kanji drawn in the side column is searched (1440px)', async
   await page.goto('/resources', { waitUntil: 'networkidle' });
   const box = page.getByRole('searchbox', { name: 'Tìm trong kho và Kho chung' });
 
-  await page.getByRole('button', { name: 'Vẽ', exact: true }).click();
+  await page.getByRole('button', { name: 'Vẽ chữ kanji' }).click();
   const column = page.getByRole('complementary', { name: 'Vẽ chữ' });
   await expect(column).toBeVisible();
   // The board stays in view beside the pad.
@@ -95,7 +95,7 @@ test("on a phone, the drawing keyboard takes the tab bar's place (390px)", async
   const box = page.getByRole('searchbox', { name: 'Tìm trong kho và Kho chung' });
   await shot(page, 've-kanji-phone-truoc');
 
-  await page.getByRole('button', { name: 'Vẽ', exact: true }).click();
+  await page.getByRole('button', { name: 'Vẽ chữ kanji' }).click();
   const keyboard = page.getByRole('region', { name: 'Bàn phím vẽ' });
   await expect(keyboard).toBeVisible();
   // It sits at the foot of the screen, over the tab bar.

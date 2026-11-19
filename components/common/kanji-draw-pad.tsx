@@ -1,16 +1,16 @@
 'use client';
 
 import { useRef, useState, type PointerEvent } from 'react';
-import { Delete, Keyboard, Undo2 } from 'lucide-react';
+import { Keyboard, Trash2, Undo2 } from 'lucide-react';
 import { recognizeKanjiAction } from '@/app/resources/actions';
 import { Button } from '@/components/ui/button';
 import { resample, STROKE_BOX, type Point } from '@/lib/japanese/strokes';
 import { cn } from '@/lib/core/utils';
 
-// Search by drawing (KD2, docs/plans/2026-11-19-kanji-draw-search.md, layout B that thien picked on
-// 19/11): the learner draws one kanji, the server guesses it after every stroke (KD1), and a tap on
-// a guess hands it on and clears the pad for the next one. "keyboard" is the phone's bottom panel,
-// "panel" the column beside the results on a laptop.
+// Search by drawing (KD2, docs/plans/2026-11-19-kanji-draw-search.md: layout B, then round 2's C that
+// thien picked on 19/11): the learner draws one kanji, the server guesses it after every stroke (KD1),
+// and a tap on a guess hands it on and clears the pad for the next one. The tools are icons alone in a
+// column beside the pad, so the pad is as big as it gets (thien: those icons need no words).
 
 /** Points sent per stroke: enough for the shape, few enough for a small request. */
 const SENT_POINTS = 48;
@@ -18,12 +18,10 @@ const SENT_POINTS = 48;
 export function KanjiDrawPad({
   onPick,
   onKeyboard,
-  layout,
 }: {
   onPick: (kanji: string) => void;
   /** The phone's way back to typing. */
   onKeyboard?: () => void;
-  layout: 'keyboard' | 'panel';
 }) {
   const [strokes, setStrokes] = useState<Point[][]>([]);
   const [drawing, setDrawing] = useState<Point[] | null>(null);
@@ -99,24 +97,39 @@ export function KanjiDrawPad({
       ? `${points[0].x},${points[0].y} ${points[0].x + 0.1},${points[0].y}`
       : points.map((p) => `${p.x},${p.y}`).join(' ');
 
+  // Icons alone, in a column beside the pad (thien picked C on 19/11: the pad as big as it gets while
+  // a phone still shows results above it; the icons need no words, thien said).
   const tools = (
     <>
       <Button
         variant="outline"
+        size="icon-lg"
+        aria-label="Xoá nét"
+        title="Xoá nét"
         disabled={strokes.length === 0}
         onClick={() => update(strokes.slice(0, -1))}
       >
-        <Undo2 data-icon="inline-start" />
-        Xoá nét
+        <Undo2 />
       </Button>
-      <Button variant="outline" disabled={strokes.length === 0} onClick={() => update([])}>
-        <Delete data-icon="inline-start" />
-        Xoá hết
+      <Button
+        variant="outline"
+        size="icon-lg"
+        aria-label="Xoá hết"
+        title="Xoá hết"
+        disabled={strokes.length === 0}
+        onClick={() => update([])}
+      >
+        <Trash2 />
       </Button>
       {onKeyboard && (
-        <Button variant="outline" onClick={onKeyboard}>
-          <Keyboard data-icon="inline-start" />
-          Bàn phím
+        <Button
+          variant="outline"
+          size="icon-lg"
+          aria-label="Bàn phím"
+          title="Bàn phím"
+          onClick={onKeyboard}
+        >
+          <Keyboard />
         </Button>
       )}
     </>
@@ -147,7 +160,7 @@ export function KanjiDrawPad({
           </p>
         )}
       </div>
-      <div className={cn('flex gap-3', layout === 'panel' && 'flex-col')}>
+      <div className="flex gap-3">
         <svg
           ref={box}
           viewBox="0 0 109 109"
@@ -157,7 +170,7 @@ export function KanjiDrawPad({
           data-strokes={strokes.length}
           className={cn(
             'aspect-square cursor-crosshair touch-none rounded-xl border-2 border-border bg-card select-none',
-            layout === 'keyboard' ? 'w-3/5 max-w-64' : 'w-full',
+            'min-w-0 flex-1',
           )}
           onPointerDown={down}
           onPointerMove={move}
@@ -186,9 +199,7 @@ export function KanjiDrawPad({
             {drawing && <polyline points={line(drawing)} className="text-accent-brand" />}
           </g>
         </svg>
-        <div className={cn('flex gap-2', layout === 'keyboard' ? 'flex-1 flex-col' : 'flex-wrap')}>
-          {tools}
-        </div>
+        <div className="flex flex-col gap-2">{tools}</div>
       </div>
     </div>
   );
