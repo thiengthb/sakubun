@@ -92,22 +92,25 @@ function Neighbour({
     side === 'prev' ? (
       <>
         <ChevronLeft aria-hidden />
-        Chặng trước
+        Trước
       </>
     ) : (
       <>
-        Chặng sau
+        Sau
         <ChevronRight aria-hidden />
       </>
     );
+  // The screen is a set, so "Trước" and "Sau" say enough (thien, KN1 review); a screen reader
+  // still hears which way.
+  const label = side === 'prev' ? 'Chặng trước' : 'Chặng sau';
   if (to === null)
     return (
-      <Button variant="outline" disabled>
+      <Button variant="outline" disabled aria-label={label}>
         {body}
       </Button>
     );
   return (
-    <ButtonLink href={setHref(ctx, to)} variant="outline">
+    <ButtonLink href={setHref(ctx, to)} variant="outline" aria-label={label}>
       {body}
     </ButtonLink>
   );

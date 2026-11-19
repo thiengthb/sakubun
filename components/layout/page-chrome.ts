@@ -5,7 +5,7 @@
 // Laptop: a nested page's parent trail is a small line above the title. A top page draws no empty
 // line for it: its title sits level with the sidebar's logo, and only a nested page's title moves
 // down by the trail (thien, Ôn nhanh round 2: 24px of empty space on every top page). Phone: the menu logo, the title block and the
-// actions share one 36px row; the title block is two tight lines (trail over title on a nested
+// actions share one 36px row (a nested page with a way back drops the logo, thien KN1 review 19/11); the title block is two tight lines (trail over title on a nested
 // page, title over meta on a top page).
 export const PAGE_CHROME = {
   // A flex column, not space-y: a tab's hidden panels after the open one would each keep a margin.
@@ -15,7 +15,9 @@ export const PAGE_CHROME = {
   trail: 'flex h-4 min-w-0 items-center max-md:hidden',
   /** Laptop: 8px from the trail to the title and from the title to the meta (thien, Nhóm round 1). */
   stack: 'space-y-1 md:space-y-2',
-  row: 'flex min-h-9 min-w-0 items-center gap-3 md:min-h-7',
+  row: 'group/row flex min-h-9 min-w-0 items-center gap-3 md:min-h-7',
+  /** Phone only: the logo, which steps aside when the trail is a way back (thien, KN1 review). */
+  phoneLogo: 'flex shrink-0 items-center group-has-[[data-back]]/row:hidden md:hidden',
   block: 'min-w-0 flex-1',
   /** Phone only: the trail inside the title block, above the title. */
   phoneTrail: 'mb-1 flex h-4 min-w-0 items-center md:hidden',

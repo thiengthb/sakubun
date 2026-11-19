@@ -138,8 +138,8 @@ export function PageSkeleton({
         <div className={PAGE_CHROME.header}>
           <div className={PAGE_CHROME.stack}>
             {trail && <div className={PAGE_CHROME.trail}>{trail}</div>}
-            <div className={PAGE_CHROME.row}>
-              <div className="flex shrink-0 items-center md:hidden">
+            <div data-slot="header-row" className={PAGE_CHROME.row}>
+              <div className={PAGE_CHROME.phoneLogo}>
                 <Skeleton className="size-9 rounded-sm" />
               </div>
               <div className={PAGE_CHROME.block}>

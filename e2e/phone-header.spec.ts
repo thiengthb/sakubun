@@ -94,7 +94,9 @@ test('detail headers keep the way back (or logo), trail and star on one row, the
   expect(wrong, wrong.join('\n')).toEqual([]);
 });
 
-test('template pages keep logo, title and actions on one row at 390px', async ({ page }) => {
+test('template pages keep logo (or the way back), title and actions on one row at 390px', async ({
+  page,
+}) => {
   test.setTimeout(120_000);
   await login(page);
 
@@ -105,8 +107,9 @@ test('template pages keep logo, title and actions on one row at 390px', async ({
       const shell = document.querySelector('[data-template]');
       const logo = shell?.querySelector('header [data-app-logo]');
       const h1 = shell?.querySelector('header h1');
-      const rowEl = logo?.parentElement?.parentElement;
+      const rowEl = shell?.querySelector('header [data-slot="header-row"]');
       if (!logo || !h1 || !rowEl) return null;
+      const back = Boolean(rowEl.querySelector('nav[data-back]'));
       const mid = (el: Element) => {
         const r = el.getBoundingClientRect();
         return {
@@ -119,13 +122,17 @@ test('template pages keep logo, title and actions on one row at 390px', async ({
       const actions = [...rowEl.querySelectorAll(':scope > div:not(:first-child) button')]
         .filter((el) => el.getBoundingClientRect().height > 0)
         .map(mid);
-      return { row: mid(rowEl), logo: mid(logo), h1: mid(h1), actions };
+      return { row: mid(rowEl), logo: mid(logo), h1: mid(h1), actions, back };
     });
     if (!row) {
       wrong.push(`${path}: no template header (data-template, menu logo, h1)`);
       continue;
     }
-    if (row.logo.height !== 36) wrong.push(`${path}: logo is ${row.logo.height}px, not 36px`);
+    // A nested page with a way back has no logo beside it (thien, KN1 review 19/11).
+    if (row.back) {
+      if (row.logo.height !== 0) wrong.push(`${path}: a logo beside the way back`);
+    } else if (row.logo.height !== 36)
+      wrong.push(`${path}: logo is ${row.logo.height}px, not 36px`);
     if (row.row.height > 44) wrong.push(`${path}: header row is ${row.row.height}px, not one row`);
     for (const el of [row.h1, ...row.actions]) {
       if (el.top < row.row.top || el.bottom > row.row.bottom)
