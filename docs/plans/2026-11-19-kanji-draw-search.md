@@ -7,9 +7,9 @@ lỗi thì ghi vào "Lỗi gặp".
 
 ## Đang ở đâu
 
-- Đang ở: KD1 (máy đoán chữ) theo cách A thien chọn.
-- Còn thiếu: KD1–KD3.
-- thien cần làm: không có (sau KD1: vẽ thử khoảng 20 chữ).
+- Đang ở: KD1 (máy đoán chữ) xong ở PR #340, chờ merge. Tiếp KD2 (khung vẽ, chọn bố cục trước).
+- Còn thiếu: KD2, KD3.
+- thien cần làm: không có (ở KD2: vẽ thử khoảng 20 chữ).
 
 ## Mục tiêu
 
@@ -55,14 +55,18 @@ KD1 phải thử bằng nét vẽ thật (thien vẽ khoảng 20 chữ) trước
 
 ### KD1. Máy đoán chữ
 
-Xong khi: test với nét giả lập như trên đạt ít nhất mức ở bảng; 20 chữ thien vẽ thật có ít nhất 16 chữ nằm trong 5 chữ đầu.
+Xong khi: test với nét giả lập đạt ít nhất mức ở bảng.
 
-- [ ] Hàm thuần nhận các nét đã vẽ, trả 10 chữ giống nhất (theo cách thien chọn), kèm test.
-- [ ] Server action nhận nét (đã thu gọn) và trả chữ đoán; giới hạn số nét và số điểm.
+- [x] Hàm thuần nhận các nét đã vẽ, trả 10 chữ giống nhất, kèm test (`lib/japanese/recognize.ts`, PR #340). Test 60
+      chữ mỗi mức với hạt giống cố định: nhẹ 100% đúng vị trí 1; vừa 98% trong 5 chữ đầu; nặng 87% trong 10 chữ đầu;
+      đảo 2 nét 88% trong 5 chữ đầu; thiếu 1 nét 97% trong 5 chữ đầu. Khoảng 20–35 ms một lần đoán trên máy dev.
+- [x] Server action `recognizeKanjiAction` (`app/resources/actions.ts`) nhận nét dạng cặp [x, y], tối đa 34 nét, 200
+      điểm mỗi nét; nét không đọc được thì trả một dòng "Xoá hết rồi vẽ lại".
 
 ### KD2. Khung vẽ ở ô tìm của Kho
 
-Xong khi: thien duyệt ảnh laptop và điện thoại. Trước khi code: 2–3 bố cục để thien chọn (nút bút cạnh ô tìm mở khung
+Xong khi: thien duyệt ảnh laptop và điện thoại, và 20 chữ thien vẽ thật có ít nhất 16 chữ nằm trong 5 chữ đầu (chuyển từ
+KD1 sang đây vì phải có khung vẽ mới thử tay được). Trước khi code: 2–3 bố cục để thien chọn (nút bút cạnh ô tìm mở khung
 nổi, hay ngăn dưới trên điện thoại, hay khung luôn hiện bên phải).
 
 - [ ] Khung vẽ dùng lại phần vẽ của khung viết KJ4 (`kanji-write-pad.tsx`), có Xoá nét cuối và Xoá hết.
@@ -77,8 +81,9 @@ Xong khi: ô tìm ở Kho chung và trang Kanji cũng có nút vẽ.
 
 ## Đã đổi
 
-| Ngày | Đổi gì | Vì sao |
-| ---- | ------ | ------ |
+| Ngày  | Đổi gì                                    | Vì sao                                     |
+| ----- | ----------------------------------------- | ------------------------------------------ |
+| 19/11 | Thử 20 chữ vẽ thật chuyển từ KD1 sang KD2 | KD1 chưa có khung vẽ để thien thử bằng tay |
 
 ## Lỗi gặp
 

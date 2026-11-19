@@ -14,7 +14,7 @@ bảng nhỏ phải, giữ sidebar và thanh tab): U2a xong (#291, 14/11), U2b�
 | Kế hoạch                                                   | Đang ở checkpoint | Đã tick       |
 | ---------------------------------------------------------- | ----------------- | ------------- |
 | [UI v2](plans/2026-11-08-ui-v2.md)                         | U4 Kho của bạn    | U0–U3 / U0–U8 |
-| [Tìm bằng vẽ kanji](plans/2026-11-19-kanji-draw-search.md) | KD1 Máy đoán chữ  | 0 / 3         |
+| [Tìm bằng vẽ kanji](plans/2026-11-19-kanji-draw-search.md) | KD1 Máy đoán chữ  | 1 / 3         |
 
 ## Việc dở
 
@@ -22,7 +22,7 @@ bảng nhỏ phải, giữ sidebar và thanh tab): U2a xong (#291, 14/11), U2b�
 | ----------------------- | ------------- | ----- | ----------------------------------------- |
 | Đóng câu hỏi nghiên cứu | #289          | 13/11 | Chỉ tài liệu, chờ thien merge             |
 | Bản tóm tắt hai nick    | #296          | 13/11 | Tạm, của nick kia; đóng khi thien so xong |
-| KD1 Máy đoán chữ kanji  | (PR này)      | 19/11 | thien chọn A; đang code                   |
+| KD1 Máy đoán chữ kanji  | (PR này)      | 19/11 | Code xong; chờ review, "merge đi"         |
 
 ## Việc tiếp theo
 

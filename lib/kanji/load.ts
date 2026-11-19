@@ -4,6 +4,7 @@ import path from 'node:path';
 import { buildKanjiCatalog, type KanjiEntry } from '@/lib/kanji/catalog';
 import type { RadicalRow } from '@/lib/kanji/data';
 import { partIndex } from '@/lib/kanji/network';
+import { prepareShapes, type KanjiShape } from '@/lib/japanese/recognize';
 
 let cached: Promise<KanjiEntry[]> | null = null;
 
@@ -26,6 +27,14 @@ export function kanjiStrokes(): Promise<Record<string, string[]>> {
     (text) => JSON.parse(text) as Record<string, string[]>,
   );
   return strokes;
+}
+
+let shapes: Promise<KanjiShape[]> | null = null;
+
+/** The same strokes made ready for recognition (KD1): resampled and scaled once per process. */
+export function kanjiShapes(): Promise<KanjiShape[]> {
+  shapes ??= kanjiStrokes().then(prepareShapes);
+  return shapes;
 }
 
 let radicals: Promise<RadicalRow[]> | null = null;
