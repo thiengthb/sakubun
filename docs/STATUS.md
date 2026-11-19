@@ -23,7 +23,7 @@ Review PR: CodeRabbit review một lần khi PR chuyển sẵn sàng, không rev
 | ------------------------ | ------------- | ----- | ----------------------------------------- |
 | Đóng câu hỏi nghiên cứu  | #289          | 13/11 | Chỉ tài liệu, chờ thien merge             |
 | Bản tóm tắt hai nick     | #296          | 13/11 | Tạm, của nick kia; đóng khi thien so xong |
-| U4e Ngoài JLPT, nút Thêm | #PR           | 19/11 | Đưa 2–3 bố cục cho thien chọn             |
+| U4e Ngoài JLPT, nút Thêm | #336          | 19/11 | Đưa 2–3 bố cục cho thien chọn             |
 
 ## Việc tiếp theo
 
