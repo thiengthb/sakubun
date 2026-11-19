@@ -17,6 +17,11 @@ const ALLOW: Record<string, Record<string, string>> = {
   'components/ui/tooltip.tsx': {
     'radius-class': 'the tooltip arrow is a 10px rotated square; 2px only softens its tip',
   },
+  'components/features/resources/add-sheet.tsx': {
+    'no-form-dialog':
+      "Kho's Add panel types one item in place: thien picked layout B with this form on 19/11 " +
+      '(docs/plans/2026-11-14-u4-kho.md, U4e); the full Add page keeps pasting and Excel',
+  },
 };
 
 const SKIP_DIRS = new Set(['node_modules', 'generated', '.next']);

@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { PageShell } from '@/components/layout/page-shell';
 import { ParentCrumbs } from '@/components/layout/app-breadcrumbs';
-import { AddButton } from '@/components/common/add-button';
+import { AddSheet } from '@/components/features/resources/add-sheet';
 import { LIST_CARD } from '@/components/common/list-card';
 import { ButtonLink } from '@/components/ui/button';
 import { setSummary, STATE_LABEL } from '@/lib/library/level-screen';
@@ -28,7 +28,7 @@ export function OutsideView({ shelves }: { shelves: OutsideShelves }) {
       breadcrumb={<ParentCrumbs section="resources" self />}
       title={OUTSIDE_TITLE}
       meta={outsideMeta(shelves)}
-      actions={<AddButton href="/resources/new" />}
+      actions={<AddSheet />}
     >
       <div className="flex flex-col gap-6">
         <ShelfSection

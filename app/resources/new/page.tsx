@@ -8,10 +8,10 @@ export const dynamic = 'force-dynamic';
 export default async function ResourceAddRoute({
   searchParams,
 }: {
-  searchParams: Promise<{ kind?: string }>;
+  searchParams: Promise<{ kind?: string; tab?: string }>;
 }) {
   await getSessionUserId();
-  const { kind } = await searchParams;
+  const { kind, tab } = await searchParams;
 
-  return <ResourceAddPage kind={kind === 'vocab' ? 'vocab' : 'grammar'} />;
+  return <ResourceAddPage kind={kind === 'vocab' ? 'vocab' : 'grammar'} initialTab={tab} />;
 }
