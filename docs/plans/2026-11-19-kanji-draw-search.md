@@ -7,9 +7,9 @@ lỗi thì ghi vào "Lỗi gặp".
 
 ## Đang ở đâu
 
-- Đang ở: KD1 xong (#340, 19/11). KD2 (khung vẽ): điện thoại đã duyệt (vòng 2); laptop đổi sang khung nổi, chờ thien duyệt ảnh vòng 3.
+- Đang ở: KD1 xong (#340, 19/11). KD2 (khung vẽ): thien duyệt xong ảnh (vòng 3, 19/11), #341 chờ review rồi merge; sau merge thien vẽ thử 20 chữ.
 - Còn thiếu: KD2, KD3.
-- thien cần làm: duyệt ảnh KD2; sau khi merge thì vẽ thử 20 chữ trên app thật.
+- thien cần làm: nói "merge đi" cho #341 sau review; sau khi merge thì vẽ thử 20 chữ trên app thật.
 
 ## Mục tiêu
 
@@ -82,7 +82,7 @@ docs/plans/2026-11-19-kanji-draw-search/kd2/decision.json <out>`. Kết quả (1
       tìm, khung trống lại để vẽ chữ sau.
 - [x] e2e `e2e/kanji-draw-search.spec.ts`: laptop vẽ 会 rồi 話, ô tìm thành 会話 và kết quả hiện; Xoá nét, Xoá hết, Đóng;
       điện thoại bàn phím vẽ chạm đáy màn, vẽ 会, bấm Bàn phím thì ô tìm được focus. Chạy xanh trên máy (19/11).
-- [ ] Vòng duyệt 1 (19/11): thien duyệt 3/4. "Vẽ và thêm chữ · 1440" OK; cần sửa "Mở khung vẽ · 1440" (nút Vẽ chưa ổn, bố cục
+- [x] Vòng duyệt 1 (19/11): thien duyệt 3/4. "Vẽ và thêm chữ · 1440" OK; cần sửa "Mở khung vẽ · 1440" (nút Vẽ chưa ổn, bố cục
       hơi lệch) và "Mở bàn phím vẽ · 390" (khung vẽ to ra, nút để dưới hoặc chỉ có biểu tượng vì đủ hiểu). Vòng 2: nút bút trong ô
       tìm chỉ còn biểu tượng, cột Vẽ chữ ngang hàng ô tìm, khung vẽ rộng hết chỗ; 3 cách đặt nút (A dưới khung, B trên góc
       khung, C cột bên phải, đề xuất ẩn tới khi chọn) ở `kd2-r2/`, trang chọn https://claude.ai/artifact/JWXNfHzHqQzurEwu65UWo6
@@ -94,8 +94,8 @@ docs/plans/2026-11-19-kanji-draw-search/kd2/decision.json <out>`. Kết quả (1
       Vòng 2 (19/11): điện thoại OK cả hai màn; laptop cần sửa: "khung vẽ ở laptop hiện lên menu như lúc đầu". Đã làm: trên
       laptop khung vẽ nổi dưới ô tìm, sát mép phải, đè lên kết quả (như bản phác A). Ảnh vòng 3 ở `kd2/r3/`, trang
       https://claude.ai/artifact/QH5BBeRZo9683K8oGUjgcg (mở ở nick tnt628), dựng lại: `make-round.mjs
-    docs/plans/2026-11-19-kanji-draw-search/kd2/r3/round.json <out>`.
-- [ ] thien duyệt ảnh laptop và điện thoại: trang https://claude.ai/artifact/YYVCB9K5etj9jyiihB3yVF (mở ở nick tnt628),
+  docs/plans/2026-11-19-kanji-draw-search/kd2/r3/round.json <out>`.
+- [x] thien duyệt ảnh laptop và điện thoại (19/11: vòng 3 laptop OK 2/2, vòng 2 điện thoại OK 2/2). Vòng 1: trang https://claude.ai/artifact/YYVCB9K5etj9jyiihB3yVF (mở ở nick tnt628),
       dựng lại: `make-round.mjs docs/plans/2026-11-19-kanji-draw-search/kd2/round.json <out>`; ảnh chụp bằng `kd2/shots.spec.ts.txt`.
 - [ ] thien vẽ thử 20 chữ trên app thật (sau khi merge, Kho tự lên NUC): ít nhất 16 chữ nằm trong 5 chữ đầu.
 
