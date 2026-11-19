@@ -23,7 +23,7 @@ bảng nhỏ phải, giữ sidebar và thanh tab): U2a xong (#291, 14/11), U2b�
 | Đóng câu hỏi nghiên cứu | #289          | 13/11 | Chỉ tài liệu, chờ thien merge             |
 | Bản tóm tắt hai nick    | #296          | 13/11 | Tạm, của nick kia; đóng khi thien so xong |
 | KD2 Khung vẽ kanji      | #341 (merge)  | 19/11 | thien vẽ thử 20 chữ trên app thật         |
-| KN Điều hướng Kho       | #343          | 19/11 | chờ thien chọn phương án                  |
+| KN Điều hướng Kho       | #343          | 19/11 | thien chọn C; làm KN1                     |
 
 ## Việc tiếp theo
 

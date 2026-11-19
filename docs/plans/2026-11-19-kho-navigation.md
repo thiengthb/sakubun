@@ -6,9 +6,9 @@ Luật ghi file này ở `profile/PLANNING.md` của repo thienai-workflow. Tick
 
 ## Đang ở đâu
 
-- Đang ở: KN0, sơ đồ hiện tại và 3 phương án điều hướng, chờ thien chọn.
-- Còn thiếu: thien chọn phương án; rồi chia bước code.
-- thien cần làm: chọn phương án ở https://claude.ai/artifact/2sHn59iuGi9qsbvFGjwkXA (mở ở nick tnt628; nguồn trang ở `2026-11-19-kho-navigation/kn0/`).
+- Đang ở: KN1 (đường dẫn đúng và nút quay lại).
+- Còn thiếu: KN1, KN2, KN3.
+- thien cần làm: duyệt ảnh của từng bước khi được gửi.
 
 ## Mục tiêu
 
@@ -42,7 +42,7 @@ Chỗ làm lạc đường:
 
 - **A. Sửa đường dẫn, thêm nút quay lại.** Giữ nguyên cấu trúc. Mọi màn có đường dẫn đầy đủ theo đúng đường đã đi (Kho › N5 · Từ vựng › Chặng 3 › 会う); trên điện thoại thay bằng nút "‹ Chặng 3". Sửa được lỗi 1, 3, 4, chưa sửa lỗi 2.
 - **B. Hàng ngả của Kho ở đầu mọi màn Kho** [đề xuất]. Gồm A, thêm một hàng cố định dưới tiêu đề: Theo cấp · Ngoài JLPT · Nhóm · Kanji · Kho chung, ngả đang đứng được tô. Điện thoại vuốt ngang hàng này. Mọi mục thành nút "Xem dạng bảng" trong Theo cấp.
-- **C. Kho mở rộng trong thanh bên.** Gồm A, thanh bên laptop xổ Kho thành 5 mục con như cây thư mục; điện thoại bấm tab Kho ra một trang chọn ngả trước khi vào bảng cấp.
+- **C. Kho mở rộng trong thanh bên** [thien chọn 19/11 16:26Z, trên trang chọn https://claude.ai/artifact/2sHn59iuGi9qsbvFGjwkXA; AI đã đề xuất B]. Gồm A, thanh bên laptop xổ Kho thành 5 mục con như cây thư mục; điện thoại bấm tab Kho ra một trang chọn ngả trước khi vào bảng cấp.
 
 ## Không làm
 
@@ -55,8 +55,32 @@ Chỗ làm lạc đường:
 
 Xong khi: thien chọn trên trang chọn, lựa chọn ghi vào file này.
 
-- [x] Sơ đồ Kho hiện tại và các chỗ làm lạc đường (PR KN0)
-- [ ] thien chọn phương án
+- [x] Sơ đồ Kho hiện tại và các chỗ làm lạc đường (#343)
+- [x] thien chọn C (19/11)
+
+### 1. KN1 · Đường dẫn đúng chỗ, nút quay lại trên điện thoại
+
+Xong khi: ở mọi màn Kho, đường dẫn ghi đúng chỗ của màn trong cây Kho, bấm vào đâu về đúng đó; điện thoại có nút "‹ <màn cha>".
+
+- [ ] Một cây Kho duy nhất (logic thuần, có test): với mỗi đường dẫn trang, biết ngả (Theo cấp JLPT, Ngoài JLPT, Nhóm, Kanji, Kho chung) và chuỗi màn cha. Trang một mục suy ra chỗ của mục: mục có cấp JLPT về Cấp › Chặng chứa nó, mục ngoài JLPT về Ngoài JLPT › nguồn.
+- [ ] Mọi màn Kho dùng cây đó cho đường dẫn (sửa trang mục, kanji, nhóm, Kho chung đang trỏ về bảng Mọi mục hoặc không có lối về Kho).
+- [ ] Điện thoại: chữ nhỏ đầu trang thành nút "‹ <màn cha>".
+- [ ] Ảnh duyệt laptop và điện thoại, e2e.
+
+### 2. KN2 · Kho xổ ra trong thanh bên laptop
+
+Xong khi: thanh bên laptop có Kho với 5 mục con, mục con của ngả đang đứng được tô.
+
+- [ ] Nhóm và Kanji có trang danh sách riêng (`/groups`, `/resources/kanji`), lấy từ tab của bảng Mọi mục; bảng Mọi mục thành nút "Xem dạng bảng" ở Theo cấp JLPT.
+- [ ] Thanh bên: Kho › Theo cấp JLPT, Ngoài JLPT, Nhóm, Kanji, Kho chung, tô theo cây Kho.
+- [ ] Ảnh duyệt, e2e.
+
+### 3. KN3 · Trang chọn ngả trên điện thoại
+
+Xong khi: bấm tab Kho trên điện thoại ra trang 5 ngả (kèm số mục), vào ngả nào cũng có nút "‹ Kho" về trang này.
+
+- [ ] Trang chọn ngả, tab Kho trỏ về đó trên điện thoại; laptop giữ bảng cấp.
+- [ ] Ảnh duyệt, e2e.
 
 ## Đã đổi
 
